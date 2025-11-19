@@ -29,6 +29,11 @@ import { UpdateSupportTicketDto } from './dto/update-ticket.dto';
 import { RateTicketDto } from './dto/rate-ticket.dto';
 import { CreateCannedResponseDto, UpdateCannedResponseDto } from './dto/canned-response.dto';
 import { WebSocketService } from '../../shared/websocket/websocket.service';
+import { NotificationService } from '../notifications/services/notification.service';
+import { NotificationType, NotificationChannel, NotificationPriority } from '../notifications/enums/notification.enums';
+import { User, UserRole } from '../users/schemas/user.schema';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class SupportService {
@@ -36,8 +41,40 @@ export class SupportService {
     @InjectModel(SupportTicket.name) private ticketModel: Model<SupportTicketDocument>,
     @InjectModel(SupportMessage.name) private messageModel: Model<SupportMessageDocument>,
     @InjectModel(CannedResponse.name) private cannedResponseModel: Model<CannedResponseDocument>,
+    @InjectModel(User.name) private userModel: Model<User>,
     private readonly webSocketService: WebSocketService,
+    private readonly notificationService?: NotificationService,
   ) {}
+
+  // ===== Notification Helpers =====
+
+  private async notifyAdmins(type: NotificationType, title: string, message: string, messageEn: string, data?: Record<string, unknown>) {
+    try {
+      if (!this.notificationService) return;
+      
+      const admins = await this.userModel.find({
+        roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+        status: 'ACTIVE',
+      }).select('_id').lean();
+
+      const notificationPromises = admins.map((admin) =>
+        this.notificationService!.createNotification({
+          recipientId: admin._id.toString(),
+          type,
+          title,
+          message,
+          messageEn,
+          data,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+        })
+      );
+
+      await Promise.all(notificationPromises);
+    } catch (error) {
+      // Don't throw - notifications are not critical
+    }
+  }
 
   /**
    * Create a new support ticket
@@ -67,6 +104,21 @@ export class SupportService {
       attachments: dto.attachments,
       messageType: MessageType.USER_MESSAGE,
     });
+
+    // إرسال إشعار TICKET_CREATED للمدراء
+    await this.notifyAdmins(
+      NotificationType.TICKET_CREATED,
+      'تذكرة دعم فني جديدة',
+      `تم إنشاء تذكرة دعم فني جديدة: ${savedTicket.title}`,
+      `New support ticket created: ${savedTicket.title}`,
+      {
+        ticketId: savedTicket._id.toString(),
+        ticketTitle: savedTicket.title,
+        category: savedTicket.category,
+        priority: savedTicket.priority,
+        customerId: userId,
+      }
+    );
 
     return savedTicket;
   }
@@ -689,6 +741,22 @@ export class SupportService {
               ticketTitle: ticket.title,
               message: messageData,
             },
+          );
+        }
+
+        // إرسال إشعار SUPPORT_MESSAGE_RECEIVED للمدراء إذا كانت الرسالة من العميل
+        if (data.messageType === MessageType.USER_MESSAGE && this.notificationService) {
+          await this.notifyAdmins(
+            NotificationType.SUPPORT_MESSAGE_RECEIVED,
+            'رسالة دعم فني جديدة',
+            `رسالة جديدة في التذكرة: ${ticket.title}`,
+            `New message in ticket: ${ticket.title}`,
+            {
+              ticketId: ticketId,
+              ticketTitle: ticket.title,
+              messageId: savedMessage._id.toString(),
+              customerId: ticket.userId.toString(),
+            }
           );
         }
       }

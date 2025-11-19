@@ -45,83 +45,136 @@ export class CategoriesService {
 
   // ==================== إنشاء فئة ====================
   async createCategory(dto: Partial<Category>) {
-    const slug = slugify(dto.nameEn!);
+    try {
+      const slug = slugify(dto.nameEn!);
 
-    // التحقق من عدم تكرار الـ slug
-    const existing = await this.categoryModel.findOne({ slug, deletedAt: null });
-    if (existing) {
-      throw new CategoryAlreadyExistsException({ slug: dto.slug });
-    }
-
-    if (dto.parentId) {
-      const parent = await this.categoryModel.findById(dto.parentId).lean();
-      if (!parent) {
-        throw new CategoryException(ErrorCode.CATEGORY_INVALID_PARENT, { parentId: dto.parentId });
-      }
-      if (parent.deletedAt) {
-        throw new CategoryException(ErrorCode.CATEGORY_INVALID_PARENT, { parentId: dto.parentId, reason: 'deleted' });
+      // التحقق من عدم تكرار الـ slug
+      const existing = await this.categoryModel.findOne({ slug, deletedAt: null });
+      if (existing) {
+        throw new CategoryAlreadyExistsException({ slug, categoryId: existing._id.toString() });
       }
 
-      // تحديث عدد الأطفال للأب
-      await this.categoryModel.updateOne({ _id: dto.parentId }, { $inc: { childrenCount: 1 } });
+      if (dto.parentId) {
+        const parent = await this.categoryModel.findById(dto.parentId).lean();
+        if (!parent) {
+          throw new CategoryException(ErrorCode.CATEGORY_INVALID_PARENT, { parentId: dto.parentId });
+        }
+        if (parent.deletedAt) {
+          throw new CategoryException(ErrorCode.CATEGORY_INVALID_PARENT, { parentId: dto.parentId, reason: 'deleted' });
+        }
+
+        // تحديث عدد الأطفال للأب
+        await this.categoryModel.updateOne({ _id: dto.parentId }, { $inc: { childrenCount: 1 } });
+      }
+
+      const category = await this.categoryModel.create({
+        ...dto,
+        parentId: dto.parentId ? new Types.ObjectId(dto.parentId) : null,
+        slug,
+        order: dto.order || 0,
+        isActive: dto.isActive !== undefined ? dto.isActive : true,
+        childrenCount: 0,
+        productsCount: 0,
+      });
+
+      // Clear category caches
+      await this.clearAllCaches();
+
+      return category;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to create category', {
+        error: err.message,
+        stack: err.stack,
+        name: dto.name,
+        nameEn: dto.nameEn,
+        parentId: dto.parentId,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع CategoryException
+      if (error instanceof CategoryException) {
+        throw error;
+      }
+
+      // معالجة أخطاء MongoDB
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        const mongoError = error as { keyPattern?: Record<string, unknown> };
+        const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
+        throw new CategoryException(ErrorCode.CATEGORY_INVALID_DATA, {
+          reason: 'duplicate_field',
+          field,
+          message: `${field} موجود مسبقاً`,
+        });
+      }
+
+      throw new CategoryException(ErrorCode.CATEGORY_CREATE_FAILED, {
+        name: dto.name,
+        nameEn: dto.nameEn,
+        parentId: dto.parentId,
+        error: err.message,
+      });
     }
-
-    const category = await this.categoryModel.create({
-      ...dto,
-      parentId: dto.parentId ? new Types.ObjectId(dto.parentId) : null,
-      slug,
-      order: dto.order || 0,
-      isActive: dto.isActive !== undefined ? dto.isActive : true,
-      childrenCount: 0,
-      productsCount: 0,
-    });
-
-    // Clear category caches
-    await this.clearAllCaches();
-
-    return category;
   }
 
   // ==================== تحديث فئة ====================
   async updateCategory(id: string, patch: Partial<Category>) {
-    const category = await this.categoryModel.findById(id);
-    if (!category) {
-      throw new CategoryNotFoundException({ categoryId: id });
-    }
-
-    if (category.deletedAt) {
-      throw new CategoryException(ErrorCode.CATEGORY_NOT_FOUND, { categoryId: id, reason: 'deleted' });
-    }
-
-    if (patch.nameEn) {
-      const slug = slugify(patch.nameEn);
-
-      // التحقق من عدم تكرار الـ slug
-      const existing = await this.categoryModel.findOne({
-        slug,
-        _id: { $ne: id },
-        deletedAt: null,
-      });
-      if (existing) {
-        throw new CategoryAlreadyExistsException({ slug });
+    try {
+      const category = await this.categoryModel.findById(id);
+      if (!category) {
+        throw new CategoryNotFoundException({ categoryId: id });
       }
 
-      patch.slug = slug;
+      if (category.deletedAt) {
+        throw new CategoryNotFoundException({ categoryId: id, reason: 'deleted' });
+      }
+
+      if (patch.nameEn) {
+        const slug = slugify(patch.nameEn);
+
+        // التحقق من عدم تكرار الـ slug
+        const existing = await this.categoryModel.findOne({
+          slug,
+          _id: { $ne: id },
+          deletedAt: null,
+        });
+        if (existing) {
+          throw new CategoryAlreadyExistsException({ slug, categoryId: existing._id.toString() });
+        }
+
+        patch.slug = slug;
+      }
+
+      // إذا تم تغيير parentId، نحتاج لتحديث الأطفال
+      if (patch.parentId !== undefined && patch.parentId !== category.parentId) {
+        await this.handleParentChange(id, category.parentId || null, patch.parentId || null);
+      }
+
+      await this.categoryModel.updateOne({ _id: id }, { $set: patch });
+
+      const updated = await this.categoryModel.findById(id);
+
+      // Clear category caches
+      await this.clearAllCaches();
+
+      return updated;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to update category', {
+        error: err.message,
+        stack: err.stack,
+        categoryId: id,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع CategoryException
+      if (error instanceof CategoryException || error instanceof CategoryNotFoundException) {
+        throw error;
+      }
+
+      throw new CategoryException(ErrorCode.CATEGORY_UPDATE_FAILED, {
+        categoryId: id,
+        error: err.message,
+      });
     }
-
-    // إذا تم تغيير parentId، نحتاج لتحديث الأطفال
-    if (patch.parentId !== undefined && patch.parentId !== category.parentId) {
-      await this.handleParentChange(id, category.parentId || null, patch.parentId || null);
-    }
-
-    await this.categoryModel.updateOne({ _id: id }, { $set: patch });
-
-    const updated = await this.categoryModel.findById(id);
-
-    // Clear category caches
-    await this.clearAllCaches();
-
-    return updated;
   }
 
   // ==================== عرض فئة واحدة ====================
@@ -284,101 +337,159 @@ export class CategoriesService {
 
   // ==================== حذف فئة (Soft Delete) ====================
   async deleteCategory(id: string, userId: string) {
-    const category = await this.categoryModel.findById(id);
+    try {
+      const category = await this.categoryModel.findById(id);
 
-    if (!category) {
-      throw new CategoryNotFoundException({ categoryId: id });
+      if (!category) {
+        throw new CategoryNotFoundException({ categoryId: id });
+      }
+
+      if (category.deletedAt) {
+        throw new CategoryException(ErrorCode.CATEGORY_INVALID_DATA, { categoryId: id, reason: 'already_deleted' });
+      }
+
+      // فحص إذا كان لديها أطفال
+      const childrenCount = await this.categoryModel.countDocuments({
+        parentId: id,
+        deletedAt: null,
+      });
+
+      if (childrenCount > 0) {
+        throw new CategoryException(ErrorCode.CATEGORY_HAS_SUBCATEGORIES, { categoryId: id, childrenCount });
+      }
+
+      // Soft delete
+      category.deletedAt = new Date();
+      category.deletedBy = userId;
+      await category.save();
+
+      // تحديث عدد الأطفال للأب
+      if (category.parentId) {
+        await this.categoryModel.updateOne(
+          { _id: category.parentId },
+          { $inc: { childrenCount: -1 } },
+        );
+      }
+
+      await this.clearAllCaches();
+
+      return category;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to delete category', {
+        error: err.message,
+        stack: err.stack,
+        categoryId: id,
+        userId,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع CategoryException
+      if (error instanceof CategoryException || error instanceof CategoryNotFoundException) {
+        throw error;
+      }
+
+      throw new CategoryException(ErrorCode.CATEGORY_DELETE_FAILED, {
+        categoryId: id,
+        error: err.message,
+      });
     }
-
-    if (category.deletedAt) {
-      throw new CategoryException(ErrorCode.CATEGORY_NOT_FOUND, { categoryId: id, reason: 'already_deleted' });
-    }
-
-    // فحص إذا كان لديها أطفال
-    const childrenCount = await this.categoryModel.countDocuments({
-      parentId: id,
-      deletedAt: null,
-    });
-
-    if (childrenCount > 0) {
-      throw new CategoryException(ErrorCode.CATEGORY_HAS_SUBCATEGORIES, { categoryId: id, childrenCount });
-    }
-
-    // Soft delete
-    category.deletedAt = new Date();
-    category.deletedBy = userId;
-    await category.save();
-
-    // تحديث عدد الأطفال للأب
-    if (category.parentId) {
-      await this.categoryModel.updateOne(
-        { _id: category.parentId },
-        { $inc: { childrenCount: -1 } },
-      );
-    }
-
-    await this.clearAllCaches();
-
-    return category;
   }
 
   // ==================== استعادة فئة محذوفة ====================
   async restoreCategory(id: string) {
-    const category = await this.categoryModel.findById(id);
+    try {
+      const category = await this.categoryModel.findById(id);
 
-    if (!category) {
-      throw new CategoryNotFoundException({ categoryId: id });
+      if (!category) {
+        throw new CategoryNotFoundException({ categoryId: id });
+      }
+
+      if (!category.deletedAt) {
+        throw new CategoryException(ErrorCode.CATEGORY_INVALID_DATA, { categoryId: id, reason: 'not_deleted' });
+      }
+
+      category.deletedAt = null;
+      category.deletedBy = undefined;
+      await category.save();
+
+      // تحديث عدد الأطفال للأب
+      if (category.parentId) {
+        await this.categoryModel.updateOne(
+          { _id: category.parentId },
+          { $inc: { childrenCount: 1 } },
+        );
+      }
+
+      await this.clearAllCaches();
+
+      return category;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to restore category', {
+        error: err.message,
+        stack: err.stack,
+        categoryId: id,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع CategoryException
+      if (error instanceof CategoryException || error instanceof CategoryNotFoundException) {
+        throw error;
+      }
+
+      throw new CategoryException(ErrorCode.CATEGORY_UPDATE_FAILED, {
+        categoryId: id,
+        error: err.message,
+      });
     }
-
-    if (!category.deletedAt) {
-      throw new CategoryException(ErrorCode.CATEGORY_NOT_FOUND, { categoryId: id, reason: 'not_deleted' });
-    }
-
-    category.deletedAt = null;
-    category.deletedBy = undefined;
-    await category.save();
-
-    // تحديث عدد الأطفال للأب
-    if (category.parentId) {
-      await this.categoryModel.updateOne(
-        { _id: category.parentId },
-        { $inc: { childrenCount: 1 } },
-      );
-    }
-
-    await this.clearAllCaches();
-
-    return category;
   }
 
   // ==================== حذف نهائي ====================
   async permanentDeleteCategory(id: string) {
-    const category = await this.categoryModel.findById(id);
+    try {
+      const category = await this.categoryModel.findById(id);
 
-    if (!category) {
-      throw new CategoryNotFoundException({ categoryId: id });
+      if (!category) {
+        throw new CategoryNotFoundException({ categoryId: id });
+      }
+
+      // التحقق من عدم وجود أطفال
+      const childrenCount = await this.categoryModel.countDocuments({ parentId: id });
+      if (childrenCount > 0) {
+        throw new CategoryException(ErrorCode.CATEGORY_HAS_SUBCATEGORIES, { categoryId: id, childrenCount });
+      }
+
+      // حذف من قاعدة البيانات
+      await this.categoryModel.deleteOne({ _id: id });
+
+      // تحديث عدد الأطفال للأب
+      if (category.parentId) {
+        await this.categoryModel.updateOne(
+          { _id: category.parentId },
+          { $inc: { childrenCount: -1 } },
+        );
+      }
+
+      await this.clearAllCaches();
+
+      return { deleted: true };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to permanently delete category', {
+        error: err.message,
+        stack: err.stack,
+        categoryId: id,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع CategoryException
+      if (error instanceof CategoryException || error instanceof CategoryNotFoundException) {
+        throw error;
+      }
+
+      throw new CategoryException(ErrorCode.CATEGORY_DELETE_FAILED, {
+        categoryId: id,
+        error: err.message,
+      });
     }
-
-    // التحقق من عدم وجود أطفال
-    const childrenCount = await this.categoryModel.countDocuments({ parentId: id });
-    if (childrenCount > 0) {
-      throw new CategoryException(ErrorCode.CATEGORY_HAS_SUBCATEGORIES, { categoryId: id, childrenCount });
-    }
-
-    // حذف من قاعدة البيانات
-    await this.categoryModel.deleteOne({ _id: id });
-
-    // تحديث عدد الأطفال للأب
-    if (category.parentId) {
-      await this.categoryModel.updateOne(
-        { _id: category.parentId },
-        { $inc: { childrenCount: -1 } },
-      );
-    }
-
-    await this.clearAllCaches();
-
-    return { deleted: true };
   }
 
   // ==================== تحديث الإحصائيات ====================

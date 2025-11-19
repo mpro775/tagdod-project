@@ -85,6 +85,10 @@ export enum ErrorCode {
   CATEGORY_HAS_PRODUCTS = 'CATEGORY_402',
   CATEGORY_HAS_SUBCATEGORIES = 'CATEGORY_403',
   CATEGORY_INVALID_PARENT = 'CATEGORY_404',
+  CATEGORY_INVALID_DATA = 'CATEGORY_405',
+  CATEGORY_CREATE_FAILED = 'CATEGORY_406',
+  CATEGORY_UPDATE_FAILED = 'CATEGORY_407',
+  CATEGORY_DELETE_FAILED = 'CATEGORY_408',
 
   // ==================== العلامات التجارية (BRANDS: 450-499) ====================
   BRAND_NOT_FOUND = 'BRAND_450',
@@ -132,6 +136,9 @@ export enum ErrorCode {
   ORDER_RATING_NOT_ALLOWED = 'ORDER_614',
   ORDER_ADDRESS_NOT_FOUND = 'ORDER_615',
   ORDER_ADDRESS_INVALID = 'ORDER_616',
+  ORDER_REPORT_GENERATION_FAILED = 'ORDER_617',
+  ORDER_PDF_GENERATION_FAILED = 'ORDER_618',
+  ORDER_EXCEL_GENERATION_FAILED = 'ORDER_619',
 
   // ==================== العناوين (ADDRESSES: 650-699) ====================
   ADDRESS_NOT_FOUND = 'ADDRESS_650',
@@ -324,6 +331,10 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.CATEGORY_HAS_PRODUCTS]: 'لا يمكن حذف الفئة لوجود منتجات بها',
   [ErrorCode.CATEGORY_HAS_SUBCATEGORIES]: 'لا يمكن حذف الفئة لوجود فئات فرعية',
   [ErrorCode.CATEGORY_INVALID_PARENT]: 'الفئة الأب غير صالحة',
+  [ErrorCode.CATEGORY_INVALID_DATA]: 'بيانات الفئة غير صالحة',
+  [ErrorCode.CATEGORY_CREATE_FAILED]: 'فشل إنشاء الفئة',
+  [ErrorCode.CATEGORY_UPDATE_FAILED]: 'فشل تحديث الفئة',
+  [ErrorCode.CATEGORY_DELETE_FAILED]: 'فشل حذف الفئة',
 
   // ==================== العلامات التجارية ====================
   [ErrorCode.BRAND_NOT_FOUND]: 'العلامة التجارية غير موجودة',
@@ -371,6 +382,9 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.ORDER_RATING_NOT_ALLOWED]: 'لا يمكن التقييم إلا بعد استلام الطلب',
   [ErrorCode.ORDER_ADDRESS_NOT_FOUND]: 'عنوان التوصيل غير موجود',
   [ErrorCode.ORDER_ADDRESS_INVALID]: 'عنوان التوصيل غير صالح',
+  [ErrorCode.ORDER_REPORT_GENERATION_FAILED]: 'فشل إنشاء تقرير الطلبات',
+  [ErrorCode.ORDER_PDF_GENERATION_FAILED]: 'فشل في إنشاء تقرير PDF',
+  [ErrorCode.ORDER_EXCEL_GENERATION_FAILED]: 'فشل في إنشاء تقرير Excel',
 
   // ==================== العناوين ====================
   [ErrorCode.ADDRESS_NOT_FOUND]: 'العنوان غير موجود',

@@ -10,11 +10,9 @@ import {
   Avatar,
   Divider,
   ListItemIcon,
-  Badge,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Notifications,
   AccountCircle,
   Logout,
   Settings,
@@ -28,7 +26,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { useUnreadNotifications } from '@/features/notifications/hooks/useUnreadNotifications';
+import { NotificationBell } from '@/shared/components/NotificationBell';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -39,7 +37,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { t, i18n } = useTranslation();
   const { user, logout, refreshProfile } = useAuthStore();
   const { mode, toggleMode } = useThemeStore();
-  const { unreadCount } = useUnreadNotifications(true);
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const isMenuOpen = Boolean(anchorEl);
@@ -128,15 +125,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </IconButton>
 
           {/* Notifications */}
-          <IconButton 
-            color="inherit"
-            onClick={() => navigate('/notifications')}
-            title={t('navigation.notifications', 'الإشعارات')}
-          >
-            <Badge badgeContent={unreadCount} color="error">
-              <Notifications />
-            </Badge>
-          </IconButton>
+          <NotificationBell />
 
           {/* User Menu */}
           <IconButton edge="end" color="inherit" onClick={handleMenuOpen} sx={{ ml: 1 }}>

@@ -6,6 +6,8 @@ import {
   OrderNotReadyToShipException,
   OrderRatingNotAllowedException,
   OrderException,
+  OrderPdfGenerationFailedException,
+  OrderExcelGenerationFailedException,
   AddressNotFoundException,
   ErrorCode,
   DomainException
@@ -37,6 +39,8 @@ import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.servic
 import { InventoryService as ProductsInventoryService } from '../../products/services/inventory.service';
 import { VariantService } from '../../products/services/variant.service';
 import { ProductService } from '../../products/services/product.service';
+import { NotificationService } from '../../notifications/services/notification.service';
+import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
 import * as crypto from 'crypto';
 import {
   CreateOrderDto,
@@ -130,6 +134,8 @@ export class OrderService {
     private variantService: VariantService,
     @Inject(forwardRef(() => ProductService))
     private productService: ProductService,
+    @Inject(forwardRef(() => NotificationService))
+    private notificationService?: NotificationService,
   ) {}
 
   // ===== Helper Methods =====
@@ -145,6 +151,56 @@ export class OrderService {
 
   private buildPreviewCacheKey(userId: string, currency: string): string {
     return `${userId}:${this.normalizeCurrency(currency)}`;
+  }
+
+  // ===== Notification Helpers =====
+
+  private async safeNotify(userId: string, type: NotificationType, title: string, message: string, messageEn: string, data?: Record<string, unknown>) {
+    try {
+      if (this.notificationService) {
+        await this.notificationService.createNotification({
+          recipientId: userId,
+          type,
+          title,
+          message,
+          messageEn,
+          data,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.MEDIUM,
+        });
+      }
+    } catch (error) {
+      this.logger.warn(`Notification failed for user ${userId}:`, error);
+    }
+  }
+
+  private async notifyAdmins(type: NotificationType, title: string, message: string, messageEn: string, data?: Record<string, unknown>) {
+    try {
+      if (!this.notificationService) return;
+      
+      const admins = await this.userModel.find({
+        roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+        status: 'ACTIVE',
+      }).select('_id').lean();
+
+      const notificationPromises = admins.map((admin) =>
+        this.notificationService!.createNotification({
+          recipientId: admin._id.toString(),
+          type,
+          title,
+          message,
+          messageEn,
+          data,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+        })
+      );
+
+      await Promise.all(notificationPromises);
+      this.logger.log(`Sent ${type} notification to ${admins.length} admin(s)`);
+    } catch (error) {
+      this.logger.warn(`Failed to notify admins:`, error);
+    }
   }
 
   invalidateCheckoutPreviewCache(userId: string, currency?: string): void {
@@ -2055,6 +2111,38 @@ export class OrderService {
 
       this.logger.log(`Order created: ${order.orderNumber}, Cart converted`);
 
+      // إرسال إشعار ORDER_CREATED للمدراء
+      await this.notifyAdmins(
+        NotificationType.ORDER_CREATED,
+        'طلب جديد',
+        `تم إنشاء طلب جديد: ${order.orderNumber}`,
+        `New order created: ${order.orderNumber}`,
+        {
+          orderId: order._id.toString(),
+          orderNumber: order.orderNumber,
+          customerId: userId,
+          total: total,
+          currency: dto.currency,
+        }
+      );
+
+      // إرسال إشعار COUPON_USED للمدراء إذا تم استخدام كوبون
+      if (appliedCoupons.length > 0) {
+        await this.notifyAdmins(
+          NotificationType.COUPON_USED,
+          'استخدام كوبون',
+          `تم استخدام كوبون ${appliedCoupons.map(c => c.code).join(', ')} في الطلب ${order.orderNumber}`,
+          `Coupon ${appliedCoupons.map(c => c.code).join(', ')} used in order ${order.orderNumber}`,
+          {
+            orderId: order._id.toString(),
+            orderNumber: order.orderNumber,
+            couponCodes: appliedCoupons.map(c => c.code),
+            discountAmount: couponDiscount,
+            currency: dto.currency,
+          }
+        );
+      }
+
       const codEligibilityAfter = await this.checkCODEligibility(userId);
       const customerOrderStats = {
         totalOrders: codEligibilityAfter.totalOrders,
@@ -2489,6 +2577,23 @@ export class OrderService {
     order.ratingInfo.rating = dto.rating;
     order.ratingInfo.review = dto.review;
     order.ratingInfo.ratedAt = new Date();
+
+    await order.save();
+
+    // إرسال إشعار ORDER_RATED للمدراء
+    await this.notifyAdmins(
+      NotificationType.ORDER_RATED,
+      'تقييم طلب',
+      `تم تقييم الطلب ${order.orderNumber} بـ ${dto.rating} نجوم`,
+      `Order ${order.orderNumber} rated with ${dto.rating} stars`,
+      {
+        orderId: order._id.toString(),
+        orderNumber: order.orderNumber,
+        rating: dto.rating,
+        review: dto.review,
+        customerId: userId,
+      }
+    );
 
     return order;
   }
@@ -3140,6 +3245,23 @@ export class OrderService {
         // حفظ الملف
         fs.writeFileSync(filePath, pdfBuffer);
         
+        // إرسال إشعار INVOICE_CREATED للمدراء
+        if (orders.length > 0) {
+          await this.notifyAdmins(
+            NotificationType.INVOICE_CREATED,
+            'فاتورة جديدة',
+            `تم إنشاء فاتورة PDF تحتوي على ${orders.length} طلب`,
+            `Invoice PDF created with ${orders.length} order(s)`,
+            {
+              fileName,
+              filePath: `/uploads/reports/${fileName}`,
+              orderCount: orders.length,
+              totalRevenue,
+              orderIds: orders.map(o => o._id.toString()),
+            }
+          );
+        }
+        
         // إرجاع المسار النسبي للوصول من الويب
         return `/uploads/reports/${fileName}`;
       } finally {
@@ -3148,8 +3270,21 @@ export class OrderService {
         }
       }
     } catch (error) {
-      this.logger.error('Error generating PDF report:', error);
-      throw new Error('فشل في إنشاء تقرير PDF');
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Error generating PDF report', {
+        error: err.message,
+        stack: err.stack,
+        ordersCount: orders.length,
+      });
+
+      if (error instanceof OrderException) {
+        throw error;
+      }
+
+      throw new OrderPdfGenerationFailedException({
+        ordersCount: orders.length,
+        error: err.message,
+      });
     }
   }
 
@@ -3220,8 +3355,21 @@ export class OrderService {
       // إرجاع المسار النسبي للوصول من الويب
       return `/uploads/reports/${fileName}`;
     } catch (error) {
-      this.logger.error('Error generating Excel report:', error);
-      throw new Error('فشل في إنشاء تقرير Excel');
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Error generating Excel report', {
+        error: err.message,
+        stack: err.stack,
+        ordersCount: orders.length,
+      });
+
+      if (error instanceof OrderException) {
+        throw error;
+      }
+
+      throw new OrderExcelGenerationFailedException({
+        ordersCount: orders.length,
+        error: err.message,
+      });
     }
   }
 

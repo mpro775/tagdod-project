@@ -241,6 +241,24 @@ export class OrderRatingNotAllowedException extends OrderException {
   }
 }
 
+export class OrderReportGenerationFailedException extends OrderException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ORDER_REPORT_GENERATION_FAILED, details);
+  }
+}
+
+export class OrderPdfGenerationFailedException extends OrderException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ORDER_PDF_GENERATION_FAILED, details);
+  }
+}
+
+export class OrderExcelGenerationFailedException extends OrderException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ORDER_EXCEL_GENERATION_FAILED, details);
+  }
+}
+
 // ==================== Address Exceptions ====================
 
 export class AddressException extends DomainException {
