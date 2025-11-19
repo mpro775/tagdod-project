@@ -19,8 +19,10 @@ class NotificationsSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private listeners: Map<string, Set<(data: unknown) => void>> = new Map();
+  private isInitialized = false;
 
   connect(): Socket | null {
+    // إذا كان socket موجود ومتصل، ارجعه مباشرة
     if (this.socket?.connected) {
       return this.socket;
     }
@@ -29,6 +31,14 @@ class NotificationsSocketService {
     if (!token) {
       console.warn('No token found, cannot connect to notifications socket');
       return null;
+    }
+
+    // إذا كان socket موجود لكن غير متصل، نظفه أولاً
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+      this.socket = null;
+      this.isInitialized = false;
     }
 
     const wsUrl = API_BASE_URL.replace('/api/v1', '');
@@ -43,6 +53,18 @@ class NotificationsSocketService {
       reconnectionDelayMax: 5000,
       reconnectionAttempts: this.maxReconnectAttempts,
     });
+
+    // إضافة listeners مرة واحدة فقط
+    if (!this.isInitialized) {
+      this.setupSocketListeners();
+      this.isInitialized = true;
+    }
+
+    return this.socket;
+  }
+
+  private setupSocketListeners(): void {
+    if (!this.socket) return;
 
     this.socket.on('connect', () => {
       console.log('✅ Connected to notifications socket');
@@ -75,14 +97,14 @@ class NotificationsSocketService {
     this.socket.on('unread-count', (data: { count: number }) => {
       this.emit('unread-count', data);
     });
-
-    return this.socket;
   }
 
   disconnect(): void {
     if (this.socket) {
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
+      this.isInitialized = false;
       this.listeners.clear();
     }
   }

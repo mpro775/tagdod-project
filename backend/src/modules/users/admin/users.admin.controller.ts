@@ -9,7 +9,9 @@ import {
   Query,
   Req,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -42,6 +44,7 @@ import { SuspendUserDto } from './dto/suspend-user.dto';
 import { UpdateCapabilityStatusDto } from './dto/update-capability-status.dto';
 import { AdminResetPasswordDto } from './dto/reset-password.dto';
 import { ApproveVerificationDto } from '../dto/approve-verification.dto';
+import { AuditService } from '../../../shared/services/audit.service';
 
 @ApiTags('إدارة-المستخدمين')
 @ApiBearerAuth()
@@ -49,9 +52,12 @@ import { ApproveVerificationDto } from '../dto/approve-verification.dto';
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/users')
 export class UsersAdminController {
+  private readonly logger = new Logger(UsersAdminController.name);
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
+    private auditService: AuditService,
+
   ) {}
 
   // ==================== قائمة المستخدمين مع Pagination ====================
@@ -337,7 +343,7 @@ export class UsersAdminController {
   // ==================== إنشاء أدمن مع صلاحيات مخصصة ====================
   @RequirePermissions('users.create', 'super_admin.access')
   @Post('create-admin')
-  async createAdmin(@Body() dto: CreateAdminDto) {
+  async createAdmin(@Body() dto: CreateAdminDto, @Req() req: { user: { sub: string } } & Request) {
     // التحقق من عدم وجود المستخدم
     const existingUser = await this.userModel.findOne({ phone: dto.phone });
     if (existingUser) {
@@ -376,6 +382,21 @@ export class UsersAdminController {
 
     await this.capsModel.create(capsData);
 
+    // تسجيل حدث إنشاء الأدمن
+    this.auditService.logUserEvent({
+      userId: String(user._id),
+      action: 'created',
+      performedBy: req.user.sub,
+      newValues: {
+        phone: user.phone,
+        roles: user.roles,
+        permissions: user.permissions,
+        status: user.status,
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger?.error('Failed to log user event', err));
+
     return {
       id: user._id,
       phone: user.phone,
@@ -393,7 +414,7 @@ export class UsersAdminController {
   // ==================== إنشاء أدمن بناءً على الدور ====================
   @RequirePermissions('users.create', 'super_admin.access')
   @Post('create-role-admin')
-  async createRoleBasedAdmin(@Body() dto: CreateRoleBasedAdminDto) {
+  async createRoleBasedAdmin(@Body() dto: CreateRoleBasedAdminDto, @Req() req: { user: { sub: string } } & Request) {
     // تحديد الأدوار والصلاحيات بناءً على النوع
     let roles: UserRole[] = [UserRole.ADMIN];
     let permissions: AdminPermission[] = [];
@@ -445,13 +466,13 @@ export class UsersAdminController {
       description: dto.description,
     };
 
-    return await this.createAdmin(adminDto);
+    return await this.createAdmin(adminDto, req);
   }
 
   // ==================== إنشاء مستخدم عادي ====================
   @RequirePermissions('users.create', 'admin.access')
   @Post()
-  async createUser(@Body() dto: CreateUserAdminDto) {
+  async createUser(@Body() dto: CreateUserAdminDto, @Req() req: { user: { sub: string } } & Request) {
     // التحقق من عدم وجود المستخدم
     const existingUser = await this.userModel.findOne({ phone: dto.phone });
     if (existingUser) {
@@ -521,6 +542,20 @@ export class UsersAdminController {
 
     await this.capsModel.create(capsData);
 
+    // تسجيل حدث إنشاء المستخدم
+    this.auditService.logUserEvent({
+      userId: String(user._id),
+      action: 'created',
+      performedBy: req.user.sub,
+      newValues: {
+        phone: user.phone,
+        roles: user.roles,
+        status: user.status,
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger?.error('Failed to log user event', err));
+
     return {
       id: user._id,
       phone: user.phone,
@@ -537,12 +572,19 @@ export class UsersAdminController {
   async updateUser(
     @Param('id') id: string,
     @Body() dto: UpdateUserAdminDto,
-    @Req() req: { user: { sub: string } },
+    @Req() req: { user: { sub: string } } & Request,
   ) {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new UserNotFoundException({ userId: id });
     }
+
+    // حفظ القيم القديمة للتسجيل
+    const oldValues = {
+      roles: user.roles ? [...user.roles] : [],
+      permissions: user.permissions ? [...user.permissions] : [],
+      status: user.status,
+    };
 
     // منع تعديل Super Admin من قبل Admin عادي
     const adminUser = await this.userModel.findById(req.user.sub);
@@ -647,6 +689,51 @@ export class UsersAdminController {
       await capabilities.save();
     }
 
+    // تسجيل حدث تحديث المستخدم
+    const newValues = {
+      roles: user.roles ? [...user.roles] : [],
+      permissions: user.permissions ? [...user.permissions] : [],
+      status: user.status,
+    };
+
+    this.auditService.logUserEvent({
+      userId: id,
+      action: 'updated',
+      performedBy: req.user.sub,
+      oldValues,
+      newValues,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger?.error('Failed to log user event', err));
+
+    // تسجيل تغييرات الأدوار إذا تغيرت
+    if (dto.roles !== undefined && JSON.stringify(oldValues.roles) !== JSON.stringify(newValues.roles)) {
+      const addedRoles = newValues.roles.filter(r => !oldValues.roles.includes(r));
+      const removedRoles = oldValues.roles.filter(r => !newValues.roles.includes(r));
+
+      for (const role of addedRoles) {
+        this.auditService.logRoleChange({
+          userId: id,
+          role,
+          action: 'assign',
+          changedBy: req.user.sub,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+        }).catch(err => this.logger?.error('Failed to log role change', err));
+      }
+
+      for (const role of removedRoles) {
+        this.auditService.logRoleChange({
+          userId: id,
+          role,
+          action: 'remove',
+          changedBy: req.user.sub,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+        }).catch(err => this.logger?.error('Failed to log role change', err));
+      }
+    }
+
     return {
       id: user._id,
       phone: user.phone,
@@ -664,7 +751,7 @@ export class UsersAdminController {
   async suspendUser(
     @Param('id') id: string,
     @Body() dto: SuspendUserDto,
-    @Req() req: { user: { sub: string } },
+    @Req() req: { user: { sub: string } } & Request,
   ) {
     const user = await this.userModel.findById(id);
     if (!user) {
@@ -675,12 +762,25 @@ export class UsersAdminController {
       throw new AuthException(ErrorCode.AUTH_USER_SUSPENDED, { userId: id });
     }
 
+    const oldStatus = user.status;
     user.status = UserStatus.SUSPENDED;
     user.suspendedReason = dto.reason || 'لم يتم تحديد السبب';
     user.suspendedBy = req.user.sub;
     user.suspendedAt = new Date();
 
     await user.save();
+
+    // تسجيل حدث تعليق المستخدم
+    this.auditService.logUserEvent({
+      userId: id,
+      action: 'suspended',
+      performedBy: req.user.sub,
+      oldValues: { status: oldStatus },
+      newValues: { status: user.status },
+      reason: dto.reason,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger?.error('Failed to log user event', err));
 
     return {
       id: user._id,
@@ -692,18 +792,30 @@ export class UsersAdminController {
   // ==================== تفعيل مستخدم ====================
   @RequirePermissions('users.update', 'admin.access')
   @Post(':id/activate')
-  async activateUser(@Param('id') id: string) {
+  async activateUser(@Param('id') id: string, @Req() req: { user: { sub: string } } & Request) {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new UserNotFoundException({ userId: id });
     }
 
+    const oldStatus = user.status;
     user.status = UserStatus.ACTIVE;
     user.suspendedReason = undefined;
     user.suspendedBy = undefined;
     user.suspendedAt = undefined;
 
     await user.save();
+
+    // تسجيل حدث تفعيل المستخدم
+    this.auditService.logUserEvent({
+      userId: id,
+      action: 'activated',
+      performedBy: req.user.sub,
+      oldValues: { status: oldStatus },
+      newValues: { status: user.status },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger?.error('Failed to log user event', err));
 
     return {
       id: user._id,
@@ -715,7 +827,7 @@ export class UsersAdminController {
   // ==================== Soft Delete مستخدم ====================
   @RequirePermissions('users.delete', 'admin.access')
   @Delete(':id')
-  async deleteUser(@Param('id') id: string, @Req() req: { user: { sub: string } }) {
+  async deleteUser(@Param('id') id: string, @Req() req: { user: { sub: string } } & Request) {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new UserNotFoundException({ userId: id });
@@ -730,12 +842,24 @@ export class UsersAdminController {
       throw new ForbiddenException({ reason: 'cannot_delete_super_admin' });
     }
 
+    const oldStatus = user.status;
     // Soft delete - إصلاح منطق الحذف الناعم
     user.deletedAt = new Date();
     user.deletedBy = req.user.sub;
     user.status = UserStatus.DELETED; // استخدام الحالة الجديدة
 
     await user.save();
+
+    // تسجيل حدث حذف المستخدم
+    this.auditService.logUserEvent({
+      userId: id,
+      action: 'deleted',
+      performedBy: req.user.sub,
+      oldValues: { status: oldStatus },
+      newValues: { status: user.status },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger?.error('Failed to log user event', err));
 
     return {
       id: user._id,
@@ -980,6 +1104,7 @@ export class UsersAdminController {
   })
   async approveVerification(
     @Param('userId') userId: string,
+    @Req() req: { user: { sub: string } } & Request,
   ) {
     const user = await this.userModel.findById(userId);
     if (!user) {
@@ -997,16 +1122,23 @@ export class UsersAdminController {
       });
     }
 
+    const oldValues: Record<string, unknown> = {};
+    const newValues: Record<string, unknown> = {};
+
     // الموافقة على التحقق
     if (isEngineerPending) {
+      oldValues.engineer_status = user.engineer_status;
       user.engineer_status = CapabilityStatus.APPROVED;
+      newValues.engineer_status = user.engineer_status;
       if (!user.roles.includes(UserRole.ENGINEER)) {
         user.roles.push(UserRole.ENGINEER);
       }
     }
 
     if (isMerchantPending) {
+      oldValues.merchant_status = user.merchant_status;
       user.merchant_status = CapabilityStatus.APPROVED;
+      newValues.merchant_status = user.merchant_status;
       if (!user.roles.includes(UserRole.MERCHANT)) {
         user.roles.push(UserRole.MERCHANT);
       }
@@ -1028,12 +1160,25 @@ export class UsersAdminController {
       await caps.save();
     }
 
+    // تسجيل حدث الموافقة على capability
+    const capabilityType = isEngineerPending ? 'engineer' : 'merchant';
+    this.auditService.logCapabilityDecision({
+      userId,
+      capability: capabilityType,
+      action: 'approve',
+      decidedBy: req.user.sub,
+      oldValues,
+      newValues,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger?.error('Failed to log capability decision', err));
+
     return {
       success: true,
       message: 'تمت الموافقة على التحقق بنجاح',
       data: {
         userId: user._id,
-        verificationType: isEngineerPending ? 'engineer' : 'merchant',
+        verificationType: capabilityType,
         status: 'approved',
       },
     };
@@ -1057,6 +1202,7 @@ export class UsersAdminController {
   async rejectVerification(
     @Param('userId') userId: string,
     @Body() dto: ApproveVerificationDto,
+    @Req() req: { user: { sub: string } } & Request,
   ) {
     const user = await this.userModel.findById(userId);
     if (!user) {
@@ -1074,16 +1220,23 @@ export class UsersAdminController {
       });
     }
 
+    const oldValues: Record<string, unknown> = {};
+    const newValues: Record<string, unknown> = {};
+
     // رفض التحقق
     if (isEngineerPending) {
+      oldValues.engineer_status = user.engineer_status;
       user.engineer_status = CapabilityStatus.REJECTED;
+      newValues.engineer_status = user.engineer_status;
       user.roles = user.roles.filter(role => role !== UserRole.ENGINEER);
       // مسح ملف السيرة الذاتية
       user.cvFileUrl = undefined;
     }
 
     if (isMerchantPending) {
+      oldValues.merchant_status = user.merchant_status;
       user.merchant_status = CapabilityStatus.REJECTED;
+      newValues.merchant_status = user.merchant_status;
       user.roles = user.roles.filter(role => role !== UserRole.MERCHANT);
       // مسح صورة المحل واسم المحل
       user.storePhotoUrl = undefined;
@@ -1111,12 +1264,26 @@ export class UsersAdminController {
       await caps.save();
     }
 
+    // تسجيل حدث رفض capability
+    const capabilityType = isEngineerPending ? 'engineer' : 'merchant';
+    this.auditService.logCapabilityDecision({
+      userId,
+      capability: capabilityType,
+      action: 'reject',
+      decidedBy: req.user.sub,
+      oldValues,
+      newValues,
+      reason: dto.reason,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger?.error('Failed to log capability decision', err));
+
     return {
       success: true,
       message: 'تم رفض التحقق بنجاح',
       data: {
         userId: user._id,
-        verificationType: isEngineerPending ? 'engineer' : 'merchant',
+        verificationType: capabilityType,
         status: 'rejected',
         reason: dto.reason,
       },

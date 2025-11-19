@@ -61,7 +61,13 @@ export class EmailAdapter {
         },
         tls: {
           rejectUnauthorized: false,
+          ciphers: 'SSLv3',
         },
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 10000, // 10 seconds
+        socketTimeout: 10000, // 10 seconds
+        debug: process.env.NODE_ENV === 'development', // Enable debug in development
+        logger: process.env.NODE_ENV === 'development', // Enable logger in development
       };
 
       this.transporter = nodemailer.createTransport(smtpConfig);

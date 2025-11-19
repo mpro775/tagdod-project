@@ -10,6 +10,8 @@ import {
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Request as ExpressRequest } from 'express';
 import { OrderService } from '../services/order.service';
+import { AuditService } from '../../../shared/services/audit.service';
+import { Logger } from '@nestjs/common';
 import {
   CheckoutPreviewDto,
   CheckoutConfirmDto,
@@ -30,7 +32,12 @@ import {
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  private readonly logger = new Logger(OrderController.name);
+
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly auditService: AuditService,
+  ) {}
 
   private getUserId(req: ExpressRequest): string {
     return (req as unknown as { user: { sub: string } }).user.sub;
@@ -121,6 +128,21 @@ export class OrderController {
     const userId = this.getUserId(req);
     const result = await this.orderService.confirmCheckout(userId, dto);
     const paymentOptions = await this.orderService.getPaymentOptions(userId, dto.currency);
+
+    // تسجيل إنشاء الطلب في audit
+    if (result.order) {
+      this.auditService.logOrderEvent({
+        userId,
+        orderId: result.order.orderId,
+        action: 'created',
+        orderNumber: result.order.orderNumber,
+        newStatus: result.order.status,
+        totalAmount: result.order.payment?.amount,
+        currency: dto.currency,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      }).catch(err => this.logger.error('Failed to log order creation', err));
+    }
 
     return {
       ...result,
@@ -302,7 +324,23 @@ export class OrderController {
     @Param('id') orderId: string,
     @Body() dto: CancelOrderDto,
   ) {
-    const order = await this.orderService.cancelOrder(orderId, this.getUserId(req), dto);
+    const userId = this.getUserId(req);
+    const order = await this.orderService.cancelOrder(orderId, userId, dto);
+
+    // تسجيل إلغاء الطلب في audit
+    this.auditService.logOrderEvent({
+      userId,
+      orderId,
+      action: 'cancelled',
+      orderNumber: order.orderNumber,
+      oldStatus: order.statusHistory[order.statusHistory.length - 2]?.status,
+      newStatus: order.status,
+      totalAmount: order.total,
+      currency: order.currency,
+      reason: dto.reason,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log order cancellation', err));
 
     return {
       order,

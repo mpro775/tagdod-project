@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule } from '@nestjs/config';
 
 // Schemas
 import { Order, OrderSchema } from './schemas/order.schema';
@@ -40,6 +41,7 @@ import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
       { name: InventoryLedger.name, schema: InventoryLedgerSchema },
       { name: Cart.name, schema: CartSchema },
     ]),
+    ConfigModule,
     CartModule,
     MarketingModule,
     forwardRef(() => AuthModule),

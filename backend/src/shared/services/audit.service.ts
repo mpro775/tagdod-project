@@ -53,6 +53,63 @@ export class AuditService {
   }
 
   /**
+   * تسجيل حدث مستخدم
+   */
+  async logUserEvent(data: {
+    userId: string;
+    action: 'created' | 'updated' | 'deleted' | 'suspended' | 'activated';
+    performedBy?: string;
+    oldValues?: Record<string, unknown>;
+    newValues?: Record<string, unknown>;
+    ipAddress?: string;
+    userAgent?: string;
+    reason?: string;
+  }): Promise<void> {
+    try {
+      let auditAction: AuditAction;
+
+      switch (data.action) {
+        case 'created':
+          auditAction = AuditAction.USER_CREATED;
+          break;
+        case 'updated':
+          auditAction = AuditAction.USER_UPDATED;
+          break;
+        case 'deleted':
+          auditAction = AuditAction.USER_DELETED;
+          break;
+        case 'suspended':
+          auditAction = AuditAction.USER_SUSPENDED;
+          break;
+        case 'activated':
+          auditAction = AuditAction.USER_ACTIVATED;
+          break;
+        default:
+          return;
+      }
+
+      const auditEntry = new this.auditLogModel({
+        userId: data.userId,
+        performedBy: data.performedBy,
+        action: auditAction,
+        resource: AuditResource.USER,
+        oldValues: data.oldValues,
+        newValues: data.newValues,
+        reason: data.reason,
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+        isSensitive: data.action === 'deleted' || data.action === 'suspended',
+      });
+
+      await auditEntry.save();
+
+      this.logger.log(`👤 User Event Audited: ${data.action} for user ${data.userId} by ${data.performedBy || 'system'}`);
+    } catch (error) {
+      this.logger.error('❌ Failed to audit user event:', error);
+    }
+  }
+
+  /**
    * تسجيل تغيير دور
    */
   async logRoleChange(data: {
@@ -328,6 +385,203 @@ export class AuditService {
   }
 
   /**
+   * تسجيل أحداث الطلبات
+   */
+  async logOrderEvent(data: {
+    userId: string;
+    orderId: string;
+    action: 'created' | 'cancelled' | 'refunded' | 'status_changed' | 'updated_by_admin';
+    orderNumber: string;
+    oldStatus?: string;
+    newStatus?: string;
+    totalAmount?: number;
+    currency?: string;
+    performedBy?: string;
+    reason?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    try {
+      let auditAction: AuditAction;
+
+      switch (data.action) {
+        case 'created':
+          auditAction = AuditAction.ORDER_CREATED;
+          break;
+        case 'cancelled':
+          auditAction = AuditAction.ORDER_CANCELLED;
+          break;
+        case 'refunded':
+          auditAction = AuditAction.ORDER_REFUNDED;
+          break;
+        case 'status_changed':
+          auditAction = AuditAction.ORDER_STATUS_CHANGED;
+          break;
+        case 'updated_by_admin':
+          auditAction = AuditAction.ORDER_UPDATED_BY_ADMIN;
+          break;
+        default:
+          return;
+      }
+
+      const auditEntry = new this.auditLogModel({
+        userId: data.userId,
+        performedBy: data.performedBy,
+        action: auditAction,
+        resource: AuditResource.ORDER,
+        resourceId: data.orderId,
+        oldValues: data.oldStatus ? { status: data.oldStatus } : undefined,
+        newValues: data.newStatus ? { status: data.newStatus } : undefined,
+        metadata: {
+          orderNumber: data.orderNumber,
+          totalAmount: data.totalAmount,
+          currency: data.currency,
+        },
+        reason: data.reason,
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+        isSensitive: true, // العمليات المالية حساسة
+      });
+
+      await auditEntry.save();
+
+      this.logger.log(`📦 Order Event Audited: ${data.action} for order ${data.orderNumber} by ${data.performedBy || data.userId}`);
+    } catch (error) {
+      this.logger.error('❌ Failed to audit order event:', error);
+    }
+  }
+
+  /**
+   * تسجيل أحداث المدفوعات
+   */
+  async logPaymentEvent(data: {
+    userId: string;
+    orderId: string;
+    action: 'initiated' | 'completed' | 'failed' | 'refunded' | 'status_changed';
+    paymentMethod: string;
+    amount: number;
+    currency: string;
+    transactionId?: string;
+    failureReason?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    try {
+      let auditAction: AuditAction;
+
+      switch (data.action) {
+        case 'initiated':
+          auditAction = AuditAction.PAYMENT_INITIATED;
+          break;
+        case 'completed':
+          auditAction = AuditAction.PAYMENT_COMPLETED;
+          break;
+        case 'failed':
+          auditAction = AuditAction.PAYMENT_FAILED;
+          break;
+        case 'refunded':
+          auditAction = AuditAction.PAYMENT_REFUNDED;
+          break;
+        case 'status_changed':
+          auditAction = AuditAction.PAYMENT_STATUS_CHANGED;
+          break;
+        default:
+          return;
+      }
+
+      const auditEntry = new this.auditLogModel({
+        userId: data.userId,
+        action: auditAction,
+        resource: AuditResource.PAYMENT,
+        resourceId: data.orderId,
+        metadata: {
+          paymentMethod: data.paymentMethod,
+          amount: data.amount,
+          currency: data.currency,
+          transactionId: data.transactionId,
+          failureReason: data.failureReason,
+        },
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+        isSensitive: true, // العمليات المالية حساسة
+      });
+
+      await auditEntry.save();
+
+      this.logger.log(`💳 Payment Event Audited: ${data.action} for order ${data.orderId} - Amount: ${data.amount} ${data.currency}`);
+    } catch (error) {
+      this.logger.error('❌ Failed to audit payment event:', error);
+    }
+  }
+
+  /**
+   * تسجيل أحداث الكوبونات
+   */
+  async logCouponEvent(data: {
+    userId?: string;
+    couponCode: string;
+    action: 'applied' | 'application_failed' | 'created' | 'updated' | 'deleted' | 'activated' | 'deactivated';
+    orderId?: string;
+    discountAmount?: number;
+    failureReason?: string;
+    performedBy?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    try {
+      let auditAction: AuditAction;
+
+      switch (data.action) {
+        case 'applied':
+          auditAction = AuditAction.COUPON_APPLIED;
+          break;
+        case 'application_failed':
+          auditAction = AuditAction.COUPON_APPLICATION_FAILED;
+          break;
+        case 'created':
+          auditAction = AuditAction.COUPON_CREATED;
+          break;
+        case 'updated':
+          auditAction = AuditAction.COUPON_UPDATED;
+          break;
+        case 'deleted':
+          auditAction = AuditAction.COUPON_DELETED;
+          break;
+        case 'activated':
+          auditAction = AuditAction.COUPON_ACTIVATED;
+          break;
+        case 'deactivated':
+          auditAction = AuditAction.COUPON_DEACTIVATED;
+          break;
+        default:
+          return;
+      }
+
+      const auditEntry = new this.auditLogModel({
+        userId: data.userId || data.performedBy,
+        performedBy: data.performedBy,
+        action: auditAction,
+        resource: AuditResource.COUPON,
+        resourceId: data.couponCode,
+        metadata: {
+          orderId: data.orderId,
+          discountAmount: data.discountAmount,
+          failureReason: data.failureReason,
+        },
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+        isSensitive: data.action === 'applied' || data.action === 'created' || data.action === 'deleted',
+      });
+
+      await auditEntry.save();
+
+      this.logger.log(`🎫 Coupon Event Audited: ${data.action} for coupon ${data.couponCode}${data.orderId ? ` on order ${data.orderId}` : ''}`);
+    } catch (error) {
+      this.logger.error('❌ Failed to audit coupon event:', error);
+    }
+  }
+
+  /**
    * تحويل string resource إلى enum
    */
   private mapResource(resource: string): AuditResource {
@@ -344,6 +598,12 @@ export class AuditService {
         return AuditResource.AUTH;
       case 'admin':
         return AuditResource.ADMIN;
+      case 'order':
+        return AuditResource.ORDER;
+      case 'payment':
+        return AuditResource.PAYMENT;
+      case 'coupon':
+        return AuditResource.COUPON;
       default:
         return AuditResource.SYSTEM;
     }

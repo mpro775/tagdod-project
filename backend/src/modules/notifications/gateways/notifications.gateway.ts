@@ -14,11 +14,12 @@ import { Server } from 'socket.io';
 import { WebSocketAuthGuard } from '../../../shared/websocket/websocket-auth.guard';
 import { WebSocketService } from '../../../shared/websocket/websocket.service';
 import { AuthenticatedSocket } from '../../../shared/websocket/websocket-auth.guard';
+import { getWebSocketCorsOrigins } from '../../../shared/websocket/websocket-cors.helper';
 import { NotificationService } from '../services/notification.service';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || '*',
+    origin: getWebSocketCorsOrigins(),
     credentials: true,
   },
   namespace: '/notifications',

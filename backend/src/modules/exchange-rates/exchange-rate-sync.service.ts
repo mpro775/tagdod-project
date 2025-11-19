@@ -7,6 +7,14 @@ import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { ProductPricingCalculatorService } from '../products/services/product-pricing-calculator.service';
 import { ExchangeRate } from './schemas/exchange-rate.schema';
+import {
+  ExchangeRateException,
+  ExchangeRateSyncJobNotFoundException,
+  ExchangeRateSyncJobInvalidException,
+  ExchangeRateSyncFailedException,
+  ErrorCode,
+  ProductNotFoundException,
+} from '../../shared/exceptions';
 
 const DEFAULT_BATCH_SIZE = 50;
 const MAX_ERRORS_RECORDED = 50;
@@ -135,6 +143,12 @@ export class ExchangeRateSyncService {
     try {
       rates = await this.exchangeRatesService.getCurrentRates();
     } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to load exchange rates for sync job', {
+        error: err.message,
+        stack: err.stack,
+        jobId,
+      });
       await this.failJob(jobId, `Failed to load exchange rates: ${this.stringifyError(error)}`);
       return;
     }
@@ -173,6 +187,12 @@ export class ExchangeRateSyncService {
 
       this.logger.log(`Exchange rate sync job ${jobId} completed`);
     } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Exchange rate sync job failed', {
+        error: err.message,
+        stack: err.stack,
+        jobId,
+      });
       await this.failJob(jobId, this.stringifyError(error));
     }
   }
@@ -426,88 +446,113 @@ export class ExchangeRateSyncService {
   }
 
   async retryProduct(jobId: string, productId: string): Promise<ExchangeRateSyncJob | null> {
-    if (!Types.ObjectId.isValid(jobId) || !Types.ObjectId.isValid(productId)) {
-      throw new Error('Invalid job or product identifier');
-    }
+    try {
+      if (!Types.ObjectId.isValid(jobId) || !Types.ObjectId.isValid(productId)) {
+        throw new ExchangeRateSyncJobInvalidException({
+          jobId,
+          productId,
+          reason: 'invalid_identifier',
+        });
+      }
 
-    const job = await this.syncJobModel.findById(jobId);
-    if (!job) {
-      throw new Error('Exchange rate sync job not found');
-    }
+      const job = await this.syncJobModel.findById(jobId);
+      if (!job) {
+        throw new ExchangeRateSyncJobNotFoundException({ jobId });
+      }
 
-    const productObjectId = new Types.ObjectId(productId);
-    const product = await this.productModel
-      .findOne({
-        _id: productObjectId,
-        $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
-      })
-      .lean<ProductDocument>();
+      const productObjectId = new Types.ObjectId(productId);
+      const product = await this.productModel
+        .findOne({
+          _id: productObjectId,
+          $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+        })
+        .lean<ProductDocument>();
 
-    if (!product) {
-      throw new Error('Product not found or has been deleted');
-    }
+      if (!product) {
+        throw new ProductNotFoundException({ productId, reason: 'deleted_or_not_found' });
+      }
 
-    const rates = await this.exchangeRatesService.getCurrentRates();
-    const baseMetadata = this.pricingCalculator.calculateDerivedPricing({}, rates);
-    const exchangeRateVersion = job.exchangeRateVersion ?? baseMetadata.exchangeRateVersion;
-    const syncSnapshot = new Date();
+      const rates = await this.exchangeRatesService.getCurrentRates();
+      const baseMetadata = this.pricingCalculator.calculateDerivedPricing({}, rates);
+      const exchangeRateVersion = job.exchangeRateVersion ?? baseMetadata.exchangeRateVersion;
+      const syncSnapshot = new Date();
 
-    const productUpdates = await this.buildProductUpdatePayload(
-      product,
-      rates,
-      exchangeRateVersion,
-      syncSnapshot,
-    );
+      const productUpdates = await this.buildProductUpdatePayload(
+        product,
+        rates,
+        exchangeRateVersion,
+        syncSnapshot,
+      );
 
-    if (Object.keys(productUpdates).length > 0) {
-      await this.productModel.updateOne(
-        { _id: product._id },
+      if (Object.keys(productUpdates).length > 0) {
+        await this.productModel.updateOne(
+          { _id: product._id },
+          {
+            $set: productUpdates,
+          },
+        );
+      }
+
+      const variantResult = await this.syncVariantsForProduct(
+        productObjectId,
+        rates,
+        exchangeRateVersion,
+        syncSnapshot,
+      );
+
+      const existingErrors = job.errors ?? [];
+      const removedErrors = existingErrors.filter((error) => error.productId === productId);
+      const remainingErrors = existingErrors.filter((error) => error.productId !== productId);
+
+      const productLevelErrorsRemoved = removedErrors.some((error) => !error.variantId) ? 1 : 0;
+      const variantErrorsRemoved = removedErrors.filter((error) => error.variantId).length;
+
+      const updatedErrors = [...remainingErrors, ...variantResult.errors].slice(-MAX_ERRORS_RECORDED);
+
+      const updatedProcessedProducts = job.processedProducts + 1;
+      const updatedProcessedVariants = job.processedVariants + variantResult.processed;
+      const updatedFailedProducts = Math.max(0, job.failedProducts - productLevelErrorsRemoved);
+      const updatedFailedVariants = Math.max(
+        0,
+        job.failedVariants - variantErrorsRemoved + variantResult.failed,
+      );
+
+      await this.syncJobModel.updateOne(
+        { _id: jobId },
         {
-          $set: productUpdates,
+          $set: {
+            errors: updatedErrors,
+            lastProcessedProductId: productId,
+            processedProducts: updatedProcessedProducts,
+            processedVariants: updatedProcessedVariants,
+            failedProducts: updatedFailedProducts,
+            failedVariants: updatedFailedVariants,
+            exchangeRateVersion: exchangeRateVersion ?? job.exchangeRateVersion,
+          },
         },
       );
+
+      return this.getJob(jobId);
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to retry product sync', {
+        error: err.message,
+        stack: err.stack,
+        jobId,
+        productId,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع ExchangeRateException
+      if (error instanceof ExchangeRateException || error instanceof ProductNotFoundException) {
+        throw error;
+      }
+
+      throw new ExchangeRateSyncFailedException({
+        jobId,
+        productId,
+        error: err.message,
+      });
     }
-
-    const variantResult = await this.syncVariantsForProduct(
-      productObjectId,
-      rates,
-      exchangeRateVersion,
-      syncSnapshot,
-    );
-
-    const existingErrors = job.errors ?? [];
-    const removedErrors = existingErrors.filter((error) => error.productId === productId);
-    const remainingErrors = existingErrors.filter((error) => error.productId !== productId);
-
-    const productLevelErrorsRemoved = removedErrors.some((error) => !error.variantId) ? 1 : 0;
-    const variantErrorsRemoved = removedErrors.filter((error) => error.variantId).length;
-
-    const updatedErrors = [...remainingErrors, ...variantResult.errors].slice(-MAX_ERRORS_RECORDED);
-
-    const updatedProcessedProducts = job.processedProducts + 1;
-    const updatedProcessedVariants = job.processedVariants + variantResult.processed;
-    const updatedFailedProducts = Math.max(0, job.failedProducts - productLevelErrorsRemoved);
-    const updatedFailedVariants = Math.max(
-      0,
-      job.failedVariants - variantErrorsRemoved + variantResult.failed,
-    );
-
-    await this.syncJobModel.updateOne(
-      { _id: jobId },
-      {
-        $set: {
-          errors: updatedErrors,
-          lastProcessedProductId: productId,
-          processedProducts: updatedProcessedProducts,
-          processedVariants: updatedProcessedVariants,
-          failedProducts: updatedFailedProducts,
-          failedVariants: updatedFailedVariants,
-          exchangeRateVersion: exchangeRateVersion ?? job.exchangeRateVersion,
-        },
-      },
-    );
-
-    return this.getJob(jobId);
   }
 
   private withoutUndefined<T extends Record<string, unknown>>(input: T): T {

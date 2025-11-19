@@ -10,7 +10,7 @@ export class ErrorLog {
 
   @Prop({ 
     required: true, 
-    enum: ['database', 'api', 'authentication', 'validation', 'business_logic', 'external_service', 'system', 'unknown'],
+    enum: ['database', 'api', 'authentication', 'validation', 'business_logic', 'external_service', 'system', 'frontend', 'unknown'],
     index: true 
   })
   category!: string;

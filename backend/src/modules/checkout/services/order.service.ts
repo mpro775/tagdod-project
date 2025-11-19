@@ -41,6 +41,9 @@ import { VariantService } from '../../products/services/variant.service';
 import { ProductService } from '../../products/services/product.service';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
+import { AuditService } from '../../../shared/services/audit.service';
+import { EmailAdapter } from '../../notifications/adapters/email.adapter';
+import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import {
   CreateOrderDto,
@@ -136,6 +139,10 @@ export class OrderService {
     private productService: ProductService,
     @Inject(forwardRef(() => NotificationService))
     private notificationService?: NotificationService,
+    private auditService?: AuditService,
+    @Inject(forwardRef(() => EmailAdapter))
+    private emailAdapter?: EmailAdapter,
+    private configService?: ConfigService,
   ) {}
 
   // ===== Helper Methods =====
@@ -505,6 +512,17 @@ export class OrderService {
       const validation = initialValidations[i];
       if (!validation || !validation.valid || !validation.coupon) {
         this.logger.warn(`Invalid coupon: ${code} - ${validation?.message || 'Unknown error'}`);
+        
+        // تسجيل فشل تطبيق الكوبون في audit
+        if (this.auditService && params.userId) {
+          this.auditService.logCouponEvent({
+            userId: params.userId,
+            couponCode: code,
+            action: 'application_failed',
+            failureReason: validation?.message || 'Unknown error',
+          }).catch(err => this.logger.error('Failed to log coupon application failure', err));
+        }
+        
         continue;
       }
 
@@ -536,6 +554,16 @@ export class OrderService {
         });
 
         this.logger.debug(`Applied coupon ${code} with discount ${couponDiscount}`);
+
+        // تسجيل تطبيق الكوبون في audit
+        if (this.auditService && params.userId) {
+          this.auditService.logCouponEvent({
+            userId: params.userId,
+            couponCode: code,
+            action: 'applied',
+            discountAmount: couponDiscount,
+          }).catch(err => this.logger.error('Failed to log coupon application', err));
+        }
       } catch (error) {
         this.logger.error(`Error applying coupon ${code}`, error as Error);
       }
@@ -2076,9 +2104,27 @@ export class OrderService {
       // إذا كان الدفع عند الاستلام، تأكيد فوري وتحديث حالة الدفع
       if (dto.paymentMethod === PaymentMethod.COD) {
         // تحديث حالة الدفع أولاً
-        order.paymentStatus = PaymentStatus.PAID;
+        const oldPaymentStatus = order.paymentStatus;
+        const newPaymentStatus = PaymentStatus.PAID;
+        order.paymentStatus = newPaymentStatus;
         order.paidAt = new Date();
         await order.save();
+        
+        // تسجيل حدث الدفع في audit
+        if (this.auditService) {
+          this.auditService.logPaymentEvent({
+            userId,
+            orderId: String(order._id),
+            action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'completed',
+            paymentMethod: PaymentMethod.COD,
+            amount: order.total,
+            currency: order.currency,
+            failureReason: oldPaymentStatus !== newPaymentStatus 
+              ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}` 
+              : undefined,
+            ipAddress: undefined, // COD لا يحتاج IP
+          }).catch(err => this.logger.error('Failed to log COD payment', err));
+        }
         
         // ثم تحديث حالة الطلب
         await this.updateOrderStatus(
@@ -2458,6 +2504,10 @@ export class OrderService {
       case OrderStatus.COMPLETED:
         order.completedAt = now;
         order.deliveredAt = now;
+        // إنشاء وإرسال الفاتورة عند إكمال الطلب
+        this.handleOrderCompletion(order).catch(err => {
+          this.logger.error(`Failed to handle order completion for ${order.orderNumber}:`, err);
+        });
         break;
       case OrderStatus.CANCELLED:
         order.cancelledAt = now;
@@ -2466,6 +2516,22 @@ export class OrderService {
 
     await order.save();
     this.logger.log(`Order ${order.orderNumber} status updated to ${newStatus}`);
+
+    // تسجيل تغيير حالة الطلب في audit
+    if (this.auditService) {
+      this.auditService.logOrderEvent({
+        userId: String(order.userId),
+        orderId: String(order._id),
+        action: 'status_changed',
+        orderNumber: order.orderNumber,
+        oldStatus: previousStatus,
+        newStatus,
+        totalAmount: order.total,
+        currency: order.currency,
+        performedBy: String(changedBy),
+        reason: notes,
+      }).catch(err => this.logger.error('Failed to log order status change', err));
+    }
 
     return order;
   }
@@ -2548,9 +2614,40 @@ export class OrderService {
     order.returnInfo.returnedBy = new Types.ObjectId(adminId);
 
     // تحديث حالة الدفع
-    order.paymentStatus = dto.amount === order.total ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED;
+    const oldPaymentStatus = order.paymentStatus;
+    const newPaymentStatus = dto.amount === order.total ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED;
+    order.paymentStatus = newPaymentStatus;
     // ملاحظة: نستخدم REFUNDED فقط في OrderStatus (تم تبسيط الحالات)
     order.status = OrderStatus.REFUNDED;
+    
+    // تسجيل حدث الاسترداد في audit
+    if (this.auditService) {
+      this.auditService.logPaymentEvent({
+        userId: String(order.userId),
+        orderId: String(order._id),
+        action: 'refunded',
+        paymentMethod: order.paymentMethod || 'UNKNOWN',
+        amount: dto.amount,
+        currency: order.currency,
+        transactionId: order.paymentTransactionId,
+        failureReason: String(oldPaymentStatus) !== String(newPaymentStatus) 
+          ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}` 
+          : undefined,
+      }).catch(err => this.logger.error('Failed to log refund', err));
+      
+      this.auditService.logOrderEvent({
+        userId: String(order.userId),
+        orderId: String(order._id),
+        action: 'refunded',
+        orderNumber: order.orderNumber,
+        oldStatus: order.statusHistory[order.statusHistory.length - 1]?.status,
+        newStatus: OrderStatus.REFUNDED,
+        totalAmount: dto.amount,
+        currency: order.currency,
+        performedBy: adminId,
+        reason: dto.reason,
+      }).catch(err => this.logger.error('Failed to log order refund', err));
+    }
 
     await this.addStatusHistory(
       order,
@@ -2936,8 +3033,27 @@ export class OrderService {
     }
 
     if (status === 'SUCCESS' && Number(amount) === order.total) {
-      order.paymentStatus = PaymentStatus.PAID;
+      const oldPaymentStatus = order.paymentStatus;
+      const newPaymentStatus = PaymentStatus.PAID;
+      order.paymentStatus = newPaymentStatus;
       order.paidAt = new Date();
+      
+      // تسجيل حدث الدفع الناجح في audit
+      if (this.auditService) {
+        this.auditService.logPaymentEvent({
+          userId: String(order.userId),
+          orderId: String(order._id),
+          action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'completed',
+          paymentMethod: order.paymentMethod || 'ONLINE',
+          amount: order.total,
+          currency: order.currency,
+          transactionId: intentId,
+          failureReason: oldPaymentStatus !== newPaymentStatus 
+            ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}` 
+            : undefined,
+        }).catch(err => this.logger.error('Failed to log payment completion', err));
+      }
+      
       await this.updateOrderStatus(
         order._id.toString(),
         OrderStatus.CONFIRMED,
@@ -2946,7 +3062,26 @@ export class OrderService {
         'تم تأكيد الدفع'
       );
     } else {
-      order.paymentStatus = PaymentStatus.FAILED;
+      const oldPaymentStatus = order.paymentStatus;
+      const newPaymentStatus = PaymentStatus.FAILED;
+      order.paymentStatus = newPaymentStatus;
+      
+      // تسجيل حدث فشل الدفع في audit
+      if (this.auditService) {
+        this.auditService.logPaymentEvent({
+          userId: String(order.userId),
+          orderId: String(order._id),
+          action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'failed',
+          paymentMethod: order.paymentMethod || 'ONLINE',
+          amount: Number(amount),
+          currency: order.currency,
+          transactionId: intentId,
+          failureReason: oldPaymentStatus !== newPaymentStatus 
+            ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}. Original failure: ${status}`
+            : `Payment failed: ${status}`,
+        }).catch(err => this.logger.error('Failed to log payment failure', err));
+      }
+      
       // في حالة فشل الدفع، نبقي الطلب في حالة PENDING_PAYMENT
       await this.addStatusHistory(
         order,
@@ -3225,11 +3360,23 @@ export class OrderService {
       try {
         browser = await puppeteer.launch({
           headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+          timeout: 60000, // زيادة timeout إلى 60 ثانية
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--disable-software-rasterizer',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--disable-blink-features=AutomationControlled'
+          ],
         });
         
         const page = await browser.newPage();
-        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        // استخدام 'load' بدلاً من 'networkidle0' لأنه أسرع وأكثر موثوقية
+        await page.setContent(htmlContent, { waitUntil: 'load', timeout: 30000 });
         
         const pdfBuffer = await page.pdf({
           format: 'A4',
@@ -3593,8 +3740,26 @@ export class OrderService {
     order.paymentVerificationNotes = dto.notes;
 
     if (isAmountSufficient) {
-      order.paymentStatus = PaymentStatus.PAID;
+      const oldPaymentStatus = order.paymentStatus;
+      const newPaymentStatus = PaymentStatus.PAID;
+      order.paymentStatus = newPaymentStatus;
       order.paidAt = new Date();
+      
+      // تسجيل حدث الدفع الناجح في audit
+      if (this.auditService) {
+        this.auditService.logPaymentEvent({
+          userId: String(order.userId),
+          orderId: String(order._id),
+          action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'completed',
+          paymentMethod: order.paymentMethod || 'LOCAL',
+          amount: dto.verifiedAmount,
+          currency: dto.verifiedCurrency,
+          transactionId: order.paymentReference,
+          failureReason: oldPaymentStatus !== newPaymentStatus 
+            ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}` 
+            : undefined,
+        }).catch(err => this.logger.error('Failed to log local payment verification', err));
+      }
       
       // تحديث حالة الطلب إذا كان في انتظار الدفع
       if (order.status === OrderStatus.PENDING_PAYMENT) {
@@ -3611,7 +3776,26 @@ export class OrderService {
         `تم قبول الدفع - المبلغ: ${dto.verifiedAmount} ${dto.verifiedCurrency}${dto.notes ? ` - ${dto.notes}` : ''}`
       );
     } else {
-      order.paymentStatus = PaymentStatus.FAILED;
+      const oldPaymentStatus = order.paymentStatus;
+      const newPaymentStatus = PaymentStatus.FAILED;
+      order.paymentStatus = newPaymentStatus;
+      
+      // تسجيل حدث فشل الدفع في audit
+      if (this.auditService) {
+        const failureMessage = `Insufficient amount: ${dto.verifiedAmount} < ${order.total}`;
+        this.auditService.logPaymentEvent({
+          userId: String(order.userId),
+          orderId: String(order._id),
+          action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'failed',
+          paymentMethod: order.paymentMethod || 'LOCAL',
+          amount: dto.verifiedAmount,
+          currency: dto.verifiedCurrency,
+          transactionId: order.paymentReference,
+          failureReason: oldPaymentStatus !== newPaymentStatus 
+            ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}. ${failureMessage}`
+            : failureMessage,
+        }).catch(err => this.logger.error('Failed to log local payment verification failure', err));
+      }
       
       // إضافة إلى سجل الحالات (نبقي الطلب في حالته الحالية)
       await this.addStatusHistory(
@@ -3659,5 +3843,458 @@ export class OrderService {
         },
       }
     };
+  }
+
+  /**
+   * معالجة إكمال الطلب - إنشاء وإرسال الفاتورة
+   */
+  private async handleOrderCompletion(order: OrderDocument): Promise<void> {
+    try {
+      // إنشاء رقم فاتورة إذا لم يكن موجوداً
+      if (!order.invoiceNumber) {
+        const year = new Date().getFullYear();
+        const count = await this.orderModel.countDocuments({
+          invoiceNumber: { $exists: true },
+          createdAt: { $gte: new Date(`${year}-01-01`), $lt: new Date(`${year + 1}-01-01`) }
+        });
+        order.invoiceNumber = `INV-${year}-${String(count + 1).padStart(5, '0')}`;
+        await order.save();
+      }
+
+      // إنشاء PDF الفاتورة
+      const pdfBuffer = await this.generateOrderInvoicePDF(order);
+
+      // إرسال الفاتورة عبر البريد الإلكتروني
+      await this.sendOrderInvoiceEmail(order, pdfBuffer);
+
+      this.logger.log(`Order completion handled successfully for ${order.orderNumber}`);
+    } catch (error) {
+      this.logger.error(`Error handling order completion for ${order.orderNumber}:`, error);
+      // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
+    }
+  }
+
+  /**
+   * إنشاء فاتورة PDF لطلب واحد
+   */
+  private async generateOrderInvoicePDF(order: OrderDocument): Promise<Buffer> {
+    try {
+      // جلب بيانات المستخدم
+      const user = await this.userModel.findById(order.userId);
+      const userInfo = user ? {
+        name: (user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.firstName || user.lastName) || order.customerName || 'غير محدد',
+        phone: user.phone || order.customerPhone || 'غير محدد',
+        email: 'غير محدد'
+      } : {
+        name: order.customerName || 'غير محدد',
+        phone: order.customerPhone || 'غير محدد',
+        email: 'غير محدد'
+      };
+
+      // مسار ترويسة الشركة (PNG شفاف)
+      const letterheadPath = path.join(process.cwd(), 'assets', 'letterhead.png');
+      let letterheadBase64 = '';
+      
+      if (fs.existsSync(letterheadPath)) {
+        const letterheadBuffer = fs.readFileSync(letterheadPath);
+        letterheadBase64 = `data:image/png;base64,${letterheadBuffer.toString('base64')}`;
+      }
+
+      // تنسيق التاريخ
+      const formatDate = (date?: Date) => {
+        if (!date) return 'غير محدد';
+        return new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      };
+
+      // تنسيق المبلغ
+      const formatCurrency = (amount: number, currency: string) => {
+        return `${amount.toLocaleString('en-US')} ${currency}`;
+      };
+
+      // إنشاء محتوى HTML للفاتورة
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <title>فاتورة ${order.orderNumber}</title>
+          <style>
+            @page {
+              size: A4;
+              margin: 0;
+            }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: 'Arial', 'Tahoma', sans-serif;
+              direction: rtl;
+              padding: 0;
+              margin: 0;
+              background: #fff;
+              color: #333;
+              font-size: 12px;
+              line-height: 1.6;
+            }
+            .letterhead {
+              width: 100%;
+              max-height: 120px;
+              object-fit: contain;
+              margin-bottom: 20px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              padding-bottom: 15px;
+              border-bottom: 2px solid #1976d2;
+            }
+            .header h1 {
+              color: #1976d2;
+              font-size: 24px;
+              margin-bottom: 10px;
+            }
+            .invoice-info {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 30px;
+              flex-wrap: wrap;
+            }
+            .info-box {
+              flex: 1;
+              min-width: 200px;
+              margin: 10px;
+              padding: 15px;
+              background: #f5f5f5;
+              border-radius: 5px;
+            }
+            .info-box h3 {
+              color: #1976d2;
+              margin-bottom: 10px;
+              font-size: 14px;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 5px;
+            }
+            .info-box p {
+              margin: 5px 0;
+              font-size: 12px;
+            }
+            .items-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 20px 0;
+              background: #fff;
+            }
+            .items-table th {
+              background: #1976d2;
+              color: #fff;
+              padding: 12px;
+              text-align: right;
+              font-weight: bold;
+              font-size: 13px;
+            }
+            .items-table td {
+              padding: 10px;
+              border: 1px solid #ddd;
+              text-align: right;
+              font-size: 12px;
+            }
+            .items-table tr:nth-child(even) {
+              background: #f9f9f9;
+            }
+            .totals-section {
+              margin-top: 30px;
+              display: flex;
+              justify-content: flex-end;
+            }
+            .totals-box {
+              width: 350px;
+              border: 2px solid #1976d2;
+              border-radius: 5px;
+              padding: 15px;
+              background: #f9f9f9;
+            }
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 8px 0;
+              border-bottom: 1px solid #ddd;
+            }
+            .total-row:last-child {
+              border-bottom: none;
+              border-top: 2px solid #1976d2;
+              margin-top: 10px;
+              padding-top: 10px;
+              font-weight: bold;
+              font-size: 16px;
+              color: #1976d2;
+            }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 2px solid #ddd;
+              text-align: center;
+              color: #666;
+              font-size: 11px;
+            }
+            .delivery-info {
+              margin-top: 20px;
+              padding: 15px;
+              background: #e3f2fd;
+              border-radius: 5px;
+              border-right: 4px solid #1976d2;
+            }
+            .delivery-info h3 {
+              color: #1976d2;
+              margin-bottom: 10px;
+              font-size: 14px;
+            }
+          </style>
+        </head>
+        <body>
+          ${letterheadBase64 ? `<img src="${letterheadBase64}" class="letterhead" alt="Company Letterhead" />` : ''}
+          
+          <div class="header">
+            <h1>فاتورة ضريبية</h1>
+            <p>Tax Invoice</p>
+          </div>
+
+          <div class="invoice-info">
+            <div class="info-box">
+              <h3>معلومات الفاتورة</h3>
+              <p><strong>رقم الفاتورة:</strong> ${order.invoiceNumber || order.orderNumber}</p>
+              <p><strong>رقم الطلب:</strong> ${order.orderNumber}</p>
+              <p><strong>تاريخ الفاتورة:</strong> ${formatDate(order.completedAt || order.createdAt)}</p>
+              <p><strong>تاريخ الطلب:</strong> ${formatDate(order.createdAt)}</p>
+            </div>
+            
+            <div class="info-box">
+              <h3>معلومات العميل</h3>
+              <p><strong>الاسم:</strong> ${userInfo.name}</p>
+              <p><strong>الهاتف:</strong> ${userInfo.phone}</p>
+              <p><strong>البريد الإلكتروني:</strong> ${userInfo.email}</p>
+              <p><strong>نوع الحساب:</strong> ${order.accountType || 'غير محدد'}</p>
+            </div>
+          </div>
+
+          <div class="delivery-info">
+            <h3>عنوان التوصيل</h3>
+            <p><strong>المستلم:</strong> ${order.deliveryAddress?.recipientName || userInfo.name}</p>
+            <p><strong>الهاتف:</strong> ${order.deliveryAddress?.recipientPhone || userInfo.phone}</p>
+            <p><strong>العنوان:</strong> ${order.deliveryAddress?.line1 || ''} ${order.deliveryAddress?.line2 || ''}</p>
+            <p><strong>المدينة:</strong> ${order.deliveryAddress?.city || ''}</p>
+            <p><strong>المنطقة:</strong> ${order.deliveryAddress?.region || 'غير محدد'}</p>
+            ${order.deliveryAddress?.postalCode ? `<p><strong>الرمز البريدي:</strong> ${order.deliveryAddress.postalCode}</p>` : ''}
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>المنتج</th>
+                <th>الكمية</th>
+                <th>السعر الوحدة</th>
+                <th>الخصم</th>
+                <th>المجموع</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.items.map((item, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>
+                    <strong>${item.snapshot?.name || 'منتج'}</strong><br/>
+                    ${item.snapshot?.sku ? `<small>SKU: ${item.snapshot.sku}</small><br/>` : ''}
+                    ${item.snapshot?.brandName ? `<small>العلامة: ${item.snapshot.brandName}</small>` : ''}
+                  </td>
+                  <td>${item.qty}</td>
+                  <td>${formatCurrency(item.finalPrice, order.currency)}</td>
+                  <td>${item.discount > 0 ? formatCurrency(item.discount, order.currency) : '-'}</td>
+                  <td><strong>${formatCurrency(item.lineTotal, order.currency)}</strong></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="totals-section">
+            <div class="totals-box">
+              <div class="total-row">
+                <span>المجموع الفرعي:</span>
+                <span>${formatCurrency(order.subtotal, order.currency)}</span>
+              </div>
+              ${order.itemsDiscount > 0 ? `
+              <div class="total-row">
+                <span>خصم المنتجات:</span>
+                <span>- ${formatCurrency(order.itemsDiscount, order.currency)}</span>
+              </div>
+              ` : ''}
+              ${order.couponDiscount > 0 ? `
+              <div class="total-row">
+                <span>خصم الكوبونات:</span>
+                <span>- ${formatCurrency(order.couponDiscount, order.currency)}</span>
+              </div>
+              ` : ''}
+              ${order.shippingCost > 0 ? `
+              <div class="total-row">
+                <span>تكلفة الشحن:</span>
+                <span>${formatCurrency(order.shippingCost, order.currency)}</span>
+              </div>
+              ` : ''}
+              ${order.tax > 0 ? `
+              <div class="total-row">
+                <span>الضريبة (${order.taxRate}%):</span>
+                <span>${formatCurrency(order.tax, order.currency)}</span>
+              </div>
+              ` : ''}
+              <div class="total-row">
+                <span>المجموع الكلي:</span>
+                <span>${formatCurrency(order.total, order.currency)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 5px; border-right: 4px solid #ffc107;">
+            <h3 style="color: #856404; margin-bottom: 10px;">معلومات الدفع</h3>
+            <p><strong>طريقة الدفع:</strong> ${order.paymentMethod === PaymentMethod.COD ? 'الدفع عند الاستلام' : order.paymentMethod === PaymentMethod.BANK_TRANSFER ? 'تحويل بنكي' : order.paymentMethod}</p>
+            <p><strong>حالة الدفع:</strong> ${order.paymentStatus === PaymentStatus.PAID ? 'مدفوع ✓' : order.paymentStatus}</p>
+            ${order.paidAt ? `<p><strong>تاريخ الدفع:</strong> ${formatDate(order.paidAt)}</p>` : ''}
+            ${order.trackingNumber ? `<p><strong>رقم التتبع:</strong> ${order.trackingNumber}</p>` : ''}
+            ${order.shippingCompany ? `<p><strong>شركة الشحن:</strong> ${order.shippingCompany}</p>` : ''}
+          </div>
+
+          <div class="footer">
+            <p>شكراً لاختياركم خدماتنا</p>
+            <p>Thank you for choosing our services</p>
+            <p style="margin-top: 10px; color: #999;">تم إنشاء هذه الفاتورة تلقائياً من نظام إدارة الطلبات</p>
+            <p style="color: #999;">This invoice was automatically generated by the order management system</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // إنشاء PDF باستخدام puppeteer
+      const browser = await puppeteer.launch({
+        headless: true,
+        timeout: 60000, // زيادة timeout إلى 60 ثانية
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins,site-per-process',
+          '--disable-blink-features=AutomationControlled'
+        ],
+      });
+      
+      try {
+        const page = await browser.newPage();
+        // استخدام 'load' بدلاً من 'networkidle0' لأنه أسرع وأكثر موثوقية
+        await page.setContent(htmlContent, { waitUntil: 'load', timeout: 30000 });
+        
+        const pdfData = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: {
+            top: '10mm',
+            right: '15mm',
+            bottom: '15mm',
+            left: '15mm'
+          }
+        });
+        
+        return Buffer.from(pdfData);
+      } finally {
+        await browser.close();
+      }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Error generating order invoice PDF', {
+        error: err.message,
+        stack: err.stack,
+        orderId: order._id.toString(),
+        orderNumber: order.orderNumber,
+      });
+      throw new OrderPdfGenerationFailedException({
+        ordersCount: 1,
+        error: err.message,
+      });
+    }
+  }
+
+  /**
+   * إرسال فاتورة الطلب عبر البريد الإلكتروني
+   */
+  private async sendOrderInvoiceEmail(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
+    try {
+      if (!this.emailAdapter || !this.emailAdapter.isInitialized()) {
+        this.logger.warn('Email adapter not initialized. Cannot send invoice email.');
+        return;
+      }
+
+      const invoiceNumber = order.invoiceNumber || order.orderNumber;
+      const fileName = `invoice-${invoiceNumber}-${Date.now()}.pdf`;
+
+      // استخدام متغير البيئة للبريد الإلكتروني مع قيمة افتراضية
+      const salesManagerEmail = this.configService?.get('SALES_MANAGER_EMAIL') || 'Mohammedsalehallawzi14@gmail.com';
+
+      const result = await this.emailAdapter.sendEmail({
+        to: salesManagerEmail,
+        subject: `فاتورة جديدة - ${invoiceNumber} | New Invoice - ${invoiceNumber}`,
+        html: `
+          <div dir="rtl" style="font-family: Arial, Tahoma, sans-serif; padding: 20px;">
+            <h2 style="color: #1976d2;">فاتورة جديدة</h2>
+            <p>تم إكمال طلب جديد وتم إنشاء الفاتورة المرفقة.</p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+            <h3 style="color: #333;">تفاصيل الطلب:</h3>
+            <ul style="line-height: 1.8;">
+              <li><strong>رقم الطلب:</strong> ${order.orderNumber}</li>
+              <li><strong>رقم الفاتورة:</strong> ${invoiceNumber}</li>
+              <li><strong>اسم العميل:</strong> ${order.customerName || 'غير محدد'}</li>
+              <li><strong>المجموع:</strong> ${order.total.toLocaleString('ar-SA')} ${order.currency}</li>
+              <li><strong>تاريخ الإكمال:</strong> ${order.completedAt?.toLocaleDateString('ar-SA') || 'غير محدد'}</li>
+            </ul>
+            <p style="margin-top: 20px; color: #666;">يرجى الاطلاع على الفاتورة المرفقة للتفاصيل الكاملة.</p>
+          </div>
+          <div dir="ltr" style="font-family: Arial, sans-serif; padding: 20px; border-top: 1px solid #ddd; margin-top: 20px;">
+            <h2 style="color: #1976d2;">New Invoice</h2>
+            <p>A new order has been completed and the attached invoice has been generated.</p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+            <h3 style="color: #333;">Order Details:</h3>
+            <ul style="line-height: 1.8;">
+              <li><strong>Order Number:</strong> ${order.orderNumber}</li>
+              <li><strong>Invoice Number:</strong> ${invoiceNumber}</li>
+              <li><strong>Customer Name:</strong> ${order.customerName || 'N/A'}</li>
+              <li><strong>Total:</strong> ${order.total.toLocaleString()} ${order.currency}</li>
+              <li><strong>Completed Date:</strong> ${order.completedAt?.toLocaleDateString() || 'N/A'}</li>
+            </ul>
+            <p style="margin-top: 20px; color: #666;">Please review the attached invoice for complete details.</p>
+          </div>
+        `,
+        attachments: [{
+          filename: fileName,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }]
+      });
+
+      if (result.success) {
+        this.logger.log(`Invoice email sent successfully for order ${order.orderNumber} to sales manager`);
+      } else {
+        this.logger.error(`Failed to send invoice email for order ${order.orderNumber}: ${result.error}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error sending invoice email for order ${order.orderNumber}:`, error);
+      // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
+    }
   }
 }

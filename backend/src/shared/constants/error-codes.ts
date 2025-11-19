@@ -217,6 +217,10 @@ export enum ErrorCode {
   CURRENCY_NOT_SUPPORTED = 'EXCHANGE_1102',
   CONVERSION_FAILED = 'EXCHANGE_1103',
   EXCHANGE_RATE_FETCH_FAILED = 'EXCHANGE_1104',
+  EXCHANGE_RATE_SYNC_JOB_NOT_FOUND = 'EXCHANGE_1105',
+  EXCHANGE_RATE_SYNC_JOB_INVALID = 'EXCHANGE_1106',
+  EXCHANGE_RATE_SYNC_FAILED = 'EXCHANGE_1107',
+  EXCHANGE_RATE_INVALID_DATA = 'EXCHANGE_1108',
 
   // ==================== التحليلات (ANALYTICS: 1150-1199) ====================
   ANALYTICS_REPORT_NOT_FOUND = 'ANALYTICS_1150',
@@ -463,6 +467,10 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.CURRENCY_NOT_SUPPORTED]: 'العملة غير مدعومة',
   [ErrorCode.CONVERSION_FAILED]: 'فشل تحويل العملة',
   [ErrorCode.EXCHANGE_RATE_FETCH_FAILED]: 'فشل في جلب أسعار الصرف. يرجى المحاولة مرة أخرى',
+  [ErrorCode.EXCHANGE_RATE_SYNC_JOB_NOT_FOUND]: 'مهمة مزامنة أسعار الصرف غير موجودة',
+  [ErrorCode.EXCHANGE_RATE_SYNC_JOB_INVALID]: 'معرف مهمة مزامنة أسعار الصرف غير صالح',
+  [ErrorCode.EXCHANGE_RATE_SYNC_FAILED]: 'فشل مزامنة أسعار الصرف',
+  [ErrorCode.EXCHANGE_RATE_INVALID_DATA]: 'بيانات سعر الصرف غير صالحة',
 
   // ==================== التحليلات ====================
   [ErrorCode.ANALYTICS_REPORT_NOT_FOUND]: 'التقرير غير موجود',

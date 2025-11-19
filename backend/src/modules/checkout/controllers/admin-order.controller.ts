@@ -26,6 +26,8 @@ import { UserRole } from '../../users/schemas/user.schema';
 import { AdminPermission } from '../../../shared/constants/permissions';
 import { Request as ExpressRequest } from 'express';
 import { OrderService } from '../services/order.service';
+import { AuditService } from '../../../shared/services/audit.service';
+import { Logger } from '@nestjs/common';
 import {
   ListOrdersDto,
   ListRatingsDto,
@@ -48,7 +50,12 @@ import { PaymentStatus } from '../schemas/order.schema';
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/orders')
 export class AdminOrderController {
-  constructor(private readonly orderService: OrderService) {}
+  private readonly logger = new Logger(AdminOrderController.name);
+
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly auditService: AuditService,
+  ) {}
 
   private getUserId(req: ExpressRequest): string {
     return (req as unknown as { user: { sub: string } }).user.sub;
@@ -107,11 +114,28 @@ export class AdminOrderController {
     @Param('id') orderId: string,
     @Body() dto: UpdateOrderStatusDto
   ) {
+    const adminId = this.getUserId(req);
     const order = await this.orderService.adminUpdateOrderStatus(
       orderId,
       dto,
-      this.getUserId(req)
+      adminId
     );
+
+    // تسجيل تحديث الطلب من الأدمن في audit
+    this.auditService.logOrderEvent({
+      userId: String(order.userId),
+      orderId,
+      action: 'updated_by_admin',
+      orderNumber: order.orderNumber,
+      oldStatus: order.statusHistory[order.statusHistory.length - 2]?.status,
+      newStatus: dto.status,
+      totalAmount: order.total,
+      currency: order.currency,
+      performedBy: adminId,
+      reason: dto.notes,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log admin order update', err));
 
     return {
       order,

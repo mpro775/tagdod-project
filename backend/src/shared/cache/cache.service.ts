@@ -23,6 +23,7 @@ export interface CacheStats {
 export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
   private readonly redis: Redis;
+  private isReadOnly = false;
   private stats = {
     hits: 0,
     misses: 0,
@@ -67,15 +68,33 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private setupEventHandlers() {
     this.redis.on('connect', () => {
       this.logger.log('Connected to Redis');
+      this.isReadOnly = false;
     });
 
     this.redis.on('error', (error) => {
-      this.logger.error('Redis connection error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        if (!this.isReadOnly) {
+          this.logger.warn('Redis is in read-only mode. Write operations will be skipped.');
+          this.isReadOnly = true;
+        }
+      } else {
+        this.logger.error('Redis connection error:', error);
+      }
     });
 
     this.redis.on('ready', () => {
       this.logger.log('Redis is ready');
+      this.isReadOnly = false;
     });
+  }
+
+  /**
+   * Check if error is a READONLY error
+   */
+  private isReadOnlyError(error: string | Error): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /READONLY/i.test(message) || /read only/i.test(message);
   }
 
   /**
@@ -108,6 +127,11 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Set cache value
    */
   async set(key: string, value: unknown, options: CacheOptions = {}): Promise<void> {
+    if (this.isReadOnly) {
+      this.logger.debug(`Skipping cache write for key ${key} - Redis is in read-only mode`);
+      return;
+    }
+
     const cacheKey = this.generateKey(key, options.prefix);
     const serializedValue = this.serialize(value);
     const ttl = options.ttl ?? Number(this.configService.get<number>('CACHE_TTL') ?? 3600);
@@ -119,7 +143,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         await this.redis.set(cacheKey, serializedValue);
       }
       this.stats.sets++;
+      this.isReadOnly = false;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn(`Failed to set cache key ${cacheKey}: Redis is in read-only mode`);
+        return;
+      }
       this.logger.error(`Failed to set cache key ${cacheKey}:`, error);
       throw error;
     }
@@ -151,13 +182,25 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Delete cache key
    */
   async delete(key: string, prefix?: string): Promise<boolean> {
+    if (this.isReadOnly) {
+      this.logger.debug(`Skipping cache delete for key ${key} - Redis is in read-only mode`);
+      return false;
+    }
+
     const cacheKey = this.generateKey(key, prefix);
 
     try {
       const result = await this.redis.del(cacheKey);
       this.stats.deletes++;
+      this.isReadOnly = false;
       return result > 0;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn(`Failed to delete cache key ${cacheKey}: Redis is in read-only mode`);
+        return false;
+      }
       this.logger.error(`Failed to delete cache key ${cacheKey}:`, error);
       return false;
     }
@@ -182,6 +225,11 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Set multiple cache values
    */
   async mset(keyValuePairs: Record<string, unknown>, options: CacheOptions = {}): Promise<void> {
+    if (this.isReadOnly) {
+      this.logger.debug(`Skipping cache mset - Redis is in read-only mode`);
+      return;
+    }
+
     const pipeline = this.redis.pipeline();
 
     for (const [key, value] of Object.entries(keyValuePairs)) {
@@ -199,7 +247,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     try {
       await pipeline.exec();
       this.stats.sets += Object.keys(keyValuePairs).length;
+      this.isReadOnly = false;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn('Failed to set multiple cache keys: Redis is in read-only mode');
+        return;
+      }
       this.logger.error('Failed to set multiple cache keys:', error);
       throw error;
     }
@@ -233,13 +288,25 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Delete multiple cache keys
    */
   async mdelete(keys: string[], prefix?: string): Promise<number> {
+    if (this.isReadOnly) {
+      this.logger.debug(`Skipping cache mdelete - Redis is in read-only mode`);
+      return 0;
+    }
+
     const cacheKeys = keys.map((key) => this.generateKey(key, prefix));
 
     try {
       const result = await this.redis.del(...cacheKeys);
       this.stats.deletes += keys.length;
+      this.isReadOnly = false;
       return result;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn('Failed to delete multiple cache keys: Redis is in read-only mode');
+        return 0;
+      }
       this.logger.error('Failed to delete multiple cache keys:', error);
       return 0;
     }
@@ -249,6 +316,11 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Set cache value with hash
    */
   async hset(hash: string, field: string, value: unknown, options: CacheOptions = {}): Promise<void> {
+    if (this.isReadOnly) {
+      this.logger.debug(`Skipping cache hset for ${hash}:${field} - Redis is in read-only mode`);
+      return;
+    }
+
     const cacheKey = this.generateKey(hash, options.prefix);
     const serializedValue = this.serialize(value);
 
@@ -258,7 +330,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         await this.redis.expire(cacheKey, options.ttl);
       }
       this.stats.sets++;
+      this.isReadOnly = false;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn(`Failed to set hash field ${cacheKey}:${field}: Redis is in read-only mode`);
+        return;
+      }
       this.logger.error(`Failed to set hash field ${cacheKey}:${field}:`, error);
       throw error;
     }
@@ -316,13 +395,25 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Delete hash field
    */
   async hdel(hash: string, field: string, prefix?: string): Promise<boolean> {
+    if (this.isReadOnly) {
+      this.logger.debug(`Skipping cache hdel for ${hash}:${field} - Redis is in read-only mode`);
+      return false;
+    }
+
     const cacheKey = this.generateKey(hash, prefix);
 
     try {
       const result = await this.redis.hdel(cacheKey, field);
       this.stats.deletes++;
+      this.isReadOnly = false;
       return result > 0;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn(`Failed to delete hash field ${cacheKey}:${field}: Redis is in read-only mode`);
+        return false;
+      }
       this.logger.error(`Failed to delete hash field ${cacheKey}:${field}:`, error);
       return false;
     }
@@ -332,12 +423,24 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Set expiration time for key
    */
   async expire(key: string, ttl: number, prefix?: string): Promise<boolean> {
+    if (this.isReadOnly) {
+      this.logger.debug(`Skipping cache expire for key ${key} - Redis is in read-only mode`);
+      return false;
+    }
+
     const cacheKey = this.generateKey(key, prefix);
 
     try {
       const result = await this.redis.expire(cacheKey, ttl);
+      this.isReadOnly = false;
       return result > 0;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn(`Failed to set expiration for key ${cacheKey}: Redis is in read-only mode`);
+        return false;
+      }
       this.logger.error(`Failed to set expiration for key ${cacheKey}:`, error);
       return false;
     }
@@ -361,6 +464,11 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    * Clear all cache keys with prefix
    */
   async clear(prefix?: string): Promise<void> {
+    if (this.isReadOnly) {
+      this.logger.debug(`Skipping cache clear - Redis is in read-only mode`);
+      return;
+    }
+
     const globalPrefix = this.configService.get('CACHE_PREFIX', 'solar:');
     const basePrefix = prefix
       ? prefix.startsWith(globalPrefix)
@@ -375,9 +483,16 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       if (keys.length > 0) {
         await this.redis.del(...keys);
         this.stats.deletes += keys.length;
+        this.isReadOnly = false;
         this.logger.log(`Cleared ${keys.length} cache keys with pattern ${pattern}`);
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn(`Failed to clear cache with pattern ${pattern}: Redis is in read-only mode`);
+        return;
+      }
       this.logger.error(`Failed to clear cache with pattern ${pattern}:`, error);
       throw error;
     }

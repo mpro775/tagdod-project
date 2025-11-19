@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards, Logger } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -51,6 +52,7 @@ import {
 import { FavoritesService } from '../favorites/favorites.service';
 import { BiometricService } from './biometric.service';
 import { normalizeYemeniPhone } from '../../shared/utils/phone.util';
+import { AuditService } from '../../shared/services/audit.service';
 
 @ApiTags('المصادقة')
 @Controller('auth')
@@ -64,6 +66,7 @@ export class AuthController {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
     private favoritesService: FavoritesService,
+    private auditService: AuditService,
   ) {}
 
   private buildAuthResponse(user: UserDocument) {
@@ -268,7 +271,7 @@ export class AuthController {
       },
     },
   })
-  async verifyOtp(@Body() dto: VerifyOtpDto) {
+  async verifyOtp(@Body() dto: VerifyOtpDto, @Req() req: Request) {
     // Normalize phone number for OTP verification only (SMS sending)
     // OTP is stored in Redis with normalized phone (+967 format)
     let normalizedPhone: string;
@@ -392,6 +395,15 @@ export class AuthController {
     };
     const access = this.tokens.signAccess(payload);
     const refresh = this.tokens.signRefresh(payload);
+
+    // تسجيل حدث تسجيل الدخول الناجح
+    this.auditService.logAuthEvent({
+      userId: String(user._id),
+      action: 'login_success',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log auth event', err));
+
     return {
       tokens: { access, refresh },
       me: {
@@ -423,9 +435,18 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('set-password')
-  async setPassword(@Req() req: { user: { sub: string } }, @Body() dto: SetPasswordDto) {
+  async setPassword(@Req() req: { user: { sub: string } } & Request, @Body() dto: SetPasswordDto) {
     const hashedPassword = await hash(dto.password, 10);
     await this.userModel.updateOne({ _id: req.user.sub }, { $set: { passwordHash: hashedPassword } });
+    
+    // تسجيل حدث تغيير كلمة المرور
+    this.auditService.logAuthEvent({
+      userId: req.user.sub,
+      action: 'password_change',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log auth event', err));
+
     return { updated: true };
   }
 
@@ -485,7 +506,7 @@ export class AuthController {
     return { sent: result.sent, devCode: result.devCode };
   }
 
-  @Post('reset-password') async reset(@Body() dto: ResetPasswordDto) {
+  @Post('reset-password') async reset(@Body() dto: ResetPasswordDto, @Req() req: Request) {
     this.logger.log(`Reset password request for phone: ${dto.phone}`);
 
     // Normalize phone number for OTP verification only (OTP was stored with normalized phone)
@@ -521,6 +542,14 @@ export class AuthController {
     const hashedPassword = await hash(dto.newPassword, 10);
     await this.userModel.updateOne({ _id: user._id }, { $set: { passwordHash: hashedPassword } });
     this.logger.log(`Password reset successful for ${normalizedPhone}`);
+    
+    // تسجيل حدث إعادة تعيين كلمة المرور
+    this.auditService.logAuthEvent({
+      userId: String(user._id),
+      action: 'password_reset',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log auth event', err));
     
     return { updated: true };
   }
@@ -714,16 +743,27 @@ export class AuthController {
       approve: boolean;
       merchantDiscountPercent?: number; // نسبة الخصم للتاجر (0-100)
     },
+    @Req() req: { user: { sub: string } } & Request,
   ) {
     const caps = await this.capsModel.findOne({ userId: body.userId });
     if (!caps) throw new AuthException(ErrorCode.AUTH_CAPS_NOT_FOUND, { userId: body.userId });
 
+    const oldValues: Record<string, unknown> = {};
+    const newValues: Record<string, unknown> = {};
+
     if (body.capability === 'engineer') {
+      oldValues.engineer_status = caps.engineer_status;
+      oldValues.engineer_capable = caps.engineer_capable;
       caps.engineer_status = body.approve ? 'approved' : 'rejected';
       caps.engineer_capable = body.approve;
+      newValues.engineer_status = caps.engineer_status;
+      newValues.engineer_capable = caps.engineer_capable;
     }
 
     if (body.capability === 'merchant') {
+      oldValues.merchant_status = caps.merchant_status;
+      oldValues.merchant_capable = caps.merchant_capable;
+      oldValues.merchant_discount_percent = caps.merchant_discount_percent;
       caps.merchant_status = body.approve ? 'approved' : 'rejected';
       caps.merchant_capable = body.approve;
 
@@ -741,9 +781,25 @@ export class AuthController {
         // إزالة الخصم عند الرفض
         caps.merchant_discount_percent = 0;
       }
+      newValues.merchant_status = caps.merchant_status;
+      newValues.merchant_capable = caps.merchant_capable;
+      newValues.merchant_discount_percent = caps.merchant_discount_percent;
     }
 
     await caps.save();
+
+    // تسجيل حدث الموافقة/الرفض على capability
+    this.auditService.logCapabilityDecision({
+      userId: body.userId,
+      capability: body.capability,
+      action: body.approve ? 'approve' : 'reject',
+      decidedBy: req.user.sub,
+      oldValues,
+      newValues,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log capability decision', err));
+
     return { updated: true };
   }
 
@@ -1488,7 +1544,7 @@ export class AuthController {
   })
   @ApiBadRequestResponse({ description: 'بيانات غير صحيحة' })
   @ApiUnauthorizedResponse({ description: 'كلمة المرور غير صحيحة' })
-  async userLogin(@Body() body: UserLoginDto) {
+  async userLogin(@Body() body: UserLoginDto, @Req() req: Request) {
     this.logger.log(`User login attempt for phone: ${body.phone}`);
 
     // البحث عن المستخدم بالرقم كما هو (بدون تحويل إلى +967)
@@ -1502,18 +1558,39 @@ export class AuthController {
     // التحقق من كلمة المرور
     if (!user.passwordHash) {
       this.logger.warn(`User login failed - no password set: ${body.phone}`);
+      this.auditService.logAuthEvent({
+        userId: String(user._id),
+        action: 'login_failed',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        details: { reason: 'no_password_set' },
+      }).catch(err => this.logger.error('Failed to log auth event', err));
       throw new AuthException(ErrorCode.AUTH_PASSWORD_NOT_SET, { phone: body.phone });
     }
 
     const isPasswordValid = await compare(body.password, user.passwordHash);
     if (!isPasswordValid) {
       this.logger.warn(`User login failed - invalid password: ${body.phone}`);
+      this.auditService.logAuthEvent({
+        userId: String(user._id),
+        action: 'login_failed',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        details: { reason: 'invalid_password' },
+      }).catch(err => this.logger.error('Failed to log auth event', err));
       throw new InvalidPasswordException({ phone: body.phone });
     }
 
     // التحقق من حالة المستخدم
     if (user.status === UserStatus.PENDING) {
       this.logger.warn(`User login failed - account pending verification: ${body.phone}`);
+      this.auditService.logAuthEvent({
+        userId: String(user._id),
+        action: 'login_failed',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        details: { reason: 'account_pending' },
+      }).catch(err => this.logger.error('Failed to log auth event', err));
       throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { 
         phone: body.phone, 
         status: user.status,
@@ -1523,17 +1600,33 @@ export class AuthController {
 
     if (user.status !== UserStatus.ACTIVE) {
       this.logger.warn(`User login failed - user not active: ${body.phone}`);
+      this.auditService.logAuthEvent({
+        userId: String(user._id),
+        action: 'login_failed',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        details: { reason: 'user_not_active', status: user.status },
+      }).catch(err => this.logger.error('Failed to log auth event', err));
       throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { phone: body.phone, status: user.status });
     }
 
     this.logger.log(`User login successful: ${body.phone}`);
+    
+    // تسجيل حدث تسجيل الدخول الناجح
+    this.auditService.logAuthEvent({
+      userId: String(user._id),
+      action: 'login_success',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log auth event', err));
+
     return this.buildAuthResponse(user);
   }
 
   // ==================== تسجيل دخول السوبر أدمن (للاستخدام في مرحلة التطوير) ====================
   @RequirePermissions('admin.access') // مطلوب في التطوير لكن يتم التحقق منه في الكود
   @Post('dev-login')
-  async devLogin(@Body() body: { phone: string; password: string }) {
+  async devLogin(@Body() body: { phone: string; password: string }, @Req() req: Request) {
     // هذا الـ endpoint مخصص للتطوير فقط
     if (process.env.NODE_ENV === 'production') {
       throw new NotAllowedInProductionException();
@@ -1573,6 +1666,14 @@ export class AuthController {
     };
     const access = this.tokens.signAccess(payload);
     const refresh = this.tokens.signRefresh(payload);
+
+    // تسجيل حدث تسجيل الدخول الناجح
+    this.auditService.logAuthEvent({
+      userId: String(user._id),
+      action: 'login_success',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log auth event', err));
 
     return {
       tokens: { access, refresh },

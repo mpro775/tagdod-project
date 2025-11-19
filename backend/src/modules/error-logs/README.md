@@ -9,7 +9,7 @@
 ### 1. تسجيل الأخطاء
 - **Deduplication**: دمج الأخطاء المتشابهة تلقائياً
 - **Error Levels**: Error, Warning, Fatal, Debug
-- **Categories**: Database, API, Authentication, Validation, Business Logic, External Service, System
+- **Categories**: Database, API, Authentication, Validation, Business Logic, External Service, System, Frontend
 - **Stack Traces**: حفظ Stack traces كاملة
 - **Metadata**: معلومات إضافية قابلة للتخصيص
 
@@ -119,7 +119,7 @@ POST /error-logs/cleanup
 ```typescript
 {
   level: string;              // error, warn, fatal, debug
-  category: string;           // database, api, authentication, etc.
+  category: string;           // database, api, authentication, validation, business_logic, external_service, system, frontend, unknown
   message: string;            // رسالة الخطأ
   stack: string;              // Stack trace
   metadata: object;           // معلومات إضافية
@@ -185,6 +185,24 @@ await errorLogsService.createSystemLog(
   'AuthService',
   { userId: user.id, ip: req.ip }
 );
+
+// تسجيل خطأ من الفرونت إند
+await errorLogsService.createErrorLog({
+  level: ErrorLevel.ERROR,
+  category: ErrorCategory.FRONTEND,
+  message: error.message,
+  stack: error.stack,
+  userId: user?.id,
+  metadata: {
+    url: window.location.href,
+    userAgent: navigator.userAgent,
+    viewport: {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    },
+    browser: navigator.userAgent,
+  },
+});
 ```
 
 ### التكامل مع Exception Filter

@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { notificationsSocket, NotificationPayload } from './notificationsSocket';
 
 export interface UseNotificationsSocketReturn {
@@ -16,6 +16,15 @@ export const useNotificationsSocket = (
   const [unreadCount, setUnreadCount] = useState(0);
   const [latestNotification, setLatestNotification] = useState<NotificationPayload | null>(null);
 
+  // استخدام useRef لتثبيت callbacks وتجنب إعادة تشغيل effect
+  const onNotificationRef = useRef(onNotification);
+  const onUnreadCountUpdateRef = useRef(onUnreadCountUpdate);
+
+  useEffect(() => {
+    onNotificationRef.current = onNotification;
+    onUnreadCountUpdateRef.current = onUnreadCountUpdate;
+  }, [onNotification, onUnreadCountUpdate]);
+
   useEffect(() => {
     const socket = notificationsSocket.connect();
     
@@ -30,16 +39,16 @@ export const useNotificationsSocket = (
 
       const handleNotification = (notification: NotificationPayload) => {
         setLatestNotification(notification);
-        if (onNotification) {
-          onNotification(notification);
+        if (onNotificationRef.current) {
+          onNotificationRef.current(notification);
         }
         setUnreadCount((prev) => prev + 1);
       };
 
       const handleUnreadCount = (data: { count: number }) => {
         setUnreadCount(data.count);
-        if (onUnreadCountUpdate) {
-          onUnreadCountUpdate(data.count);
+        if (onUnreadCountUpdateRef.current) {
+          onUnreadCountUpdateRef.current(data.count);
         }
       };
 
@@ -54,10 +63,11 @@ export const useNotificationsSocket = (
       };
     }
 
-    return () => {
-      notificationsSocket.disconnect();
-    };
-  }, [onNotification, onUnreadCountUpdate]);
+    // لا تقم بقطع الاتصال في cleanup - دع socket يبقى متصل
+    // return () => {
+    //   notificationsSocket.disconnect();
+    // };
+  }, []); // dependency array فارغ - يعمل مرة واحدة فقط
 
   const reconnect = useCallback(() => {
     notificationsSocket.reconnect();

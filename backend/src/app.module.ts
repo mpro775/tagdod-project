@@ -47,6 +47,7 @@ import { IdempotencyMiddleware } from './shared/middleware/idempotency.middlewar
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
 import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-envelope.interceptor';
 import { SecurityLoggingInterceptor } from './modules/security/interceptors/security-logging.interceptor';
+import { ApiMetricsInterceptor } from './modules/system-monitoring/interceptors/api-metrics.interceptor';
 
 @Module({
   imports: [
@@ -122,6 +123,7 @@ import { SecurityLoggingInterceptor } from './modules/security/interceptors/secu
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ResponseEnvelopeInterceptor },
     { provide: APP_INTERCEPTOR, useClass: SecurityLoggingInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: ApiMetricsInterceptor },
     // TODO: إعادة تفعيل rate limiting بعد الاختبار
     // { provide: APP_GUARD, useClass: ThrottlerGuard },
     KeepAliveService,

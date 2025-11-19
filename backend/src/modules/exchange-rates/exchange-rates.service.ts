@@ -1,5 +1,9 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { CurrencyNotSupportedException } from '../../shared/exceptions';
+import {
+  CurrencyNotSupportedException,
+  ExchangeRateException,
+  ErrorCode,
+} from '../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ExchangeRate, ExchangeRateDocument } from './schemas/exchange-rate.schema';
@@ -95,8 +99,37 @@ export class ExchangeRatesService {
 
       return newRates;
     } catch (error) {
-      this.logger.error('فشل في تحديث أسعار الصرف:', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to update exchange rates', {
+        error: err.message,
+        stack: err.stack,
+        usdToYer: updateDto.usdToYer,
+        usdToSar: updateDto.usdToSar,
+        updatedBy,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع ExchangeRateException
+      if (error instanceof ExchangeRateException) {
+        throw error;
+      }
+
+      // معالجة أخطاء MongoDB
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        const mongoError = error as { keyPattern?: Record<string, unknown> };
+        const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
+        throw new ExchangeRateException(ErrorCode.EXCHANGE_RATE_INVALID_DATA, {
+          reason: 'duplicate_field',
+          field,
+          message: `${field} موجود مسبقاً`,
+        });
+      }
+
+      throw new ExchangeRateException(ErrorCode.EXCHANGE_RATE_UPDATE_FAILED, {
+        usdToYer: updateDto.usdToYer,
+        usdToSar: updateDto.usdToSar,
+        updatedBy,
+        error: err.message,
+      });
     }
   }
 
@@ -138,8 +171,26 @@ export class ExchangeRatesService {
 
       return conversion;
     } catch (error) {
-      this.logger.error('فشل في تحويل العملة:', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to convert currency', {
+        error: err.message,
+        stack: err.stack,
+        fromCurrency: convertDto.fromCurrency,
+        toCurrency: convertDto.toCurrency,
+        amount: convertDto.amount,
+      });
+
+      // إعادة رمي الخطأ إذا كان من نوع ExchangeRateException
+      if (error instanceof ExchangeRateException) {
+        throw error;
+      }
+
+      throw new ExchangeRateException(ErrorCode.CONVERSION_FAILED, {
+        fromCurrency: convertDto.fromCurrency,
+        toCurrency: convertDto.toCurrency,
+        amount: convertDto.amount,
+        error: err.message,
+      });
     }
   }
 

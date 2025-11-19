@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { 
   HealthCheckService, 
   MongooseHealthIndicator,
@@ -25,6 +25,8 @@ import {
   SystemMetricsQueryDto,
 } from './dto/system-monitoring.dto';
 import * as os from 'os';
+import checkDiskSpace from 'check-disk-space';
+import Redis from 'ioredis';
 
 @Injectable()
 export class SystemMonitoringService {
@@ -49,6 +51,8 @@ export class SystemMonitoringService {
     private redis: RedisHealthIndicator,
     private memory: MemoryHealthIndicator,
     private disk: DiskHealthIndicator,
+    @Inject('REDIS_CLIENT')
+    private readonly redisClient: Redis,
   ) {
     // Record startup event
     this.recordUptimeEvent('startup');
@@ -198,18 +202,70 @@ export class SystemMonitoringService {
       const healthCheck = await this.redis.isHealthy('redis');
       const responseTime = Date.now() - startTime;
 
-      // These would come from actual Redis INFO command
-      // For now, returning mock data
+      // Get actual Redis INFO command data
+      const [stats, memory, keyspace] = await Promise.all([
+        this.redisClient.info('stats'),
+        this.redisClient.info('memory'),
+        this.redisClient.info('keyspace'),
+      ]);
+
+      // Parse INFO output
+      const parsedStats = this.parseRedisInfo(stats);
+      const parsedMemory = this.parseRedisInfo(memory);
+      const parsedKeyspace = this.parseRedisInfo(keyspace);
+
+      // Calculate Hit Rate
+      const hits = parseInt(parsedStats.keyspace_hits || '0', 10);
+      const misses = parseInt(parsedStats.keyspace_misses || '0', 10);
+      const totalOps = hits + misses;
+      const hitRate = totalOps > 0 ? (hits / totalOps) * 100 : 0;
+
+      // Get keys count from keyspace
+      let keysCount = 0;
+      try {
+        const dbKeys = Object.keys(parsedKeyspace).find((key) => key.startsWith('db'));
+        if (dbKeys) {
+          const dbInfo = parsedKeyspace[dbKeys];
+          const keysMatch = dbInfo.match(/keys=(\d+)/);
+          if (keysMatch) {
+            keysCount = parseInt(keysMatch[1], 10);
+          }
+        }
+        // Fallback: use DBSIZE command
+        if (keysCount === 0) {
+          keysCount = await this.redisClient.dbsize();
+        }
+      } catch (error) {
+        this.logger.warn('Could not get keys count from keyspace, using DBSIZE:', error);
+        try {
+          keysCount = await this.redisClient.dbsize();
+        } catch (dbSizeError) {
+          this.logger.warn('Could not get keys count:', dbSizeError);
+        }
+      }
+
+      // Memory usage
+      const memoryUsed = parseInt(parsedMemory.used_memory || '0', 10);
+      const maxMemory = parseInt(parsedMemory.maxmemory || '0', 10);
+      const memoryUsagePercentage =
+        maxMemory > 0 ? (memoryUsed / maxMemory) * 100 : 0;
+
+      // Operations per second
+      const operationsPerSecond = parseInt(
+        parsedStats.instantaneous_ops_per_sec || '0',
+        10,
+      );
+
       return {
         connected: healthCheck.redis.status === 'up',
         responseTime,
-        memoryUsage: 50 * 1024 * 1024, // 50 MB
-        maxMemory: 256 * 1024 * 1024, // 256 MB
-        memoryUsagePercentage: 19.5,
-        keysCount: 1000,
-        hitRate: 95.5,
-        missRate: 4.5,
-        operationsPerSecond: 1000,
+        memoryUsage: memoryUsed,
+        maxMemory: maxMemory || 256 * 1024 * 1024, // Default 256MB if not set
+        memoryUsagePercentage,
+        keysCount,
+        hitRate,
+        missRate: 100 - hitRate,
+        operationsPerSecond,
       };
     } catch (error) {
       this.logger.error('Error getting Redis metrics:', error);
@@ -387,19 +443,54 @@ export class SystemMonitoringService {
     free: number;
     usagePercentage: number;
   }> {
-    // This is platform-specific. On Windows, might need different approach
-    // For now, returning mock data
-    return {
-      total: 500 * 1024 * 1024 * 1024, // 500 GB
-      used: 300 * 1024 * 1024 * 1024, // 300 GB
-      free: 200 * 1024 * 1024 * 1024, // 200 GB
-      usagePercentage: 60,
-    };
+    try {
+      // Get disk space for root path (works on Windows, Linux, Mac)
+      // On Windows: 'C:\\' or os.platform() === 'win32' ? 'C:\\' : '/'
+      const diskPath = os.platform() === 'win32' ? 'C:\\' : '/';
+      const diskInfo = await checkDiskSpace(diskPath);
+
+      const total = diskInfo.size;
+      const free = diskInfo.free;
+      const used = total - free;
+      const usagePercentage = total > 0 ? (used / total) * 100 : 0;
+
+      return {
+        total,
+        used,
+        free,
+        usagePercentage,
+      };
+    } catch (error) {
+      this.logger.error('Error getting disk usage:', error);
+      // Fallback to mock data if check-disk-space fails
+      return {
+        total: 0,
+        used: 0,
+        free: 0,
+        usagePercentage: 0,
+      };
+    }
   }
 
   private calculateErrorRate(): number {
     const total = this.apiMetrics.totalRequests || 1;
     return (this.apiMetrics.failedRequests / total) * 100;
+  }
+
+  private parseRedisInfo(infoString: string): Record<string, string> {
+    const result: Record<string, string> = {};
+    const lines = infoString.split('\r\n');
+
+    for (const line of lines) {
+      if (line && !line.startsWith('#') && line.includes(':')) {
+        const colonIndex = line.indexOf(':');
+        const key = line.substring(0, colonIndex);
+        const value = line.substring(colonIndex + 1);
+        result[key] = value;
+      }
+    }
+
+    return result;
   }
 
   private buildDateFilter(

@@ -22109,6 +22109,7 @@
                 "business_logic",
                 "external_service",
                 "system",
+                "frontend",
                 "unknown"
               ],
               "type": "string"
@@ -33675,6 +33676,7 @@
               "business_logic",
               "external_service",
               "system",
+              "frontend",
               "unknown"
             ]
           },
@@ -33741,6 +33743,7 @@
               "business_logic",
               "external_service",
               "system",
+              "frontend",
               "unknown"
             ]
           },

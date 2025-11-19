@@ -33,6 +33,29 @@ export enum AuditAction {
   SYSTEM_BACKUP = 'system.backup',
   SYSTEM_MAINTENANCE = 'system.maintenance',
   DATA_MIGRATION = 'system.migration',
+
+  // Orders
+  ORDER_CREATED = 'order.created',
+  ORDER_CANCELLED = 'order.cancelled',
+  ORDER_REFUNDED = 'order.refunded',
+  ORDER_STATUS_CHANGED = 'order.status.changed',
+  ORDER_UPDATED_BY_ADMIN = 'order.updated.by.admin',
+
+  // Payments
+  PAYMENT_INITIATED = 'payment.initiated',
+  PAYMENT_COMPLETED = 'payment.completed',
+  PAYMENT_FAILED = 'payment.failed',
+  PAYMENT_REFUNDED = 'payment.refunded',
+  PAYMENT_STATUS_CHANGED = 'payment.status.changed',
+
+  // Coupons
+  COUPON_APPLIED = 'coupon.applied',
+  COUPON_APPLICATION_FAILED = 'coupon.application.failed',
+  COUPON_CREATED = 'coupon.created',
+  COUPON_UPDATED = 'coupon.updated',
+  COUPON_DELETED = 'coupon.deleted',
+  COUPON_ACTIVATED = 'coupon.activated',
+  COUPON_DEACTIVATED = 'coupon.deactivated',
 }
 
 export enum AuditResource {
@@ -43,6 +66,9 @@ export enum AuditResource {
   SYSTEM = 'system',
   AUTH = 'auth',
   ADMIN = 'admin',
+  ORDER = 'order',
+  PAYMENT = 'payment',
+  COUPON = 'coupon',
 }
 
 @Schema({ timestamps: true, collection: 'audit_logs' })

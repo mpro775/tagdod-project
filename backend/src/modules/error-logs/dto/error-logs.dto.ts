@@ -17,6 +17,7 @@ export enum ErrorCategory {
   BUSINESS_LOGIC = 'business_logic',
   EXTERNAL_SERVICE = 'external_service',
   SYSTEM = 'system',
+  FRONTEND = 'frontend',
   UNKNOWN = 'unknown',
 }
 

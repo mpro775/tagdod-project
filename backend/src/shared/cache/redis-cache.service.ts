@@ -12,6 +12,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisCacheService.name);
   private readonly IDEMPOTENCY_PREFIX = 'idempotency:';
   private readonly DEFAULT_TTL = 3600; // 1 hour
+  private isReadOnly = false;
 
   constructor(@Inject('REDIS_CLIENT') private readonly redisService: Redis) {}
 
@@ -50,13 +51,25 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
     value: CachedResponse,
     ttlSeconds: number = this.DEFAULT_TTL,
   ): Promise<void> {
+    if (this.isReadOnly) {
+      this.logger.debug(`Skipping idempotency cache write for key ${key} - Redis is in read-only mode`);
+      return;
+    }
+
     try {
       await this.redisService.setex(
         `${this.IDEMPOTENCY_PREFIX}${key}`,
         ttlSeconds,
         JSON.stringify(value),
       );
+      this.isReadOnly = false;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn(`Failed to set key ${key}: Redis is in read-only mode`);
+        return;
+      }
       this.logger.error(`Failed to set key ${key}:`, error as Error);
     }
   }
@@ -72,14 +85,31 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async delete(key: string): Promise<void> {
+    if (this.isReadOnly) {
+      this.logger.debug(`Skipping idempotency cache delete for key ${key} - Redis is in read-only mode`);
+      return;
+    }
+
     try {
       await this.redisService.del(`${this.IDEMPOTENCY_PREFIX}${key}`);
+      this.isReadOnly = false;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn(`Failed to delete key ${key}: Redis is in read-only mode`);
+        return;
+      }
       this.logger.error(`Failed to delete key ${key}:`, error as Error);
     }
   }
 
   async clearExpired(): Promise<void> {
+    if (this.isReadOnly) {
+      this.logger.debug('Skipping clear expired - Redis is in read-only mode');
+      return;
+    }
+
     try {
       const keys = await this.redisService.keys(`${this.IDEMPOTENCY_PREFIX}*`);
       for (const key of keys) {
@@ -88,8 +118,23 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
           await this.redisService.expire(key, this.DEFAULT_TTL);
         }
       }
+      this.isReadOnly = false;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (this.isReadOnlyError(errorMessage)) {
+        this.isReadOnly = true;
+        this.logger.warn('Failed to clear expired keys: Redis is in read-only mode');
+        return;
+      }
       this.logger.error('Failed to clear expired keys:', error as Error);
     }
+  }
+
+  /**
+   * Check if error is a READONLY error
+   */
+  private isReadOnlyError(error: string | Error): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /READONLY/i.test(message) || /read only/i.test(message);
   }
 }

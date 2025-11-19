@@ -14520,6 +14520,7 @@ paths:
               - business_logic
               - external_service
               - system
+              - frontend
               - unknown
             type: string
         - name: search
@@ -22593,6 +22594,7 @@ components:
             - business_logic
             - external_service
             - system
+            - frontend
             - unknown
         message:
           type: string
@@ -22644,6 +22646,7 @@ components:
             - business_logic
             - external_service
             - system
+            - frontend
             - unknown
         message:
           type: string

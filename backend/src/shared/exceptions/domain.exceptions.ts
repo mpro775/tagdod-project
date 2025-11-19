@@ -499,6 +499,24 @@ export class ExchangeRateFetchFailedException extends ExchangeRateException {
   }
 }
 
+export class ExchangeRateSyncJobNotFoundException extends ExchangeRateException {
+  constructor(details?: unknown) {
+    super(ErrorCode.EXCHANGE_RATE_SYNC_JOB_NOT_FOUND, details);
+  }
+}
+
+export class ExchangeRateSyncJobInvalidException extends ExchangeRateException {
+  constructor(details?: unknown) {
+    super(ErrorCode.EXCHANGE_RATE_SYNC_JOB_INVALID, details);
+  }
+}
+
+export class ExchangeRateSyncFailedException extends ExchangeRateException {
+  constructor(details?: unknown) {
+    super(ErrorCode.EXCHANGE_RATE_SYNC_FAILED, details);
+  }
+}
+
 // ==================== Analytics Exceptions ====================
 
 export class AnalyticsException extends DomainException {

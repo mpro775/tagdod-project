@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Req, Logger } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -19,6 +19,11 @@ import { RequirePermissions } from '../../shared/decorators/permissions.decorato
 import { UserRole } from '../users/schemas/user.schema';
 import { AdminPermission } from '../../shared/constants/permissions';
 import { AdminGuard } from '../../shared/guards/admin.guard';
+import { AuditService } from '../../shared/services/audit.service';
+import { Request } from 'express';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Coupon, CouponDocument } from './schemas/coupon.schema';
 
 @ApiTags('إدارة-التسويق')
 @ApiBearerAuth()
@@ -26,7 +31,13 @@ import { AdminGuard } from '../../shared/guards/admin.guard';
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller('admin/marketing')
 export class MarketingAdminController {
-  constructor(private svc: MarketingService) {}
+  private readonly logger = new Logger(MarketingAdminController.name);
+
+  constructor(
+    private svc: MarketingService,
+    private auditService: AuditService,
+    @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
+  ) {}
 
   @RequirePermissions(AdminPermission.MARKETING_CREATE, AdminPermission.ADMIN_ACCESS)
   @Post('price-rules')
@@ -205,8 +216,19 @@ export class MarketingAdminController {
     status: 201,
     description: 'تم إنشاء الكوبون بنجاح'
   })
-  async createCoupon(@Body() dto: CreateCouponDto) {
-    const coupon = await this.svc.createCoupon(dto);
+  async createCoupon(@Body() dto: CreateCouponDto, @Req() req: Request) {
+    const adminId = (req as unknown as { user: { sub: string } }).user.sub;
+    const coupon = await this.svc.createCoupon(dto, adminId);
+    
+    // تسجيل إنشاء الكوبون في audit
+    this.auditService.logCouponEvent({
+      couponCode: coupon.code,
+      action: 'created',
+      performedBy: adminId,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log coupon creation', err));
+    
     return coupon;
   }
 
@@ -362,8 +384,19 @@ export class MarketingAdminController {
     status: 200,
     description: 'تم تحديث الكوبون بنجاح'
   })
-  async updateCoupon(@Param('id') id: string, @Body() dto: UpdateCouponDto) {
-    const coupon = await this.svc.updateCoupon(id, dto);
+  async updateCoupon(@Param('id') id: string, @Body() dto: UpdateCouponDto, @Req() req: Request) {
+    const adminId = (req as unknown as { user: { sub: string } }).user.sub;
+    const coupon = await this.svc.updateCoupon(id, dto, adminId);
+    
+    // تسجيل تحديث الكوبون في audit
+    this.auditService.logCouponEvent({
+      couponCode: coupon?.code || '',
+      action: 'updated',
+      performedBy: adminId,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log coupon update', err));
+    
     return coupon;
   }
 
@@ -381,8 +414,25 @@ export class MarketingAdminController {
     status: 200,
     description: 'تم حذف الكوبون بنجاح'
   })
-  async deleteCoupon(@Param('id') id: string) {
-    const result = await this.svc.deleteCoupon(id);
+  async deleteCoupon(@Param('id') id: string, @Req() req: Request) {
+    const adminId = (req as unknown as { user: { sub: string } }).user.sub;
+    
+    // الحصول على الكوبون قبل الحذف لتسجيله في audit
+    const coupon = await this.couponModel.findById(id);
+    
+    const result = await this.svc.deleteCoupon(id, adminId);
+    
+    // تسجيل حذف الكوبون في audit
+    if (coupon) {
+      this.auditService.logCouponEvent({
+        couponCode: coupon.code,
+        action: 'deleted',
+        performedBy: adminId,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      }).catch(err => this.logger.error('Failed to log coupon deletion', err));
+    }
+    
     return result;
   }
 
