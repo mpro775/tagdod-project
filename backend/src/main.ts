@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger, LogLevel } from '@nestjs/common';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import { AppModule } from './app.module';
@@ -88,6 +89,11 @@ async function bootstrap() {
   } catch (error) {
     logger.warn('Failed to setup Swagger documentation:', error instanceof Error ? error.message : 'Unknown error');
   }
+
+  // Configure WebSocket adapter to use the same HTTP server port
+  // This ensures WebSocket uses the same port as HTTP (not port 0)
+  app.useWebSocketAdapter(new IoAdapter(app));
+  logger.log('✅ WebSocket adapter configured to use HTTP server port');
 
   const port = process.env.PORT || 3000;
   

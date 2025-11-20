@@ -2,7 +2,10 @@
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
 > 📅 **آخر تحديث**: نوفمبر 2025  
-> 🆕 **محدث**: حل مشكلة المنفذ `:0` في URL
+> 🆕 **محدث**: 
+> - ✅ حل مشكلة المنفذ `:0` في URL
+> - ✅ إضافة WebSocket Exception Filter لمعالجة الأخطاء
+> - ✅ تحديث Events والأوامر لتتطابق مع Backend
 
 يوفر النظام اتصالات WebSocket في الوقت الفعلي للإشعارات ورسائل الدعم الفني باستخدام Socket.IO.
 
@@ -156,11 +159,25 @@ class ApiConfig {
 | Event | الوصف | البيانات |
 |-------|-------|---------|
 | `connect` | اتصال ناجح | - |
-| `connected` | مصادقة ناجحة | `{ userId, socketId }` |
-| `notification:new` | إشعار جديد | `Notification` |
+| `connected` | مصادقة ناجحة | `{ success: true, userId: string, timestamp: string }` |
+| `notification:new` | إشعار جديد | `{ id, title, message, messageEn, type, priority, data, createdAt, isRead }` |
 | `unread-count` | تحديث عدد غير المقروء | `{ count: number }` |
+| `marked-as-read` | تم تحديد كمقروء | `{ success: true, markedCount: number }` |
+| `marked-all-as-read` | تم تحديد الكل كمقروء | `{ success: true, markedCount: number }` |
+| `pong` | رد على ping | `{ pong: true, timestamp: string }` |
+| `exception` | خطأ WebSocket | `{ status: 'error', error: { code, message }, timestamp }` |
+| `error` | خطأ WebSocket (مطابق لـ exception) | `{ status: 'error', error: { code, message }, timestamp }` |
 | `disconnect` | انقطاع الاتصال | `reason` |
 | `connect_error` | خطأ في الاتصال | `error` |
+
+### الأوامر المتاحة
+
+| الأمر | الوصف | البيانات |
+|------|-------|---------|
+| `ping` | اختبار الاتصال | لا |
+| `get-unread-count` | طلب عدد غير مقروء | لا |
+| `mark-as-read` | تحديد كمقروء | `{ notificationIds: string[] }` |
+| `mark-all-as-read` | تحديد الكل كمقروء | لا |
 
 ### كود Flutter - خدمة WebSocket
 
@@ -282,6 +299,23 @@ class NotificationsWebSocketService {
     // Ping/Pong
     _socket!.on('pong', (data) {
       print('🏓 Pong received');
+    });
+
+    // معالجة الأخطاء من WebSocket Exception Filter
+    _socket!.on('exception', (data) {
+      print('❌ WebSocket exception: $data');
+      final error = data as Map<String, dynamic>;
+      if (onError != null) {
+        onError!(error['error']?['message'] ?? 'WebSocket error occurred');
+      }
+    });
+
+    _socket!.on('error', (data) {
+      print('❌ WebSocket error: $data');
+      final error = data as Map<String, dynamic>;
+      if (onError != null) {
+        onError!(error['error']?['message'] ?? 'WebSocket error occurred');
+      }
     });
   }
 
@@ -429,14 +463,26 @@ class _NotificationsBadgeState extends State<NotificationsBadge> {
 | Event | الوصف | البيانات |
 |-------|-------|---------|
 | `connect` | اتصال ناجح | - |
-| `connected` | مصادقة ناجحة | `{ userId, socketId }` |
-| `message:new` | رسالة جديدة في التذكرة | `SupportMessage` |
-| `support:new-message` | إشعار برسالة جديدة (لتذاكر أخرى) | `{ ticketId, message }` |
-| `user-typing` | مؤشر الكتابة | `{ ticketId, userId, isTyping }` |
-| `joined-ticket` | انضمام ناجح لتذكرة | `{ ticketId }` |
-| `left-ticket` | مغادرة تذكرة | `{ ticketId }` |
+| `connected` | مصادقة ناجحة | `{ success: true, userId: string, timestamp: string }` |
+| `message:new` | رسالة جديدة في التذكرة | `{ id, ticketId, senderId, content, attachments, messageType, createdAt }` |
+| `support:new-message` | إشعار برسالة جديدة (لتذاكر أخرى) | `{ ticketId, ticketTitle, message: {...} }` |
+| `user-typing` | مؤشر الكتابة | `{ userId, ticketId, isTyping: bool, userName }` |
+| `joined-ticket` | انضمام ناجح | `{ success: true, ticketId: string }` |
+| `left-ticket` | مغادرة ناجحة | `{ success: true, ticketId: string }` |
+| `pong` | رد على ping | `{ pong: true, timestamp: string }` |
+| `exception` | خطأ WebSocket | `{ status: 'error', error: { code, message }, timestamp }` |
+| `error` | خطأ WebSocket (مطابق لـ exception) | `{ status: 'error', error: { code, message }, timestamp }` |
 | `disconnect` | انقطاع الاتصال | `reason` |
 | `connect_error` | خطأ في الاتصال | `error` |
+
+### الأوامر المتاحة
+
+| الأمر | الوصف | البيانات |
+|------|-------|---------|
+| `ping` | اختبار الاتصال | لا |
+| `join-ticket` | الانضمام لتذكرة | `{ ticketId: string }` |
+| `leave-ticket` | مغادرة تذكرة | `{ ticketId: string }` |
+| `typing` | إرسال مؤشر الكتابة | `{ ticketId: string, isTyping: bool }` |
 
 ### كود Flutter - خدمة WebSocket
 
@@ -577,6 +623,23 @@ class SupportWebSocketService {
     // Ping/Pong
     _socket!.on('pong', (data) {
       print('🏓 Pong received');
+    });
+
+    // معالجة الأخطاء من WebSocket Exception Filter
+    _socket!.on('exception', (data) {
+      print('❌ WebSocket exception: $data');
+      final error = data as Map<String, dynamic>;
+      if (onError != null) {
+        onError!(error['error']?['message'] ?? 'WebSocket error occurred');
+      }
+    });
+
+    _socket!.on('error', (data) {
+      print('❌ WebSocket error: $data');
+      final error = data as Map<String, dynamic>;
+      if (onError != null) {
+        onError!(error['error']?['message'] ?? 'WebSocket error occurred');
+      }
     });
   }
 
@@ -776,16 +839,77 @@ class WebSocketManager {
 
 ---
 
-## 7. استكشاف الأخطاء
+## 7. معالجة الأخطاء (WebSocket Exception Filter)
+
+### ✅ الإصلاحات المطبقة في Backend
+
+تم إصلاح مشكلتين رئيسيتين في Backend:
+
+1. **مشكلة المنفذ (Port 0):**
+   - تم إضافة `IoAdapter` في `main.ts` لضمان استخدام WebSocket لنفس منفذ HTTP
+   - WebSocket الآن يستخدم نفس المنفذ المحدد في `PORT` (افتراضي: 3000)
+
+2. **الفلاتر لا تعمل مع WebSocket:**
+   - تم إنشاء `WebSocketExceptionFilter` للتعامل مع `WsException`
+   - تم إضافة `@UseFilters(WebSocketExceptionFilter)` على كل Gateway
+
+### كيفية عمل WebSocket Exception Filter
+
+عند حدوث خطأ في WebSocket (مثل `WsException`):
+
+1. يتم التقاط الخطأ بواسطة `WebSocketExceptionFilter`
+2. يتم تسجيل الخطأ في الـ Logger مع معلومات Socket و User
+3. يتم إرسال استجابة موحدة للعميل عبر events: `exception` و `error`:
+
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "WS_ERROR",
+    "message": "Error message"
+  },
+  "timestamp": "2025-01-15T10:00:00.000Z"
+}
+```
+
+### معالجة الأخطاء في Flutter
+
+تأكد من الاستماع لـ events `exception` و `error` في كل خدمة:
+
+```dart
+// في _setupEventListeners()
+_socket!.on('exception', (data) {
+  final error = data as Map<String, dynamic>;
+  final message = error['error']?['message'] ?? 'WebSocket error occurred';
+  print('❌ WebSocket exception: $message');
+  if (onError != null) {
+    onError!(message);
+  }
+});
+
+_socket!.on('error', (data) {
+  final error = data as Map<String, dynamic>;
+  final message = error['error']?['message'] ?? 'WebSocket error occurred';
+  print('❌ WebSocket error: $message');
+  if (onError != null) {
+    onError!(message);
+  }
+});
+```
+
+---
+
+## 8. استكشاف الأخطاء
 
 ### الخطأ: `Connection to 'https://api.allawzi.net:0/socket.io/...' was not upgraded`
 
-**السبب:** المنفذ `:0` يُضاف بشكل خاطئ.
+**السبب:** المنفذ `:0` يُضاف بشكل خاطئ عند استخراج URL من `API_BASE_URL`.
 
 **الحل:**
-1. تأكد من استخدام دالة `buildWebSocketUrl()` أو `ApiConfig.getWebSocketUrl()`
-2. لا تستخدم منفذ صريح مع HTTPS
-3. تحقق من أن `API_BASE_URL` صحيح
+1. ✅ **تم إصلاحه في Backend**: WebSocket الآن يستخدم نفس منفذ HTTP تلقائياً
+2. تأكد من استخدام دالة `buildWebSocketUrl()` أو `ApiConfig.getWebSocketUrl()`
+3. لا تستخدم منفذ صريح مع HTTPS
+4. تحقق من أن `API_BASE_URL` صحيح
 
 ```dart
 // ❌ خطأ
@@ -794,6 +918,8 @@ final url = 'https://api.allawzi.net:443/notifications'; // لا حاجة للم
 // ✅ صحيح
 final url = 'https://api.allawzi.net/notifications';
 ```
+
+**ملاحظة:** تم إصلاح هذه المشكلة في Backend بإضافة `IoAdapter` في `main.ts`.
 
 ### الخطأ: `Connection error` أو `401 Unauthorized`
 
@@ -818,8 +944,9 @@ if (token == null) {
 **السبب:** CORS غير مُعد بشكل صحيح في Backend.
 
 **الحل:**
-1. تأكد من إعداد `FRONTEND_URL` في Backend `.env`
-2. تحقق من إعدادات CORS في WebSocket Gateway
+1. تأكد من إعداد `FRONTEND_URL` أو `CORS_ORIGINS` في Backend `.env`
+2. تحقق من إعدادات CORS في WebSocket Gateway (يستخدم `getWebSocketCorsOrigins()`)
+3. في Development، يتم إضافة localhost origins تلقائياً
 
 ### الخطأ: الاتصال لا يعمل بعد إعادة تشغيل التطبيق
 
@@ -852,6 +979,26 @@ _wsService.connect().then((_) {
 });
 ```
 
+### الخطأ: `WsException` أو أخطاء WebSocket غير معالجة
+
+**السبب:** قبل الإصلاحات، لم تكن هناك فلاتر لمعالجة أخطاء WebSocket.
+
+**الحل:**
+1. ✅ **تم إصلاحه في Backend**: تم إضافة `WebSocketExceptionFilter`
+2. تأكد من الاستماع لـ events `exception` و `error` في Flutter
+3. جميع الأخطاء الآن تُرسل بشكل موحد عبر هذه الأحداث
+
+```dart
+// تأكد من إضافة هذه الـ listeners
+_socket!.on('exception', (data) {
+  // معالجة الخطأ
+});
+
+_socket!.on('error', (data) {
+  // معالجة الخطأ
+});
+```
+
 ### نصائح عامة
 
 1. **استخدم Singleton Pattern** للخدمات لتجنب اتصالات متعددة
@@ -859,17 +1006,41 @@ _wsService.connect().then((_) {
 3. **تعامل مع الأخطاء** بشكل مناسب وأظهر رسائل واضحة
 4. **راقب حالة الاتصال** وعرض مؤشر للمستخدم
 5. **استخدم Fallback** إلى REST API إذا فشل WebSocket
+6. **استمع لـ exception/error events** لمعالجة الأخطاء من Backend
 
 ---
 
 ## 📚 المراجع
 
-- [خدمة الإشعارات](./13-notifications-service.md) - للمزيد من التفاصيل
-- [خدمة الدعم](./16-support-service.md) - للمزيد من التفاصيل
+- [خدمة الإشعارات](./13-notifications-service.md) - للمزيد من التفاصيل عن WebSocket للإشعارات
+- [خدمة الدعم](./16-support-service.md) - للمزيد من التفاصيل عن WebSocket للدعم
 - [Socket.IO Client Documentation](https://pub.dev/packages/socket_io_client)
+- [Backend WebSocket Fixes](../../backend/WEBSOCKET_FIXES.md) - تفاصيل الإصلاحات في Backend
+
+---
+
+## 🔄 ملاحظات التحديث
+
+### التغييرات الرئيسية (نوفمبر 2025)
+
+1. ✅ **إصلاح مشكلة المنفذ (Port 0):**
+   - تم إضافة `IoAdapter` في `main.ts`
+   - WebSocket يستخدم نفس منفذ HTTP تلقائياً
+
+2. ✅ **إضافة WebSocket Exception Filter:**
+   - معالجة موحدة لجميع أخطاء WebSocket
+   - إرسال استجابات منظمة عبر events `exception` و `error`
+
+3. ✅ **تحديث Events والأوامر:**
+   - تحديث جميع Events لتتطابق مع Backend الفعلي
+   - إضافة Events المفقودة (`marked-as-read`, `marked-all-as-read`, إلخ)
+
+4. ✅ **تحسين معالجة الأخطاء:**
+   - إضافة أمثلة لمعالجة `exception` و `error` events
+   - تحديث استكشاف الأخطاء
 
 ---
 
 **آخر تحديث:** نوفمبر 2025  
-**النسخة:** 1.0.0
+**النسخة:** 2.0.0
 

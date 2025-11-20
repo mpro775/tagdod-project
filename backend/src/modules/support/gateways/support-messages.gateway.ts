@@ -9,12 +9,13 @@ import {
   ConnectedSocket,
   WsException,
 } from '@nestjs/websockets';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger, UseGuards, UseFilters } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { WebSocketAuthGuard } from '../../../shared/websocket/websocket-auth.guard';
 import { WebSocketService } from '../../../shared/websocket/websocket.service';
 import { AuthenticatedSocket } from '../../../shared/websocket/websocket-auth.guard';
 import { getWebSocketCorsOrigins } from '../../../shared/websocket/websocket-cors.helper';
+import { WebSocketExceptionFilter } from '../../../shared/filters/websocket-exception.filter';
 import { SupportService } from '../support.service';
 
 @WebSocketGateway({
@@ -28,6 +29,7 @@ import { SupportService } from '../support.service';
   pingInterval: 25000,
 })
 @UseGuards(WebSocketAuthGuard)
+@UseFilters(WebSocketExceptionFilter)
 export class SupportMessagesGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
