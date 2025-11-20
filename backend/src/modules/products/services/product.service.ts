@@ -38,13 +38,57 @@ export class ProductService {
     });
 
     try {
-      const slug = slugify(dto.nameEn!);
+      let slug = slugify(dto.nameEn!);
+      const originalSlug = slug;
+      
+      this.logger.debug(`Checking for existing product with slug: ${slug}`, {
+        nameEn: dto.nameEn,
+        generatedSlug: slug,
+      });
 
-      // التحقق من عدم التكرار
-      const existing = await this.productModel.findOne({ slug, deletedAt: null });
+      // التحقق من عدم التكرار - البحث عن أي منتج بنفس slug (حتى المحذوف)
+      const existing = await this.productModel.findOne({ slug });
       if (existing) {
-        this.logger.warn(`Product with slug ${slug} already exists`);
-        throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, { slug: dto.slug, reason: 'already_exists' });
+        // إذا كان المنتج موجوداً وغير محذوف، نرفض الإنشاء
+        if (!existing.deletedAt) {
+          this.logger.warn(`Product with slug ${slug} already exists (not deleted)`, {
+            existingProductId: existing._id,
+            existingName: existing.nameEn,
+            newName: dto.nameEn,
+          });
+          throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, { 
+            slug, 
+            reason: 'already_exists',
+            existingProductId: String(existing._id),
+            message: `منتج بنفس الاسم الإنجليزي موجود مسبقاً: ${existing.nameEn}`,
+          });
+        }
+        
+        // إذا كان المنتج محذوفاً، ننشئ slug فريد بإضافة timestamp
+        // التأكد من أن الـ slug الجديد فريد (حتى لو كان هناك عدة منتجات محذوفة)
+        let counter = 1;
+        const baseTimestamp = Date.now();
+        let newSlug = `${originalSlug}-${baseTimestamp}`;
+        
+        while (await this.productModel.findOne({ slug: newSlug })) {
+          newSlug = `${originalSlug}-${baseTimestamp}-${counter}`;
+          counter++;
+          
+          // حماية من loop لانهائي (غير محتمل لكن احتياطي)
+          if (counter > 1000) {
+            throw new ProductException(ErrorCode.PRODUCT_CREATE_FAILED, {
+              reason: 'slug_generation_failed',
+              message: 'فشل في إنشاء slug فريد للمنتج',
+            });
+          }
+        }
+        
+        slug = newSlug;
+        this.logger.warn(`Product with slug ${originalSlug} was deleted, using new slug: ${slug}`, {
+          originalSlug,
+          newSlug: slug,
+          deletedProductId: existing._id,
+        });
       }
 
       // إضافة retry logic لـ buildDerivedPricingFields
