@@ -7,7 +7,7 @@ import { User } from '../users/schemas/user.schema';
 import { AddressesService } from '../addresses/addresses.service';
 import { NotificationService } from '../notifications/services/notification.service';
 import { NotificationType, NotificationChannel, NotificationPriority } from '../notifications/enums/notification.enums';
-import { CreateServiceRequestDto } from './dto/requests.dto';
+import { CreateServiceRequestDto, UpdateServiceRequestDto } from './dto/requests.dto';
 import { CreateOfferDto, UpdateOfferDto } from './dto/offers.dto';
 import { DistanceService } from './services/distance.service';
 import { UploadService } from '../upload/upload.service';
@@ -185,6 +185,104 @@ export class ServicesService {
     await this.addressesService.markAsUsed(dto.addressId, userId);
 
     return doc;
+  }
+
+  async updateRequest(
+    userId: string,
+    id: string,
+    dto: UpdateServiceRequestDto,
+    uploadedFiles?: Array<{ buffer: Buffer; originalname: string; mimetype: string; size: number }>,
+  ) {
+    // التحقق من ملكية الطلب
+    const r = await this.requests.findOne({ _id: id, userId });
+    if (!r) {
+      return { error: 'NOT_FOUND' };
+    }
+
+    // التحقق من عدم وجود أي عروض على الطلب
+    const offersCount = await this.offers.countDocuments({ requestId: r._id });
+    if (offersCount > 0) {
+      return { error: 'HAS_OFFERS' };
+    }
+
+    // التحقق من أن الطلب في حالة تسمح بالتعديل (OPEN فقط)
+    if (r.status !== 'OPEN') {
+      return { error: 'INVALID_STATUS' };
+    }
+
+    const updateData: Record<string, unknown> = {};
+
+    // تحديث العنوان إذا تم تغييره
+    if (dto.addressId) {
+      const isValid = await this.addressesService.validateAddressOwnership(dto.addressId, userId);
+      if (!isValid) {
+        return { error: 'ADDRESS_NOT_FOUND' };
+      }
+
+      const addr = await this.addressesService.getAddressById(dto.addressId);
+      const rawLng = (addr.coords as { lng?: unknown } | undefined)?.lng;
+      const rawLat = (addr.coords as { lat?: unknown } | undefined)?.lat;
+
+      const lng = typeof rawLng === 'number' ? rawLng : Number(rawLng);
+      const lat = typeof rawLat === 'number' ? rawLat : Number(rawLat);
+
+      const hasValidCoords = Number.isFinite(lng) && Number.isFinite(lat);
+      if (!hasValidCoords) {
+        this.logger.warn(`Address ${dto.addressId} is missing coordinates; using fallback [0,0].`);
+      }
+
+      const location = hasValidCoords
+        ? { type: 'Point', coordinates: [lng, lat] as [number, number] }
+        : { type: 'Point', coordinates: [0, 0] as [number, number] };
+
+      updateData.addressId = addr._id;
+      updateData.city = addr.city;
+      updateData.location = location;
+    }
+
+    // رفع الصور الجديدة إذا كانت موجودة
+    const imageUrls: string[] = [];
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      this.logger.log(`Uploading ${uploadedFiles.length} image(s) to Bunny.net for service request update`);
+      for (const file of uploadedFiles) {
+        try {
+          const uploadResult = await this.uploadService.uploadFile(
+            {
+              buffer: file.buffer,
+              originalname: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size,
+            },
+            'services/requests',
+          );
+          imageUrls.push(uploadResult.url);
+          this.logger.log(`Successfully uploaded image: ${uploadResult.url}`);
+        } catch (error) {
+          this.logger.error(`Failed to upload image ${file.originalname}:`, error);
+        }
+      }
+    }
+
+    // دمج الصور المرفوعة مع الصور المرسلة كروابط (إن وجدت)
+    if (dto.images !== undefined || (uploadedFiles && uploadedFiles.length > 0)) {
+      const newImages = dto.images || [];
+      const allNewImages = [...imageUrls, ...newImages];
+      updateData.images = allNewImages;
+    }
+
+    // تحديث الحقول الأخرى
+    if (dto.title !== undefined) updateData.title = dto.title;
+    if (dto.type !== undefined) updateData.type = dto.type;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.scheduledAt !== undefined) {
+      updateData.scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : null;
+    }
+
+    // تطبيق التحديثات
+    Object.assign(r, updateData);
+    await r.save();
+
+    return r;
   }
 
   async myRequests(userId: string) {
@@ -731,7 +829,7 @@ export class ServicesService {
   }
 
   async updateOffer(engineerUserId: string, id: string, patch: UpdateOfferDto) {
-    const off = await this.offers.findOne({ _id: id, engineerId: engineerUserId });
+    const off = await this.offers.findOne({ _id: id, engineerId: new Types.ObjectId(engineerUserId) });
     if (!off) return { error: 'NOT_FOUND' };
     if (off.status !== 'OFFERED') return { error: 'CANNOT_UPDATE' };
     if ((off.updatesCount || 0) >= 1) return { error: 'UPDATE_LIMIT_REACHED' };
@@ -743,7 +841,7 @@ export class ServicesService {
   }
 
   async deleteOffer(engineerUserId: string, id: string) {
-    const off = await this.offers.findOne({ _id: id, engineerId: engineerUserId });
+    const off = await this.offers.findOne({ _id: id, engineerId: new Types.ObjectId(engineerUserId) });
     if (!off) return { error: 'NOT_FOUND' };
     if (off.status !== 'OFFERED') return { error: 'CANNOT_DELETE' };
 
@@ -798,7 +896,7 @@ export class ServicesService {
   // جلب عروض المهندس
   async myOffers(engineerUserId: string) {
     return this.offers
-      .find({ engineerId: engineerUserId })
+      .find({ engineerId: new Types.ObjectId(engineerUserId) })
       .populate('requestId')
       .sort({ createdAt: -1 })
       .lean();

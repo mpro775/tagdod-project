@@ -11179,6 +11179,33 @@
           }
         },
         {
+          "name": "تعديل طلب خدمة",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/customer/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "customer",
+                "{id}"
+              ]
+            },
+            "description": "تعديل طلب خدمة - مسموح فقط إذا لم يتم تلقي أي عروض على الطلب"
+          }
+        },
+        {
           "name": "إلغاء طلب خدمة",
           "request": {
             "method": "POST",

@@ -146,7 +146,7 @@ export class EngineerServicesController {
       },
     },
   })
-  async listAll(@Req() req: RequestWithUser) {
+  async listAll() {
     const data = await this.svc.listAllAvailableRequests();
     return { data };
   }

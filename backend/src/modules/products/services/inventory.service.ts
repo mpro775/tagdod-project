@@ -9,7 +9,7 @@ import {
  
 } from '../../../shared/exceptions';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
+import { NotificationType, NotificationChannel, NotificationPriority, NotificationCategory } from '../../notifications/enums/notification.enums';
 
 interface PopulatedProduct {
   _id: Types.ObjectId | string;
@@ -300,6 +300,7 @@ export class InventoryService {
         messageEn: `Variant ${variant.sku || variant._id.toString()} has low stock: ${variant.stock} (minimum: ${variant.minStock})`,
         channel: NotificationChannel.DASHBOARD,
         priority: NotificationPriority.HIGH,
+        category: NotificationCategory.PRODUCT,
         data: {
           variantId: variant._id.toString(),
           productId: variant.productId.toString(),
@@ -324,6 +325,7 @@ export class InventoryService {
         messageEn: `Variant ${variant.sku || variant._id.toString()} is out of stock`,
         channel: NotificationChannel.DASHBOARD,
         priority: NotificationPriority.HIGH,
+        category: NotificationCategory.PRODUCT,
         data: {
           variantId: variant._id.toString(),
           productId: variant.productId.toString(),
@@ -385,6 +387,7 @@ export class InventoryService {
         messageEn: `Product ${product.nameEn ?? product.name} has low stock: ${stock} (minimum: ${minStock})`,
         channel: NotificationChannel.DASHBOARD,
         priority: NotificationPriority.HIGH,
+        category: NotificationCategory.PRODUCT,
         data: {
           productId,
           currentStock: stock,
@@ -408,6 +411,7 @@ export class InventoryService {
         messageEn: `Product ${productName ?? productId} is out of stock`,
         channel: NotificationChannel.DASHBOARD,
         priority: NotificationPriority.HIGH,
+        category: NotificationCategory.PRODUCT,
         data: {
           productId,
           currentStock: 0,

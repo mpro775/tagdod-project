@@ -29,6 +29,15 @@ export class RateServiceDto {
   @IsOptional() @IsString() @MaxLength(500) comment?: string;
 }
 
+export class UpdateServiceRequestDto {
+  @IsOptional() @IsString() @MaxLength(140) title?: string;
+  @IsOptional() @IsString() type?: string;
+  @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsArray() images?: string[];
+  @IsOptional() @IsMongoId() addressId?: string;
+  @IsOptional() @IsDateString() scheduledAt?: string;
+}
+
 export class NearbyQueryDto {
   @Type(() => Number) @IsNumber() lat!: number;
   @Type(() => Number) @IsNumber() lng!: number;

@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { Product, ProductDocument } from '../schemas/product.schema';
 import { Variant, VariantDocument } from '../schemas/variant.schema';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
+import { NotificationType, NotificationChannel, NotificationPriority, NotificationCategory } from '../../notifications/enums/notification.enums';
 
 type PopulatedProduct = { name: string; nameEn: string };
 
@@ -168,6 +168,7 @@ export class StockAlertService {
         messageEn: alert.messageEn,
         channel: NotificationChannel.DASHBOARD,
         priority: NotificationPriority.HIGH,
+        category: NotificationCategory.PRODUCT,
         data: {
           variantId: alert.variantId,
           productId: alert.productId,

@@ -23020,6 +23020,141 @@
             "bearer": []
           }
         ]
+      },
+      "patch": {
+        "operationId": "update",
+        "summary": "تعديل طلب خدمة",
+        "description": "تعديل طلب خدمة - مسموح فقط إذا لم يتم تلقي أي عروض على الطلب",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف طلب الخدمة",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "إصلاح جهاز تكييف"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "maintenance"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل"
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "صور الطلب (حتى 10 صور) - يتم رفعها تلقائياً إلى Bunny.net"
+                  },
+                  "addressId": {
+                    "type": "string",
+                    "example": "662fa2ab5d97b30a4f8c1234"
+                  },
+                  "scheduledAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2024-06-05T09:00:00.000Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث طلب الخدمة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "_id": "6645e1a5f2f0a02eab4d9c10",
+                      "userId": "6637c4ed09d96f1d93f3b712",
+                      "title": "إصلاح جهاز تكييف محدث",
+                      "type": "maintenance",
+                      "description": "الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل - تم التحديث",
+                      "images": [
+                        "https://cdn.example.com/uploads/services/requests/uuid-ac-issue-1.jpg"
+                      ],
+                      "city": "صنعاء",
+                      "addressId": "662fa2ab5d97b30a4f8c1234",
+                      "status": "OPEN",
+                      "scheduledAt": "2024-06-05T09:00:00.000Z",
+                      "engineerId": null,
+                      "acceptedOffer": null,
+                      "rating": {},
+                      "location": {
+                        "type": "Point",
+                        "coordinates": [
+                          44.206521,
+                          15.353622
+                        ]
+                      },
+                      "createdAt": "2024-06-01T12:30:15.512Z",
+                      "updatedAt": "2024-06-01T14:20:30.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "لا يمكن تعديل الطلب - يوجد عروض مقدمة عليه",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "HAS_OFFERS"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مصرح لك بالوصول إلى هذا الطلب"
+          },
+          "404": {
+            "description": "لم يتم العثور على الطلب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "NOT_FOUND"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "خدمات-العملاء"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/v1/services/customer/{id}/cancel": {

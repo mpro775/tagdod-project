@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
@@ -17,7 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ServicesService } from './services.service';
-import { AcceptOfferDto, CreateServiceRequestDto, RateServiceDto } from './dto/requests.dto';
+import { AcceptOfferDto, CreateServiceRequestDto, RateServiceDto, UpdateServiceRequestDto } from './dto/requests.dto';
 import { ServicesPermissionGuard, ServicePermission } from './guards/services-permission.guard';
 import { RequireServicePermission } from './decorators/service-permission.decorator';
 
@@ -355,6 +355,92 @@ export class CustomerServicesController {
   @ApiForbiddenResponse({ description: 'غير مصرح لك بالوصول إلى هذا الطلب' })
   async get(@Req() req: RequestWithUser, @Param('id') id: string) {
     const data = await this.svc.getRequest(req.user!.sub, id);
+    return { data };
+  }
+
+  @Patch(':id')
+  @UseInterceptors(FilesInterceptor('images', 10))
+  @RequireServicePermission(ServicePermission.CUSTOMER)
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'تعديل طلب خدمة',
+    description: 'تعديل طلب خدمة - مسموح فقط إذا لم يتم تلقي أي عروض على الطلب'
+  })
+  @ApiParam({ name: 'id', description: 'معرف طلب الخدمة' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', example: 'إصلاح جهاز تكييف' },
+        type: { type: 'string', example: 'maintenance' },
+        description: { type: 'string', example: 'الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل' },
+        images: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          description: 'صور الطلب (حتى 10 صور) - يتم رفعها تلقائياً إلى Bunny.net',
+        },
+        addressId: { type: 'string', example: '662fa2ab5d97b30a4f8c1234' },
+        scheduledAt: { type: 'string', format: 'date-time', example: '2024-06-05T09:00:00.000Z' },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'تم تحديث طلب الخدمة بنجاح',
+    schema: {
+      example: {
+        data: {
+          _id: '6645e1a5f2f0a02eab4d9c10',
+          userId: '6637c4ed09d96f1d93f3b712',
+          title: 'إصلاح جهاز تكييف محدث',
+          type: 'maintenance',
+          description: 'الجهاز لا يعمل ويصدر صوتاً مرتفعاً عند التشغيل - تم التحديث',
+          images: ['https://cdn.example.com/uploads/services/requests/uuid-ac-issue-1.jpg'],
+          city: 'صنعاء',
+          addressId: '662fa2ab5d97b30a4f8c1234',
+          status: 'OPEN',
+          scheduledAt: '2024-06-05T09:00:00.000Z',
+          engineerId: null,
+          acceptedOffer: null,
+          rating: {},
+          location: { type: 'Point', coordinates: [44.206521, 15.353622] },
+          createdAt: '2024-06-01T12:30:15.512Z',
+          updatedAt: '2024-06-01T14:20:30.000Z',
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'لا يمكن تعديل الطلب - يوجد عروض مقدمة عليه',
+    schema: {
+      example: {
+        data: { error: 'HAS_OFFERS' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'حالة الطلب لا تسمح بالتعديل',
+    schema: {
+      example: {
+        data: { error: 'INVALID_STATUS' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'لم يتم العثور على الطلب',
+    schema: {
+      example: {
+        data: { error: 'NOT_FOUND' },
+      },
+    },
+  })
+  @ApiForbiddenResponse({ description: 'غير مصرح لك بالوصول إلى هذا الطلب' })
+  async update(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateServiceRequestDto,
+    @UploadedFiles() images?: Array<{ buffer: Buffer; originalname: string; mimetype: string; size: number }>,
+  ) {
+    const data = await this.svc.updateRequest(req.user!.sub, id, dto, images);
     return { data };
   }
 
