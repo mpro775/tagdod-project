@@ -1,6 +1,8 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { notificationsSocket, NotificationPayload } from './notificationsSocket';
 
+export type { NotificationPayload };
+
 export interface UseNotificationsSocketReturn {
   isConnected: boolean;
   unreadCount: number;
@@ -37,7 +39,8 @@ export const useNotificationsSocket = (
       socket.on('connect', handleConnect);
       socket.on('disconnect', handleDisconnect);
 
-      const handleNotification = (notification: NotificationPayload) => {
+      const handleNotification = (data: unknown) => {
+        const notification = data as NotificationPayload;
         setLatestNotification(notification);
         if (onNotificationRef.current) {
           onNotificationRef.current(notification);
@@ -45,10 +48,11 @@ export const useNotificationsSocket = (
         setUnreadCount((prev) => prev + 1);
       };
 
-      const handleUnreadCount = (data: { count: number }) => {
-        setUnreadCount(data.count);
+      const handleUnreadCount = (data: unknown) => {
+        const countData = data as { count: number };
+        setUnreadCount(countData.count);
         if (onUnreadCountUpdateRef.current) {
-          onUnreadCountUpdateRef.current(data.count);
+          onUnreadCountUpdateRef.current(countData.count);
         }
       };
 

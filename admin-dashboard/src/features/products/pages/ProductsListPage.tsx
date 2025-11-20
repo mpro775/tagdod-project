@@ -23,6 +23,8 @@ import {
   Inventory,
   FilterList,
   TrendingUp,
+  ViewModule,
+  TableChart,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
@@ -65,6 +67,11 @@ export const ProductsListPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<ProductStatus | 'all'>('all');
   const [featuredFilter, setFeaturedFilter] = useState<boolean | 'all'>('all');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => {
+    // Load from localStorage if available, default to 'table'
+    const saved = localStorage.getItem('products-view-mode');
+    return (saved === 'grid' || saved === 'table') ? saved : 'table';
+  });
 
   // API
   const { data, isLoading, refetch } = useProducts({
@@ -123,6 +130,11 @@ export const ProductsListPage: React.FC = () => {
       setFeaturedFilter(value);
     }
     handleMenuClose();
+  };
+
+  const handleViewModeChange = (mode: 'table' | 'grid') => {
+    setViewMode(mode);
+    localStorage.setItem('products-view-mode', mode);
   };
 
   // Columns
@@ -438,7 +450,38 @@ export const ProductsListPage: React.FC = () => {
             {t('list.inventoryManagement')}
           </Button>
         </Box>
-        <Box display="flex" gap={1} alignItems="center">
+        <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
+          {/* View Mode Toggle */}
+          <Box display="flex" gap={0.5} sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
+            <Tooltip title={t('list.viewMode.table', 'عرض الجدول')}>
+              <IconButton
+                size="small"
+                color={viewMode === 'table' ? 'primary' : 'default'}
+                onClick={() => handleViewModeChange('table')}
+                sx={{
+                  borderRadius: 0,
+                  borderTopLeftRadius: 4,
+                  borderBottomLeftRadius: 4,
+                }}
+              >
+                <TableChart fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t('list.viewMode.grid', 'العرض الشبكي')}>
+              <IconButton
+                size="small"
+                color={viewMode === 'grid' ? 'primary' : 'default'}
+                onClick={() => handleViewModeChange('grid')}
+                sx={{
+                  borderRadius: 0,
+                  borderTopRightRadius: 4,
+                  borderBottomRightRadius: 4,
+                }}
+              >
+                <ViewModule fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
           <CurrencySelector size="small" showLabel={false} />
           <Button variant="contained" onClick={() => navigate('/products/new')} size={isMobile ? 'small' : 'medium'}>
             {t('list.addNew')}
@@ -471,9 +514,9 @@ export const ProductsListPage: React.FC = () => {
         </Box>
       )}
 
-      {/* Display based on screen size */}
-      {isMobile ? (
-        /* Mobile Card Layout */
+      {/* Display based on view mode */}
+      {viewMode === 'grid' ? (
+        /* Grid/Card Layout */
         <Box>
           {!data?.data || data.data.length === 0 ? (
             /* Empty State */
@@ -490,7 +533,15 @@ export const ProductsListPage: React.FC = () => {
             /* Products Grid */
             <Grid container spacing={2}>
               {data.data.map((product) => (
-                <Grid size={{ xs: 12 }} key={product._id}>
+                <Grid 
+                  size={{ 
+                    xs: 12, 
+                    sm: 6, 
+                    md: 4, 
+                    lg: 3 
+                  }} 
+                  key={product._id}
+                >
                   <ProductCard
                     product={product}
                     onView={(p) => navigate(`/products/${p._id}/view`)}
@@ -504,7 +555,7 @@ export const ProductsListPage: React.FC = () => {
             </Grid>
           )}
 
-          {/* Mobile Pagination */}
+          {/* Pagination */}
           {data?.meta && data.meta.total > paginationModel.pageSize && (
             <Box mt={3} display="flex" justifyContent="center" alignItems="center" gap={1}>
               <Button
@@ -516,7 +567,7 @@ export const ProductsListPage: React.FC = () => {
                 {t('common.previous', { ns: 'common' })}
               </Button>
               <Typography variant="body2">
-                {t('common.of', { ns: 'common' })} {Math.ceil((data.meta.total || 0) / paginationModel.pageSize)}
+                {paginationModel.page + 1} {t('common.of', { ns: 'common' })} {Math.ceil((data.meta.total || 0) / paginationModel.pageSize)}
               </Typography>
               <Button
                 variant="outlined"
@@ -530,16 +581,19 @@ export const ProductsListPage: React.FC = () => {
           )}
         </Box>
       ) : (
-        /* Desktop Table Layout */
+        /* Table Layout */
         <DataTable
           title={t('list.title')}
           columns={columns}
           rows={data?.data || []}
-          loading={false}
+          loading={isLoading}
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
+          rowCount={data?.meta?.total ?? 0}
+          paginationMode="server"
           sortModel={sortModel}
           onSortModelChange={setSortModel}
+          sortingMode="server"
           searchPlaceholder={t('list.search')}
           onSearch={setSearch}
           getRowId={(row) => (row as Product)._id}

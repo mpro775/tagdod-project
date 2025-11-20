@@ -19,11 +19,15 @@ export interface DataTableProps {
   paginationModel: GridPaginationModel;
   // eslint-disable-next-line no-unused-vars
   onPaginationModelChange: (model: GridPaginationModel) => void;
+  // Server-side pagination support
+  rowCount?: number; // Total number of rows (for server-side pagination)
+  paginationMode?: 'client' | 'server'; // Default: 'client'
 
   // Sorting
   sortModel?: GridSortModel;
   // eslint-disable-next-line no-unused-vars
   onSortModelChange?: (model: GridSortModel) => void;
+  sortingMode?: 'client' | 'server'; // Default: 'client'
 
   // Selection
   selectable?: boolean;
@@ -61,8 +65,11 @@ export const DataTable: React.FC<DataTableProps> = ({
   loading = false,
   paginationModel,
   onPaginationModelChange,
+  rowCount,
+  paginationMode = 'client',
   sortModel,
   onSortModelChange,
+  sortingMode = 'client',
   selectable = false,
   onRowSelectionModelChange,
   title,
@@ -176,12 +183,13 @@ export const DataTable: React.FC<DataTableProps> = ({
               ? { rowHeight: rowHeight === 'auto' ? undefined : rowHeight }
               : {})}
           // Pagination
-          paginationMode="client"
+          paginationMode={paginationMode}
           paginationModel={paginationModel}
           onPaginationModelChange={onPaginationModelChange}
+          rowCount={rowCount ?? rows.length}
           pageSizeOptions={[5, 10, 20, 25, 50]}
           // Sorting
-          sortingMode="client"
+          sortingMode={sortingMode}
           sortModel={sortModel}
           onSortModelChange={onSortModelChange}
           // Selection

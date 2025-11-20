@@ -10,6 +10,7 @@ export const envSchema = z.object({
   
   // Redis
   REDIS_URL: z.string().min(1),
+  REDIS_TLS: z.string().optional(),
   
   // JWT Configuration
   JWT_SECRET: z.string().min(1),

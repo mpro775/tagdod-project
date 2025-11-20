@@ -29,7 +29,11 @@ import { CacheGuard } from '../guards/cache.guard';
           logger.warn('Invalid REDIS_URL; TLS servername will be undefined');
         }
 
-        const isTLS = redisUrl.startsWith('rediss://');
+        // التحقق من TLS من URL أو من متغير البيئة
+        const redisTls = configService.get<string>('REDIS_TLS');
+        const isTLSFromEnv = redisTls === 'true' || redisTls === '1';
+        const isTLSFromUrl = redisUrl.startsWith('rediss://');
+        const isTLS = isTLSFromUrl || isTLSFromEnv;
 
         const client = new Redis(redisUrl, {
           // مهم جداً مع rediss على Render

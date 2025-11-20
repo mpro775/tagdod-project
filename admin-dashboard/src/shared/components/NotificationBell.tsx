@@ -7,7 +7,6 @@ import {
   Typography,
   List,
   ListItem,
-  ListItemText,
   ListItemButton,
   Divider,
   Button,
@@ -40,16 +39,13 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
   const { latestNotification, unreadCount: socketUnreadCount } = useNotificationsSocket(
     (notification) => {
       setNotifications((prev) => [notification, ...prev].slice(0, 10));
-    },
-    (count) => {
-      // Update unread count from socket
     }
   );
 
   useEffect(() => {
     if (notificationsData?.data) {
       const formattedNotifications = notificationsData.data.map((n) => ({
-        id: n._id || n.id || '',
+        id: n._id,
         title: n.title,
         message: n.message,
         messageEn: n.messageEn,
