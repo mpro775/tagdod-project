@@ -179,39 +179,78 @@ export class CategoriesService {
 
   // ==================== عرض فئة واحدة ====================
   async getCategory(identifier: string): Promise<CategoryDetail> {
-    const ver = await this.getCacheVersion();
+    let ver = 1;
     let categoryId = identifier;
 
     // Determine if identifier is ObjectId or slug
-    if (!Types.ObjectId.isValid(identifier)) {
-      const categoryBySlug = await this.categoryModel
-        .findOne({ slug: identifier, deletedAt: null, isActive: true })
-        .select('_id')
-        .lean<{ _id: Types.ObjectId }>();
+    try {
+      if (!Types.ObjectId.isValid(identifier)) {
+        const categoryBySlug = await this.categoryModel
+          .findOne({ slug: identifier, deletedAt: null, isActive: true })
+          .select('_id')
+          .lean<{ _id: Types.ObjectId }>();
 
-      if (!categoryBySlug) {
-        throw new CategoryNotFoundException({ categoryId: identifier });
+        if (!categoryBySlug) {
+          throw new CategoryNotFoundException({ categoryId: identifier });
+        }
+
+        categoryId = categoryBySlug._id.toString();
       }
+    } catch (error) {
+      if (error instanceof CategoryNotFoundException) {
+        throw error;
+      }
+      this.logger.error('Failed to resolve category identifier:', error instanceof Error ? error.message : String(error));
+      throw new CategoryException(
+        ErrorCode.DATABASE_ERROR,
+        { 
+          originalError: error instanceof Error ? error.message : String(error),
+          identifier,
+        },
+      );
+    }
 
-      categoryId = categoryBySlug._id.toString();
+    // Try to get cache version (graceful degradation if Redis fails)
+    try {
+      ver = await this.getCacheVersion();
+    } catch (error) {
+      this.logger.warn('Failed to get cache version for category detail, using default:', error instanceof Error ? error.message : String(error));
     }
 
     const cacheKey = `categories:v${ver}:detail:${categoryId}`;
 
-    const cached = await this.cacheService.get<CategoryDetail>(cacheKey);
-    if (cached) {
-      this.logger.debug(`Category detail cache hit: ${categoryId}`);
-      return cached;
+    // Try to get from cache
+    try {
+      const cached = await this.cacheService.get<CategoryDetail>(cacheKey);
+      if (cached) {
+        this.logger.debug(`Category detail cache hit: ${categoryId}`);
+        return cached;
+      }
+    } catch (error) {
+      this.logger.warn('Cache read failed for category detail, proceeding to database:', error instanceof Error ? error.message : String(error));
     }
 
-    const categoryDoc = await this.categoryModel
-      .findOne({
-        _id: categoryId,
-        deletedAt: null,
-        isActive: true,
-      })
-      .populate('imageId')
-      .lean();
+    // Fetch from database
+    let categoryDoc;
+    try {
+      categoryDoc = await this.categoryModel
+        .findOne({
+          _id: categoryId,
+          deletedAt: null,
+          isActive: true,
+        })
+        .populate('imageId')
+        .lean();
+    } catch (error) {
+      this.logger.error('Database query failed in getCategory:', error instanceof Error ? error.message : String(error));
+      throw new CategoryException(
+        ErrorCode.DATABASE_ERROR,
+        { 
+          originalError: error instanceof Error ? error.message : String(error),
+          categoryId,
+        },
+      );
+    }
 
     const category = categoryDoc as CategoryLean | null;
 
@@ -220,15 +259,33 @@ export class CategoriesService {
     }
 
     // جلب الأطفال
-    const childrenDocs = await this.categoryModel
-      .find({ parentId: categoryId, deletedAt: null, isActive: true })
-      .sort({ order: 1, name: 1 })
-      .lean();
+    let childrenDocs;
+    try {
+      childrenDocs = await this.categoryModel
+        .find({ parentId: categoryId, deletedAt: null, isActive: true })
+        .sort({ order: 1, name: 1 })
+        .lean();
+    } catch (error) {
+      this.logger.error('Failed to fetch category children:', error instanceof Error ? error.message : String(error));
+      throw new CategoryException(
+        ErrorCode.DATABASE_ERROR,
+        { 
+          originalError: error instanceof Error ? error.message : String(error),
+          categoryId,
+        },
+      );
+    }
 
     const children = childrenDocs as CategoryLean[];
 
     // جلب breadcrumbs
-    const breadcrumbs = await this.getBreadcrumbs(categoryId);
+    let breadcrumbs: CategoryBreadcrumb[];
+    try {
+      breadcrumbs = await this.getBreadcrumbs(categoryId);
+    } catch (error) {
+      this.logger.warn('Failed to get breadcrumbs, continuing without them:', error instanceof Error ? error.message : String(error));
+      breadcrumbs = [];
+    }
 
     const result: CategoryDetail = {
       ...category,
@@ -236,7 +293,12 @@ export class CategoriesService {
       breadcrumbs,
     };
 
-    await this.cacheService.set(cacheKey, result, { ttl: this.CACHE_TTL.CATEGORY_DETAIL });
+    // Try to cache the result (graceful degradation if Redis fails)
+    try {
+      await this.cacheService.set(cacheKey, result, { ttl: this.CACHE_TTL.CATEGORY_DETAIL });
+    } catch (error) {
+      this.logger.warn('Cache write failed for category detail, but data retrieved successfully:', error instanceof Error ? error.message : String(error));
+    }
 
     return result;
   }
@@ -254,15 +316,28 @@ export class CategoriesService {
   ) {
     const { parentId, search, isActive, isFeatured, includeDeleted = false, force = false } = query;
 
-    const ver = await this.getCacheVersion();
-    const key = `categories:v${ver}:list:${this.normalizeQuery(query)}`;
+    let ver = 1;
+    let key = '';
+    
+    // Try to get cache version (graceful degradation if Redis fails)
+    try {
+      ver = await this.getCacheVersion();
+      key = `categories:v${ver}:list:${this.normalizeQuery(query)}`;
+    } catch (error) {
+      this.logger.warn('Failed to get cache version, using default:', error instanceof Error ? error.message : String(error));
+      key = `categories:v1:list:${this.normalizeQuery(query)}`;
+    }
 
     // Try to get from cache first (unless force refresh)
     if (!force) {
-      const cached = await this.cacheService.get<Category[]>(key);
-      if (cached) {
-        this.logger.debug(`Categories cache hit`);
-        return cached;
+      try {
+        const cached = await this.cacheService.get<Category[]>(key);
+        if (cached) {
+          this.logger.debug(`Categories cache hit`);
+          return cached;
+        }
+      } catch (error) {
+        this.logger.warn('Cache read failed, proceeding to database:', error instanceof Error ? error.message : String(error));
       }
     }
 
@@ -297,40 +372,87 @@ export class CategoriesService {
       q.isFeatured = isFeatured;
     }
 
-    const categories = await this.categoryModel
-      .find(q)
-      .populate('imageId')
-      .sort({ order: 1, name: 1 })
-      .lean();
+    // Fetch from database
+    let categories;
+    try {
+      categories = await this.categoryModel
+        .find(q)
+        .populate('imageId')
+        .sort({ order: 1, name: 1 })
+        .lean();
+    } catch (error) {
+      this.logger.error('Database query failed in listCategories:', error instanceof Error ? error.message : String(error));
+      throw new CategoryException(
+        ErrorCode.DATABASE_ERROR,
+        { 
+          originalError: error instanceof Error ? error.message : String(error),
+          query: q,
+        },
+      );
+    }
 
-    // Cache the result
-    await this.cacheService.set(key, categories, { ttl: this.CACHE_TTL.CATEGORIES });
+    // Try to cache the result (graceful degradation if Redis fails)
+    try {
+      await this.cacheService.set(key, categories, { ttl: this.CACHE_TTL.CATEGORIES });
+    } catch (error) {
+      this.logger.warn('Cache write failed, but data retrieved successfully:', error instanceof Error ? error.message : String(error));
+    }
 
     return categories;
   }
 
   // ==================== شجرة الفئات الكاملة ====================
   async getCategoryTree() {
-    const ver = await this.getCacheVersion();
-    const cacheKey = `categories:v${ver}:tree:full`;
+    let ver = 1;
+    let cacheKey = '';
+    
+    // Try to get cache version (graceful degradation if Redis fails)
+    try {
+      ver = await this.getCacheVersion();
+      cacheKey = `categories:v${ver}:tree:full`;
+    } catch (error) {
+      this.logger.warn('Failed to get cache version for tree, using default:', error instanceof Error ? error.message : String(error));
+      cacheKey = `categories:v1:tree:full`;
+    }
 
-    const cached = await this.cacheService.get(cacheKey);
-    if (cached) {
-      this.logger.debug('Category tree cache hit');
-      return cached;
+    // Try to get from cache
+    try {
+      const cached = await this.cacheService.get(cacheKey);
+      if (cached) {
+        this.logger.debug('Category tree cache hit');
+        return cached;
+      }
+    } catch (error) {
+      this.logger.warn('Cache read failed for tree, proceeding to database:', error instanceof Error ? error.message : String(error));
     }
 
     // جلب جميع الفئات النشطة
-    const allCategories = await this.categoryModel
-      .find({ deletedAt: null, isActive: true })
-      .populate('imageId')
-      .sort({ order: 1, name: 1 })
-      .lean();
+    let allCategories;
+    try {
+      allCategories = await this.categoryModel
+        .find({ deletedAt: null, isActive: true })
+        .populate('imageId')
+        .sort({ order: 1, name: 1 })
+        .lean();
+    } catch (error) {
+      this.logger.error('Database query failed in getCategoryTree:', error instanceof Error ? error.message : String(error));
+      throw new CategoryException(
+        ErrorCode.DATABASE_ERROR,
+        { 
+          originalError: error instanceof Error ? error.message : String(error),
+        },
+      );
+    }
 
     // بناء الشجرة
     const tree = this.buildTree(allCategories, null);
 
-    await this.cacheService.set(cacheKey, tree, { ttl: this.CACHE_TTL.CATEGORY_TREE });
+    // Try to cache the result (graceful degradation if Redis fails)
+    try {
+      await this.cacheService.set(cacheKey, tree, { ttl: this.CACHE_TTL.CATEGORY_TREE });
+    } catch (error) {
+      this.logger.warn('Cache write failed for tree, but data retrieved successfully:', error instanceof Error ? error.message : String(error));
+    }
 
     return tree;
   }
@@ -758,8 +880,13 @@ export class CategoriesService {
 
   // ==================== Cache Versioning ====================
   private async getCacheVersion(): Promise<number> {
-    const ver = await this.cacheService.get('categories:ver');
-    return (typeof ver === 'number' ? ver : 1);
+    try {
+      const ver = await this.cacheService.get<number>('categories:ver');
+      return (typeof ver === 'number' ? ver : 1);
+    } catch (error) {
+      this.logger.warn('Failed to get cache version, using default:', error instanceof Error ? error.message : String(error));
+      return 1;
+    }
   }
 
   private async bumpCacheVersion(): Promise<void> {

@@ -92,6 +92,11 @@ export class CategoriesPublicController {
       isFeatured: featured,
     });
 
+    // Ensure data is an array before mapping
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
     return this.mapPublicCategories(data);
   }
 

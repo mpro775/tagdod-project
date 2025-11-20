@@ -18,23 +18,24 @@
    - [طلبات بعروض غير مقبولة](#طلبات-بعروض-غير-مقبولة)
    - [طلبات بعروض مقبولة](#طلبات-بعروض-مقبولة)
 3. [تفاصيل طلب](#3-تفاصيل-طلب)
-4. [إلغاء طلب](#4-إلغاء-طلب)
-5. [العروض المقدمة على طلب](#5-العروض-المقدمة-على-طلب)
+4. [تعديل طلب خدمة](#4-تعديل-طلب-خدمة)
+5. [إلغاء طلب](#5-إلغاء-طلب)
+6. [العروض المقدمة على طلب](#6-العروض-المقدمة-على-طلب)
    - [تفاصيل عرض محدد](#تفاصيل-عرض-محدد)
-6. [قبول عرض](#6-قبول-عرض)
-7. [تقييم الخدمة](#7-تقييم-الخدمة)
+7. [قبول عرض](#7-قبول-عرض)
+8. [تقييم الخدمة](#8-تقييم-الخدمة)
 
 ### للمهندسين (Engineers)
-8. [الطلبات القريبة](#8-الطلبات-القريبة)
+9. [الطلبات القريبة](#9-الطلبات-القريبة)
    - [الطلبات في مدينتي](#الطلبات-في-مدينتي)
    - [جميع الطلبات المتاحة](#جميع-الطلبات-المتاحة)
-9. [تفاصيل طلب خدمة](#9-تفاصيل-طلب-خدمة)
-10. [تقديم عرض](#10-تقديم-عرض)
-11. [تحديث عرض](#11-تحديث-عرض)
+10. [تفاصيل طلب خدمة](#10-تفاصيل-طلب-خدمة)
+11. [تقديم عرض](#11-تقديم-عرض)
+12. [تحديث عرض](#12-تحديث-عرض)
     - [حذف عرض](#حذف-عرض)
-12. [عروضي](#12-عروضي)
-13. [بدء تنفيذ الطلب](#13-بدء-تنفيذ-الطلب)
-14. [إكمال الطلب](#14-إكمال-الطلب)
+13. [عروضي](#13-عروضي)
+14. [بدء تنفيذ الطلب](#14-بدء-تنفيذ-الطلب)
+15. [إكمال الطلب](#15-إكمال-الطلب)
 
 ---
 
@@ -382,7 +383,239 @@ Future<ServiceRequest> getServiceRequest(String requestId) async {
 
 ---
 
-### 4. إلغاء طلب
+### 4. تعديل طلب خدمة
+
+يعدل طلب خدمة موجود - مسموح فقط إذا لم يتم تلقي أي عروض على الطلب.
+
+### معلومات الطلب
+
+- **Method:** `PATCH`
+- **Endpoint:** `/services/customer/:id`
+- **Auth Required:** ✅ نعم
+- **Cache:** ❌ لا
+- **Content-Type:** `multipart/form-data` (لرفع الصور)
+
+### Request Body (multipart/form-data)
+
+| الحقل | النوع | مطلوب | الوصف |
+|------|------|-------|-------|
+| `title` | `string` | ❌ | عنوان الطلب |
+| `type` | `string` | ❌ | نوع الخدمة |
+| `description` | `string` | ❌ | وصف الطلب |
+| `images` | `File[]` | ❌ | صور الطلب (حتى 10 صور) - يتم رفعها تلقائياً إلى Bunny.net |
+| `addressId` | `string` | ❌ | معرف العنوان (عند تغيير العنوان) |
+| `scheduledAt` | `string` (ISO 8601) | ❌ | موعد التنفيذ |
+
+> ⚠️ **مهم:** يمكن تعديل الطلب فقط إذا:
+> - لم يتم تلقي أي عروض على الطلب (`offersCount === 0`)
+> - حالة الطلب هي `OPEN`
+
+### مثال Request (multipart/form-data)
+
+```
+title: "تركيب نظام طاقة شمسية محدث"
+description: "أحتاج تركيب نظام 10 كيلو واط مع بطاريات"
+images: [File1, File2]  // ملفات الصور الجديدة
+addressId: "64address456"  // عنوان جديد (اختياري)
+scheduledAt: "2025-10-25T10:00:00.000Z"
+```
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "_id": "64service123",
+      "userId": "64user123",
+      "title": "تركيب نظام طاقة شمسية محدث",
+      "type": "INSTALLATION",
+      "description": "أحتاج تركيب نظام 10 كيلو واط مع بطاريات",
+      "images": [
+        "https://cdn.example.com/services/requests/uuid-updated-photo-1.jpg"
+      ],
+      "city": "صنعاء",
+      "addressId": "64address456",
+      "location": {
+        "type": "Point",
+        "coordinates": [44.2060, 15.3694]
+      },
+      "status": "OPEN",
+      "scheduledAt": "2025-10-25T10:00:00.000Z",
+      "engineerId": null,
+      "acceptedOffer": null,
+      "rating": null,
+      "adminNotes": [],
+      "createdAt": "2025-01-15T12:00:00.000Z",
+      "updatedAt": "2025-01-15T14:30:00.000Z"
+    }
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
+}
+```
+
+### Response - خطأ (400) - يوجد عروض
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "HAS_OFFERS"
+    }
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
+}
+```
+
+### Response - خطأ (400) - حالة غير صحيحة
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "INVALID_STATUS"
+    }
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
+}
+```
+
+### Response - خطأ (404) - طلب غير موجود
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "NOT_FOUND"
+    }
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
+}
+```
+
+### كود Flutter
+
+```dart
+import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+
+Future<ServiceRequest> updateServiceRequest({
+  required String requestId,
+  String? title,
+  String? type,
+  String? description,
+  List<String>? imagePaths, // مسارات الملفات المحلية
+  String? addressId,
+  DateTime? scheduledAt,
+}) async {
+  // إنشاء FormData لرفع الملفات
+  final formData = FormData.fromMap({
+    if (title != null) 'title': title,
+    if (type != null) 'type': type,
+    if (description != null) 'description': description,
+    if (addressId != null) 'addressId': addressId,
+    if (scheduledAt != null) 'scheduledAt': scheduledAt.toIso8601String(),
+  });
+
+  // إضافة الصور إذا كانت موجودة
+  if (imagePaths != null && imagePaths.isNotEmpty) {
+    for (final imagePath in imagePaths) {
+      final file = await MultipartFile.fromFile(
+        imagePath,
+        filename: imagePath.split('/').last,
+        contentType: MediaType('image', 'jpeg'), // أو 'png', 'webp' حسب النوع
+      );
+      formData.files.add(MapEntry('images', file));
+    }
+  }
+
+  final response = await _dio.patch(
+    '/services/customer/$requestId',
+    data: formData,
+    options: Options(
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    ),
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    final data = apiResponse.data!['data'];
+    // التحقق من وجود خطأ
+    if (data is Map && data.containsKey('error')) {
+      final error = data['error'] as String;
+      switch (error) {
+        case 'HAS_OFFERS':
+          throw ApiException('لا يمكن تعديل الطلب - يوجد عروض مقدمة عليه');
+        case 'INVALID_STATUS':
+          throw ApiException('لا يمكن تعديل الطلب في حالته الحالية');
+        case 'NOT_FOUND':
+          throw NotFoundException('الطلب غير موجود');
+        case 'ADDRESS_NOT_FOUND':
+          throw ApiException('العنوان غير موجود');
+        default:
+          throw ApiException('حدث خطأ أثناء تعديل الطلب');
+      }
+    }
+    return ServiceRequest.fromJson(data);
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+### مثال الاستخدام في Flutter
+
+```dart
+// تحديث عنوان ووصف الطلب
+try {
+  final updatedRequest = await servicesService.updateServiceRequest(
+    requestId: '64service123',
+    title: 'إصلاح لوح شمسي محدث',
+    description: 'يحتاج صيانة عاجلة مع استبدال البطاريات',
+    addressId: '64address456', // عنوان جديد
+  );
+  print('تم تحديث الطلب: ${updatedRequest.title}');
+} on ApiException catch (e) {
+  if (e.message.contains('HAS_OFFERS')) {
+    print('لا يمكن التعديل - يوجد عروض على الطلب');
+  } else {
+    print('خطأ: ${e.message}');
+  }
+}
+
+// تحديث الصور فقط
+final requestWithNewImages = await servicesService.updateServiceRequest(
+  requestId: '64service123',
+  imagePaths: [
+    '/path/to/new-image1.jpg',
+    '/path/to/new-image2.jpg',
+  ],
+);
+
+// الصور الجديدة ستكون متاحة في requestWithNewImages.images كروابط CDN
+print('الصور المحدثة: ${requestWithNewImages.images}');
+```
+
+> ⚠️ **ملاحظات مهمة:**
+> - يمكن تعديل الطلب فقط إذا لم يتم تلقي أي عروض (`offersCount === 0`)
+> - يجب أن تكون حالة الطلب `OPEN` للتعديل
+> - عند تغيير العنوان، يتم تحديث الموقع والمدينة تلقائياً
+> - الصور الجديدة تُرفع تلقائياً إلى Bunny.net CDN
+> - إذا تم إرسال صور جديدة، يتم استبدال الصور القديمة بالجديدة
+
+---
+
+### 5. إلغاء طلب
 
 يلغي طلب خدمة.
 
@@ -431,7 +664,7 @@ Future<bool> cancelServiceRequest(String requestId) async {
 
 ---
 
-### 5. العروض المقدمة على طلب
+### 6. العروض المقدمة على طلب
 
 يسترجع العروض المقدمة على طلب محدد.
 
@@ -542,7 +775,7 @@ Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
 
 ---
 
-### 6. قبول عرض
+### 7. قبول عرض
 
 يقبل عرض مهندس على طلب.
 
@@ -601,7 +834,7 @@ Future<bool> acceptOffer(String requestId, String offerId) async {
 
 ---
 
-### 7. تقييم الخدمة
+### 8. تقييم الخدمة
 
 يقيم المستخدم الخدمة المقدمة.
 
@@ -664,7 +897,7 @@ Future<bool> rateService(String requestId, int score, String? comment) async {
 
 ## للمهندسين (Engineers)
 
-### 8. الطلبات القريبة
+### 9. الطلبات القريبة
 
 يسترجع الطلبات القريبة من موقع المهندس.
 
@@ -763,7 +996,7 @@ Future<List<ServiceRequest>> getNearbyRequests({
 
 ---
 
-### 9. تفاصيل طلب خدمة
+### 10. تفاصيل طلب خدمة
 
 يسترجع المهندس تفاصيل طلب خدمة محدد بما في ذلك معلومات العميل والعنوان وعرضه إن وجد.
 
@@ -905,7 +1138,7 @@ if (requestDetails.address != null) {
 
 ---
 
-### 10. تقديم عرض
+### 11. تقديم عرض
 
 يقدم المهندس عرض على طلب.
 
@@ -983,7 +1216,7 @@ Future<EngineerOffer> createOffer({
 
 ---
 
-### 11. تحديث عرض
+### 12. تحديث عرض
 
 يحدث المهندس عرضه.
 
@@ -1077,7 +1310,7 @@ Future<bool> deleteOffer(String offerId) async {
 
 ---
 
-### 12. عروضي
+### 13. عروضي
 
 يسترجع عروض المهندس.
 
@@ -1139,7 +1372,7 @@ Future<List<EngineerOffer>> getMyOffers() async {
 
 ---
 
-### 13. بدء تنفيذ الطلب
+### 14. بدء تنفيذ الطلب
 
 يبدأ المهندس تنفيذ الطلب.
 
@@ -1188,7 +1421,7 @@ Future<bool> startServiceRequest(String requestId) async {
 
 ---
 
-### 14. إكمال الطلب
+### 15. إكمال الطلب
 
 يكمل المهندس تنفيذ الطلب.
 
@@ -1843,7 +2076,14 @@ class EngineerMyOffer {
    - `addressId`: معرف العنوان (مطلوب)
    - `scheduledAt`: موعد التنفيذ (اختياري)
 
-2. **حالات الطلب:**
+2. **تعديل طلب خدمة:**
+   - جميع الحقول اختيارية
+   - يمكن التعديل فقط إذا لم يتم تلقي أي عروض على الطلب
+   - يجب أن تكون حالة الطلب `OPEN` للتعديل
+   - عند تغيير العنوان، يتم تحديث الموقع والمدينة تلقائياً
+   - الصور الجديدة تُرفع تلقائياً إلى Bunny.net CDN
+
+3. **حالات الطلب:**
    - `OPEN`: مفتوح للعروض
    - `OFFERS_COLLECTING`: جمع العروض
    - `ASSIGNED`: تم التعيين
@@ -1852,44 +2092,44 @@ class EngineerMyOffer {
    - `RATED`: تم التقييم
    - `CANCELLED`: ملغي
 
-3. **العروض:**
+4. **العروض:**
    - يمكن للمستخدم رؤية جميع العروض المقدمة
    - يمكن قبول عرض واحد فقط
    - بعد القبول، يتم تعيين المهندس
 
-4. **التقييم:**
+5. **التقييم:**
    - يمكن التقييم بعد إكمال الخدمة
    - التقييم من 1 إلى 5 نجوم
    - يمكن إضافة تعليق اختياري
 
 ### للمهندسين (Engineers)
 
-5. **الطلبات القريبة:**
+6. **الطلبات القريبة:**
    - `lat`, `lng`: موقع المهندس
    - `radiusKm`: نصف القطر بالكيلومتر
    - **فلترة حسب المدينة:** يتم تطبيقها تلقائياً بناءً على مدينة المهندس
    - يتم ترتيب النتائج حسب المسافة
 
-6. **تقديم العروض:**
+7. **تقديم العروض:**
    - `requestId`: معرف الطلب
    - `amount`: المبلغ المقترح
    - `note`: ملاحظة اختيارية
    - `lat`, `lng`: موقع المهندس لحساب المسافة
 
-7. **حالات العرض:**
+8. **حالات العرض:**
    - `OFFERED`: تم تقديمه
    - `ACCEPTED`: تم قبوله
    - `REJECTED`: تم رفضه
    - `CANCELLED`: تم إلغاؤه
 
-8. **تفاصيل الطلب:**
+9. **تفاصيل الطلب:**
    - يمكن للمهندس رؤية تفاصيل أي طلب متاح
    - يتضمن معلومات العميل للتواصل المباشر
    - يتضمن العنوان الكامل مع الإحداثيات
    - يعرض عرض المهندس الحالي إن وجد (`myOffer`)
    - يعرض المسافة من موقع الطلب
 
-9. **تنفيذ الطلب:**
+10. **تنفيذ الطلب:**
    - `start`: بدء التنفيذ
    - `complete`: إكمال التنفيذ
    - يجب أن يكون المهندس معين على الطلب
@@ -1997,11 +2237,13 @@ class EngineerMyOffer {
 5. ✅ إزالة جميع الـ Cache flags (لا يوجد caching في endpoints الفعلية)
 6. ✅ **تحديث نظام المدن اليمنية** - فلترة الطلبات حسب المدينة تلقائياً اعتماداً على العنوان
 7. ✅ **إضافة endpoint جديد للمهندسين** - `GET /services/engineer/requests/:id` لعرض تفاصيل الطلب مع معلومات العميل والعنوان وعرض المهندس الحالي
+8. ✅ **إضافة endpoint تعديل الطلب للعملاء** - `PATCH /services/customer/:id` - يسمح بتعديل الطلب فقط إذا لم يتم تلقي أي عروض
 
 **Endpoints للعملاء (Customers):**
 - `POST /services/customer` - إنشاء طلب
 - `GET /services/customer/my` - طلباتي
 - `GET /services/customer/:id` - تفاصيل طلب
+- `PATCH /services/customer/:id` - تعديل طلب ✅ جديد
 - `POST /services/customer/:id/cancel` - إلغاء طلب
 - `POST /services/customer/:id/accept-offer` - قبول عرض
 - `POST /services/customer/:id/rate` - تقييم الخدمة
@@ -2011,7 +2253,7 @@ class EngineerMyOffer {
 - `GET /services/engineer/requests/nearby` - الطلبات القريبة
 - `GET /services/engineer/requests/city` - الطلبات في مدينتي
 - `GET /services/engineer/requests/all` - جميع الطلبات المتاحة
-- `GET /services/engineer/requests/:id` - تفاصيل طلب خدمة ✅ جديد
+- `GET /services/engineer/requests/:id` - تفاصيل طلب خدمة
 - `POST /services/engineer/offers` - تقديم عرض
 - `PATCH /services/engineer/offers/:id` - تحديث عرض
 - `DELETE /services/engineer/offers/:id` - حذف عرض
