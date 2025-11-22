@@ -242,4 +242,81 @@ export const notificationsApi = {
   unregisterDevice: async (id: string): Promise<void> => {
     await apiClient.delete(`/notifications/devices/${id}`);
   },
+
+  // ===== Device Check (Admin) =====
+  checkUserDevices: async (userId: string): Promise<{
+    userId: string;
+    hasDevices: boolean;
+    deviceCount: number;
+    devices: Array<{
+      _id: string;
+      platform: string;
+      userAgent?: string;
+      appVersion?: string;
+      isActive: boolean;
+      lastUsedAt?: string;
+      createdAt?: string;
+    }>;
+    platforms: {
+      ios: number;
+      android: number;
+      web: number;
+    };
+  }> => {
+    const response = await apiClient.get<ApiResponse<{
+      userId: string;
+      hasDevices: boolean;
+      deviceCount: number;
+      devices: Array<{
+        _id: string;
+        platform: string;
+        userAgent?: string;
+        appVersion?: string;
+        isActive: boolean;
+        lastUsedAt?: string;
+        createdAt?: string;
+      }>;
+      platforms: {
+        ios: number;
+        android: number;
+        web: number;
+      };
+    }>>(`/notifications/admin/users/${userId}/devices`);
+    return response.data.data;
+  },
+
+  checkMultipleUsersDevices: async (userIds: string[]): Promise<{
+    total: number;
+    withDevices: number;
+    withoutDevices: number;
+    results: Array<{
+      userId: string;
+      hasDevices: boolean;
+      deviceCount: number;
+      platforms: {
+        ios: number;
+        android: number;
+        web: number;
+      };
+    }>;
+  }> => {
+    const response = await apiClient.post<ApiResponse<{
+      total: number;
+      withDevices: number;
+      withoutDevices: number;
+      results: Array<{
+        userId: string;
+        hasDevices: boolean;
+        deviceCount: number;
+        platforms: {
+          ios: number;
+          android: number;
+          web: number;
+        };
+      }>;
+    }>>('/notifications/admin/users/devices/check', {
+      userIds,
+    });
+    return response.data.data;
+  },
 };
