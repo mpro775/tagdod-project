@@ -111,6 +111,22 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const status =
       exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
+    // Log authentication/authorization errors for debugging
+    if (status === 401 || status === 403) {
+      this.logger.warn(
+        `[${status}] ${exception.constructor.name}: ${exception.message}`,
+        {
+          path: req.url,
+          method: req.method,
+          userId: req.user?.userId,
+          requestId: req.requestId,
+          exceptionType: exception.constructor.name,
+          isDomainException: exception instanceof DomainException,
+          isHttpException: exception instanceof HttpException,
+        }
+      );
+    }
+
     // Log critical errors to console
     if (status >= 500) {
       this.logger.error(

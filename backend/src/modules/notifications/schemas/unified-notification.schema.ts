@@ -31,6 +31,9 @@ export class UnifiedNotification {
   @Prop({ type: Object, default: {} })
   data!: Record<string, unknown>;
 
+  @Prop({ maxlength: 500 })
+  actionUrl?: string;
+
   @Prop({ 
     type: String, 
     enum: Object.values(NotificationChannel), 

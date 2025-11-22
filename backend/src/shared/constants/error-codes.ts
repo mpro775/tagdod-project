@@ -514,13 +514,25 @@ export function getErrorMessage(code: ErrorCode): string {
  */
 export function getHttpStatusCode(code: ErrorCode): number {
   // Auth errors - 401 Unauthorized
+  // Check specific error codes first
+  if (code === ErrorCode.AUTH_UNAUTHORIZED || 
+      code === ErrorCode.AUTH_INVALID_TOKEN || 
+      code === ErrorCode.AUTH_TOKEN_EXPIRED ||
+      code === ErrorCode.AUTH_REFRESH_TOKEN_INVALID) {
+    return 401;
+  }
+  
+  // Check pattern-based auth errors
   if (code.startsWith('AUTH_') && 
-      (code.includes('INVALID') || code.includes('EXPIRED') || code.includes('UNAUTHORIZED'))) {
+      (code.includes('INVALID') || code.includes('EXPIRED'))) {
     return 401;
   }
   
   // Forbidden - 403
-  if (code.includes('FORBIDDEN') || code.includes('PERMISSION') || code.includes('NOT_ALLOWED')) {
+  if (code === ErrorCode.AUTH_FORBIDDEN || 
+      code.includes('FORBIDDEN') || 
+      code.includes('PERMISSION') || 
+      code.includes('NOT_ALLOWED')) {
     return 403;
   }
   

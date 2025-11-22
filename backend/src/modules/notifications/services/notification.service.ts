@@ -25,6 +25,7 @@ import {
 import { WebSocketService } from '../../../shared/websocket/websocket.service';
 import { PushNotificationAdapter } from '../adapters/notification.adapters';
 import { DeviceToken, DeviceTokenDocument } from '../schemas/device-token.schema';
+import { User, UserDocument, UserStatus } from '../../users/schemas/user.schema';
 
 @Injectable()
 export class NotificationService {
@@ -35,6 +36,8 @@ export class NotificationService {
     private notificationModel: Model<UnifiedNotificationDocument>,
     @InjectModel(DeviceToken.name)
     private deviceTokenModel: Model<DeviceTokenDocument>,
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
     private readonly webSocketService: WebSocketService,
     private readonly pushNotificationAdapter: PushNotificationAdapter,
   ) {}
@@ -83,6 +86,13 @@ export class NotificationService {
 
         // إرسال Push Notification إذا كان PUSH
         if (dto.channel === NotificationChannel.PUSH) {
+          this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
+            this.logger.error(`Failed to send push notification: ${error instanceof Error ? error.message : String(error)}`);
+          });
+        }
+
+        // إرسال Push Notification أيضاً إذا كان DASHBOARD (لإرسال للهاتف)
+        if (dto.channel === NotificationChannel.DASHBOARD) {
           this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
             this.logger.error(`Failed to send push notification: ${error instanceof Error ? error.message : String(error)}`);
           });
@@ -534,6 +544,7 @@ export class NotificationService {
             priority: notification.priority,
             recipientId: userId,
             deviceToken: deviceToken.token,
+            actionUrl: (notification as any).actionUrl,
             data: notification.data || {},
           });
 
@@ -555,6 +566,58 @@ export class NotificationService {
       await Promise.allSettled(sendPromises);
     } catch (error) {
       this.logger.error(`Failed to send push notifications: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  // ===== User List for Selection =====
+
+  /**
+   * الحصول على قائمة المستخدمين للاختيار (مع الاسم والرقم)
+   */
+  async getUsersForSelection(search?: string, limit: number = 100): Promise<Array<{
+    _id: string;
+    name: string;
+    phone: string;
+    firstName?: string;
+    lastName?: string;
+  }>> {
+    try {
+      const query: Record<string, unknown> = {
+        status: { $ne: UserStatus.DELETED },
+        deletedAt: null,
+      };
+
+      if (search) {
+        query.$or = [
+          { phone: { $regex: search, $options: 'i' } },
+          { firstName: { $regex: search, $options: 'i' } },
+          { lastName: { $regex: search, $options: 'i' } },
+        ];
+      }
+
+      const users = await this.userModel
+        .find(query)
+        .select('_id phone firstName lastName')
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .lean();
+
+      return users.map((user) => {
+        const firstName = user.firstName?.trim() || '';
+        const lastName = user.lastName?.trim() || '';
+        const fullName = [firstName, lastName].filter(Boolean).join(' ') || user.phone || 'غير محدد';
+
+        return {
+          _id: user._id.toString(),
+          name: fullName,
+          phone: user.phone,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+        };
+      });
+    } catch (error) {
+      this.logger.error(`Failed to get users for selection: ${error instanceof Error ? error.message : String(error)}`);
+      return [];
     }
   }
 }

@@ -6,13 +6,21 @@ import { EngineerOffer } from './schemas/engineer-offer.schema';
 import { User } from '../users/schemas/user.schema';
 import { AddressesService } from '../addresses/addresses.service';
 import { NotificationService } from '../notifications/services/notification.service';
-import { NotificationType, NotificationChannel, NotificationPriority } from '../notifications/enums/notification.enums';
+import {
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+} from '../notifications/enums/notification.enums';
 import { CreateServiceRequestDto, UpdateServiceRequestDto } from './dto/requests.dto';
 import { CreateOfferDto, UpdateOfferDto } from './dto/offers.dto';
 import { DistanceService } from './services/distance.service';
 import { UploadService } from '../upload/upload.service';
 
-type ServiceRequestLean = ServiceRequest & { _id: Types.ObjectId; createdAt: Date; updatedAt: Date };
+type ServiceRequestLean = ServiceRequest & {
+  _id: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+};
 type EngineerOfferLean = EngineerOffer & { _id: Types.ObjectId; createdAt: Date; updatedAt: Date };
 
 interface PopulatedEngineer {
@@ -80,7 +88,13 @@ export class ServicesService {
   ) {}
 
   // Helper method for safe notification sending
-  private async safeNotify(userId: string, type: NotificationType, title: string, message: string, data?: Record<string, unknown>) {
+  private async safeNotify(
+    userId: string,
+    type: NotificationType,
+    title: string,
+    message: string,
+    data?: Record<string, unknown>,
+  ) {
     try {
       if (this.notificationService) {
         await this.notificationService.createNotification({
@@ -132,10 +146,12 @@ export class ServicesService {
 
     // رفع الصور تلقائياً إلى Bunny.net إذا كانت موجودة
     const imageUrls: string[] = [];
-    
+
     // إذا كانت هناك ملفات مرفوعة، ارفعها أولاً
     if (uploadedFiles && uploadedFiles.length > 0) {
-      this.logger.log(`Uploading ${uploadedFiles.length} image(s) to Bunny.net for service request`);
+      this.logger.log(
+        `Uploading ${uploadedFiles.length} image(s) to Bunny.net for service request`,
+      );
       for (const file of uploadedFiles) {
         try {
           const uploadResult = await this.uploadService.uploadFile(
@@ -155,7 +171,7 @@ export class ServicesService {
         }
       }
     }
-    
+
     // دمج الصور المرفوعة مع الصور المرسلة كروابط (إن وجدت)
     const allImages = [...imageUrls, ...(dto.images || [])];
 
@@ -178,7 +194,7 @@ export class ServicesService {
       NotificationType.SERVICE_REQUEST_OPENED,
       'تم استلام طلب خدمة',
       `تم إنشاء طلب خدمة جديد: ${String(doc._id)}`,
-      { requestId: String(doc._id) }
+      { requestId: String(doc._id) },
     );
 
     // تحديث استخدام العنوان
@@ -194,7 +210,9 @@ export class ServicesService {
     uploadedFiles?: Array<{ buffer: Buffer; originalname: string; mimetype: string; size: number }>,
   ) {
     // التحقق من ملكية الطلب
-    const r = await this.requests.findOne({ _id: id, userId });
+    const userObjectId = new Types.ObjectId(userId);
+    const requestObjectId = new Types.ObjectId(id);
+    const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
     if (!r) {
       return { error: 'NOT_FOUND' };
     }
@@ -243,7 +261,9 @@ export class ServicesService {
     // رفع الصور الجديدة إذا كانت موجودة
     const imageUrls: string[] = [];
     if (uploadedFiles && uploadedFiles.length > 0) {
-      this.logger.log(`Uploading ${uploadedFiles.length} image(s) to Bunny.net for service request update`);
+      this.logger.log(
+        `Uploading ${uploadedFiles.length} image(s) to Bunny.net for service request update`,
+      );
       for (const file of uploadedFiles) {
         try {
           const uploadResult = await this.uploadService.uploadFile(
@@ -312,26 +332,28 @@ export class ServicesService {
       .exec();
   }
 
-  async myRequestsWithOffersPending(userId: string): Promise<Array<{
-    _id: Types.ObjectId;
-    userId: Types.ObjectId | string;
-    title: string;
-    type?: string;
-    description?: string;
-    images?: string[];
-    city: string;
-    status: string;
-    statusLabel: string;
-    scheduledAt?: Date;
-    createdAt: Date;
-    updatedAt: Date;
-    address: {
-      label: string | null;
-      line1: string | null;
-      city: string | null;
-    } | null;
-    offers: OfferListItem[];
-  }>> {
+  async myRequestsWithOffersPending(userId: string): Promise<
+    Array<{
+      _id: Types.ObjectId;
+      userId: Types.ObjectId | string;
+      title: string;
+      type?: string;
+      description?: string;
+      images?: string[];
+      city: string;
+      status: string;
+      statusLabel: string;
+      scheduledAt?: Date;
+      createdAt: Date;
+      updatedAt: Date;
+      address: {
+        label: string | null;
+        line1: string | null;
+        city: string | null;
+      } | null;
+      offers: OfferListItem[];
+    }>
+  > {
     const userObjectId = new Types.ObjectId(userId);
     const requests = (await this.requests
       .find({
@@ -345,7 +367,7 @@ export class ServicesService {
 
     if (!requests.length) return [];
 
-    const requestIds = requests.map(r => r._id);
+    const requestIds = requests.map((r) => r._id);
     const offers = (await this.offers
       .find({ requestId: { $in: requestIds }, status: 'OFFERED' })
       .populate('engineerId', 'firstName lastName phone jobTitle')
@@ -418,37 +440,42 @@ export class ServicesService {
       .filter((item) => item.offers.length > 0);
   }
 
-  async myRequestsWithAcceptedOffers(userId: string, status?: string | string[]): Promise<Array<{
-    _id: Types.ObjectId;
-    userId: Types.ObjectId | string;
-    title: string;
-    type?: string;
-    description?: string;
-    images?: string[];
-    city: string;
-    status: string;
-    statusLabel: string;
-    scheduledAt?: Date;
-    createdAt: Date;
-    updatedAt: Date;
-    address: {
-      label: string | null;
-      line1: string | null;
-      city: string | null;
-    } | null;
-    engineer: {
-      id: string | null;
-      name: string | null;
-      phone: string | null;
-      whatsapp: string | null;
-    } | null;
-    acceptedOffer: {
-      offerId: string;
-      amount: number;
-      note?: string;
-      amountYER: number;
-    } | null;
-  }>> {
+  async myRequestsWithAcceptedOffers(
+    userId: string,
+    status?: string | string[],
+  ): Promise<
+    Array<{
+      _id: Types.ObjectId;
+      userId: Types.ObjectId | string;
+      title: string;
+      type?: string;
+      description?: string;
+      images?: string[];
+      city: string;
+      status: string;
+      statusLabel: string;
+      scheduledAt?: Date;
+      createdAt: Date;
+      updatedAt: Date;
+      address: {
+        label: string | null;
+        line1: string | null;
+        city: string | null;
+      } | null;
+      engineer: {
+        id: string | null;
+        name: string | null;
+        phone: string | null;
+        whatsapp: string | null;
+      } | null;
+      acceptedOffer: {
+        offerId: string;
+        amount: number;
+        note?: string;
+        amountYER: number;
+      } | null;
+    }>
+  > {
     const userObjectId = new Types.ObjectId(userId);
     const statuses = Array.isArray(status)
       ? status
@@ -477,10 +504,10 @@ export class ServicesService {
 
       const addressData = this.extractAddress(doc.addressId);
 
-      const engineerId: string | null = engineerData 
-        ? String(engineerData._id) 
-        : doc.engineerId 
-          ? String(doc.engineerId) 
+      const engineerId: string | null = engineerData
+        ? String(engineerData._id)
+        : doc.engineerId
+          ? String(doc.engineerId)
           : null;
 
       return {
@@ -523,12 +550,15 @@ export class ServicesService {
 
   async getRequest(userId: string, id: string) {
     const userObjectId = new Types.ObjectId(userId);
-    return this.requests.findOne({ _id: id, userId: userObjectId }).lean();
+    const requestObjectId = new Types.ObjectId(id);
+    return this.requests.findOne({ _id: requestObjectId, userId: userObjectId }).lean();
   }
 
   async cancel(userId: string, id: string) {
-    const r = await this.requests.findOne({ _id: id, userId });
-    if (!r) return null;
+    const userObjectId = new Types.ObjectId(userId);
+    const requestObjectId = new Types.ObjectId(id);
+    const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
+    if (!r) return { error: 'NOT_FOUND' };
     if (['OPEN', 'OFFERS_COLLECTING'].includes(r.status)) {
       r.status = 'CANCELLED';
       await r.save();
@@ -541,7 +571,7 @@ export class ServicesService {
         NotificationType.SERVICE_REQUEST_CANCELLED,
         'تم إلغاء طلب الخدمة',
         `تم إلغاء الطلب ${String(r._id)}`,
-        { requestId: String(r._id) }
+        { requestId: String(r._id) },
       );
       return { ok: true };
     }
@@ -549,11 +579,18 @@ export class ServicesService {
   }
 
   async acceptOffer(userId: string, id: string, offerId: string) {
-    const r = await this.requests.findOne({ _id: id, userId });
+    const userObjectId = new Types.ObjectId(userId);
+    const requestObjectId = new Types.ObjectId(id);
+    const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
     if (!r) return { error: 'NOT_FOUND' };
     if (!['OPEN', 'OFFERS_COLLECTING'].includes(r.status)) return { error: 'INVALID_STATUS' };
 
-    const offer = await this.offers.findOne({ _id: offerId, requestId: r._id, status: 'OFFERED' });
+    const offerObjectId = new Types.ObjectId(offerId);
+    const offer = await this.offers.findOne({
+      _id: offerObjectId,
+      requestId: r._id,
+      status: 'OFFERED',
+    });
     if (!offer) return { error: 'OFFER_NOT_FOUND' };
 
     r.status = 'ASSIGNED';
@@ -573,13 +610,15 @@ export class ServicesService {
       NotificationType.OFFER_ACCEPTED,
       'تم قبول عرضك',
       `تم قبول عرضك للطلب ${String(r._id)}`,
-      { requestId: String(r._id) }
+      { requestId: String(r._id) },
     );
     return { ok: true };
   }
 
   async rate(userId: string, id: string, score: number, comment?: string) {
-    const r = await this.requests.findOne({ _id: id, userId });
+    const userObjectId = new Types.ObjectId(userId);
+    const requestObjectId = new Types.ObjectId(id);
+    const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
     if (!r) return { error: 'NOT_FOUND' };
     if (r.status !== 'COMPLETED') return { error: 'NOT_COMPLETED' };
     r.rating = { score, comment, at: new Date() };
@@ -590,14 +629,16 @@ export class ServicesService {
       NotificationType.SERVICE_RATED,
       'تم تقييم الخدمة',
       `تم تقييم الخدمة بنتيجة ${score} نجوم`,
-      { requestId: String(r._id), score }
+      { requestId: String(r._id), score },
     );
     return { ok: true };
   }
 
   // جلب العروض لطلب معين (للعميل)
   async getOffersForRequest(userId: string, requestId: string) {
-    const r = await this.requests.findOne({ _id: requestId, userId });
+    const userObjectId = new Types.ObjectId(userId);
+    const requestObjectId = new Types.ObjectId(requestId);
+    const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
     if (!r) return { error: 'REQUEST_NOT_FOUND' };
 
     const offers = await this.offers
@@ -610,14 +651,17 @@ export class ServicesService {
   }
 
   async getOfferDetails(userId: string, requestId: string, offerId: string) {
+    const userObjectId = new Types.ObjectId(userId);
+    const requestObjectId = new Types.ObjectId(requestId);
     const request = await this.requests
-      .findOne({ _id: requestId, userId })
+      .findOne({ _id: requestObjectId, userId: userObjectId })
       .populate('addressId', 'label line1 city')
       .lean<ServiceRequestPopulated | null>();
     if (!request) return { error: 'REQUEST_NOT_FOUND' };
 
+    const offerObjectId = new Types.ObjectId(offerId);
     const offer = await this.offers
-      .findOne({ _id: offerId, requestId: request._id })
+      .findOne({ _id: offerObjectId, requestId: request._id })
       .populate('engineerId', 'firstName lastName phone jobTitle city')
       .lean<EngineerOfferPopulated | null>();
     if (!offer) return { error: 'OFFER_NOT_FOUND' };
@@ -677,13 +721,15 @@ export class ServicesService {
   // ---- Engineer flows
   async nearby(engineerUserId: string, lat: number, lng: number, radiusKm: number) {
     const meters = radiusKm * 1000;
-    
+
     // جلب مدينة المهندس
     const engineer = await this.userModel.findById(engineerUserId).select('city').lean();
     const engineerCity = engineer?.city || 'صنعاء'; // القيمة الافتراضية صنعاء
-    
-    this.logger.log(`Engineer ${engineerUserId} from city: ${engineerCity} searching for nearby requests`);
-    
+
+    this.logger.log(
+      `Engineer ${engineerUserId} from city: ${engineerCity} searching for nearby requests`,
+    );
+
     const list = await this.requests
       .find({
         status: { $in: ['OPEN', 'OFFERS_COLLECTING'] },
@@ -699,7 +745,7 @@ export class ServicesService {
       })
       .limit(100)
       .lean();
-      
+
     this.logger.log(`Found ${list.length} nearby requests in city ${engineerCity}`);
     return list;
   }
@@ -823,13 +869,16 @@ export class ServicesService {
       NotificationType.NEW_ENGINEER_OFFER,
       'عرض جديد من مهندس',
       `تم تقديم عرض جديد للطلب ${String(r._id)}`,
-      { requestId: String(r._id) }
+      { requestId: String(r._id) },
     );
     return doc;
   }
 
   async updateOffer(engineerUserId: string, id: string, patch: UpdateOfferDto) {
-    const off = await this.offers.findOne({ _id: id, engineerId: new Types.ObjectId(engineerUserId) });
+    const off = await this.offers.findOne({
+      _id: id,
+      engineerId: new Types.ObjectId(engineerUserId),
+    });
     if (!off) return { error: 'NOT_FOUND' };
     if (off.status !== 'OFFERED') return { error: 'CANNOT_UPDATE' };
     if ((off.updatesCount || 0) >= 1) return { error: 'UPDATE_LIMIT_REACHED' };
@@ -841,13 +890,19 @@ export class ServicesService {
   }
 
   async deleteOffer(engineerUserId: string, id: string) {
-    const off = await this.offers.findOne({ _id: id, engineerId: new Types.ObjectId(engineerUserId) });
+    const off = await this.offers.findOne({
+      _id: id,
+      engineerId: new Types.ObjectId(engineerUserId),
+    });
     if (!off) return { error: 'NOT_FOUND' };
     if (off.status !== 'OFFERED') return { error: 'CANNOT_DELETE' };
 
     await this.offers.deleteOne({ _id: off._id });
 
-    const stillAvailable = await this.offers.exists({ requestId: off.requestId, status: 'OFFERED' });
+    const stillAvailable = await this.offers.exists({
+      requestId: off.requestId,
+      status: 'OFFERED',
+    });
     if (!stillAvailable) {
       const req = await this.requests.findById(off.requestId);
       if (req && req.status === 'OFFERS_COLLECTING') {
@@ -871,7 +926,7 @@ export class ServicesService {
       NotificationType.SERVICE_STARTED,
       'تم بدء الخدمة',
       `تم بدء تنفيذ الخدمة للطلب ${String(r._id)}`,
-      { requestId: String(r._id) }
+      { requestId: String(r._id) },
     );
     return { ok: true };
   }
@@ -888,7 +943,7 @@ export class ServicesService {
       NotificationType.SERVICE_COMPLETED,
       'تم إنجاز الخدمة',
       `تم إنجاز الخدمة للطلب ${String(r._id)}`,
-      { requestId: String(r._id) }
+      { requestId: String(r._id) },
     );
     return { ok: true };
   }
@@ -949,9 +1004,10 @@ export class ServicesService {
       customer: customerData
         ? {
             id: String(customerData._id),
-            name: customerData.firstName && customerData.lastName
-              ? `${customerData.firstName} ${customerData.lastName}`.trim()
-              : null,
+            name:
+              customerData.firstName && customerData.lastName
+                ? `${customerData.firstName} ${customerData.lastName}`.trim()
+                : null,
             phone: customerData.phone ?? null,
             whatsapp: customerData.phone ? this.makeWhatsappLink(customerData.phone) : null,
           }
@@ -1061,10 +1117,25 @@ export class ServicesService {
     const r = await this.requests.findById(id);
     if (!r) return { error: 'NOT_FOUND' };
 
-    const validStatuses = ['OPEN', 'OFFERS_COLLECTING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'RATED', 'CANCELLED'];
+    const validStatuses = [
+      'OPEN',
+      'OFFERS_COLLECTING',
+      'ASSIGNED',
+      'IN_PROGRESS',
+      'COMPLETED',
+      'RATED',
+      'CANCELLED',
+    ];
     if (!validStatuses.includes(status)) return { error: 'INVALID_STATUS' };
 
-    r.status = status as 'OPEN' | 'OFFERS_COLLECTING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RATED' | 'CANCELLED';
+    r.status = status as
+      | 'OPEN'
+      | 'OFFERS_COLLECTING'
+      | 'ASSIGNED'
+      | 'IN_PROGRESS'
+      | 'COMPLETED'
+      | 'RATED'
+      | 'CANCELLED';
     if (note) {
       r.adminNotes = r.adminNotes || [];
       r.adminNotes.push({ note, at: new Date() });
@@ -1076,7 +1147,7 @@ export class ServicesService {
       NotificationType.SERVICE_REQUEST_OPENED, // Using available type
       'تم تحديث حالة الخدمة',
       `تم تحديث حالة الخدمة إلى ${status}`,
-      { requestId: String(r._id), status, note }
+      { requestId: String(r._id), status, note },
     );
 
     return { ok: true };
@@ -1104,7 +1175,7 @@ export class ServicesService {
       NotificationType.SERVICE_REQUEST_CANCELLED,
       'تم إلغاء الخدمة من قبل الإدارة',
       `تم إلغاء الخدمة من قبل الإدارة: ${reason || 'لا يوجد سبب محدد'}`,
-      { requestId: String(r._id), reason }
+      { requestId: String(r._id), reason },
     );
 
     return { ok: true };
@@ -1130,7 +1201,7 @@ export class ServicesService {
       NotificationType.OFFER_ACCEPTED,
       'تم تعيين مهندس من قبل الإدارة',
       `تم تعيين مهندس للخدمة من قبل الإدارة`,
-      { requestId: String(r._id), engineerId }
+      { requestId: String(r._id), engineerId },
     );
 
     return { ok: true };
@@ -1142,13 +1213,13 @@ export class ServicesService {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-    
+
     // إصلاح حساب startOfWeek
     const weekDate = new Date(now);
     weekDate.setDate(weekDate.getDate() - weekDate.getDay());
     weekDate.setHours(0, 0, 0, 0);
     const startOfWeek = weekDate;
-    
+
     const startOfDay = new Date(now);
     startOfDay.setHours(0, 0, 0, 0);
 
@@ -1197,33 +1268,43 @@ export class ServicesService {
       this.offers.countDocuments({ createdAt: { $gte: startOfMonth } }),
       this.requests
         .aggregate([
-          { $match: { status: 'COMPLETED', acceptedOffer: { $exists: true }, createdAt: { $gte: startOfMonth } } },
+          {
+            $match: {
+              status: 'COMPLETED',
+              acceptedOffer: { $exists: true },
+              createdAt: { $gte: startOfMonth },
+            },
+          },
           { $group: { _id: null, total: { $sum: '$acceptedOffer.amount' } } },
         ])
         .then((result) => result[0]?.total || 0),
-      this.requests.distinct('engineerId', {
-        createdAt: { $gte: startOfMonth },
-        engineerId: { $ne: null }
-      }).then((ids) => ids.filter((id) => id !== null).length),
+      this.requests
+        .distinct('engineerId', {
+          createdAt: { $gte: startOfMonth },
+          engineerId: { $ne: null },
+        })
+        .then((ids) => ids.filter((id) => id !== null).length),
       // حساب البيانات للفترة السابقة
-      this.requests.countDocuments({ 
-        createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth } 
-      }),
-      this.offers.countDocuments({ 
-        createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth } 
-      }),
-      this.requests.distinct('engineerId', {
+      this.requests.countDocuments({
         createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth },
-        engineerId: { $ne: null }
-      }).then((ids) => ids.filter((id) => id !== null).length),
+      }),
+      this.offers.countDocuments({
+        createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth },
+      }),
+      this.requests
+        .distinct('engineerId', {
+          createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth },
+          engineerId: { $ne: null },
+        })
+        .then((ids) => ids.filter((id) => id !== null).length),
       this.requests
         .aggregate([
-          { 
-            $match: { 
-              status: 'COMPLETED', 
-              acceptedOffer: { $exists: true }, 
-              createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth } 
-            } 
+          {
+            $match: {
+              status: 'COMPLETED',
+              acceptedOffer: { $exists: true },
+              createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth },
+            },
           },
           { $group: { _id: null, total: { $sum: '$acceptedOffer.amount' } } },
         ])
@@ -1454,13 +1535,10 @@ export class ServicesService {
   // === إدارة المهندسين ===
   async getEngineersList(params: { page: number; limit: number; search?: string }) {
     const { page, limit, search } = params;
-    
+
     // بناء استعلام البحث للمهندسين
     const matchStage: Record<string, unknown> = {
-      $or: [
-        { roles: { $in: ['engineer'] } },
-        { engineer_capable: true },
-      ],
+      $or: [{ roles: { $in: ['engineer'] } }, { engineer_capable: true }],
       status: { $ne: 'deleted' },
     };
 
@@ -1480,7 +1558,7 @@ export class ServicesService {
     // جلب المهندسين من جدول المستخدمين
     const engineersQuery = this.userModel.find(matchStage);
     const total = await this.userModel.countDocuments(matchStage);
-    
+
     const engineers = await engineersQuery
       .select('_id firstName lastName phone email jobTitle engineer_status')
       .skip((page - 1) * limit)
@@ -1489,7 +1567,7 @@ export class ServicesService {
 
     // جلب إحصائيات المهندسين من جدول الخدمات
     const engineerIds = engineers.map((e) => e._id);
-    
+
     const statsPipeline = [
       { $match: { engineerId: { $in: engineerIds } } },
       {
@@ -1521,14 +1599,15 @@ export class ServicesService {
 
     const statsMap = new Map();
     const stats = await this.requests.aggregate(statsPipeline);
-    
+
     stats.forEach((stat) => {
       statsMap.set(stat._id.toString(), {
         totalRequests: stat.totalRequests || 0,
         completedRequests: stat.completedRequests || 0,
-        completionRate: stat.totalRequests > 0 
-          ? Math.round((stat.completedRequests / stat.totalRequests) * 100 * 10) / 10 
-          : 0,
+        completionRate:
+          stat.totalRequests > 0
+            ? Math.round((stat.completedRequests / stat.totalRequests) * 100 * 10) / 10
+            : 0,
         averageRating: stat.averageRating ? Math.round(stat.averageRating * 10) / 10 : 0,
         totalRevenue: stat.totalRevenue || 0,
       });
@@ -1656,12 +1735,7 @@ export class ServicesService {
 
   // === إحصائيات المهندسين ===
   async getEngineersOverviewStatistics() {
-    const [
-      totalEngineers,
-      averageRating,
-      averageCompletionRate,
-      totalRevenue,
-    ] = await Promise.all([
+    const [totalEngineers, averageRating, averageCompletionRate, totalRevenue] = await Promise.all([
       // إجمالي عدد المهندسين الذين لديهم طلبات
       this.requests.distinct('engineerId').then((ids) => ids.filter((id) => id !== null).length),
 
@@ -1689,14 +1763,11 @@ export class ServicesService {
               _id: null,
               avgCompletionRate: {
                 $avg: {
-                  $multiply: [
-                    { $divide: ['$completedRequests', '$totalRequests'] },
-                    100
-                  ]
-                }
-              }
-            }
-          }
+                  $multiply: [{ $divide: ['$completedRequests', '$totalRequests'] }, 100],
+                },
+              },
+            },
+          },
         ])
         .then((result) => result[0]?.avgCompletionRate || 0),
 
@@ -1727,29 +1798,21 @@ export class ServicesService {
       if (filters.dateTo) (q.createdAt as Record<string, Date>).$lte = filters.dateTo;
     }
 
-    const [
-      totalOffers,
-      acceptedOffers,
-      pendingOffers,
-      totalValue,
-      averageOffer,
-    ] = await Promise.all([
-      this.offers.countDocuments(q),
-      this.offers.countDocuments({ ...q, status: 'ACCEPTED' }),
-      this.offers.countDocuments({ ...q, status: 'OFFERED' }),
-      this.offers
-        .aggregate([
-          { $match: { ...q, status: 'ACCEPTED' } },
-          { $group: { _id: null, total: { $sum: '$amount' } } },
-        ])
-        .then((result) => result[0]?.total || 0),
-      this.offers
-        .aggregate([
-          { $match: q },
-          { $group: { _id: null, average: { $avg: '$amount' } } },
-        ])
-        .then((result) => result[0]?.average || 0),
-    ]);
+    const [totalOffers, acceptedOffers, pendingOffers, totalValue, averageOffer] =
+      await Promise.all([
+        this.offers.countDocuments(q),
+        this.offers.countDocuments({ ...q, status: 'ACCEPTED' }),
+        this.offers.countDocuments({ ...q, status: 'OFFERED' }),
+        this.offers
+          .aggregate([
+            { $match: { ...q, status: 'ACCEPTED' } },
+            { $group: { _id: null, total: { $sum: '$amount' } } },
+          ])
+          .then((result) => result[0]?.total || 0),
+        this.offers
+          .aggregate([{ $match: q }, { $group: { _id: null, average: { $avg: '$amount' } } }])
+          .then((result) => result[0]?.average || 0),
+      ]);
 
     return {
       totalOffers,
@@ -1836,26 +1899,26 @@ export class ServicesService {
   async adminAcceptOffer(requestId: string, offerId: string) {
     const r = await this.requests.findById(requestId);
     if (!r) return { error: 'REQUEST_NOT_FOUND' };
-    
+
     if (!['OPEN', 'OFFERS_COLLECTING'].includes(r.status)) {
       return { error: 'INVALID_STATUS' };
     }
 
-    const offer = await this.offers.findOne({ 
-      _id: offerId, 
-      requestId: r._id, 
-      status: 'OFFERED' 
+    const offer = await this.offers.findOne({
+      _id: offerId,
+      requestId: r._id,
+      status: 'OFFERED',
     });
-    
+
     if (!offer) return { error: 'OFFER_NOT_FOUND' };
 
     // تحديث الطلب
     r.status = 'ASSIGNED';
     r.engineerId = offer.engineerId;
-    r.acceptedOffer = { 
-      offerId: String(offer._id), 
-      amount: offer.amount, 
-      note: offer.note 
+    r.acceptedOffer = {
+      offerId: String(offer._id),
+      amount: offer.amount,
+      note: offer.note,
     };
     await r.save();
 
@@ -1875,7 +1938,7 @@ export class ServicesService {
       NotificationType.OFFER_ACCEPTED,
       'تم قبول عرضك',
       `تم قبول عرضك للطلب ${String(r._id)} من قبل الإدارة`,
-      { requestId: String(r._id) }
+      { requestId: String(r._id) },
     );
 
     this.logger.log(`Admin accepted offer ${offerId} for request ${requestId}`);
@@ -1901,7 +1964,7 @@ export class ServicesService {
       NotificationType.OFFER_REJECTED,
       'تم رفض عرضك',
       reason || `تم رفض عرضك للطلب ${String(offer.requestId)} من قبل الإدارة`,
-      { requestId: String(offer.requestId), reason }
+      { requestId: String(offer.requestId), reason },
     );
 
     this.logger.log(`Admin rejected offer ${offerId}. Reason: ${reason || 'No reason provided'}`);
@@ -1932,7 +1995,9 @@ export class ServicesService {
         request.acceptedOffer = undefined;
         await request.save();
 
-        this.logger.log(`Request ${offer.requestId} status reverted to OPEN after cancelling accepted offer`);
+        this.logger.log(
+          `Request ${offer.requestId} status reverted to OPEN after cancelling accepted offer`,
+        );
       }
     }
 
@@ -1942,7 +2007,7 @@ export class ServicesService {
       NotificationType.OFFER_CANCELLED,
       'تم إلغاء عرضك',
       reason || `تم إلغاء عرضك للطلب ${String(offer.requestId)} من قبل الإدارة`,
-      { requestId: String(offer.requestId), reason }
+      { requestId: String(offer.requestId), reason },
     );
 
     this.logger.log(`Admin cancelled offer ${offerId}. Reason: ${reason || 'No reason provided'}`);

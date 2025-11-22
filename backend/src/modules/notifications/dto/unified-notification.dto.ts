@@ -57,6 +57,11 @@ export class BaseNotificationDto {
   @IsOptional()
   @IsEnum(NotificationCategory)
   category?: NotificationCategory;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  actionUrl?: string;
 }
 
 // ===== Create Notification DTO =====
@@ -114,6 +119,11 @@ export class UpdateNotificationDto {
   @IsOptional()
   @IsObject()
   data?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  actionUrl?: string;
 
   @IsOptional()
   @IsEnum(NotificationChannel)

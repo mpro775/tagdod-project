@@ -21,6 +21,7 @@ export interface INotification {
   message: string;
   messageEn: string;
   data: Record<string, unknown>;
+  actionUrl?: string;
   channel: NotificationChannel;
   status: NotificationStatus;
   priority: NotificationPriority;
@@ -303,6 +304,7 @@ export interface CreateNotificationDto {
   title: string;
   message: string;
   messageEn: string;
+  actionUrl?: string;
   data?: Record<string, unknown>;
   channel?: NotificationChannel;
   priority?: NotificationPriority;

@@ -590,6 +590,27 @@ export class UnifiedNotificationController {
     return { success: true, message: 'Notification sent successfully' };
   }
 
+  @Get('admin/users-list')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: قائمة المستخدمين للاختيار',
+    description: 'الحصول على قائمة المستخدمين مع الاسم والرقم للاستخدام في dropdown/select'
+  })
+  @ApiQuery({ name: 'search', required: false, description: 'البحث في الاسم أو الرقم' })
+  @ApiQuery({ name: 'limit', required: false, description: 'عدد النتائج (افتراضي: 100)' })
+  @ApiResponse({ status: 200, description: 'قائمة المستخدمين' })
+  async getUsersList(
+    @Query('search') search?: string,
+    @Query('limit') limit?: number,
+  ) {
+    const users = await this.notificationService.getUsersForSelection(
+      search,
+      limit ? parseInt(limit.toString(), 10) : 100,
+    );
+    return { success: true, data: users };
+  }
+
   @Post('admin/bulk-send')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)

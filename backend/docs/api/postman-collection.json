@@ -2855,6 +2855,33 @@
           }
         },
         {
+          "name": "الإدارة: قائمة المستخدمين للاختيار",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/users-list",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "users-list"
+              ]
+            },
+            "description": "الحصول على قائمة المستخدمين مع الاسم والرقم للاستخدام في dropdown/select"
+          }
+        },
+        {
           "name": "الإدارة: إرسال إشعارات مجمعة",
           "request": {
             "method": "POST",
