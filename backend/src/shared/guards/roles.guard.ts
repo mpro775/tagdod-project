@@ -6,6 +6,7 @@ import { UserRole, User, UserStatus } from '../../modules/users/schemas/user.sch
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PermissionService } from '../services/permission.service';
+import { UnauthorizedException, ForbiddenException } from '../exceptions/domain.exceptions';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -37,7 +38,7 @@ export class RolesGuard implements CanActivate {
     const user = request.user;
 
     if (!user?.sub) {
-      return false;
+      throw new UnauthorizedException({ reason: 'user_not_authenticated' });
     }
 
     // Super admin has access to everything - check from JWT directly
@@ -48,11 +49,11 @@ export class RolesGuard implements CanActivate {
     // Check if user is deleted or suspended
     const fullUser = await this.userModel.findById(user.sub).lean();
     if (!fullUser) {
-      return false;
+      throw new UnauthorizedException({ reason: 'user_not_found' });
     }
 
     if (fullUser.deletedAt || fullUser.status === UserStatus.SUSPENDED) {
-      return false;
+      throw new ForbiddenException({ reason: 'user_suspended_or_deleted', status: fullUser.status });
     }
 
     // Double check super admin from database
@@ -64,7 +65,11 @@ export class RolesGuard implements CanActivate {
     if (requiredRoles) {
       const hasRole = await this.permissionService.hasAnyRole(user.sub, requiredRoles);
       if (!hasRole) {
-        return false;
+        throw new ForbiddenException({ 
+          reason: 'insufficient_roles', 
+          required: requiredRoles,
+          userRoles: user.roles 
+        });
       }
     }
 
@@ -73,7 +78,11 @@ export class RolesGuard implements CanActivate {
       for (const permission of requiredPermissions) {
         const hasPermission = await this.permissionService.hasPermission(user.sub, permission);
         if (!hasPermission) {
-          return false;
+          throw new ForbiddenException({ 
+            reason: 'insufficient_permissions', 
+            required: permission,
+            userPermissions: user.permissions 
+          });
         }
       }
     }

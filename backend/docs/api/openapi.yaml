@@ -4117,6 +4117,31 @@ paths:
         - الإشعارات
       security:
         - bearer: []
+  /api/v1/notifications/admin/users-list:
+    get:
+      operationId: getUsersList
+      summary: 'الإدارة: قائمة المستخدمين للاختيار'
+      description: الحصول على قائمة المستخدمين مع الاسم والرقم للاستخدام في dropdown/select
+      parameters:
+        - name: search
+          required: false
+          in: query
+          description: البحث في الاسم أو الرقم
+          schema:
+            type: string
+        - name: limit
+          required: false
+          in: query
+          description: 'عدد النتائج (افتراضي: 100)'
+          schema:
+            type: number
+      responses:
+        '200':
+          description: قائمة المستخدمين
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
   /api/v1/notifications/admin/bulk-send:
     post:
       operationId: adminBulkSend

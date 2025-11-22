@@ -14,6 +14,7 @@ import {
 } from './schemas/notification-preference.schema';
 import { DeviceToken, DeviceTokenSchema } from './schemas/device-token.schema';
 import { NotificationLog, NotificationLogSchema } from './schemas/notification-log.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
 import { PushNotificationAdapter } from './adapters/notification.adapters';
 
 // Services
@@ -57,6 +58,7 @@ import { WebSocketService } from '../../shared/websocket/websocket.service';
       { name: NotificationPreference.name, schema: NotificationPreferenceSchema },
       { name: DeviceToken.name, schema: DeviceTokenSchema },
       { name: NotificationLog.name, schema: NotificationLogSchema },
+      { name: User.name, schema: UserSchema },
     ]),
     forwardRef(() => AuthModule),
     SharedModule,

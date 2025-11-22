@@ -1,10 +1,61 @@
 # 🔔 خدمة الإشعارات (Notifications Service)
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
-> 📅 **آخر تحديث**: نوفمبر 2025  
-> 🆕 **محدث**: إضافة WebSocket للإشعارات الفورية
+> 📅 **آخر تحديث**: يناير 2025  
+> 🆕 **محدث**: إضافة WebSocket للإشعارات الفورية + تسجيل الأجهزة + التحقق من الأجهزة
 
 خدمة الإشعارات توفر endpoints لإدارة الإشعارات وتسجيل الأجهزة مع دعم قنوات متعددة.
+
+## 🎯 السيناريو الكامل للإشعارات
+
+### 1. تسجيل الجهاز (من Flutter)
+```
+المستخدم يفتح التطبيق
+    ↓
+Flutter يحصل على FCM Token من Firebase
+    ↓
+Flutter يرسل Token للـ Backend:
+POST /notifications/devices/register
+{
+  "platform": "android",
+  "token": "fcm_token_here",
+  "userAgent": "Android 13",
+  "appVersion": "1.0.0"
+}
+    ↓
+Backend يحفظ Token في قاعدة البيانات مع userId
+```
+
+### 2. إرسال إشعار (من لوحة التحكم)
+```
+Admin ينشئ إشعار من لوحة التحكم:
+POST /notifications/admin/create
+{
+  "channel": "push",
+  "recipientId": "user_id",
+  "title": "عنوان",
+  "message": "محتوى"
+}
+    ↓
+Backend يجلب جميع Device Tokens النشطة للمستخدم
+    ↓
+Backend يرسل الإشعار لكل Token عبر FCM
+    ↓
+Firebase يرسل الإشعار للأجهزة
+    ↓
+الإشعار يظهر على الهاتف
+```
+
+### 3. استقبال الإشعار (في Flutter)
+```
+Firebase يستقبل الإشعار
+    ↓
+Flutter يعرض الإشعار (Foreground/Background/Terminated)
+    ↓
+المستخدم ينقر على الإشعار
+    ↓
+التطبيق يفتح ويتنقل للصفحة المناسبة
+```
 
 ---
 
@@ -14,8 +65,11 @@
 2. [تحديد كمقروء (متعدد)](#2-تحديد-كمقروء-متعدد)
 3. [تحديد الكل كمقروء](#3-تحديد-الكل-كمقروء)
 4. [عدد الإشعارات غير المقروءة](#4-عدد-الإشعارات-غير-المقروءة)
-5. [WebSocket - الإشعارات الفورية](#5-websocket---الإشعارات-الفورية)
-6. [Models في Flutter](#models-في-flutter)
+5. [تسجيل الجهاز للإشعارات](#5-تسجيل-الجهاز-للإشعارات)
+6. [إلغاء تسجيل الجهاز](#6-إلغاء-تسجيل-الجهاز)
+7. [الحصول على أجهزة المستخدم](#7-الحصول-على-أجهزة-المستخدم)
+8. [WebSocket - الإشعارات الفورية](#8-websocket---الإشعارات-الفورية)
+9. [Models في Flutter](#models-في-flutter)
 
 ---
 
@@ -261,7 +315,231 @@ Future<int> getUnreadCount() async {
 
 ---
 
-## 5. WebSocket - الإشعارات الفورية
+## 5. تسجيل الجهاز للإشعارات
+
+تسجيل أو تحديث FCM Token للجهاز لاستقبال Push Notifications.
+
+### معلومات الطلب
+
+- **Method:** `POST`
+- **Endpoint:** `/notifications/devices/register`
+- **Auth Required:** ✅ نعم
+- **Cache:** ❌ لا
+
+### Request Body
+
+```json
+{
+  "platform": "android",
+  "token": "fcm_token_here...",
+  "userAgent": "Android 13",
+  "appVersion": "1.0.0"
+}
+```
+
+| الحقل | النوع | مطلوب | الوصف |
+|-------|------|-------|-------|
+| `platform` | `string` | ✅ | المنصة: `"ios"`, `"android"`, أو `"web"` |
+| `token` | `string` | ✅ | FCM Token (أقصى طول: 500 حرف) |
+| `userAgent` | `string` | ❌ | معلومات الجهاز (أقصى طول: 500 حرف) |
+| `appVersion` | `string` | ❌ | إصدار التطبيق (أقصى طول: 50 حرف) |
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "message": "Device registered successfully",
+  "data": {
+    "deviceToken": {
+      "_id": "device_id_123",
+      "userId": "user_id_456",
+      "token": "fcm_token_here...",
+      "platform": "android",
+      "isActive": true,
+      "lastUsedAt": "2025-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+**ملاحظة:** يتم إخفاء جزء من Token في الـ Response للأمان (أول 20 حرف فقط).
+
+### كود Flutter
+
+```dart
+Future<void> registerDevice(String fcmToken) async {
+  final deviceInfo = DeviceInfoPlugin();
+  final packageInfo = await PackageInfo.fromPlatform();
+  
+  String platform;
+  String? userAgent;
+  
+  if (Platform.isAndroid) {
+    final androidInfo = await deviceInfo.androidInfo;
+    platform = 'android';
+    userAgent = 'Android ${androidInfo.version.release}';
+  } else if (Platform.isIOS) {
+    final iosInfo = await deviceInfo.iosInfo;
+    platform = 'ios';
+    userAgent = 'iOS ${iosInfo.systemVersion}';
+  } else {
+    platform = 'web';
+  }
+  
+  final response = await _dio.post(
+    '/notifications/devices/register',
+    data: {
+      'platform': platform,
+      'token': fcmToken,
+      'userAgent': userAgent,
+      'appVersion': packageInfo.version,
+    },
+  );
+  
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    print('✅ Device registered successfully');
+  }
+}
+```
+
+### ملاحظات مهمة
+
+1. **التسجيل التلقائي**: يتم استدعاء هذا الـ endpoint تلقائياً عند:
+   - الحصول على FCM Token لأول مرة
+   - تحديث FCM Token (عند `onTokenRefresh`)
+
+2. **التحديث التلقائي**: إذا كان Token موجوداً لنفس المستخدم، يتم تحديثه بدلاً من إنشاء جديد
+
+3. **دعم عدة أجهزة**: يمكن للمستخدم تسجيل عدة أجهزة (مثل هاتف + تابلت)
+
+4. **الأمان**: Token يتم إخفاء جزء منه في الـ Response
+
+---
+
+## 6. إلغاء تسجيل الجهاز
+
+تعطيل FCM Token للجهاز (لن يستقبل Push Notifications بعد الآن).
+
+### معلومات الطلب
+
+- **Method:** `POST`
+- **Endpoint:** `/notifications/devices/unregister`
+- **Auth Required:** ✅ نعم
+- **Cache:** ❌ لا
+
+### Request Body
+
+```json
+{
+  "token": "fcm_token_here..."
+}
+```
+
+| الحقل | النوع | مطلوب | الوصف |
+|-------|------|-------|-------|
+| `token` | `string` | ✅ | FCM Token للجهاز |
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "message": "Device unregistered successfully"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<void> unregisterDevice(String fcmToken) async {
+  final response = await _dio.post(
+    '/notifications/devices/unregister',
+    data: {
+      'token': fcmToken,
+    },
+  );
+  
+  if (response.statusCode == 200) {
+    print('✅ Device unregistered successfully');
+  }
+}
+```
+
+### متى تستخدم
+
+- عند تسجيل خروج المستخدم
+- عند حذف التطبيق
+- عند رفض المستخدم أذونات الإشعارات
+
+---
+
+## 7. الحصول على أجهزة المستخدم
+
+استرداد قائمة بجميع الأجهزة المسجلة للمستخدم.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/notifications/devices`
+- **Auth Required:** ✅ نعم
+- **Cache:** ❌ لا
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "devices": [
+      {
+        "_id": "device_id_1",
+        "platform": "android",
+        "userAgent": "Android 13",
+        "appVersion": "1.0.0",
+        "isActive": true,
+        "lastUsedAt": "2025-01-15T10:30:00.000Z",
+        "createdAt": "2025-01-10T08:00:00.000Z"
+      },
+      {
+        "_id": "device_id_2",
+        "platform": "ios",
+        "userAgent": "iOS 17.0",
+        "appVersion": "1.0.0",
+        "isActive": true,
+        "lastUsedAt": "2025-01-14T15:20:00.000Z",
+        "createdAt": "2025-01-12T09:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+### كود Flutter
+
+```dart
+Future<List<DeviceToken>> getUserDevices() async {
+  final response = await _dio.get('/notifications/devices');
+  
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+  
+  if (apiResponse.isSuccess) {
+    final devices = (apiResponse.data!['devices'] as List)
+        .map((item) => DeviceToken.fromJson(item))
+        .toList();
+    return devices;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
+## 8. WebSocket - الإشعارات الفورية
 
 يوفر النظام اتصال WebSocket في الوقت الفعلي لاستقبال الإشعارات فوراً دون الحاجة لـ polling.
 
@@ -1173,10 +1451,62 @@ class NotificationsService {
       
       if (response.statusCode == 200 || response.statusCode == 201) {
         print('✅ Device registered successfully');
+        
+        // حفظ معلومات التسجيل
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('device_registered', 'true');
+        await prefs.setString('device_platform', platform);
       }
     } catch (e) {
       print('❌ Error registering device: $e');
       // لا نرمي خطأ هنا لأن التطبيق يجب أن يعمل حتى لو فشل التسجيل
+    }
+  }
+
+  /// إلغاء تسجيل الجهاز
+  Future<void> unregisterDevice() async {
+    try {
+      if (_currentToken == null) {
+        final prefs = await SharedPreferences.getInstance();
+        _currentToken = prefs.getString('fcm_token');
+      }
+      
+      if (_currentToken != null) {
+        await _apiClient.dio.post(
+          '/notifications/devices/unregister',
+          data: {
+            'token': _currentToken,
+          },
+        );
+        
+        print('✅ Device unregistered successfully');
+        
+        // حذف معلومات التسجيل
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('device_registered');
+        await prefs.remove('device_platform');
+        await prefs.remove('fcm_token');
+      }
+    } catch (e) {
+      print('❌ Error unregistering device: $e');
+    }
+  }
+
+  /// الحصول على أجهزة المستخدم المسجلة
+  Future<List<Map<String, dynamic>>> getUserDevices() async {
+    try {
+      final response = await _apiClient.dio.get('/notifications/devices');
+      
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final devices = data['devices'] as List;
+        return devices.cast<Map<String, dynamic>>();
+      }
+      
+      return [];
+    } catch (e) {
+      print('❌ Error getting user devices: $e');
+      return [];
     }
   }
 
@@ -1566,15 +1896,42 @@ final token = await NotificationsService().currentToken;
 print('FCM Token: $token');
 ```
 
-### 7.2 اختبار الإشعارات
+### 7.2 التحقق من تسجيل الجهاز
+
+```dart
+// الحصول على الأجهزة المسجلة
+final devices = await NotificationsService().getUserDevices();
+print('Registered devices: ${devices.length}');
+
+for (var device in devices) {
+  print('Platform: ${device['platform']}, Active: ${device['isActive']}');
+}
+```
+
+### 7.3 اختبار الإشعارات
 
 1. **من Firebase Console**: أرسل إشعار تجريبي
 2. **من Backend**: استخدم endpoint إرسال الإشعارات
-3. **تحقق من**:
-   - ظهور الإشعار داخل التطبيق
-   - ظهور الإشعار في الخلفية
-   - فتح التطبيق عند النقر على الإشعار
-   - تحديث حالة الإشعار في Backend
+3. **من لوحة التحكم**: أنشئ إشعار جديد مع `channel: "push"`
+4. **تحقق من**:
+   - ✅ تسجيل الجهاز في Backend (`GET /notifications/devices`)
+   - ✅ ظهور الإشعار داخل التطبيق (Foreground)
+   - ✅ ظهور الإشعار في الخلفية (Background)
+   - ✅ فتح التطبيق عند النقر على الإشعار (Terminated)
+   - ✅ تحديث حالة الإشعار في Backend (sent, delivered, read)
+
+### 7.4 التحقق من الأجهزة (Admin)
+
+```typescript
+// التحقق من أجهزة مستخدم واحد
+GET /notifications/admin/users/:userId/devices
+
+// التحقق من عدة مستخدمين
+POST /notifications/admin/users/devices/check
+{
+  "userIds": ["user_id_1", "user_id_2"]
+}
+```
 
 ---
 
@@ -1585,16 +1942,35 @@ print('FCM Token: $token');
 3. **استخدم Callbacks**: للتنقل عند النقر على الإشعارات
 4. **حدّث الحالة**: حدّث حالة الإشعارات (read, clicked) في Backend
 5. **اختبر جميع الحالات**: Foreground, Background, Terminated
+6. **تسجيل تلقائي**: سجّل الجهاز تلقائياً عند الحصول على Token
+7. **تحديث Token**: استمع لتحديثات Token (`onTokenRefresh`) وأعد التسجيل
+8. **إلغاء التسجيل**: ألغِ تسجيل الجهاز عند تسجيل الخروج
+9. **التحقق قبل الإرسال**: تحقق من وجود أجهزة مسجلة قبل إرسال Push Notifications
+10. **دعم عدة أجهزة**: النظام يدعم عدة أجهزة لنفس المستخدم تلقائياً
 
 ---
 
 ## 📝 ملاحظات مهمة
 
+### تسجيل الأجهزة:
 - **Background Handler**: يجب أن يكون top-level function
-- **Token Refresh**: استمع لتحديثات Token وأعد التسجيل
+- **Token Refresh**: استمع لتحديثات Token (`onTokenRefresh`) وأعد التسجيل تلقائياً
+- **تسجيل تلقائي**: سجّل الجهاز تلقائياً عند الحصول على FCM Token
+- **إلغاء التسجيل**: ألغِ تسجيل الجهاز عند تسجيل الخروج أو حذف التطبيق
+- **دعم عدة أجهزة**: يمكن للمستخدم تسجيل عدة أجهزة (هاتف + تابلت)
+
+### الإشعارات:
 - **Permissions**: اطلب الأذونات بشكل مناسب حسب المنصة
 - **Navigation**: استخدم NavigatorKey للتنقل من أي مكان
 - **Error Handling**: تعامل مع الأخطاء بشكل مناسب
+- **Channel مهم**: استخدم `"push"` أو `"dashboard"` لإرسال Push Notifications
+- **Device Token مطلوب**: بدون Device Token مسجل، لن يتم إرسال الإشعار
+
+### من لوحة التحكم:
+- **التحقق قبل الإرسال**: استخدم `GET /notifications/admin/users/:userId/devices` للتحقق
+- **Bulk Check**: استخدم `POST /notifications/admin/users/devices/check` للتحقق من عدة مستخدمين
+- **Channel**: تأكد من استخدام `channel: "push"` أو `"dashboard"` للإرسال
+- **recipientId**: يجب تحديد `recipientId` (User ID) للإرسال
 
 ---
 
@@ -1605,14 +1981,26 @@ print('FCM Token: $token');
 ### ✅ المتطلبات
 
 1. **Backend مُعد بشكل صحيح:**
-   - متغيرات FCM موجودة في `.env`
+   - متغيرات FCM موجودة في `.env`:
+     ```env
+     FCM_PROJECT_ID=your-firebase-project-id
+     FCM_PRIVATE_KEY_ID=your-private-key-id
+     FCM_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+     FCM_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+     FCM_CLIENT_ID=your-client-id
+     ```
    - Firebase Admin SDK مُهيأ
    - Endpoints الإدارية متاحة
 
 2. **تطبيق Flutter مُعد:**
    - Firebase مُهيأ
-   - الأجهزة مسجلة (`/notifications/devices/register`)
+   - الأجهزة مسجلة (`POST /notifications/devices/register`)
    - Token محفوظ في Backend
+
+3. **التحقق من الأجهزة (اختياري):**
+   - يمكن التحقق من وجود أجهزة مسجلة للمستخدم قبل الإرسال:
+     - `GET /notifications/admin/users/:userId/devices` - لمستخدم واحد
+     - `POST /notifications/admin/users/devices/check` - لعدة مستخدمين
 
 ### 📤 كيفية الإرسال من لوحة التحكم
 
@@ -1691,7 +2079,7 @@ Firebase يرسل إلى الأجهزة المسجلة
 
 عند إنشاء إشعار من لوحة التحكم، تأكد من:
 
-1. **`channel`**: يجب أن يكون `"push"` لإرسال Push Notification
+1. **`channel`**: يجب أن يكون `"push"` أو `"dashboard"` لإرسال Push Notification
 2. **`recipientId`**: معرف المستخدم المستلم (مطلوب)
 3. **`title`** و **`message`**: محتوى الإشعار
 4. **`data`**: بيانات إضافية (اختياري) مثل:
@@ -1699,41 +2087,144 @@ Firebase يرسل إلى الأجهزة المسجلة
    {
      "orderId": "order_123",
      "productId": "product_456",
-     "serviceId": "service_789"
+     "serviceId": "service_789",
+     "notificationId": "notif_123"
    }
    ```
+
+### 🔍 التحقق من الأجهزة قبل الإرسال
+
+قبل إرسال Push Notification، يمكنك التحقق من وجود أجهزة مسجلة للمستخدم:
+
+#### لمستخدم واحد:
+```typescript
+GET /notifications/admin/users/:userId/devices
+
+// Response:
+{
+  "success": true,
+  "data": {
+    "userId": "user_id",
+    "hasDevices": true,
+    "deviceCount": 2,
+    "devices": [...],
+    "platforms": {
+      "ios": 1,
+      "android": 1,
+      "web": 0
+    }
+  }
+}
+```
+
+#### لعدة مستخدمين:
+```typescript
+POST /notifications/admin/users/devices/check
+{
+  "userIds": ["user_id_1", "user_id_2", "user_id_3"]
+}
+
+// Response:
+{
+  "success": true,
+  "data": {
+    "total": 3,
+    "withDevices": 2,
+    "withoutDevices": 1,
+    "results": [
+      {
+        "userId": "user_id_1",
+        "hasDevices": true,
+        "deviceCount": 2,
+        "platforms": { "ios": 1, "android": 1, "web": 0 }
+      },
+      ...
+    ]
+  }
+}
+```
 
 ### ✅ التحقق من نجاح الإرسال
 
 بعد إرسال الإشعار، يمكنك التحقق من:
 
-1. **في لوحة التحكم:**
+1. **قبل الإرسال (مستحسن):**
+   - استخدم `GET /notifications/admin/users/:userId/devices` للتحقق من وجود أجهزة مسجلة
+   - إذا كان `hasDevices: false`، لن يتم إرسال الإشعار
+
+2. **في لوحة التحكم:**
    - حالة الإشعار (sent, delivered, failed)
    - وقت الإرسال
    - أي أخطاء حدثت
+   - عدد الأجهزة التي تم الإرسال إليها
 
-2. **في تطبيق Flutter:**
+3. **في تطبيق Flutter:**
    - يجب أن يظهر الإشعار للمستخدم
    - يمكن التحقق من سجل الإشعارات في التطبيق
+   - يمكن التحقق من الأجهزة المسجلة عبر `GET /notifications/devices`
+
+### 🔍 مثال: التحقق قبل الإرسال
+
+```typescript
+// في لوحة التحكم - قبل إرسال إشعار
+async function checkAndSend(userId: string) {
+  // 1. التحقق من وجود أجهزة
+  const devicesCheck = await fetch(
+    `/notifications/admin/users/${userId}/devices`
+  );
+  const devicesInfo = await devicesCheck.json();
+  
+  if (!devicesInfo.data.hasDevices) {
+    alert('⚠️ هذا المستخدم لا يملك أجهزة مسجلة. لن يتم إرسال Push Notification.');
+    return;
+  }
+  
+  console.log(`✅ المستخدم لديه ${devicesInfo.data.deviceCount} جهاز مسجل`);
+  console.log(`📱 المنصات:`, devicesInfo.data.platforms);
+  
+  // 2. إرسال الإشعار
+  await fetch('/notifications/admin/create', {
+    method: 'POST',
+    body: JSON.stringify({
+      channel: 'push',
+      recipientId: userId,
+      // ...
+    }),
+  });
+}
+```
 
 ### ⚠️ ملاحظات مهمة
 
 1. **Device Token مطلوب:**
-   - يجب أن يكون المستخدم قد سجل جهازه أولاً
+   - يجب أن يكون المستخدم قد سجل جهازه أولاً عبر `POST /notifications/devices/register`
    - بدون Device Token، لن يتم إرسال الإشعار
+   - يمكن التحقق من وجود أجهزة قبل الإرسال
 
 2. **Channel مهم:**
-   - استخدم `"push"` للإشعارات الفورية
-   - استخدم `"inApp"` للإشعارات داخل التطبيق فقط
+   - استخدم `"push"` للإشعارات الفورية (Push Notifications)
+   - استخدم `"dashboard"` للإشعارات من لوحة التحكم (يُرسل أيضاً كـ Push)
+   - استخدم `"inApp"` للإشعارات داخل التطبيق فقط (WebSocket)
 
 3. **الأذونات:**
    - يجب أن يكون المستخدم قد منح أذونات الإشعارات
    - على Android 13+، يجب طلب الأذونات صراحة
+   - على iOS، يجب طلب الأذونات عند أول استخدام
 
 4. **الحالة:**
    - الإشعارات تُحفظ في قاعدة البيانات أولاً
-   - ثم تُرسل عبر FCM
-   - يمكن تتبع حالة كل إشعار
+   - ثم تُرسل عبر FCM لكل Device Token نشط للمستخدم
+   - يمكن تتبع حالة كل إشعار (sent, delivered, read, clicked)
+
+5. **دعم عدة أجهزة:**
+   - يمكن للمستخدم تسجيل عدة أجهزة (هاتف + تابلت)
+   - سيتم إرسال الإشعار لكل جهاز نشط
+   - يمكن للمستخدم إلغاء تسجيل جهاز معين
+
+6. **الربط بين Device و User:**
+   - كل Device Token مرتبط بـ `userId` في قاعدة البيانات
+   - عند الإرسال، يتم البحث عن جميع Tokens النشطة للمستخدم
+   - يتم إرسال الإشعار لكل Token عبر FCM
 
 ---
 
@@ -1899,28 +2390,39 @@ Firebase يرسل إلى الأجهزة المسجلة
 1. ✅ تصحيح Endpoint - `/notifications` بدلاً من `/notifications/history`
 2. ✅ تصحيح mark-read endpoint - `/notifications/mark-read` مع body (notificationIds array)
 3. ✅ تصحيح mark-all-read endpoint - `/notifications/mark-all-read`
-4. ✅ تصحيح unread-count response - `{ unreadCount: number }` بدلاً من البنية المعقدة
+4. ✅ تصحيح unread-count response - `{ count: number }` بدلاً من البنية المعقدة
 5. ✅ تصحيح Response Structure - إضافة pagination fields في نفس المستوى
 6. ✅ **إضافة WebSocket للإشعارات الفورية**:
    - Namespace: `/notifications`
    - Events: `notification:new`, `unread-count`, `marked-as-read`, `marked-all-as-read`
    - Commands: `ping`, `get-unread-count`, `mark-as-read`, `mark-all-as-read`
    - Real-time notifications بدون polling
-7. ✅ **توسيع كبير في الـ Enums**:
+7. ✅ **إضافة Device Registration Endpoints**:
+   - `POST /notifications/devices/register` - تسجيل أو تحديث Device Token
+   - `POST /notifications/devices/unregister` - إلغاء تسجيل Device Token
+   - `GET /notifications/devices` - الحصول على أجهزة المستخدم المسجلة
+8. ✅ **إضافة Admin Device Check Endpoints**:
+   - `GET /notifications/admin/users/:userId/devices` - التحقق من أجهزة مستخدم واحد
+   - `POST /notifications/admin/users/devices/check` - التحقق من أجهزة عدة مستخدمين
+9. ✅ **توسيع كبير في الـ Enums**:
    - NotificationType: من 6 أنواع إلى 43 نوع
    - NotificationStatus: من 4 حالات إلى 11 حالة
-   - NotificationChannel: إضافة inApp
+   - NotificationChannel: إضافة inApp و dashboard
    - إضافة NotificationPriority (4 levels)
    - إضافة NotificationCategory (9 فئات)
-7. ✅ **توسيع نموذج Notification**:
-   - إضافة priority, category
-   - إضافة templateId, templateKey
-   - إضافة deliveredAt, clickedAt, failedAt
-   - إضافة errorCode, nextRetryAt
-   - إضافة trackingId, externalId
-   - إضافة metadata object
-8. ✅ تحديث PaginatedNotifications - إضافة pagination fields كـ properties
-9. ✅ إزالة UnreadCount model - يتم إرجاع عدد فقط
+10. ✅ **توسيع نموذج Notification**:
+    - إضافة priority, category
+    - إضافة templateId, templateKey
+    - إضافة deliveredAt, clickedAt, failedAt
+    - إضافة errorCode, nextRetryAt
+    - إضافة trackingId, externalId
+    - إضافة metadata object
+11. ✅ تحديث PaginatedNotifications - إضافة pagination fields كـ properties
+12. ✅ إزالة UnreadCount model - يتم إرجاع عدد فقط
+13. ✅ **تحسين Push Notifications**:
+    - ربط Device Tokens مع User ID
+    - دعم عدة أجهزة لنفس المستخدم
+    - إرسال تلقائي عند إنشاء إشعار بـ channel = "push" أو "dashboard"
 
 **ملاحظات مهمة:**
 - الـ endpoint الأساسي هو `/notifications` (وليس `/notifications/history`)
@@ -1931,9 +2433,12 @@ Firebase يرسل إلى الأجهزة المسجلة
 
 **ملفات Backend المرجعية:**
 - `backend/src/modules/notifications/controllers/unified-notification.controller.ts` - جميع endpoints
-- `backend/src/modules/notifications/services/notification.service.ts` - المنطق
+- `backend/src/modules/notifications/services/notification.service.ts` - المنطق (يشمل Device Management)
 - `backend/src/modules/notifications/schemas/unified-notification.schema.ts` - Schema
+- `backend/src/modules/notifications/schemas/device-token.schema.ts` - Device Token Schema
 - `backend/src/modules/notifications/enums/notification.enums.ts` - جميع Enums
+- `backend/src/modules/notifications/adapters/fcm.adapter.ts` - FCM Adapter
+- `backend/src/modules/notifications/adapters/notification.adapters.ts` - Notification Adapters
 
 ---
 
