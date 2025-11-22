@@ -23653,6 +23653,78 @@
             "bearer": []
           }
         ]
+      },
+      "delete": {
+        "operationId": "delete",
+        "summary": "حذف طلب خدمة",
+        "description": "حذف طلب خدمة نهائياً من قبل العميل - مسموح فقط للطلبات المفتوحة أو الملغاة",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف طلب الخدمة",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف الطلب بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "ok": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "لا يمكن حذف هذا الطلب في حالته الحالية",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "CANNOT_DELETE",
+                      "message": "لا يمكن حذف الطلب في حالته الحالية. يمكن حذف الطلبات المفتوحة أو الملغاة فقط."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مصرح لك بالوصول إلى هذا الطلب"
+          },
+          "404": {
+            "description": "لم يتم العثور على الطلب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "NOT_FOUND"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "خدمات-العملاء"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/v1/services/customer/{id}/cancel": {

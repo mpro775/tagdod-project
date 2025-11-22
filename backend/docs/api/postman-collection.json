@@ -11371,6 +11371,33 @@
           }
         },
         {
+          "name": "حذف طلب خدمة",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/customer/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "customer",
+                "{id}"
+              ]
+            },
+            "description": "حذف طلب خدمة نهائياً من قبل العميل - مسموح فقط للطلبات المفتوحة أو الملغاة"
+          }
+        },
+        {
           "name": "إلغاء طلب خدمة",
           "request": {
             "method": "POST",

@@ -1,4 +1,17 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+} from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
@@ -17,7 +30,12 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ServicesService } from './services.service';
-import { AcceptOfferDto, CreateServiceRequestDto, RateServiceDto, UpdateServiceRequestDto } from './dto/requests.dto';
+import {
+  AcceptOfferDto,
+  CreateServiceRequestDto,
+  RateServiceDto,
+  UpdateServiceRequestDto,
+} from './dto/requests.dto';
 import { ServicesPermissionGuard, ServicePermission } from './guards/services-permission.guard';
 import { RequireServicePermission } from './decorators/service-permission.decorator';
 
@@ -49,7 +67,7 @@ export class CustomerServicesController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'إنشاء طلب خدمة جديد',
-    description: 'إنشاء طلب خدمة جديد من قبل العميل مع رفع الصور تلقائياً إلى Bunny.net'
+    description: 'إنشاء طلب خدمة جديد من قبل العميل مع رفع الصور تلقائياً إلى Bunny.net',
   })
   @ApiBody({
     schema: {
@@ -108,7 +126,8 @@ export class CustomerServicesController {
   async create(
     @Req() req: RequestWithUser,
     @Body() dto: CreateServiceRequestDto,
-    @UploadedFiles() images?: Array<{ buffer: Buffer; originalname: string; mimetype: string; size: number }>,
+    @UploadedFiles()
+    images?: Array<{ buffer: Buffer; originalname: string; mimetype: string; size: number }>,
   ) {
     const data = await this.svc.createRequest(req.user!.sub, dto, images);
     return { data };
@@ -117,7 +136,7 @@ export class CustomerServicesController {
   @Get('my')
   @ApiOperation({
     summary: 'طلباتي',
-    description: 'استرداد قائمة بجميع طلبات الخدمات الخاصة بالعميل'
+    description: 'استرداد قائمة بجميع طلبات الخدمات الخاصة بالعميل',
   })
   @ApiOkResponse({
     description: 'تم استرداد طلباتك بنجاح',
@@ -169,7 +188,7 @@ export class CustomerServicesController {
   @Get('my/no-offers')
   @ApiOperation({
     summary: 'طلباتي بدون عروض',
-    description: 'استرداد الطلبات التي لم يتم تقديم عروض عليها بعد'
+    description: 'استرداد الطلبات التي لم يتم تقديم عروض عليها بعد',
   })
   @ApiOkResponse({
     description: 'تم استرداد الطلبات بدون عروض بنجاح',
@@ -195,7 +214,7 @@ export class CustomerServicesController {
   @Get('my/with-offers')
   @ApiOperation({
     summary: 'طلباتي مع عروض قيد المراجعة',
-    description: 'استرداد الطلبات التي تحتوي على عروض ولم تُقبل بعد'
+    description: 'استرداد الطلبات التي تحتوي على عروض ولم تُقبل بعد',
   })
   @ApiOkResponse({
     description: 'تم استرداد الطلبات ذات العروض بنجاح',
@@ -221,7 +240,7 @@ export class CustomerServicesController {
   @Get(':requestId/offers/:offerId')
   @ApiOperation({
     summary: 'تفاصيل عرض مهندس',
-    description: 'استرداد تفاصيل عرض محدد مع بيانات المهندس والطلب'
+    description: 'استرداد تفاصيل عرض محدد مع بيانات المهندس والطلب',
   })
   @ApiParam({ name: 'requestId', description: 'معرف طلب الخدمة' })
   @ApiParam({ name: 'offerId', description: 'معرف العرض' })
@@ -241,8 +260,8 @@ export class CustomerServicesController {
               name: 'حسن اللقلي',
               jobTitle: 'مهندس كهرباء',
               phone: '777123456',
-              whatsapp: 'https://wa.me/967777123456'
-            }
+              whatsapp: 'https://wa.me/967777123456',
+            },
           },
           request: {
             _id: '6645e1a5f2f0a02eab4d9c10',
@@ -256,9 +275,9 @@ export class CustomerServicesController {
             address: {
               label: 'المنزل',
               line1: 'شارع تعز - جوار مستشفى ناصر',
-              city: 'صنعاء'
-            }
-          }
+              city: 'صنعاء',
+            },
+          },
         },
       },
     },
@@ -283,7 +302,7 @@ export class CustomerServicesController {
   @Get('my/with-accepted-offer')
   @ApiOperation({
     summary: 'طلباتي مع عروض مقبولة',
-    description: 'استرداد الطلبات التي تم قبول أحد عروضها'
+    description: 'استرداد الطلبات التي تم قبول أحد عروضها',
   })
   @ApiQuery({
     name: 'status',
@@ -307,7 +326,10 @@ export class CustomerServicesController {
       },
     },
   })
-  async myWithAcceptedOffer(@Req() req: RequestWithUser, @Query('status') status?: string | string[]) {
+  async myWithAcceptedOffer(
+    @Req() req: RequestWithUser,
+    @Query('status') status?: string | string[],
+  ) {
     const data = await this.svc.myRequestsWithAcceptedOffers(req.user!.sub, status);
     return { data };
   }
@@ -315,7 +337,7 @@ export class CustomerServicesController {
   @Get(':id')
   @ApiOperation({
     summary: 'تفاصيل طلب خدمة',
-    description: 'استرداد تفاصيل كاملة لطلب خدمة محدد'
+    description: 'استرداد تفاصيل كاملة لطلب خدمة محدد',
   })
   @ApiOkResponse({
     description: 'تم استرداد تفاصيل الطلب بنجاح',
@@ -333,7 +355,11 @@ export class CustomerServicesController {
           status: 'ASSIGNED',
           scheduledAt: '2024-06-05T09:00:00.000Z',
           engineerId: '6637d50690fbb31de8d9c445',
-          acceptedOffer: { offerId: '6645f731dc490a317ad91884', amount: 180, note: 'يشمل قطع الغيار' },
+          acceptedOffer: {
+            offerId: '6645f731dc490a317ad91884',
+            amount: 180,
+            note: 'يشمل قطع الغيار',
+          },
           rating: {},
           location: { type: 'Point', coordinates: [44.206521, 15.353622] },
           createdAt: '2024-06-01T12:30:15.512Z',
@@ -364,7 +390,7 @@ export class CustomerServicesController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'تعديل طلب خدمة',
-    description: 'تعديل طلب خدمة - مسموح فقط إذا لم يتم تلقي أي عروض على الطلب'
+    description: 'تعديل طلب خدمة - مسموح فقط إذا لم يتم تلقي أي عروض على الطلب',
   })
   @ApiParam({ name: 'id', description: 'معرف طلب الخدمة' })
   @ApiBody({
@@ -438,7 +464,8 @@ export class CustomerServicesController {
     @Req() req: RequestWithUser,
     @Param('id') id: string,
     @Body() dto: UpdateServiceRequestDto,
-    @UploadedFiles() images?: Array<{ buffer: Buffer; originalname: string; mimetype: string; size: number }>,
+    @UploadedFiles()
+    images?: Array<{ buffer: Buffer; originalname: string; mimetype: string; size: number }>,
   ) {
     const data = await this.svc.updateRequest(req.user!.sub, id, dto, images);
     return { data };
@@ -447,7 +474,7 @@ export class CustomerServicesController {
   @Post(':id/cancel')
   @ApiOperation({
     summary: 'إلغاء طلب خدمة',
-    description: 'إلغاء طلب خدمة من قبل العميل'
+    description: 'إلغاء طلب خدمة من قبل العميل',
   })
   @ApiOkResponse({
     description: 'تم إلغاء الطلب بنجاح',
@@ -478,10 +505,50 @@ export class CustomerServicesController {
     return { data };
   }
 
+  @Delete(':id')
+  @RequireServicePermission(ServicePermission.CUSTOMER)
+  @ApiOperation({
+    summary: 'حذف طلب خدمة',
+    description: 'حذف طلب خدمة نهائياً من قبل العميل - مسموح فقط للطلبات المفتوحة أو الملغاة',
+  })
+  @ApiParam({ name: 'id', description: 'معرف طلب الخدمة' })
+  @ApiOkResponse({
+    description: 'تم حذف الطلب بنجاح',
+    schema: {
+      example: {
+        data: { ok: true },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'لا يمكن حذف هذا الطلب في حالته الحالية',
+    schema: {
+      example: {
+        data: {
+          error: 'CANNOT_DELETE',
+          message: 'لا يمكن حذف الطلب في حالته الحالية. يمكن حذف الطلبات المفتوحة أو الملغاة فقط.',
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'لم يتم العثور على الطلب',
+    schema: {
+      example: {
+        data: { error: 'NOT_FOUND' },
+      },
+    },
+  })
+  @ApiForbiddenResponse({ description: 'غير مصرح لك بالوصول إلى هذا الطلب' })
+  async delete(@Req() req: RequestWithUser, @Param('id') id: string) {
+    const data = await this.svc.deleteRequest(req.user!.sub, id);
+    return { data };
+  }
+
   @Post(':id/accept-offer')
   @ApiOperation({
     summary: 'قبول عرض فني',
-    description: 'قبول عرض مقدم من فني لطلب خدمة'
+    description: 'قبول عرض مقدم من فني لطلب خدمة',
   })
   @ApiBody({ type: AcceptOfferDto })
   @ApiOkResponse({
@@ -516,7 +583,7 @@ export class CustomerServicesController {
   @Post(':id/rate')
   @ApiOperation({
     summary: 'تقييم خدمة',
-    description: 'تقييم خدمة منجزة وإضافة تعليق'
+    description: 'تقييم خدمة منجزة وإضافة تعليق',
   })
   @ApiBody({ type: RateServiceDto })
   @ApiOkResponse({
@@ -551,7 +618,7 @@ export class CustomerServicesController {
   @Get(':id/offers')
   @ApiOperation({
     summary: 'عروض طلب خدمة',
-    description: 'استرداد جميع العروض المقدمة لطلب خدمة محدد'
+    description: 'استرداد جميع العروض المقدمة لطلب خدمة محدد',
   })
   @ApiOkResponse({
     description: 'تم استرداد العروض بنجاح',

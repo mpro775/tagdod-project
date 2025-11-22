@@ -20,6 +20,7 @@
 3. [تفاصيل طلب](#3-تفاصيل-طلب)
 4. [تعديل طلب خدمة](#4-تعديل-طلب-خدمة)
 5. [إلغاء طلب](#5-إلغاء-طلب)
+5.1. [حذف طلب خدمة](#51-حذف-طلب-خدمة)
 6. [العروض المقدمة على طلب](#6-العروض-المقدمة-على-طلب)
    - [تفاصيل عرض محدد](#تفاصيل-عرض-محدد)
 7. [قبول عرض](#7-قبول-عرض)
@@ -661,6 +662,147 @@ Future<bool> cancelServiceRequest(String requestId) async {
   }
 }
 ```
+
+---
+
+### 5.1. حذف طلب خدمة
+
+يحذف طلب خدمة نهائياً من قاعدة البيانات - مسموح فقط للطلبات المفتوحة أو الملغاة.
+
+> ⚠️ **مهم:** يختلف الحذف عن الإلغاء:
+> - **الإلغاء (`cancel`)**: يغير حالة الطلب إلى `CANCELLED` ويبقي الطلب في قاعدة البيانات
+> - **الحذف (`delete`)**: يحذف الطلب نهائياً من قاعدة البيانات مع جميع العروض المرتبطة به
+
+### معلومات الطلب
+
+- **Method:** `DELETE`
+- **Endpoint:** `/services/customer/:id`
+- **Auth Required:** ✅ نعم
+- **Cache:** ❌ لا
+
+### القيود
+
+- يمكن حذف الطلب فقط إذا كان في حالة `OPEN` أو `CANCELLED`
+- لا يمكن حذف الطلبات التي تم قبول عروض عليها (`ASSIGNED`, `IN_PROGRESS`, `COMPLETED`, `RATED`)
+- يتم حذف جميع العروض المرتبطة بالطلب تلقائياً
+- يتم محاولة حذف الصور من Bunny.net (مع معالجة الأخطاء)
+
+### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "ok": true
+    }
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
+}
+```
+
+### Response - خطأ (400) - لا يمكن الحذف
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "CANNOT_DELETE",
+      "message": "لا يمكن حذف الطلب في حالته الحالية. يمكن حذف الطلبات المفتوحة أو الملغاة فقط."
+    }
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
+}
+```
+
+### Response - خطأ (404) - طلب غير موجود
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "NOT_FOUND"
+    }
+  },
+  "requestId": "f4c4d5aa-1bde-4a22-85db-1fb3e7cc90a1"
+}
+```
+
+### كود Flutter
+
+```dart
+Future<bool> deleteServiceRequest(String requestId) async {
+  final response = await _dio.delete('/services/customer/$requestId');
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    final result = apiResponse.data!['data'] as Map<String, dynamic>?;
+    
+    // التحقق من وجود خطأ
+    if (result != null && result.containsKey('error')) {
+      final error = result['error'] as String;
+      switch (error) {
+        case 'CANNOT_DELETE':
+          throw ApiException(
+            result['message'] as String? ?? 
+            'لا يمكن حذف الطلب في حالته الحالية. يمكن حذف الطلبات المفتوحة أو الملغاة فقط.'
+          );
+        case 'NOT_FOUND':
+          throw NotFoundException('الطلب غير موجود');
+        default:
+          throw ApiException('حدث خطأ أثناء حذف الطلب');
+      }
+    }
+    
+    return result?['ok'] == true;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+### مثال الاستخدام في Flutter
+
+```dart
+// حذف طلب مفتوح
+try {
+  final deleted = await servicesService.deleteServiceRequest('64service123');
+  if (deleted) {
+    print('تم حذف الطلب بنجاح');
+  }
+} on ApiException catch (e) {
+  if (e.message.contains('CANNOT_DELETE')) {
+    print('لا يمكن حذف الطلب - يجب أن يكون في حالة OPEN أو CANCELLED');
+  } else {
+    print('خطأ: ${e.message}');
+  }
+} on NotFoundException {
+  print('الطلب غير موجود');
+}
+
+// حذف طلب ملغي
+final cancelledRequest = await servicesService.cancelServiceRequest('64service123');
+if (cancelledRequest) {
+  // بعد الإلغاء، يمكن حذف الطلب
+  final deleted = await servicesService.deleteServiceRequest('64service123');
+  if (deleted) {
+    print('تم حذف الطلب الملغي بنجاح');
+  }
+}
+```
+
+> ⚠️ **ملاحظات مهمة:**
+> - الحذف نهائي ولا يمكن التراجع عنه
+> - يتم حذف جميع العروض المرتبطة بالطلب تلقائياً
+> - يتم محاولة حذف الصور من Bunny.net (إذا فشل حذف الصور، يستمر حذف الطلب)
+> - استخدم `cancel` إذا أردت إلغاء الطلب مع الاحتفاظ به في قاعدة البيانات
+> - استخدم `delete` فقط إذا كنت متأكداً من رغبتك في حذف الطلب نهائياً
 
 ---
 
@@ -2238,6 +2380,7 @@ class EngineerMyOffer {
 6. ✅ **تحديث نظام المدن اليمنية** - فلترة الطلبات حسب المدينة تلقائياً اعتماداً على العنوان
 7. ✅ **إضافة endpoint جديد للمهندسين** - `GET /services/engineer/requests/:id` لعرض تفاصيل الطلب مع معلومات العميل والعنوان وعرض المهندس الحالي
 8. ✅ **إضافة endpoint تعديل الطلب للعملاء** - `PATCH /services/customer/:id` - يسمح بتعديل الطلب فقط إذا لم يتم تلقي أي عروض
+9. ✅ **إضافة endpoint حذف الطلب للعملاء** - `DELETE /services/customer/:id` - يسمح بحذف الطلب نهائياً (فقط للطلبات المفتوحة أو الملغاة)
 
 **Endpoints للعملاء (Customers):**
 - `POST /services/customer` - إنشاء طلب
@@ -2245,6 +2388,7 @@ class EngineerMyOffer {
 - `GET /services/customer/:id` - تفاصيل طلب
 - `PATCH /services/customer/:id` - تعديل طلب ✅ جديد
 - `POST /services/customer/:id/cancel` - إلغاء طلب
+- `DELETE /services/customer/:id` - حذف طلب ✅ جديد
 - `POST /services/customer/:id/accept-offer` - قبول عرض
 - `POST /services/customer/:id/rate` - تقييم الخدمة
 - `GET /services/customer/:id/offers` - العروض المقدمة

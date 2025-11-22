@@ -578,6 +578,79 @@ export class ServicesService {
     return { error: 'CANNOT_CANCEL' };
   }
 
+  async deleteRequest(userId: string, id: string) {
+    const userObjectId = new Types.ObjectId(userId);
+    const requestObjectId = new Types.ObjectId(id);
+    const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
+    if (!r) return { error: 'NOT_FOUND' };
+    
+    // يمكن حذف الطلب فقط إذا كان في حالة OPEN أو CANCELLED
+    // (لم يتم قبول أي عروض أو تم إلغاؤه)
+    if (!['OPEN', 'CANCELLED'].includes(r.status)) {
+      return { error: 'CANNOT_DELETE', message: 'لا يمكن حذف الطلب في حالته الحالية. يمكن حذف الطلبات المفتوحة أو الملغاة فقط.' };
+    }
+
+    // حذف جميع العروض المرتبطة بالطلب
+    await this.offers.deleteMany({ requestId: r._id });
+
+    // حذف الصور من Bunny.net إذا كانت موجودة
+    if (r.images && r.images.length > 0) {
+      try {
+        for (const imageUrl of r.images) {
+          try {
+            // استخراج مسار الملف من URL
+            // URL format: https://cdn.example.com/services/requests/uuid-filename.jpg
+            // أو: https://storage.bunnycdn.com/zone/services/requests/uuid-filename.jpg
+            // نحتاج: services/requests/uuid-filename.jpg
+            
+            const urlObj = new URL(imageUrl);
+            let filePath = urlObj.pathname;
+            
+            // إزالة الـ leading slash
+            if (filePath.startsWith('/')) {
+              filePath = filePath.substring(1);
+            }
+            
+            // البحث عن مجلد services/requests في المسار
+            // إذا كان موجوداً، نأخذ كل شيء بعد storage zone name (إن وجد)
+            // أو نأخذ المسار مباشرة إذا كان يبدأ بـ services/
+            const servicesIndex = filePath.indexOf('services/');
+            if (servicesIndex !== -1) {
+              // نأخذ المسار من services/ فصاعداً
+              filePath = filePath.substring(servicesIndex);
+            } else {
+              // إذا لم نجد services/، نحاول استخراج اسم الملف فقط
+              // ونضيف المجلد الافتراضي
+              const fileName = filePath.split('/').pop();
+              if (fileName) {
+                filePath = `services/requests/${fileName}`;
+              } else {
+                continue; // نتخطى هذه الصورة
+              }
+            }
+            
+            if (filePath) {
+              await this.uploadService.deleteFile(filePath).catch((err) => {
+                this.logger.warn(`Failed to delete image ${filePath}: ${err.message}`);
+              });
+            }
+          } catch (urlError) {
+            // إذا فشل تحليل URL، نتجاهل هذه الصورة
+            this.logger.warn(`Failed to parse image URL ${imageUrl}: ${urlError}`);
+          }
+        }
+      } catch (error) {
+        this.logger.warn(`Error deleting images for request ${id}: ${error}`);
+        // نستمر في الحذف حتى لو فشل حذف الصور
+      }
+    }
+
+    // حذف الطلب
+    await this.requests.deleteOne({ _id: r._id });
+
+    return { ok: true };
+  }
+
   async acceptOffer(userId: string, id: string, offerId: string) {
     const userObjectId = new Types.ObjectId(userId);
     const requestObjectId = new Types.ObjectId(id);
