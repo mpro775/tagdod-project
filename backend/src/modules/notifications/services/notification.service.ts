@@ -79,6 +79,11 @@ export class NotificationService {
               isRead: false,
             },
           );
+          
+          // إرسال Push Notification أيضاً لإيقاظ الهاتف حتى لو كان التطبيق مغلقاً
+          this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
+            this.logger.error(`Failed to send push notification: ${error instanceof Error ? error.message : String(error)}`);
+          });
         }
 
         // إرسال Push Notification إذا كان PUSH

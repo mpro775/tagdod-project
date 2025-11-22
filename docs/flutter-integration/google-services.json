@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "864789878205",
+    "project_id": "tagadod-5932b",
+    "storage_bucket": "tagadod-5932b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:864789878205:android:6a71cb01ab85a83cd0aed4",
+        "android_client_info": {
+          "package_name": "com.tagadod.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCl2lCKn_Ve9h0ddCP2vPFKx3H4yPKivmg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
