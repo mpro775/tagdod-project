@@ -3857,6 +3857,154 @@ paths:
         - الإشعارات
       security:
         - bearer: []
+  /api/v1/notifications/devices/register:
+    post:
+      operationId: registerDevice
+      summary: تسجيل جهاز للإشعارات
+      description: تسجيل أو تحديث FCM Token للجهاز لاستقبال Push Notifications
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeviceDto'
+      responses:
+        '200':
+          description: تم تسجيل الجهاز بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Device registered successfully
+                  data:
+                    type: object
+                    properties:
+                      deviceToken:
+                        type: object
+                        properties:
+                          _id:
+                            type: string
+                            example: device123
+                          userId:
+                            type: string
+                            example: user456
+                          token:
+                            type: string
+                            example: fcm_token_here...
+                          platform:
+                            type: string
+                            example: android
+                            enum:
+                              - ios
+                              - android
+                              - web
+                          isActive:
+                            type: boolean
+                            example: true
+                          lastUsedAt:
+                            type: string
+                            format: date-time
+        '400':
+          description: بيانات غير صحيحة
+        '401':
+          description: غير مصرح لك بالوصول
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/devices/unregister:
+    post:
+      operationId: unregisterDevice
+      summary: إلغاء تسجيل جهاز
+      description: تعطيل FCM Token للجهاز (لن يستقبل Push Notifications بعد الآن)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: FCM Token للجهاز
+              required:
+                - token
+      responses:
+        '200':
+          description: تم إلغاء تسجيل الجهاز بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Device unregistered successfully
+        '401':
+          description: غير مصرح لك بالوصول
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/devices:
+    get:
+      operationId: getUserDevices
+      summary: الحصول على أجهزة المستخدم المسجلة
+      description: استرداد قائمة بجميع الأجهزة المسجلة للمستخدم
+      parameters: []
+      responses:
+        '200':
+          description: تم استرداد الأجهزة بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      devices:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                            platform:
+                              type: string
+                              enum:
+                                - ios
+                                - android
+                                - web
+                            userAgent:
+                              type: string
+                            appVersion:
+                              type: string
+                            isActive:
+                              type: boolean
+                            lastUsedAt:
+                              type: string
+                              format: date-time
+        '401':
+          description: غير مصرح لك بالوصول
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
   /api/v1/notifications/admin/list:
     get:
       operationId: adminListNotifications
@@ -4138,6 +4286,159 @@ paths:
       responses:
         '200':
           description: قائمة المستخدمين
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/users/{userId}/devices:
+    get:
+      operationId: checkUserDevices
+      summary: 'الإدارة: التحقق من أجهزة المستخدم'
+      description: التحقق من وجود Device Tokens نشطة للمستخدم قبل إرسال Push Notifications (للإداريين فقط)
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          description: معرف المستخدم
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم التحقق من أجهزة المستخدم بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                        example: 507f1f77bcf86cd799439011
+                      hasDevices:
+                        type: boolean
+                        example: true
+                        description: هل المستخدم لديه أجهزة مسجلة
+                      deviceCount:
+                        type: number
+                        example: 2
+                        description: عدد الأجهزة النشطة
+                      devices:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            _id:
+                              type: string
+                            platform:
+                              type: string
+                              enum:
+                                - ios
+                                - android
+                                - web
+                            userAgent:
+                              type: string
+                            appVersion:
+                              type: string
+                            isActive:
+                              type: boolean
+                            lastUsedAt:
+                              type: string
+                              format: date-time
+                            createdAt:
+                              type: string
+                              format: date-time
+                      platforms:
+                        type: object
+                        properties:
+                          ios:
+                            type: number
+                            example: 1
+                          android:
+                            type: number
+                            example: 1
+                          web:
+                            type: number
+                            example: 0
+        '403':
+          description: غير مصرح لك بالوصول
+        '404':
+          description: المستخدم غير موجود
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/users/devices/check:
+    post:
+      operationId: checkMultipleUsersDevices
+      summary: 'الإدارة: التحقق من أجهزة عدة مستخدمين'
+      description: التحقق من وجود Device Tokens نشطة لعدة مستخدمين دفعة واحدة (للإداريين فقط)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userIds:
+                  type: array
+                  items:
+                    type: string
+                  description: قائمة معرفات المستخدمين
+              required:
+                - userIds
+      responses:
+        '200':
+          description: تم التحقق من أجهزة المستخدمين بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: number
+                        example: 5
+                      withDevices:
+                        type: number
+                        example: 3
+                        description: عدد المستخدمين الذين لديهم أجهزة
+                      withoutDevices:
+                        type: number
+                        example: 2
+                        description: عدد المستخدمين الذين لا يملكون أجهزة
+                      results:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            userId:
+                              type: string
+                            hasDevices:
+                              type: boolean
+                            deviceCount:
+                              type: number
+                            platforms:
+                              type: object
+                              properties:
+                                ios:
+                                  type: number
+                                android:
+                                  type: number
+                                web:
+                                  type: number
+        '403':
+          description: غير مصرح لك بالوصول
       tags:
         - الإشعارات
       security:
@@ -20043,6 +20344,9 @@ components:
           example: true
           default: true
     MarkAsReadDto:
+      type: object
+      properties: {}
+    RegisterDeviceDto:
       type: object
       properties: {}
     CreateNotificationDto:

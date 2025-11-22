@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
@@ -7,9 +7,6 @@ import {
   Grid,
   Button,
   CircularProgress,
-  Alert,
-  Tabs,
-  Tab,
   Table,
   TableBody,
   TableCell,
@@ -18,8 +15,6 @@ import {
   TableRow,
   Paper,
   Chip,
-  IconButton,
-  Tooltip,
   Stack,
 } from '@mui/material';
 import {
@@ -37,58 +32,15 @@ import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   useProductStats,
   useInventorySummary,
-  useLowStockVariants,
-  useOutOfStockVariants,
 } from '../hooks/useProducts';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`analytics-tabpanel-${index}`}
-      aria-labelledby={`analytics-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: { xs: 2, sm: 3 } }}>{children}</Box>}
-    </div>
-  );
-}
 
 export const ProductsAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(0);
   const { t } = useTranslation(['products', 'common']);
   const { isMobile } = useBreakpoint();
 
   const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useProductStats();
   const { data: inventorySummary, isLoading: loadingInventory } = useInventorySummary();
-  const { data: lowStockVariantsResponse } = useLowStockVariants();
-  const { data: outOfStockVariantsResponse } = useOutOfStockVariants();
-
-  const lowStockVariants = Array.isArray(lowStockVariantsResponse)
-    ? lowStockVariantsResponse
-    : Array.isArray((lowStockVariantsResponse as any)?.data)
-    ? (lowStockVariantsResponse as any).data
-    : [];
-
-  const outOfStockVariants = Array.isArray(outOfStockVariantsResponse)
-    ? outOfStockVariantsResponse
-    : Array.isArray((outOfStockVariantsResponse as any)?.data)
-    ? (outOfStockVariantsResponse as any).data
-    : [];
-
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
 
   const handleRefresh = () => {
     refetchStats();
@@ -368,127 +320,6 @@ export const ProductsAnalyticsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Detailed Analytics Tabs */}
-      <Card>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant={isMobile ? 'scrollable' : 'standard'}
-            scrollButtons={isMobile ? 'auto' : false}
-            allowScrollButtonsMobile
-          >
-            <Tab label={`${t('products:stats.lowStock', 'مخزون منخفض')} (${lowStockVariants.length})`} />
-            <Tab label={`${t('products:stats.outOfStock', 'نفذ من المخزون')} (${outOfStockVariants.length})`} />
-          </Tabs>
-        </Box>
-
-        <TabPanel value={activeTab} index={0}>
-          {lowStockVariants && lowStockVariants.length > 0 ? (
-            <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-              <Table size={isMobile ? 'small' : 'medium'}>
-                <TableHead
-                  sx={{
-                    backgroundColor: (theme) =>
-                      theme.palette.mode === 'dark'
-                        ? theme.palette.grey[800]
-                        : theme.palette.grey[100],
-                  }}
-                >
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:variants.form.sku', 'SKU')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.product', 'المنتج')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.currentStock', 'المخزون الحالي')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.minimumStock', 'الحد الأدنى')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.price', 'السعر')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.actions', 'الإجراءات')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {lowStockVariants.map((variant: any) => (
-                    <TableRow key={variant.variantId || variant._id} hover>
-                      <TableCell>{variant.variantName || variant.sku || '-'}</TableCell>
-                      <TableCell>{variant.productName || variant.productId}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={variant.currentStock ?? variant.stock ?? 0}
-                          color={(variant.currentStock ?? variant.stock ?? 0) === 0 ? 'error' : 'warning'}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>{variant.minStock ?? '-'}</TableCell>
-                      <TableCell>-</TableCell>
-                      <TableCell>
-                        <Tooltip title={t('products:stats.viewDetails', 'عرض التفاصيل')}>
-                          <IconButton
-                            size="small"
-                            onClick={() => navigate(`/products/${variant.productId}`)}
-                          >
-                            <Inventory fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Alert severity="success">{t('products:stats.noLowStock', 'لا توجد منتجات بمخزون منخفض حالياً')}</Alert>
-          )}
-        </TabPanel>
-
-        <TabPanel value={activeTab} index={1}>
-          {outOfStockVariants && outOfStockVariants.length > 0 ? (
-            <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-              <Table size={isMobile ? 'small' : 'medium'}>
-                <TableHead
-                  sx={{
-                    backgroundColor: (theme) =>
-                      theme.palette.mode === 'dark'
-                        ? theme.palette.grey[800]
-                        : theme.palette.grey[100],
-                  }}
-                >
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:variants.form.sku', 'SKU')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.product', 'المنتج')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.currentStock', 'المخزون')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.minimumStock', 'الحد الأدنى')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.price', 'السعر')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', color: 'text.primary' }}>{t('products:stats.actions', 'الإجراءات')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {outOfStockVariants.map((variant: any) => (
-                    <TableRow key={variant.variantId || variant._id} hover>
-                      <TableCell>{variant.variantName || variant.sku || '-'}</TableCell>
-                      <TableCell>{variant.productName || variant.productId}</TableCell>
-                      <TableCell>
-                        <Chip label="0" color="error" size="small" />
-                      </TableCell>
-                      <TableCell>-</TableCell>
-                      <TableCell>-</TableCell>
-                      <TableCell>
-                        <Tooltip title={t('products:stats.viewDetails', 'عرض التفاصيل')}>
-                          <IconButton
-                            size="small"
-                            onClick={() => navigate(`/products/${variant.productId}`)}
-                          >
-                            <Inventory fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Alert severity="success">{t('products:stats.allInStock', 'جميع المنتجات متوفرة في المخزون')}</Alert>
-          )}
-        </TabPanel>
-      </Card>
     </Box>
   );
 };

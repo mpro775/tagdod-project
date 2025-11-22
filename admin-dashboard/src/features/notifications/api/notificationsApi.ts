@@ -139,6 +139,13 @@ export const notificationsApi = {
         params,
       }
     );
+    // Handle nested data structure: response.data.data.data or response.data.data
+    const responseData = response.data.data as any;
+    // Check if data is nested (response.data.data.data)
+    if (responseData && typeof responseData === 'object' && 'data' in responseData && 'success' in responseData) {
+      return responseData.data;
+    }
+    // Otherwise return response.data.data directly
     return response.data.data;
   },
 

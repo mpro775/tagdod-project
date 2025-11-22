@@ -79,6 +79,14 @@ export interface OrderItem {
     categoryId?: string;
     categoryName?: string;
     attributes?: Record<string, string>;
+    variantAttributes?: Array<{
+      attributeId?: string;
+      attributeName?: string;
+      attributeNameEn?: string;
+      valueId?: string;
+      value?: string;
+      valueEn?: string;
+    }>;
   };
   itemStatus: 'pending' | 'fulfilled' | 'cancelled' | 'returned';
   isReturned: boolean;

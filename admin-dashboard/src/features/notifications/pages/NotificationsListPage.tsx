@@ -34,6 +34,7 @@ import {
   Checkbox,
   ListItemText,
   OutlinedInput,
+  ListSubheader,
 } from '@mui/material';
 import {
   Send,
@@ -2075,36 +2076,33 @@ const NotificationCreateForm: React.FC<{
               )}
 
               {/* Group users by role */}
-              {Object.entries(usersByRole).map(([role, users]) => {
-                if (users.length === 0) return null;
-                return (
-                  <React.Fragment key={role}>
-                    <Box
-                      sx={{
-                        px: 2,
-                        py: 1,
-                        bgcolor: 'grey.100',
-                        fontWeight: 'medium',
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      {getRoleLabel(role as UserRole)} ({users.length})
-                    </Box>
-                    {users.map((user) => {
-                      const userName =
-                        user.firstName && user.lastName
-                          ? `${user.firstName} ${user.lastName}`
-                          : user.phone || user._id;
-                      return (
-                        <MenuItem key={user._id} value={user._id} sx={{ pl: 4 }}>
-                          <Checkbox checked={selectedUserIds.indexOf(user._id) > -1} />
-                          <ListItemText primary={userName} secondary={user.phone} />
-                        </MenuItem>
-                      );
-                    })}
-                  </React.Fragment>
-                );
-              })}
+              {Object.entries(usersByRole)
+                .filter(([, users]) => users.length > 0)
+                .flatMap(([role, users]) => [
+                  <ListSubheader
+                    key={`header-${role}`}
+                    sx={{
+                      bgcolor: 'grey.100',
+                      fontWeight: 'medium',
+                      fontSize: '0.875rem',
+                      lineHeight: '2.5',
+                    }}
+                  >
+                    {getRoleLabel(role as UserRole)} ({users.length})
+                  </ListSubheader>,
+                  ...users.map((user) => {
+                    const userName =
+                      user.firstName && user.lastName
+                        ? `${user.firstName} ${user.lastName}`
+                        : user.phone || user._id;
+                    return (
+                      <MenuItem key={user._id} value={user._id} sx={{ pl: 4 }}>
+                        <Checkbox checked={selectedUserIds.indexOf(user._id) > -1} />
+                        <ListItemText primary={userName} secondary={user.phone} />
+                      </MenuItem>
+                    );
+                  }),
+                ])}
 
               {allUsers.length === 0 && !usersLoading && (
                 <MenuItem disabled>

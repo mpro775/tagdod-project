@@ -31,6 +31,7 @@ export class StockAlertService {
       const lowStockVariants = await this.variantModel
         .find({
           trackInventory: true,
+          stock: { $gt: 0 }, // استبعاد المنتجات التي نفذت (stock = 0)
           $expr: { $lt: ['$stock', '$minStock'] },
           isActive: true,
           deletedAt: null,
@@ -233,6 +234,7 @@ export class StockAlertService {
       this.variantModel
         .find({
           trackInventory: true,
+          stock: { $gt: 0 }, // استبعاد المنتجات التي نفذت (stock = 0)
           $expr: { $lt: ['$stock', '$minStock'] },
           isActive: true,
           deletedAt: null,

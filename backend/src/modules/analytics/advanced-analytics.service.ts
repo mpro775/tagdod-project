@@ -582,6 +582,7 @@ export class AdvancedAnalyticsService {
     const previousLowStockCount = await this.productModel.countDocuments({
       deletedAt: null,
       trackStock: true,
+      stock: { $gt: 0 }, // استبعاد المنتجات التي نفذت (stock = 0)
       $expr: { $lt: ['$stock', '$minStock'] },
       updatedAt: { $gte: previousStartDate, $lt: startDate },
     });
@@ -789,6 +790,7 @@ export class AdvancedAnalyticsService {
     const lowStockProducts = await this.productModel.countDocuments({
       deletedAt: null,
       trackStock: true,
+      stock: { $gt: 0 }, // استبعاد المنتجات التي نفذت (stock = 0)
       $expr: { $lt: ['$stock', '$minStock'] },
     });
 
@@ -2418,6 +2420,7 @@ export class AdvancedAnalyticsService {
     return await this.productModel.countDocuments({
       deletedAt: null,
       trackStock: true,
+      stock: { $gt: 0 }, // استبعاد المنتجات التي نفذت (stock = 0)
       $expr: { $lt: ['$stock', '$minStock'] },
     });
   }
@@ -2667,6 +2670,7 @@ export class AdvancedAnalyticsService {
       .find({
         deletedAt: null,
         trackStock: true,
+        stock: { $gt: 0 }, // استبعاد المنتجات التي نفذت (stock = 0)
         $expr: { $lt: ['$stock', '$minStock'] },
       })
       .select('_id name stock minStock')

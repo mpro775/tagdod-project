@@ -2584,6 +2584,86 @@
           }
         },
         {
+          "name": "تسجيل جهاز للإشعارات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/devices/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "devices",
+                "register"
+              ]
+            },
+            "description": "تسجيل أو تحديث FCM Token للجهاز لاستقبال Push Notifications"
+          }
+        },
+        {
+          "name": "إلغاء تسجيل جهاز",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/devices/unregister",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "devices",
+                "unregister"
+              ]
+            },
+            "description": "تعطيل FCM Token للجهاز (لن يستقبل Push Notifications بعد الآن)"
+          }
+        },
+        {
+          "name": "الحصول على أجهزة المستخدم المسجلة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/devices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "devices"
+              ]
+            },
+            "description": "استرداد قائمة بجميع الأجهزة المسجلة للمستخدم"
+          }
+        },
+        {
           "name": "الإدارة: قائمة جميع الإشعارات",
           "request": {
             "method": "GET",
@@ -2879,6 +2959,64 @@
               ]
             },
             "description": "الحصول على قائمة المستخدمين مع الاسم والرقم للاستخدام في dropdown/select"
+          }
+        },
+        {
+          "name": "الإدارة: التحقق من أجهزة المستخدم",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/users/{userId}/devices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "users",
+                "{userId}",
+                "devices"
+              ]
+            },
+            "description": "التحقق من وجود Device Tokens نشطة للمستخدم قبل إرسال Push Notifications (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: التحقق من أجهزة عدة مستخدمين",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/users/devices/check",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "users",
+                "devices",
+                "check"
+              ]
+            },
+            "description": "التحقق من وجود Device Tokens نشطة لعدة مستخدمين دفعة واحدة (للإداريين فقط)"
           }
         },
         {

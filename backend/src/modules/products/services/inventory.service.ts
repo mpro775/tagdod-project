@@ -467,6 +467,11 @@ export class InventoryService {
           return false;
         }
 
+        // استبعاد المنتجات التي نفذت (stock = 0) من المخزون المنخفض
+        if (variant.stock === 0) {
+          return false;
+        }
+
         // تطبيق شرط threshold أو المقارنة
         if (threshold !== undefined && !isNaN(threshold)) {
           return variant.stock <= threshold;

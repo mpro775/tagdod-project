@@ -379,6 +379,7 @@ export class AnalyticsService {
           trackInventory: true,
           deletedAt: null,
           isActive: true,
+          stock: { $gt: 0 }, // استبعاد المنتجات التي نفذت (stock = 0)
           $expr: { $lte: ['$stock', '$minStock'] }
         }
       },
@@ -2041,6 +2042,7 @@ export class AnalyticsService {
         $match: {
           deletedAt: null,
           trackStock: true,
+          stock: { $gt: 0 }, // استبعاد المنتجات التي نفذت (stock = 0)
           $expr: { $lt: ['$stock', '$minStock'] },
         },
       },

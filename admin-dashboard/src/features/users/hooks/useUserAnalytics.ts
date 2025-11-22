@@ -101,7 +101,30 @@ export const useUserAnalytics = () => {
       setLoading(true);
       const response = await apiClient.get('/admin/user-analytics/alerts/churn-risk');
       const data = response.data.data || response.data;
-      setChurnRiskAlerts(data.customers || []);
+      const customers = data.customers || [];
+      
+      // Transform API data to match ChurnRiskAlert interface
+      const transformedAlerts: ChurnRiskAlert[] = customers.map((customer: any) => {
+        // Build name from firstName and lastName
+        const firstName = customer.userInfo?.firstName || '';
+        const lastName = customer.userInfo?.lastName || '';
+        const name = [firstName, lastName].filter(Boolean).join(' ').trim() || undefined;
+        
+        // Use phone as email fallback if email is not available
+        const email = customer.email || customer.userInfo?.phone || '';
+        
+        return {
+          userId: customer.userId || customer._id,
+          name: name || '',
+          email: email,
+          churnRisk: customer.churnRisk || 'low',
+          lastOrderDays: customer.lastOrderDays || 0,
+          recommendedAction: customer.recommendedAction || '',
+          totalSpent: customer.totalSpent || 0,
+        };
+      });
+      
+      setChurnRiskAlerts(transformedAlerts);
     } catch {
       toast.error(t('users:analytics.errors.loadAlerts', 'فشل تحميل تنبيهات المخاطر'));
     } finally {

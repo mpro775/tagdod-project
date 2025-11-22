@@ -564,23 +564,94 @@ export const OrderDetailsPage: React.FC = () => {
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                               {t('details.lineTotal')}: {formatCurrency(item.lineTotal, order.currency)}
                             </Typography>
-                            {item.snapshot.attributes && (
-                              <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                {Object.entries(item.snapshot.attributes).map(([key, value]) => (
-                                  <Chip
-                                    key={key}
-                                    label={`${key}: ${value}`}
-                                    size="small"
-                                    sx={{
-                                      bgcolor:
-                                        theme.palette.mode === 'dark'
-                                          ? 'rgba(255, 255, 255, 0.08)'
-                                          : 'grey.100',
-                                    }}
-                                  />
-                                ))}
+                            {/* Variant Attributes - Professional Display */}
+                            {item.snapshot.variantAttributes && item.snapshot.variantAttributes.length > 0 && (
+                              <Box sx={{ mt: 1.5 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    display: 'block',
+                                    mb: 1,
+                                    fontWeight: 'medium',
+                                    color: 'text.secondary',
+                                  }}
+                                >
+                                  {t('details.variantAttributes', { defaultValue: 'السمات المختارة' })}:
+                                </Typography>
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 1,
+                                    p: 1.5,
+                                    bgcolor:
+                                      theme.palette.mode === 'dark'
+                                        ? 'rgba(255, 255, 255, 0.05)'
+                                        : 'grey.50',
+                                    borderRadius: 1,
+                                    border: `1px solid ${theme.palette.divider}`,
+                                  }}
+                                >
+                                  {item.snapshot.variantAttributes.map((attr, attrIndex) => (
+                                    <Box
+                                      key={attrIndex}
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        flexWrap: 'wrap',
+                                      }}
+                                    >
+                                      <Typography
+                                        variant="caption"
+                                        sx={{
+                                          fontWeight: 'bold',
+                                          color: 'primary.main',
+                                          minWidth: 'fit-content',
+                                        }}
+                                      >
+                                        {attr.attributeName || attr.attributeNameEn || 'سمة'}:
+                                      </Typography>
+                                      <Chip
+                                        label={attr.value || attr.valueEn || 'غير محدد'}
+                                        size="small"
+                                        sx={{
+                                          bgcolor:
+                                            theme.palette.mode === 'dark'
+                                              ? 'rgba(255, 255, 255, 0.12)'
+                                              : 'background.paper',
+                                          border: `1px solid ${theme.palette.primary.main}20`,
+                                          fontWeight: 'medium',
+                                          '& .MuiChip-label': {
+                                            px: 1.5,
+                                          },
+                                        }}
+                                      />
+                                    </Box>
+                                  ))}
+                                </Box>
                               </Box>
                             )}
+                            {/* Fallback to old attributes format for backward compatibility */}
+                            {(!item.snapshot.variantAttributes ||
+                              item.snapshot.variantAttributes.length === 0) &&
+                              item.snapshot.attributes && (
+                                <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                  {Object.entries(item.snapshot.attributes).map(([key, value]) => (
+                                    <Chip
+                                      key={key}
+                                      label={`${key}: ${value}`}
+                                      size="small"
+                                      sx={{
+                                        bgcolor:
+                                          theme.palette.mode === 'dark'
+                                            ? 'rgba(255, 255, 255, 0.08)'
+                                            : 'grey.100',
+                                      }}
+                                    />
+                                  ))}
+                                </Box>
+                              )}
                           </Box>
                         }
                         sx={{ flex: 1, minWidth: 0 }}

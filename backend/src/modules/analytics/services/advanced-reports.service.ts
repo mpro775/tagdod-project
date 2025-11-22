@@ -2179,6 +2179,7 @@ export class AdvancedReportsService {
   private async getLowStockCount(): Promise<number> {
     return await this.variantModel.countDocuments({
       trackInventory: true,
+      stock: { $gt: 0 }, // استبعاد المنتجات التي نفذت (stock = 0)
       $expr: { $lt: ['$stock', '$minStock'] },
       deletedAt: null
     });
