@@ -65,9 +65,9 @@ export class EmailAdapter {
         tls: {
           rejectUnauthorized: false,
         },
-        connectionTimeout: 30000, // زيادة إلى 30 ثانية
-        greetingTimeout: 30000,   // زيادة إلى 30 ثانية
-        socketTimeout: 30000,     // زيادة إلى 30 ثانية
+        connectionTimeout: 60000, // زيادة إلى 60 ثانية
+        greetingTimeout: 60000,   // زيادة إلى 60 ثانية
+        socketTimeout: 60000,     // زيادة إلى 60 ثانية
         debug: process.env.NODE_ENV === 'development',
         logger: process.env.NODE_ENV === 'development',
       };
@@ -120,7 +120,13 @@ export class EmailAdapter {
         attachments: notification.attachments,
       };
 
-      const info = await this.transporter!.sendMail(mailOptions);
+      // إضافة timeout wrapper للتعامل مع الملفات المرفقة الكبيرة
+      const sendMailPromise = this.transporter!.sendMail(mailOptions);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Email send timeout after 90 seconds')), 90000);
+      });
+
+      const info = await Promise.race([sendMailPromise, timeoutPromise]) as any;
 
       this.logger.log(`Email sent successfully to ${notification.to}: ${info.messageId}`);
 

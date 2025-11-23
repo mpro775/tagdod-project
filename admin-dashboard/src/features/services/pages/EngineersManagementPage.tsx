@@ -21,6 +21,7 @@ import {
   TextField,
   useTheme,
   useMediaQuery,
+  CircularProgress,
 } from '@mui/material';
 import {
   Engineering,
@@ -689,6 +690,145 @@ export const EngineersManagementPage: React.FC = () => {
                           total: selectedEngineer.totalRequests,
                         })}
                       </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                {/* Engineer Coupons Section */}
+                <Grid size={{ xs: 12 }}>
+                  <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
+                    <CardContent>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="h6" gutterBottom>
+                          {t('services:engineers.coupons', 'كوبونات المهندس')}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<Add />}
+                          onClick={() => {
+                            setDetailsDialogOpen(false);
+                            navigate(`/coupons/new?engineerId=${engineerId}`);
+                          }}
+                        >
+                          {t('services:engineers.createCoupon', 'إنشاء كوبون')}
+                        </Button>
+                      </Box>
+
+                      {couponsLoading || statsLoading ? (
+                        <Box display="flex" justifyContent="center" py={3}>
+                          <CircularProgress size={24} />
+                        </Box>
+                      ) : couponStats ? (
+                        <>
+                          <Grid container spacing={2} sx={{ mb: 2 }}>
+                            <Grid size={{ xs: 6, sm: 3 }}>
+                              <Box textAlign="center">
+                                <Typography variant="h5" color="primary">
+                                  {formatNumber(couponStats.totalCoupons || 0)}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {t('services:engineers.totalCoupons', 'إجمالي الكوبونات')}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                            <Grid size={{ xs: 6, sm: 3 }}>
+                              <Box textAlign="center">
+                                <Typography variant="h5" color="success.main">
+                                  {formatNumber(couponStats.activeCoupons || 0)}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {t('services:engineers.activeCoupons', 'كوبونات نشطة')}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                            <Grid size={{ xs: 6, sm: 3 }}>
+                              <Box textAlign="center">
+                                <Typography variant="h5" color="info.main">
+                                  {formatNumber(couponStats.totalUses || 0)}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {t('services:engineers.totalUses', 'إجمالي الاستخدامات')}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                            <Grid size={{ xs: 6, sm: 3 }}>
+                              <Box textAlign="center">
+                                <Typography variant="h5" color="warning.main">
+                                  {formatCurrency(couponStats.totalCommissionEarned || 0)}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {t('services:engineers.totalCommission', 'إجمالي العمولات')}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                          </Grid>
+
+                          {engineerCoupons && engineerCoupons.length > 0 ? (
+                            <Box>
+                              <Typography variant="subtitle2" gutterBottom sx={{ mb: 1 }}>
+                                {t('services:engineers.couponsList', 'قائمة الكوبونات')}
+                              </Typography>
+                              <Stack spacing={1}>
+                                {engineerCoupons.slice(0, 5).map((coupon: any) => (
+                                  <Box
+                                    key={coupon._id}
+                                    sx={{
+                                      p: 1.5,
+                                      border: `1px solid ${theme.palette.divider}`,
+                                      borderRadius: 1,
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                    }}
+                                  >
+                                    <Box>
+                                      <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                                        <LocalOffer fontSize="small" color="primary" />
+                                        <Typography variant="body2" fontWeight="medium">
+                                          {coupon.code}
+                                        </Typography>
+                                      </Box>
+                                      <Typography variant="caption" color="text.secondary">
+                                        {coupon.name}
+                                      </Typography>
+                                    </Box>
+                                    <Box textAlign="right">
+                                      <Typography variant="body2" fontWeight="medium" color="success.main">
+                                        {formatNumber(coupon.usedCount || 0)} {t('services:engineers.uses', 'استخدام')}
+                                      </Typography>
+                                      {coupon.commissionRate && (
+                                        <Typography variant="caption" color="text.secondary">
+                                          {coupon.commissionRate}% {t('services:engineers.commission', 'عمولة')}
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                  </Box>
+                                ))}
+                                {engineerCoupons.length > 5 && (
+                                  <Button
+                                    size="small"
+                                    onClick={() => {
+                                      setDetailsDialogOpen(false);
+                                      navigate(`/coupons?engineerId=${engineerId}`);
+                                    }}
+                                  >
+                                    {t('services:engineers.viewAll', 'عرض الكل')} ({engineerCoupons.length})
+                                  </Button>
+                                )}
+                              </Stack>
+                            </Box>
+                          ) : (
+                            <Alert severity="info" sx={{ mt: 2 }}>
+                              {t('services:engineers.noCoupons', 'لا توجد كوبونات لهذا المهندس')}
+                            </Alert>
+                          )}
+                        </>
+                      ) : (
+                        <Alert severity="info">
+                          {t('services:engineers.noCouponData', 'لا توجد بيانات كوبونات')}
+                        </Alert>
+                      )}
                     </CardContent>
                   </Card>
                 </Grid>
