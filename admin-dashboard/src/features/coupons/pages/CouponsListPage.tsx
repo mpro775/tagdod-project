@@ -90,6 +90,7 @@ export const CouponsListPage: React.FC = () => {
   const [couponToDelete, setCouponToDelete] = useState<Coupon | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [engineerFilter, setEngineerFilter] = useState<boolean | null>(null);
 
   const couponTypeLabels = createCouponTypeLabels(t);
   const couponVisibilityLabels = createCouponVisibilityLabels(t);

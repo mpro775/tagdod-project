@@ -563,6 +563,11 @@ export class PublicProductsPresenter {
       ...(variantId ? { _id: variantId } : {}),
       ...(attributeValues.length > 0 ? { attributeValues } : {}),
       ...(typeof rawVariant.isActive === 'boolean' ? { isActive: rawVariant.isActive } : {}),
+      ...(typeof rawVariant.isAvailable === 'boolean' ? { isAvailable: rawVariant.isAvailable } : {}),
+      ...(typeof rawVariant.stock === 'number' ? { stock: rawVariant.stock } : {}),
+      ...(typeof rawVariant.minOrderQuantity === 'number' ? { minOrderQuantity: rawVariant.minOrderQuantity } : {}),
+      ...(typeof rawVariant.maxOrderQuantity === 'number' ? { maxOrderQuantity: rawVariant.maxOrderQuantity } : {}),
+      ...(typeof rawVariant.salesCount === 'number' ? { salesCount: rawVariant.salesCount } : {}),
     };
 
     if (pricingByCurrency && typeof pricingByCurrency === 'object') {
@@ -667,6 +672,11 @@ export class PublicProductsPresenter {
         : {}),
       ...(typeof product.averageRating === 'number' ? { averageRating: product.averageRating } : {}),
       ...(typeof product.reviewsCount === 'number' ? { reviewsCount: product.reviewsCount } : {}),
+      ...(typeof product.salesCount === 'number' ? { salesCount: product.salesCount } : {}),
+      ...(typeof product.isAvailable === 'boolean' ? { isAvailable: product.isAvailable } : {}),
+      ...(typeof product.minOrderQuantity === 'number' ? { minOrderQuantity: product.minOrderQuantity } : {}),
+      ...(typeof product.maxOrderQuantity === 'number' ? { maxOrderQuantity: product.maxOrderQuantity } : {}),
+      ...(typeof product.stock === 'number' ? { stock: product.stock } : {}),
       ...(includePricingByCurrency
         ? cleanedPricingByCurrency
           ? { pricingByCurrency: cleanedPricingByCurrency }
@@ -750,6 +760,12 @@ export class PublicProductsPresenter {
         ...variant,
         pricing: this.stripVariantId(selectedPriceEntry),
         pricingByCurrency,
+        // التأكد من إرجاع الحقول الجديدة
+        ...(typeof variant.isAvailable === 'boolean' ? { isAvailable: variant.isAvailable } : {}),
+        ...(typeof variant.stock === 'number' ? { stock: variant.stock } : {}),
+        ...(typeof variant.minOrderQuantity === 'number' ? { minOrderQuantity: variant.minOrderQuantity } : {}),
+        ...(typeof variant.maxOrderQuantity === 'number' ? { maxOrderQuantity: variant.maxOrderQuantity } : {}),
+        ...(typeof variant.salesCount === 'number' ? { salesCount: variant.salesCount } : {}),
       };
     });
 

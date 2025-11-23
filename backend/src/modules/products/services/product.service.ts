@@ -191,7 +191,23 @@ export class ProductService {
       throw new ProductNotFoundException({ productId: id });
     }
 
-    return product;
+    // إضافة isAvailable يدوياً لأن .lean() لا يرجع virtual fields
+    const productWithAvailability = product as Product & { isAvailable?: boolean };
+    if (productWithAvailability) {
+      // حساب isAvailable
+      if (!productWithAvailability.isActive || productWithAvailability.status !== ProductStatus.ACTIVE) {
+        productWithAvailability.isAvailable = false;
+      } else if (productWithAvailability.variantsCount > 0) {
+        // للمنتجات مع variants، افتراضي true (سيتم التحقق الفعلي في service layer)
+        productWithAvailability.isAvailable = true;
+      } else if (productWithAvailability.trackStock) {
+        productWithAvailability.isAvailable = (productWithAvailability.stock ?? 0) > 0;
+      } else {
+        productWithAvailability.isAvailable = true;
+      }
+    }
+
+    return productWithAvailability;
   }
 
   async findBySlug(slug: string): Promise<Product> {
@@ -645,8 +661,21 @@ export class ProductService {
       } else {
         // إذا لم يكن هناك categoryId صالح، نستخدم categoryId الأصلي كـ string
         this.logger.warn(`Cannot determine categoryIdForCheck, skipping debug check`);
+        // إضافة isAvailable يدوياً
+        const dataWithAvailability = (data as Array<Product & { isAvailable?: boolean }>).map((product) => {
+          if (!product.isActive || product.status !== ProductStatus.ACTIVE) {
+            product.isAvailable = false;
+          } else if (product.variantsCount > 0) {
+            product.isAvailable = true;
+          } else if (product.trackStock) {
+            product.isAvailable = (product.stock ?? 0) > 0;
+          } else {
+            product.isAvailable = true;
+          }
+          return product;
+        });
         return {
-          data,
+          data: dataWithAvailability,
           meta: {
             page,
             limit,
@@ -716,14 +745,29 @@ export class ProductService {
       });
     }
 
+    // إضافة isAvailable يدوياً لأن .lean() لا يرجع virtual fields
+    const dataWithAvailability = (data as Array<Product & { isAvailable?: boolean }>).map((product) => {
+      if (!product.isActive || product.status !== ProductStatus.ACTIVE) {
+        product.isAvailable = false;
+      } else if (product.variantsCount > 0) {
+        // للمنتجات مع variants، افتراضي true (سيتم التحقق الفعلي في service layer)
+        product.isAvailable = true;
+      } else if (product.trackStock) {
+        product.isAvailable = (product.stock ?? 0) > 0;
+      } else {
+        product.isAvailable = true;
+      }
+      return product;
+    });
+
     this.logger.debug(`Product list result:`, { 
-      found: data.length, 
+      found: dataWithAvailability.length, 
       total, 
       filter: filterForLogging
     });
 
     return {
-      data,
+      data: dataWithAvailability,
       meta: {
         page,
         limit,
@@ -739,6 +783,70 @@ export class ProductService {
 
   async incrementViews(id: string): Promise<void> {
     await this.productModel.updateOne({ _id: id }, { $inc: { viewsCount: 1 } });
+  }
+
+  /**
+   * تحديث عدد المبيعات للمنتج
+   */
+  async incrementSalesCount(productId: string, quantity: number = 1): Promise<void> {
+    if (quantity <= 0) {
+      this.logger.warn(`Invalid quantity for salesCount increment: ${quantity}`);
+      return;
+    }
+    await this.productModel.updateOne(
+      { _id: productId },
+      { $inc: { salesCount: quantity } }
+    );
+    this.logger.debug(`Incremented salesCount for product ${productId} by ${quantity}`);
+  }
+
+  /**
+   * التحقق من توفر المنتج
+   */
+  async getProductAvailability(productId: string): Promise<{
+    isAvailable: boolean;
+    availableStock?: number;
+    reason?: string;
+  }> {
+    const product = await this.productModel.findById(productId);
+    if (!product) {
+      return { isAvailable: false, reason: 'PRODUCT_NOT_FOUND' };
+    }
+
+    if (!product.isActive || product.status !== ProductStatus.ACTIVE) {
+      return { isAvailable: false, reason: 'PRODUCT_NOT_ACTIVE' };
+    }
+
+    // إذا كان المنتج لديه variants
+    if (product.variantsCount > 0) {
+      const variants = await this.variantModel.find({
+        productId: product._id,
+        deletedAt: null,
+        isActive: true,
+      });
+
+      const availableVariants = variants.filter(v => {
+        if (!v.isAvailable) return false;
+        if (v.trackInventory && v.stock <= 0) return false;
+        return true;
+      });
+
+      return {
+        isAvailable: availableVariants.length > 0,
+        availableStock: availableVariants.reduce((sum, v) => sum + v.stock, 0),
+      };
+    }
+
+    // للمنتجات البسيطة
+    if (product.trackStock) {
+      const stock = product.stock ?? 0;
+      return {
+        isAvailable: stock > 0,
+        availableStock: stock,
+      };
+    }
+
+    return { isAvailable: true };
   }
 
   async updateStats(id: string): Promise<void> {

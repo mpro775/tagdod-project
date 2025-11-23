@@ -4054,6 +4054,40 @@ export class OrderService {
         }
       }
 
+      // تحديث salesCount للمنتجات والـ variants
+      try {
+        const productSalesMap = new Map<string, number>();
+        const variantSalesMap = new Map<string, number>();
+
+        // تجميع الكميات المباعة لكل منتج و variant
+        for (const item of order.items) {
+          const productId = item.productId.toString();
+          const currentProductSales = productSalesMap.get(productId) || 0;
+          productSalesMap.set(productId, currentProductSales + item.qty);
+
+          if (item.variantId) {
+            const variantId = item.variantId.toString();
+            const currentVariantSales = variantSalesMap.get(variantId) || 0;
+            variantSalesMap.set(variantId, currentVariantSales + item.qty);
+          }
+        }
+
+        // تحديث salesCount للمنتجات
+        for (const [productId, qty] of productSalesMap.entries()) {
+          await this.productService.incrementSalesCount(productId, qty);
+        }
+
+        // تحديث salesCount للـ variants
+        for (const [variantId, qty] of variantSalesMap.entries()) {
+          await this.variantService.incrementSalesCount(variantId, qty);
+        }
+
+        this.logger.log(`Updated salesCount for order ${order.orderNumber}`);
+      } catch (error) {
+        this.logger.error(`Failed to update salesCount for order ${order.orderNumber}:`, error);
+        // لا نرمي خطأ هنا حتى لا نوقف عملية إكمال الطلب
+      }
+
       this.logger.log(`Order completion handled successfully for ${order.orderNumber}`);
     } catch (error) {
       this.logger.error(`Error handling order completion for ${orderNumber}:`, error);

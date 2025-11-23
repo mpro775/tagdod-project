@@ -107,6 +107,13 @@ export class Variant {
   @Prop({ default: true })
   isAvailable!: boolean; // متاح للبيع
 
+  // الحد الأدنى والأقصى للطلب
+  @Prop({ default: 1, min: 1 })
+  minOrderQuantity!: number; // الحد الأدنى للطلب
+
+  @Prop({ default: 0, min: 0 }) // 0 يعني لا يوجد حد أقصى
+  maxOrderQuantity!: number; // الحد الأقصى للطلب
+
   // الإحصائيات
   @Prop({ default: 0 })
   salesCount!: number;

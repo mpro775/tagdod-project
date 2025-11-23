@@ -45,15 +45,15 @@ export class EmailAdapter {
       if (!smtpHost || !smtpUser || !smtpPass) {
         this.logger.warn(
           'SMTP environment variables are not fully configured. ' +
-          'Required: SMTP_HOST, SMTP_USER, SMTP_PASS. ' +
-          'Email notifications will be disabled.'
+            'Required: SMTP_HOST, SMTP_USER, SMTP_PASS. ' +
+            'Email notifications will be disabled.',
         );
         return;
       }
 
       const smtpPort = parseInt(this.configService.get('SMTP_PORT') || '587');
       const smtpSecure = this.configService.get('SMTP_SECURE') === 'true';
-      
+
       const smtpConfig = {
         host: smtpHost,
         port: smtpPort,
@@ -66,8 +66,8 @@ export class EmailAdapter {
           rejectUnauthorized: false,
         },
         connectionTimeout: 60000, // زيادة إلى 60 ثانية
-        greetingTimeout: 60000,   // زيادة إلى 60 ثانية
-        socketTimeout: 60000,     // زيادة إلى 60 ثانية
+        greetingTimeout: 60000, // زيادة إلى 60 ثانية
+        socketTimeout: 60000, // زيادة إلى 60 ثانية
         debug: process.env.NODE_ENV === 'development',
         logger: process.env.NODE_ENV === 'development',
       };
@@ -100,7 +100,6 @@ export class EmailAdapter {
     }
 
     try {
-
       let html = notification.html;
       let text = notification.text;
 
@@ -121,8 +120,24 @@ export class EmailAdapter {
             content: Buffer.from(attachment.content, 'base64'),
           };
         }
-        return attachment;
+        // التأكد من أن المحتوى هو Buffer وليس string
+        if (Buffer.isBuffer(attachment.content)) {
+          return attachment;
+        }
+        // إذا كان المحتوى ليس Buffer ولا string، نحاول تحويله
+        const content = attachment.content as string | Uint8Array | Buffer;
+        return {
+          ...attachment,
+          content: Buffer.from(content),
+        };
       });
+
+      // إذا كان هناك مرفقات، لا نحدد Content-Type في headers
+      // لأن nodemailer سيستخدم multipart/mixed تلقائياً
+      const headers: Record<string, string> = {};
+      if (!attachments || attachments.length === 0) {
+        headers['Content-Type'] = 'text/html; charset=UTF-8';
+      }
 
       const mailOptions: nodemailer.SendMailOptions = {
         from: this.configService.get('SMTP_FROM') || this.configService.get('SMTP_USER'),
@@ -131,9 +146,7 @@ export class EmailAdapter {
         html,
         text,
         attachments: attachments,
-        headers: {
-          'Content-Type': 'text/html; charset=UTF-8',
-        },
+        headers: Object.keys(headers).length > 0 ? headers : undefined,
       };
 
       // إضافة timeout wrapper للتعامل مع الملفات المرفقة الكبيرة
@@ -142,7 +155,10 @@ export class EmailAdapter {
         setTimeout(() => reject(new Error('Email send timeout after 90 seconds')), 90000);
       });
 
-      const info = await Promise.race([sendMailPromise, timeoutPromise]) as any;
+      const info = (await Promise.race([
+        sendMailPromise,
+        timeoutPromise,
+      ])) as nodemailer.SentMessageInfo;
 
       this.logger.log(`Email sent successfully to ${notification.to}: ${info.messageId}`);
 
@@ -252,7 +268,10 @@ export class EmailAdapter {
    * Send welcome email
    */
   async sendWelcomeEmail(to: string, userName: string): Promise<EmailResult> {
-    const appDeepLink = this.configService.get<string>('MOBILE_APP_DEEP_LINK_SCHEME', 'tagdodapp://');
+    const appDeepLink = this.configService.get<string>(
+      'MOBILE_APP_DEEP_LINK_SCHEME',
+      'tagdodapp://',
+    );
     return this.sendEmail({
       to,
       subject: 'مرحباً بك في تجدٌد',
@@ -272,7 +291,10 @@ export class EmailAdapter {
     to: string,
     orderData: Record<string, unknown>,
   ): Promise<EmailResult> {
-    const appDeepLink = this.configService.get<string>('MOBILE_APP_DEEP_LINK_SCHEME', 'tagdodapp://');
+    const appDeepLink = this.configService.get<string>(
+      'MOBILE_APP_DEEP_LINK_SCHEME',
+      'tagdodapp://',
+    );
     return this.sendEmail({
       to,
       subject: `تأكيد الطلب #${orderData.orderNumber}`,
@@ -290,9 +312,12 @@ export class EmailAdapter {
    */
   async sendPasswordReset(to: string, resetToken: string): Promise<EmailResult> {
     // الحصول على رابط Deep Link للتطبيق
-    const appDeepLink = this.configService.get<string>('MOBILE_APP_DEEP_LINK_SCHEME', 'tagdodapp://');
+    const appDeepLink = this.configService.get<string>(
+      'MOBILE_APP_DEEP_LINK_SCHEME',
+      'tagdodapp://',
+    );
     const resetUrl = `${appDeepLink}reset-password?token=${resetToken}`;
-    
+
     return this.sendEmail({
       to,
       subject: 'إعادة تعيين كلمة المرور',
@@ -308,14 +333,17 @@ export class EmailAdapter {
    * Send stock alert email
    */
   async sendStockAlert(to: string, productData: Record<string, unknown>): Promise<EmailResult> {
-    const appDeepLink = this.configService.get<string>('MOBILE_APP_DEEP_LINK_SCHEME', 'tagdodapp://');
+    const appDeepLink = this.configService.get<string>(
+      'MOBILE_APP_DEEP_LINK_SCHEME',
+      'tagdodapp://',
+    );
     return this.sendEmail({
       to,
       subject: `تنبيه: مخزون منخفض - ${productData.name}`,
       template: 'stock-alert',
       data: {
         ...productData,
-          siteName: 'تجدٌد',
+        siteName: 'تجدٌد',
         productUrl: `${appDeepLink}products/${productData.id}`,
       },
     });

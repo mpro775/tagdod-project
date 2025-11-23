@@ -546,6 +546,21 @@ export class VariantService {
 
   // ==================== Helper Methods ====================
 
+  /**
+   * تحديث عدد المبيعات للـ variant
+   */
+  async incrementSalesCount(variantId: string, quantity: number = 1): Promise<void> {
+    if (quantity <= 0) {
+      this.logger.warn(`Invalid quantity for salesCount increment: ${quantity}`);
+      return;
+    }
+    await this.variantModel.updateOne(
+      { _id: variantId },
+      { $inc: { salesCount: quantity } }
+    );
+    this.logger.debug(`Incremented salesCount for variant ${variantId} by ${quantity}`);
+  }
+
   private async updateProductVariantCount(productId: string): Promise<void> {
     const count = await this.variantModel.countDocuments({
       productId: new Types.ObjectId(productId),

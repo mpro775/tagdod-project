@@ -154,6 +154,13 @@ export class Product {
   @Prop({ default: false })
   allowBackorder?: boolean;
 
+  // الحد الأدنى والأقصى للطلب
+  @Prop({ default: 1, min: 1 })
+  minOrderQuantity?: number; // الحد الأدنى للطلب
+
+  @Prop({ default: 0, min: 0 }) // 0 يعني لا يوجد حد أقصى
+  maxOrderQuantity?: number; // الحد الأقصى للطلب
+
   // المنتجات الشبيهة
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Product' }], default: [] })
   relatedProducts!: string[]; // IDs of related/similar products
@@ -182,4 +189,30 @@ ProductSchema.index({ deletedAt: 1 });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ salesCount: -1 });
 ProductSchema.index({ viewsCount: -1 });
+
+// Virtual for isAvailable
+ProductSchema.virtual('isAvailable').get(function() {
+  // إذا كان المنتج غير نشط، غير متاح
+  if (!this.isActive || this.status !== ProductStatus.ACTIVE) {
+    return false;
+  }
+
+  // إذا كان المنتج لديه variants، نحتاج للتحقق من variants
+  // سيتم التحقق الفعلي في service layer
+  if (this.variantsCount > 0) {
+    return true; // افتراضي true، سيتم التحقق الفعلي في service
+  }
+
+  // للمنتجات البسيطة (بدون variants)
+  if (this.trackStock) {
+    return (this.stock ?? 0) > 0;
+  }
+
+  // إذا لم يكن trackStock مفعل، المنتج متاح
+  return true;
+});
+
+// تأكد من أن virtuals يتم تضمينها في JSON و Object
+ProductSchema.set('toJSON', { virtuals: true });
+ProductSchema.set('toObject', { virtuals: true });
 
