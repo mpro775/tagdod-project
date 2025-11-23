@@ -3483,7 +3483,7 @@ export class OrderService {
       try {
         browser = await puppeteer.launch({
           headless: true,
-          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 'temp-invoices',
           timeout: 60000, // زيادة timeout إلى 60 ثانية
           args: [
             '--no-sandbox',
@@ -4025,9 +4025,10 @@ export class OrderService {
 
       // حفظ PDF مؤقت للتأكد من الإنشاء (للتطوير فقط)
       try {
+        const tempInvoicesDir = this.configService?.get('TEMP_INVOICES_DIR') || 'temp-invoices';
         const tempPdfPath = path.join(
           process.cwd(),
-          'temp-invoices',
+          tempInvoicesDir,
           `invoice-${order.orderNumber}-${Date.now()}.pdf`,
         );
         const tempDir = path.dirname(tempPdfPath);
@@ -4180,7 +4181,8 @@ export class OrderService {
           };
 
       // مسار ترويسة الشركة (PNG شفاف)
-      const letterheadPath = path.join(process.cwd(), 'assets', 'letterhead.png');
+      const assetsDir = this.configService?.get('ASSETS_DIR') || 'assets';
+      const letterheadPath = path.join(process.cwd(), assetsDir, 'letterhead.png');
       let letterheadBase64 = '';
 
       if (fs.existsSync(letterheadPath)) {
