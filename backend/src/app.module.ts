@@ -61,19 +61,19 @@ import { ApiMetricsInterceptor } from './modules/system-monitoring/interceptors/
     MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/solar-commerce', {
       maxPoolSize: parseInt(process.env.DB_POOL_MAX || '10'),
       minPoolSize: parseInt(process.env.DB_POOL_MIN || '2'),
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 20000, // Increased from 5000 to 20000 (20 seconds) due to high latency
       socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
+      connectTimeoutMS: 15000, // Increased from 10000 to 15000
       heartbeatFrequencyMS: 10000, // Important: periodic ping to maintain connection
       maxIdleTimeMS: 30000,
       retryWrites: true,
       retryReads: true,
+      // Additional settings to improve stability
+      bufferCommands: false, // Disable mongoose buffering
     }),
-    
+
     // Global schemas for middleware
-    MongooseModule.forFeature([
-      { name: User.name, schema: UserSchema },
-    ]),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
 
     // Scheduling
     ScheduleModule.forRoot(),
@@ -132,15 +132,11 @@ import { ApiMetricsInterceptor } from './modules/system-monitoring/interceptors/
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // Apply request ID middleware to all routes
-    consumer
-      .apply(RequestIdMiddleware)
-      .forRoutes('*');
-    
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+
     // Apply activity tracking middleware to all routes
-    consumer
-      .apply(ActivityTrackingMiddleware)
-      .forRoutes('*');
-    
+    consumer.apply(ActivityTrackingMiddleware).forRoutes('*');
+
     // Apply idempotency middleware to critical routes (Orders/Checkout)
     consumer
       .apply(IdempotencyMiddleware)

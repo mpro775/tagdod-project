@@ -60,61 +60,45 @@ GET /categories?isFeatured=true
   "success": true,
   "data": [
     {
-      "_id": "64cat123",
+      "id": "64a1b2c3d4e5f6789abcdef0",
       "name": "ألواح شمسية",
       "nameEn": "Solar Panels",
-      "description": "جميع أنواع الألواح الشمسية",
-      "descriptionEn": "All types of solar panels",
-      "slug": "solar-panels",
-      "path": "/solar-panels",
-      "depth": 0,
-      "parentId": null,
-      "image": "https://cdn.example.com/categories/solar-panels.jpg",
-      "imageId": "64img123",
-      "icon": "https://cdn.example.com/icons/solar-panel.svg",
-      "iconId": "64icon123",
-      "metaTitle": "ألواح شمسية - أفضل الأسعار في اليمن",
-      "metaDescription": "تسوق أفضل الألواح الشمسية عالية الكفاءة",
-      "metaKeywords": ["ألواح شمسية", "solar panels", "طاقة شمسية"],
-      "order": 1,
+      "parent": null,
+      "image": {
+        "id": "64img123abc",
+        "path": "media/category/solar-panels.png"
+      },
       "isActive": true,
-      "showInMenu": true,
-      "isFeatured": true,
-      "productsCount": 45,
-      "childrenCount": 3,
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "updatedAt": "2025-01-15T10:00:00.000Z"
+      "order": 1,
+      "productsCount": 45
     },
     {
-      "_id": "64cat124",
+      "id": "64a1b2c3d4e5f6789abcdef1",
       "name": "بطاريات",
       "nameEn": "Batteries",
-      "description": "بطاريات الطاقة الشمسية",
-      "descriptionEn": "Solar energy batteries",
-      "slug": "batteries",
-      "path": "/batteries",
-      "depth": 0,
-      "parentId": null,
-      "image": "https://cdn.example.com/categories/batteries.jpg",
-      "imageId": "64img124",
-      "icon": "https://cdn.example.com/icons/battery.svg",
-      "iconId": "64icon124",
-      "metaTitle": "بطاريات الطاقة الشمسية",
-      "metaDescription": "أفضل بطاريات الطاقة الشمسية",
-      "metaKeywords": ["بطاريات", "batteries", "طاقة شمسية"],
-      "order": 2,
+      "parent": null,
+      "image": {
+        "id": "64img124abc",
+        "path": "media/category/batteries.png"
+      },
       "isActive": true,
-      "showInMenu": true,
-      "isFeatured": true,
-      "productsCount": 28,
-      "childrenCount": 2,
-      "createdAt": "2025-01-01T00:00:00.000Z",
-      "updatedAt": "2025-01-10T14:00:00.000Z"
+      "order": 2,
+      "productsCount": 28
     }
   ],
   "requestId": "req_cat_001"
 }
 ```
+
+> **ملاحظة:** الـ response مبسط للعرض العام. الحقول المتاحة:
+> - `id`: معرف الفئة
+> - `name`: الاسم بالعربية
+> - `nameEn`: الاسم بالإنجليزية
+> - `parent`: كائن يحتوي على `id` فقط (أو `null` للفئات الرئيسية)
+> - `image`: كائن يحتوي على `id` و `path` (أو `null`)
+> - `isActive`: حالة الفئة
+> - `order`: ترتيب العرض
+> - `productsCount`: عدد المنتجات
 
 ### كود Flutter
 
@@ -222,78 +206,72 @@ Future<List<Category>> getCategories({
   "success": true,
   "data": [
     {
-      "_id": "64cat123",
+      "id": "64a1b2c3d4e5f6789abcdef0",
       "name": "ألواح شمسية",
       "nameEn": "Solar Panels",
-      "slug": "solar-panels",
-      "path": "/solar-panels",
-      "depth": 0,
-      "parentId": null,
-      "icon": "https://cdn.example.com/icons/solar-panel.svg",
-      "iconId": "64icon123",
+      "parent": null,
+      "image": {
+        "id": "64img123abc",
+        "path": "media/category/solar-panels.png"
+      },
       "isActive": true,
-      "isFeatured": true,
-      "showInMenu": true,
+      "order": 1,
       "productsCount": 45,
-      "childrenCount": 3,
       "children": [
         {
-          "_id": "64cat125",
+          "id": "64a1b2c3d4e5f6789abcdef2",
           "name": "ألواح 550 واط",
           "nameEn": "550W Panels",
-          "slug": "solar-panels-550w",
-          "path": "/solar-panels/solar-panels-550w",
-          "depth": 1,
-          "parentId": "64cat123",
-          "icon": "https://cdn.example.com/icons/solar-panel-550w.svg",
-          "iconId": "64icon125",
+          "parent": {
+            "id": "64a1b2c3d4e5f6789abcdef0"
+          },
+          "image": {
+            "id": "64img125abc",
+            "path": "media/category/solar-panels-550w.png"
+          },
           "isActive": true,
-          "isFeatured": false,
-          "showInMenu": true,
+          "order": 1,
           "productsCount": 25,
-          "childrenCount": 0,
           "children": []
         },
         {
-          "_id": "64cat126",
+          "id": "64a1b2c3d4e5f6789abcdef3",
           "name": "ألواح 450 واط",
           "nameEn": "450W Panels",
-          "slug": "solar-panels-450w",
-          "path": "/solar-panels/solar-panels-450w",
-          "depth": 1,
-          "parentId": "64cat123",
-          "icon": "https://cdn.example.com/icons/solar-panel-450w.svg",
-          "iconId": "64icon126",
+          "parent": {
+            "id": "64a1b2c3d4e5f6789abcdef0"
+          },
+          "image": {
+            "id": "64img126abc",
+            "path": "media/category/solar-panels-450w.png"
+          },
           "isActive": true,
-          "isFeatured": false,
-          "showInMenu": true,
+          "order": 2,
           "productsCount": 20,
-          "childrenCount": 0,
           "children": []
         }
       ]
     },
     {
-      "_id": "64cat124",
+      "id": "64a1b2c3d4e5f6789abcdef1",
       "name": "بطاريات",
       "nameEn": "Batteries",
-      "slug": "batteries",
-      "path": "/batteries",
-      "depth": 0,
-      "parentId": null,
-      "icon": "https://cdn.example.com/icons/battery.svg",
-      "iconId": "64icon124",
+      "parent": null,
+      "image": {
+        "id": "64img124abc",
+        "path": "media/category/batteries.png"
+      },
       "isActive": true,
-      "isFeatured": true,
-      "showInMenu": true,
+      "order": 2,
       "productsCount": 28,
-      "childrenCount": 2,
       "children": []
     }
   ],
   "requestId": "req_cat_002"
 }
 ```
+
+> **ملاحظة:** البنية نفسها للقائمة العادية مع إضافة `children` array لكل فئة.
 
 ### كود Flutter
 
@@ -335,35 +313,56 @@ Future<List<CategoryTree>> getCategoryTree() async {
 {
   "success": true,
   "data": {
-    "_id": "64cat123",
-    "name": {
-      "ar": "ألواح شمسية",
-      "en": "Solar Panels"
-    },
-    "description": {
-      "ar": "جميع أنواع الألواح الشمسية عالية الكفاءة",
-      "en": "All types of high-efficiency solar panels"
-    },
+    "_id": "64a1b2c3d4e5f6789abcdef0",
+    "name": "ألواح شمسية",
+    "nameEn": "Solar Panels",
+    "description": "جميع أنواع الألواح الشمسية عالية الكفاءة",
+    "descriptionEn": "All types of high-efficiency solar panels",
     "slug": "solar-panels",
     "parentId": null,
-    "icon": "https://cdn.example.com/icons/solar-panel.svg",
-    "image": "https://cdn.example.com/categories/solar-panels.jpg",
+    "imageId": {
+      "_id": "64img123abc",
+      "storedFilename": "media/category/solar-panels.png",
+      "url": "https://cdn.example.com/media/category/solar-panels.png"
+    },
+    "metaTitle": "ألواح شمسية - أفضل الأسعار في اليمن",
+    "metaDescription": "تسوق أفضل الألواح الشمسية عالية الكفاءة",
+    "metaKeywords": ["ألواح شمسية", "solar panels", "طاقة شمسية"],
+    "order": 1,
     "isActive": true,
     "isFeatured": true,
-    "order": 1,
     "productsCount": 45,
-    "seo": {
-      "title": "ألواح شمسية - أفضل الأسعار في اليمن",
-      "description": "تسوق أفضل الألواح الشمسية...",
-      "keywords": ["ألواح شمسية", "solar panels", "طاقة شمسية"]
-    },
+    "childrenCount": 3,
+    "children": [
+      {
+        "_id": "64a1b2c3d4e5f6789abcdef2",
+        "name": "ألواح 550 واط",
+        "nameEn": "550W Panels",
+        "slug": "solar-panels-550w",
+        "parentId": "64a1b2c3d4e5f6789abcdef0",
+        "productsCount": 25
+      }
+    ],
+    "breadcrumbs": [
+      {
+        "id": "64a1b2c3d4e5f6789abcdef0",
+        "name": "ألواح شمسية",
+        "nameEn": "Solar Panels",
+        "slug": "solar-panels"
+      }
+    ],
     "createdAt": "2025-01-01T00:00:00.000Z",
     "updatedAt": "2025-01-15T10:00:00.000Z"
   },
-  "meta": null,
   "requestId": "req_cat_003"
 }
 ```
+
+> **ملاحظة:** هذا الـ endpoint يعيد تفاصيل كاملة للفئة مع:
+> - جميع الحقول من الـ schema
+> - `children`: قائمة بالفئات الفرعية
+> - `breadcrumbs`: مسار التنقل الهرمي
+> - `imageId`: كائن كامل من Media Library (populated)
 
 ### كود Flutter
 
@@ -580,22 +579,24 @@ Future<PaginatedProducts> getCategoryProducts(
   "success": true,
   "data": [
     {
-      "_id": "64cat123",
-      "name": {
-        "ar": "ألواح شمسية",
-        "en": "Solar Panels"
+      "id": "64a1b2c3d4e5f6789abcdef0",
+      "name": "ألواح شمسية",
+      "nameEn": "Solar Panels",
+      "parent": null,
+      "image": {
+        "id": "64img123abc",
+        "path": "media/category/solar-panels.png"
       },
-      "slug": "solar-panels",
-      "icon": "https://cdn.example.com/icons/solar-panel.svg",
-      "image": "https://cdn.example.com/categories/solar-panels.jpg",
-      "isFeatured": true,
+      "isActive": true,
+      "order": 1,
       "productsCount": 45
     }
   ],
-  "meta": null,
   "requestId": "req_cat_004"
 }
 ```
+
+> **ملاحظة:** نفس بنية `/categories` لكن فقط الفئات المميزة (`isFeatured: true`).
 
 ### كود Flutter
 
@@ -635,8 +636,8 @@ class Category {
   final String path;
   final int depth;
   final String? parentId;
-  final String? image;
-  final String? imageId;
+  final String? image; // path أو URL للصورة
+  final String? imageId; // ID الصورة من Media Library
   final String? icon;
   final String? iconId;
   final String? metaTitle;
@@ -650,6 +651,14 @@ class Category {
   final int childrenCount;
   final DateTime createdAt;
   final DateTime updatedAt;
+  
+  // للحصول على URL الصورة الكامل (إذا لزم الأمر)
+  String? get imageUrl {
+    if (image == null) return null;
+    if (image!.startsWith('http')) return image;
+    // بناء URL كامل من path
+    return 'https://cdn.example.com/$image';
+  }
 
   Category({
     required this.id,
@@ -679,18 +688,55 @@ class Category {
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
+    // للـ endpoints العامة (list, featured): id, name, nameEn, parent, image, isActive, order, productsCount
+    // للـ endpoint التفاصيل (/:id): _id, name, nameEn, description, descriptionEn, slug, parentId, imageId, children, breadcrumbs, etc.
+    
+    // معالجة id (قد يكون 'id' أو '_id')
+    final categoryId = json['id'] ?? json['_id'] ?? '';
+    
+    // معالجة parent (قد يكون object مع id أو string أو null)
+    String? parentId;
+    if (json['parent'] != null) {
+      if (json['parent'] is Map) {
+        parentId = json['parent']['id'];
+      } else {
+        parentId = json['parent'] as String?;
+      }
+    } else if (json['parentId'] != null) {
+      parentId = json['parentId'] is String ? json['parentId'] : json['parentId'].toString();
+    }
+    
+    // معالجة image (قد يكون object مع id و path أو string)
+    String? imagePath;
+    String? imageId;
+    if (json['image'] != null) {
+      if (json['image'] is Map) {
+        imageId = json['image']['id'];
+        imagePath = json['image']['path'];
+      } else {
+        imagePath = json['image'] as String?;
+      }
+    } else if (json['imageId'] != null) {
+      if (json['imageId'] is Map) {
+        imageId = json['imageId']['_id'] ?? json['imageId']['id'];
+        imagePath = json['imageId']['storedFilename'] ?? json['imageId']['url'];
+      } else {
+        imageId = json['imageId'] as String?;
+      }
+    }
+    
     return Category(
-      id: json['_id'],
+      id: categoryId,
       name: json['name'] ?? '',
       nameEn: json['nameEn'] ?? '',
       description: json['description'],
       descriptionEn: json['descriptionEn'],
-      slug: json['slug'],
+      slug: json['slug'] ?? '',
       path: json['path'] ?? '',
       depth: json['depth'] ?? 0,
-      parentId: json['parentId'],
-      image: json['image'],
-      imageId: json['imageId'],
+      parentId: parentId,
+      image: imagePath,
+      imageId: imageId,
       icon: json['icon'],
       iconId: json['iconId'],
       metaTitle: json['metaTitle'],
@@ -702,8 +748,12 @@ class Category {
       isFeatured: json['isFeatured'] ?? false,
       productsCount: json['productsCount'] ?? 0,
       childrenCount: json['childrenCount'] ?? 0,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt']) 
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null 
+          ? DateTime.parse(json['updatedAt']) 
+          : DateTime.now(),
     );
   }
 
@@ -731,6 +781,8 @@ class CategoryTree {
   final String path;
   final int depth;
   final String? parentId;
+  final String? image; // path للصورة
+  final String? imageId; // ID الصورة
   final String? icon;
   final String? iconId;
   final bool isActive;
@@ -739,6 +791,13 @@ class CategoryTree {
   final int productsCount;
   final int childrenCount;
   final List<CategoryTree> children;
+  
+  // للحصول على URL الصورة الكامل (إذا لزم الأمر)
+  String? get imageUrl {
+    if (image == null) return null;
+    if (image!.startsWith('http')) return image;
+    return 'https://cdn.example.com/$image';
+  }
 
   CategoryTree({
     required this.id,
@@ -748,6 +807,8 @@ class CategoryTree {
     required this.path,
     required this.depth,
     this.parentId,
+    this.image,
+    this.imageId,
     this.icon,
     this.iconId,
     required this.isActive,
@@ -759,14 +820,39 @@ class CategoryTree {
   });
 
   factory CategoryTree.fromJson(Map<String, dynamic> json) {
+    // معالجة id (قد يكون 'id' أو '_id')
+    final categoryId = json['id'] ?? json['_id'] ?? '';
+    
+    // معالجة parent (قد يكون object مع id أو string أو null)
+    String? parentId;
+    if (json['parent'] != null) {
+      if (json['parent'] is Map) {
+        parentId = json['parent']['id'];
+      } else {
+        parentId = json['parent'] as String?;
+      }
+    } else if (json['parentId'] != null) {
+      parentId = json['parentId'] is String ? json['parentId'] : json['parentId'].toString();
+    }
+    
+    // معالجة image (قد يكون object مع id و path)
+    String? imagePath;
+    String? imageId;
+    if (json['image'] != null && json['image'] is Map) {
+      imageId = json['image']['id'];
+      imagePath = json['image']['path'];
+    }
+    
     return CategoryTree(
-      id: json['_id'],
+      id: categoryId,
       name: json['name'] ?? '',
       nameEn: json['nameEn'] ?? '',
-      slug: json['slug'],
+      slug: json['slug'] ?? '',
       path: json['path'] ?? '',
       depth: json['depth'] ?? 0,
-      parentId: json['parentId'],
+      parentId: parentId,
+      image: imagePath,
+      imageId: imageId,
       icon: json['icon'],
       iconId: json['iconId'],
       isActive: json['isActive'] ?? true,
@@ -829,45 +915,61 @@ class CategorySEO {
 
 ## 📝 ملاحظات مهمة
 
-1. **التصنيفات الهرمية:**
+1. **بنية الـ Response المختلفة:**
+   - **Endpoints العامة** (`/categories`, `/categories/tree`, `/categories/featured/list`):
+     - تستخدم `id` (وليس `_id`)
+     - `parent` هو كائن يحتوي على `id` فقط (أو `null`)
+     - `image` هو كائن يحتوي على `id` و `path` (أو `null`)
+     - بنية مبسطة للعرض العام
+   - **Endpoint التفاصيل** (`/categories/:id`):
+     - يستخدم `_id`
+     - `parentId` هو string مباشر (أو `null`)
+     - `imageId` هو كائن كامل من Media Library (populated)
+     - يحتوي على `children` و `breadcrumbs`
+     - بنية كاملة مع جميع التفاصيل
+
+2. **التصنيفات الهرمية:**
    - التصنيفات منظمة في شكل شجرة مع `path` و `depth`
    - `parentId = null` يعني تصنيف رئيسي
    - `path` يحتوي على المسار الكامل (مثل `/electronics/phones`)
    - `depth` يحدد مستوى التعمق (0 للرئيسية، 1 للفرعية، إلخ)
    - استخدم `/categories/tree` للحصول على الهيكل الكامل
 
-2. **السلوك الافتراضي:**
+3. **السلوك الافتراضي:**
    - **مهم:** عند استدعاء `/categories` بدون parameters، يتم إرجاع **الفئات الرئيسية فقط** (parentId = null) تلقائياً
    - للحصول على الفئات الفرعية، يجب تمرير `parentId` مع ID الفئة الأب
    - هذا السلوك يضمن أن التطبيق يعرض الفئات الرئيسية أولاً، ثم يمكن التنقل للفئات الفرعية
 
-3. **اللغات:**
+4. **اللغات:**
    - `name` و `nameEn`: الأسماء بالعربي والإنجليزي
    - `description` و `descriptionEn`: الأوصاف بالعربي والإنجليزي
    - استخدم `getName(locale)` و `getDescription(locale)` للحصول على النص المناسب
 
-4. **الصور والأيقونات:**
-   - `icon` و `iconId`: أيقونة صغيرة (SVG أو PNG)
-   - `image` و `imageId`: صورة كبيرة للتصنيف
-   - `iconId` و `imageId` من مستودع الصور
+5. **الصور والأيقونات:**
+   - في الـ endpoints العامة (`/categories`, `/categories/tree`, `/categories/featured/list`):
+     - `image`: كائن يحتوي على `id` و `path`
+     - `path`: مسار الصورة النسبي (مثل `media/category/solar-panels.png`)
+   - في endpoint التفاصيل (`/categories/:id`):
+     - `imageId`: كائن كامل من Media Library (populated) يحتوي على `_id`, `storedFilename`, `url`
+   - لبناء URL كامل: استخدم `path` مع base URL أو استخدم `url` من `imageId` في التفاصيل
 
-5. **SEO:**
+6. **SEO:**
    - `metaTitle`: عنوان الصفحة
    - `metaDescription`: وصف الصفحة
    - `metaKeywords`: كلمات مفتاحية للبحث
 
-6. **العرض في التطبيق:**
+7. **العرض في التطبيق:**
    - استخدم `order` للترتيب
    - `showInMenu`: عرض في القائمة الرئيسية
    - `isFeatured`: عرض في الصفحة الرئيسية
    - `productsCount`: عدد المنتجات في الفئة
    - `childrenCount`: عدد الفئات الفرعية
 
-7. **Cache:**
+8. **Cache:**
    - جميع الـ endpoints مع cache طويل (30 دقيقة - ساعة)
    - يمكنك cache البيانات محلياً أيضاً
 
-8. **التنقل:**
+9. **التنقل:**
    - عند النقر على تصنيف رئيسي، اعرض الفئات الفرعية
    - استخدم `slug` في الـ URLs
    - استخدم `path` للتنقل الهرمي
@@ -893,10 +995,11 @@ class CategorySEO {
 ### تم التحقق من:
 - ✅ جميع الـ 5 endpoints موجودة
 - ✅ Query parameters مطابقة
-- ✅ Response structures صحيحة
+- ✅ Response structures صحيحة ومطابقة للكود الفعلي
 - ✅ Cache TTL مطابق (30 min للـ list، 60 min للـ tree، 5 min للمنتجات)
-- ✅ Flutter Models شاملة ومفيدة
+- ✅ Flutter Models شاملة ومفيدة مع معالجة صحيحة للـ response structures المختلفة
 - ✅ دعم الفئات الفرعية في فلترة المنتجات
+- ✅ معالجة صحيحة لـ `id` vs `_id` و `parent` vs `parentId` و `image` structure
 
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/categories/public.controller.ts`

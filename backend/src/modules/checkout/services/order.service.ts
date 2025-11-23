@@ -3877,6 +3877,21 @@ export class OrderService {
 
       // إنشاء PDF الفاتورة
       const pdfBuffer = await this.generateOrderInvoicePDF(order);
+      this.logger.log(`PDF generated successfully for order ${order.orderNumber}, size: ${pdfBuffer.length} bytes`);
+
+      // حفظ PDF مؤقت للتأكد من الإنشاء (للتطوير فقط)
+      try {
+        const tempPdfPath = path.join(process.cwd(), 'temp-invoices', `invoice-${order.orderNumber}-${Date.now()}.pdf`);
+        const tempDir = path.dirname(tempPdfPath);
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
+        }
+        fs.writeFileSync(tempPdfPath, pdfBuffer);
+        this.logger.log(`PDF saved temporarily at: ${tempPdfPath}`);
+      } catch (saveError) {
+        this.logger.warn(`Failed to save temporary PDF for order ${order.orderNumber}:`, saveError);
+        // لا نوقف العملية إذا فشل الحفظ المؤقت
+      }
 
       // إرسال الفاتورة عبر البريد الإلكتروني
       await this.sendOrderInvoiceEmail(order, pdfBuffer);
@@ -3895,16 +3910,49 @@ export class OrderService {
     try {
       // جلب بيانات المستخدم
       const user = await this.userModel.findById(order.userId);
+      
+      // تحديد نوع الحساب
+      const getAccountType = (): string => {
+        if (order.accountType) {
+          // إذا كان موجود في Order، استخدمه مع الترجمة
+          const accountTypeMap: Record<string, string> = {
+            'retail': 'عميل',
+            'merchant': 'تاجر',
+            'engineer': 'مهندس',
+            'user': 'عميل',
+            'admin': 'مدير',
+            'super_admin': 'مدير عام'
+          };
+          return accountTypeMap[order.accountType] || order.accountType;
+        }
+        
+        if (user) {
+          // تحديد من roles
+          if (user.roles?.includes(UserRole.MERCHANT) || user.merchant_capable) {
+            return 'تاجر';
+          }
+          if (user.roles?.includes(UserRole.ENGINEER) || user.engineer_capable) {
+            return 'مهندس';
+          }
+          if (user.roles?.includes(UserRole.ADMIN) || user.roles?.includes(UserRole.SUPER_ADMIN)) {
+            return user.roles.includes(UserRole.SUPER_ADMIN) ? 'مدير عام' : 'مدير';
+          }
+          return 'عميل';
+        }
+        
+        return 'غير محدد';
+      };
+      
       const userInfo = user ? {
         name: (user.firstName && user.lastName 
           ? `${user.firstName} ${user.lastName}` 
           : user.firstName || user.lastName) || order.customerName || 'غير محدد',
         phone: user.phone || order.customerPhone || 'غير محدد',
-        email: 'غير محدد'
+        accountType: getAccountType()
       } : {
         name: order.customerName || 'غير محدد',
         phone: order.customerPhone || 'غير محدد',
-        email: 'غير محدد'
+        accountType: getAccountType()
       };
 
       // مسار ترويسة الشركة (PNG شفاف)
@@ -3931,6 +3979,32 @@ export class OrderService {
         return `${amount.toLocaleString('en-US')} ${currency}`;
       };
 
+      // حساب خصم التاجر (الفرق بين basePrice و finalPrice لكل منتج)
+      let totalMerchantDiscount = 0;
+      let totalPromotionDiscount = 0;
+      const itemsWithPromotions: Array<{ name: string; promotionId?: any; discount: number }> = [];
+
+      order.items.forEach((item) => {
+        // حساب الخصم الإجمالي للمنتج
+        const itemDiscount = (item.basePrice - item.finalPrice) * item.qty;
+        
+        // إذا كان هناك عرض مطبق، اجعله من خصم العرض
+        if (item.appliedPromotionId) {
+          const promotionDiscount = item.promotionDiscount * item.qty;
+          totalPromotionDiscount += promotionDiscount;
+          itemsWithPromotions.push({
+            name: item.snapshot?.name || 'منتج',
+            promotionId: item.appliedPromotionId,
+            discount: promotionDiscount
+          });
+          // باقي الخصم يعتبر خصم تاجر
+          totalMerchantDiscount += itemDiscount - promotionDiscount;
+        } else {
+          // بدون عرض، كل الخصم يعتبر خصم تاجر
+          totalMerchantDiscount += itemDiscount;
+        }
+      });
+
       // إنشاء محتوى HTML للفاتورة
       const htmlContent = `
         <!DOCTYPE html>
@@ -3953,27 +4027,72 @@ export class OrderService {
               direction: rtl;
               padding: 0;
               margin: 0;
-              background: #fff;
+              ${letterheadBase64 ? `background-image: url('${letterheadBase64}');` : 'background: #fff;'}
+              background-size: cover;
+              background-repeat: no-repeat;
+              background-position: center;
+              background-attachment: fixed;
               color: #333;
               font-size: 12px;
               line-height: 1.6;
+              position: relative;
+              min-height: 100vh;
             }
-            .letterhead {
-              width: 100%;
-              max-height: 120px;
-              object-fit: contain;
-              margin-bottom: 20px;
+            body::before {
+              content: '';
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              ${letterheadBase64 ? `background-image: url('${letterheadBase64}');` : ''}
+              background-size: cover;
+              background-repeat: no-repeat;
+              background-position: center;
+              z-index: 0;
+              pointer-events: none;
             }
-            .header {
-              text-align: center;
-              margin-bottom: 30px;
-              padding-bottom: 15px;
-              border-bottom: 2px solid #1976d2;
+            body > * {
+              position: relative;
+              z-index: 1;
             }
-            .header h1 {
+            .invoice-info, .delivery-info, .items-table, .totals-section, .footer,
+            div[style*="background: #fff3cd"], .discounts-section {
+              background: rgba(255, 255, 255, 0.95);
+            }
+            .info-box {
+              background: rgba(245, 245, 245, 0.95);
+            }
+            .discounts-section {
+              margin-top: 20px;
+              padding: 15px;
+              background: rgba(227, 242, 253, 0.95);
+              border-radius: 5px;
+              border-right: 4px solid #1976d2;
+            }
+            .discounts-section h3 {
               color: #1976d2;
-              font-size: 24px;
-              margin-bottom: 10px;
+              margin-bottom: 15px;
+              font-size: 14px;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 5px;
+            }
+            .discount-item {
+              margin: 8px 0;
+              padding: 8px;
+              background: rgba(255, 255, 255, 0.7);
+              border-radius: 3px;
+              font-size: 12px;
+            }
+            .product-attributes {
+              margin-top: 5px;
+              font-size: 10px;
+              color: #666;
+              line-height: 1.5;
+            }
+            .product-attributes span {
+              margin-left: 8px;
+              display: inline-block;
             }
             .invoice-info {
               display: flex;
@@ -4073,13 +4192,6 @@ export class OrderService {
           </style>
         </head>
         <body>
-          ${letterheadBase64 ? `<img src="${letterheadBase64}" class="letterhead" alt="Company Letterhead" />` : ''}
-          
-          <div class="header">
-            <h1>فاتورة ضريبية</h1>
-            <p>Tax Invoice</p>
-          </div>
-
           <div class="invoice-info">
             <div class="info-box">
               <h3>معلومات الفاتورة</h3>
@@ -4093,8 +4205,7 @@ export class OrderService {
               <h3>معلومات العميل</h3>
               <p><strong>الاسم:</strong> ${userInfo.name}</p>
               <p><strong>الهاتف:</strong> ${userInfo.phone}</p>
-              <p><strong>البريد الإلكتروني:</strong> ${userInfo.email}</p>
-              <p><strong>نوع الحساب:</strong> ${order.accountType || 'غير محدد'}</p>
+              <p><strong>نوع الحساب:</strong> ${userInfo.accountType}</p>
             </div>
           </div>
 
@@ -4120,22 +4231,97 @@ export class OrderService {
               </tr>
             </thead>
             <tbody>
-              ${order.items.map((item, index) => `
+              ${order.items.map((item, index) => {
+                // تجميع السمات
+                const attributes: string[] = [];
+                
+                // إضافة attributes (Record<string, string>)
+                if (item.snapshot?.attributes) {
+                  Object.entries(item.snapshot.attributes).forEach(([key, value]) => {
+                    attributes.push(`${key}: ${value}`);
+                  });
+                }
+                
+                // إضافة variantAttributes (Array) - قد يكون موجود في البيانات الفعلية رغم عدم وجوده في النوع
+                const snapshotAny = item.snapshot as any;
+                if (snapshotAny?.variantAttributes && Array.isArray(snapshotAny.variantAttributes)) {
+                  snapshotAny.variantAttributes.forEach((attr: any) => {
+                    const attrName = attr.attributeName || attr.attributeNameEn || 'Attribute';
+                    const attrValue = attr.value || attr.valueEn || 'N/A';
+                    attributes.push(`${attrName}: ${attrValue}`);
+                  });
+                }
+                
+                // تحديد إذا كان هناك عرض مطبق
+                const hasPromotion = item.appliedPromotionId ? ' (عرض مطبق)' : '';
+                
+                return `
                 <tr>
                   <td>${index + 1}</td>
                   <td>
-                    <strong>${item.snapshot?.name || 'منتج'}</strong><br/>
+                    <strong>${item.snapshot?.name || 'منتج'}${hasPromotion}</strong><br/>
                     ${item.snapshot?.sku ? `<small>SKU: ${item.snapshot.sku}</small><br/>` : ''}
-                    ${item.snapshot?.brandName ? `<small>العلامة: ${item.snapshot.brandName}</small>` : ''}
+                    ${item.snapshot?.brandName ? `<small>العلامة: ${item.snapshot.brandName}</small><br/>` : ''}
+                    ${attributes.length > 0 ? `
+                    <div class="product-attributes">
+                      ${attributes.map(attr => `<span>${attr}</span>`).join(' • ')}
+                    </div>
+                    ` : ''}
                   </td>
                   <td>${item.qty}</td>
                   <td>${formatCurrency(item.finalPrice, order.currency)}</td>
                   <td>${item.discount > 0 ? formatCurrency(item.discount, order.currency) : '-'}</td>
                   <td><strong>${formatCurrency(item.lineTotal, order.currency)}</strong></td>
                 </tr>
-              `).join('')}
+              `;
+              }).join('')}
             </tbody>
           </table>
+
+          ${(itemsWithPromotions.length > 0 || (order.appliedCoupons && order.appliedCoupons.length > 0) || (order.autoAppliedCoupons && order.autoAppliedCoupons.length > 0)) ? `
+          <div class="discounts-section">
+            <h3>العروض والكوبونات المطبقة</h3>
+            
+            ${itemsWithPromotions.length > 0 ? `
+            <div style="margin-bottom: 15px;">
+              <strong style="color: #1976d2;">العروض المطبقة على المنتجات:</strong>
+              ${itemsWithPromotions.map(promo => `
+                <div class="discount-item">
+                  ${promo.name}: خصم ${formatCurrency(promo.discount, order.currency)}
+                </div>
+              `).join('')}
+            </div>
+            ` : ''}
+            
+            ${order.appliedCoupons && order.appliedCoupons.length > 0 ? `
+            <div style="margin-bottom: 15px;">
+              <strong style="color: #1976d2;">الكوبونات المطبقة:</strong>
+              ${order.appliedCoupons.map((coupon: any) => {
+                const couponType = coupon.details?.type === 'percentage' ? 'نسبة مئوية' : 'مبلغ ثابت';
+                const couponValue = coupon.details?.type === 'percentage' 
+                  ? `${coupon.details?.discountPercentage || 0}%`
+                  : formatCurrency(coupon.details?.discountAmount || 0, order.currency);
+                return `
+                <div class="discount-item">
+                  <strong>${coupon.details?.title || coupon.code || 'كوبون'}</strong> (${couponType}: ${couponValue}) - خصم ${formatCurrency(coupon.discount, order.currency)}
+                </div>
+              `;
+              }).join('')}
+            </div>
+            ` : ''}
+            
+            ${order.autoAppliedCoupons && order.autoAppliedCoupons.length > 0 ? `
+            <div>
+              <strong style="color: #1976d2;">الكوبونات التلقائية:</strong>
+              ${order.autoAppliedCoupons.map((coupon: any) => `
+                <div class="discount-item">
+                  ${coupon.code || 'كوبون تلقائي'}: خصم ${formatCurrency(coupon.discount || 0, order.currency)}
+                </div>
+              `).join('')}
+            </div>
+            ` : ''}
+          </div>
+          ` : ''}
 
           <div class="totals-section">
             <div class="totals-box">
@@ -4143,16 +4329,28 @@ export class OrderService {
                 <span>المجموع الفرعي:</span>
                 <span>${formatCurrency(order.subtotal, order.currency)}</span>
               </div>
-              ${order.itemsDiscount > 0 ? `
+              ${totalMerchantDiscount > 0 ? `
               <div class="total-row">
-                <span>خصم المنتجات:</span>
-                <span>- ${formatCurrency(order.itemsDiscount, order.currency)}</span>
+                <span>خصم التاجر:</span>
+                <span>- ${formatCurrency(totalMerchantDiscount, order.currency)}</span>
               </div>
               ` : ''}
-              ${order.couponDiscount > 0 ? `
+              ${totalPromotionDiscount > 0 ? `
+              <div class="total-row">
+                <span>خصم العروض:</span>
+                <span>- ${formatCurrency(totalPromotionDiscount, order.currency)}</span>
+              </div>
+              ` : ''}
+              ${order.itemsDiscount > 0 && (totalMerchantDiscount + totalPromotionDiscount) !== order.itemsDiscount ? `
+              <div class="total-row">
+                <span>خصم إضافي على المنتجات:</span>
+                <span>- ${formatCurrency(order.itemsDiscount - totalMerchantDiscount - totalPromotionDiscount, order.currency)}</span>
+              </div>
+              ` : ''}
+              ${(order.couponDiscount > 0 || (order.autoDiscountsTotal && order.autoDiscountsTotal > 0)) ? `
               <div class="total-row">
                 <span>خصم الكوبونات:</span>
-                <span>- ${formatCurrency(order.couponDiscount, order.currency)}</span>
+                <span>- ${formatCurrency((order.couponDiscount || 0) + (order.autoDiscountsTotal || 0), order.currency)}</span>
               </div>
               ` : ''}
               ${order.shippingCost > 0 ? `
@@ -4255,6 +4453,52 @@ export class OrderService {
         return;
       }
 
+      // جلب بيانات المستخدم للحصول على الاسم الكامل
+      const user = await this.userModel.findById(order.userId);
+      const customerName = user 
+        ? (user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}` 
+          : user.firstName || user.lastName || order.customerName || 'N/A')
+        : order.customerName || 'N/A';
+
+      const customerPhone = user?.phone || order.customerPhone || order.deliveryAddress?.recipientPhone || 'N/A';
+
+      // تنسيق العنوان الكامل
+      const formatDeliveryAddress = () => {
+        const addr = order.deliveryAddress;
+        if (!addr) return 'N/A';
+        
+        const parts: string[] = [];
+        if (addr.recipientName) parts.push(`Recipient: ${addr.recipientName}`);
+        if (addr.recipientPhone) parts.push(`Phone: ${addr.recipientPhone}`);
+        if (addr.line1) parts.push(`Address: ${addr.line1}`);
+        if (addr.line2) parts.push(addr.line2);
+        if (addr.city) parts.push(`City: ${addr.city}`);
+        if (addr.region) parts.push(`Region: ${addr.region}`);
+        if (addr.country) parts.push(`Country: ${addr.country}`);
+        if (addr.postalCode) parts.push(`Postal Code: ${addr.postalCode}`);
+        if (addr.label) parts.push(`Label: ${addr.label}`);
+        if (addr.notes) parts.push(`Notes: ${addr.notes}`);
+        
+        return parts.length > 0 ? parts.join('<br>') : 'N/A';
+      };
+
+      const deliveryAddressHtml = formatDeliveryAddress();
+
+      // تنسيق التاريخ والأرقام بالإنجليزية
+      const formatDate = (date?: Date) => {
+        if (!date) return 'N/A';
+        return new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      };
+
+      const formatNumber = (num: number) => {
+        return num.toLocaleString('en-US');
+      };
+
       const invoiceNumber = order.invoiceNumber || order.orderNumber;
       const fileName = `invoice-${invoiceNumber}-${Date.now()}.pdf`;
 
@@ -4273,10 +4517,15 @@ export class OrderService {
             <ul style="line-height: 1.8;">
               <li><strong>رقم الطلب:</strong> ${order.orderNumber}</li>
               <li><strong>رقم الفاتورة:</strong> ${invoiceNumber}</li>
-              <li><strong>اسم العميل:</strong> ${order.customerName || 'غير محدد'}</li>
-              <li><strong>المجموع:</strong> ${order.total.toLocaleString('ar-SA')} ${order.currency}</li>
-              <li><strong>تاريخ الإكمال:</strong> ${order.completedAt?.toLocaleDateString('ar-SA') || 'غير محدد'}</li>
+              <li><strong>اسم العميل:</strong> ${customerName}</li>
+              <li><strong>الهاتف:</strong> ${customerPhone}</li>
+              <li><strong>المجموع:</strong> ${formatNumber(order.total)} ${order.currency}</li>
+              <li><strong>تاريخ الإكمال:</strong> ${formatDate(order.completedAt)}</li>
             </ul>
+            <h3 style="color: #333; margin-top: 20px;">عنوان التوصيل:</h3>
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; direction: ltr; text-align: left;">
+              ${deliveryAddressHtml}
+            </div>
             <p style="margin-top: 20px; color: #666;">يرجى الاطلاع على الفاتورة المرفقة للتفاصيل الكاملة.</p>
           </div>
           <div dir="ltr" style="font-family: Arial, sans-serif; padding: 20px; border-top: 1px solid #ddd; margin-top: 20px;">
@@ -4287,10 +4536,15 @@ export class OrderService {
             <ul style="line-height: 1.8;">
               <li><strong>Order Number:</strong> ${order.orderNumber}</li>
               <li><strong>Invoice Number:</strong> ${invoiceNumber}</li>
-              <li><strong>Customer Name:</strong> ${order.customerName || 'N/A'}</li>
-              <li><strong>Total:</strong> ${order.total.toLocaleString()} ${order.currency}</li>
-              <li><strong>Completed Date:</strong> ${order.completedAt?.toLocaleDateString() || 'N/A'}</li>
+              <li><strong>Customer Name:</strong> ${customerName}</li>
+              <li><strong>Phone:</strong> ${customerPhone}</li>
+              <li><strong>Total:</strong> ${formatNumber(order.total)} ${order.currency}</li>
+              <li><strong>Completed Date:</strong> ${formatDate(order.completedAt)}</li>
             </ul>
+            <h3 style="color: #333; margin-top: 20px;">Delivery Address:</h3>
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0;">
+              ${deliveryAddressHtml}
+            </div>
             <p style="margin-top: 20px; color: #666;">Please review the attached invoice for complete details.</p>
           </div>
         `,

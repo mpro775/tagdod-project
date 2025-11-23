@@ -47,6 +47,7 @@
 | `brandId` | `string` | ❌ | ID البراند للفلترة |
 | `isFeatured` | `boolean` | ❌ | فقط المنتجات المميزة |
 | `isNew` | `boolean` | ❌ | فقط المنتجات الجديدة |
+| `currency` | `string` | ❌ | رمز العملة المطلوبة (USD, YER, SAR) - افتراضي: USD أو العملة المفضلة للمستخدم |
 | `sortBy` | `string` | ❌ | حقل الترتيب (افتراضي: `createdAt`) |
 | `sortOrder` | `string` | ❌ | اتجاه الترتيب: `asc` أو `desc` (افتراضي: `desc` - الأحدث أولاً) |
 
@@ -68,65 +69,98 @@ GET /products?sortBy=name&sortOrder=asc
   "data": [
     {
       "_id": "64prod123",
-      "nameAr": "لوح شمسي 550 واط",
+      "name": "لوح شمسي 550 واط",
       "nameEn": "Solar Panel 550W",
-      "descriptionAr": "لوح شمسي عالي الكفاءة",
-      "descriptionEn": "High efficiency solar panel",
-      "slug": "solar-panel-550w",
-      "categoryId": {
+      "status": "ACTIVE",
+      "category": {
         "_id": "64cat123",
-        "nameAr": "الألواح الشمسية",
+        "name": "الألواح الشمسية",
         "nameEn": "Solar Panels"
       },
-      "brandId": "64brand123",
-      "sku": "SP-550-001",
-      "status": "ACTIVE",
+      "brand": {
+        "_id": "64brand123",
+        "name": "Brand Name",
+        "nameEn": "Brand Name"
+      },
+      "mainImage": {
+        "_id": "64img123",
+        "url": "https://cdn.example.com/products/solar-panel-1.jpg"
+      },
       "isFeatured": true,
       "isNew": false,
-      "mainImageId": {
-        "_id": "64img123",
-        "url": "https://cdn.example.com/products/solar-panel-1.jpg",
-        "alt": "Solar Panel Front"
-      },
-      "imageIds": [
-        {
-          "_id": "64img123",
-          "url": "https://cdn.example.com/products/solar-panel-1.jpg",
-          "alt": "Solar Panel Front"
+      "hasVariants": true,
+      "pricingByCurrency": {
+        "USD": {
+          "basePrice": 600,
+          "compareAtPrice": 720,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 600,
+          "currency": "USD"
         },
-        {
-          "_id": "64img124",
-          "url": "https://cdn.example.com/products/solar-panel-2.jpg",
-          "alt": "Solar Panel Back"
+        "YER": {
+          "basePrice": 150000,
+          "compareAtPrice": 180000,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 150000,
+          "currency": "YER"
+        },
+        "SAR": {
+          "basePrice": 2250,
+          "compareAtPrice": 2700,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 2250,
+          "currency": "SAR"
         }
-      ],
-      "specifications": {
-        "power": "550W",
-        "efficiency": "21%",
-        "warranty": "25 years"
       },
-      "tags": ["solar", "renewable", "energy"],
-      "viewsCount": 1250,
-      "variantsCount": 3,
-      "salesCount": 45,
-      "reviewsCount": 12,
-      "averageRating": 4.5,
-      "createdAt": "2025-01-15T10:00:00.000Z",
-      "updatedAt": "2025-01-20T14:30:00.000Z"
+      "defaultPricing": {
+        "basePrice": 600,
+        "compareAtPrice": 720,
+        "discountPercent": 0,
+        "discountAmount": 0,
+        "finalPrice": 600,
+        "currency": "USD"
+      },
+      "priceRangeByCurrency": {
+        "USD": {
+          "minPrice": 500,
+          "maxPrice": 800,
+          "currency": "USD",
+          "hasDiscountedVariant": false
+        },
+        "YER": {
+          "minPrice": 125000,
+          "maxPrice": 200000,
+          "currency": "YER",
+          "hasDiscountedVariant": false
+        }
+      }
     }
   ],
-    "meta": {
-      "page": 1,
-      "limit": 20,
-      "total": 150,
-      "totalPages": 8,
-      "hasNextPage": true,
-      "hasPrevPage": false
-    }
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 150,
+    "totalPages": 8,
+    "hasNextPage": true,
+    "hasPrevPage": false
   },
   "requestId": "req_prod_001"
 }
 ```
+
+> **ملاحظة:** الـ response مبسط للعرض في القائمة. الحقول المتاحة:
+> - `_id`: معرف المنتج
+> - `name`, `nameEn`: الاسم بالعربي والإنجليزي
+> - `category`: كائن مبسط يحتوي على `_id`, `name`, `nameEn`
+> - `brand`: كائن مبسط يحتوي على `_id`, `name`, `nameEn` (أو `null`)
+> - `mainImage`: كائن مبسط يحتوي على `_id`, `url` (أو `null`)
+> - `pricingByCurrency`: أسعار المنتج بجميع العملات (USD, YER, SAR)
+> - `defaultPricing`: السعر الافتراضي (بالعملة المطلوبة)
+> - `priceRangeByCurrency`: نطاق الأسعار لكل عملة (للمنتجات ذات variants متعددة)
+> - `hasVariants`: هل المنتج يحتوي على variants
 
 ### كود Flutter
 
@@ -140,6 +174,7 @@ class ProductsFilter {
   final String? brandId;
   final bool? isFeatured;
   final bool? isNew;
+  final String? currency; // USD, YER, SAR
   final String? sortBy; // مثل: 'createdAt', 'name', 'basePriceUSD'
   final String? sortOrder; // 'asc' أو 'desc'
 
@@ -152,6 +187,7 @@ class ProductsFilter {
     this.brandId,
     this.isFeatured,
     this.isNew,
+    this.currency,
     this.sortBy,
     this.sortOrder,
   });
@@ -166,6 +202,7 @@ class ProductsFilter {
       if (brandId != null) 'brandId': brandId,
       if (isFeatured != null) 'isFeatured': isFeatured.toString(),
       if (isNew != null) 'isNew': isNew.toString(),
+      if (currency != null) 'currency': currency,
       if (sortBy != null) 'sortBy': sortBy,
       if (sortOrder != null) 'sortOrder': sortOrder,
     };
@@ -224,45 +261,38 @@ GET /products/64prod123?currency=YER
   "data": {
     "product": {
       "_id": "64prod123",
-      "nameAr": "لوح شمسي 550 واط",
+      "name": "لوح شمسي 550 واط",
       "nameEn": "Solar Panel 550W",
-      "descriptionAr": "لوح شمسي عالي الكفاءة مع ضمان 25 سنة",
+      "description": "لوح شمسي عالي الكفاءة مع ضمان 25 سنة",
       "descriptionEn": "High efficiency solar panel with 25 years warranty",
-      "slug": "solar-panel-550w",
-      "categoryId": {
+      "status": "ACTIVE",
+      "category": {
         "_id": "64cat123",
-        "nameAr": "الألواح الشمسية",
+        "name": "الألواح الشمسية",
         "nameEn": "Solar Panels"
       },
-      "brandId": "64brand123",
-      "sku": "SP-550-001",
-      "status": "ACTIVE",
-      "isFeatured": true,
-      "isNew": false,
-      "mainImageId": {
-        "_id": "64img123",
-        "url": "https://cdn.example.com/products/solar-panel-1.jpg",
-        "alt": "Solar Panel Front"
+      "brand": {
+        "_id": "64brand123",
+        "name": "Brand Name",
+        "nameEn": "Brand Name"
       },
-      "imageIds": [
+      "mainImage": {
+        "_id": "64img123",
+        "url": "https://cdn.example.com/products/solar-panel-1.jpg"
+      },
+      "images": [
         {
           "_id": "64img123",
-          "url": "https://cdn.example.com/products/solar-panel-1.jpg",
-          "alt": "Solar Panel Front"
+          "url": "https://cdn.example.com/products/solar-panel-1.jpg"
+        },
+        {
+          "_id": "64img124",
+          "url": "https://cdn.example.com/products/solar-panel-2.jpg"
         }
       ],
-      "specifications": {
-        "power": "550W",
-        "efficiency": "21%",
-        "warranty": "25 years",
-        "weight": "28kg"
-      },
-      "tags": ["solar", "renewable", "energy"],
-      "viewsCount": 1250,
-      "variantsCount": 3,
-      "salesCount": 45,
-      "reviewsCount": 12,
-      "averageRating": 4.5,
+      "isFeatured": true,
+      "isNew": false,
+      "hasVariants": true,
       "attributesDetails": [
         {
           "id": "64attr001",
@@ -274,14 +304,52 @@ GET /products/64prod123?currency=YER
           ]
         }
       ],
-      "createdAt": "2025-01-15T10:00:00.000Z",
-      "updatedAt": "2025-01-20T14:30:00.000Z"
+      "pricingByCurrency": {
+        "USD": {
+          "basePrice": 600,
+          "compareAtPrice": 720,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 600,
+          "currency": "USD"
+        },
+        "YER": {
+          "basePrice": 150000,
+          "compareAtPrice": 180000,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 150000,
+          "currency": "YER"
+        },
+        "SAR": {
+          "basePrice": 2250,
+          "compareAtPrice": 2700,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 2250,
+          "currency": "SAR"
+        }
+      },
+      "priceRangeByCurrency": {
+        "USD": {
+          "minPrice": 500,
+          "maxPrice": 800,
+          "currency": "USD",
+          "hasDiscountedVariant": false
+        },
+        "YER": {
+          "minPrice": 125000,
+          "maxPrice": 200000,
+          "currency": "YER",
+          "hasDiscountedVariant": false
+        }
+      },
+      "averageRating": 4.5,
+      "reviewsCount": 12
     },
     "variants": [
       {
         "_id": "64var123",
-        "productId": "64prod123",
-        "sku": "SP-550-001-BLK",
         "attributeValues": [
           {
             "attributeId": "64attr001",
@@ -293,15 +361,12 @@ GET /products/64prod123?currency=YER
           }
         ],
         "pricing": {
-          "basePrice": 150000,
-          "compareAtPrice": 180000,
+          "basePrice": 600,
+          "compareAtPrice": 720,
           "discountPercent": 0,
           "discountAmount": 0,
-          "finalPrice": 150000,
-          "currency": "YER",
-          "exchangeRate": 250,
-          "formattedPrice": "150,000 ر.ي",
-          "formattedFinalPrice": "150,000 ر.ي"
+          "finalPrice": 600,
+          "currency": "USD"
         },
         "pricingByCurrency": {
           "USD": {
@@ -310,17 +375,7 @@ GET /products/64prod123?currency=YER
             "discountPercent": 0,
             "discountAmount": 0,
             "finalPrice": 600,
-            "currency": "USD",
-            "formattedPrice": "$600.00"
-          },
-          "SAR": {
-            "basePrice": 2250,
-            "compareAtPrice": 2700,
-            "discountPercent": 0,
-            "discountAmount": 0,
-            "finalPrice": 2250,
-            "currency": "SAR",
-            "formattedPrice": "2,250.00 ر.س"
+            "currency": "USD"
           },
           "YER": {
             "basePrice": 150000,
@@ -328,60 +383,59 @@ GET /products/64prod123?currency=YER
             "discountPercent": 0,
             "discountAmount": 0,
             "finalPrice": 150000,
-            "currency": "YER",
-            "formattedPrice": "150,000 ر.ي",
-            "formattedFinalPrice": "150,000 ر.ي"
+            "currency": "YER"
+          },
+          "SAR": {
+            "basePrice": 2250,
+            "compareAtPrice": 2700,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 2250,
+            "currency": "SAR"
           }
         },
-        "inventory": {
-          "quantity": 50,
-          "reserved": 5,
-          "available": 45
-        },
-        "isDefault": true,
         "isActive": true
+      }
+    ],
+    "relatedProducts": [
+      {
+        "_id": "64prod789",
+        "name": "لوح شمسي 600 واط",
+        "nameEn": "Solar Panel 600W",
+        "category": {
+          "_id": "64cat123",
+          "name": "الألواح الشمسية",
+          "nameEn": "Solar Panels"
+        },
+        "mainImage": {
+          "_id": "64img789",
+          "url": "https://cdn.example.com/products/solar-600.jpg"
+        },
+        "isFeatured": true,
+        "hasVariants": true,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 700,
+            "finalPrice": 700,
+            "currency": "USD"
+          }
+        }
       }
     ],
     "userDiscount": {
       "isMerchant": false,
       "discountPercent": 0
-    },
-    "pricingByCurrency": {
-      "USD": {
-        "basePrice": 600,
-        "compareAtPrice": 720,
-        "discountPercent": 0,
-        "discountAmount": 0,
-        "finalPrice": 600,
-        "currency": "USD",
-        "formattedPrice": "$600.00",
-        "formattedFinalPrice": "$600.00"
-      },
-      "SAR": {
-        "basePrice": 2250,
-        "compareAtPrice": 2700,
-        "discountPercent": 0,
-        "discountAmount": 0,
-        "finalPrice": 2250,
-        "currency": "SAR",
-        "formattedPrice": "2,250.00 ر.س",
-        "formattedFinalPrice": "2,250.00 ر.س"
-      },
-      "YER": {
-        "basePrice": 150000,
-        "compareAtPrice": 180000,
-        "discountPercent": 0,
-        "discountAmount": 0,
-        "finalPrice": 150000,
-        "currency": "YER",
-        "formattedPrice": "150,000 ر.ي",
-        "formattedFinalPrice": "150,000 ر.ي"
-      }
     }
   },
   "requestId": "req_prod_002"
 }
 ```
+
+> **ملاحظة:** 
+> - `product`: يحتوي على جميع تفاصيل المنتج مع `attributesDetails`, `pricingByCurrency`, `priceRangeByCurrency`
+> - `variants`: قائمة variants مع `pricing` (بالعملة المطلوبة) و `pricingByCurrency` (بجميع العملات)
+> - `relatedProducts`: منتجات شبيهة (بنية مبسطة)
+> - `userDiscount`: معلومات خصم التاجر (إذا كان المستخدم تاجر معتمد)
 
 > **ملاحظة:** يتم زيادة عداد المشاهدات تلقائياً عند استدعاء هذا الـ endpoint.
 
@@ -404,10 +458,12 @@ GET /products/64prod123?currency=YER
 
 ### ملاحظة مهمة عن الأسعار والخصومات
 
-- 🔐 **للمستخدمين المسجلين:** يتم تطبيق خصم التاجر تلقائياً إذا كان معتمد
-- 👤 **للزوار:** `userDiscount.discountPercent = 0`
-- 💰 **العملة:** تُحدد من `preferredCurrency` للمستخدم أو من query parameter
-- 🌍 **متعدد العملات:** يتم إرجاع `pricingByCurrency` لكل variant ويحتوي على الأسعار بالعملات `USD`, `YER`, `SAR` دائماً
+- 🔐 **للمستخدمين المسجلين:** يتم تطبيق خصم التاجر تلقائياً إذا كان معتمد (`userDiscount.isMerchant = true`)
+- 👤 **للزوار:** `userDiscount.discountPercent = 0` و `userDiscount.isMerchant = false`
+- 💰 **العملة:** تُحدد من `preferredCurrency` للمستخدم أو من query parameter `currency`
+- 🌍 **متعدد العملات:** يتم إرجاع `pricingByCurrency` في المنتج وكل variant ويحتوي على الأسعار بالعملات `USD`, `YER`, `SAR` دائماً
+- 📊 **السعر الافتراضي:** `defaultPricing` يحتوي على السعر بالعملة المطلوبة
+- 📈 **نطاق الأسعار:** `priceRangeByCurrency` موجود فقط للمنتجات التي تحتوي على variants متعددة
 
 ### كود Flutter
 
@@ -433,28 +489,44 @@ Future<ProductDetails> getProduct(String id, {String currency = 'USD'}) async {
 class ProductDetails {
   final Product product;
   final List<ProductVariant> variants;
-  final Map<String, VariantPricing>? pricingByCurrency;
+  final List<Product> relatedProducts;
+  final UserDiscount userDiscount;
 
   ProductDetails({
     required this.product,
     required this.variants,
-    this.pricingByCurrency,
+    required this.relatedProducts,
+    required this.userDiscount,
   });
 
   factory ProductDetails.fromJson(Map<String, dynamic> json) {
     return ProductDetails(
-      product: Product.fromJson(json['product']),
+      product: Product.fromJson(json['product'] as Map<String, dynamic>),
       variants: (json['variants'] as List)
-          .map((v) => ProductVariant.fromJson(v))
+          .map((v) => ProductVariant.fromJson(v as Map<String, dynamic>))
           .toList(),
-      pricingByCurrency: json['product']?['pricingByCurrency'] != null
-          ? (json['product']['pricingByCurrency'] as Map<String, dynamic>).map(
-              (key, value) => MapEntry(
-                key,
-                VariantPricing.fromJson(value as Map<String, dynamic>),
-              ),
-            )
-          : null,
+      relatedProducts: (json['relatedProducts'] as List?)
+              ?.map((p) => Product.fromJson(p as Map<String, dynamic>))
+              .toList() ??
+          [],
+      userDiscount: UserDiscount.fromJson(json['userDiscount'] as Map<String, dynamic>),
+    );
+  }
+}
+
+class UserDiscount {
+  final bool isMerchant;
+  final double discountPercent;
+
+  UserDiscount({
+    required this.isMerchant,
+    required this.discountPercent,
+  });
+
+  factory UserDiscount.fromJson(Map<String, dynamic> json) {
+    return UserDiscount(
+      isMerchant: json['isMerchant'] ?? false,
+      discountPercent: (json['discountPercent'] ?? 0).toDouble(),
     );
   }
 }
@@ -533,18 +605,31 @@ Future<ProductDetails> getProductBySlug(String slug, {String currency = 'USD'}) 
     "data": [
       {
         "_id": "64prod123",
-        "nameAr": "لوح شمسي 550 واط",
+        "name": "لوح شمسي 550 واط",
         "nameEn": "Solar Panel 550W",
-        "slug": "solar-panel-550w",
-        "categoryId": {
+        "status": "ACTIVE",
+        "category": {
           "_id": "64cat123",
-          "nameAr": "الألواح الشمسية",
+          "name": "الألواح الشمسية",
           "nameEn": "Solar Panels"
         },
-        "isFeatured": true,
-        "mainImageId": {
+        "mainImage": {
           "_id": "64img123",
           "url": "https://cdn.example.com/products/solar-panel-1.jpg"
+        },
+        "isFeatured": true,
+        "hasVariants": true,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 600,
+            "finalPrice": 600,
+            "currency": "USD"
+          }
+        },
+        "defaultPricing": {
+          "basePrice": 600,
+          "finalPrice": 600,
+          "currency": "USD"
         }
       }
     ],
@@ -560,6 +645,8 @@ Future<ProductDetails> getProductBySlug(String slug, {String currency = 'USD'}) 
   "requestId": "req_prod_003"
 }
 ```
+
+> **ملاحظة:** نفس بنية قائمة المنتجات (`/products`) لكن فقط المنتجات المميزة.
 
 ### كود Flutter
 
@@ -602,18 +689,31 @@ Future<PaginatedProducts> getFeaturedProducts() async {
     "data": [
       {
         "_id": "64prod456",
-        "nameAr": "بطارية ليثيوم 10 كيلو واط",
+        "name": "بطارية ليثيوم 10 كيلو واط",
         "nameEn": "Lithium Battery 10kW",
-        "slug": "lithium-battery-10kw",
-        "categoryId": {
+        "status": "ACTIVE",
+        "category": {
           "_id": "64cat456",
-          "nameAr": "البطاريات",
+          "name": "البطاريات",
           "nameEn": "Batteries"
         },
-        "isNew": true,
-        "mainImageId": {
+        "mainImage": {
           "_id": "64img456",
           "url": "https://cdn.example.com/products/battery-10kw.jpg"
+        },
+        "isNew": true,
+        "hasVariants": true,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 1200,
+            "finalPrice": 1200,
+            "currency": "USD"
+          }
+        },
+        "defaultPricing": {
+          "basePrice": 1200,
+          "finalPrice": 1200,
+          "currency": "USD"
         }
       }
     ],
@@ -629,6 +729,8 @@ Future<PaginatedProducts> getFeaturedProducts() async {
   "requestId": "req_prod_004"
 }
 ```
+
+> **ملاحظة:** نفس بنية قائمة المنتجات (`/products`) لكن فقط المنتجات الجديدة.
 
 ### كود Flutter
 
@@ -677,8 +779,6 @@ Future<PaginatedProducts> getNewProducts() async {
     "data": [
       {
         "_id": "64var123",
-        "productId": "64prod123",
-        "sku": "SP-550-001-BLK",
         "attributeValues": [
           {
             "attributeId": "64attr001",
@@ -690,15 +790,12 @@ Future<PaginatedProducts> getNewProducts() async {
           }
         ],
         "pricing": {
-          "basePrice": 150000,
-          "compareAtPrice": 180000,
+          "basePrice": 600,
+          "compareAtPrice": 720,
           "discountPercent": 0,
           "discountAmount": 0,
-          "finalPrice": 150000,
-          "currency": "YER",
-          "exchangeRate": 250,
-          "formattedPrice": "150,000 ر.ي",
-          "formattedFinalPrice": "150,000 ر.ي"
+          "finalPrice": 600,
+          "currency": "USD"
         },
         "pricingByCurrency": {
           "USD": {
@@ -707,17 +804,7 @@ Future<PaginatedProducts> getNewProducts() async {
             "discountPercent": 0,
             "discountAmount": 0,
             "finalPrice": 600,
-            "currency": "USD",
-            "formattedPrice": "$600.00"
-          },
-          "SAR": {
-            "basePrice": 2250,
-            "compareAtPrice": 2700,
-            "discountPercent": 0,
-            "discountAmount": 0,
-            "finalPrice": 2250,
-            "currency": "SAR",
-            "formattedPrice": "2,250.00 ر.س"
+            "currency": "USD"
           },
           "YER": {
             "basePrice": 150000,
@@ -725,17 +812,17 @@ Future<PaginatedProducts> getNewProducts() async {
             "discountPercent": 0,
             "discountAmount": 0,
             "finalPrice": 150000,
-            "currency": "YER",
-            "formattedPrice": "150,000 ر.ي",
-            "formattedFinalPrice": "150,000 ر.ي"
+            "currency": "YER"
+          },
+          "SAR": {
+            "basePrice": 2250,
+            "compareAtPrice": 2700,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 2250,
+            "currency": "SAR"
           }
         },
-        "inventory": {
-          "quantity": 50,
-          "reserved": 5,
-          "available": 45
-        },
-        "isDefault": true,
         "isActive": true
       }
     ],
@@ -747,6 +834,11 @@ Future<PaginatedProducts> getNewProducts() async {
   "requestId": "req_var_001"
 }
 ```
+
+> **ملاحظة:** 
+> - `data`: قائمة variants مع `pricing` (بالعملة المطلوبة) و `pricingByCurrency` (بجميع العملات)
+> - `userDiscount`: معلومات خصم التاجر (يتم تطبيقه تلقائياً على `finalPrice`)
+> - يتم تصفية variants التي لا تحتوي على مخزون تلقائياً
 
 > **ملاحظة:** إذا كان المستخدم تاجر معتمد، يتم تطبيق خصم التاجر على `finalPrice` تلقائياً.
 > بالإضافة إلى ذلك، يتم إرجاع قائمة `attributeValues` تحتوي على أسماء السمات بالعربية والإنجليزية، مع `pricingByCurrency` الذي يوفر الأسعار الحقيقية بالدولار والريال اليمني والريال السعودي.
@@ -803,15 +895,12 @@ Future<List<ProductVariant>> getProductVariants(
 {
   "success": true,
   "data": {
-    "basePrice": 150000,
-    "compareAtPrice": 180000,
+    "basePrice": 600,
+    "compareAtPrice": 720,
     "discountPercent": 15,
-    "discountAmount": 22500,
-    "finalPrice": 127500,
-    "currency": "YER",
-    "exchangeRate": 250,
-    "formattedPrice": "150,000 ر.ي",
-    "formattedFinalPrice": "127,500 ر.ي",
+    "discountAmount": 90,
+    "finalPrice": 510,
+    "currency": "USD",
     "userDiscount": {
       "isMerchant": true,
       "discountPercent": 15
@@ -820,6 +909,11 @@ Future<List<ProductVariant>> getProductVariants(
   "requestId": "req_price_001"
 }
 ```
+
+> **ملاحظة:** 
+> - `finalPrice`: السعر النهائي بعد تطبيق خصم التاجر (إذا كان المستخدم تاجر معتمد)
+> - `userDiscount`: معلومات خصم التاجر
+> - العملة تُحدد من query parameter أو من `preferredCurrency` للمستخدم
 
 ### كود Flutter
 
@@ -1048,36 +1142,6 @@ Future<PriceRange> getProductPriceRange(
   }
 }
 
-class PriceRange {
-  final double minPrice;
-  final double maxPrice;
-  final String currency;
-  final String? formattedMinPrice;
-  final String? formattedMaxPrice;
-
-  PriceRange({
-    required this.minPrice,
-    required this.maxPrice,
-    required this.currency,
-    this.formattedMinPrice,
-    this.formattedMaxPrice,
-  });
-
-  factory PriceRange.fromJson(Map<String, dynamic> json) {
-    return PriceRange(
-      minPrice: (json['minPrice'] ?? 0).toDouble(),
-      maxPrice: (json['maxPrice'] ?? 0).toDouble(),
-      currency: json['currency'] ?? 'USD',
-      formattedMinPrice: json['formattedMinPrice'],
-      formattedMaxPrice: json['formattedMaxPrice'],
-    );
-  }
-  
-  String get formattedRange => 
-      formattedMinPrice != null && formattedMaxPrice != null
-          ? '$formattedMinPrice - $formattedMaxPrice'
-          : '${minPrice.toStringAsFixed(0)} - ${maxPrice.toStringAsFixed(0)} $currency';
-}
 ```
 
 ---
@@ -1108,16 +1172,25 @@ class PriceRange {
     "data": [
       {
         "_id": "64prod789",
-        "nameAr": "لوح شمسي 600 واط",
+        "name": "لوح شمسي 600 واط",
         "nameEn": "Solar Panel 600W",
-        "slug": "solar-panel-600w",
-        "categoryId": {
+        "category": {
           "_id": "64cat123",
-          "nameAr": "الألواح الشمسية"
+          "name": "الألواح الشمسية",
+          "nameEn": "Solar Panels"
+        },
+        "mainImage": {
+          "_id": "64img789",
+          "url": "https://cdn.example.com/products/solar-600.jpg"
         },
         "isFeatured": true,
-        "mainImageId": {
-          "url": "https://cdn.example.com/products/solar-600.jpg"
+        "hasVariants": true,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 700,
+            "finalPrice": 700,
+            "currency": "USD"
+          }
         }
       }
     ],
@@ -1126,6 +1199,8 @@ class PriceRange {
   "requestId": "req_related_001"
 }
 ```
+
+> **ملاحظة:** بنية مبسطة للمنتجات الشبيهة (نفس بنية القائمة).
 
 ### كود Flutter
 
@@ -1202,128 +1277,143 @@ Future<int> getProductsCount() async {
 
 ## Models في Flutter
 
-> ⚠️ **تنبيه مهم:** الواجهات الآن تُعيد `attributeValues` لكل variant و`pricingByCurrency` بجانب `pricing` المختارة. تأكد من تحديث موديلات Flutter للتعامل مع هذه الحقول الجديدة (مثال: إضافة قائمة `attributeValues` وخرائط `pricingByCurrency`).
+> ⚠️ **تنبيه مهم:** 
+> - الواجهات تستخدم `name` و `nameEn` (وليس `nameAr`)
+> - `category` و `brand` كائنات مبسطة (فقط `_id`, `name`, `nameEn`)
+> - `mainImage` و `images` كائنات مبسطة (فقط `_id`, `url`)
+> - `pricingByCurrency` موجود في المنتج وكل variant
+> - `defaultPricing` و `priceRangeByCurrency` موجودان في المنتج
+> - `hasVariants` boolean يحدد إذا كان المنتج يحتوي على variants
 
 ### ملف: `lib/models/product/product_models.dart`
 
 ```dart
 class Category {
   final String id;
-  final String nameAr;
+  final String name;
   final String nameEn;
 
   Category({
     required this.id,
-    required this.nameAr,
+    required this.name,
     required this.nameEn,
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      id: json['_id'],
-      nameAr: json['nameAr'] ?? '',
+      id: json['_id'] ?? '',
+      name: json['name'] ?? '',
       nameEn: json['nameEn'] ?? '',
     );
   }
 
   String getName(String locale) {
     if (locale == 'en') return nameEn;
-    return nameAr;
+    return name;
   }
 }
 
 class ProductImage {
   final String id;
   final String url;
-  final String? alt;
 
   ProductImage({
     required this.id,
     required this.url,
-    this.alt,
   });
 
   factory ProductImage.fromJson(Map<String, dynamic> json) {
     return ProductImage(
-      id: json['_id'],
-      url: json['url'],
-      alt: json['alt'],
+      id: json['_id'] ?? '',
+      url: json['url'] ?? '',
+    );
+  }
+}
+
+class AttributeValue {
+  final String attributeId;
+  final String valueId;
+  final String name;
+  final String nameEn;
+  final String value;
+  final String valueEn;
+
+  AttributeValue({
+    required this.attributeId,
+    required this.valueId,
+    required this.name,
+    required this.nameEn,
+    required this.value,
+    required this.valueEn,
+  });
+
+  factory AttributeValue.fromJson(Map<String, dynamic> json) {
+    return AttributeValue(
+      attributeId: json['attributeId'] ?? '',
+      valueId: json['valueId'] ?? '',
+      name: json['name'] ?? '',
+      nameEn: json['nameEn'] ?? '',
+      value: json['value'] ?? '',
+      valueEn: json['valueEn'] ?? '',
     );
   }
 }
 
 class ProductVariant {
   final String id;
-  final String productId;
-  final String sku;
-  final String nameAr;
-  final String nameEn;
-  final Map<String, dynamic> attributes;
-  final VariantPricing? pricing; // من جميع endpoints يكون object واحد
-  final VariantInventory inventory;
-  final bool isDefault;
+  final List<AttributeValue> attributeValues;
+  final VariantPricing? pricing; // السعر بالعملة المطلوبة
+  final Map<String, VariantPricing>? pricingByCurrency; // الأسعار بجميع العملات
   final bool isActive;
-  final ProductImage? image;
 
   ProductVariant({
     required this.id,
-    required this.productId,
-    required this.sku,
-    required this.nameAr,
-    required this.nameEn,
-    required this.attributes,
+    required this.attributeValues,
     this.pricing,
-    required this.inventory,
-    required this.isDefault,
+    this.pricingByCurrency,
     required this.isActive,
-    this.image,
   });
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
-    // من جميع endpoints يكون pricing object واحد
     VariantPricing? pricingObj;
-    final pricingData = json['pricing'];
-    
-    if (pricingData != null && pricingData is Map) {
-      pricingObj = VariantPricing.fromJson(pricingData);
+    if (json['pricing'] != null && json['pricing'] is Map) {
+      pricingObj = VariantPricing.fromJson(json['pricing'] as Map<String, dynamic>);
+    }
+
+    Map<String, VariantPricing>? pricingByCurrencyMap;
+    if (json['pricingByCurrency'] != null && json['pricingByCurrency'] is Map) {
+      pricingByCurrencyMap = (json['pricingByCurrency'] as Map<String, dynamic>).map(
+        (key, value) => MapEntry(
+          key,
+          VariantPricing.fromJson(value as Map<String, dynamic>),
+        ),
+      );
     }
 
     return ProductVariant(
-      id: json['_id'],
-      productId: json['productId'],
-      sku: json['sku'],
-      nameAr: json['nameAr'] ?? '',
-      nameEn: json['nameEn'] ?? '',
-      attributes: json['attributes'] ?? {},
+      id: json['_id'] ?? '',
+      attributeValues: (json['attributeValues'] as List?)
+              ?.map((e) => AttributeValue.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       pricing: pricingObj,
-      inventory: VariantInventory.fromJson(json['inventory'] ?? {}),
-      isDefault: json['isDefault'] ?? false,
+      pricingByCurrency: pricingByCurrencyMap,
       isActive: json['isActive'] ?? true,
-      image: json['imageId'] != null 
-          ? ProductImage.fromJson(json['imageId'])
-          : null,
     );
   }
 
-  String getName(String locale) {
-    if (locale == 'en') return nameEn;
-    return nameAr;
-  }
-
   // الحصول على السعر لعملة معينة
-  VariantPricing? getPricing(String currency) {
-    if (pricing != null && pricing!.currency == currency) {
-      return pricing;
+  VariantPricing? getPricingForCurrency(String currency) {
+    if (pricingByCurrency != null && pricingByCurrency!.containsKey(currency)) {
+      return pricingByCurrency![currency];
     }
-    return null;
+    return pricing;
   }
 
   // السعر النهائي (مع الخصم إن وجد)
   double? getFinalPrice(String currency) {
-    if (pricing != null && pricing!.currency == currency) {
-      return pricing!.finalPrice ?? pricing!.basePrice;
-    }
-    return null;
+    final price = getPricingForCurrency(currency);
+    return price?.finalPrice ?? price?.basePrice;
   }
 }
 
@@ -1331,25 +1421,17 @@ class VariantPricing {
   final String currency;
   final double basePrice;
   final double? compareAtPrice;
-  final double? salePrice;
-  final double? discountPercent;
-  final double? discountAmount;
-  final double? finalPrice;
-  final double? exchangeRate;
-  final String? formattedPrice;
-  final String? formattedFinalPrice;
+  final double discountPercent;
+  final double discountAmount;
+  final double finalPrice;
 
   VariantPricing({
     required this.currency,
     required this.basePrice,
     this.compareAtPrice,
-    this.salePrice,
-    this.discountPercent,
-    this.discountAmount,
-    this.finalPrice,
-    this.exchangeRate,
-    this.formattedPrice,
-    this.formattedFinalPrice,
+    required this.discountPercent,
+    required this.discountAmount,
+    required this.finalPrice,
   });
 
   factory VariantPricing.fromJson(Map<String, dynamic> json) {
@@ -1357,189 +1439,272 @@ class VariantPricing {
       currency: json['currency'] ?? 'USD',
       basePrice: (json['basePrice'] ?? 0).toDouble(),
       compareAtPrice: json['compareAtPrice']?.toDouble(),
-      salePrice: json['salePrice']?.toDouble(),
-      discountPercent: json['discountPercent']?.toDouble(),
-      discountAmount: json['discountAmount']?.toDouble(),
-      finalPrice: json['finalPrice']?.toDouble(),
-      exchangeRate: json['exchangeRate']?.toDouble(),
-      formattedPrice: json['formattedPrice'],
-      formattedFinalPrice: json['formattedFinalPrice'],
+      discountPercent: (json['discountPercent'] ?? 0).toDouble(),
+      discountAmount: (json['discountAmount'] ?? 0).toDouble(),
+      finalPrice: (json['finalPrice'] ?? json['basePrice'] ?? 0).toDouble(),
     );
   }
 
-  bool get hasDiscount {
-    if (finalPrice != null) {
-      return finalPrice! < basePrice;
-    }
-    if (salePrice != null) {
-      return salePrice! < basePrice;
-    }
-    if (discountPercent != null && discountPercent! > 0) {
-      return true;
-    }
-    return false;
-  }
+  bool get hasDiscount => finalPrice < basePrice || discountPercent > 0;
   
   double get calculatedDiscountPercent {
-    if (discountPercent != null) return discountPercent!;
-    if (finalPrice != null) {
-      return ((basePrice - finalPrice!) / basePrice * 100);
-    }
-    if (salePrice != null) {
-      return ((basePrice - salePrice!) / basePrice * 100);
+    if (discountPercent > 0) return discountPercent;
+    if (finalPrice < basePrice) {
+      return ((basePrice - finalPrice) / basePrice * 100);
     }
     return 0;
   }
 }
 
-class VariantInventory {
-  final int quantity;
-  final int reserved;
-  final int available;
+class PriceRange {
+  final double minPrice;
+  final double maxPrice;
+  final String currency;
+  final bool hasDiscountedVariant;
 
-  VariantInventory({
-    required this.quantity,
-    required this.reserved,
-    required this.available,
+  PriceRange({
+    required this.minPrice,
+    required this.maxPrice,
+    required this.currency,
+    required this.hasDiscountedVariant,
   });
 
-  factory VariantInventory.fromJson(Map<String, dynamic> json) {
-    return VariantInventory(
-      quantity: json['quantity'] ?? 0,
-      reserved: json['reserved'] ?? 0,
-      available: json['available'] ?? 0,
+  factory PriceRange.fromJson(Map<String, dynamic> json) {
+    return PriceRange(
+      minPrice: (json['minPrice'] ?? 0).toDouble(),
+      maxPrice: (json['maxPrice'] ?? 0).toDouble(),
+      currency: json['currency'] ?? 'USD',
+      hasDiscountedVariant: json['hasDiscountedVariant'] ?? false,
     );
   }
-
-  bool get inStock => available > 0;
 }
 
 class Product {
   final String id;
-  final String nameAr;
+  final String name;
   final String nameEn;
-  final String descriptionAr;
-  final String descriptionEn;
-  final String slug;
-  final Category category;
-  final String? brandId;
-  final String sku;
+  final String? description;
+  final String? descriptionEn;
   final String status;
-  final bool isFeatured;
-  final bool isNew;
+  final Category? category;
+  final Category? brand; // نفس بنية Category
   final ProductImage? mainImage;
   final List<ProductImage> images;
-  final List<ProductVariant>? variants;
-  final Map<String, dynamic> specifications;
-  final List<String> tags;
-  final int viewsCount;
-  final int variantsCount;
-  final int salesCount;
-  final int reviewsCount;
-  final double averageRating;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final bool isFeatured;
+  final bool isNew;
+  final bool hasVariants;
+  final Map<String, VariantPricing>? pricingByCurrency;
+  final VariantPricing? defaultPricing;
+  final Map<String, PriceRange>? priceRangeByCurrency;
+  final List<ProductVariant>? variants; // في تفاصيل المنتج فقط
+  final List<AttributeSummary>? attributesDetails; // في تفاصيل المنتج فقط
+  final double? averageRating;
+  final int? reviewsCount;
 
   Product({
     required this.id,
-    required this.nameAr,
+    required this.name,
     required this.nameEn,
-    required this.descriptionAr,
-    required this.descriptionEn,
-    required this.slug,
-    required this.category,
-    this.brandId,
-    required this.sku,
+    this.description,
+    this.descriptionEn,
     required this.status,
-    required this.isFeatured,
-    required this.isNew,
+    this.category,
+    this.brand,
     this.mainImage,
     required this.images,
+    required this.isFeatured,
+    required this.isNew,
+    required this.hasVariants,
+    this.pricingByCurrency,
+    this.defaultPricing,
+    this.priceRangeByCurrency,
     this.variants,
-    required this.specifications,
-    required this.tags,
-    required this.viewsCount,
-    required this.variantsCount,
-    required this.salesCount,
-    required this.reviewsCount,
-    required this.averageRating,
-    required this.createdAt,
-    required this.updatedAt,
+    this.attributesDetails,
+    this.averageRating,
+    this.reviewsCount,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
+    Category? categoryObj;
+    if (json['category'] != null && json['category'] is Map) {
+      categoryObj = Category.fromJson(json['category'] as Map<String, dynamic>);
+    } else if (json['categoryId'] != null && json['categoryId'] is Map) {
+      categoryObj = Category.fromJson(json['categoryId'] as Map<String, dynamic>);
+    }
+
+    Category? brandObj;
+    if (json['brand'] != null && json['brand'] is Map) {
+      brandObj = Category.fromJson(json['brand'] as Map<String, dynamic>);
+    }
+
+    ProductImage? mainImageObj;
+    if (json['mainImage'] != null && json['mainImage'] is Map) {
+      mainImageObj = ProductImage.fromJson(json['mainImage'] as Map<String, dynamic>);
+    } else if (json['mainImageId'] != null && json['mainImageId'] is Map) {
+      mainImageObj = ProductImage.fromJson(json['mainImageId'] as Map<String, dynamic>);
+    }
+
+    List<ProductImage> imagesList = [];
+    if (json['images'] != null && json['images'] is List) {
+      imagesList = (json['images'] as List)
+          .map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } else if (json['imageIds'] != null && json['imageIds'] is List) {
+      imagesList = (json['imageIds'] as List)
+          .map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+
+    Map<String, VariantPricing>? pricingByCurrencyMap;
+    if (json['pricingByCurrency'] != null && json['pricingByCurrency'] is Map) {
+      pricingByCurrencyMap = (json['pricingByCurrency'] as Map<String, dynamic>).map(
+        (key, value) => MapEntry(
+          key,
+          VariantPricing.fromJson(value as Map<String, dynamic>),
+        ),
+      );
+    }
+
+    VariantPricing? defaultPricingObj;
+    if (json['defaultPricing'] != null && json['defaultPricing'] is Map) {
+      defaultPricingObj = VariantPricing.fromJson(json['defaultPricing'] as Map<String, dynamic>);
+    }
+
+    Map<String, PriceRange>? priceRangeMap;
+    if (json['priceRangeByCurrency'] != null && json['priceRangeByCurrency'] is Map) {
+      priceRangeMap = (json['priceRangeByCurrency'] as Map<String, dynamic>).map(
+        (key, value) => MapEntry(
+          key,
+          PriceRange.fromJson(value as Map<String, dynamic>),
+        ),
+      );
+    }
+
+    List<ProductVariant>? variantsList;
+    if (json['variants'] != null && json['variants'] is List) {
+      variantsList = (json['variants'] as List)
+          .map((e) => ProductVariant.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+
+    List<AttributeSummary>? attributesDetailsList;
+    if (json['attributesDetails'] != null && json['attributesDetails'] is List) {
+      attributesDetailsList = (json['attributesDetails'] as List)
+          .map((e) => AttributeSummary.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+
     return Product(
-      id: json['_id'],
-      nameAr: json['nameAr'] ?? '',
+      id: json['_id'] ?? '',
+      name: json['name'] ?? '',
       nameEn: json['nameEn'] ?? '',
-      descriptionAr: json['descriptionAr'] ?? '',
-      descriptionEn: json['descriptionEn'] ?? '',
-      slug: json['slug'],
-      category: Category.fromJson(json['categoryId']),
-      brandId: json['brandId'],
-      sku: json['sku'],
-      status: json['status'],
+      description: json['description'],
+      descriptionEn: json['descriptionEn'],
+      status: json['status'] ?? 'ACTIVE',
+      category: categoryObj,
+      brand: brandObj,
+      mainImage: mainImageObj,
+      images: imagesList,
       isFeatured: json['isFeatured'] ?? false,
       isNew: json['isNew'] ?? false,
-      mainImage: json['mainImageId'] != null 
-          ? ProductImage.fromJson(json['mainImageId'])
-          : null,
-      images: (json['imageIds'] as List?)
-              ?.map((e) => ProductImage.fromJson(e))
-              .toList() ??
-          [],
-      variants: json['variants'] != null
-          ? (json['variants'] as List)
-              .map((e) => ProductVariant.fromJson(e))
-              .toList()
-          : null,
-      specifications: json['specifications'] ?? {},
-      tags: List<String>.from(json['tags'] ?? []),
-      viewsCount: json['viewsCount'] ?? 0,
-      variantsCount: json['variantsCount'] ?? 0,
-      salesCount: json['salesCount'] ?? 0,
-      reviewsCount: json['reviewsCount'] ?? 0,
-      averageRating: (json['averageRating'] ?? 0).toDouble(),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      hasVariants: json['hasVariants'] ?? false,
+      pricingByCurrency: pricingByCurrencyMap,
+      defaultPricing: defaultPricingObj,
+      priceRangeByCurrency: priceRangeMap,
+      variants: variantsList,
+      attributesDetails: attributesDetailsList,
+      averageRating: json['averageRating']?.toDouble(),
+      reviewsCount: json['reviewsCount'],
     );
   }
 
   String getName(String locale) {
     if (locale == 'en') return nameEn;
-    return nameAr;
+    return name;
   }
 
-  String getDescription(String locale) {
+  String? getDescription(String locale) {
     if (locale == 'en') return descriptionEn;
-    return descriptionAr;
+    return description;
   }
 
   // الحصول على الصورة الرئيسية
   ProductImage? get primaryImage => mainImage ?? (images.isNotEmpty ? images.first : null);
 
-  // الحصول على الـ variant الافتراضي
-  ProductVariant? get defaultVariant {
-    if (variants == null || variants!.isEmpty) return null;
-    try {
-      return variants!.firstWhere((v) => v.isDefault);
-    } catch (e) {
-      return variants!.first;
+  // الحصول على السعر لعملة معينة
+  VariantPricing? getPricingForCurrency(String currency) {
+    if (pricingByCurrency != null && pricingByCurrency!.containsKey(currency)) {
+      return pricingByCurrency![currency];
     }
+    return defaultPricing;
   }
 
   // السعر الأساسي
   double? getBasePrice(String currency) {
-    return defaultVariant?.getPricing(currency)?.basePrice;
+    return getPricingForCurrency(currency)?.basePrice;
   }
 
   // السعر النهائي
   double? getFinalPrice(String currency) {
-    return defaultVariant?.getFinalPrice(currency);
+    return getPricingForCurrency(currency)?.finalPrice;
   }
 
-  // هل المنتج متوفر
-  bool get inStock => defaultVariant?.inventory.inStock ?? false;
+  // نطاق الأسعار
+  PriceRange? getPriceRange(String currency) {
+    if (priceRangeByCurrency != null && priceRangeByCurrency!.containsKey(currency)) {
+      return priceRangeByCurrency![currency];
+    }
+    return null;
+  }
+}
+
+class AttributeSummary {
+  final String id;
+  final String name;
+  final String nameEn;
+  final List<AttributeValueSummary> values;
+
+  AttributeSummary({
+    required this.id,
+    required this.name,
+    required this.nameEn,
+    required this.values,
+  });
+
+  factory AttributeSummary.fromJson(Map<String, dynamic> json) {
+    return AttributeSummary(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      nameEn: json['nameEn'] ?? '',
+      values: (json['values'] as List?)
+              ?.map((e) => AttributeValueSummary.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
+}
+
+class AttributeValueSummary {
+  final String id;
+  final String value;
+  final String? valueEn;
+  final String? hexCode;
+
+  AttributeValueSummary({
+    required this.id,
+    required this.value,
+    this.valueEn,
+    this.hexCode,
+  });
+
+  factory AttributeValueSummary.fromJson(Map<String, dynamic> json) {
+    return AttributeValueSummary(
+      id: json['id'] ?? '',
+      value: json['value'] ?? '',
+      valueEn: json['valueEn'],
+      hexCode: json['hexCode'],
+    );
+  }
 }
 
 class PaginatedProducts {
@@ -1549,11 +1714,21 @@ class PaginatedProducts {
   PaginatedProducts({required this.products, required this.meta});
 
   factory PaginatedProducts.fromJson(Map<String, dynamic> json) {
+    // json قد يكون مباشرة response.data أو response.data.data
+    final data = json['data'] ?? json;
+    final productsList = data is List
+        ? data
+        : (data['data'] as List? ?? []);
+    
     return PaginatedProducts(
-      products: (json['data'] as List)
-          .map((item) => Product.fromJson(item))
+      products: (productsList as List)
+          .map((item) => Product.fromJson(item as Map<String, dynamic>))
           .toList(),
-      meta: PaginationMeta.fromJson(json['meta']),
+      meta: PaginationMeta.fromJson(
+        (data is Map && data['meta'] != null)
+            ? data['meta'] as Map<String, dynamic>
+            : json['meta'] as Map<String, dynamic>,
+      ),
     );
   }
 }
@@ -1595,47 +1770,64 @@ class PaginationMeta {
 
 ## 📝 ملاحظات مهمة
 
-1. **اللغات:**
+1. **بنية الـ Response المختلفة:**
+   - **قائمة المنتجات** (`/products`, `/products/featured/list`, `/products/new/list`):
+     - منتجات مبسطة مع `_id`, `name`, `nameEn`, `category`, `brand`, `mainImage`
+     - `pricingByCurrency`: أسعار بجميع العملات
+     - `defaultPricing`: السعر الافتراضي (بالعملة المطلوبة)
+     - `priceRangeByCurrency`: نطاق الأسعار (للمنتجات ذات variants متعددة)
+     - `hasVariants`: boolean يحدد إذا كان المنتج يحتوي على variants
+   - **تفاصيل المنتج** (`/products/:id`, `/products/slug/:slug`):
+     - `product`: منتج كامل مع `attributesDetails`, `pricingByCurrency`, `priceRangeByCurrency`
+     - `variants`: قائمة variants مع `pricing` و `pricingByCurrency`
+     - `relatedProducts`: منتجات شبيهة
+     - `userDiscount`: معلومات خصم التاجر
+
+2. **اللغات:**
    - جميع النصوص متوفرة بالعربي والإنجليزي
+   - استخدام `name` و `nameEn` (وليس `nameAr`)
    - استخدم `getName(locale)` و `getDescription(locale)` للحصول على النص المناسب
 
-2. **الصور:**
-   - `mainImage`: الصورة الرئيسية للمنتج
-   - `images`: قائمة بجميع صور المنتج
+3. **الصور:**
+   - `mainImage`: كائن مبسط يحتوي على `_id`, `url` (أو `null`)
+   - `images`: قائمة كائنات مبسطة (فقط `_id`, `url`)
    - استخدم `primaryImage` getter للحصول على الصورة الرئيسية
 
-3. **Variants:**
+4. **Category و Brand:**
+   - كائنات مبسطة تحتوي على `_id`, `name`, `nameEn` فقط
+   - `brand` قد يكون `null` إذا لم يكن المنتج مرتبط ببراند
+
+5. **Variants:**
    - كل منتج له variants مختلفة (ألوان، أحجام، إلخ)
-   - لكل variant سعر ومخزون منفصل
-   - استخدم `defaultVariant` للحصول على الخيار الافتراضي
+   - لكل variant `pricing` (بالعملة المطلوبة) و `pricingByCurrency` (بجميع العملات)
+   - `attributeValues`: قائمة قيم السمات مع `attributeId`, `valueId`, `name`, `nameEn`, `value`, `valueEn`
+   - يتم تصفية variants التي لا تحتوي على مخزون تلقائياً في الـ endpoints العامة
 
-4. **الأسعار:**
+6. **الأسعار:**
    - `basePrice`: السعر الأساسي
-   - `salePrice`: سعر الخصم (إن وجد)
-   - استخدم `getFinalPrice()` للحصول على السعر النهائي
+   - `compareAtPrice`: سعر المقارنة (السعر الأصلي قبل الخصم)
+   - `finalPrice`: السعر النهائي بعد تطبيق خصم التاجر (إن وجد)
+   - `discountPercent`: نسبة الخصم
+   - `discountAmount`: مبلغ الخصم
+   - `pricingByCurrency`: أسعار بجميع العملات (USD, YER, SAR)
+   - `priceRangeByCurrency`: نطاق الأسعار لكل عملة (للمنتجات ذات variants متعددة)
 
-5. **المخزون:**
-   - `quantity`: الكمية الكلية
-   - `reserved`: الكمية المحجوزة في طلبات معلقة
-   - `available`: المتوفر للطلب
-   - استخدم `inStock` للتحقق من التوفر
-
-6. **الإحصائيات:**
-   - `viewsCount`: عدد المشاهدات
-   - `variantsCount`: عدد المتغيرات
-   - `salesCount`: عدد المبيعات
-   - `reviewsCount`: عدد التقييمات
-   - `averageRating`: متوسط التقييم
-
-7. **Cache:**
-   - جميع الـ endpoints مع cache من جهة السيرفر
-   - يمكنك إضافة cache في التطبيق أيضاً
-
-8. **خصم التاجر (Merchant Discount):**
+7. **خصم التاجر (Merchant Discount):**
    - يتم تطبيقه تلقائياً للمستخدمين المعتمدين كتجار
    - يظهر في `userDiscount.isMerchant` و `userDiscount.discountPercent`
-   - يتم خصمه من `finalPrice` مباشرة
-   - للزوار غير المسجلين: `discountPercent = 0`
+   - يتم خصمه من `finalPrice` مباشرة في الـ response
+   - للزوار غير المسجلين: `discountPercent = 0` و `isMerchant = false`
+   - يتم تطبيقه على جميع variants تلقائياً
+
+8. **Cache:**
+   - جميع الـ endpoints مع cache من جهة السيرفر (5-10 دقائق)
+   - يمكنك إضافة cache في التطبيق أيضاً
+
+9. **العملات:**
+   - العملات المدعومة: `USD`, `YER`, `SAR`
+   - العملة الافتراضية: `USD`
+   - يمكن تحديد العملة من query parameter `currency` أو من `preferredCurrency` للمستخدم
+   - `pricingByCurrency` يحتوي دائماً على الأسعار بجميع العملات
 
 ---
 
@@ -1644,12 +1836,22 @@ class PaginationMeta {
 > ✅ **تم تحديث هذه الوثيقة بالكامل** لتطابق الكود الفعلي
 
 ### التحديثات المضافة في هذه النسخة (آخر تحديث):
-1. ✅ **إضافة parameters جديدة:**
+1. ✅ **تحديث بنية Response:**
+   - استخدام `name` و `nameEn` بدلاً من `nameAr` و `nameEn`
+   - `category` و `brand` ككائنات مبسطة (فقط `_id`, `name`, `nameEn`)
+   - `mainImage` و `images` ككائنات مبسطة (فقط `_id`, `url`)
+   - إضافة `pricingByCurrency`, `defaultPricing`, `priceRangeByCurrency`
+   - إضافة `hasVariants` boolean
+2. ✅ **تحديث تفاصيل المنتج:**
+   - `product` يحتوي على `attributesDetails`, `pricingByCurrency`, `priceRangeByCurrency`
+   - `variants` تحتوي على `pricing` و `pricingByCurrency`
+   - إضافة `relatedProducts` و `userDiscount`
+3. ✅ **إضافة parameters جديدة:**
    - `includeSubcategories` - تضمين المنتجات من الفئات الفرعية (افتراضي: `true`)
    - `sortBy` و `sortOrder` - للترتيب المخصص
-2. ✅ **تحديث الترتيب الافتراضي:**
+   - `currency` - لتحديد العملة المطلوبة
+4. ✅ **تحديث الترتيب الافتراضي:**
    - الأحدث أولاً (`createdAt: desc`) تلقائياً
-   - يمكن تخصيص الترتيب باستخدام `sortBy` و `sortOrder`
 
 ### التحديثات السابقة:
 1. ✅ **إضافة 7 endpoints جديدة:**
@@ -1669,8 +1871,19 @@ class PaginationMeta {
 8. ✅ **تحديث Flutter Models** - إضافة `VariantPrice`, `PriceRange`, `VariantAvailability`
 9. ✅ **تحديث VariantPricing model** - دعم جميع الحقول من API
 
+### تم التحقق من:
+- ✅ جميع الـ 11 endpoints موجودة
+- ✅ Query parameters مطابقة
+- ✅ Response structures صحيحة ومطابقة للكود الفعلي
+- ✅ Cache TTL مطابق (5 min للقائمة، 10 min للتفاصيل)
+- ✅ Flutter Models شاملة ومفيدة مع معالجة صحيحة للـ response structures المختلفة
+- ✅ دعم خصم التاجر تلقائياً
+- ✅ دعم متعدد العملات (USD, YER, SAR)
+- ✅ معالجة صحيحة لـ `name` vs `nameAr` و `category`/`brand` structure و `pricingByCurrency`
+
 ### الملفات المرجعية:
 - **Controller:** `backend/src/modules/products/controllers/public-products.controller.ts`
+- **Presenter:** `backend/src/modules/products/services/public-products.presenter.ts`
 - **Services:** 
   - `backend/src/modules/products/services/product.service.ts`
   - `backend/src/modules/products/services/variant.service.ts`

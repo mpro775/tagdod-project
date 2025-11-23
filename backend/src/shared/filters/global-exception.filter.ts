@@ -75,6 +75,25 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       return;
     }
 
+    // Skip database logging if the error itself is a database connection error
+    const isDatabaseConnectionError = 
+      exception.message?.includes('getaddrinfo') ||
+      exception.message?.includes('EAI_AGAIN') ||
+      exception.message?.includes('MongoServerSelectionError') ||
+      exception.message?.includes('MongoNetworkError') ||
+      exception.message?.includes('MongoTimeoutError') ||
+      exception.name === 'MongoServerSelectionError' ||
+      exception.name === 'MongoNetworkError';
+
+    if (isDatabaseConnectionError) {
+      this.logger.warn('Skipping database error log - database connection unavailable', {
+        error: exception.message,
+        path: req.url,
+        method: req.method,
+      });
+      return;
+    }
+
     try {
       const level = status >= 500 ? ErrorLevel.ERROR : ErrorLevel.WARN;
       const category = this.determineCategory(exception);
