@@ -111,6 +111,11 @@ export interface Product extends BaseEntity {
   reviewsCount: number; // عدد التقييمات الحقيقية
   averageRating: number; // متوسط التقييم الحقيقي
 
+  // التوفر والحدود
+  isAvailable?: boolean; // متاح للبيع أم لا
+  minOrderQuantity?: number; // الحد الأدنى للطلب
+  maxOrderQuantity?: number; // الحد الأقصى للطلب (0 يعني لا يوجد حد)
+
   // التقييم اليدوي (للأدمن)
   useManualRating?: boolean; // استخدام التقييم اليدوي بدلاً من الحقيقي
   manualRating?: number; // التقييم اليدوي (0-5)
@@ -181,6 +186,10 @@ export interface Variant extends BaseEntity {
   minStock: number;
   trackInventory: boolean;
   allowBackorder: boolean;
+
+  // الحدود
+  minOrderQuantity: number; // الحد الأدنى للطلب
+  maxOrderQuantity: number; // الحد الأقصى للطلب (0 يعني لا يوجد حد)
 
   // الصور
   imageId?: string;
@@ -280,6 +289,10 @@ export interface UpdateProductDto {
   maxStock?: number;
   trackStock?: boolean;
   allowBackorder?: boolean;
+
+  // الحدود
+  minOrderQuantity?: number;
+  maxOrderQuantity?: number;
   
   // التقييم اليدوي
   useManualRating?: boolean;
@@ -319,6 +332,10 @@ export interface CreateVariantDto {
   trackInventory?: boolean;
   imageId?: string;
   weight?: number;
+  
+  // الحدود
+  minOrderQuantity?: number;
+  maxOrderQuantity?: number;
 }
 
 export interface UpdateVariantDto {
@@ -329,6 +346,10 @@ export interface UpdateVariantDto {
   stock?: number;
   isActive?: boolean;
   imageId?: string;
+  
+  // الحدود
+  minOrderQuantity?: number;
+  maxOrderQuantity?: number;
 }
 
 export interface GenerateVariantsDto {

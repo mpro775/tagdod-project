@@ -34,6 +34,10 @@ export class CreateProductDto {
   @IsOptional() @IsNumber() @Min(0) maxStock?: number;
   @IsOptional() @IsBoolean() trackStock?: boolean;
   @IsOptional() @IsBoolean() allowBackorder?: boolean;
+
+  // الحد الأدنى والأقصى للطلب
+  @IsOptional() @IsNumber() @Min(1) minOrderQuantity?: number;
+  @IsOptional() @IsNumber() @Min(0) maxOrderQuantity?: number;
   
   // التسعير الافتراضي للمنتجات البسيطة
   @IsOptional() @IsNumber() @Min(0) basePriceUSD?: number;
@@ -79,6 +83,10 @@ export class UpdateProductDto {
   @IsOptional() @IsNumber() @Min(0) maxStock?: number;
   @IsOptional() @IsBoolean() trackStock?: boolean;
   @IsOptional() @IsBoolean() allowBackorder?: boolean;
+
+  // الحد الأدنى والأقصى للطلب
+  @IsOptional() @IsNumber() @Min(1) minOrderQuantity?: number;
+  @IsOptional() @IsNumber() @Min(0) maxOrderQuantity?: number;
   
   // التسعير الافتراضي للمنتجات البسيطة
   @IsOptional() @IsNumber() @Min(0) basePriceUSD?: number;
@@ -129,6 +137,10 @@ export class CreateVariantDto {
   @IsOptional() @IsBoolean() trackInventory?: boolean;
   @IsOptional() @IsString() imageId?: string;
   @IsOptional() @IsNumber() weight?: number;
+  
+  // الحد الأدنى والأقصى للطلب
+  @IsOptional() @IsNumber() @Min(1) minOrderQuantity?: number;
+  @IsOptional() @IsNumber() @Min(0) maxOrderQuantity?: number;
 }
 
 export class UpdateVariantDto {
@@ -138,6 +150,10 @@ export class UpdateVariantDto {
   @IsOptional() @IsNumber() @Min(0) stock?: number;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsString() imageId?: string;
+  
+  // الحد الأدنى والأقصى للطلب
+  @IsOptional() @IsNumber() @Min(1) minOrderQuantity?: number;
+  @IsOptional() @IsNumber() @Min(0) maxOrderQuantity?: number;
 }
 
 export class GenerateVariantsDto {

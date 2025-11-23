@@ -565,8 +565,13 @@ export class PublicProductsPresenter {
       ...(typeof rawVariant.isActive === 'boolean' ? { isActive: rawVariant.isActive } : {}),
       ...(typeof rawVariant.isAvailable === 'boolean' ? { isAvailable: rawVariant.isAvailable } : {}),
       ...(typeof rawVariant.stock === 'number' ? { stock: rawVariant.stock } : {}),
-      ...(typeof rawVariant.minOrderQuantity === 'number' ? { minOrderQuantity: rawVariant.minOrderQuantity } : {}),
-      ...(typeof rawVariant.maxOrderQuantity === 'number' ? { maxOrderQuantity: rawVariant.maxOrderQuantity } : {}),
+      // إرجاع القيم الافتراضية إذا كانت undefined (للـ variants القديمة)
+      minOrderQuantity: (typeof rawVariant.minOrderQuantity === 'number' && !isNaN(rawVariant.minOrderQuantity)) 
+        ? rawVariant.minOrderQuantity 
+        : 1,
+      maxOrderQuantity: (typeof rawVariant.maxOrderQuantity === 'number' && !isNaN(rawVariant.maxOrderQuantity)) 
+        ? rawVariant.maxOrderQuantity 
+        : 0,
       ...(typeof rawVariant.salesCount === 'number' ? { salesCount: rawVariant.salesCount } : {}),
     };
 
@@ -674,8 +679,13 @@ export class PublicProductsPresenter {
       ...(typeof product.reviewsCount === 'number' ? { reviewsCount: product.reviewsCount } : {}),
       ...(typeof product.salesCount === 'number' ? { salesCount: product.salesCount } : {}),
       ...(typeof product.isAvailable === 'boolean' ? { isAvailable: product.isAvailable } : {}),
-      ...(typeof product.minOrderQuantity === 'number' ? { minOrderQuantity: product.minOrderQuantity } : {}),
-      ...(typeof product.maxOrderQuantity === 'number' ? { maxOrderQuantity: product.maxOrderQuantity } : {}),
+      // إرجاع القيم الافتراضية إذا كانت undefined (للمنتجات القديمة)
+      minOrderQuantity: (typeof product.minOrderQuantity === 'number' && !isNaN(product.minOrderQuantity)) 
+        ? product.minOrderQuantity 
+        : 1,
+      maxOrderQuantity: (typeof product.maxOrderQuantity === 'number' && !isNaN(product.maxOrderQuantity)) 
+        ? product.maxOrderQuantity 
+        : 0,
       ...(typeof product.stock === 'number' ? { stock: product.stock } : {}),
       ...(includePricingByCurrency
         ? cleanedPricingByCurrency
@@ -763,8 +773,13 @@ export class PublicProductsPresenter {
         // التأكد من إرجاع الحقول الجديدة
         ...(typeof variant.isAvailable === 'boolean' ? { isAvailable: variant.isAvailable } : {}),
         ...(typeof variant.stock === 'number' ? { stock: variant.stock } : {}),
-        ...(typeof variant.minOrderQuantity === 'number' ? { minOrderQuantity: variant.minOrderQuantity } : {}),
-        ...(typeof variant.maxOrderQuantity === 'number' ? { maxOrderQuantity: variant.maxOrderQuantity } : {}),
+        // إرجاع القيم الافتراضية إذا كانت undefined (للـ variants القديمة)
+        minOrderQuantity: (typeof variant.minOrderQuantity === 'number' && !isNaN(variant.minOrderQuantity)) 
+          ? variant.minOrderQuantity 
+          : 1,
+        maxOrderQuantity: (typeof variant.maxOrderQuantity === 'number' && !isNaN(variant.maxOrderQuantity)) 
+          ? variant.maxOrderQuantity 
+          : 0,
         ...(typeof variant.salesCount === 'number' ? { salesCount: variant.salesCount } : {}),
       };
     });

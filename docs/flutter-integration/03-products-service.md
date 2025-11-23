@@ -89,6 +89,11 @@ GET /products?sortBy=name&sortOrder=asc
       "isFeatured": true,
       "isNew": false,
       "hasVariants": true,
+      "isAvailable": true,
+      "salesCount": 45,
+      "minOrderQuantity": 1,
+      "maxOrderQuantity": 0,
+      "stock": 182,
       "pricingByCurrency": {
         "USD": {
           "basePrice": 600,
@@ -157,6 +162,11 @@ GET /products?sortBy=name&sortOrder=asc
 > - `category`: كائن مبسط يحتوي على `_id`, `name`, `nameEn`
 > - `brand`: كائن مبسط يحتوي على `_id`, `name`, `nameEn` (أو `null`)
 > - `mainImage`: كائن مبسط يحتوي على `_id`, `url` (أو `null`)
+> - `isAvailable`: متاح للبيع أم لا (boolean)
+> - `salesCount`: عدد المبيعات (number)
+> - `minOrderQuantity`: الحد الأدنى للطلب (number، افتراضي: 1)
+> - `maxOrderQuantity`: الحد الأقصى للطلب (number، 0 يعني لا يوجد حد)
+> - `stock`: المخزون (number، للمنتجات البسيطة بدون variants)
 > - `pricingByCurrency`: أسعار المنتج بجميع العملات (USD, YER, SAR)
 > - `defaultPricing`: السعر الافتراضي (بالعملة المطلوبة)
 > - `priceRangeByCurrency`: نطاق الأسعار لكل عملة (للمنتجات ذات variants متعددة)
@@ -345,11 +355,21 @@ GET /products/64prod123?currency=YER
         }
       },
       "averageRating": 4.5,
-      "reviewsCount": 12
+      "reviewsCount": 12,
+      "salesCount": 45,
+      "isAvailable": true,
+      "minOrderQuantity": 1,
+      "maxOrderQuantity": 0,
+      "stock": 182
     },
     "variants": [
       {
         "_id": "64var123",
+        "stock": 50,
+        "isAvailable": true,
+        "salesCount": 12,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
         "attributeValues": [
           {
             "attributeId": "64attr001",
@@ -823,7 +843,12 @@ Future<PaginatedProducts> getNewProducts() async {
             "currency": "SAR"
           }
         },
-        "isActive": true
+        "isActive": true,
+        "isAvailable": true,
+        "stock": 50,
+        "salesCount": 12,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0
       }
     ],
     "userDiscount": {
@@ -1365,6 +1390,11 @@ class ProductVariant {
   final VariantPricing? pricing; // السعر بالعملة المطلوبة
   final Map<String, VariantPricing>? pricingByCurrency; // الأسعار بجميع العملات
   final bool isActive;
+  final bool isAvailable; // متاح للبيع
+  final int stock; // المخزون
+  final int salesCount; // عدد المبيعات
+  final int minOrderQuantity; // الحد الأدنى للطلب
+  final int maxOrderQuantity; // الحد الأقصى للطلب (0 يعني لا يوجد حد)
 
   ProductVariant({
     required this.id,
@@ -1372,6 +1402,11 @@ class ProductVariant {
     this.pricing,
     this.pricingByCurrency,
     required this.isActive,
+    required this.isAvailable,
+    required this.stock,
+    required this.salesCount,
+    required this.minOrderQuantity,
+    required this.maxOrderQuantity,
   });
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
@@ -1399,6 +1434,11 @@ class ProductVariant {
       pricing: pricingObj,
       pricingByCurrency: pricingByCurrencyMap,
       isActive: json['isActive'] ?? true,
+      isAvailable: json['isAvailable'] ?? true,
+      stock: json['stock'] ?? 0,
+      salesCount: json['salesCount'] ?? 0,
+      minOrderQuantity: json['minOrderQuantity'] ?? 1,
+      maxOrderQuantity: json['maxOrderQuantity'] ?? 0,
     );
   }
 
@@ -1500,6 +1540,11 @@ class Product {
   final List<AttributeSummary>? attributesDetails; // في تفاصيل المنتج فقط
   final double? averageRating;
   final int? reviewsCount;
+  final int? salesCount; // عدد المبيعات
+  final bool? isAvailable; // متاح للبيع
+  final int? minOrderQuantity; // الحد الأدنى للطلب
+  final int? maxOrderQuantity; // الحد الأقصى للطلب (0 يعني لا يوجد حد)
+  final int? stock; // المخزون (للمنتجات البسيطة بدون variants)
 
   Product({
     required this.id,
@@ -1518,10 +1563,15 @@ class Product {
     this.pricingByCurrency,
     this.defaultPricing,
     this.priceRangeByCurrency,
-    this.variants,
-    this.attributesDetails,
-    this.averageRating,
-    this.reviewsCount,
+      this.variants,
+      this.attributesDetails,
+      this.averageRating,
+      this.reviewsCount,
+      this.salesCount,
+      this.isAvailable,
+      this.minOrderQuantity,
+      this.maxOrderQuantity,
+      this.stock,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -1615,6 +1665,11 @@ class Product {
       attributesDetails: attributesDetailsList,
       averageRating: json['averageRating']?.toDouble(),
       reviewsCount: json['reviewsCount'],
+      salesCount: json['salesCount'],
+      isAvailable: json['isAvailable'],
+      minOrderQuantity: json['minOrderQuantity'],
+      maxOrderQuantity: json['maxOrderQuantity'],
+      stock: json['stock'],
     );
   }
 
@@ -1801,6 +1856,11 @@ class PaginationMeta {
    - كل منتج له variants مختلفة (ألوان، أحجام، إلخ)
    - لكل variant `pricing` (بالعملة المطلوبة) و `pricingByCurrency` (بجميع العملات)
    - `attributeValues`: قائمة قيم السمات مع `attributeId`, `valueId`, `name`, `nameEn`, `value`, `valueEn`
+   - `isAvailable`: متاح للبيع أم لا
+   - `stock`: المخزون المتاح
+   - `salesCount`: عدد المبيعات
+   - `minOrderQuantity`: الحد الأدنى للطلب (افتراضي: 1)
+   - `maxOrderQuantity`: الحد الأقصى للطلب (0 يعني لا يوجد حد)
    - يتم تصفية variants التي لا تحتوي على مخزون تلقائياً في الـ endpoints العامة
 
 6. **الأسعار:**
@@ -1812,18 +1872,25 @@ class PaginationMeta {
    - `pricingByCurrency`: أسعار بجميع العملات (USD, YER, SAR)
    - `priceRangeByCurrency`: نطاق الأسعار لكل عملة (للمنتجات ذات variants متعددة)
 
-7. **خصم التاجر (Merchant Discount):**
+7. **التوفر والحدود:**
+   - `isAvailable`: متاح للبيع أم لا (يتم حسابه تلقائياً بناءً على المخزون والحالة)
+   - `salesCount`: عدد المبيعات (يتم تحديثه تلقائياً عند إكمال الطلب)
+   - `minOrderQuantity`: الحد الأدنى للطلب (افتراضي: 1)
+   - `maxOrderQuantity`: الحد الأقصى للطلب (0 يعني لا يوجد حد)
+   - `stock`: المخزون المتاح (للمنتجات البسيطة بدون variants)
+
+8. **خصم التاجر (Merchant Discount):**
    - يتم تطبيقه تلقائياً للمستخدمين المعتمدين كتجار
    - يظهر في `userDiscount.isMerchant` و `userDiscount.discountPercent`
    - يتم خصمه من `finalPrice` مباشرة في الـ response
    - للزوار غير المسجلين: `discountPercent = 0` و `isMerchant = false`
    - يتم تطبيقه على جميع variants تلقائياً
 
-8. **Cache:**
+9. **Cache:**
    - جميع الـ endpoints مع cache من جهة السيرفر (5-10 دقائق)
    - يمكنك إضافة cache في التطبيق أيضاً
 
-9. **العملات:**
+10. **العملات:**
    - العملات المدعومة: `USD`, `YER`, `SAR`
    - العملة الافتراضية: `USD`
    - يمكن تحديد العملة من query parameter `currency` أو من `preferredCurrency` للمستخدم
@@ -1836,7 +1903,13 @@ class PaginationMeta {
 > ✅ **تم تحديث هذه الوثيقة بالكامل** لتطابق الكود الفعلي
 
 ### التحديثات المضافة في هذه النسخة (آخر تحديث):
-1. ✅ **تحديث بنية Response:**
+1. ✅ **إضافة حقول جديدة للمنتجات والـ Variants:**
+   - `isAvailable`: متاح للبيع أم لا (boolean)
+   - `salesCount`: عدد المبيعات (number) - يتم تحديثه تلقائياً عند إكمال الطلب
+   - `minOrderQuantity`: الحد الأدنى للطلب (number، افتراضي: 1)
+   - `maxOrderQuantity`: الحد الأقصى للطلب (number، 0 يعني لا يوجد حد)
+   - `stock`: المخزون (number، للمنتجات البسيطة بدون variants)
+2. ✅ **تحديث بنية Response:**
    - استخدام `name` و `nameEn` بدلاً من `nameAr` و `nameEn`
    - `category` و `brand` ككائنات مبسطة (فقط `_id`, `name`, `nameEn`)
    - `mainImage` و `images` ككائنات مبسطة (فقط `_id`, `url`)
