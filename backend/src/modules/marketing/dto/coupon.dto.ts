@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, IsArray } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsEnum, IsDateString, IsArray, Min, Max } from 'class-validator';
 import { CouponType, CouponStatus, CouponVisibility, DiscountAppliesTo } from '../schemas/coupon.schema';
 
 export class CreateCouponDto {
@@ -30,6 +30,10 @@ export class CreateCouponDto {
   @IsNumber() @IsOptional() buyXQuantity?: number;
   @IsNumber() @IsOptional() getYQuantity?: number;
   @IsString() @IsOptional() getYProductId?: string;
+
+  // Engineer Coupon Fields
+  @IsString() @IsOptional() engineerId?: string;
+  @IsNumber() @IsOptional() @Min(0) @Max(100) commissionRate?: number;
 }
 
 export class UpdateCouponDto {
@@ -77,4 +81,26 @@ export class ValidateCouponDto {
   @IsString() @IsOptional() userId?: string;
   @IsNumber() @IsOptional() orderAmount?: number;
   @IsArray() @IsOptional() productIds?: string[];
+}
+
+export class CreateEngineerCouponDto {
+  @IsString() engineerId!: string;
+  @IsString() code!: string;
+  @IsString() name!: string;
+  @IsString() @IsOptional() description?: string;
+
+  @IsNumber() @Min(0) @Max(100) commissionRate!: number;
+
+  @IsEnum(CouponType) @IsOptional() type?: CouponType = CouponType.PERCENTAGE;
+
+  @IsNumber() @IsOptional() discountValue?: number;
+
+  @IsNumber() @IsOptional() usageLimit?: number;
+
+  @IsNumber() @IsOptional() usageLimitPerUser?: number;
+
+  @IsDateString() validFrom!: string;
+  @IsDateString() validUntil!: string;
+
+  @IsNumber() @IsOptional() minimumOrderAmount?: number;
 }

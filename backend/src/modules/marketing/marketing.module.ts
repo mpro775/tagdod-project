@@ -13,6 +13,7 @@ import { Coupon, CouponSchema } from './schemas/coupon.schema';
 import { Banner, BannerSchema } from './schemas/banner.schema';
 import { Variant, VariantSchema } from '../products/schemas/variant.schema';
 import { Product, ProductSchema } from '../products/schemas/product.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { Product, ProductSchema } from '../products/schemas/product.schema';
       { name: Banner.name, schema: BannerSchema },
       { name: Variant.name, schema: VariantSchema },
       { name: Product.name, schema: ProductSchema },
+      { name: User.name, schema: UserSchema },
     ]),
     AuthModule,
     SharedModule,

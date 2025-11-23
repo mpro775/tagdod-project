@@ -14629,6 +14629,156 @@
         ]
       }
     },
+    "/api/v1/admin/marketing/coupons/engineer": {
+      "post": {
+        "operationId": "createEngineerCoupon",
+        "summary": "إنشاء كوبون للمهندس",
+        "description": "إنشاء كوبون مرتبط بمهندس مع نسبة عمولة",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEngineerCouponDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء الكوبون بنجاح"
+          },
+          "400": {
+            "description": "بيانات غير صحيحة أو المستخدم ليس مهندساً"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/engineers/{engineerId}/coupons": {
+      "get": {
+        "operationId": "getEngineerCoupons",
+        "summary": "كوبونات المهندس",
+        "description": "جلب جميع كوبونات مهندس معين",
+        "parameters": [
+          {
+            "name": "engineerId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المهندس",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد كوبونات المهندس بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/engineers/{engineerId}/coupons/stats": {
+      "get": {
+        "operationId": "getEngineerCouponStats",
+        "summary": "إحصائيات كوبونات المهندس",
+        "description": "جلب إحصائيات شاملة لكوبونات مهندس معين",
+        "parameters": [
+          {
+            "name": "engineerId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المهندس",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإحصائيات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalCoupons": {
+                      "type": "number",
+                      "example": 5
+                    },
+                    "activeCoupons": {
+                      "type": "number",
+                      "example": 3
+                    },
+                    "totalUses": {
+                      "type": "number",
+                      "example": 150
+                    },
+                    "totalCommissionEarned": {
+                      "type": "number",
+                      "example": 750
+                    },
+                    "totalDiscountGiven": {
+                      "type": "number",
+                      "example": 15000
+                    },
+                    "coupons": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "usedCount": {
+                            "type": "number"
+                          },
+                          "commissionEarned": {
+                            "type": "number"
+                          },
+                          "discountGiven": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/marketing/pricing/variant": {
       "get": {
         "operationId": "getVariantPrice",
@@ -32490,6 +32640,10 @@
         "properties": {}
       },
       "UpdateBannerDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateEngineerCouponDto": {
         "type": "object",
         "properties": {}
       },

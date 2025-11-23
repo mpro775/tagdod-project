@@ -6686,6 +6686,93 @@
             },
             "description": "تصدير بيانات الكوبونات وتحليلاتها بصيغ مختلفة (CSV, Excel, JSON)"
           }
+        },
+        {
+          "name": "إنشاء كوبون للمهندس",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/engineer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "engineer"
+              ]
+            },
+            "description": "إنشاء كوبون مرتبط بمهندس مع نسبة عمولة"
+          }
+        },
+        {
+          "name": "كوبونات المهندس",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/engineers/{engineerId}/coupons",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "engineers",
+                "{engineerId}",
+                "coupons"
+              ]
+            },
+            "description": "جلب جميع كوبونات مهندس معين"
+          }
+        },
+        {
+          "name": "إحصائيات كوبونات المهندس",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/engineers/{engineerId}/coupons/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "engineers",
+                "{engineerId}",
+                "coupons",
+                "stats"
+              ]
+            },
+            "description": "جلب إحصائيات شاملة لكوبونات مهندس معين"
+          }
         }
       ],
       "description": "Endpoints for إدارة-التسويق functionality"

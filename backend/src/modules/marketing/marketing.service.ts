@@ -2,16 +2,16 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { PriceRule, PriceRuleDocument } from './schemas/price-rule.schema';
-import { Coupon, CouponDocument, CouponStatus } from './schemas/coupon.schema';
+import { Coupon, CouponDocument, CouponStatus, CouponType, CouponVisibility, DiscountAppliesTo } from './schemas/coupon.schema';
 import { Banner, BannerDocument, BannerLocation, BannerNavigationType } from './schemas/banner.schema';
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Media } from '../upload/schemas/media.schema';
-import { UserRole } from '../users/schemas/user.schema';
+import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
 
 // DTOs
 import { CreatePriceRuleDto, UpdatePriceRuleDto, PreviewPriceRuleDto, PricingQueryDto } from './dto/price-rule.dto';
-import { CreateCouponDto, UpdateCouponDto, ValidateCouponDto, ListCouponsDto } from './dto/coupon.dto';
+import { CreateCouponDto, UpdateCouponDto, ValidateCouponDto, ListCouponsDto, CreateEngineerCouponDto } from './dto/coupon.dto';
 import { CreateBannerDto, UpdateBannerDto, ListBannersDto } from './dto/banner.dto';
 
 // Types
@@ -46,6 +46,7 @@ export class MarketingService {
     @InjectModel(Banner.name) private bannerModel: Model<BannerDocument>,
     @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
   // ==================== PRICE RULES ====================
@@ -607,6 +608,20 @@ export class MarketingService {
           return { valid: false, message: 'This coupon is not available for your account' };
         }
       }
+
+      // Check usage limit per user (for engineer coupons)
+      if (coupon.usageLimitPerUser && coupon.engineerId) {
+        const userUsageCount = coupon.usageHistory?.filter(
+          usage => String(usage.userId) === userId
+        ).length || 0;
+        
+        if (userUsageCount >= coupon.usageLimitPerUser) {
+          return { 
+            valid: false, 
+            message: 'تم الوصول إلى الحد الأقصى لاستخدام هذا الكوبون' 
+          };
+        }
+      }
     }
 
     // Check product restrictions if productIds are provided (can be variantIds or productIds)
@@ -649,6 +664,125 @@ export class MarketingService {
     }
 
     return { valid: true, coupon };
+  }
+
+  // ==================== ENGINEER COUPONS ====================
+
+  async createEngineerCoupon(dto: CreateEngineerCouponDto, adminId?: string): Promise<Coupon> {
+    // التحقق من أن المستخدم مهندس معتمد
+    const engineer = await this.userModel.findById(dto.engineerId);
+    if (!engineer || !engineer.isEngineer()) {
+      throw new BadRequestException('المستخدم المحدد ليس مهندساً معتمداً');
+    }
+
+    // التحقق من عدم وجود كوبون بنفس الكود
+    const existing = await this.couponModel.findOne({
+      code: dto.code.toUpperCase(),
+      deletedAt: null,
+    });
+
+    if (existing) {
+      throw new BadRequestException('كود الكوبون موجود بالفعل');
+    }
+
+    const coupon = new this.couponModel({
+      code: dto.code.toUpperCase(),
+      name: dto.name,
+      description: dto.description,
+      type: dto.type || CouponType.PERCENTAGE,
+      discountValue: dto.discountValue || dto.commissionRate, // إذا لم يُحدد، استخدم نسبة العمولة
+      engineerId: new Types.ObjectId(dto.engineerId),
+      commissionRate: dto.commissionRate,
+      usageLimit: dto.usageLimit,
+      usageLimitPerUser: dto.usageLimitPerUser,
+      validFrom: new Date(dto.validFrom),
+      validUntil: new Date(dto.validUntil),
+      minimumOrderAmount: dto.minimumOrderAmount,
+      status: CouponStatus.ACTIVE,
+      visibility: CouponVisibility.PUBLIC,
+      appliesTo: DiscountAppliesTo.ALL_PRODUCTS,
+      usedCount: 0,
+      totalCommissionEarned: 0,
+      usageHistory: [],
+      createdBy: adminId,
+    });
+
+    return await coupon.save();
+  }
+
+  async getEngineerCoupons(engineerId: string): Promise<Coupon[]> {
+    return this.couponModel.find({
+      engineerId: new Types.ObjectId(engineerId),
+      deletedAt: null,
+    }).sort({ createdAt: -1 });
+  }
+
+  async getEngineerCouponStats(engineerId: string) {
+    const coupons = await this.couponModel.find({
+      engineerId: new Types.ObjectId(engineerId),
+      deletedAt: null,
+    });
+
+    const stats = {
+      totalCoupons: coupons.length,
+      activeCoupons: coupons.filter(c => c.status === CouponStatus.ACTIVE).length,
+      totalUses: coupons.reduce((sum, c) => sum + (c.usedCount || 0), 0),
+      totalCommissionEarned: coupons.reduce((sum, c) => sum + (c.totalCommissionEarned || 0), 0),
+      totalDiscountGiven: coupons.reduce((sum, c) => sum + (c.totalDiscountGiven || 0), 0),
+      coupons: coupons.map(c => ({
+        code: c.code,
+        name: c.name,
+        usedCount: c.usedCount || 0,
+        commissionEarned: c.totalCommissionEarned || 0,
+        discountGiven: c.totalDiscountGiven || 0,
+      })),
+    };
+
+    return stats;
+  }
+
+  async recordCouponUsage(params: {
+    couponCode: string;
+    orderId: string;
+    userId: string;
+    discountAmount: number;
+    orderTotal: number;
+  }): Promise<{ commissionAmount: number; engineerId: string } | null> {
+    const coupon = await this.couponModel.findOne({
+      code: params.couponCode.toUpperCase(),
+      deletedAt: null,
+    });
+
+    if (!coupon || !coupon.engineerId || !coupon.commissionRate) {
+      return null; // ليس كوبون مهندس
+    }
+
+    // حساب العمولة (نسبة من مبلغ الخصم)
+    const commissionAmount = (params.discountAmount * coupon.commissionRate) / 100;
+
+    // تحديث سجل الاستخدام
+    coupon.usageHistory = coupon.usageHistory || [];
+    coupon.usageHistory.push({
+      orderId: new Types.ObjectId(params.orderId),
+      userId: new Types.ObjectId(params.userId),
+      discountAmount: params.discountAmount,
+      commissionAmount,
+      usedAt: new Date(),
+    });
+
+    // تحديث الإحصائيات
+    coupon.usedCount = (coupon.usedCount || 0) + 1;
+    coupon.totalCommissionEarned = (coupon.totalCommissionEarned || 0) + commissionAmount;
+    coupon.totalRedemptions = (coupon.totalRedemptions || 0) + 1;
+    coupon.totalDiscountGiven = (coupon.totalDiscountGiven || 0) + params.discountAmount;
+    coupon.totalRevenue = (coupon.totalRevenue || 0) + params.orderTotal;
+
+    await coupon.save();
+
+    return {
+      commissionAmount,
+      engineerId: String(coupon.engineerId),
+    };
   }
 
   async getCouponsAnalytics(period: number = 30) {

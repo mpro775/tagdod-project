@@ -30,6 +30,7 @@ import {
   VisibilityOff,
   ContentCopy,
   Add,
+  Engineering,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -359,6 +360,36 @@ export const CouponsListPage: React.FC = () => {
       ),
     },
     {
+      field: 'engineer',
+      headerName: t('table.columns.engineer', 'المهندس'),
+      width: 150,
+      flex: 0.15,
+      minWidth: 130,
+      renderCell: (params) => {
+        const coupon = params.row as Coupon;
+        if (!coupon.engineerId) {
+          return (
+            <Box sx={{ py: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                -
+              </Typography>
+            </Box>
+          );
+        }
+        return (
+          <Box sx={{ py: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Engineering fontSize="small" color="primary" />
+            <Chip
+              label={t('table.columns.engineerCoupon', 'كوبون مهندس')}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+          </Box>
+        );
+      },
+    },
+    {
       field: 'actions',
       headerName: t('table.columns.actions'),
       width: 200,
@@ -433,15 +464,45 @@ export const CouponsListPage: React.FC = () => {
   ];
 
   const coupons = data?.data || [];
+  
+  // Filter coupons by engineer if filter is set
+  const filteredCoupons = engineerFilter !== null
+    ? coupons.filter((coupon: Coupon) => 
+        engineerFilter ? !!coupon.engineerId : !coupon.engineerId
+      )
+    : coupons;
 
   return (
     <Box>
+      {/* Filters */}
+      <Box display="flex" gap={2} mb={2} flexWrap="wrap" alignItems="center">
+        <Chip
+          label={t('filters.all', 'الكل')}
+          onClick={() => setEngineerFilter(null)}
+          color={engineerFilter === null ? 'primary' : 'default'}
+          variant={engineerFilter === null ? 'filled' : 'outlined'}
+        />
+        <Chip
+          label={t('filters.engineerCoupons', 'كوبونات المهندسين')}
+          onClick={() => setEngineerFilter(true)}
+          color={engineerFilter === true ? 'primary' : 'default'}
+          variant={engineerFilter === true ? 'filled' : 'outlined'}
+          icon={<Engineering />}
+        />
+        <Chip
+          label={t('filters.regularCoupons', 'كوبونات عادية')}
+          onClick={() => setEngineerFilter(false)}
+          color={engineerFilter === false ? 'primary' : 'default'}
+          variant={engineerFilter === false ? 'filled' : 'outlined'}
+        />
+      </Box>
+
       {/* Desktop View */}
       {!isXs ? (
         <DataTable
           title={t('table.title')}
           columns={columns}
-          rows={coupons}
+          rows={filteredCoupons}
           loading={isLoading}
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
@@ -481,13 +542,13 @@ export const CouponsListPage: React.FC = () => {
             <Box display="flex" justifyContent="center" p={4}>
               <CircularProgress />
             </Box>
-          ) : coupons.length === 0 ? (
+          ) : filteredCoupons.length === 0 ? (
             <Alert severity="info" sx={{ mt: 2 }}>
               {t('messages.noData')}
             </Alert>
           ) : (
             <Grid container spacing={2}>
-              {coupons.map((coupon) => (
+              {filteredCoupons.map((coupon) => (
                 <Grid key={coupon._id} size={{ xs: 6 }}>
                   <Card
                     sx={{
@@ -621,6 +682,25 @@ export const CouponsListPage: React.FC = () => {
                       <Typography variant="caption" color="text.secondary">
                         {formatDateGregorian(coupon.validFrom)} - {formatDateGregorian(coupon.validUntil)}
                       </Typography>
+
+                      {/* Engineer Badge */}
+                      {coupon.engineerId && (
+                        <Box display="flex" alignItems="center" gap={0.5} mt={0.5}>
+                          <Engineering fontSize="small" color="primary" />
+                          <Chip
+                            label={t('table.columns.engineerCoupon', 'كوبون مهندس')}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ fontSize: '0.65rem' }}
+                          />
+                          {coupon.commissionRate && (
+                            <Typography variant="caption" color="text.secondary">
+                              ({coupon.commissionRate}%)
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
                     </CardContent>
 
                     {/* Actions */}

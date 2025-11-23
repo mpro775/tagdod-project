@@ -3364,6 +3364,7 @@ export class OrderService {
       try {
         browser = await puppeteer.launch({
           headless: true,
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
           timeout: 60000, // زيادة timeout إلى 60 ثانية
           args: [
             '--no-sandbox',
@@ -3374,7 +3375,8 @@ export class OrderService {
             '--disable-software-rasterizer',
             '--disable-web-security',
             '--disable-features=IsolateOrigins,site-per-process',
-            '--disable-blink-features=AutomationControlled'
+            '--disable-blink-features=AutomationControlled',
+            '--single-process' // مهم لـ Docker
           ],
         });
         
@@ -3896,10 +3898,81 @@ export class OrderService {
       // إرسال الفاتورة عبر البريد الإلكتروني
       await this.sendOrderInvoiceEmail(order, pdfBuffer);
 
+      // معالجة عمولات الكوبونات المرتبطة بالمهندسين
+      if (order.appliedCouponCodes && order.appliedCouponCodes.length > 0) {
+        for (const couponCode of order.appliedCouponCodes) {
+          const couponInfo = order.appliedCoupons?.find(c => c.code === couponCode);
+          if (couponInfo) {
+            try {
+              const commissionResult = await this.marketingService.recordCouponUsage({
+                couponCode,
+                orderId: String(order._id),
+                userId: String(order.userId),
+                discountAmount: couponInfo.discount,
+                orderTotal: order.total,
+              });
+
+              if (commissionResult) {
+                // إضافة العمولة لرصيد المهندس
+                await this.addCommissionToEngineer(
+                  commissionResult.engineerId,
+                  commissionResult.commissionAmount,
+                  String(order._id),
+                  couponCode,
+                );
+              }
+            } catch (error) {
+              this.logger.error(`Failed to process commission for coupon ${couponCode}:`, error);
+            }
+          }
+        }
+      }
+
       this.logger.log(`Order completion handled successfully for ${order.orderNumber}`);
     } catch (error) {
       this.logger.error(`Error handling order completion for ${orderNumber}:`, error);
       // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
+    }
+  }
+
+  /**
+   * إضافة العمولة لرصيد المهندس
+   */
+  private async addCommissionToEngineer(
+    engineerId: string,
+    amount: number,
+    orderId: string,
+    couponCode: string,
+  ): Promise<void> {
+    try {
+      const engineer = await this.userModel.findById(engineerId);
+      if (!engineer) {
+        this.logger.warn(`Engineer ${engineerId} not found for commission`);
+        return;
+      }
+
+      // تحديث الرصيد
+      engineer.walletBalance = (engineer.walletBalance || 0) + amount;
+
+      // إضافة سجل المعاملة
+      engineer.commissionTransactions = engineer.commissionTransactions || [];
+      engineer.commissionTransactions.push({
+        transactionId: `COMM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: 'commission',
+        amount,
+        orderId: new Types.ObjectId(orderId),
+        couponCode,
+        description: `عمولة من كوبون ${couponCode}`,
+        createdAt: new Date(),
+      });
+
+      await engineer.save();
+
+      this.logger.log(
+        `Added commission ${amount} to engineer ${engineerId} from coupon ${couponCode}`,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to add commission to engineer ${engineerId}:`, error);
     }
   }
 
@@ -4394,6 +4467,7 @@ export class OrderService {
       // إنشاء PDF باستخدام puppeteer
       const browser = await puppeteer.launch({
         headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
         timeout: 60000, // زيادة timeout إلى 60 ثانية
         args: [
           '--no-sandbox',
@@ -4404,7 +4478,8 @@ export class OrderService {
           '--disable-software-rasterizer',
           '--disable-web-security',
           '--disable-features=IsolateOrigins,site-per-process',
-          '--disable-blink-features=AutomationControlled'
+          '--disable-blink-features=AutomationControlled',
+          '--single-process' // مهم لـ Docker
         ],
       });
       

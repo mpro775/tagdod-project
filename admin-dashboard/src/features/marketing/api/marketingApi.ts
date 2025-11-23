@@ -137,6 +137,17 @@ export interface Coupon {
   lastModifiedBy?: string;
   createdAt: Date;
   updatedAt: Date;
+  // Engineer Coupon Fields
+  engineerId?: string;
+  commissionRate?: number;
+  usageHistory?: Array<{
+    orderId: string;
+    userId: string;
+    discountAmount: number;
+    commissionAmount: number;
+    usedAt: Date;
+  }>;
+  totalCommissionEarned?: number;
 }
 
 export interface CreateCouponDto {
@@ -162,6 +173,39 @@ export interface CreateCouponDto {
   buyXQuantity?: number;
   getYQuantity?: number;
   getYProductId?: string;
+  // Engineer Coupon Fields
+  engineerId?: string;
+  commissionRate?: number;
+}
+
+export interface CreateEngineerCouponDto {
+  engineerId: string;
+  code: string;
+  name: string;
+  description?: string;
+  commissionRate: number;
+  type?: 'percentage' | 'fixed_amount' | 'free_shipping' | 'buy_x_get_y';
+  discountValue?: number;
+  usageLimit?: number;
+  usageLimitPerUser?: number;
+  validFrom: string;
+  validUntil: string;
+  minimumOrderAmount?: number;
+}
+
+export interface EngineerCouponStats {
+  totalCoupons: number;
+  activeCoupons: number;
+  totalUses: number;
+  totalCommissionEarned: number;
+  totalDiscountGiven: number;
+  coupons: Array<{
+    code: string;
+    name: string;
+    usedCount: number;
+    commissionEarned: number;
+    discountGiven: number;
+  }>;
 }
 
 export interface UpdateCouponDto {
@@ -552,7 +596,29 @@ export const marketingApi = {
     return extractResponseData<any>(response);
   },
 
- 
+  // ==================== ENGINEER COUPONS ====================
+
+  createEngineerCoupon: async (data: CreateEngineerCouponDto): Promise<Coupon> => {
+    const response = await apiClient.post<ApiResponse<Coupon>>(
+      '/admin/marketing/coupons/engineer',
+      data
+    );
+    return extractResponseData<Coupon>(response);
+  },
+
+  getEngineerCoupons: async (engineerId: string): Promise<Coupon[]> => {
+    const response = await apiClient.get<ApiResponse<Coupon[]>>(
+      `/admin/marketing/engineers/${engineerId}/coupons`
+    );
+    return extractResponseData<Coupon[]>(response);
+  },
+
+  getEngineerCouponStats: async (engineerId: string): Promise<EngineerCouponStats> => {
+    const response = await apiClient.get<ApiResponse<EngineerCouponStats>>(
+      `/admin/marketing/engineers/${engineerId}/coupons/stats`
+    );
+    return extractResponseData<EngineerCouponStats>(response);
+  },
 
   // ==================== BANNERS ====================
 

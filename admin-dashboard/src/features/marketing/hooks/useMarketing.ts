@@ -14,6 +14,8 @@ import type {
   ListBannersParams,
   ValidateCouponDto,
   PricingQueryDto,
+  CreateEngineerCouponDto,
+  EngineerCouponStats,
 } from '../api/marketingApi';
 
 const MARKETING_KEY = 'marketing';
@@ -382,5 +384,36 @@ export const useEffectivePrice = (params: PricingQueryDto) => {
     queryKey: [MARKETING_KEY, 'pricing', params],
     queryFn: () => marketingApi.getEffectivePrice(params),
     enabled: !!params.variantId,
+  });
+};
+
+// ==================== ENGINEER COUPONS HOOKS ====================
+
+export const useEngineerCoupons = (engineerId: string) => {
+  return useQuery({
+    queryKey: [MARKETING_KEY, 'engineers', engineerId, 'coupons'],
+    queryFn: () => marketingApi.getEngineerCoupons(engineerId),
+    enabled: !!engineerId,
+  });
+};
+
+export const useEngineerCouponStats = (engineerId: string) => {
+  return useQuery({
+    queryKey: [MARKETING_KEY, 'engineers', engineerId, 'coupons', 'stats'],
+    queryFn: () => marketingApi.getEngineerCouponStats(engineerId),
+    enabled: !!engineerId,
+  });
+};
+
+export const useCreateEngineerCoupon = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateEngineerCouponDto) => marketingApi.createEngineerCoupon(data),
+    onSuccess: () => {
+      toast.success('تم إنشاء كوبون المهندس بنجاح');
+      queryClient.invalidateQueries({ queryKey: [MARKETING_KEY, 'coupons'] });
+      queryClient.invalidateQueries({ queryKey: [MARKETING_KEY, 'engineers'] });
+    },
+    onError: ErrorHandler.showError,
   });
 };

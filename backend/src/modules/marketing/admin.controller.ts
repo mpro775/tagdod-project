@@ -10,7 +10,7 @@ import {
 } from '@nestjs/swagger';
 import { MarketingService } from './marketing.service';
 import { CreatePriceRuleDto, UpdatePriceRuleDto, PreviewPriceRuleDto } from './dto/price-rule.dto';
-import { CreateCouponDto, UpdateCouponDto, ListCouponsDto, ValidateCouponDto } from './dto/coupon.dto';
+import { CreateCouponDto, UpdateCouponDto, ListCouponsDto, ValidateCouponDto, CreateEngineerCouponDto } from './dto/coupon.dto';
 import { CreateBannerDto, UpdateBannerDto, ListBannersDto } from './dto/banner.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../../shared/guards/roles.guard';
@@ -640,5 +640,99 @@ export class MarketingAdminController {
     const exportPeriod = period || 30;
     
     return await this.svc.exportCouponsData(exportFormat, exportPeriod);
+  }
+
+  @Post('coupons/engineer')
+  @ApiOperation({
+    summary: 'إنشاء كوبون للمهندس',
+    description: 'إنشاء كوبون مرتبط بمهندس مع نسبة عمولة',
+  })
+  @ApiBody({ type: CreateEngineerCouponDto })
+  @ApiResponse({
+    status: 201,
+    description: 'تم إنشاء الكوبون بنجاح'
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'بيانات غير صحيحة أو المستخدم ليس مهندساً'
+  })
+  async createEngineerCoupon(
+    @Body() dto: CreateEngineerCouponDto,
+    @Req() req: Request,
+  ) {
+    const adminId = (req as unknown as { user: { sub: string } }).user.sub;
+    const coupon = await this.svc.createEngineerCoupon(dto, adminId);
+    
+    // تسجيل إنشاء الكوبون في audit
+    this.auditService.logCouponEvent({
+      couponCode: coupon.code,
+      action: 'created',
+      performedBy: adminId,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    }).catch(err => this.logger.error('Failed to log engineer coupon creation', err));
+    
+    return coupon;
+  }
+
+  @Get('engineers/:engineerId/coupons')
+  @ApiOperation({
+    summary: 'كوبونات المهندس',
+    description: 'جلب جميع كوبونات مهندس معين',
+  })
+  @ApiParam({
+    name: 'engineerId',
+    description: 'معرف المهندس',
+    example: '507f1f77bcf86cd799439011'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد كوبونات المهندس بنجاح'
+  })
+  async getEngineerCoupons(@Param('engineerId') engineerId: string) {
+    const coupons = await this.svc.getEngineerCoupons(engineerId);
+    return coupons;
+  }
+
+  @Get('engineers/:engineerId/coupons/stats')
+  @ApiOperation({
+    summary: 'إحصائيات كوبونات المهندس',
+    description: 'جلب إحصائيات شاملة لكوبونات مهندس معين',
+  })
+  @ApiParam({
+    name: 'engineerId',
+    description: 'معرف المهندس',
+    example: '507f1f77bcf86cd799439011'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد الإحصائيات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        totalCoupons: { type: 'number', example: 5 },
+        activeCoupons: { type: 'number', example: 3 },
+        totalUses: { type: 'number', example: 150 },
+        totalCommissionEarned: { type: 'number', example: 750 },
+        totalDiscountGiven: { type: 'number', example: 15000 },
+        coupons: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              code: { type: 'string' },
+              name: { type: 'string' },
+              usedCount: { type: 'number' },
+              commissionEarned: { type: 'number' },
+              discountGiven: { type: 'number' }
+            }
+          }
+        }
+      }
+    }
+  })
+  async getEngineerCouponStats(@Param('engineerId') engineerId: string) {
+    const stats = await this.svc.getEngineerCouponStats(engineerId);
+    return stats;
   }
 }

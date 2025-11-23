@@ -16,8 +16,12 @@ import {
   Select,
   MenuItem,
   FormHelperText,
+  Autocomplete,
+  FormControlLabel,
+  Switch,
+  Divider,
 } from '@mui/material';
-import { Save, ArrowBack, Preview } from '@mui/icons-material';
+import { Save, ArrowBack, Preview, Engineering } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
@@ -26,7 +30,9 @@ import {
   useCreateCoupon,
   useUpdateCoupon,
   useCoupon,
+  useCreateEngineerCoupon,
 } from '@/features/marketing/hooks/useMarketing';
+import { useEngineers } from '@/features/services/hooks/useServices';
 import type { CreateCouponDto, UpdateCouponDto } from '@/features/marketing/api/marketingApi';
 import type { TFunction } from 'i18next';
 
@@ -83,9 +89,12 @@ export const CouponFormPage: React.FC = () => {
   const appliesToOptions = createAppliesToOptions(t);
 
   const { data: coupon, isLoading: loadingCoupon } = useCoupon(id!);
+  const { data: engineersData } = useEngineers({});
+  const engineers = engineersData?.data || [];
 
   const { mutate: createCoupon, isPending: creating } = useCreateCoupon();
   const { mutate: updateCoupon, isPending: updating } = useUpdateCoupon();
+  const { mutate: createEngineerCoupon, isPending: creatingEngineer } = useCreateEngineerCoupon();
 
   const {
     control,
@@ -113,10 +122,14 @@ export const CouponFormPage: React.FC = () => {
       applicableBrandIds: [],
       applicableUserIds: [],
       excludedUserIds: [],
+      engineerId: undefined,
+      commissionRate: undefined,
     },
   });
 
   const couponType = watch('type');
+  const isEngineerCoupon = watch('engineerId');
+  const engineerId = watch('engineerId');
 
   useEffect(() => {
     if (coupon && isEditing) {
@@ -145,6 +158,8 @@ export const CouponFormPage: React.FC = () => {
         buyXQuantity: coupon.buyXQuantity,
         getYQuantity: coupon.getYQuantity,
         getYProductId: coupon.getYProductId,
+        engineerId: coupon.engineerId,
+        commissionRate: coupon.commissionRate,
       });
     }
   }, [coupon, isEditing, reset]);
@@ -155,6 +170,33 @@ export const CouponFormPage: React.FC = () => {
   };
 
   const onSubmit = (data: CouponFormData) => {
+    // If it's an engineer coupon and we're creating (not editing), use createEngineerCoupon
+    if (!isEditing && data.engineerId && data.commissionRate) {
+      createEngineerCoupon({
+        engineerId: data.engineerId,
+        code: data.code,
+        name: data.name,
+        description: data.description,
+        commissionRate: data.commissionRate,
+        type: data.type || 'percentage',
+        discountValue: data.discountValue,
+        usageLimit: data.usageLimit,
+        usageLimitPerUser: data.usageLimitPerUser,
+        validFrom: data.validFrom,
+        validUntil: data.validUntil,
+        minimumOrderAmount: data.minimumOrderAmount,
+      }, {
+        onSuccess: () => {
+          toast.success(t('messages.createSuccess'));
+          navigate('/coupons');
+        },
+        onError: (error: any) => {
+          toast.error(error.response?.data?.error?.message || t('messages.createError'));
+        },
+      });
+      return;
+    }
+
     if (isEditing) {
       updateCoupon(
         { id: id!, data },
