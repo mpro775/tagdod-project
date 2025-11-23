@@ -118,6 +118,11 @@ export class EmailAdapter {
         html,
         text,
         attachments: notification.attachments,
+        encoding: 'UTF-8',
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8',
+          'Content-Transfer-Encoding': 'quoted-printable',
+        },
       };
 
       // إضافة timeout wrapper للتعامل مع الملفات المرفقة الكبيرة

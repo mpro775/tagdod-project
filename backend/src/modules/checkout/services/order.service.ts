@@ -10,11 +10,11 @@ import {
   OrderExcelGenerationFailedException,
   AddressNotFoundException,
   ErrorCode,
-  DomainException
+  DomainException,
 } from '../../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { User , UserRole } from '../../users/schemas/user.schema';
+import { User, UserRole } from '../../users/schemas/user.schema';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
@@ -40,7 +40,11 @@ import { InventoryService as ProductsInventoryService } from '../../products/ser
 import { VariantService } from '../../products/services/variant.service';
 import { ProductService } from '../../products/services/product.service';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
+import {
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+} from '../../notifications/enums/notification.enums';
 import { AuditService } from '../../../shared/services/audit.service';
 import { EmailAdapter } from '../../notifications/adapters/email.adapter';
 import { ConfigService } from '@nestjs/config';
@@ -111,7 +115,10 @@ export class OrderService {
   private readonly logger = new Logger(OrderService.name);
   private reservationTtlSec = Number(process.env.RESERVATION_TTL_SECONDS || 900);
   private paymentSigningKey = process.env.PAYMENT_SIGNING_KEY || 'dev_signing_key';
-  private readonly checkoutPreviewCache = new Map<string, { expiresAt: number; data: CartPreviewResult }>();
+  private readonly checkoutPreviewCache = new Map<
+    string,
+    { expiresAt: number; data: CartPreviewResult }
+  >();
   private readonly checkoutPreviewTtlMs = 60_000;
   private readonly couponValidationCache = new Map<
     string,
@@ -162,7 +169,14 @@ export class OrderService {
 
   // ===== Notification Helpers =====
 
-  private async safeNotify(userId: string, type: NotificationType, title: string, message: string, messageEn: string, data?: Record<string, unknown>) {
+  private async safeNotify(
+    userId: string,
+    type: NotificationType,
+    title: string,
+    message: string,
+    messageEn: string,
+    data?: Record<string, unknown>,
+  ) {
     try {
       if (this.notificationService) {
         await this.notificationService.createNotification({
@@ -181,14 +195,23 @@ export class OrderService {
     }
   }
 
-  private async notifyAdmins(type: NotificationType, title: string, message: string, messageEn: string, data?: Record<string, unknown>) {
+  private async notifyAdmins(
+    type: NotificationType,
+    title: string,
+    message: string,
+    messageEn: string,
+    data?: Record<string, unknown>,
+  ) {
     try {
       if (!this.notificationService) return;
-      
-      const admins = await this.userModel.find({
-        roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
-        status: 'ACTIVE',
-      }).select('_id').lean();
+
+      const admins = await this.userModel
+        .find({
+          roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+          status: 'ACTIVE',
+        })
+        .select('_id')
+        .lean();
 
       const notificationPromises = admins.map((admin) =>
         this.notificationService!.createNotification({
@@ -200,7 +223,7 @@ export class OrderService {
           data,
           channel: NotificationChannel.IN_APP,
           priority: NotificationPriority.HIGH,
-        })
+        }),
       );
 
       await Promise.all(notificationPromises);
@@ -226,7 +249,10 @@ export class OrderService {
     }
   }
 
-  private async getCartPreviewWithCache(userId: string, currency: string): Promise<CartPreviewResult> {
+  private async getCartPreviewWithCache(
+    userId: string,
+    currency: string,
+  ): Promise<CartPreviewResult> {
     const key = this.buildPreviewCacheKey(userId, currency);
     const now = Date.now();
     const cached = this.checkoutPreviewCache.get(key);
@@ -403,8 +429,8 @@ export class OrderService {
                 ? item.unit.final
                 : typeof (item as { unit?: { finalBeforeDiscount?: number } }).unit
                       ?.finalBeforeDiscount === 'number'
-                ? (item as { unit?: { finalBeforeDiscount?: number } }).unit!.finalBeforeDiscount!
-                : 0;
+                  ? (item as { unit?: { finalBeforeDiscount?: number } }).unit!.finalBeforeDiscount!
+                  : 0;
             const qty = typeof item.qty === 'number' ? item.qty : 0;
             return sum + unitFinal * qty;
           }, 0);
@@ -512,17 +538,19 @@ export class OrderService {
       const validation = initialValidations[i];
       if (!validation || !validation.valid || !validation.coupon) {
         this.logger.warn(`Invalid coupon: ${code} - ${validation?.message || 'Unknown error'}`);
-        
+
         // تسجيل فشل تطبيق الكوبون في audit
         if (this.auditService && params.userId) {
-          this.auditService.logCouponEvent({
-            userId: params.userId,
-            couponCode: code,
-            action: 'application_failed',
-            failureReason: validation?.message || 'Unknown error',
-          }).catch(err => this.logger.error('Failed to log coupon application failure', err));
+          this.auditService
+            .logCouponEvent({
+              userId: params.userId,
+              couponCode: code,
+              action: 'application_failed',
+              failureReason: validation?.message || 'Unknown error',
+            })
+            .catch((err) => this.logger.error('Failed to log coupon application failure', err));
         }
-        
+
         continue;
       }
 
@@ -557,12 +585,14 @@ export class OrderService {
 
         // تسجيل تطبيق الكوبون في audit
         if (this.auditService && params.userId) {
-          this.auditService.logCouponEvent({
-            userId: params.userId,
-            couponCode: code,
-            action: 'applied',
-            discountAmount: couponDiscount,
-          }).catch(err => this.logger.error('Failed to log coupon application', err));
+          this.auditService
+            .logCouponEvent({
+              userId: params.userId,
+              couponCode: code,
+              action: 'applied',
+              discountAmount: couponDiscount,
+            })
+            .catch((err) => this.logger.error('Failed to log coupon application', err));
         }
       } catch (error) {
         this.logger.error(`Error applying coupon ${code}`, error as Error);
@@ -616,8 +646,9 @@ export class OrderService {
       );
     }
 
-    const previewTotalsMap = (params.preview as Record<string, unknown>)
-      .totalsInAllCurrencies as Record<string, unknown> | undefined;
+    const previewTotalsMap = (params.preview as Record<string, unknown>).totalsInAllCurrencies as
+      | Record<string, unknown>
+      | undefined;
     if (previewTotalsMap) {
       Object.keys(previewTotalsMap).forEach((code) =>
         currenciesSet.add(this.normalizeCurrency(code)),
@@ -676,12 +707,11 @@ export class OrderService {
       { subtotal: number; totalDiscount: number; total: number }
     > = Object.fromEntries(totalsEntries);
 
-    const normalizedBaseTotals =
-      totalsByCurrency[normalizedCurrency] ?? {
-        subtotal: baseTotals.subtotal,
-        totalDiscount: baseTotals.totalDiscount,
-        total: baseTotals.total,
-      };
+    const normalizedBaseTotals = totalsByCurrency[normalizedCurrency] ?? {
+      subtotal: baseTotals.subtotal,
+      totalDiscount: baseTotals.totalDiscount,
+      total: baseTotals.total,
+    };
 
     const summaryEntries = await Promise.all(
       Object.entries(totalsByCurrency).map(async ([currencyCode, totalsForCurrency]) => {
@@ -759,9 +789,7 @@ export class OrderService {
     };
   }
 
-  private async getUsersMap(
-    userIds: Types.ObjectId[],
-  ): Promise<
+  private async getUsersMap(userIds: Types.ObjectId[]): Promise<
     Map<
       string,
       {
@@ -773,10 +801,9 @@ export class OrderService {
       }
     >
   > {
-    const users = await this.userModel.find(
-      { _id: { $in: userIds } },
-      { _id: 1, firstName: 1, lastName: 1, phone: 1 },
-    ).lean();
+    const users = await this.userModel
+      .find({ _id: { $in: userIds } }, { _id: 1, firstName: 1, lastName: 1, phone: 1 })
+      .lean();
 
     const usersMap = new Map<
       string,
@@ -816,7 +843,7 @@ export class OrderService {
         totalOrders: 0,
         completedOrders: 0,
         inProgressOrders: 0,
-        cancelledOrders: 0
+        cancelledOrders: 0,
       };
     }
 
@@ -830,8 +857,8 @@ export class OrderService {
     }>([
       {
         $match: {
-          userId: userObjectId
-        }
+          userId: userObjectId,
+        },
       },
       {
         $group: {
@@ -839,8 +866,8 @@ export class OrderService {
           totalOrders: { $sum: 1 },
           completedOrders: {
             $sum: {
-              $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, 1, 0]
-            }
+              $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, 1, 0],
+            },
           },
           inProgressOrders: {
             $sum: {
@@ -848,32 +875,28 @@ export class OrderService {
                 {
                   $in: [
                     '$status',
-                    [
-                      OrderStatus.PENDING_PAYMENT,
-                      OrderStatus.CONFIRMED,
-                      OrderStatus.PROCESSING
-                    ]
-                  ]
+                    [OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED, OrderStatus.PROCESSING],
+                  ],
                 },
                 1,
-                0
-              ]
-            }
+                0,
+              ],
+            },
           },
           cancelledOrders: {
             $sum: {
-              $cond: [{ $eq: ['$status', OrderStatus.CANCELLED] }, 1, 0]
-            }
-          }
-        }
-      }
+              $cond: [{ $eq: ['$status', OrderStatus.CANCELLED] }, 1, 0],
+            },
+          },
+        },
+      },
     ]);
 
     return {
       totalOrders: result?.totalOrders ?? 0,
       completedOrders: result?.completedOrders ?? 0,
       inProgressOrders: result?.inProgressOrders ?? 0,
-      cancelledOrders: result?.cancelledOrders ?? 0
+      cancelledOrders: result?.cancelledOrders ?? 0,
     };
   }
 
@@ -883,7 +906,7 @@ export class OrderService {
     changedBy: Types.ObjectId,
     changedByRole: 'customer' | 'admin' | 'system',
     notes?: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     order.statusHistory.push({
       status,
@@ -891,7 +914,7 @@ export class OrderService {
       changedBy,
       changedByRole,
       notes,
-      metadata
+      metadata,
     });
   }
 
@@ -914,7 +937,10 @@ export class OrderService {
     return undefined;
   }
 
-  private buildInventoryFilter(target: { variantId?: string; productId?: string }): Record<string, unknown> {
+  private buildInventoryFilter(target: {
+    variantId?: string;
+    productId?: string;
+  }): Record<string, unknown> {
     if (target.variantId) {
       return { variantId: new Types.ObjectId(target.variantId) };
     }
@@ -968,7 +994,7 @@ export class OrderService {
     // البحث أولاً بـ ObjectId
     const filter = this.buildInventoryFilter(target);
     let existing = await this.inventoryModel.findOne(filter).lean();
-    
+
     // إذا لم يجد بـ ObjectId، جرب البحث بـ string
     if (!existing) {
       const stringFilter: Record<string, unknown> = {};
@@ -978,17 +1004,19 @@ export class OrderService {
         stringFilter.productId = target.productId;
       }
       existing = await this.inventoryModel.findOne(stringFilter).lean();
-      
+
       // إذا وجد بـ string، حوله إلى ObjectId
       if (existing) {
-        this.logger.debug(`Found inventory record with string filter, converting to ObjectId: ${JSON.stringify(stringFilter)}`);
+        this.logger.debug(
+          `Found inventory record with string filter, converting to ObjectId: ${JSON.stringify(stringFilter)}`,
+        );
         const updates: Record<string, unknown> = {};
         if (target.variantId && typeof existing.variantId === 'string') {
           updates.variantId = new Types.ObjectId(existing.variantId);
         } else if (target.productId && typeof existing.productId === 'string') {
           updates.productId = new Types.ObjectId(existing.productId);
         }
-        
+
         // تحديث on_hand إذا لزم الأمر
         if (
           typeof params.onHand === 'number' &&
@@ -998,17 +1026,17 @@ export class OrderService {
         ) {
           updates.on_hand = params.onHand;
         }
-        
+
         if (Object.keys(updates).length > 0) {
           await this.inventoryModel.updateOne(stringFilter, { $set: updates });
         }
         return;
       }
     }
-    
+
     if (existing) {
       const updates: Record<string, unknown> = {};
-      
+
       // تحديث on_hand إذا كانت القيمة المطلوبة أكبر من القيمة الحالية
       if (
         typeof params.onHand === 'number' &&
@@ -1018,7 +1046,7 @@ export class OrderService {
       ) {
         updates.on_hand = params.onHand;
       }
-      
+
       if (
         typeof params.safetyStock === 'number' &&
         Number.isFinite(params.safetyStock) &&
@@ -1057,10 +1085,15 @@ export class OrderService {
       const mongoError = error as { code?: number };
       if (mongoError?.code === 11000) {
         // Record already exists (duplicate key) - السجل موجود، نعتبر العملية ناجحة
-        this.logger.debug(`Inventory record already exists (duplicate key): ${JSON.stringify(filter)} - proceeding without verification`);
+        this.logger.debug(
+          `Inventory record already exists (duplicate key): ${JSON.stringify(filter)} - proceeding without verification`,
+        );
         return;
       }
-      this.logger.error(`Failed to create inventory record: ${JSON.stringify(filter)}`, error as Error);
+      this.logger.error(
+        `Failed to create inventory record: ${JSON.stringify(filter)}`,
+        error as Error,
+      );
       throw error;
     }
   }
@@ -1087,10 +1120,9 @@ export class OrderService {
       });
 
       try {
-        await this.inventoryModel.updateOne(
-          filter,
-          { $inc: { on_hand: entry.qty, reserved: -entry.qty } },
-        );
+        await this.inventoryModel.updateOne(filter, {
+          $inc: { on_hand: entry.qty, reserved: -entry.qty },
+        });
       } catch (error) {
         this.logger.error(
           `Failed to rollback inventory counts for target ${JSON.stringify(filter)} (order ${orderId})`,
@@ -1194,8 +1226,8 @@ export class OrderService {
             typeof availability.availableStock === 'number'
               ? availability.availableStock
               : typeof variantDetails.stock === 'number'
-              ? variantDetails.stock
-              : 0;
+                ? variantDetails.stock
+                : 0;
 
           safetyStock =
             typeof variantDetails.minStock === 'number' && Number.isFinite(variantDetails.minStock)
@@ -1228,8 +1260,8 @@ export class OrderService {
             typeof availability.availableStock === 'number'
               ? availability.availableStock
               : typeof productDetails.stock === 'number'
-              ? productDetails.stock
-              : 0;
+                ? productDetails.stock
+                : 0;
 
           safetyStock =
             typeof productDetails.minStock === 'number' && Number.isFinite(productDetails.minStock)
@@ -1241,7 +1273,10 @@ export class OrderService {
           });
         }
 
-        await this.ensureInventoryRecord({ variantId, productId }, { onHand: initialOnHand, safetyStock });
+        await this.ensureInventoryRecord(
+          { variantId, productId },
+          { onHand: initialOnHand, safetyStock },
+        );
 
         const inventoryFilter = this.buildInventoryFilter({ variantId, productId });
         if (!availability.canBackorder) {
@@ -1343,10 +1378,9 @@ export class OrderService {
         );
 
         if (inventoryAdjusted) {
-          await this.inventoryModel.updateOne(
-            this.buildInventoryFilter({ variantId, productId }),
-            { $inc: { on_hand: qty, reserved: -qty } },
-          );
+          await this.inventoryModel.updateOne(this.buildInventoryFilter({ variantId, productId }), {
+            $inc: { on_hand: qty, reserved: -qty },
+          });
         }
 
         if (stockAdjusted) {
@@ -1532,7 +1566,7 @@ export class OrderService {
    */
   async checkCODEligibility(userId: string): Promise<CODEligibilityResult> {
     const requiredOrders = 3;
-    
+
     // التحقق من أن المستخدم ليس Admin
     const user = await this.userModel.findById(userId).lean();
     if (!user) {
@@ -1545,7 +1579,7 @@ export class OrderService {
         requiredOrders,
         remainingOrders: requiredOrders,
         progress: '0/3',
-        message: 'المستخدم غير موجود'
+        message: 'المستخدم غير موجود',
       };
     }
 
@@ -1565,7 +1599,7 @@ export class OrderService {
         remainingOrders: 0,
         progress: `${Math.min(counters.completedOrders, requiredOrders)}/${requiredOrders}`,
         message: 'المستخدم له صلاحيات إدارية',
-        isAdmin: true
+        isAdmin: true,
       };
     }
 
@@ -1583,9 +1617,9 @@ export class OrderService {
       requiredOrders,
       remainingOrders,
       progress,
-      message: eligible 
-        ? undefined 
-        : `يجب إكمال ${requiredOrders} طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك ${completedOrdersCount} طلب مكتمل`
+      message: eligible
+        ? undefined
+        : `يجب إكمال ${requiredOrders} طلبات على الأقل لاستخدام الدفع عند الاستلام. لديك ${completedOrdersCount} طلب مكتمل`,
     };
   }
 
@@ -1600,7 +1634,9 @@ export class OrderService {
     const normalizedCurrency = currency?.toUpperCase();
 
     const [codEligibility, providers] = await Promise.all([
-      codEligibilityOverride ? Promise.resolve(codEligibilityOverride) : this.checkCODEligibility(userId),
+      codEligibilityOverride
+        ? Promise.resolve(codEligibilityOverride)
+        : this.checkCODEligibility(userId),
       normalizedCurrency
         ? this.localPaymentAccountService.findByCurrency(normalizedCurrency, true)
         : this.localPaymentAccountService.findGrouped(true),
@@ -1626,19 +1662,20 @@ export class OrderService {
 
     const localPaymentProviders: CheckoutLocalPaymentProviderDto[] = providers
       .map((provider) => {
-        const accounts: CheckoutLocalPaymentAccountDto[] = provider.accounts
-          .map((account) => ({
-            id: account.id,
-            currency: account.currency,
-            accountNumber: account.accountNumber,
-            isActive: account.isActive,
-            displayOrder: account.displayOrder,
-            notes: account.notes,
-          }));
+        const accounts: CheckoutLocalPaymentAccountDto[] = provider.accounts.map((account) => ({
+          id: account.id,
+          currency: account.currency,
+          accountNumber: account.accountNumber,
+          isActive: account.isActive,
+          displayOrder: account.displayOrder,
+          notes: account.notes,
+        }));
 
         const primaryDisplayOrder =
-          accounts.reduce((min, account) => Math.min(min, account.displayOrder ?? 0), Number.POSITIVE_INFINITY) ||
-          0;
+          accounts.reduce(
+            (min, account) => Math.min(min, account.displayOrder ?? 0),
+            Number.POSITIVE_INFINITY,
+          ) || 0;
 
         const icon: CheckoutProviderIconDto | undefined = provider.icon
           ? {
@@ -1660,7 +1697,9 @@ export class OrderService {
           accounts,
         } as CheckoutLocalPaymentProviderDto;
       })
-      .sort((a, b) => a.displayOrder - b.displayOrder || a.providerName.localeCompare(b.providerName));
+      .sort(
+        (a, b) => a.displayOrder - b.displayOrder || a.providerName.localeCompare(b.providerName),
+      );
 
     return {
       cod: codStatus,
@@ -1709,11 +1748,7 @@ export class OrderService {
         couponCodes: dto.couponCodes,
         codEligibility,
       }),
-      this.getPaymentOptions(
-        userId,
-        normalizedCurrency,
-        codEligibility,
-      ),
+      this.getPaymentOptions(userId, normalizedCurrency, codEligibility),
     ]);
 
     let totalsInAllCurrencies: Record<string, unknown> | undefined;
@@ -1792,8 +1827,9 @@ export class OrderService {
 
     const computationPreviewRecord = computation.preview as Record<string, unknown>;
     const previewMeta = computationPreviewRecord.meta as Record<string, unknown> | undefined;
-    const previewTotalsInAllCurrencies =
-      computationPreviewRecord.totalsInAllCurrencies as Record<string, unknown> | undefined;
+    const previewTotalsInAllCurrencies = computationPreviewRecord.totalsInAllCurrencies as
+      | Record<string, unknown>
+      | undefined;
 
     return {
       cart: {
@@ -1839,7 +1875,12 @@ export class OrderService {
   /**
    * معاينة الطلب قبل التأكيد - دعم كوبونات متعددة
    */
-  async previewCheckout(userId: string, currency: string, couponCode?: string, couponCodes?: string[]) {
+  async previewCheckout(
+    userId: string,
+    currency: string,
+    couponCode?: string,
+    couponCodes?: string[],
+  ) {
     try {
       const normalizedCurrency = this.normalizeCurrency(currency);
       const preview = await this.getCartPreviewWithCache(userId, normalizedCurrency);
@@ -1872,7 +1913,7 @@ export class OrderService {
             requiredOrders: codEligibility.requiredOrders,
             remainingOrders: codEligibility.remainingOrders,
             progress: codEligibility.progress,
-            message: codEligibility.message
+            message: codEligibility.message,
           },
           customerOrderStats: computation.customerOrderStats,
           // Backward compatibility
@@ -1880,8 +1921,8 @@ export class OrderService {
             computation.discounts.appliedCoupons.length > 0
               ? computation.discounts.appliedCoupons[0]
               : null,
-          couponDiscount: computation.discounts.couponDiscount
-        }
+          couponDiscount: computation.discounts.couponDiscount,
+        },
       };
     } catch (error) {
       this.logger.error('Preview checkout failed:', error);
@@ -1894,7 +1935,7 @@ export class OrderService {
    */
   async confirmCheckout(
     userId: string,
-    dto: CreateOrderDto
+    dto: CreateOrderDto,
   ): Promise<{
     order: {
       orderId: string;
@@ -1915,7 +1956,10 @@ export class OrderService {
   }> {
     try {
       // التحقق من ملكية العنوان
-      const isValid = await this.addressesService.validateAddressOwnership(dto.deliveryAddressId, userId);
+      const isValid = await this.addressesService.validateAddressOwnership(
+        dto.deliveryAddressId,
+        userId,
+      );
       if (!isValid) {
         throw new AddressNotFoundException();
       }
@@ -1936,20 +1980,46 @@ export class OrderService {
               requiredOrders: codEligibilityBefore.requiredOrders,
               progress: codEligibilityBefore.progress,
               totalOrders: codEligibilityBefore.totalOrders,
-              remainingOrders: codEligibilityBefore.remainingOrders
-            }
+              remainingOrders: codEligibilityBefore.remainingOrders,
+            },
           });
         }
       }
 
       // إعادة حساب من السلة - دعم كوبونات متعددة
-      const quote = await this.previewCheckout(userId, dto.currency, dto.couponCode, dto.couponCodes) as { data: { total: number; subtotal: number; shipping: number; couponDiscount: number; itemsDiscount?: number; discounts?: { itemsDiscount: number; couponDiscount: number; totalDiscount: number; appliedCoupons: Array<{ code: string; name: string; discountValue: number; type: string; discount: number }> }; items: CartLine[] } };
+      const quote = (await this.previewCheckout(
+        userId,
+        dto.currency,
+        dto.couponCode,
+        dto.couponCodes,
+      )) as {
+        data: {
+          total: number;
+          subtotal: number;
+          shipping: number;
+          couponDiscount: number;
+          itemsDiscount?: number;
+          discounts?: {
+            itemsDiscount: number;
+            couponDiscount: number;
+            totalDiscount: number;
+            appliedCoupons: Array<{
+              code: string;
+              name: string;
+              discountValue: number;
+              type: string;
+              discount: number;
+            }>;
+          };
+          items: CartLine[];
+        };
+      };
       const total = quote.data.total;
       const subtotal = quote.data.subtotal;
       const shipping = quote.data.shipping || 0;
       const couponDiscount = quote.data.discounts?.couponDiscount || quote.data.couponDiscount || 0;
       const itemsDiscount = quote.data.discounts?.itemsDiscount || quote.data.itemsDiscount || 0;
-      const totalDiscount = quote.data.discounts?.totalDiscount || (itemsDiscount + couponDiscount);
+      const totalDiscount = quote.data.discounts?.totalDiscount || itemsDiscount + couponDiscount;
       const appliedCoupons = quote.data.discounts?.appliedCoupons || [];
       const tax = 0; // الضريبة حالياً صفر
 
@@ -1961,7 +2031,10 @@ export class OrderService {
         const usdShipping = await this.exchangeRatesService.convertToUSD(shipping, dto.currency);
         const usdTax = await this.exchangeRatesService.convertToUSD(tax, dto.currency);
         // تحويل إجمالي الخصومات (عروض + كوبونات) وليس الكوبونات فقط
-        const usdDiscount = await this.exchangeRatesService.convertToUSD(totalDiscount, dto.currency);
+        const usdDiscount = await this.exchangeRatesService.convertToUSD(
+          totalDiscount,
+          dto.currency,
+        );
 
         totalsInAllCurrencies = await this.exchangeRatesService.calculateTotalsInAllCurrencies(
           usdSubtotal,
@@ -1981,7 +2054,7 @@ export class OrderService {
         if (!selection || !selection.isActive) {
           throw new DomainException(ErrorCode.VALIDATION_ERROR, {
             reason: 'invalid_payment_account',
-            message: 'الحساب المحدد غير موجود أو غير مفعل'
+            message: 'الحساب المحدد غير موجود أو غير مفعل',
           });
         }
 
@@ -1989,7 +2062,7 @@ export class OrderService {
         if (selection.currency !== dto.currency.toUpperCase()) {
           throw new DomainException(ErrorCode.VALIDATION_ERROR, {
             reason: 'currency_mismatch',
-            message: `العملة المحددة (${dto.currency}) لا تطابق عملة الحساب (${selection.currency})`
+            message: `العملة المحددة (${dto.currency}) لا تطابق عملة الحساب (${selection.currency})`,
           });
         }
 
@@ -1997,7 +2070,7 @@ export class OrderService {
         if (!dto.paymentReference || dto.paymentReference.trim().length === 0) {
           throw new DomainException(ErrorCode.VALIDATION_ERROR, {
             reason: 'payment_reference_required',
-            message: 'يجب إدخال رقم الحوالة أو المرجع'
+            message: 'يجب إدخال رقم الحوالة أو المرجع',
           });
         }
       }
@@ -2042,8 +2115,8 @@ export class OrderService {
         tax: tax,
         totalDiscount: totalDiscount,
         // Multiple coupons support
-        appliedCouponCodes: appliedCoupons.map(c => c.code),
-        appliedCoupons: appliedCoupons.map(c => ({
+        appliedCouponCodes: appliedCoupons.map((c) => c.code),
+        appliedCoupons: appliedCoupons.map((c) => ({
           code: c.code,
           discount: c.discount,
           details: {
@@ -2052,17 +2125,26 @@ export class OrderService {
             type: c.type,
             discountPercentage: c.type === 'percentage' ? c.discountValue : undefined,
             discountAmount: c.type === 'fixed_amount' ? c.discountValue : undefined,
-          }
+          },
         })),
         // Backward compatibility
         appliedCouponCode: appliedCoupons.length > 0 ? appliedCoupons[0].code : dto.couponCode,
-        couponDetails: appliedCoupons.length > 0 ? {
-          code: appliedCoupons[0].code,
-          title: appliedCoupons[0].name,
-          type: appliedCoupons[0].type,
-          discountPercentage: appliedCoupons[0].type === 'percentage' ? appliedCoupons[0].discountValue : undefined,
-          discountAmount: appliedCoupons[0].type === 'fixed_amount' ? appliedCoupons[0].discountValue : undefined,
-        } : undefined,
+        couponDetails:
+          appliedCoupons.length > 0
+            ? {
+                code: appliedCoupons[0].code,
+                title: appliedCoupons[0].name,
+                type: appliedCoupons[0].type,
+                discountPercentage:
+                  appliedCoupons[0].type === 'percentage'
+                    ? appliedCoupons[0].discountValue
+                    : undefined,
+                discountAmount:
+                  appliedCoupons[0].type === 'fixed_amount'
+                    ? appliedCoupons[0].discountValue
+                    : undefined,
+              }
+            : undefined,
         paymentMethod: dto.paymentMethod,
         paymentProvider: dto.paymentProvider,
         localPaymentAccountId: dto.localPaymentAccountId ?? undefined,
@@ -2070,7 +2152,7 @@ export class OrderService {
         shippingMethod: dto.shippingMethod,
         customerNotes: dto.customerNotes,
         totalsInAllCurrencies,
-        source: 'web'
+        source: 'web',
       });
 
       await order.save();
@@ -2098,7 +2180,7 @@ export class OrderService {
         OrderStatus.PENDING_PAYMENT,
         new Types.ObjectId(userId),
         'customer',
-        'تم إنشاء الطلب'
+        'تم إنشاء الطلب',
       );
 
       // إذا كان الدفع عند الاستلام، تأكيد فوري وتحديث حالة الدفع
@@ -2109,30 +2191,33 @@ export class OrderService {
         order.paymentStatus = newPaymentStatus;
         order.paidAt = new Date();
         await order.save();
-        
+
         // تسجيل حدث الدفع في audit
         if (this.auditService) {
-          this.auditService.logPaymentEvent({
-            userId,
-            orderId: String(order._id),
-            action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'completed',
-            paymentMethod: PaymentMethod.COD,
-            amount: order.total,
-            currency: order.currency,
-            failureReason: oldPaymentStatus !== newPaymentStatus 
-              ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}` 
-              : undefined,
-            ipAddress: undefined, // COD لا يحتاج IP
-          }).catch(err => this.logger.error('Failed to log COD payment', err));
+          this.auditService
+            .logPaymentEvent({
+              userId,
+              orderId: String(order._id),
+              action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'completed',
+              paymentMethod: PaymentMethod.COD,
+              amount: order.total,
+              currency: order.currency,
+              failureReason:
+                oldPaymentStatus !== newPaymentStatus
+                  ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}`
+                  : undefined,
+              ipAddress: undefined, // COD لا يحتاج IP
+            })
+            .catch((err) => this.logger.error('Failed to log COD payment', err));
         }
-        
+
         // ثم تحديث حالة الطلب
         await this.updateOrderStatus(
           order._id.toString(),
           OrderStatus.CONFIRMED,
           new Types.ObjectId(userId),
           'admin',
-          'تأكيد فوري للدفع عند الاستلام'
+          'تأكيد فوري للدفع عند الاستلام',
         );
       }
 
@@ -2151,8 +2236,8 @@ export class OrderService {
             convertedToOrderId: order._id,
             convertedAt: new Date(),
             items: [], // تفريغ العناصر لمنع إعادة الاستخدام
-          }
-        }
+          },
+        },
       );
 
       this.logger.log(`Order created: ${order.orderNumber}, Cart converted`);
@@ -2169,7 +2254,7 @@ export class OrderService {
           customerId: userId,
           total: total,
           currency: dto.currency,
-        }
+        },
       );
 
       // إرسال إشعار COUPON_USED للمدراء إذا تم استخدام كوبون
@@ -2177,15 +2262,15 @@ export class OrderService {
         await this.notifyAdmins(
           NotificationType.COUPON_USED,
           'استخدام كوبون',
-          `تم استخدام كوبون ${appliedCoupons.map(c => c.code).join(', ')} في الطلب ${order.orderNumber}`,
-          `Coupon ${appliedCoupons.map(c => c.code).join(', ')} used in order ${order.orderNumber}`,
+          `تم استخدام كوبون ${appliedCoupons.map((c) => c.code).join(', ')} في الطلب ${order.orderNumber}`,
+          `Coupon ${appliedCoupons.map((c) => c.code).join(', ')} used in order ${order.orderNumber}`,
           {
             orderId: order._id.toString(),
             orderNumber: order.orderNumber,
-            couponCodes: appliedCoupons.map(c => c.code),
+            couponCodes: appliedCoupons.map((c) => c.code),
             discountAmount: couponDiscount,
             currency: dto.currency,
-          }
+          },
         );
       }
 
@@ -2197,7 +2282,7 @@ export class OrderService {
         cancelledOrders: codEligibilityAfter.cancelledOrders,
         requiredForCOD: codEligibilityAfter.requiredOrders,
         remainingForCOD: codEligibilityAfter.remainingOrders,
-        codEligible: codEligibilityAfter.eligible
+        codEligible: codEligibilityAfter.eligible,
       };
 
       return {
@@ -2205,15 +2290,18 @@ export class OrderService {
           orderId: order._id.toString(),
           orderNumber: order.orderNumber,
           status: order.status,
-          payment: dto.paymentMethod === 'BANK_TRANSFER' ? {
-          intentId: `local-${order._id}`,
-          provider: 'local_bank',
-          amount: total,
-          signature: this.hmac(`local-${order._id}|PENDING|${total}`)
-        } : undefined
+          payment:
+            dto.paymentMethod === 'BANK_TRANSFER'
+              ? {
+                  intentId: `local-${order._id}`,
+                  provider: 'local_bank',
+                  amount: total,
+                  signature: this.hmac(`local-${order._id}|PENDING|${total}`),
+                }
+              : undefined,
         },
         codEligibility: codEligibilityAfter,
-        customerOrderStats
+        customerOrderStats,
       };
     } catch (error) {
       this.logger.error('Confirm checkout failed:', error);
@@ -2238,7 +2326,7 @@ export class OrderService {
       fromDate,
       toDate,
       hasRating,
-      minRating
+      minRating,
     } = query;
 
     const skip = (page - 1) * limit;
@@ -2259,7 +2347,7 @@ export class OrderService {
     if (search) {
       filter.$or = [
         { orderNumber: { $regex: search, $options: 'i' } },
-        { 'deliveryAddress.recipientName': { $regex: search, $options: 'i' } }
+        { 'deliveryAddress.recipientName': { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -2271,7 +2359,7 @@ export class OrderService {
         const existingOr = filter.$or as unknown[] | undefined;
         const ratingOr = [
           { 'ratingInfo.rating': { $exists: false } },
-          { 'ratingInfo.rating': null }
+          { 'ratingInfo.rating': null },
         ];
         if (existingOr) {
           filter.$or = [...existingOr, ...ratingOr];
@@ -2294,13 +2382,8 @@ export class OrderService {
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
     const [orders, total] = await Promise.all([
-      this.orderModel
-        .find(filter)
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      this.orderModel.countDocuments(filter)
+      this.orderModel.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+      this.orderModel.countDocuments(filter),
     ]);
 
     const userIds = orders
@@ -2314,7 +2397,7 @@ export class OrderService {
     const localPaymentAccountIds = orders
       .map((order) => order.localPaymentAccountId)
       .filter((id): id is string => Boolean(id));
-    
+
     const accountTypesMap = new Map<string, string>();
     if (localPaymentAccountIds.length > 0) {
       try {
@@ -2326,7 +2409,7 @@ export class OrderService {
               // البحث عن الطلب الذي يستخدم هذا الحساب للحصول على العملة
               const orderWithAccount = orders.find((o) => o.localPaymentAccountId === accountId);
               const currency = orderWithAccount?.currency || 'USD';
-              
+
               const selection = await this.localPaymentAccountService.resolveAccountSelection(
                 accountId,
                 currency,
@@ -2338,7 +2421,7 @@ export class OrderService {
               // تجاهل الأخطاء في جلب نوع الحساب
               this.logger.debug(`Failed to resolve account type for ${accountId}: ${error}`);
             }
-          })
+          }),
         );
       } catch (error) {
         this.logger.warn(`Failed to load account types: ${error}`);
@@ -2384,8 +2467,8 @@ export class OrderService {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -2423,7 +2506,8 @@ export class OrderService {
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)), // timeout 1 ثانية
         ]);
         if (selection) {
-          (order as unknown as { localPaymentAccountType?: string }).localPaymentAccountType = selection.type;
+          (order as unknown as { localPaymentAccountType?: string }).localPaymentAccountType =
+            selection.type;
         }
       } catch (error) {
         this.logger.debug(`Failed to resolve account type for order ${orderId}: ${error}`);
@@ -2441,7 +2525,7 @@ export class OrderService {
     newStatus: OrderStatus,
     changedBy: Types.ObjectId,
     changedByRole: 'customer' | 'admin' | 'system',
-    notes?: string
+    notes?: string,
   ): Promise<OrderDocument> {
     const order = await this.orderModel.findById(orderId);
     if (!order) {
@@ -2452,7 +2536,10 @@ export class OrderService {
 
     // التحقق من صحة الانتقال
     if (!OrderStateMachine.canTransition(order.status, newStatus)) {
-      throw new OrderException(ErrorCode.ORDER_INVALID_STATUS, { from: order.status, to: newStatus });
+      throw new OrderException(ErrorCode.ORDER_INVALID_STATUS, {
+        from: order.status,
+        to: newStatus,
+      });
     }
 
     // التحقق من الدفع قبل السماح بتغيير الحالة
@@ -2461,7 +2548,7 @@ export class OrderService {
     const statusesRequiringPayment = [
       OrderStatus.CONFIRMED,
       OrderStatus.PROCESSING,
-      OrderStatus.COMPLETED
+      OrderStatus.COMPLETED,
     ];
 
     if (statusesRequiringPayment.includes(newStatus) && newStatus !== OrderStatus.CANCELLED) {
@@ -2470,15 +2557,12 @@ export class OrderService {
           reason: 'payment_required',
           message: `لا يمكن تغيير حالة الطلب إلى ${newStatus} بدون إتمام الدفع. حالة الدفع الحالية: ${order.paymentStatus}`,
           currentPaymentStatus: order.paymentStatus,
-          requiredPaymentStatus: PaymentStatus.PAID
+          requiredPaymentStatus: PaymentStatus.PAID,
         });
       }
     }
 
-    if (
-      newStatus === OrderStatus.CONFIRMED &&
-      previousStatus === OrderStatus.PENDING_PAYMENT
-    ) {
+    if (newStatus === OrderStatus.CONFIRMED && previousStatus === OrderStatus.PENDING_PAYMENT) {
       await this.commitInventoryReservations(orderId);
     }
 
@@ -2488,7 +2572,7 @@ export class OrderService {
 
     // تحديث الحالة
     order.status = newStatus;
-    
+
     // إضافة سجل الحالة
     await this.addStatusHistory(order, newStatus, changedBy, changedByRole, notes);
 
@@ -2516,25 +2600,27 @@ export class OrderService {
     // معالجة إكمال الطلب بعد حفظ التغييرات
     if (newStatus === OrderStatus.COMPLETED) {
       // استخدام orderId بدلاً من order object لتجنب ParallelSaveError
-      this.handleOrderCompletion(order._id.toString()).catch(err => {
+      this.handleOrderCompletion(order._id.toString()).catch((err) => {
         this.logger.error(`Failed to handle order completion for ${order.orderNumber}:`, err);
       });
     }
 
     // تسجيل تغيير حالة الطلب في audit
     if (this.auditService) {
-      this.auditService.logOrderEvent({
-        userId: String(order.userId),
-        orderId: String(order._id),
-        action: 'status_changed',
-        orderNumber: order.orderNumber,
-        oldStatus: previousStatus,
-        newStatus,
-        totalAmount: order.total,
-        currency: order.currency,
-        performedBy: String(changedBy),
-        reason: notes,
-      }).catch(err => this.logger.error('Failed to log order status change', err));
+      this.auditService
+        .logOrderEvent({
+          userId: String(order.userId),
+          orderId: String(order._id),
+          action: 'status_changed',
+          orderNumber: order.orderNumber,
+          oldStatus: previousStatus,
+          newStatus,
+          totalAmount: order.total,
+          currency: order.currency,
+          performedBy: String(changedBy),
+          reason: notes,
+        })
+        .catch((err) => this.logger.error('Failed to log order status change', err));
     }
 
     return order;
@@ -2545,7 +2631,7 @@ export class OrderService {
    */
   async cancelOrder(orderId: string, userId: string, dto: CancelOrderDto): Promise<OrderDocument> {
     const order = await this.getOrderDetails(orderId, userId);
-    
+
     // التحقق من إمكانية الإلغاء
     if (!OrderStateMachine.canTransition(order.status, OrderStatus.CANCELLED)) {
       throw new OrderCannotCancelException({ status: order.status });
@@ -2557,7 +2643,7 @@ export class OrderService {
       OrderStatus.CANCELLED,
       new Types.ObjectId(userId),
       'customer',
-      `تم الإلغاء: ${dto.reason}`
+      `تم الإلغاء: ${dto.reason}`,
     );
 
     return order;
@@ -2568,7 +2654,7 @@ export class OrderService {
    */
   async shipOrder(orderId: string, dto: ShipOrderDto, adminId: string): Promise<OrderDocument> {
     const order = await this.getOrderDetails(orderId);
-    
+
     if (order.status !== OrderStatus.PROCESSING) {
       throw new OrderNotReadyToShipException({ status: order.status });
     }
@@ -2576,7 +2662,9 @@ export class OrderService {
     order.trackingNumber = dto.trackingNumber;
     order.trackingUrl = dto.trackingUrl;
     order.shippingCompany = dto.shippingCompany;
-    order.estimatedDeliveryDate = dto.estimatedDeliveryDate ? new Date(dto.estimatedDeliveryDate) : undefined;
+    order.estimatedDeliveryDate = dto.estimatedDeliveryDate
+      ? new Date(dto.estimatedDeliveryDate)
+      : undefined;
     order.shippedAt = new Date();
 
     await this.addStatusHistory(
@@ -2589,7 +2677,7 @@ export class OrderService {
         trackingNumber: order.trackingNumber,
         shippingCompany: order.shippingCompany,
         estimatedDeliveryDate: order.estimatedDeliveryDate,
-      }
+      },
     );
 
     await order.save();
@@ -2600,15 +2688,22 @@ export class OrderService {
   /**
    * معالجة الاسترداد
    */
-  async processRefund(orderId: string, dto: RefundOrderDto, adminId: string): Promise<OrderDocument> {
+  async processRefund(
+    orderId: string,
+    dto: RefundOrderDto,
+    adminId: string,
+  ): Promise<OrderDocument> {
     const order = await this.getOrderDetails(orderId);
-    
+
     if (order.paymentStatus !== PaymentStatus.PAID) {
       throw new OrderException(ErrorCode.ORDER_ALREADY_PAID);
     }
 
     if (dto.amount > order.total) {
-      throw new OrderException(ErrorCode.ORDER_REFUND_AMOUNT_INVALID, { amount: dto.amount, total: order.total });
+      throw new OrderException(ErrorCode.ORDER_REFUND_AMOUNT_INVALID, {
+        amount: dto.amount,
+        total: order.total,
+      });
     }
 
     order.returnInfo.isReturned = true;
@@ -2619,38 +2714,44 @@ export class OrderService {
 
     // تحديث حالة الدفع
     const oldPaymentStatus = order.paymentStatus;
-    const newPaymentStatus = dto.amount === order.total ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED;
+    const newPaymentStatus =
+      dto.amount === order.total ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED;
     order.paymentStatus = newPaymentStatus;
     // ملاحظة: نستخدم REFUNDED فقط في OrderStatus (تم تبسيط الحالات)
     order.status = OrderStatus.REFUNDED;
-    
+
     // تسجيل حدث الاسترداد في audit
     if (this.auditService) {
-      this.auditService.logPaymentEvent({
-        userId: String(order.userId),
-        orderId: String(order._id),
-        action: 'refunded',
-        paymentMethod: order.paymentMethod || 'UNKNOWN',
-        amount: dto.amount,
-        currency: order.currency,
-        transactionId: order.paymentTransactionId,
-        failureReason: String(oldPaymentStatus) !== String(newPaymentStatus) 
-          ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}` 
-          : undefined,
-      }).catch(err => this.logger.error('Failed to log refund', err));
-      
-      this.auditService.logOrderEvent({
-        userId: String(order.userId),
-        orderId: String(order._id),
-        action: 'refunded',
-        orderNumber: order.orderNumber,
-        oldStatus: order.statusHistory[order.statusHistory.length - 1]?.status,
-        newStatus: OrderStatus.REFUNDED,
-        totalAmount: dto.amount,
-        currency: order.currency,
-        performedBy: adminId,
-        reason: dto.reason,
-      }).catch(err => this.logger.error('Failed to log order refund', err));
+      this.auditService
+        .logPaymentEvent({
+          userId: String(order.userId),
+          orderId: String(order._id),
+          action: 'refunded',
+          paymentMethod: order.paymentMethod || 'UNKNOWN',
+          amount: dto.amount,
+          currency: order.currency,
+          transactionId: order.paymentTransactionId,
+          failureReason:
+            String(oldPaymentStatus) !== String(newPaymentStatus)
+              ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}`
+              : undefined,
+        })
+        .catch((err) => this.logger.error('Failed to log refund', err));
+
+      this.auditService
+        .logOrderEvent({
+          userId: String(order.userId),
+          orderId: String(order._id),
+          action: 'refunded',
+          orderNumber: order.orderNumber,
+          oldStatus: order.statusHistory[order.statusHistory.length - 1]?.status,
+          newStatus: OrderStatus.REFUNDED,
+          totalAmount: dto.amount,
+          currency: order.currency,
+          performedBy: adminId,
+          reason: dto.reason,
+        })
+        .catch((err) => this.logger.error('Failed to log order refund', err));
     }
 
     await this.addStatusHistory(
@@ -2658,7 +2759,7 @@ export class OrderService {
       order.status,
       new Types.ObjectId(adminId),
       'admin',
-      `استرداد ${dto.amount} - ${dto.reason}`
+      `استرداد ${dto.amount} - ${dto.reason}`,
     );
 
     await order.save();
@@ -2670,7 +2771,7 @@ export class OrderService {
    */
   async rateOrder(orderId: string, userId: string, dto: RateOrderDto): Promise<OrderDocument> {
     const order = await this.getOrderDetails(orderId, userId);
-    
+
     if (order.status !== OrderStatus.COMPLETED) {
       throw new OrderRatingNotAllowedException({ status: order.status });
     }
@@ -2693,7 +2794,7 @@ export class OrderService {
         rating: dto.rating,
         review: dto.review,
         customerId: userId,
-      }
+      },
     );
 
     return order;
@@ -2702,9 +2803,14 @@ export class OrderService {
   /**
    * إضافة ملاحظات للطلب
    */
-  async addOrderNotes(orderId: string, dto: AddOrderNotesDto, userId: string, isAdmin = false): Promise<OrderDocument> {
+  async addOrderNotes(
+    orderId: string,
+    dto: AddOrderNotesDto,
+    userId: string,
+    isAdmin = false,
+  ): Promise<OrderDocument> {
     const order = await this.getOrderDetails(orderId, isAdmin ? undefined : userId);
-    
+
     switch (dto.type) {
       case 'customer':
         order.customerNotes = dto.notes;
@@ -2733,31 +2839,32 @@ export class OrderService {
       this.orderModel.countDocuments({ userId: new Types.ObjectId(userId) }),
       this.orderModel.countDocuments({
         userId: new Types.ObjectId(userId),
-        status: OrderStatus.COMPLETED
+        status: OrderStatus.COMPLETED,
       }),
       this.orderModel.countDocuments({
         userId: new Types.ObjectId(userId),
-        status: OrderStatus.CANCELLED
+        status: OrderStatus.CANCELLED,
       }),
       this.orderModel.aggregate([
         {
           $match: {
             userId: new Types.ObjectId(userId),
-            status: OrderStatus.COMPLETED
-          }
+            status: OrderStatus.COMPLETED,
+          },
         },
-        { $group: { _id: null, total: { $sum: '$total' } } }
-      ])
+        { $group: { _id: null, total: { $sum: '$total' } } },
+      ]),
     ]);
 
-    const averageOrderValue = completedOrders > 0 ? (totalSpent[0]?.total || 0) / completedOrders : 0;
+    const averageOrderValue =
+      completedOrders > 0 ? (totalSpent[0]?.total || 0) / completedOrders : 0;
 
     return {
       totalOrders,
       completedOrders,
       cancelledOrders,
       totalSpent: totalSpent[0]?.total || 0,
-      averageOrderValue
+      averageOrderValue,
     };
   }
 
@@ -2776,17 +2883,13 @@ export class OrderService {
       this.orderModel.countDocuments(matchFilter),
       this.orderModel.aggregate([
         { $match: { ...matchFilter, status: OrderStatus.COMPLETED } },
-        { $group: { _id: null, total: { $sum: '$total' } } }
+        { $group: { _id: null, total: { $sum: '$total' } } },
       ]),
       this.orderModel.aggregate([
         { $match: matchFilter },
-        { $group: { _id: '$status', count: { $sum: 1 } } }
+        { $group: { _id: '$status', count: { $sum: 1 } } },
       ]),
-      this.orderModel
-        .find(matchFilter)
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .lean()
+      this.orderModel.find(matchFilter).sort({ createdAt: -1 }).limit(10).lean(),
     ]);
 
     const avgOrderValue = totalOrders > 0 ? (totalRevenue[0]?.total || 0) / totalOrders : 0;
@@ -2797,7 +2900,7 @@ export class OrderService {
       totalRevenue: totalRevenue[0]?.total || 0,
       averageOrderValue: avgOrderValue,
       ordersByStatus,
-      recentOrders
+      recentOrders,
     };
   }
 
@@ -2822,12 +2925,12 @@ export class OrderService {
       search,
       sortOrder = 'desc',
       fromDate,
-      toDate
+      toDate,
     } = query;
 
     const skip = (page - 1) * limit;
     const filter: Record<string, unknown> = {
-      'ratingInfo.rating': { $exists: true, $ne: null }
+      'ratingInfo.rating': { $exists: true, $ne: null },
     };
 
     // فلترة حسب التقييم
@@ -2841,7 +2944,8 @@ export class OrderService {
     // فلترة حسب التاريخ
     if (fromDate || toDate) {
       filter['ratingInfo.ratedAt'] = {} as Record<string, unknown>;
-      if (fromDate) (filter['ratingInfo.ratedAt'] as Record<string, unknown>).$gte = new Date(fromDate);
+      if (fromDate)
+        (filter['ratingInfo.ratedAt'] as Record<string, unknown>).$gte = new Date(fromDate);
       if (toDate) (filter['ratingInfo.ratedAt'] as Record<string, unknown>).$lte = new Date(toDate);
     }
 
@@ -2850,7 +2954,7 @@ export class OrderService {
       filter.$or = [
         { orderNumber: { $regex: search, $options: 'i' } },
         { 'ratingInfo.review': { $regex: search, $options: 'i' } },
-        { 'deliveryAddress.recipientName': { $regex: search, $options: 'i' } }
+        { 'deliveryAddress.recipientName': { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -2858,13 +2962,8 @@ export class OrderService {
     sort['ratingInfo.ratedAt'] = sortOrder === 'desc' ? -1 : 1;
 
     const [orders, total] = await Promise.all([
-      this.orderModel
-        .find(filter)
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      this.orderModel.countDocuments(filter)
+      this.orderModel.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+      this.orderModel.countDocuments(filter),
     ]);
 
     const userIds = orders
@@ -2893,7 +2992,7 @@ export class OrderService {
         orderStatus: order.status,
         orderTotal: order.total,
         orderCurrency: order.currency,
-        createdAt: order.createdAt
+        createdAt: order.createdAt,
       };
     });
 
@@ -2903,8 +3002,8 @@ export class OrderService {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -2912,64 +3011,59 @@ export class OrderService {
    * الحصول على إحصائيات التقييمات (للإدارة)
    */
   async getRatingsStats() {
-    const [
-      totalRatings,
-      averageRating,
-      ratingsByValue,
-      recentRatings,
-      ratingsWithReviews
-    ] = await Promise.all([
-      // إجمالي التقييمات
-      this.orderModel.countDocuments({
-        'ratingInfo.rating': { $exists: true, $ne: null }
-      }),
-      // متوسط التقييم
-      this.orderModel.aggregate([
-        {
-          $match: {
-            'ratingInfo.rating': { $exists: true, $ne: null }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            averageRating: { $avg: '$ratingInfo.rating' },
-            totalRatings: { $sum: 1 }
-          }
-        }
-      ]),
-      // التوزيع حسب القيمة
-      this.orderModel.aggregate([
-        {
-          $match: {
-            'ratingInfo.rating': { $exists: true, $ne: null }
-          }
-        },
-        {
-          $group: {
-            _id: '$ratingInfo.rating',
-            count: { $sum: 1 }
-          }
-        },
-        {
-          $sort: { _id: -1 }
-        }
-      ]),
-      // آخر التقييمات
-      this.orderModel
-        .find({
-          'ratingInfo.rating': { $exists: true, $ne: null }
-        })
-        .sort({ 'ratingInfo.ratedAt': -1 })
-        .limit(5)
-        .select('orderNumber ratingInfo.rating ratingInfo.review ratingInfo.ratedAt')
-        .lean(),
-      // التقييمات مع مراجعات
-      this.orderModel.countDocuments({
-        'ratingInfo.rating': { $exists: true, $ne: null },
-        'ratingInfo.review': { $exists: true, $nin: [null, ''] }
-      })
-    ]);
+    const [totalRatings, averageRating, ratingsByValue, recentRatings, ratingsWithReviews] =
+      await Promise.all([
+        // إجمالي التقييمات
+        this.orderModel.countDocuments({
+          'ratingInfo.rating': { $exists: true, $ne: null },
+        }),
+        // متوسط التقييم
+        this.orderModel.aggregate([
+          {
+            $match: {
+              'ratingInfo.rating': { $exists: true, $ne: null },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              averageRating: { $avg: '$ratingInfo.rating' },
+              totalRatings: { $sum: 1 },
+            },
+          },
+        ]),
+        // التوزيع حسب القيمة
+        this.orderModel.aggregate([
+          {
+            $match: {
+              'ratingInfo.rating': { $exists: true, $ne: null },
+            },
+          },
+          {
+            $group: {
+              _id: '$ratingInfo.rating',
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $sort: { _id: -1 },
+          },
+        ]),
+        // آخر التقييمات
+        this.orderModel
+          .find({
+            'ratingInfo.rating': { $exists: true, $ne: null },
+          })
+          .sort({ 'ratingInfo.ratedAt': -1 })
+          .limit(5)
+          .select('orderNumber ratingInfo.rating ratingInfo.review ratingInfo.ratedAt')
+          .lean(),
+        // التقييمات مع مراجعات
+        this.orderModel.countDocuments({
+          'ratingInfo.rating': { $exists: true, $ne: null },
+          'ratingInfo.review': { $exists: true, $nin: [null, ''] },
+        }),
+      ]);
 
     const avgRatingResult = averageRating[0];
     const avgRating = avgRatingResult?.averageRating
@@ -2981,7 +3075,7 @@ export class OrderService {
         acc[item._id] = item.count;
         return acc;
       },
-      {} as Record<number, number>
+      {} as Record<number, number>,
     );
 
     return {
@@ -2992,15 +3086,15 @@ export class OrderService {
         4: ratingsDistribution[4] || 0,
         3: ratingsDistribution[3] || 0,
         2: ratingsDistribution[2] || 0,
-        1: ratingsDistribution[1] || 0
+        1: ratingsDistribution[1] || 0,
       },
       ratingsWithReviews,
       recentRatings: recentRatings.map((order) => ({
         orderNumber: order.orderNumber,
         rating: order.ratingInfo?.rating,
         review: order.ratingInfo?.review,
-        ratedAt: order.ratingInfo?.ratedAt
-      }))
+        ratedAt: order.ratingInfo?.ratedAt,
+      })),
     };
   }
 
@@ -3010,9 +3104,15 @@ export class OrderService {
   async adminUpdateOrderStatus(
     orderId: string,
     dto: UpdateOrderStatusDto,
-    adminId: string
+    adminId: string,
   ): Promise<OrderDocument> {
-    return this.updateOrderStatus(orderId, dto.status, new Types.ObjectId(adminId), 'admin', dto.notes);
+    return this.updateOrderStatus(
+      orderId,
+      dto.status,
+      new Types.ObjectId(adminId),
+      'admin',
+      dto.notes,
+    );
   }
 
   // ===== Webhook Methods =====
@@ -3024,7 +3124,7 @@ export class OrderService {
     intentId: string,
     status: 'SUCCESS' | 'FAILED',
     amount: string,
-    signature: string
+    signature: string,
   ): Promise<{ ok: boolean; reason?: string }> {
     const expected = this.hmac(`${intentId}|${status}|${amount}`);
     if (signature !== expected) {
@@ -3041,58 +3141,64 @@ export class OrderService {
       const newPaymentStatus = PaymentStatus.PAID;
       order.paymentStatus = newPaymentStatus;
       order.paidAt = new Date();
-      
+
       // تسجيل حدث الدفع الناجح في audit
       if (this.auditService) {
-        this.auditService.logPaymentEvent({
-          userId: String(order.userId),
-          orderId: String(order._id),
-          action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'completed',
-          paymentMethod: order.paymentMethod || 'ONLINE',
-          amount: order.total,
-          currency: order.currency,
-          transactionId: intentId,
-          failureReason: oldPaymentStatus !== newPaymentStatus 
-            ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}` 
-            : undefined,
-        }).catch(err => this.logger.error('Failed to log payment completion', err));
+        this.auditService
+          .logPaymentEvent({
+            userId: String(order.userId),
+            orderId: String(order._id),
+            action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'completed',
+            paymentMethod: order.paymentMethod || 'ONLINE',
+            amount: order.total,
+            currency: order.currency,
+            transactionId: intentId,
+            failureReason:
+              oldPaymentStatus !== newPaymentStatus
+                ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}`
+                : undefined,
+          })
+          .catch((err) => this.logger.error('Failed to log payment completion', err));
       }
-      
+
       await this.updateOrderStatus(
         order._id.toString(),
         OrderStatus.CONFIRMED,
         new Types.ObjectId('system'),
         'system',
-        'تم تأكيد الدفع'
+        'تم تأكيد الدفع',
       );
     } else {
       const oldPaymentStatus = order.paymentStatus;
       const newPaymentStatus = PaymentStatus.FAILED;
       order.paymentStatus = newPaymentStatus;
-      
+
       // تسجيل حدث فشل الدفع في audit
       if (this.auditService) {
-        this.auditService.logPaymentEvent({
-          userId: String(order.userId),
-          orderId: String(order._id),
-          action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'failed',
-          paymentMethod: order.paymentMethod || 'ONLINE',
-          amount: Number(amount),
-          currency: order.currency,
-          transactionId: intentId,
-          failureReason: oldPaymentStatus !== newPaymentStatus 
-            ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}. Original failure: ${status}`
-            : `Payment failed: ${status}`,
-        }).catch(err => this.logger.error('Failed to log payment failure', err));
+        this.auditService
+          .logPaymentEvent({
+            userId: String(order.userId),
+            orderId: String(order._id),
+            action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'failed',
+            paymentMethod: order.paymentMethod || 'ONLINE',
+            amount: Number(amount),
+            currency: order.currency,
+            transactionId: intentId,
+            failureReason:
+              oldPaymentStatus !== newPaymentStatus
+                ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}. Original failure: ${status}`
+                : `Payment failed: ${status}`,
+          })
+          .catch((err) => this.logger.error('Failed to log payment failure', err));
       }
-      
+
       // في حالة فشل الدفع، نبقي الطلب في حالة PENDING_PAYMENT
       await this.addStatusHistory(
         order,
         order.status,
         new Types.ObjectId('system'),
         'system',
-        'فشل في الدفع - يرجى المحاولة مرة أخرى'
+        'فشل في الدفع - يرجى المحاولة مرة أخرى',
       );
     }
 
@@ -3119,9 +3225,9 @@ export class OrderService {
           _id: null,
           totalRevenue: { $sum: '$total' },
           totalOrders: { $sum: 1 },
-          averageOrderValue: { $avg: '$total' }
-        }
-      }
+          averageOrderValue: { $avg: '$total' },
+        },
+      },
     ]);
 
     const revenueByDay = await this.orderModel.aggregate([
@@ -3130,10 +3236,10 @@ export class OrderService {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
           revenue: { $sum: '$total' },
-          orders: { $sum: 1 }
-        }
+          orders: { $sum: 1 },
+        },
       },
-      { $sort: { _id: 1 } }
+      { $sort: { _id: 1 } },
     ]);
 
     const revenueByStatus = await this.orderModel.aggregate([
@@ -3142,9 +3248,9 @@ export class OrderService {
         $group: {
           _id: '$status',
           revenue: { $sum: '$total' },
-          orders: { $sum: 1 }
-        }
-      }
+          orders: { $sum: 1 },
+        },
+      },
     ]);
 
     return {
@@ -3153,7 +3259,7 @@ export class OrderService {
       averageOrderValue: analytics[0]?.averageOrderValue || 0,
       revenueByDay,
       revenueByStatus,
-      topProducts: await this.getTopSellingProducts(matchQuery)
+      topProducts: await this.getTopSellingProducts(matchQuery),
     };
   }
 
@@ -3170,19 +3276,19 @@ export class OrderService {
           productName: { $first: '$items.snapshot.name' },
           totalQuantity: { $sum: '$items.qty' },
           totalRevenue: { $sum: { $multiply: ['$items.finalPrice', '$items.qty'] } },
-          orderCount: { $sum: 1 }
-        }
+          orderCount: { $sum: 1 },
+        },
       },
       { $sort: { totalRevenue: -1 } },
-      { $limit: 10 }
+      { $limit: 10 },
     ]);
 
-    return topProducts.map(product => ({
+    return topProducts.map((product) => ({
       productId: product._id?.toString(),
       name: product.productName || 'Unknown Product',
       totalQuantity: product.totalQuantity,
       totalRevenue: product.totalRevenue,
-      orderCount: product.orderCount
+      orderCount: product.orderCount,
     }));
   }
 
@@ -3202,20 +3308,22 @@ export class OrderService {
           completedOrders: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, 1, 0] } },
           cancelledOrders: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.CANCELLED] }, 1, 0] } },
           returnedOrders: { $sum: { $cond: ['$returnInfo.isReturned', 1, 0] } },
-          avgProcessingTime: { $avg: { $subtract: ['$completedAt', '$createdAt'] } }
-        }
-      }
+          avgProcessingTime: { $avg: { $subtract: ['$completedAt', '$createdAt'] } },
+        },
+      },
     ]);
 
     const result = metrics[0] || {};
     const totalOrders = result.totalOrders || 0;
 
     return {
-      averageProcessingTime: result.avgProcessingTime ? result.avgProcessingTime / (1000 * 60 * 60 * 24) : 0, // days
+      averageProcessingTime: result.avgProcessingTime
+        ? result.avgProcessingTime / (1000 * 60 * 60 * 24)
+        : 0, // days
       fulfillmentRate: totalOrders > 0 ? (result.completedOrders / totalOrders) * 100 : 0,
       cancellationRate: totalOrders > 0 ? (result.cancelledOrders / totalOrders) * 100 : 0,
       returnRate: totalOrders > 0 ? (result.returnedOrders / totalOrders) * 100 : 0,
-      customerSatisfaction: await this.calculateCustomerSatisfaction()
+      customerSatisfaction: await this.calculateCustomerSatisfaction(),
     };
   }
 
@@ -3230,16 +3338,16 @@ export class OrderService {
       {
         $match: {
           createdAt: { $gte: lastMonth },
-          'ratingInfo.rating': { $exists: true, $ne: null }
-        }
+          'ratingInfo.rating': { $exists: true, $ne: null },
+        },
       },
       {
         $group: {
           _id: null,
           averageRating: { $avg: '$ratingInfo.rating' },
-          totalRatings: { $sum: 1 }
-        }
-      }
+          totalRatings: { $sum: 1 },
+        },
+      },
     ]);
 
     if (ratingStats.length === 0 || !ratingStats[0].averageRating) {
@@ -3250,9 +3358,11 @@ export class OrderService {
           $group: {
             _id: null,
             totalOrders: { $sum: 1 },
-            completedOrders: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, 1, 0] } }
-          }
-        }
+            completedOrders: {
+              $sum: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, 1, 0] },
+            },
+          },
+        },
       ]);
 
       const result = performanceStats[0];
@@ -3273,13 +3383,15 @@ export class OrderService {
   async generateOrdersPDF(orders: OrderDocument[]): Promise<string> {
     try {
       // جلب بيانات المستخدمين
-      const userIds = orders.map(order => order.userId).filter(id => id);
+      const userIds = orders.map((order) => order.userId).filter((id) => id);
       const usersMap = await this.getUsersMap(userIds);
 
       // إحصائيات سريعة للتقرير
       const totalOrders = orders.length;
       const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
-      const completedOrders = orders.filter(order => order.status === OrderStatus.COMPLETED).length;
+      const completedOrders = orders.filter(
+        (order) => order.status === OrderStatus.COMPLETED,
+      ).length;
       const completionRate = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
 
       // إنشاء محتوى HTML للتقرير
@@ -3331,9 +3443,14 @@ export class OrderService {
               </tr>
             </thead>
             <tbody>
-              ${orders.slice(0, 50).map(order => {
-                const userInfo = usersMap.get(order.userId.toString()) || { name: 'غير محدد', phone: 'غير محدد' };
-                return `
+              ${orders
+                .slice(0, 50)
+                .map((order) => {
+                  const userInfo = usersMap.get(order.userId.toString()) || {
+                    name: 'غير محدد',
+                    phone: 'غير محدد',
+                  };
+                  return `
                 <tr>
                   <td>${order.orderNumber}</td>
                   <td>${order.createdAt?.toLocaleDateString('ar-SA')}</td>
@@ -3341,7 +3458,9 @@ export class OrderService {
                   <td>${order.total?.toLocaleString()} ريال</td>
                   <td>${userInfo.name}</td>
                 </tr>
-              `}).join('')}
+              `;
+                })
+                .join('')}
             </tbody>
           </table>
           
@@ -3358,7 +3477,7 @@ export class OrderService {
 
       const fileName = `orders-report-${new Date().toISOString().split('T')[0]}.pdf`;
       const filePath = path.join(reportsDir, fileName);
-      
+
       // إنشاء PDF باستخدام puppeteer
       let browser;
       try {
@@ -3376,14 +3495,14 @@ export class OrderService {
             '--disable-web-security',
             '--disable-features=IsolateOrigins,site-per-process',
             '--disable-blink-features=AutomationControlled',
-            '--single-process' // مهم لـ Docker
+            '--single-process', // مهم لـ Docker
           ],
         });
-        
+
         const page = await browser.newPage();
         // استخدام 'load' بدلاً من 'networkidle0' لأنه أسرع وأكثر موثوقية
         await page.setContent(htmlContent, { waitUntil: 'load', timeout: 30000 });
-        
+
         const pdfBuffer = await page.pdf({
           format: 'A4',
           printBackground: true,
@@ -3391,13 +3510,13 @@ export class OrderService {
             top: '20mm',
             right: '20mm',
             bottom: '20mm',
-            left: '20mm'
-          }
+            left: '20mm',
+          },
         });
-        
+
         // حفظ الملف
         fs.writeFileSync(filePath, pdfBuffer);
-        
+
         // إرسال إشعار INVOICE_CREATED للمدراء
         if (orders.length > 0) {
           await this.notifyAdmins(
@@ -3410,11 +3529,11 @@ export class OrderService {
               filePath: `/uploads/reports/${fileName}`,
               orderCount: orders.length,
               totalRevenue,
-              orderIds: orders.map(o => o._id.toString()),
-            }
+              orderIds: orders.map((o) => o._id.toString()),
+            },
           );
         }
-        
+
         // إرجاع المسار النسبي للوصول من الويب
         return `/uploads/reports/${fileName}`;
       } finally {
@@ -3447,25 +3566,28 @@ export class OrderService {
   async generateOrdersExcel(orders: OrderDocument[]): Promise<string> {
     try {
       // جلب بيانات المستخدمين
-      const userIds = orders.map(order => order.userId).filter(id => id);
+      const userIds = orders.map((order) => order.userId).filter((id) => id);
       const usersMap = await this.getUsersMap(userIds);
 
       // إنشاء البيانات للتقرير
-      const excelData = orders.map(order => {
-        const userInfo = usersMap.get(order.userId.toString()) || { name: 'غير محدد', phone: 'غير محدد' };
+      const excelData = orders.map((order) => {
+        const userInfo = usersMap.get(order.userId.toString()) || {
+          name: 'غير محدد',
+          phone: 'غير محدد',
+        };
 
         return {
           'رقم الطلب': order.orderNumber,
           'تاريخ الطلب': order.createdAt?.toLocaleDateString('ar-SA'),
-          'الحالة': order.status,
-          'المجموع': order.total,
-          'العملة': order.currency,
+          الحالة: order.status,
+          المجموع: order.total,
+          العملة: order.currency,
           'اسم العميل': userInfo.name,
           'رقم الهاتف': userInfo.phone,
-          'المدينة': order.deliveryAddress?.city || 'غير محدد',
+          المدينة: order.deliveryAddress?.city || 'غير محدد',
           'طريقة الدفع': order.paymentMethod,
           'عدد المنتجات': order.items?.length || 0,
-          'التقييم': order.ratingInfo?.rating || 'غير مقيم'
+          التقييم: order.ratingInfo?.rating || 'غير مقيم',
         };
       });
 
@@ -3477,34 +3599,34 @@ export class OrderService {
 
       const fileName = `orders-report-${new Date().toISOString().split('T')[0]}.xlsx`;
       const filePath = path.join(reportsDir, fileName);
-      
+
       // إنشاء ملف Excel باستخدام xlsx
       const worksheet = XLSX.utils.json_to_sheet(excelData);
-      
+
       // تنسيق الأعمدة
       const columnWidths = [
         { wch: 15 }, // رقم الطلب
         { wch: 12 }, // تاريخ الطلب
         { wch: 12 }, // الحالة
         { wch: 12 }, // المجموع
-        { wch: 8 },  // العملة
+        { wch: 8 }, // العملة
         { wch: 20 }, // اسم العميل
         { wch: 15 }, // رقم الهاتف
         { wch: 15 }, // المدينة
         { wch: 15 }, // طريقة الدفع
         { wch: 12 }, // عدد المنتجات
-        { wch: 10 }  // التقييم
+        { wch: 10 }, // التقييم
       ];
-      
+
       worksheet['!cols'] = columnWidths;
-      
+
       // إنشاء workbook
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير الطلبات');
-      
+
       // حفظ الملف
       XLSX.writeFile(workbook, filePath);
-      
+
       // إرجاع المسار النسبي للوصول من الويب
       return `/uploads/reports/${fileName}`;
     } catch (error) {
@@ -3541,10 +3663,12 @@ export class OrderService {
           totalRevenue: { $sum: '$total' },
           totalOrders: { $sum: 1 },
           totalDiscounts: { $sum: '$totalDiscount' },
-          totalRefunds: { $sum: { $cond: ['$returnInfo.isReturned', '$returnInfo.returnAmount', 0] } },
-          totalShipping: { $sum: '$shippingCost' }
-        }
-      }
+          totalRefunds: {
+            $sum: { $cond: ['$returnInfo.isReturned', '$returnInfo.returnAmount', 0] },
+          },
+          totalShipping: { $sum: '$shippingCost' },
+        },
+      },
     ]);
 
     const result = financialData[0] || {};
@@ -3558,9 +3682,9 @@ export class OrderService {
       averageOrderValue: result.totalOrders > 0 ? totalRevenue / result.totalOrders : 0,
       refunds: totalRefunds,
       netRevenue,
-      profitMargin: totalRevenue > 0 ? ((netRevenue / totalRevenue) * 100) : 0,
+      profitMargin: totalRevenue > 0 ? (netRevenue / totalRevenue) * 100 : 0,
       totalDiscounts: result.totalDiscounts || 0,
-      totalShipping: result.totalShipping || 0
+      totalShipping: result.totalShipping || 0,
     };
   }
 
@@ -3584,8 +3708,8 @@ export class OrderService {
       const stats = await this.orderModel.aggregate([
         {
           $match: {
-            userId: { $exists: true, $ne: null }
-          }
+            userId: { $exists: true, $ne: null },
+          },
         },
         {
           $group: {
@@ -3598,10 +3722,14 @@ export class OrderService {
             cancelled: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.CANCELLED] }, 1, 0] } },
             returned: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.RETURNED] }, 1, 0] } },
             refunded: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.REFUNDED] }, 1, 0] } },
-            totalRevenue: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, '$total', 0] } },
-            orderValues: { $push: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, '$total', null] } }
-          }
-        }
+            totalRevenue: {
+              $sum: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, '$total', 0] },
+            },
+            orderValues: {
+              $push: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, '$total', null] },
+            },
+          },
+        },
       ]);
 
       const result = stats[0] || {
@@ -3614,14 +3742,16 @@ export class OrderService {
         returned: 0,
         refunded: 0,
         totalRevenue: 0,
-        orderValues: []
+        orderValues: [],
       };
 
       // حساب متوسط قيمة الطلب
       const validOrderValues = result.orderValues.filter((value: number | null) => value !== null);
-      const averageOrderValue = validOrderValues.length > 0
-        ? validOrderValues.reduce((sum: number, value: number) => sum + value, 0) / validOrderValues.length
-        : 0;
+      const averageOrderValue =
+        validOrderValues.length > 0
+          ? validOrderValues.reduce((sum: number, value: number) => sum + value, 0) /
+            validOrderValues.length
+          : 0;
 
       return {
         total: result.total,
@@ -3633,7 +3763,7 @@ export class OrderService {
         returned: result.returned,
         refunded: result.refunded,
         totalRevenue: result.totalRevenue,
-        averageOrderValue
+        averageOrderValue,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -3650,7 +3780,7 @@ export class OrderService {
         returned: 0,
         refunded: 0,
         totalRevenue: 0,
-        averageOrderValue: 0
+        averageOrderValue: 0,
       };
     }
   }
@@ -3662,19 +3792,19 @@ export class OrderService {
     format: string,
     params: OrderAnalyticsDto,
     fromDate?: string,
-    toDate?: string
+    toDate?: string,
   ) {
     this.logger.log('Exporting order analytics:', { format, params, fromDate, toDate });
 
     // Get analytics data
     const analytics = await this.getAdminAnalytics(params);
-    
+
     // Get revenue analytics if date range provided
     let revenueAnalytics = null;
     if (fromDate && toDate) {
       revenueAnalytics = await this.getRevenueAnalytics({
         fromDate: new Date(fromDate),
-        toDate: new Date(toDate)
+        toDate: new Date(toDate),
       });
     }
 
@@ -3700,7 +3830,7 @@ export class OrderService {
           performance: performanceAnalytics,
           ...(revenueAnalytics && { revenue: revenueAnalytics }),
         },
-      }
+      },
     };
   }
 
@@ -3710,10 +3840,10 @@ export class OrderService {
   async verifyLocalPayment(
     orderId: string,
     dto: VerifyPaymentDto,
-    adminId: string
+    adminId: string,
   ): Promise<Order> {
     const order = await this.orderModel.findById(orderId);
-    
+
     if (!order) {
       throw new OrderNotFoundException();
     }
@@ -3721,7 +3851,7 @@ export class OrderService {
     if (!order.localPaymentAccountId) {
       throw new DomainException(ErrorCode.VALIDATION_ERROR, {
         reason: 'not_local_payment_order',
-        message: 'هذا الطلب لا يستخدم الدفع المحلي'
+        message: 'هذا الطلب لا يستخدم الدفع المحلي',
       });
     }
 
@@ -3731,7 +3861,7 @@ export class OrderService {
       // لأغراض بسيطة، سنرفض إذا كانت العملة مختلفة
       throw new DomainException(ErrorCode.VALIDATION_ERROR, {
         reason: 'currency_mismatch',
-        message: `عملة المطابقة (${dto.verifiedCurrency}) لا تطابق عملة الطلب (${order.currency})`
+        message: `عملة المطابقة (${dto.verifiedCurrency}) لا تطابق عملة الطلب (${order.currency})`,
       });
     }
 
@@ -3750,23 +3880,26 @@ export class OrderService {
       const newPaymentStatus = PaymentStatus.PAID;
       order.paymentStatus = newPaymentStatus;
       order.paidAt = new Date();
-      
+
       // تسجيل حدث الدفع الناجح في audit
       if (this.auditService) {
-        this.auditService.logPaymentEvent({
-          userId: String(order.userId),
-          orderId: String(order._id),
-          action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'completed',
-          paymentMethod: order.paymentMethod || 'LOCAL',
-          amount: dto.verifiedAmount,
-          currency: dto.verifiedCurrency,
-          transactionId: order.paymentReference,
-          failureReason: oldPaymentStatus !== newPaymentStatus 
-            ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}` 
-            : undefined,
-        }).catch(err => this.logger.error('Failed to log local payment verification', err));
+        this.auditService
+          .logPaymentEvent({
+            userId: String(order.userId),
+            orderId: String(order._id),
+            action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'completed',
+            paymentMethod: order.paymentMethod || 'LOCAL',
+            amount: dto.verifiedAmount,
+            currency: dto.verifiedCurrency,
+            transactionId: order.paymentReference,
+            failureReason:
+              oldPaymentStatus !== newPaymentStatus
+                ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}`
+                : undefined,
+          })
+          .catch((err) => this.logger.error('Failed to log local payment verification', err));
       }
-      
+
       // تحديث حالة الطلب إذا كان في انتظار الدفع
       if (order.status === OrderStatus.PENDING_PAYMENT) {
         order.status = OrderStatus.CONFIRMED;
@@ -3779,42 +3912,49 @@ export class OrderService {
         order.status,
         new Types.ObjectId(adminId),
         'admin',
-        `تم قبول الدفع - المبلغ: ${dto.verifiedAmount} ${dto.verifiedCurrency}${dto.notes ? ` - ${dto.notes}` : ''}`
+        `تم قبول الدفع - المبلغ: ${dto.verifiedAmount} ${dto.verifiedCurrency}${dto.notes ? ` - ${dto.notes}` : ''}`,
       );
     } else {
       const oldPaymentStatus = order.paymentStatus;
       const newPaymentStatus = PaymentStatus.FAILED;
       order.paymentStatus = newPaymentStatus;
-      
+
       // تسجيل حدث فشل الدفع في audit
       if (this.auditService) {
         const failureMessage = `Insufficient amount: ${dto.verifiedAmount} < ${order.total}`;
-        this.auditService.logPaymentEvent({
-          userId: String(order.userId),
-          orderId: String(order._id),
-          action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'failed',
-          paymentMethod: order.paymentMethod || 'LOCAL',
-          amount: dto.verifiedAmount,
-          currency: dto.verifiedCurrency,
-          transactionId: order.paymentReference,
-          failureReason: oldPaymentStatus !== newPaymentStatus 
-            ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}. ${failureMessage}`
-            : failureMessage,
-        }).catch(err => this.logger.error('Failed to log local payment verification failure', err));
+        this.auditService
+          .logPaymentEvent({
+            userId: String(order.userId),
+            orderId: String(order._id),
+            action: oldPaymentStatus !== newPaymentStatus ? 'status_changed' : 'failed',
+            paymentMethod: order.paymentMethod || 'LOCAL',
+            amount: dto.verifiedAmount,
+            currency: dto.verifiedCurrency,
+            transactionId: order.paymentReference,
+            failureReason:
+              oldPaymentStatus !== newPaymentStatus
+                ? `Payment status changed from ${oldPaymentStatus} to ${newPaymentStatus}. ${failureMessage}`
+                : failureMessage,
+          })
+          .catch((err) =>
+            this.logger.error('Failed to log local payment verification failure', err),
+          );
       }
-      
+
       // إضافة إلى سجل الحالات (نبقي الطلب في حالته الحالية)
       await this.addStatusHistory(
         order,
         order.status,
         new Types.ObjectId(adminId),
         'admin',
-        `تم رفض الدفع - المبلغ غير كافٍ: ${dto.verifiedAmount} ${dto.verifiedCurrency} (المطلوب: ${order.total} ${order.currency})${dto.notes ? ` - ${dto.notes}` : ''}`
+        `تم رفض الدفع - المبلغ غير كافٍ: ${dto.verifiedAmount} ${dto.verifiedCurrency} (المطلوب: ${order.total} ${order.currency})${dto.notes ? ` - ${dto.notes}` : ''}`,
       );
     }
 
     await order.save();
-    this.logger.log(`Payment verification for order ${order.orderNumber}: ${isAmountSufficient ? 'APPROVED' : 'REJECTED'}`);
+    this.logger.log(
+      `Payment verification for order ${order.orderNumber}: ${isAmountSufficient ? 'APPROVED' : 'REJECTED'}`,
+    );
     return order;
   }
 
@@ -3847,7 +3987,7 @@ export class OrderService {
           filters: query,
           stats,
         },
-      }
+      },
     };
   }
 
@@ -3871,7 +4011,7 @@ export class OrderService {
         const year = new Date().getFullYear();
         const count = await this.orderModel.countDocuments({
           invoiceNumber: { $exists: true },
-          createdAt: { $gte: new Date(`${year}-01-01`), $lt: new Date(`${year + 1}-01-01`) }
+          createdAt: { $gte: new Date(`${year}-01-01`), $lt: new Date(`${year + 1}-01-01`) },
         });
         order.invoiceNumber = `INV-${year}-${String(count + 1).padStart(5, '0')}`;
         await order.save();
@@ -3879,11 +4019,17 @@ export class OrderService {
 
       // إنشاء PDF الفاتورة
       const pdfBuffer = await this.generateOrderInvoicePDF(order);
-      this.logger.log(`PDF generated successfully for order ${order.orderNumber}, size: ${pdfBuffer.length} bytes`);
+      this.logger.log(
+        `PDF generated successfully for order ${order.orderNumber}, size: ${pdfBuffer.length} bytes`,
+      );
 
       // حفظ PDF مؤقت للتأكد من الإنشاء (للتطوير فقط)
       try {
-        const tempPdfPath = path.join(process.cwd(), 'temp-invoices', `invoice-${order.orderNumber}-${Date.now()}.pdf`);
+        const tempPdfPath = path.join(
+          process.cwd(),
+          'temp-invoices',
+          `invoice-${order.orderNumber}-${Date.now()}.pdf`,
+        );
         const tempDir = path.dirname(tempPdfPath);
         if (!fs.existsSync(tempDir)) {
           fs.mkdirSync(tempDir, { recursive: true });
@@ -3901,7 +4047,7 @@ export class OrderService {
       // معالجة عمولات الكوبونات المرتبطة بالمهندسين
       if (order.appliedCouponCodes && order.appliedCouponCodes.length > 0) {
         for (const couponCode of order.appliedCouponCodes) {
-          const couponInfo = order.appliedCoupons?.find(c => c.code === couponCode);
+          const couponInfo = order.appliedCoupons?.find((c) => c.code === couponCode);
           if (couponInfo) {
             try {
               const commissionResult = await this.marketingService.recordCouponUsage({
@@ -3983,22 +4129,22 @@ export class OrderService {
     try {
       // جلب بيانات المستخدم
       const user = await this.userModel.findById(order.userId);
-      
+
       // تحديد نوع الحساب
       const getAccountType = (): string => {
         if (order.accountType) {
           // إذا كان موجود في Order، استخدمه مع الترجمة
           const accountTypeMap: Record<string, string> = {
-            'retail': 'عميل',
-            'merchant': 'تاجر',
-            'engineer': 'مهندس',
-            'user': 'عميل',
-            'admin': 'مدير',
-            'super_admin': 'مدير عام'
+            retail: 'عميل',
+            merchant: 'تاجر',
+            engineer: 'مهندس',
+            user: 'عميل',
+            admin: 'مدير',
+            super_admin: 'مدير عام',
           };
           return accountTypeMap[order.accountType] || order.accountType;
         }
-        
+
         if (user) {
           // تحديد من roles
           if (user.roles?.includes(UserRole.MERCHANT) || user.merchant_capable) {
@@ -4012,26 +4158,31 @@ export class OrderService {
           }
           return 'عميل';
         }
-        
+
         return 'غير محدد';
       };
-      
-      const userInfo = user ? {
-        name: (user.firstName && user.lastName 
-          ? `${user.firstName} ${user.lastName}` 
-          : user.firstName || user.lastName) || order.customerName || 'غير محدد',
-        phone: user.phone || order.customerPhone || 'غير محدد',
-        accountType: getAccountType()
-      } : {
-        name: order.customerName || 'غير محدد',
-        phone: order.customerPhone || 'غير محدد',
-        accountType: getAccountType()
-      };
+
+      const userInfo = user
+        ? {
+            name:
+              (user.firstName && user.lastName
+                ? `${user.firstName} ${user.lastName}`
+                : user.firstName || user.lastName) ||
+              order.customerName ||
+              'غير محدد',
+            phone: user.phone || order.customerPhone || 'غير محدد',
+            accountType: getAccountType(),
+          }
+        : {
+            name: order.customerName || 'غير محدد',
+            phone: order.customerPhone || 'غير محدد',
+            accountType: getAccountType(),
+          };
 
       // مسار ترويسة الشركة (PNG شفاف)
       const letterheadPath = path.join(process.cwd(), 'assets', 'letterhead.png');
       let letterheadBase64 = '';
-      
+
       if (fs.existsSync(letterheadPath)) {
         const letterheadBuffer = fs.readFileSync(letterheadPath);
         letterheadBase64 = `data:image/png;base64,${letterheadBuffer.toString('base64')}`;
@@ -4043,7 +4194,7 @@ export class OrderService {
         return new Date(date).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
-          day: 'numeric'
+          day: 'numeric',
         });
       };
 
@@ -4060,7 +4211,7 @@ export class OrderService {
       order.items.forEach((item) => {
         // حساب الخصم الإجمالي للمنتج
         const itemDiscount = (item.basePrice - item.finalPrice) * item.qty;
-        
+
         // إذا كان هناك عرض مطبق، اجعله من خصم العرض
         if (item.appliedPromotionId) {
           const promotionDiscount = item.promotionDiscount * item.qty;
@@ -4068,7 +4219,7 @@ export class OrderService {
           itemsWithPromotions.push({
             name: item.snapshot?.name || 'منتج',
             promotionId: item.appliedPromotionId,
-            discount: promotionDiscount
+            discount: promotionDiscount,
           });
           // باقي الخصم يعتبر خصم تاجر
           totalMerchantDiscount += itemDiscount - promotionDiscount;
@@ -4304,42 +4455,50 @@ export class OrderService {
               </tr>
             </thead>
             <tbody>
-              ${order.items.map((item, index) => {
-                // تجميع السمات
-                const attributes: string[] = [];
-                
-                // إضافة attributes (Record<string, string>)
-                if (item.snapshot?.attributes) {
-                  Object.entries(item.snapshot.attributes).forEach(([key, value]) => {
-                    attributes.push(`${key}: ${value}`);
-                  });
-                }
-                
-                // إضافة variantAttributes (Array) - قد يكون موجود في البيانات الفعلية رغم عدم وجوده في النوع
-                const snapshotAny = item.snapshot as any;
-                if (snapshotAny?.variantAttributes && Array.isArray(snapshotAny.variantAttributes)) {
-                  snapshotAny.variantAttributes.forEach((attr: any) => {
-                    const attrName = attr.attributeName || attr.attributeNameEn || 'Attribute';
-                    const attrValue = attr.value || attr.valueEn || 'N/A';
-                    attributes.push(`${attrName}: ${attrValue}`);
-                  });
-                }
-                
-                // تحديد إذا كان هناك عرض مطبق
-                const hasPromotion = item.appliedPromotionId ? ' (عرض مطبق)' : '';
-                
-                return `
+              ${order.items
+                .map((item, index) => {
+                  // تجميع السمات
+                  const attributes: string[] = [];
+
+                  // إضافة attributes (Record<string, string>)
+                  if (item.snapshot?.attributes) {
+                    Object.entries(item.snapshot.attributes).forEach(([key, value]) => {
+                      attributes.push(`${key}: ${value}`);
+                    });
+                  }
+
+                  // إضافة variantAttributes (Array) - قد يكون موجود في البيانات الفعلية رغم عدم وجوده في النوع
+                  const snapshotAny = item.snapshot as any;
+                  if (
+                    snapshotAny?.variantAttributes &&
+                    Array.isArray(snapshotAny.variantAttributes)
+                  ) {
+                    snapshotAny.variantAttributes.forEach((attr: any) => {
+                      const attrName = attr.attributeName || attr.attributeNameEn || 'Attribute';
+                      const attrValue = attr.value || attr.valueEn || 'N/A';
+                      attributes.push(`${attrName}: ${attrValue}`);
+                    });
+                  }
+
+                  // تحديد إذا كان هناك عرض مطبق
+                  const hasPromotion = item.appliedPromotionId ? ' (عرض مطبق)' : '';
+
+                  return `
                 <tr>
                   <td>${index + 1}</td>
                   <td>
                     <strong>${item.snapshot?.name || 'منتج'}${hasPromotion}</strong><br/>
                     ${item.snapshot?.sku ? `<small>SKU: ${item.snapshot.sku}</small><br/>` : ''}
                     ${item.snapshot?.brandName ? `<small>العلامة: ${item.snapshot.brandName}</small><br/>` : ''}
-                    ${attributes.length > 0 ? `
+                    ${
+                      attributes.length > 0
+                        ? `
                     <div class="product-attributes">
-                      ${attributes.map(attr => `<span>${attr}</span>`).join(' • ')}
+                      ${attributes.map((attr) => `<span>${attr}</span>`).join(' • ')}
                     </div>
-                    ` : ''}
+                    `
+                        : ''
+                    }
                   </td>
                   <td>${item.qty}</td>
                   <td>${formatCurrency(item.finalPrice, order.currency)}</td>
@@ -4347,54 +4506,85 @@ export class OrderService {
                   <td><strong>${formatCurrency(item.lineTotal, order.currency)}</strong></td>
                 </tr>
               `;
-              }).join('')}
+                })
+                .join('')}
             </tbody>
           </table>
 
-          ${(itemsWithPromotions.length > 0 || (order.appliedCoupons && order.appliedCoupons.length > 0) || (order.autoAppliedCoupons && order.autoAppliedCoupons.length > 0)) ? `
+          ${
+            itemsWithPromotions.length > 0 ||
+            (order.appliedCoupons && order.appliedCoupons.length > 0) ||
+            (order.autoAppliedCoupons && order.autoAppliedCoupons.length > 0)
+              ? `
           <div class="discounts-section">
             <h3>العروض والكوبونات المطبقة</h3>
             
-            ${itemsWithPromotions.length > 0 ? `
+            ${
+              itemsWithPromotions.length > 0
+                ? `
             <div style="margin-bottom: 15px;">
               <strong style="color: #1976d2;">العروض المطبقة على المنتجات:</strong>
-              ${itemsWithPromotions.map(promo => `
+              ${itemsWithPromotions
+                .map(
+                  (promo) => `
                 <div class="discount-item">
                   ${promo.name}: خصم ${formatCurrency(promo.discount, order.currency)}
                 </div>
-              `).join('')}
+              `,
+                )
+                .join('')}
             </div>
-            ` : ''}
+            `
+                : ''
+            }
             
-            ${order.appliedCoupons && order.appliedCoupons.length > 0 ? `
+            ${
+              order.appliedCoupons && order.appliedCoupons.length > 0
+                ? `
             <div style="margin-bottom: 15px;">
               <strong style="color: #1976d2;">الكوبونات المطبقة:</strong>
-              ${order.appliedCoupons.map((coupon: any) => {
-                const couponType = coupon.details?.type === 'percentage' ? 'نسبة مئوية' : 'مبلغ ثابت';
-                const couponValue = coupon.details?.type === 'percentage' 
-                  ? `${coupon.details?.discountPercentage || 0}%`
-                  : formatCurrency(coupon.details?.discountAmount || 0, order.currency);
-                return `
+              ${order.appliedCoupons
+                .map((coupon: any) => {
+                  const couponType =
+                    coupon.details?.type === 'percentage' ? 'نسبة مئوية' : 'مبلغ ثابت';
+                  const couponValue =
+                    coupon.details?.type === 'percentage'
+                      ? `${coupon.details?.discountPercentage || 0}%`
+                      : formatCurrency(coupon.details?.discountAmount || 0, order.currency);
+                  return `
                 <div class="discount-item">
                   <strong>${coupon.details?.title || coupon.code || 'كوبون'}</strong> (${couponType}: ${couponValue}) - خصم ${formatCurrency(coupon.discount, order.currency)}
                 </div>
               `;
-              }).join('')}
+                })
+                .join('')}
             </div>
-            ` : ''}
+            `
+                : ''
+            }
             
-            ${order.autoAppliedCoupons && order.autoAppliedCoupons.length > 0 ? `
+            ${
+              order.autoAppliedCoupons && order.autoAppliedCoupons.length > 0
+                ? `
             <div>
               <strong style="color: #1976d2;">الكوبونات التلقائية:</strong>
-              ${order.autoAppliedCoupons.map((coupon: any) => `
+              ${order.autoAppliedCoupons
+                .map(
+                  (coupon: any) => `
                 <div class="discount-item">
                   ${coupon.code || 'كوبون تلقائي'}: خصم ${formatCurrency(coupon.discount || 0, order.currency)}
                 </div>
-              `).join('')}
+              `,
+                )
+                .join('')}
             </div>
-            ` : ''}
+            `
+                : ''
+            }
           </div>
-          ` : ''}
+          `
+              : ''
+          }
 
           <div class="totals-section">
             <div class="totals-box">
@@ -4402,42 +4592,68 @@ export class OrderService {
                 <span>المجموع الفرعي:</span>
                 <span>${formatCurrency(order.subtotal, order.currency)}</span>
               </div>
-              ${totalMerchantDiscount > 0 ? `
+              ${
+                totalMerchantDiscount > 0
+                  ? `
               <div class="total-row">
                 <span>خصم التاجر:</span>
                 <span>- ${formatCurrency(totalMerchantDiscount, order.currency)}</span>
               </div>
-              ` : ''}
-              ${totalPromotionDiscount > 0 ? `
+              `
+                  : ''
+              }
+              ${
+                totalPromotionDiscount > 0
+                  ? `
               <div class="total-row">
                 <span>خصم العروض:</span>
                 <span>- ${formatCurrency(totalPromotionDiscount, order.currency)}</span>
               </div>
-              ` : ''}
-              ${order.itemsDiscount > 0 && (totalMerchantDiscount + totalPromotionDiscount) !== order.itemsDiscount ? `
+              `
+                  : ''
+              }
+              ${
+                order.itemsDiscount > 0 &&
+                totalMerchantDiscount + totalPromotionDiscount !== order.itemsDiscount
+                  ? `
               <div class="total-row">
                 <span>خصم إضافي على المنتجات:</span>
                 <span>- ${formatCurrency(order.itemsDiscount - totalMerchantDiscount - totalPromotionDiscount, order.currency)}</span>
               </div>
-              ` : ''}
-              ${(order.couponDiscount > 0 || (order.autoDiscountsTotal && order.autoDiscountsTotal > 0)) ? `
+              `
+                  : ''
+              }
+              ${
+                order.couponDiscount > 0 ||
+                (order.autoDiscountsTotal && order.autoDiscountsTotal > 0)
+                  ? `
               <div class="total-row">
                 <span>خصم الكوبونات:</span>
                 <span>- ${formatCurrency((order.couponDiscount || 0) + (order.autoDiscountsTotal || 0), order.currency)}</span>
               </div>
-              ` : ''}
-              ${order.shippingCost > 0 ? `
+              `
+                  : ''
+              }
+              ${
+                order.shippingCost > 0
+                  ? `
               <div class="total-row">
                 <span>تكلفة الشحن:</span>
                 <span>${formatCurrency(order.shippingCost, order.currency)}</span>
               </div>
-              ` : ''}
-              ${order.tax > 0 ? `
+              `
+                  : ''
+              }
+              ${
+                order.tax > 0
+                  ? `
               <div class="total-row">
                 <span>الضريبة (${order.taxRate}%):</span>
                 <span>${formatCurrency(order.tax, order.currency)}</span>
               </div>
-              ` : ''}
+              `
+                  : ''
+              }
               <div class="total-row">
                 <span>المجموع الكلي:</span>
                 <span>${formatCurrency(order.total, order.currency)}</span>
@@ -4479,15 +4695,15 @@ export class OrderService {
           '--disable-web-security',
           '--disable-features=IsolateOrigins,site-per-process',
           '--disable-blink-features=AutomationControlled',
-          '--single-process' // مهم لـ Docker
+          '--single-process', // مهم لـ Docker
         ],
       });
-      
+
       try {
         const page = await browser.newPage();
         // استخدام 'load' بدلاً من 'networkidle0' لأنه أسرع وأكثر موثوقية
         await page.setContent(htmlContent, { waitUntil: 'load', timeout: 30000 });
-        
+
         const pdfData = await page.pdf({
           format: 'A4',
           printBackground: true,
@@ -4495,10 +4711,10 @@ export class OrderService {
             top: '10mm',
             right: '15mm',
             bottom: '15mm',
-            left: '15mm'
-          }
+            left: '15mm',
+          },
         });
-        
+
         return Buffer.from(pdfData);
       } finally {
         await browser.close();
@@ -4530,19 +4746,20 @@ export class OrderService {
 
       // جلب بيانات المستخدم للحصول على الاسم الكامل
       const user = await this.userModel.findById(order.userId);
-      const customerName = user 
-        ? (user.firstName && user.lastName 
-          ? `${user.firstName} ${user.lastName}` 
-          : user.firstName || user.lastName || order.customerName || 'N/A')
+      const customerName = user
+        ? user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user.firstName || user.lastName || order.customerName || 'N/A'
         : order.customerName || 'N/A';
 
-      const customerPhone = user?.phone || order.customerPhone || order.deliveryAddress?.recipientPhone || 'N/A';
+      const customerPhone =
+        user?.phone || order.customerPhone || order.deliveryAddress?.recipientPhone || 'N/A';
 
       // تنسيق العنوان الكامل
       const formatDeliveryAddress = () => {
         const addr = order.deliveryAddress;
         if (!addr) return 'N/A';
-        
+
         const parts: string[] = [];
         if (addr.recipientName) parts.push(`Recipient: ${addr.recipientName}`);
         if (addr.recipientPhone) parts.push(`Phone: ${addr.recipientPhone}`);
@@ -4554,7 +4771,7 @@ export class OrderService {
         if (addr.postalCode) parts.push(`Postal Code: ${addr.postalCode}`);
         if (addr.label) parts.push(`Label: ${addr.label}`);
         if (addr.notes) parts.push(`Notes: ${addr.notes}`);
-        
+
         return parts.length > 0 ? parts.join('<br>') : 'N/A';
       };
 
@@ -4566,7 +4783,7 @@ export class OrderService {
         return new Date(date).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
-          day: 'numeric'
+          day: 'numeric',
         });
       };
 
@@ -4578,12 +4795,20 @@ export class OrderService {
       const fileName = `invoice-${invoiceNumber}-${Date.now()}.pdf`;
 
       // استخدام متغير البيئة للبريد الإلكتروني مع قيمة افتراضية
-      const salesManagerEmail = this.configService?.get('SALES_MANAGER_EMAIL') || 'Mohammedsalehallawzi14@gmail.com';
+      const salesManagerEmail =
+        this.configService?.get('SALES_MANAGER_EMAIL') || 'Mohammedsalehallawzi14@gmail.com';
 
       const result = await this.emailAdapter.sendEmail({
         to: salesManagerEmail,
         subject: `فاتورة جديدة - ${invoiceNumber} | New Invoice - ${invoiceNumber}`,
         html: `
+          <!DOCTYPE html>
+          <html lang="ar" dir="rtl">
+          <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+          </head>
+          <body>
           <div dir="rtl" style="font-family: Arial, Tahoma, sans-serif; padding: 20px;">
             <h2 style="color: #1976d2;">فاتورة جديدة</h2>
             <p>تم إكمال طلب جديد وتم إنشاء الفاتورة المرفقة.</p>
@@ -4622,18 +4847,26 @@ export class OrderService {
             </div>
             <p style="margin-top: 20px; color: #666;">Please review the attached invoice for complete details.</p>
           </div>
+          </body>
+          </html>
         `,
-        attachments: [{
-          filename: fileName,
-          content: pdfBuffer,
-          contentType: 'application/pdf'
-        }]
+        attachments: [
+          {
+            filename: fileName,
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ],
       });
 
       if (result.success) {
-        this.logger.log(`Invoice email sent successfully for order ${order.orderNumber} to sales manager`);
+        this.logger.log(
+          `Invoice email sent successfully for order ${order.orderNumber} to sales manager`,
+        );
       } else {
-        this.logger.error(`Failed to send invoice email for order ${order.orderNumber}: ${result.error}`);
+        this.logger.error(
+          `Failed to send invoice email for order ${order.orderNumber}: ${result.error}`,
+        );
       }
     } catch (error) {
       this.logger.error(`Error sending invoice email for order ${order.orderNumber}:`, error);
