@@ -4203,6 +4203,11 @@ export class OrderService {
         letterheadBase64 = `data:image/png;base64,${letterheadBuffer.toString('base64')}`;
       }
 
+      // مسار الخطوط (ديناميكي)
+      const fontsDir = path.join(process.cwd(), assetsDir, 'fonts').replace(/\\/g, '/');
+      const cairoRegularPath = `file://${fontsDir}/Cairo-Regular.ttf`;
+      const cairoBoldPath = `file://${fontsDir}/Cairo-Bold.ttf`;
+
       // تنسيق التاريخ
       const formatDate = (date?: Date) => {
         if (!date) return 'غير محدد';
@@ -4252,6 +4257,16 @@ export class OrderService {
           <meta charset="UTF-8">
           <title>فاتورة ${order.orderNumber}</title>
           <style>
+            @font-face {
+              font-family: 'Cairo';
+              src: url('${cairoRegularPath}') format('truetype');
+              font-weight: 400;
+            }
+            @font-face {
+              font-family: 'Cairo';
+              src: url('${cairoBoldPath}') format('truetype');
+              font-weight: 700;
+            }
             @page {
               size: A4;
               margin: 0;
@@ -4262,7 +4277,7 @@ export class OrderService {
               box-sizing: border-box;
             }
             body {
-              font-family: 'Arial', 'Tahoma', sans-serif;
+              font-family: 'Cairo', sans-serif !important;
               direction: rtl;
               padding: 0;
               margin: 0;

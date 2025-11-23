@@ -59,6 +59,9 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 # انسخ كل شيء من build (بما فيها node_modules و dist)
 COPY --from=build /app ./
 
+# انسخ الخطوط
+COPY assets/fonts /app/assets/fonts
+
 EXPOSE 3000
 
 # Healthcheck اختياري (لو عندك مسار جاهز)
