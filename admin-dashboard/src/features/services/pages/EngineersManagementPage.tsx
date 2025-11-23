@@ -35,19 +35,25 @@ import {
   Edit,
   Block,
   LocationCity,
+  LocalOffer,
+  Add,
+  AttachMoney,
 } from '@mui/icons-material';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useEngineers, useEngineersOverviewStatistics } from '../hooks/useServices';
 import { useSuspendUser, useActivateUser } from '../../users/hooks/useUsers';
+import { useEngineerCoupons, useEngineerCouponStats } from '@/features/marketing/hooks/useMarketing';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
 import { getCityEmoji } from '@/shared/constants/yemeni-cities';
 import { useTranslation } from 'react-i18next';
 import { EngineerCard } from '../components/EngineerCard';
+import { useNavigate } from 'react-router-dom';
 
 export const EngineersManagementPage: React.FC = () => {
   const { t } = useTranslation(['services', 'common']);
   const theme = useTheme();
+  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -63,6 +69,11 @@ export const EngineersManagementPage: React.FC = () => {
   const { data: engineersStats, isLoading: isStatsLoading, error: statsError } = useEngineersOverviewStatistics();
   const suspendUserMutation = useSuspendUser();
   const activateUserMutation = useActivateUser();
+  
+  // Engineer coupons data
+  const engineerId = selectedEngineer?.engineerId || selectedEngineer?._id;
+  const { data: engineerCoupons, isLoading: couponsLoading } = useEngineerCoupons(engineerId || '');
+  const { data: couponStats, isLoading: statsLoading } = useEngineerCouponStats(engineerId || '');
 
   const engineers = engineersData?.data || [];
   const stats = engineersStats || {};

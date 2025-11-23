@@ -689,12 +689,12 @@ export const CouponFormPage: React.FC = () => {
                 <Button
                   type="submit"
                   variant="contained"
-                  startIcon={creating || updating ? <CircularProgress size={20} /> : <Save />}
-                  disabled={creating || updating}
+                  startIcon={creating || updating || creatingEngineer ? <CircularProgress size={20} /> : <Save />}
+                  disabled={creating || updating || creatingEngineer}
                   fullWidth={isMobile}
                   size={isMobile ? 'medium' : 'large'}
                 >
-                  {creating || updating ? t('buttons.saving') : t('buttons.save')}
+                  {creating || updating || creatingEngineer ? t('buttons.saving') : t('buttons.save')}
                 </Button>
               </Box>
             </Grid>
