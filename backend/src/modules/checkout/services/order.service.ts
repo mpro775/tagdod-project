@@ -2305,6 +2305,13 @@ export class OrderService {
       };
     } catch (error) {
       this.logger.error('Confirm checkout failed:', error);
+
+      // إذا كان الخطأ DomainException، أعد رميه كما هو للحفاظ على التفاصيل
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      // للأخطاء الأخرى، استخدم OrderException العام
       throw new OrderException(ErrorCode.ORDER_CONFIRM_FAILED);
     }
   }

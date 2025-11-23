@@ -31,6 +31,7 @@ ENV NODE_ENV=production
 
 # sharp يعتمد على libvips في runtime
 # تثبيت Chromium والمكتبات المطلوبة لـ Puppeteer
+# HarfBuzz + ICU لدعم النص العربي بشكل صحيح
 RUN apt-get update && apt-get install -y \
     libvips-dev \
     chromium \
@@ -50,6 +51,12 @@ RUN apt-get update && apt-get install -y \
     libxdamage1 \
     libxrandr2 \
     xdg-utils \
+    libharfbuzz0b \
+    libharfbuzz-icu0 \
+    libicu-dev \
+    fonts-noto-color-emoji \
+    fonts-noto-hinted \
+    fonts-noto-unhinted \
     && rm -rf /var/lib/apt/lists/*
 
 # تعيين متغيرات البيئة للـ Chromium
