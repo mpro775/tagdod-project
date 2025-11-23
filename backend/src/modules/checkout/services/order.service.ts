@@ -4203,10 +4203,14 @@ export class OrderService {
         letterheadBase64 = `data:image/png;base64,${letterheadBuffer.toString('base64')}`;
       }
 
-      // مسار الخطوط (ديناميكي)
-      const fontsDir = path.join(process.cwd(), assetsDir, 'fonts').replace(/\\/g, '/');
-      const cairoRegularPath = `file://${fontsDir}/Cairo-Regular.ttf`;
-      const cairoBoldPath = `file://${fontsDir}/Cairo-Bold.ttf`;
+      // تحميل الخطوط كـ Base64
+      const cairoRegularBase64 = fs
+        .readFileSync(path.join(process.cwd(), assetsDir, 'fonts', 'Cairo-Regular.ttf'))
+        .toString('base64');
+
+      const cairoBoldBase64 = fs
+        .readFileSync(path.join(process.cwd(), assetsDir, 'fonts', 'Cairo-Bold.ttf'))
+        .toString('base64');
 
       // تنسيق التاريخ
       const formatDate = (date?: Date) => {
@@ -4259,12 +4263,12 @@ export class OrderService {
           <style>
             @font-face {
               font-family: 'Cairo';
-              src: url('${cairoRegularPath}') format('truetype');
+              src: url('data:font/ttf;base64,${cairoRegularBase64}') format('truetype');
               font-weight: 400;
             }
             @font-face {
               font-family: 'Cairo';
-              src: url('${cairoBoldPath}') format('truetype');
+              src: url('data:font/ttf;base64,${cairoBoldBase64}') format('truetype');
               font-weight: 700;
             }
             @page {
