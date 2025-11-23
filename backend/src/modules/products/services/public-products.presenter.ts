@@ -600,8 +600,13 @@ export class PublicProductsPresenter {
     const productId = this.extractIdString(product._id) ?? product._id;
     const category = this.simplifyCategory(product.category ?? product.categoryId);
     const brand = this.simplifyBrand(product.brand ?? product.brandId);
-    const mainImage = this.simplifyMedia(product.mainImage ?? product.mainImageId);
+    let mainImage = this.simplifyMedia(product.mainImage ?? product.mainImageId);
     const images = this.simplifyMediaList(product.images ?? product.imageIds);
+    
+    // إذا لم توجد صورة رئيسية وكانت هناك صور، استخدم أول صورة كصورة رئيسية
+    if (!mainImage && images.length > 0) {
+      mainImage = images[0];
+    }
 
     const pricingMap = extras.pricingByCurrency
       ? Object.fromEntries(
@@ -985,7 +990,7 @@ export class PublicProductsPresenter {
             pricingByCurrency,
             priceRangeByCurrency,
             defaultPricing,
-            includeImages: false,
+            includeImages: true,
             includeCategory: false,
             includeBrand: false,
             includeAttributes: false,

@@ -228,6 +228,8 @@ export class ProductService {
         _id: { $in: objectIds },
         deletedAt: null,
       })
+      .populate('mainImageId')
+      .populate('imageIds')
       .lean();
 
     return products as unknown as Product[];

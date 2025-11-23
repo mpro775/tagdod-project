@@ -111,17 +111,28 @@ export class EmailAdapter {
         text = templateResult.text;
       }
 
-      const mailOptions = {
+      // تحضير المرفقات بشكل صحيح
+      const attachments = notification.attachments?.map((attachment) => {
+        // إذا كان المحتوى Buffer، نتركه كما هو (nodemailer يتعامل معه تلقائياً)
+        // إذا كان string، نحوله إلى Buffer
+        if (typeof attachment.content === 'string') {
+          return {
+            ...attachment,
+            content: Buffer.from(attachment.content, 'base64'),
+          };
+        }
+        return attachment;
+      });
+
+      const mailOptions: nodemailer.SendMailOptions = {
         from: this.configService.get('SMTP_FROM') || this.configService.get('SMTP_USER'),
         to: Array.isArray(notification.to) ? notification.to.join(', ') : notification.to,
         subject: notification.subject,
         html,
         text,
-        attachments: notification.attachments,
-        encoding: 'UTF-8',
+        attachments: attachments,
         headers: {
           'Content-Type': 'text/html; charset=UTF-8',
-          'Content-Transfer-Encoding': 'quoted-printable',
         },
       };
 

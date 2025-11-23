@@ -2597,6 +2597,14 @@ export class OrderService {
     await order.save();
     this.logger.log(`Order ${order.orderNumber} status updated to ${newStatus}`);
 
+    // إرسال الفاتورة عند تأكيد الطلب أو إكماله
+    if (newStatus === OrderStatus.CONFIRMED || newStatus === OrderStatus.COMPLETED) {
+      // استخدام orderId بدلاً من order object لتجنب ParallelSaveError
+      this.sendOrderInvoiceForStatus(order._id.toString()).catch((err: any) => {
+        this.logger.error(`Failed to send invoice for order ${order.orderNumber}:`, err);
+      });
+    }
+
     // معالجة إكمال الطلب بعد حفظ التغييرات
     if (newStatus === OrderStatus.COMPLETED) {
       // استخدام orderId بدلاً من order object لتجنب ParallelSaveError
@@ -3481,9 +3489,14 @@ export class OrderService {
       // إنشاء PDF باستخدام puppeteer
       let browser;
       try {
+        // في Windows/Linux المحلي: لا نحدد executablePath (سيجد Chrome تلقائياً)
+        // في Docker/VPS: يجب تحديد PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+        const puppeteerExecPath = process.env.PUPPETEER_EXECUTABLE_PATH;
         browser = await puppeteer.launch({
           headless: true,
-          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 'temp-invoices',
+          ...(puppeteerExecPath && puppeteerExecPath !== 'temp-invoices'
+            ? { executablePath: puppeteerExecPath }
+            : {}),
           timeout: 60000, // زيادة timeout إلى 60 ثانية
           args: [
             '--no-sandbox',
@@ -4006,44 +4019,10 @@ export class OrderService {
 
       orderNumber = order.orderNumber; // حفظ orderNumber للاستخدام في catch block
 
-      // إنشاء رقم فاتورة إذا لم يكن موجوداً
-      if (!order.invoiceNumber) {
-        const year = new Date().getFullYear();
-        const count = await this.orderModel.countDocuments({
-          invoiceNumber: { $exists: true },
-          createdAt: { $gte: new Date(`${year}-01-01`), $lt: new Date(`${year + 1}-01-01`) },
-        });
-        order.invoiceNumber = `INV-${year}-${String(count + 1).padStart(5, '0')}`;
-        await order.save();
-      }
-
-      // إنشاء PDF الفاتورة
-      const pdfBuffer = await this.generateOrderInvoicePDF(order);
-      this.logger.log(
-        `PDF generated successfully for order ${order.orderNumber}, size: ${pdfBuffer.length} bytes`,
-      );
-
-      // حفظ PDF مؤقت للتأكد من الإنشاء (للتطوير فقط)
-      try {
-        const tempInvoicesDir = this.configService?.get('TEMP_INVOICES_DIR') || 'temp-invoices';
-        const tempPdfPath = path.join(
-          process.cwd(),
-          tempInvoicesDir,
-          `invoice-${order.orderNumber}-${Date.now()}.pdf`,
-        );
-        const tempDir = path.dirname(tempPdfPath);
-        if (!fs.existsSync(tempDir)) {
-          fs.mkdirSync(tempDir, { recursive: true });
-        }
-        fs.writeFileSync(tempPdfPath, pdfBuffer);
-        this.logger.log(`PDF saved temporarily at: ${tempPdfPath}`);
-      } catch (saveError) {
-        this.logger.warn(`Failed to save temporary PDF for order ${order.orderNumber}:`, saveError);
-        // لا نوقف العملية إذا فشل الحفظ المؤقت
-      }
-
-      // إرسال الفاتورة عبر البريد الإلكتروني
-      await this.sendOrderInvoiceEmail(order, pdfBuffer);
+      // إرسال الفاتورة (إذا لم يتم إرسالها مسبقاً عند CONFIRMED)
+      // الفاتورة تُرسل الآن عند CONFIRMED و COMPLETED، لذا نتأكد من عدم إرسالها مرتين
+      // (يمكن إزالة هذا إذا أردت إرسالها في كلا الحالتين)
+      // تم نقل منطق إرسال الفاتورة إلى sendOrderInvoiceForStatus
 
       // معالجة عمولات الكوبونات المرتبطة بالمهندسين
       if (order.appliedCouponCodes && order.appliedCouponCodes.length > 0) {
@@ -4683,9 +4662,14 @@ export class OrderService {
       `;
 
       // إنشاء PDF باستخدام puppeteer
+      // في Windows/Linux المحلي: undefined (سيجد Chrome تلقائياً)
+      // في Docker/VPS: يجب تحديد PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+      const puppeteerExecPath = process.env.PUPPETEER_EXECUTABLE_PATH;
       const browser = await puppeteer.launch({
         headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+        ...(puppeteerExecPath && puppeteerExecPath !== 'temp-invoices'
+          ? { executablePath: puppeteerExecPath }
+          : {}),
         timeout: 60000, // زيادة timeout إلى 60 ثانية
         args: [
           '--no-sandbox',
@@ -4733,6 +4717,70 @@ export class OrderService {
         ordersCount: 1,
         error: err.message,
       });
+    }
+  }
+
+  /**
+   * إرسال الفاتورة عند تغيير الحالة (CONFIRMED أو COMPLETED)
+   */
+  private async sendOrderInvoiceForStatus(orderId: string): Promise<void> {
+    let orderNumber = orderId; // للاستخدام في catch block
+    try {
+      // جلب نسخة جديدة من الطلب لتجنب ParallelSaveError
+      const order = await this.orderModel.findById(orderId);
+      if (!order) {
+        this.logger.warn(`Order ${orderId} not found for invoice sending`);
+        return;
+      }
+
+      orderNumber = order.orderNumber;
+
+      // التحقق من أن الفاتورة لم يتم إرسالها مسبقاً (اختياري - يمكن إزالة هذا إذا أردت إعادة الإرسال)
+      // يمكن إضافة حقل `invoiceSentAt` لتتبع ذلك
+
+      // إنشاء رقم فاتورة إذا لم يكن موجوداً
+      if (!order.invoiceNumber) {
+        const year = new Date().getFullYear();
+        const count = await this.orderModel.countDocuments({
+          invoiceNumber: { $exists: true },
+          createdAt: { $gte: new Date(`${year}-01-01`), $lt: new Date(`${year + 1}-01-01`) },
+        });
+        order.invoiceNumber = `INV-${year}-${String(count + 1).padStart(5, '0')}`;
+        await order.save();
+      }
+
+      // إنشاء PDF الفاتورة
+      const pdfBuffer = await this.generateOrderInvoicePDF(order);
+      this.logger.log(
+        `PDF generated successfully for order ${order.orderNumber}, size: ${pdfBuffer.length} bytes`,
+      );
+
+      // حفظ PDF مؤقت للتأكد من الإنشاء (للتطوير فقط)
+      try {
+        const tempInvoicesDir = this.configService?.get('TEMP_INVOICES_DIR') || 'temp-invoices';
+        const tempPdfPath = path.join(
+          process.cwd(),
+          tempInvoicesDir,
+          `invoice-${order.orderNumber}-${Date.now()}.pdf`,
+        );
+        const tempDir = path.dirname(tempPdfPath);
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
+        }
+        fs.writeFileSync(tempPdfPath, pdfBuffer);
+        this.logger.log(`PDF saved temporarily at: ${tempPdfPath}`);
+      } catch (saveError) {
+        this.logger.warn(`Failed to save temporary PDF for order ${order.orderNumber}:`, saveError);
+        // لا نوقف العملية إذا فشل الحفظ المؤقت
+      }
+
+      // إرسال الفاتورة عبر البريد الإلكتروني
+      await this.sendOrderInvoiceEmail(order, pdfBuffer);
+
+      this.logger.log(`Invoice sent successfully for order ${order.orderNumber}`);
+    } catch (error) {
+      this.logger.error(`Error sending invoice for order ${orderNumber}:`, error);
+      // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
     }
   }
 
@@ -4855,7 +4903,7 @@ export class OrderService {
         attachments: [
           {
             filename: fileName,
-            content: pdfBuffer,
+            content: pdfBuffer, // Buffer - nodemailer يتعامل معه تلقائياً
             contentType: 'application/pdf',
           },
         ],
