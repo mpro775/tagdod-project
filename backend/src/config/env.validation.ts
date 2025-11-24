@@ -60,6 +60,10 @@ export const envSchema = z.object({
   ALAWAEL_SMS_USER_NAME: z.string().optional(),
   ALAWAEL_SMS_PASSWORD: z.string().optional(),
   ALAWAEL_SMS_BASE_URL: z.string().url().optional(),
+  
+  // Sales Manager Contact Information
+  SALES_MANAGER_EMAIL: z.string().email().optional(),
+  SALES_MANAGER_WHATSAPP: z.string().optional(),
 });
 
 export type EnvType = z.infer<typeof envSchema>;

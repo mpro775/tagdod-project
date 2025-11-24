@@ -16887,6 +16887,1475 @@
         ]
       }
     },
+    "/api/v1/upload/file": {
+      "post": {
+        "operationId": "uploadFile",
+        "summary": "رفع ملف واحد",
+        "description": "رفع ملف واحد مع إمكانية تحديد المجلد والاسم المخصص",
+        "parameters": [
+          {
+            "name": "folder",
+            "required": false,
+            "in": "query",
+            "description": "المجلد المراد رفع الملف إليه",
+            "schema": {
+              "example": "products",
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "required": false,
+            "in": "query",
+            "description": "اسم مخصص للملف",
+            "schema": {
+              "example": "product-image-001.jpg",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "رفع ملف",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم رفع الملف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "fileName": {
+                          "type": "string",
+                          "example": "product-image-001.jpg",
+                          "description": "اسم الملف"
+                        },
+                        "filePath": {
+                          "type": "string",
+                          "example": "products/product-image-001.jpg",
+                          "description": "مسار الملف"
+                        },
+                        "fileUrl": {
+                          "type": "string",
+                          "example": "https://cdn.example.com/products/product-image-001.jpg",
+                          "description": "رابط الملف"
+                        },
+                        "fileSize": {
+                          "type": "number",
+                          "example": 1024000,
+                          "description": "حجم الملف بالبايت"
+                        },
+                        "mimeType": {
+                          "type": "string",
+                          "example": "image/jpeg",
+                          "description": "نوع الملف"
+                        },
+                        "uploadedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-15T10:30:00Z"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "خطأ في البيانات أو نوع الملف غير مدعوم"
+          },
+          "401": {
+            "description": "غير مصرح لك بالوصول"
+          },
+          "413": {
+            "description": "حجم الملف كبير جداً"
+          }
+        },
+        "tags": [
+          "رفع-الملفات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteFile",
+        "summary": "حذف ملف",
+        "description": "حذف ملف مرفوع من خلال مساره",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم حذف الملف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "File deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مصرح لك بحذف هذا الملف"
+          },
+          "404": {
+            "description": "الملف غير موجود"
+          }
+        },
+        "tags": [
+          "رفع-الملفات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/upload/files": {
+      "post": {
+        "operationId": "uploadFiles",
+        "summary": "رفع ملفات متعددة",
+        "description": "رفع عدة ملفات في وقت واحد (حتى 10 ملفات) مع إمكانية تحديد المجلد",
+        "parameters": [
+          {
+            "name": "folder",
+            "required": false,
+            "in": "query",
+            "description": "المجلد المراد رفع الملفات إليه",
+            "schema": {
+              "example": "gallery",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "رفع ملفات متعددة",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  },
+                  "folder": {
+                    "type": "string",
+                    "description": "المجلد المراد رفع الملفات إليه"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم رفع الملفات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "fileName": {
+                            "type": "string",
+                            "example": "image1.jpg",
+                            "description": "اسم الملف"
+                          },
+                          "filePath": {
+                            "type": "string",
+                            "example": "gallery/image1.jpg",
+                            "description": "مسار الملف"
+                          },
+                          "fileUrl": {
+                            "type": "string",
+                            "example": "https://cdn.example.com/gallery/image1.jpg",
+                            "description": "رابط الملف"
+                          },
+                          "fileSize": {
+                            "type": "number",
+                            "example": 512000,
+                            "description": "حجم الملف بالبايت"
+                          },
+                          "mimeType": {
+                            "type": "string",
+                            "example": "image/jpeg",
+                            "description": "نوع الملف"
+                          },
+                          "uploadedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2024-01-15T10:30:00Z"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "خطأ في البيانات أو نوع أحد الملفات غير مدعوم"
+          },
+          "401": {
+            "description": "غير مصرح لك بالوصول"
+          },
+          "413": {
+            "description": "حجم إحدى الملفات كبير جداً"
+          }
+        },
+        "tags": [
+          "رفع-الملفات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/upload/file/{filePath}": {
+      "get": {
+        "operationId": "getFileInfo",
+        "summary": "معلومات الملف",
+        "description": "الحصول على معلومات مفصلة عن ملف مرفوع",
+        "parameters": [
+          {
+            "name": "filePath",
+            "required": true,
+            "in": "path",
+            "description": "مسار الملف",
+            "schema": {
+              "example": "products/image.jpg",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرجاع معلومات الملف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "fileName": {
+                          "type": "string",
+                          "example": "image.jpg",
+                          "description": "اسم الملف"
+                        },
+                        "filePath": {
+                          "type": "string",
+                          "example": "products/image.jpg",
+                          "description": "مسار الملف"
+                        },
+                        "fileUrl": {
+                          "type": "string",
+                          "example": "https://cdn.example.com/products/image.jpg",
+                          "description": "رابط الملف"
+                        },
+                        "fileSize": {
+                          "type": "number",
+                          "example": 1024000,
+                          "description": "حجم الملف بالبايت"
+                        },
+                        "mimeType": {
+                          "type": "string",
+                          "example": "image/jpeg",
+                          "description": "نوع الملف"
+                        },
+                        "uploadedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-15T10:30:00Z"
+                        },
+                        "lastModified": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-15T11:00:00Z"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مصرح لك بالوصول إلى معلومات هذا الملف"
+          },
+          "404": {
+            "description": "الملف غير موجود"
+          }
+        },
+        "tags": [
+          "رفع-الملفات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/upload/public/*": {
+      "get": {
+        "operationId": "serveFile",
+        "summary": "عرض ملف عام",
+        "description": "عرض ملف مرفوع بشكل عام (يُستخدم للاختبار - في الإنتاج يُفضل استخدام CDN مباشرة)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرجاع الملف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "description": "معلومات الملف أو محتواه حسب النوع"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "الملف غير موجود"
+          }
+        },
+        "tags": [
+          "رفع-الملفات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media/upload": {
+      "post": {
+        "operationId": "uploadMedia",
+        "summary": "رفع وسائط إلى المكتبة",
+        "description": "رفع ملف وسائط (صور، فيديوهات، مستندات) إلى مكتبة الوسائط مع إمكانية إضافة بيانات وصفية",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم رفع الوسائط بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "media123",
+                          "description": "معرف الوسائط"
+                        },
+                        "fileName": {
+                          "type": "string",
+                          "example": "product-image.jpg",
+                          "description": "اسم الملف"
+                        },
+                        "filePath": {
+                          "type": "string",
+                          "example": "media/product-image.jpg",
+                          "description": "مسار الملف"
+                        },
+                        "fileUrl": {
+                          "type": "string",
+                          "example": "https://cdn.example.com/media/product-image.jpg",
+                          "description": "رابط الملف"
+                        },
+                        "fileSize": {
+                          "type": "number",
+                          "example": 1024000,
+                          "description": "حجم الملف بالبايت"
+                        },
+                        "mimeType": {
+                          "type": "string",
+                          "example": "image/jpeg",
+                          "description": "نوع الملف"
+                        },
+                        "alt": {
+                          "type": "string",
+                          "example": "صورة منتج رائع",
+                          "description": "النص البديل"
+                        },
+                        "title": {
+                          "type": "string",
+                          "example": "هاتف ذكي سامسونج",
+                          "description": "عنوان الوسائط"
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "example": "product"
+                          },
+                          "description": "العلامات"
+                        },
+                        "uploadedBy": {
+                          "type": "string",
+                          "example": "admin123",
+                          "description": "معرف المستخدم الذي رفع الملف"
+                        },
+                        "uploadedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-15T10:30:00Z"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "isDuplicate": {
+                          "type": "boolean",
+                          "example": false,
+                          "description": "هل الملف مكرر"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Media uploaded successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "خطأ في البيانات أو نوع الملف غير مدعوم"
+          },
+          "401": {
+            "description": "غير مصرح لك بالوصول"
+          },
+          "413": {
+            "description": "حجم الملف كبير جداً"
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media": {
+      "get": {
+        "operationId": "listMedia",
+        "summary": "قائمة الوسائط",
+        "description": "استرداد قائمة بجميع الوسائط في المكتبة مع إمكانية التصفية والترقيم",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد قائمة الوسائط بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "media123",
+                            "description": "معرف الوسائط"
+                          },
+                          "fileName": {
+                            "type": "string",
+                            "example": "product-image.jpg",
+                            "description": "اسم الملف"
+                          },
+                          "filePath": {
+                            "type": "string",
+                            "example": "media/product-image.jpg",
+                            "description": "مسار الملف"
+                          },
+                          "fileUrl": {
+                            "type": "string",
+                            "example": "https://cdn.example.com/media/product-image.jpg",
+                            "description": "رابط الملف"
+                          },
+                          "fileSize": {
+                            "type": "number",
+                            "example": 1024000,
+                            "description": "حجم الملف بالبايت"
+                          },
+                          "mimeType": {
+                            "type": "string",
+                            "example": "image/jpeg",
+                            "description": "نوع الملف"
+                          },
+                          "alt": {
+                            "type": "string",
+                            "example": "صورة منتج رائع",
+                            "description": "النص البديل"
+                          },
+                          "title": {
+                            "type": "string",
+                            "example": "هاتف ذكي سامسونج",
+                            "description": "عنوان الوسائط"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "example": "product"
+                            },
+                            "description": "العلامات"
+                          },
+                          "uploadedBy": {
+                            "type": "string",
+                            "example": "admin123",
+                            "description": "معرف المستخدم الذي رفع الملف"
+                          },
+                          "uploadedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2024-01-15T10:30:00Z"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2024-01-15T11:00:00Z"
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number",
+                          "example": 150,
+                          "description": "إجمالي العناصر"
+                        },
+                        "page": {
+                          "type": "number",
+                          "example": 1,
+                          "description": "الصفحة الحالية"
+                        },
+                        "limit": {
+                          "type": "number",
+                          "example": 20,
+                          "description": "عدد العناصر في الصفحة"
+                        },
+                        "totalPages": {
+                          "type": "number",
+                          "example": 8,
+                          "description": "إجمالي الصفحات"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "غير مصرح لك بالوصول"
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media/{id}": {
+      "get": {
+        "operationId": "getMedia",
+        "summary": "تفاصيل الوسائط",
+        "description": "استرداد تفاصيل وسائط محددة من المكتبة",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف الوسائط",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد تفاصيل الوسائط بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "media123",
+                      "description": "معرف الوسائط"
+                    },
+                    "fileName": {
+                      "type": "string",
+                      "example": "product-image.jpg",
+                      "description": "اسم الملف"
+                    },
+                    "filePath": {
+                      "type": "string",
+                      "example": "media/product-image.jpg",
+                      "description": "مسار الملف"
+                    },
+                    "fileUrl": {
+                      "type": "string",
+                      "example": "https://cdn.example.com/media/product-image.jpg",
+                      "description": "رابط الملف"
+                    },
+                    "fileSize": {
+                      "type": "number",
+                      "example": 1024000,
+                      "description": "حجم الملف بالبايت"
+                    },
+                    "mimeType": {
+                      "type": "string",
+                      "example": "image/jpeg",
+                      "description": "نوع الملف"
+                    },
+                    "alt": {
+                      "type": "string",
+                      "example": "صورة منتج رائع",
+                      "description": "النص البديل"
+                    },
+                    "title": {
+                      "type": "string",
+                      "example": "هاتف ذكي سامسونج",
+                      "description": "عنوان الوسائط"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "product"
+                      },
+                      "description": "العلامات"
+                    },
+                    "uploadedBy": {
+                      "type": "string",
+                      "example": "admin123",
+                      "description": "معرف المستخدم الذي رفع الملف"
+                    },
+                    "uploadedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-15T10:30:00Z"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-15T11:00:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "غير مصرح لك بالوصول"
+          },
+          "404": {
+            "description": "الوسائط غير موجودة"
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateMedia",
+        "summary": "تحديث الوسائط",
+        "description": "تحديث البيانات الوصفية لملف وسائط في المكتبة",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف الوسائط",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث الوسائط بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "media123",
+                      "description": "معرف الوسائط"
+                    },
+                    "alt": {
+                      "type": "string",
+                      "example": "صورة منتج محدثة",
+                      "description": "النص البديل المحدث"
+                    },
+                    "title": {
+                      "type": "string",
+                      "example": "هاتف ذكي سامسونج جالاكسي",
+                      "description": "العنوان المحدث"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "product"
+                      },
+                      "description": "العلامات المحدثة"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-15T12:00:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "بيانات غير صحيحة"
+          },
+          "401": {
+            "description": "غير مصرح لك بالوصول"
+          },
+          "404": {
+            "description": "الوسائط غير موجودة"
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteMedia",
+        "summary": "حذف الوسائط",
+        "description": "حذف ملف وسائط من المكتبة (حذف مؤقت - يمكن الاستعادة)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف الوسائط",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف الوسائط بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Media deleted successfully"
+                    },
+                    "deletedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-15T13:00:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مصرح لك بحذف هذه الوسائط"
+          },
+          "404": {
+            "description": "الوسائط غير موجودة"
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media/{id}/restore": {
+      "post": {
+        "operationId": "restoreMedia",
+        "summary": "استعادة الوسائط",
+        "description": "استعادة ملف وسائط محذوف مؤقتاً إلى المكتبة",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف الوسائط",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استعادة الوسائط بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "media123",
+                      "description": "معرف الوسائط"
+                    },
+                    "status": {
+                      "type": "string",
+                      "example": "active",
+                      "description": "حالة الوسائط بعد الاستعادة"
+                    },
+                    "restoredAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-15T14:00:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مصرح لك باستعادة هذه الوسائط"
+          },
+          "404": {
+            "description": "الوسائط غير موجودة أو غير محذوفة"
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media/{id}/permanent": {
+      "delete": {
+        "operationId": "permanentDeleteMedia",
+        "summary": "حذف الوسائط نهائياً",
+        "description": "حذف ملف وسائط نهائياً من المكتبة والتخزين (متاح للمشرفين الفائقين فقط)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف الوسائط",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف الوسائط نهائياً بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Media permanently deleted successfully"
+                    },
+                    "deletedFiles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "media/product-image.jpg"
+                      },
+                      "description": "قائمة الملفات المحذوفة"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مصرح لك بالحذف النهائي (يتطلب صلاحيات مشرف فائق)"
+          },
+          "404": {
+            "description": "الوسائط غير موجودة"
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media/stats/summary": {
+      "get": {
+        "operationId": "getStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media/cleanup/deleted": {
+      "post": {
+        "operationId": "cleanupDeletedFiles",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media/cleanup/duplicates": {
+      "post": {
+        "operationId": "cleanupDuplicateFiles",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media/cleanup/unused": {
+      "post": {
+        "operationId": "cleanupUnusedFiles",
+        "parameters": [
+          {
+            "name": "days",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/overview": {
+      "get": {
+        "operationId": "getOverview",
+        "summary": "الإحصائيات العامة للوسائط",
+        "description": "يعرض إحصائيات شاملة عن جميع الملفات والوسائط في النظام",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم جلب الإحصائيات العامة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalFiles": {
+                          "type": "number",
+                          "example": 1250,
+                          "description": "إجمالي عدد الملفات"
+                        },
+                        "totalSize": {
+                          "type": "number",
+                          "example": 5242880000,
+                          "description": "إجمالي حجم الملفات بالبايت"
+                        },
+                        "totalSizeFormatted": {
+                          "type": "string",
+                          "example": "5.24 GB",
+                          "description": "إجمالي الحجم منسق"
+                        },
+                        "filesThisMonth": {
+                          "type": "number",
+                          "example": 156,
+                          "description": "عدد الملفات المرفوعة هذا الشهر"
+                        },
+                        "filesThisWeek": {
+                          "type": "number",
+                          "example": 42,
+                          "description": "عدد الملفات المرفوعة هذا الأسبوع"
+                        },
+                        "filesToday": {
+                          "type": "number",
+                          "example": 8,
+                          "description": "عدد الملفات المرفوعة اليوم"
+                        },
+                        "averageFileSize": {
+                          "type": "number",
+                          "example": 419430,
+                          "description": "متوسط حجم الملف"
+                        },
+                        "averageFileSizeFormatted": {
+                          "type": "string",
+                          "example": "419.43 KB"
+                        },
+                        "filesByType": {
+                          "type": "object",
+                          "properties": {
+                            "images": {
+                              "type": "number",
+                              "example": 850
+                            },
+                            "videos": {
+                              "type": "number",
+                              "example": 120
+                            },
+                            "documents": {
+                              "type": "number",
+                              "example": 200
+                            },
+                            "other": {
+                              "type": "number",
+                              "example": 80
+                            }
+                          }
+                        },
+                        "sizeByType": {
+                          "type": "object",
+                          "properties": {
+                            "images": {
+                              "type": "number",
+                              "example": 2147483648
+                            },
+                            "videos": {
+                              "type": "number",
+                              "example": 2684354560
+                            },
+                            "documents": {
+                              "type": "number",
+                              "example": 314572800
+                            },
+                            "other": {
+                              "type": "number",
+                              "example": 96468992
+                            }
+                          }
+                        },
+                        "storageUsagePercent": {
+                          "type": "number",
+                          "example": 52.4,
+                          "description": "نسبة استخدام التخزين"
+                        },
+                        "topUploaders": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "userId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "uploadCount": {
+                                "type": "number"
+                              },
+                              "totalSize": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/by-type": {
+      "get": {
+        "operationId": "getStatsByType",
+        "summary": "إحصائيات الوسائط حسب النوع",
+        "description": "يعرض توزيع الملفات حسب أنواعها المختلفة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم جلب الإحصائيات بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/upload-timeline": {
+      "get": {
+        "operationId": "getUploadTimeline",
+        "summary": "إحصائيات الرفع حسب الفترة الزمنية",
+        "description": "يعرض توزيع عمليات الرفع خلال فترة زمنية محددة",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "الفترة الزمنية للإحصائيات",
+            "schema": {
+              "enum": [
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب الإحصائيات بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/largest-files": {
+      "get": {
+        "operationId": "getLargestFiles",
+        "summary": "قائمة أكبر الملفات",
+        "description": "يعرض الملفات الأكبر حجماً في النظام",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد الملفات المراد عرضها",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب القائمة بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/recent-uploads": {
+      "get": {
+        "operationId": "getRecentUploads",
+        "summary": "أحدث الملفات المرفوعة",
+        "description": "يعرض آخر الملفات التي تم رفعها",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد الملفات المراد عرضها",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب القائمة بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/storage": {
+      "get": {
+        "operationId": "getStorageStats",
+        "summary": "إحصائيات التخزين",
+        "description": "يعرض معلومات عن مساحة التخزين المستخدمة والمتاحة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم جلب إحصائيات التخزين بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/by-user": {
+      "get": {
+        "operationId": "getStatsByUser",
+        "summary": "إحصائيات الرفع حسب المستخدم",
+        "description": "يعرض إحصائيات عمليات الرفع لكل مستخدم",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد المستخدمين المراد عرضهم",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب الإحصائيات بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/unused-files": {
+      "get": {
+        "operationId": "getUnusedFiles",
+        "summary": "الملفات غير المستخدمة",
+        "description": "يعرض الملفات التي لم يتم استخدامها في أي مكان",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد الملفات المراد عرضها",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب القائمة بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/media-analytics/full-report": {
+      "get": {
+        "operationId": "getFullReport",
+        "summary": "تقرير شامل عن الوسائط",
+        "description": "يولد تقرير شامل يحتوي على جميع الإحصائيات",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم توليد التقرير بنجاح"
+          }
+        },
+        "tags": [
+          "إحصائيات-الوسائط"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/support/tickets": {
       "post": {
         "operationId": "createTicket",
@@ -19293,1475 +20762,6 @@
         },
         "tags": [
           "إدارة-المستخدمين"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/upload/file": {
-      "post": {
-        "operationId": "uploadFile",
-        "summary": "رفع ملف واحد",
-        "description": "رفع ملف واحد مع إمكانية تحديد المجلد والاسم المخصص",
-        "parameters": [
-          {
-            "name": "folder",
-            "required": false,
-            "in": "query",
-            "description": "المجلد المراد رفع الملف إليه",
-            "schema": {
-              "example": "products",
-              "type": "string"
-            }
-          },
-          {
-            "name": "filename",
-            "required": false,
-            "in": "query",
-            "description": "اسم مخصص للملف",
-            "schema": {
-              "example": "product-image-001.jpg",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "description": "رفع ملف",
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/UploadFileDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "تم رفع الملف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "fileName": {
-                          "type": "string",
-                          "example": "product-image-001.jpg",
-                          "description": "اسم الملف"
-                        },
-                        "filePath": {
-                          "type": "string",
-                          "example": "products/product-image-001.jpg",
-                          "description": "مسار الملف"
-                        },
-                        "fileUrl": {
-                          "type": "string",
-                          "example": "https://cdn.example.com/products/product-image-001.jpg",
-                          "description": "رابط الملف"
-                        },
-                        "fileSize": {
-                          "type": "number",
-                          "example": 1024000,
-                          "description": "حجم الملف بالبايت"
-                        },
-                        "mimeType": {
-                          "type": "string",
-                          "example": "image/jpeg",
-                          "description": "نوع الملف"
-                        },
-                        "uploadedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T10:30:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "خطأ في البيانات أو نوع الملف غير مدعوم"
-          },
-          "401": {
-            "description": "غير مصرح لك بالوصول"
-          },
-          "413": {
-            "description": "حجم الملف كبير جداً"
-          }
-        },
-        "tags": [
-          "رفع-الملفات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "deleteFile",
-        "summary": "حذف ملف",
-        "description": "حذف ملف مرفوع من خلال مساره",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeleteFileDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم حذف الملف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "File deleted successfully"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "غير مصرح لك بحذف هذا الملف"
-          },
-          "404": {
-            "description": "الملف غير موجود"
-          }
-        },
-        "tags": [
-          "رفع-الملفات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/upload/files": {
-      "post": {
-        "operationId": "uploadFiles",
-        "summary": "رفع ملفات متعددة",
-        "description": "رفع عدة ملفات في وقت واحد (حتى 10 ملفات) مع إمكانية تحديد المجلد",
-        "parameters": [
-          {
-            "name": "folder",
-            "required": false,
-            "in": "query",
-            "description": "المجلد المراد رفع الملفات إليه",
-            "schema": {
-              "example": "gallery",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "description": "رفع ملفات متعددة",
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "files": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "binary"
-                    }
-                  },
-                  "folder": {
-                    "type": "string",
-                    "description": "المجلد المراد رفع الملفات إليه"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "تم رفع الملفات بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "fileName": {
-                            "type": "string",
-                            "example": "image1.jpg",
-                            "description": "اسم الملف"
-                          },
-                          "filePath": {
-                            "type": "string",
-                            "example": "gallery/image1.jpg",
-                            "description": "مسار الملف"
-                          },
-                          "fileUrl": {
-                            "type": "string",
-                            "example": "https://cdn.example.com/gallery/image1.jpg",
-                            "description": "رابط الملف"
-                          },
-                          "fileSize": {
-                            "type": "number",
-                            "example": 512000,
-                            "description": "حجم الملف بالبايت"
-                          },
-                          "mimeType": {
-                            "type": "string",
-                            "example": "image/jpeg",
-                            "description": "نوع الملف"
-                          },
-                          "uploadedAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "example": "2024-01-15T10:30:00Z"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "خطأ في البيانات أو نوع أحد الملفات غير مدعوم"
-          },
-          "401": {
-            "description": "غير مصرح لك بالوصول"
-          },
-          "413": {
-            "description": "حجم إحدى الملفات كبير جداً"
-          }
-        },
-        "tags": [
-          "رفع-الملفات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/upload/file/{filePath}": {
-      "get": {
-        "operationId": "getFileInfo",
-        "summary": "معلومات الملف",
-        "description": "الحصول على معلومات مفصلة عن ملف مرفوع",
-        "parameters": [
-          {
-            "name": "filePath",
-            "required": true,
-            "in": "path",
-            "description": "مسار الملف",
-            "schema": {
-              "example": "products/image.jpg",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرجاع معلومات الملف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "fileName": {
-                          "type": "string",
-                          "example": "image.jpg",
-                          "description": "اسم الملف"
-                        },
-                        "filePath": {
-                          "type": "string",
-                          "example": "products/image.jpg",
-                          "description": "مسار الملف"
-                        },
-                        "fileUrl": {
-                          "type": "string",
-                          "example": "https://cdn.example.com/products/image.jpg",
-                          "description": "رابط الملف"
-                        },
-                        "fileSize": {
-                          "type": "number",
-                          "example": 1024000,
-                          "description": "حجم الملف بالبايت"
-                        },
-                        "mimeType": {
-                          "type": "string",
-                          "example": "image/jpeg",
-                          "description": "نوع الملف"
-                        },
-                        "uploadedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T10:30:00Z"
-                        },
-                        "lastModified": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T11:00:00Z"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "غير مصرح لك بالوصول إلى معلومات هذا الملف"
-          },
-          "404": {
-            "description": "الملف غير موجود"
-          }
-        },
-        "tags": [
-          "رفع-الملفات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/upload/public/*": {
-      "get": {
-        "operationId": "serveFile",
-        "summary": "عرض ملف عام",
-        "description": "عرض ملف مرفوع بشكل عام (يُستخدم للاختبار - في الإنتاج يُفضل استخدام CDN مباشرة)",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرجاع الملف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "description": "معلومات الملف أو محتواه حسب النوع"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "الملف غير موجود"
-          }
-        },
-        "tags": [
-          "رفع-الملفات"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media/upload": {
-      "post": {
-        "operationId": "uploadMedia",
-        "summary": "رفع وسائط إلى المكتبة",
-        "description": "رفع ملف وسائط (صور، فيديوهات، مستندات) إلى مكتبة الوسائط مع إمكانية إضافة بيانات وصفية",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/UploadMediaDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "تم رفع الوسائط بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "media123",
-                          "description": "معرف الوسائط"
-                        },
-                        "fileName": {
-                          "type": "string",
-                          "example": "product-image.jpg",
-                          "description": "اسم الملف"
-                        },
-                        "filePath": {
-                          "type": "string",
-                          "example": "media/product-image.jpg",
-                          "description": "مسار الملف"
-                        },
-                        "fileUrl": {
-                          "type": "string",
-                          "example": "https://cdn.example.com/media/product-image.jpg",
-                          "description": "رابط الملف"
-                        },
-                        "fileSize": {
-                          "type": "number",
-                          "example": 1024000,
-                          "description": "حجم الملف بالبايت"
-                        },
-                        "mimeType": {
-                          "type": "string",
-                          "example": "image/jpeg",
-                          "description": "نوع الملف"
-                        },
-                        "alt": {
-                          "type": "string",
-                          "example": "صورة منتج رائع",
-                          "description": "النص البديل"
-                        },
-                        "title": {
-                          "type": "string",
-                          "example": "هاتف ذكي سامسونج",
-                          "description": "عنوان الوسائط"
-                        },
-                        "tags": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "example": "product"
-                          },
-                          "description": "العلامات"
-                        },
-                        "uploadedBy": {
-                          "type": "string",
-                          "example": "admin123",
-                          "description": "معرف المستخدم الذي رفع الملف"
-                        },
-                        "uploadedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T10:30:00Z"
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "isDuplicate": {
-                          "type": "boolean",
-                          "example": false,
-                          "description": "هل الملف مكرر"
-                        }
-                      }
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Media uploaded successfully"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "خطأ في البيانات أو نوع الملف غير مدعوم"
-          },
-          "401": {
-            "description": "غير مصرح لك بالوصول"
-          },
-          "413": {
-            "description": "حجم الملف كبير جداً"
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media": {
-      "get": {
-        "operationId": "listMedia",
-        "summary": "قائمة الوسائط",
-        "description": "استرداد قائمة بجميع الوسائط في المكتبة مع إمكانية التصفية والترقيم",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد قائمة الوسائط بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "example": "media123",
-                            "description": "معرف الوسائط"
-                          },
-                          "fileName": {
-                            "type": "string",
-                            "example": "product-image.jpg",
-                            "description": "اسم الملف"
-                          },
-                          "filePath": {
-                            "type": "string",
-                            "example": "media/product-image.jpg",
-                            "description": "مسار الملف"
-                          },
-                          "fileUrl": {
-                            "type": "string",
-                            "example": "https://cdn.example.com/media/product-image.jpg",
-                            "description": "رابط الملف"
-                          },
-                          "fileSize": {
-                            "type": "number",
-                            "example": 1024000,
-                            "description": "حجم الملف بالبايت"
-                          },
-                          "mimeType": {
-                            "type": "string",
-                            "example": "image/jpeg",
-                            "description": "نوع الملف"
-                          },
-                          "alt": {
-                            "type": "string",
-                            "example": "صورة منتج رائع",
-                            "description": "النص البديل"
-                          },
-                          "title": {
-                            "type": "string",
-                            "example": "هاتف ذكي سامسونج",
-                            "description": "عنوان الوسائط"
-                          },
-                          "tags": {
-                            "type": "array",
-                            "items": {
-                              "type": "string",
-                              "example": "product"
-                            },
-                            "description": "العلامات"
-                          },
-                          "uploadedBy": {
-                            "type": "string",
-                            "example": "admin123",
-                            "description": "معرف المستخدم الذي رفع الملف"
-                          },
-                          "uploadedAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "example": "2024-01-15T10:30:00Z"
-                          },
-                          "updatedAt": {
-                            "type": "string",
-                            "format": "date-time",
-                            "example": "2024-01-15T11:00:00Z"
-                          }
-                        }
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "number",
-                          "example": 150,
-                          "description": "إجمالي العناصر"
-                        },
-                        "page": {
-                          "type": "number",
-                          "example": 1,
-                          "description": "الصفحة الحالية"
-                        },
-                        "limit": {
-                          "type": "number",
-                          "example": 20,
-                          "description": "عدد العناصر في الصفحة"
-                        },
-                        "totalPages": {
-                          "type": "number",
-                          "example": 8,
-                          "description": "إجمالي الصفحات"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "غير مصرح لك بالوصول"
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media/{id}": {
-      "get": {
-        "operationId": "getMedia",
-        "summary": "تفاصيل الوسائط",
-        "description": "استرداد تفاصيل وسائط محددة من المكتبة",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف الوسائط",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد تفاصيل الوسائط بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "example": "media123",
-                      "description": "معرف الوسائط"
-                    },
-                    "fileName": {
-                      "type": "string",
-                      "example": "product-image.jpg",
-                      "description": "اسم الملف"
-                    },
-                    "filePath": {
-                      "type": "string",
-                      "example": "media/product-image.jpg",
-                      "description": "مسار الملف"
-                    },
-                    "fileUrl": {
-                      "type": "string",
-                      "example": "https://cdn.example.com/media/product-image.jpg",
-                      "description": "رابط الملف"
-                    },
-                    "fileSize": {
-                      "type": "number",
-                      "example": 1024000,
-                      "description": "حجم الملف بالبايت"
-                    },
-                    "mimeType": {
-                      "type": "string",
-                      "example": "image/jpeg",
-                      "description": "نوع الملف"
-                    },
-                    "alt": {
-                      "type": "string",
-                      "example": "صورة منتج رائع",
-                      "description": "النص البديل"
-                    },
-                    "title": {
-                      "type": "string",
-                      "example": "هاتف ذكي سامسونج",
-                      "description": "عنوان الوسائط"
-                    },
-                    "tags": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "example": "product"
-                      },
-                      "description": "العلامات"
-                    },
-                    "uploadedBy": {
-                      "type": "string",
-                      "example": "admin123",
-                      "description": "معرف المستخدم الذي رفع الملف"
-                    },
-                    "uploadedAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "example": "2024-01-15T10:30:00Z"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "example": "2024-01-15T11:00:00Z"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "غير مصرح لك بالوصول"
-          },
-          "404": {
-            "description": "الوسائط غير موجودة"
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "patch": {
-        "operationId": "updateMedia",
-        "summary": "تحديث الوسائط",
-        "description": "تحديث البيانات الوصفية لملف وسائط في المكتبة",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف الوسائط",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateMediaDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم تحديث الوسائط بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "example": "media123",
-                      "description": "معرف الوسائط"
-                    },
-                    "alt": {
-                      "type": "string",
-                      "example": "صورة منتج محدثة",
-                      "description": "النص البديل المحدث"
-                    },
-                    "title": {
-                      "type": "string",
-                      "example": "هاتف ذكي سامسونج جالاكسي",
-                      "description": "العنوان المحدث"
-                    },
-                    "tags": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "example": "product"
-                      },
-                      "description": "العلامات المحدثة"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "example": "2024-01-15T12:00:00Z"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "بيانات غير صحيحة"
-          },
-          "401": {
-            "description": "غير مصرح لك بالوصول"
-          },
-          "404": {
-            "description": "الوسائط غير موجودة"
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "deleteMedia",
-        "summary": "حذف الوسائط",
-        "description": "حذف ملف وسائط من المكتبة (حذف مؤقت - يمكن الاستعادة)",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف الوسائط",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم حذف الوسائط بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Media deleted successfully"
-                    },
-                    "deletedAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "example": "2024-01-15T13:00:00Z"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "غير مصرح لك بحذف هذه الوسائط"
-          },
-          "404": {
-            "description": "الوسائط غير موجودة"
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media/{id}/restore": {
-      "post": {
-        "operationId": "restoreMedia",
-        "summary": "استعادة الوسائط",
-        "description": "استعادة ملف وسائط محذوف مؤقتاً إلى المكتبة",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف الوسائط",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استعادة الوسائط بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "example": "media123",
-                      "description": "معرف الوسائط"
-                    },
-                    "status": {
-                      "type": "string",
-                      "example": "active",
-                      "description": "حالة الوسائط بعد الاستعادة"
-                    },
-                    "restoredAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "example": "2024-01-15T14:00:00Z"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "غير مصرح لك باستعادة هذه الوسائط"
-          },
-          "404": {
-            "description": "الوسائط غير موجودة أو غير محذوفة"
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media/{id}/permanent": {
-      "delete": {
-        "operationId": "permanentDeleteMedia",
-        "summary": "حذف الوسائط نهائياً",
-        "description": "حذف ملف وسائط نهائياً من المكتبة والتخزين (متاح للمشرفين الفائقين فقط)",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف الوسائط",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم حذف الوسائط نهائياً بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Media permanently deleted successfully"
-                    },
-                    "deletedFiles": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "example": "media/product-image.jpg"
-                      },
-                      "description": "قائمة الملفات المحذوفة"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "غير مصرح لك بالحذف النهائي (يتطلب صلاحيات مشرف فائق)"
-          },
-          "404": {
-            "description": "الوسائط غير موجودة"
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media/stats/summary": {
-      "get": {
-        "operationId": "getStats",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media/cleanup/deleted": {
-      "post": {
-        "operationId": "cleanupDeletedFiles",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media/cleanup/duplicates": {
-      "post": {
-        "operationId": "cleanupDuplicateFiles",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media/cleanup/unused": {
-      "post": {
-        "operationId": "cleanupUnusedFiles",
-        "parameters": [
-          {
-            "name": "days",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "إدارة-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media-analytics/overview": {
-      "get": {
-        "operationId": "getOverview",
-        "summary": "الإحصائيات العامة للوسائط",
-        "description": "يعرض إحصائيات شاملة عن جميع الملفات والوسائط في النظام",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم جلب الإحصائيات العامة بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "totalFiles": {
-                          "type": "number",
-                          "example": 1250,
-                          "description": "إجمالي عدد الملفات"
-                        },
-                        "totalSize": {
-                          "type": "number",
-                          "example": 5242880000,
-                          "description": "إجمالي حجم الملفات بالبايت"
-                        },
-                        "totalSizeFormatted": {
-                          "type": "string",
-                          "example": "5.24 GB",
-                          "description": "إجمالي الحجم منسق"
-                        },
-                        "filesThisMonth": {
-                          "type": "number",
-                          "example": 156,
-                          "description": "عدد الملفات المرفوعة هذا الشهر"
-                        },
-                        "filesThisWeek": {
-                          "type": "number",
-                          "example": 42,
-                          "description": "عدد الملفات المرفوعة هذا الأسبوع"
-                        },
-                        "filesToday": {
-                          "type": "number",
-                          "example": 8,
-                          "description": "عدد الملفات المرفوعة اليوم"
-                        },
-                        "averageFileSize": {
-                          "type": "number",
-                          "example": 419430,
-                          "description": "متوسط حجم الملف"
-                        },
-                        "averageFileSizeFormatted": {
-                          "type": "string",
-                          "example": "419.43 KB"
-                        },
-                        "filesByType": {
-                          "type": "object",
-                          "properties": {
-                            "images": {
-                              "type": "number",
-                              "example": 850
-                            },
-                            "videos": {
-                              "type": "number",
-                              "example": 120
-                            },
-                            "documents": {
-                              "type": "number",
-                              "example": 200
-                            },
-                            "other": {
-                              "type": "number",
-                              "example": 80
-                            }
-                          }
-                        },
-                        "sizeByType": {
-                          "type": "object",
-                          "properties": {
-                            "images": {
-                              "type": "number",
-                              "example": 2147483648
-                            },
-                            "videos": {
-                              "type": "number",
-                              "example": 2684354560
-                            },
-                            "documents": {
-                              "type": "number",
-                              "example": 314572800
-                            },
-                            "other": {
-                              "type": "number",
-                              "example": 96468992
-                            }
-                          }
-                        },
-                        "storageUsagePercent": {
-                          "type": "number",
-                          "example": 52.4,
-                          "description": "نسبة استخدام التخزين"
-                        },
-                        "topUploaders": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "userId": {
-                                "type": "string"
-                              },
-                              "name": {
-                                "type": "string"
-                              },
-                              "uploadCount": {
-                                "type": "number"
-                              },
-                              "totalSize": {
-                                "type": "number"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إحصائيات-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media-analytics/by-type": {
-      "get": {
-        "operationId": "getStatsByType",
-        "summary": "إحصائيات الوسائط حسب النوع",
-        "description": "يعرض توزيع الملفات حسب أنواعها المختلفة",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم جلب الإحصائيات بنجاح"
-          }
-        },
-        "tags": [
-          "إحصائيات-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media-analytics/upload-timeline": {
-      "get": {
-        "operationId": "getUploadTimeline",
-        "summary": "إحصائيات الرفع حسب الفترة الزمنية",
-        "description": "يعرض توزيع عمليات الرفع خلال فترة زمنية محددة",
-        "parameters": [
-          {
-            "name": "period",
-            "required": false,
-            "in": "query",
-            "description": "الفترة الزمنية للإحصائيات",
-            "schema": {
-              "enum": [
-                "day",
-                "week",
-                "month",
-                "year"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم جلب الإحصائيات بنجاح"
-          }
-        },
-        "tags": [
-          "إحصائيات-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media-analytics/largest-files": {
-      "get": {
-        "operationId": "getLargestFiles",
-        "summary": "قائمة أكبر الملفات",
-        "description": "يعرض الملفات الأكبر حجماً في النظام",
-        "parameters": [
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "عدد الملفات المراد عرضها",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم جلب القائمة بنجاح"
-          }
-        },
-        "tags": [
-          "إحصائيات-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media-analytics/recent-uploads": {
-      "get": {
-        "operationId": "getRecentUploads",
-        "summary": "أحدث الملفات المرفوعة",
-        "description": "يعرض آخر الملفات التي تم رفعها",
-        "parameters": [
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "عدد الملفات المراد عرضها",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم جلب القائمة بنجاح"
-          }
-        },
-        "tags": [
-          "إحصائيات-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media-analytics/storage": {
-      "get": {
-        "operationId": "getStorageStats",
-        "summary": "إحصائيات التخزين",
-        "description": "يعرض معلومات عن مساحة التخزين المستخدمة والمتاحة",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم جلب إحصائيات التخزين بنجاح"
-          }
-        },
-        "tags": [
-          "إحصائيات-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media-analytics/by-user": {
-      "get": {
-        "operationId": "getStatsByUser",
-        "summary": "إحصائيات الرفع حسب المستخدم",
-        "description": "يعرض إحصائيات عمليات الرفع لكل مستخدم",
-        "parameters": [
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "عدد المستخدمين المراد عرضهم",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم جلب الإحصائيات بنجاح"
-          }
-        },
-        "tags": [
-          "إحصائيات-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media-analytics/unused-files": {
-      "get": {
-        "operationId": "getUnusedFiles",
-        "summary": "الملفات غير المستخدمة",
-        "description": "يعرض الملفات التي لم يتم استخدامها في أي مكان",
-        "parameters": [
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "عدد الملفات المراد عرضها",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم جلب القائمة بنجاح"
-          }
-        },
-        "tags": [
-          "إحصائيات-الوسائط"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/media-analytics/full-report": {
-      "get": {
-        "operationId": "getFullReport",
-        "summary": "تقرير شامل عن الوسائط",
-        "description": "يولد تقرير شامل يحتوي على جميع الإحصائيات",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم توليد التقرير بنجاح"
-          }
-        },
-        "tags": [
-          "إحصائيات-الوسائط"
         ],
         "security": [
           {
@@ -33327,6 +33327,50 @@
           "value"
         ]
       },
+      "UploadFileDto": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "File to upload"
+          },
+          "folder": {
+            "type": "string",
+            "description": "Folder to upload to",
+            "example": "products"
+          },
+          "customFilename": {
+            "type": "string",
+            "description": "Custom filename (optional)",
+            "example": "my-image.jpg"
+          }
+        },
+        "required": [
+          "file"
+        ]
+      },
+      "DeleteFileDto": {
+        "type": "object",
+        "properties": {
+          "filePath": {
+            "type": "string",
+            "description": "Path of the file to delete",
+            "example": "uploads/my-image.jpg"
+          }
+        },
+        "required": [
+          "filePath"
+        ]
+      },
+      "UploadMediaDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateMediaDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CreateSupportTicketDto": {
         "type": "object",
         "properties": {
@@ -33858,50 +33902,6 @@
         "properties": {}
       },
       "AdminResetPasswordDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UploadFileDto": {
-        "type": "object",
-        "properties": {
-          "file": {
-            "type": "string",
-            "format": "binary",
-            "description": "File to upload"
-          },
-          "folder": {
-            "type": "string",
-            "description": "Folder to upload to",
-            "example": "products"
-          },
-          "customFilename": {
-            "type": "string",
-            "description": "Custom filename (optional)",
-            "example": "my-image.jpg"
-          }
-        },
-        "required": [
-          "file"
-        ]
-      },
-      "DeleteFileDto": {
-        "type": "object",
-        "properties": {
-          "filePath": {
-            "type": "string",
-            "description": "Path of the file to delete",
-            "example": "uploads/my-image.jpg"
-          }
-        },
-        "required": [
-          "filePath"
-        ]
-      },
-      "UploadMediaDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdateMediaDto": {
         "type": "object",
         "properties": {}
       },

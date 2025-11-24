@@ -48,6 +48,7 @@ import {
 import { AuditService } from '../../../shared/services/audit.service';
 import { EmailAdapter } from '../../notifications/adapters/email.adapter';
 import { ConfigService } from '@nestjs/config';
+import { UploadService } from '../../upload/upload.service';
 import * as crypto from 'crypto';
 import {
   CreateOrderDto,
@@ -150,6 +151,8 @@ export class OrderService {
     @Inject(forwardRef(() => EmailAdapter))
     private emailAdapter?: EmailAdapter,
     private configService?: ConfigService,
+    @Inject(forwardRef(() => UploadService))
+    private uploadService?: UploadService,
   ) {}
 
   // ===== Helper Methods =====
@@ -4470,6 +4473,22 @@ export class OrderService {
               margin-bottom: 10px;
               font-size: 14px;
             }
+            .map-link {
+              margin-top: 15px;
+              padding: 10px;
+              background: rgba(255, 255, 255, 0.7);
+              border-radius: 5px;
+              border-right: 3px solid #4caf50;
+            }
+            .map-link a {
+              color: #1976d2;
+              text-decoration: underline;
+              font-weight: bold;
+              word-break: break-all;
+            }
+            .map-link a:hover {
+              color: #1565c0;
+            }
           </style>
         </head>
         <body>
@@ -4498,6 +4517,33 @@ export class OrderService {
             <p><strong>المدينة:</strong> ${order.deliveryAddress?.city || ''}</p>
             <p><strong>المنطقة:</strong> ${order.deliveryAddress?.region || 'غير محدد'}</p>
             ${order.deliveryAddress?.postalCode ? `<p><strong>الرمز البريدي:</strong> ${order.deliveryAddress.postalCode}</p>` : ''}
+            
+            ${
+              order.deliveryAddress?.coords &&
+              typeof order.deliveryAddress.coords.lat === 'number' &&
+              typeof order.deliveryAddress.coords.lng === 'number' &&
+              !isNaN(order.deliveryAddress.coords.lat) &&
+              !isNaN(order.deliveryAddress.coords.lng)
+                ? `
+            <div class="map-link">
+              <p style="margin-bottom: 8px;">
+                <strong>📍 الموقع على الخريطة / Location on Map:</strong>
+              </p>
+              <p style="margin: 5px 0;">
+                <a href="https://www.google.com/maps?q=${order.deliveryAddress.coords.lat},${order.deliveryAddress.coords.lng}" 
+                   target="_blank" 
+                   rel="noopener noreferrer">
+                  ${order.deliveryAddress.coords.lat}, ${order.deliveryAddress.coords.lng}
+                </a>
+                <span style="color: #666; font-size: 11px;"> (اضغط للفتح / Click to open)</span>
+              </p>
+              <p style="margin: 5px 0; font-size: 11px; color: #666;">
+                أو افتح في تطبيق Google Maps / Or open in Google Maps app
+              </p>
+            </div>
+            `
+                : ''
+            }
           </div>
 
           <table class="items-table">
@@ -4854,8 +4900,15 @@ export class OrderService {
         // لا نوقف العملية إذا فشل الحفظ المؤقت
       }
 
-      // إرسال الفاتورة عبر البريد الإلكتروني
-      await this.sendOrderInvoiceEmail(order, pdfBuffer);
+      // إرسال الفاتورة عبر البريد الإلكتروني والواتساب (معاً)
+      await Promise.all([
+        this.sendOrderInvoiceEmail(order, pdfBuffer).catch((err) => {
+          this.logger.warn(`Email sending failed for order ${order.orderNumber}:`, err);
+        }),
+        this.sendOrderInvoiceWhatsApp(order, pdfBuffer).catch((err) => {
+          this.logger.warn(`WhatsApp sending failed for order ${order.orderNumber}:`, err);
+        }),
+      ]);
 
       this.logger.log(`Invoice sent successfully for order ${order.orderNumber}`);
     } catch (error) {
@@ -5000,6 +5053,108 @@ export class OrderService {
       }
     } catch (error) {
       this.logger.error(`Error sending invoice email for order ${order.orderNumber}:`, error);
+      // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
+    }
+  }
+
+  /**
+   * إرسال فاتورة الطلب عبر واتساب (رفع PDF إلى Bunny وإرسال رابط)
+   */
+  private async sendOrderInvoiceWhatsApp(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
+    try {
+      if (!this.uploadService) {
+        this.logger.warn('Upload service not available. Skipping WhatsApp notification.');
+        return;
+      }
+
+      // جلب رقم واتساب المبيعات من متغيرات البيئة
+      const salesManagerWhatsApp = this.configService?.get('SALES_MANAGER_WHATSAPP') || null;
+
+      if (!salesManagerWhatsApp) {
+        this.logger.warn('SALES_MANAGER_WHATSAPP not configured. Skipping WhatsApp notification.');
+        return;
+      }
+
+      // جلب بيانات المستخدم
+      const user = await this.userModel.findById(order.userId);
+      const customerName = user
+        ? user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user.firstName || user.lastName || order.customerName || 'N/A'
+        : order.customerName || 'N/A';
+
+      const customerPhone =
+        user?.phone || order.customerPhone || order.deliveryAddress?.recipientPhone || 'N/A';
+
+      // تنسيق التاريخ
+      const formatDate = (date?: Date) => {
+        if (!date) return 'N/A';
+        return new Date(date).toLocaleDateString('ar-SA', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+      };
+
+      const invoiceNumber = order.invoiceNumber || order.orderNumber;
+      const fileName = `invoice-${invoiceNumber}-${Date.now()}.pdf`;
+
+      // رفع PDF إلى Bunny CDN
+      try {
+        const uploadResult = await this.uploadService.uploadFile(
+          {
+            buffer: pdfBuffer,
+            originalname: fileName,
+            mimetype: 'application/pdf',
+            size: pdfBuffer.length,
+          },
+          'invoices', // مجلد في Bunny
+          fileName, // اسم الملف المخصص
+        );
+
+        const invoiceUrl = uploadResult.url;
+        this.logger.log(`Invoice PDF uploaded to Bunny: ${invoiceUrl}`);
+
+        // إنشاء رسالة واتساب
+        const message = `📄 *فاتورة جديدة - New Invoice*
+
+*رقم الطلب / Order Number:* ${order.orderNumber}
+*رقم الفاتورة / Invoice Number:* ${invoiceNumber}
+*اسم العميل / Customer Name:* ${customerName}
+*الهاتف / Phone:* ${customerPhone}
+*المجموع / Total:* ${order.total.toLocaleString()} ${order.currency}
+*تاريخ الإكمال / Completed Date:* ${formatDate(order.completedAt)}
+
+*رابط الفاتورة / Invoice Link:*
+${invoiceUrl}
+
+يرجى الاطلاع على الفاتورة المرفقة.
+Please review the attached invoice.`;
+
+        // إنشاء رابط واتساب مباشر (wa.me)
+        const whatsappNumber = salesManagerWhatsApp.replace(/[^0-9]/g, ''); // إزالة أي رموز غير رقمية
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
+        // تسجيل الرابط في السجل
+        this.logger.log(`WhatsApp link generated for order ${order.orderNumber}:`);
+        this.logger.log(`WhatsApp URL: ${whatsappUrl}`);
+        this.logger.log(`Invoice URL: ${invoiceUrl}`);
+
+        // ملاحظة: يمكن استخدام مكتبة 'open' لفتح الرابط تلقائياً في المتصفح
+        // أو إرسال الرابط عبر webhook أو أي طريقة أخرى
+      } catch (uploadError) {
+        this.logger.error(
+          `Failed to upload invoice PDF to Bunny for order ${order.orderNumber}:`,
+          uploadError,
+        );
+        // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error sending WhatsApp notification for order ${order.orderNumber}:`,
+        error,
+      );
       // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
     }
   }

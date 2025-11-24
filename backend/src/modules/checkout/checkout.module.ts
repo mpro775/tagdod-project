@@ -28,6 +28,7 @@ import { AddressesModule } from '../addresses/addresses.module';
 import { SharedModule } from '../../shared/shared.module';
 import { SystemSettingsModule } from '../system-settings/system-settings.module';
 import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
+import { UploadModule } from '../upload/upload.module';
 
 /**
  * Module موحد للطلبات والدفع - نظام احترافي شامل
@@ -52,6 +53,7 @@ import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
     SystemSettingsModule,
     ExchangeRatesModule,
     SharedModule,
+    forwardRef(() => UploadModule),
   ],
   controllers: [
     OrderController,

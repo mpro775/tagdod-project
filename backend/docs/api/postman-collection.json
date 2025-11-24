@@ -7894,6 +7894,701 @@
       "description": "Endpoints for إعدادات النظام functionality"
     },
     {
+      "name": "رفع-الملفات",
+      "item": [
+        {
+          "name": "رفع ملف واحد",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/upload/file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload",
+                "file"
+              ]
+            },
+            "description": "رفع ملف واحد مع إمكانية تحديد المجلد والاسم المخصص"
+          }
+        },
+        {
+          "name": "حذف ملف",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/upload/file",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload",
+                "file"
+              ]
+            },
+            "description": "حذف ملف مرفوع من خلال مساره"
+          }
+        },
+        {
+          "name": "رفع ملفات متعددة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/upload/files",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload",
+                "files"
+              ]
+            },
+            "description": "رفع عدة ملفات في وقت واحد (حتى 10 ملفات) مع إمكانية تحديد المجلد"
+          }
+        },
+        {
+          "name": "معلومات الملف",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/upload/file/{filePath}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload",
+                "file",
+                "{filePath}"
+              ]
+            },
+            "description": "الحصول على معلومات مفصلة عن ملف مرفوع"
+          }
+        },
+        {
+          "name": "عرض ملف عام",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/upload/public/*",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload",
+                "public",
+                "*"
+              ]
+            },
+            "description": "عرض ملف مرفوع بشكل عام (يُستخدم للاختبار - في الإنتاج يُفضل استخدام CDN مباشرة)"
+          }
+        }
+      ],
+      "description": "Endpoints for رفع-الملفات functionality"
+    },
+    {
+      "name": "إدارة-الوسائط",
+      "item": [
+        {
+          "name": "رفع وسائط إلى المكتبة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media/upload",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media",
+                "upload"
+              ]
+            },
+            "description": "رفع ملف وسائط (صور، فيديوهات، مستندات) إلى مكتبة الوسائط مع إمكانية إضافة بيانات وصفية"
+          }
+        },
+        {
+          "name": "قائمة الوسائط",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media"
+              ]
+            },
+            "description": "استرداد قائمة بجميع الوسائط في المكتبة مع إمكانية التصفية والترقيم"
+          }
+        },
+        {
+          "name": "تفاصيل الوسائط",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media",
+                "{id}"
+              ]
+            },
+            "description": "استرداد تفاصيل وسائط محددة من المكتبة"
+          }
+        },
+        {
+          "name": "تحديث الوسائط",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media",
+                "{id}"
+              ]
+            },
+            "description": "تحديث البيانات الوصفية لملف وسائط في المكتبة"
+          }
+        },
+        {
+          "name": "حذف الوسائط",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media",
+                "{id}"
+              ]
+            },
+            "description": "حذف ملف وسائط من المكتبة (حذف مؤقت - يمكن الاستعادة)"
+          }
+        },
+        {
+          "name": "استعادة الوسائط",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media/{id}/restore",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media",
+                "{id}",
+                "restore"
+              ]
+            },
+            "description": "استعادة ملف وسائط محذوف مؤقتاً إلى المكتبة"
+          }
+        },
+        {
+          "name": "حذف الوسائط نهائياً",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media/{id}/permanent",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media",
+                "{id}",
+                "permanent"
+              ]
+            },
+            "description": "حذف ملف وسائط نهائياً من المكتبة والتخزين (متاح للمشرفين الفائقين فقط)"
+          }
+        },
+        {
+          "name": "GET /api/v1/admin/media/stats/summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media/stats/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media",
+                "stats",
+                "summary"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/admin/media/cleanup/deleted",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media/cleanup/deleted",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media",
+                "cleanup",
+                "deleted"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/admin/media/cleanup/duplicates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media/cleanup/duplicates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media",
+                "cleanup",
+                "duplicates"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/admin/media/cleanup/unused",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media/cleanup/unused",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media",
+                "cleanup",
+                "unused"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ],
+      "description": "Endpoints for إدارة-الوسائط functionality"
+    },
+    {
+      "name": "إحصائيات-الوسائط",
+      "item": [
+        {
+          "name": "الإحصائيات العامة للوسائط",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "overview"
+              ]
+            },
+            "description": "يعرض إحصائيات شاملة عن جميع الملفات والوسائط في النظام"
+          }
+        },
+        {
+          "name": "إحصائيات الوسائط حسب النوع",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/by-type",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "by-type"
+              ]
+            },
+            "description": "يعرض توزيع الملفات حسب أنواعها المختلفة"
+          }
+        },
+        {
+          "name": "إحصائيات الرفع حسب الفترة الزمنية",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/upload-timeline",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "upload-timeline"
+              ]
+            },
+            "description": "يعرض توزيع عمليات الرفع خلال فترة زمنية محددة"
+          }
+        },
+        {
+          "name": "قائمة أكبر الملفات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/largest-files",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "largest-files"
+              ]
+            },
+            "description": "يعرض الملفات الأكبر حجماً في النظام"
+          }
+        },
+        {
+          "name": "أحدث الملفات المرفوعة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/recent-uploads",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "recent-uploads"
+              ]
+            },
+            "description": "يعرض آخر الملفات التي تم رفعها"
+          }
+        },
+        {
+          "name": "إحصائيات التخزين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/storage",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "storage"
+              ]
+            },
+            "description": "يعرض معلومات عن مساحة التخزين المستخدمة والمتاحة"
+          }
+        },
+        {
+          "name": "إحصائيات الرفع حسب المستخدم",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/by-user",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "by-user"
+              ]
+            },
+            "description": "يعرض إحصائيات عمليات الرفع لكل مستخدم"
+          }
+        },
+        {
+          "name": "الملفات غير المستخدمة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/unused-files",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "unused-files"
+              ]
+            },
+            "description": "يعرض الملفات التي لم يتم استخدامها في أي مكان"
+          }
+        },
+        {
+          "name": "تقرير شامل عن الوسائط",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/media-analytics/full-report",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "media-analytics",
+                "full-report"
+              ]
+            },
+            "description": "يولد تقرير شامل يحتوي على جميع الإحصائيات"
+          }
+        }
+      ],
+      "description": "Endpoints for إحصائيات-الوسائط functionality"
+    },
+    {
       "name": "دعم-العملاء",
       "item": [
         {
@@ -9047,701 +9742,6 @@
         }
       ],
       "description": "Endpoints for إدارة-المستخدمين functionality"
-    },
-    {
-      "name": "رفع-الملفات",
-      "item": [
-        {
-          "name": "رفع ملف واحد",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/upload/file",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "upload",
-                "file"
-              ]
-            },
-            "description": "رفع ملف واحد مع إمكانية تحديد المجلد والاسم المخصص"
-          }
-        },
-        {
-          "name": "حذف ملف",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/upload/file",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "upload",
-                "file"
-              ]
-            },
-            "description": "حذف ملف مرفوع من خلال مساره"
-          }
-        },
-        {
-          "name": "رفع ملفات متعددة",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/upload/files",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "upload",
-                "files"
-              ]
-            },
-            "description": "رفع عدة ملفات في وقت واحد (حتى 10 ملفات) مع إمكانية تحديد المجلد"
-          }
-        },
-        {
-          "name": "معلومات الملف",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/upload/file/{filePath}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "upload",
-                "file",
-                "{filePath}"
-              ]
-            },
-            "description": "الحصول على معلومات مفصلة عن ملف مرفوع"
-          }
-        },
-        {
-          "name": "عرض ملف عام",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/upload/public/*",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "upload",
-                "public",
-                "*"
-              ]
-            },
-            "description": "عرض ملف مرفوع بشكل عام (يُستخدم للاختبار - في الإنتاج يُفضل استخدام CDN مباشرة)"
-          }
-        }
-      ],
-      "description": "Endpoints for رفع-الملفات functionality"
-    },
-    {
-      "name": "إدارة-الوسائط",
-      "item": [
-        {
-          "name": "رفع وسائط إلى المكتبة",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media/upload",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media",
-                "upload"
-              ]
-            },
-            "description": "رفع ملف وسائط (صور، فيديوهات، مستندات) إلى مكتبة الوسائط مع إمكانية إضافة بيانات وصفية"
-          }
-        },
-        {
-          "name": "قائمة الوسائط",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media"
-              ]
-            },
-            "description": "استرداد قائمة بجميع الوسائط في المكتبة مع إمكانية التصفية والترقيم"
-          }
-        },
-        {
-          "name": "تفاصيل الوسائط",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media",
-                "{id}"
-              ]
-            },
-            "description": "استرداد تفاصيل وسائط محددة من المكتبة"
-          }
-        },
-        {
-          "name": "تحديث الوسائط",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media",
-                "{id}"
-              ]
-            },
-            "description": "تحديث البيانات الوصفية لملف وسائط في المكتبة"
-          }
-        },
-        {
-          "name": "حذف الوسائط",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media",
-                "{id}"
-              ]
-            },
-            "description": "حذف ملف وسائط من المكتبة (حذف مؤقت - يمكن الاستعادة)"
-          }
-        },
-        {
-          "name": "استعادة الوسائط",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media/{id}/restore",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media",
-                "{id}",
-                "restore"
-              ]
-            },
-            "description": "استعادة ملف وسائط محذوف مؤقتاً إلى المكتبة"
-          }
-        },
-        {
-          "name": "حذف الوسائط نهائياً",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media/{id}/permanent",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media",
-                "{id}",
-                "permanent"
-              ]
-            },
-            "description": "حذف ملف وسائط نهائياً من المكتبة والتخزين (متاح للمشرفين الفائقين فقط)"
-          }
-        },
-        {
-          "name": "GET /api/v1/admin/media/stats/summary",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media/stats/summary",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media",
-                "stats",
-                "summary"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "POST /api/v1/admin/media/cleanup/deleted",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media/cleanup/deleted",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media",
-                "cleanup",
-                "deleted"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "POST /api/v1/admin/media/cleanup/duplicates",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media/cleanup/duplicates",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media",
-                "cleanup",
-                "duplicates"
-              ]
-            },
-            "description": ""
-          }
-        },
-        {
-          "name": "POST /api/v1/admin/media/cleanup/unused",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media/cleanup/unused",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media",
-                "cleanup",
-                "unused"
-              ]
-            },
-            "description": ""
-          }
-        }
-      ],
-      "description": "Endpoints for إدارة-الوسائط functionality"
-    },
-    {
-      "name": "إحصائيات-الوسائط",
-      "item": [
-        {
-          "name": "الإحصائيات العامة للوسائط",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media-analytics/overview",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media-analytics",
-                "overview"
-              ]
-            },
-            "description": "يعرض إحصائيات شاملة عن جميع الملفات والوسائط في النظام"
-          }
-        },
-        {
-          "name": "إحصائيات الوسائط حسب النوع",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media-analytics/by-type",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media-analytics",
-                "by-type"
-              ]
-            },
-            "description": "يعرض توزيع الملفات حسب أنواعها المختلفة"
-          }
-        },
-        {
-          "name": "إحصائيات الرفع حسب الفترة الزمنية",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media-analytics/upload-timeline",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media-analytics",
-                "upload-timeline"
-              ]
-            },
-            "description": "يعرض توزيع عمليات الرفع خلال فترة زمنية محددة"
-          }
-        },
-        {
-          "name": "قائمة أكبر الملفات",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media-analytics/largest-files",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media-analytics",
-                "largest-files"
-              ]
-            },
-            "description": "يعرض الملفات الأكبر حجماً في النظام"
-          }
-        },
-        {
-          "name": "أحدث الملفات المرفوعة",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media-analytics/recent-uploads",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media-analytics",
-                "recent-uploads"
-              ]
-            },
-            "description": "يعرض آخر الملفات التي تم رفعها"
-          }
-        },
-        {
-          "name": "إحصائيات التخزين",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media-analytics/storage",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media-analytics",
-                "storage"
-              ]
-            },
-            "description": "يعرض معلومات عن مساحة التخزين المستخدمة والمتاحة"
-          }
-        },
-        {
-          "name": "إحصائيات الرفع حسب المستخدم",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media-analytics/by-user",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media-analytics",
-                "by-user"
-              ]
-            },
-            "description": "يعرض إحصائيات عمليات الرفع لكل مستخدم"
-          }
-        },
-        {
-          "name": "الملفات غير المستخدمة",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media-analytics/unused-files",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media-analytics",
-                "unused-files"
-              ]
-            },
-            "description": "يعرض الملفات التي لم يتم استخدامها في أي مكان"
-          }
-        },
-        {
-          "name": "تقرير شامل عن الوسائط",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/media-analytics/full-report",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "media-analytics",
-                "full-report"
-              ]
-            },
-            "description": "يولد تقرير شامل يحتوي على جميع الإحصائيات"
-          }
-        }
-      ],
-      "description": "Endpoints for إحصائيات-الوسائط functionality"
     },
     {
       "name": "التحليلات",
