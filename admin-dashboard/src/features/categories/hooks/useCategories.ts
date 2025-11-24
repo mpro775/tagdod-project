@@ -20,6 +20,7 @@ export const useCategories = (params: ListCategoriesParams = {}) => {
 };
 
 // Get category tree (hierarchical structure)
+// Note: Filters are applied on frontend since backend doesn't support them
 export const useCategoryTree = () => {
   return useQuery({
     queryKey: [CATEGORIES_KEY, 'tree'],

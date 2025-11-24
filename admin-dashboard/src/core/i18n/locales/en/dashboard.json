@@ -74,9 +74,24 @@
       "completed": "Completed",
       "pending": "Pending",
       "processing": "Processing",
+      "confirmed": "Confirmed",
       "cancelled": "Cancelled",
       "unknown": "Unknown"
-    }
+    },
+    "paymentStatus": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "failed": "Failed"
+    },
+    "paymentMethod": {
+      "cod": "Cash on Delivery",
+      "bankTransfer": "Bank Transfer",
+      "wallet": "Wallet",
+      "card": "Card"
+    },
+    "viewDetails": "View Details",
+    "invoice": "Invoice: {{number}}",
+    "andMore": "and {{count}} more item(s)"
   },
   "quickActions": {
     "title": "Quick Actions",

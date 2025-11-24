@@ -337,6 +337,26 @@ export const ordersApi = {
   },
 
   /**
+   * Manually send invoice to sales email
+   */
+  sendInvoice: async (id: string): Promise<{
+    success: boolean;
+    message: string;
+    invoiceNumber?: string;
+    emailSent?: boolean;
+    error?: string;
+  }> => {
+    const response = await apiClient.post<ApiResponse<{
+      success: boolean;
+      message: string;
+      invoiceNumber?: string;
+      emailSent?: boolean;
+      error?: string;
+    }>>(`/admin/orders/${id}/send-invoice`);
+    return response.data.data;
+  },
+
+  /**
    * Get order ratings
    */
   getRatings: async (params: ListRatingsParams): Promise<PaginatedResponse<OrderRating>> => {

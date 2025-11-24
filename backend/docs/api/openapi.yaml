@@ -6909,6 +6909,29 @@ paths:
         - إدارة-الطلبات
       security:
         - bearer: []
+  /api/v1/admin/orders/{id}/send-invoice:
+    post:
+      operationId: sendInvoiceManually
+      summary: توليد وإرسال الفاتورة يدوياً
+      description: توليد وإرسال الفاتورة إلى إيميل المبيعات يدوياً (في حال لم يصل الإيميل تلقائياً)
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف الطلب
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم إرسال الفاتورة بنجاح
+        '404':
+          description: الطلب غير موجود
+        '500':
+          description: فشل في إرسال الفاتورة
+      tags:
+        - إدارة-الطلبات
+      security:
+        - bearer: []
   /api/v1/admin/orders/bulk/update-status:
     post:
       operationId: bulkUpdateStatus

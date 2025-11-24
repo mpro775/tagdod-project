@@ -82,13 +82,24 @@ export const bannersApi = {
     totalViews: number;
     totalClicks: number;
     totalConversions: number;
+    averageCTR?: number;
     averageClickThroughRate: number;
     averageConversionRate: number;
+    topPerforming?: Banner[];
     topPerformingBanners: Banner[];
   }> => {
     const response = await apiClient.get<any>(`${API_BASE}/analytics`);
-    // Handle nested data structure from backend
-    const analyticsData = response.data?.data?.data || response.data?.data || response.data;
+    // Handle nested data structure from backend: response.data.data.data or response.data.data or response.data
+    // The API returns: { success: true, data: { success: true, data: { ... } } }
+    let analyticsData = response.data;
+    
+    // Unwrap nested data structure
+    if (analyticsData?.data?.data) {
+      analyticsData = analyticsData.data.data;
+    } else if (analyticsData?.data) {
+      analyticsData = analyticsData.data;
+    }
+    
     return analyticsData;
   },
 };

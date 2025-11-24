@@ -30,6 +30,7 @@ export const categoriesApi = {
 
   /**
    * Get category tree (hierarchical structure)
+   * Note: Backend doesn't support filters, so we fetch all and filter on frontend
    */
   getTree: async (): Promise<CategoryTreeNode[]> => {
     const response = await apiClient.get<ApiResponse<CategoryTreeNode[]>>('/admin/categories/tree');

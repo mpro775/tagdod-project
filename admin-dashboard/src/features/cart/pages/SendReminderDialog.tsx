@@ -9,7 +9,6 @@ import {
   Typography,
   Box,
   Alert,
-  CircularProgress,
   FormControl,
   InputLabel,
   Select,
@@ -45,23 +44,26 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
   const theme = useTheme();
   const { isMobile } = useBreakpoint();
 
-  const reminderTypes = React.useMemo(() => [
-    {
-      value: 'first',
-      label: t('dialogs.sendReminder.types.first'),
-      description: t('dialogs.sendReminder.types.firstDesc'),
-    },
-    {
-      value: 'second',
-      label: t('dialogs.sendReminder.types.second'),
-      description: t('dialogs.sendReminder.types.secondDesc'),
-    },
-    {
-      value: 'final',
-      label: t('dialogs.sendReminder.types.final'),
-      description: t('dialogs.sendReminder.types.finalDesc'),
-    },
-  ], [t]);
+  const reminderTypes = React.useMemo(
+    () => [
+      {
+        value: 'first',
+        label: t('dialogs.sendReminder.types.first'),
+        description: t('dialogs.sendReminder.types.firstDesc'),
+      },
+      {
+        value: 'second',
+        label: t('dialogs.sendReminder.types.second'),
+        description: t('dialogs.sendReminder.types.secondDesc'),
+      },
+      {
+        value: 'final',
+        label: t('dialogs.sendReminder.types.final'),
+        description: t('dialogs.sendReminder.types.finalDesc'),
+      },
+    ],
+    [t]
+  );
   const [reminderType, setReminderType] = useState<ReminderType>('first');
   const [customMessage, setCustomMessage] = useState('');
   const [errors, setErrors] = useState<{ reminderType?: string; customMessage?: string }>({});
@@ -166,9 +168,9 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
             <Email sx={{ color: 'primary.main', fontSize: { xs: '1.125rem', sm: '1.25rem' } }} />
-            <Typography 
+            <Typography
               variant="h6"
-              sx={{ 
+              sx={{
                 fontSize: { xs: '1.125rem', sm: '1.25rem' },
                 fontWeight: 'bold',
               }}
@@ -176,10 +178,10 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
               {t('dialogs.sendReminder.title')}
             </Typography>
           </Box>
-          <IconButton 
-            onClick={handleClose} 
+          <IconButton
+            onClick={handleClose}
             size="small"
-            sx={{ 
+            sx={{
               color: 'text.secondary',
               '&:hover': {
                 bgcolor: 'action.hover',
@@ -191,19 +193,19 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         </Box>
       </DialogTitle>
 
-      <DialogContent 
+      <DialogContent
         dividers
-        sx={{ 
+        sx={{
           borderColor: 'divider',
           p: { xs: 2, sm: 3 },
         }}
       >
         {/* Cart Information */}
         <Box mb={3}>
-          <Typography 
-            variant="h6" 
+          <Typography
+            variant="h6"
             gutterBottom
-            sx={{ 
+            sx={{
               fontSize: { xs: '1rem', sm: '1.25rem' },
               fontWeight: 'bold',
               color: 'text.primary',
@@ -212,10 +214,10 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
           >
             {t('dialogs.sendReminder.cartInfo')}
           </Typography>
-          <Box 
-            display="flex" 
-            flexWrap="wrap" 
-            gap={1} 
+          <Box
+            display="flex"
+            flexWrap="wrap"
+            gap={1}
             mb={2}
             sx={{
               bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
@@ -239,16 +241,18 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
               variant="outlined"
               sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
             />
-            <Chip 
+            <Chip
               label={t('dialogs.sendReminder.cartInfoAge', { hours: getCartAge() })}
-              size="small" 
-              color="warning" 
+              size="small"
+              color="warning"
               variant="outlined"
               sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
             />
             {cart.abandonmentEmailsSent > 0 && (
               <Chip
-                label={t('dialogs.sendReminder.cartInfoEmailsSent', { count: cart.abandonmentEmailsSent })}
+                label={t('dialogs.sendReminder.cartInfoEmailsSent', {
+                  count: cart.abandonmentEmailsSent,
+                })}
                 size="small"
                 color="info"
                 variant="outlined"
@@ -262,10 +266,10 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
 
         {/* Customer Information */}
         <Box mb={3}>
-          <Typography 
-            variant="h6" 
+          <Typography
+            variant="h6"
             gutterBottom
-            sx={{ 
+            sx={{
               fontSize: { xs: '1rem', sm: '1.25rem' },
               fontWeight: 'bold',
               color: 'text.primary',
@@ -283,17 +287,17 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
               borderColor: 'divider',
             }}
           >
-            <Typography 
-              variant="body2" 
+            <Typography
+              variant="body2"
               color="text.secondary"
               sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
             >
               {cart.user?.email || cart.user?.phone || t('dialogs.sendReminder.noContactInfo')}
             </Typography>
             {cart.user?.name && (
-              <Typography 
+              <Typography
                 variant="body2"
-                sx={{ 
+                sx={{
                   fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   color: 'text.primary',
                   fontWeight: 'medium',
@@ -309,10 +313,10 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
 
         {/* Reminder Type Selection */}
         <Box mb={3}>
-          <Typography 
-            variant="h6" 
+          <Typography
+            variant="h6"
             gutterBottom
-            sx={{ 
+            sx={{
               fontSize: { xs: '1rem', sm: '1.25rem' },
               fontWeight: 'bold',
               color: 'text.primary',
@@ -336,14 +340,14 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
               {reminderTypes.map((type) => (
                 <MenuItem key={type.value} value={type.value}>
                   <Box>
-                    <Typography 
+                    <Typography
                       variant="body2"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                     >
                       {type.label}
                     </Typography>
-                    <Typography 
-                      variant="caption" 
+                    <Typography
+                      variant="caption"
                       color="text.secondary"
                       sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                     >
@@ -354,19 +358,15 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
               ))}
             </Select>
             {errors.reminderType && (
-              <Typography 
-                variant="caption" 
-                color="error"
-                sx={{ mt: 0.5, ml: 1.75 }}
-              >
+              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
                 {errors.reminderType}
               </Typography>
             )}
           </FormControl>
 
           <Box mt={1.5}>
-            <Typography 
-              variant="caption" 
+            <Typography
+              variant="caption"
               color="text.secondary"
               sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
             >
@@ -379,10 +379,10 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
 
         {/* Custom Message */}
         <Box mb={3}>
-          <Typography 
-            variant="h6" 
+          <Typography
+            variant="h6"
             gutterBottom
-            sx={{ 
+            sx={{
               fontSize: { xs: '1rem', sm: '1.25rem' },
               fontWeight: 'bold',
               color: 'text.primary',
@@ -398,7 +398,10 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
             error={!!errors.customMessage}
-            helperText={errors.customMessage || t('dialogs.sendReminder.charactersCount', { count: customMessage.length })}
+            helperText={
+              errors.customMessage ||
+              t('dialogs.sendReminder.charactersCount', { count: customMessage.length })
+            }
             placeholder={t('dialogs.sendReminder.customMessagePlaceholder')}
             inputProps={{ maxLength: 500 }}
             size={isMobile ? 'small' : 'medium'}
@@ -415,10 +418,10 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         {/* Reminder Preview */}
         {reminderType && (
           <Box mb={3}>
-            <Typography 
-              variant="h6" 
+            <Typography
+              variant="h6"
               gutterBottom
-              sx={{ 
+              sx={{
                 fontSize: { xs: '1rem', sm: '1.25rem' },
                 fontWeight: 'bold',
                 color: 'text.primary',
@@ -436,44 +439,45 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
                 borderColor: 'divider',
               }}
             >
-              <Typography 
-                variant="body2" 
-                color="text.secondary" 
+              <Typography
+                variant="body2"
+                color="text.secondary"
                 gutterBottom
                 sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 1 }}
               >
-                <strong>{t('dialogs.sendReminder.subjectLabel')}:</strong> {t('dialogs.sendReminder.subject')}
+                <strong>{t('dialogs.sendReminder.subjectLabel')}:</strong>{' '}
+                {t('dialogs.sendReminder.subject')}
               </Typography>
-              <Typography 
+              <Typography
                 variant="body2"
-                sx={{ 
+                sx={{
                   fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   color: 'text.primary',
                   mb: 1,
                 }}
               >
-                {t('dialogs.sendReminder.greeting', { 
-                  name: cart.user?.name || t('dialogs.sendReminder.guest')
+                {t('dialogs.sendReminder.greeting', {
+                  name: cart.user?.name || t('dialogs.sendReminder.guest'),
                 })}
               </Typography>
-              <Typography 
-                variant="body2" 
-                sx={{ 
+              <Typography
+                variant="body2"
+                sx={{
                   mt: 1,
                   fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   color: 'text.primary',
                 }}
               >
-                {t('dialogs.sendReminder.noticeMessage', { 
+                {t('dialogs.sendReminder.noticeMessage', {
                   itemsCount: cart.items?.length || 0,
                   total: formatCurrency(cart.pricingSummary?.total || 0, cart.currency),
                 })}
               </Typography>
               {customMessage && (
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    mt: 1.5, 
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mt: 1.5,
                     fontStyle: 'italic',
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     color: 'text.secondary',
@@ -482,9 +486,9 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
                   {customMessage}
                 </Typography>
               )}
-              <Typography 
-                variant="body2" 
-                sx={{ 
+              <Typography
+                variant="body2"
+                sx={{
                   mt: 1.5,
                   fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   color: 'text.primary',
@@ -503,10 +507,35 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
             {sendReminderMutation.error.message}
           </Alert>
         )}
+
+        {/* Coming Soon Notice */}
+        <Alert
+          severity="info"
+          sx={{
+            mb: 2,
+            bgcolor:
+              theme.palette.mode === 'dark'
+                ? 'rgba(33, 150, 243, 0.1)'
+                : 'rgba(33, 150, 243, 0.08)',
+            border: `1px solid ${
+              theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(33, 150, 243, 0.2)'
+            }`,
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              color: 'text.primary',
+            }}
+          >
+            {t('dialogs.sendReminder.comingSoon')}
+          </Typography>
+        </Alert>
       </DialogContent>
 
       <DialogActions
-        sx={{ 
+        sx={{
           p: { xs: 1.5, sm: 2, md: 3 },
           borderTop: 1,
           borderColor: 'divider',
@@ -514,12 +543,12 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
           gap: { xs: 1, sm: 0 },
         }}
       >
-        <Button 
-          onClick={handleClose} 
+        <Button
+          onClick={handleClose}
           disabled={sendReminderMutation.isPending}
           fullWidth={isMobile}
           size={isMobile ? 'medium' : 'large'}
-          sx={{ 
+          sx={{
             order: { xs: 2, sm: 1 },
             minWidth: { xs: '100%', sm: 'auto' },
           }}
@@ -529,18 +558,18 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={sendReminderMutation.isPending}
-          startIcon={sendReminderMutation.isPending ? <CircularProgress size={20} /> : <Email />}
+          disabled={true}
+          startIcon={<Email />}
           fullWidth={isMobile}
           size={isMobile ? 'medium' : 'large'}
-          sx={{ 
+          sx={{
             order: { xs: 1, sm: 2 },
             minWidth: { xs: '100%', sm: 'auto' },
+            opacity: 0.6,
+            cursor: 'not-allowed',
           }}
         >
-          {sendReminderMutation.isPending
-            ? t('dialogs.sendReminder.sending')
-            : t('dialogs.sendReminder.send')}
+          {t('dialogs.sendReminder.send')}
         </Button>
       </DialogActions>
     </Dialog>

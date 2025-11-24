@@ -25,7 +25,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import toast from 'react-hot-toast';
 import { NotificationBell } from '@/shared/components/NotificationBell';
 
 interface HeaderProps {
@@ -35,7 +34,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { user, logout, refreshProfile } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { mode, toggleMode } = useThemeStore();
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -62,13 +61,8 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     handleMenuClose();
   };
 
-  const handleRefreshProfile = async () => {
-    try {
-      await refreshProfile();
-      toast.success(t('common.profile_updated', 'تم تحديث البيانات بنجاح'));
-    } catch (error) {
-      toast.error(t('common.profile_update_failed', 'فشل في تحديث البيانات'));
-    }
+  const handleRefreshPage = () => {
+    window.location.reload();
   };
 
   return (
@@ -107,19 +101,19 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </IconButton>
 
           {/* Language Toggle */}
-          <IconButton 
-            color="inherit" 
+          <IconButton
+            color="inherit"
             onClick={handleToggleLanguage}
             title={i18n.language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
           >
             <Language />
           </IconButton>
 
-          {/* Refresh Profile */}
+          {/* Refresh Page */}
           <IconButton
             color="inherit"
-            onClick={handleRefreshProfile}
-            title={t('common.refresh_profile', 'تحديث البيانات')}
+            onClick={handleRefreshPage}
+            title={t('common.refresh_page', 'تحديث الصفحة')}
           >
             <Refresh />
           </IconButton>

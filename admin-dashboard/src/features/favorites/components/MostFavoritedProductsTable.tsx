@@ -20,17 +20,20 @@ interface MostFavoritedProductsTableProps {
 const getProductName = (product: MostFavoritedProduct['product']) =>
   product?.nameAr || product?.name || product?.nameEn || product?._id;
 
-export function MostFavoritedProductsTable({ limit = 10 }: MostFavoritedProductsTableProps) {
+export function MostFavoritedProductsTable({ limit }: MostFavoritedProductsTableProps) {
   const { data: stats } = useFavoritesStats();
-  const { data, isLoading } = useMostFavoritedProducts(limit);
+  // Use a large limit to fetch all products for client-side pagination
+  const { data, isLoading } = useMostFavoritedProducts(limit ?? 1000);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
   });
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
-  const totalFavorites = stats?.total ?? data?.reduce((acc, item) => acc + item.count, 0) ?? 0;
+  const products = data?.data ?? [];
+  const totalFavorites = stats?.total ?? data?.meta?.total ?? 0;
 
+  // All hooks must be called before any conditional returns
   const columns: GridColDef[] = useMemo(
     () => [
       {
@@ -57,7 +60,10 @@ export function MostFavoritedProductsTable({ limit = 10 }: MostFavoritedProducts
         renderCell: (params) => {
           const item = params.row as MostFavoritedProduct;
           const name = getProductName(item.product) ?? item.productId;
-          const imageUrl = item.product?.mainImageId?.url;
+          const mainImageId = item.product?.mainImageId;
+          const imageUrl = typeof mainImageId === 'object' && mainImageId !== null 
+            ? mainImageId.url 
+            : undefined;
           return (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1 }}>
               <Avatar
@@ -113,7 +119,8 @@ export function MostFavoritedProductsTable({ limit = 10 }: MostFavoritedProducts
     [paginationModel, totalFavorites]
   );
 
-  if (!data || data.length === 0) {
+  // Show empty state only if data is loaded and empty
+  if (!isLoading && (!data || !data.data || products.length === 0)) {
     return (
       <Alert severity="info" sx={{ mt: 2 }}>
         <Typography variant="h6" gutterBottom>
@@ -130,10 +137,12 @@ export function MostFavoritedProductsTable({ limit = 10 }: MostFavoritedProducts
     <DataTable
       title="المنتجات الأكثر إضافة للمفضلة"
       columns={columns}
-      rows={data}
+      rows={products}
       loading={isLoading}
       paginationModel={paginationModel}
       onPaginationModelChange={setPaginationModel}
+      rowCount={products.length}
+      paginationMode="client"
       sortModel={sortModel}
       onSortModelChange={setSortModel}
       getRowId={(row) => (row as MostFavoritedProduct).productId}

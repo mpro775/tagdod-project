@@ -30,7 +30,13 @@ export interface CartItem {
   };
   pricing?: {
     appliedPromotionId?: string;
-    currencies: Record<
+    // New API structure
+    currency?: string;
+    basePrice?: number;
+    finalPrice?: number;
+    discount?: number;
+    // Old API structure (currencies map)
+    currencies?: Record<
       string,
       {
         base: number;

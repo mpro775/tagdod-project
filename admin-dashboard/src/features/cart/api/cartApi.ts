@@ -182,9 +182,9 @@ export const formatCurrency = (amount: number, currency: string = 'YER'): string
 export const formatDate = (date: Date | string): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
 
-  return new Intl.DateTimeFormat('ar-YE', {
+  return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
-    month: 'long',
+    month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
@@ -200,13 +200,13 @@ export const formatRelativeTime = (date: Date | string): string => {
     return 'منذ لحظات';
   } else if (diffInSeconds < 3600) {
     const minutes = Math.floor(diffInSeconds / 60);
-    return `منذ ${minutes} دقيقة`;
+    return `منذ ${minutes.toLocaleString('en-US')} دقيقة`;
   } else if (diffInSeconds < 86400) {
     const hours = Math.floor(diffInSeconds / 3600);
-    return `منذ ${hours} ساعة`;
+    return `منذ ${hours.toLocaleString('en-US')} ساعة`;
   } else if (diffInSeconds < 2592000) {
     const days = Math.floor(diffInSeconds / 86400);
-    return `منذ ${days} يوم`;
+    return `منذ ${days.toLocaleString('en-US')} يوم`;
   } else {
     return formatDate(dateObj);
   }
@@ -250,7 +250,9 @@ export const calculateCartTotal = (cart: Cart, preferredCurrency = 'USD'): numbe
 };
 
 export const getCartItemsCount = (cart: Cart): number => {
-  return cart.items?.length || 0;
+  if (!cart.items || cart.items.length === 0) return 0;
+  // Calculate total quantity (sum of all item quantities)
+  return cart.items.reduce((sum, item) => sum + (item.qty ?? 0), 0);
 };
 
 export const isCartAbandoned = (cart: Cart): boolean => {

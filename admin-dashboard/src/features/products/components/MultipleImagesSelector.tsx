@@ -14,7 +14,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import { Add, Delete, Edit } from '@mui/icons-material';
+import { Add, Delete, Edit, DragIndicator } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { ImageField, MediaCategory, type Media } from '@/features/media';
 
@@ -44,6 +44,7 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
+  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
 
   const handleAddImage = () => {
     setEditingIndex(null);
@@ -58,6 +59,34 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
   const handleDeleteImage = (index: number) => {
     const newImages = value.filter((_, i) => i !== index);
     onChange(newImages);
+  };
+
+  // Drag and Drop handlers
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const newImages = [...value];
+    const draggedImage = newImages[draggedIndex];
+    newImages.splice(draggedIndex, 1);
+    newImages.splice(dropIndex, 0, draggedImage);
+    onChange(newImages);
+    setDraggedIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   const createImageItem = (media: Media, index: number) => ({
@@ -116,10 +145,10 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
 
   return (
     <Box>
-      <Box 
-        display="flex" 
-        alignItems="center" 
-        justifyContent="space-between" 
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
         mb={2}
         flexDirection={isMobile ? 'column' : 'row'}
         gap={isMobile ? 1 : 0}
@@ -149,7 +178,8 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
             borderRadius: 2,
             p: 4,
             textAlign: 'center',
-            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : '#fafafa',
+            backgroundColor:
+              theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : '#fafafa',
           }}
         >
           <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -167,8 +197,45 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
       ) : (
         <Grid container spacing={2}>
           {value.map((image, index) => (
-            <Grid size={getGridSize()} key={index}>
-              <Card sx={{ position: 'relative' }}>
+            <Grid size={getGridSize()} key={`${image._id || image.url}-${index}`}>
+              <Card
+                sx={{
+                  position: 'relative',
+                  cursor: 'move',
+                  opacity: draggedIndex === index ? 0.5 : 1,
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    boxShadow: 4,
+                    transform: 'translateY(-2px)',
+                  },
+                }}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+              >
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    bgcolor: 'background.paper',
+                    borderRadius: 1,
+                    p: 0.5,
+                  }}
+                >
+                  <DragIndicator sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <Typography
+                    variant="caption"
+                    sx={{ fontWeight: 'bold', color: 'text.secondary' }}
+                  >
+                    {index + 1}
+                  </Typography>
+                </Box>
                 <CardMedia
                   component="img"
                   height={isMobile ? '200' : '200'}
@@ -188,10 +255,13 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
                   <IconButton
                     size="small"
                     color="primary"
-                    onClick={() => handleEditImage(index)}
-                    sx={{ 
-                      backgroundColor: 'background.paper', 
-                      '&:hover': { backgroundColor: 'action.hover' } 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditImage(index);
+                    }}
+                    sx={{
+                      backgroundColor: 'background.paper',
+                      '&:hover': { backgroundColor: 'action.hover' },
                     }}
                   >
                     <Edit fontSize="small" />
@@ -199,10 +269,13 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
                   <IconButton
                     size="small"
                     color="error"
-                    onClick={() => handleDeleteImage(index)}
-                    sx={{ 
-                      backgroundColor: 'background.paper', 
-                      '&:hover': { backgroundColor: 'action.hover' } 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteImage(index);
+                    }}
+                    sx={{
+                      backgroundColor: 'background.paper',
+                      '&:hover': { backgroundColor: 'action.hover' },
                     }}
                   >
                     <Delete fontSize="small" />
@@ -232,36 +305,47 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
         </Box>
       )}
 
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
-        {t('products:form.imagesCount', '{{current}} من {{max}} صورة', { 
-          current: value.length, 
-          max: maxImages
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mt: 1, display: 'block', textAlign: 'center' }}
+      >
+        {t('products:form.imagesCount', '{{current}} من {{max}} صورة', {
+          current: value.length,
+          max: maxImages,
         })}
       </Typography>
 
       {/* Image Selection Dialog */}
-      <Dialog 
-        open={dialogOpen} 
-        onClose={() => setDialogOpen(false)} 
-        maxWidth="md" 
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="md"
         fullWidth
         fullScreen={isMobile}
       >
         <DialogTitle>
-          {editingIndex !== null ? t('products:form.editImage', 'تعديل الصورة') : t('media:empty.selectImage', 'اختيار صورة')}
+          {editingIndex !== null
+            ? t('products:form.editImage', 'تعديل الصورة')
+            : t('media:empty.selectImage', 'اختيار صورة')}
         </DialogTitle>
         <DialogContent>
           <ImageField
-            label={editingIndex !== null ? t('products:form.selectNewImage', 'اختر صورة جديدة') : t('media:empty.selectImage', 'اختيار صورة')}
+            label={
+              editingIndex !== null
+                ? t('products:form.selectNewImage', 'اختر صورة جديدة')
+                : t('media:empty.selectImage', 'اختيار صورة')
+            }
             value={
-              editingIndex !== null && value[editingIndex]
-                ? value[editingIndex].url
-                : undefined
+              editingIndex !== null && value[editingIndex] ? value[editingIndex].url : undefined
             }
             onChange={(media) => handleImageSelect(media)}
             onMultiChange={(media) => handleImageSelect(media)}
             category={MediaCategory.PRODUCT}
-            helperText={t('media:uploader.selectFile', 'يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة')}
+            helperText={t(
+              'media:uploader.selectFile',
+              'يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة'
+            )}
             multiple={editingIndex === null}
             maxSelections={editingIndex !== null ? 1 : Math.max(1, maxImages - value.length)}
           />

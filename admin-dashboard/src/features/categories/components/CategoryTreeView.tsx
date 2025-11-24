@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -31,7 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useCategoryTree } from '../hooks/useCategories';
 import { CategoryImage } from './CategoryImage';
-import type { Category, CategoryTreeNode } from '../types/category.types';
+import type { Category, CategoryTreeNode, ListCategoriesParams } from '../types/category.types';
 
 interface CategoryTreeViewProps {
   // eslint-disable-next-line no-unused-vars
@@ -41,6 +41,7 @@ interface CategoryTreeViewProps {
   // eslint-disable-next-line no-unused-vars
   onAdd?: (parentId?: string) => void;
   showStats?: boolean;
+  filters?: ListCategoriesParams;
 }
 
 interface TreeNodeProps {
@@ -232,24 +233,112 @@ export const CategoryTreeView: React.FC<CategoryTreeViewProps> = ({
   onEdit,
   onDelete,
   onAdd,
-  showStats = true
+  showStats = true,
+  filters = {}
 }) => {
   const { t } = useTranslation('categories');
   const { data: treeData, isLoading, error, refetch } = useCategoryTree();
 
   // Handle different response formats safely
-  let tree: any[] = [];
+  let allTree: any[] = [];
   if (Array.isArray(treeData)) {
-    tree = treeData;
+    allTree = treeData;
   } else if (treeData && typeof treeData === 'object') {
     // Handle nested response format
     const data = treeData as any;
-    tree = data.data || data.tree || [];
+    allTree = data.data || data.tree || [];
     // Ensure it's an array
-    if (!Array.isArray(tree)) {
-      tree = [];
+    if (!Array.isArray(allTree)) {
+      allTree = [];
     }
   }
+
+  // Apply filters to tree structure
+  const tree = useMemo(() => {
+    // If no filters, return all tree
+    const hasFilters = 
+      filters.search || 
+      filters.isActive !== undefined || 
+      filters.isFeatured !== undefined || 
+      filters.parentId !== undefined ||
+      filters.includeDeleted === false;
+    
+    if (!hasFilters || !allTree || allTree.length === 0) {
+      return allTree;
+    }
+
+    const applyFilters = (nodes: CategoryTreeNode[]): CategoryTreeNode[] => {
+      return nodes
+        .map(node => {
+          // Check if node matches filters
+          let matches = true;
+
+          // Search filter
+          if (filters.search) {
+            const searchLower = filters.search.toLowerCase();
+            const matchesSearch = 
+              node.name?.toLowerCase().includes(searchLower) ||
+              node.nameEn?.toLowerCase().includes(searchLower) ||
+              node.description?.toLowerCase().includes(searchLower);
+            if (!matchesSearch) {
+              matches = false;
+            }
+          }
+
+          // Active filter
+          if (filters.isActive !== undefined && node.isActive !== filters.isActive) {
+            matches = false;
+          }
+
+          // Featured filter
+          if (filters.isFeatured !== undefined && node.isFeatured !== filters.isFeatured) {
+            matches = false;
+          }
+
+          // Parent filter - only filter root level nodes
+          if (filters.parentId !== undefined) {
+            if (filters.parentId === null) {
+              // Show only root categories (parentId is null)
+              if (node.parentId !== null) {
+                matches = false;
+              }
+            } else {
+              // Show only categories with specific parent
+              if (node.parentId !== filters.parentId) {
+                matches = false;
+              }
+            }
+          }
+
+          // Include deleted filter
+          if (filters.includeDeleted === false && node.deletedAt) {
+            matches = false;
+          }
+
+          // Recursively filter children
+          const filteredChildren = node.children ? applyFilters(node.children) : [];
+
+          // If node matches or has matching children, include it
+          if (matches) {
+            return {
+              ...node,
+              children: filteredChildren
+            };
+          } else if (filteredChildren.length > 0) {
+            // Node doesn't match but has matching children, include it with filtered children
+            return {
+              ...node,
+              children: filteredChildren
+            };
+          }
+
+          return null;
+        })
+        .filter((node): node is CategoryTreeNode => node !== null);
+    };
+
+    return applyFilters(allTree);
+  }, [allTree, filters.search, filters.isActive, filters.isFeatured, filters.parentId, filters.includeDeleted]);
 
   if (isLoading) {
     return (

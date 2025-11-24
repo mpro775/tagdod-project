@@ -124,10 +124,13 @@
       "status": "حالة الطلب",
       "descending": "تنازلي",
       "ascending": "تصاعدي"
-    }
+    },
+    "clearFilters": "مسح الفلاتر"
   },
   "stats": {
     "total": "إجمالي الطلبات",
+    "pending_payment": "في انتظار الدفع",
+    "confirmed": "طلبات مؤكدة",
     "processing": "قيد التجهيز",
     "completed": "طلبات مكتملة",
     "onHold": "طلبات معلقة",

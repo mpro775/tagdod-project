@@ -2,9 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Favorite } from './schemas/favorite.schema';
-import {
-  FavoriteNotFoundException,
-} from '../../shared/exceptions';
+import { FavoriteNotFoundException } from '../../shared/exceptions';
 import { PublicProductsPresenter } from '../products/services/public-products.presenter';
 
 type SimplifiedProductRecord = Record<string, unknown>;
@@ -108,8 +106,8 @@ export class FavoritesService {
         productId: objectProductId,
       },
       {
-        $set: { deletedAt: new Date() }
-      }
+        $set: { deletedAt: new Date() },
+      },
     );
 
     return { deleted: result.modifiedCount === 1 };
@@ -141,7 +139,7 @@ export class FavoritesService {
 
     const result = await this.favoriteModel.updateMany(
       { userId: objectUserId, deletedAt: null },
-      { $set: { deletedAt: new Date() } }
+      { $set: { deletedAt: new Date() } },
     );
 
     return { cleared: result.modifiedCount };
@@ -243,8 +241,8 @@ export class FavoritesService {
         productId: objectProductId,
       },
       {
-        $set: { deletedAt: new Date() }
-      }
+        $set: { deletedAt: new Date() },
+      },
     );
 
     return { deleted: result.modifiedCount === 1 };
@@ -253,7 +251,7 @@ export class FavoritesService {
   async clearGuestFavorites(deviceId: string) {
     const result = await this.favoriteModel.updateMany(
       { deviceId, userId: null, deletedAt: null },
-      { $set: { deletedAt: new Date() } }
+      { $set: { deletedAt: new Date() } },
     );
 
     return { cleared: result.modifiedCount };
@@ -263,11 +261,13 @@ export class FavoritesService {
 
   async syncGuestToUser(deviceId: string, userId: string) {
     // جلب مفضلات الزائر
-    const guestFavorites = await this.favoriteModel.find({
-      deviceId,
-      userId: null,
-      deletedAt: null,
-    }).lean();
+    const guestFavorites = await this.favoriteModel
+      .find({
+        deviceId,
+        userId: null,
+        deletedAt: null,
+      })
+      .lean();
 
     if (guestFavorites.length === 0) {
       return { synced: 0, skipped: 0, total: 0 };
@@ -305,7 +305,7 @@ export class FavoritesService {
     // حذف مفضلات الزائر بعد المزامنة
     await this.favoriteModel.updateMany(
       { deviceId, userId: null },
-      { $set: { deletedAt: new Date(), isSynced: true, syncedAt: new Date() } }
+      { $set: { deletedAt: new Date(), isSynced: true, syncedAt: new Date() } },
     );
 
     this.logger.log(`Synced ${synced} favorites from device ${deviceId} to user ${userId}`);
@@ -336,6 +336,14 @@ export class FavoritesService {
   }
 
   async getMostFavoritedProducts(limit = 10) {
+    // Get total count first
+    const totalCountResult = await this.favoriteModel.aggregate([
+      { $match: { deletedAt: null } },
+      { $group: { _id: '$productId', count: { $sum: 1 } } },
+      { $count: 'total' },
+    ]);
+    const total = totalCountResult.length > 0 ? totalCountResult[0].total : 0;
+
     const results = await this.favoriteModel.aggregate([
       { $match: { deletedAt: null } },
       { $group: { _id: '$productId', count: { $sum: 1 } } },
@@ -350,15 +358,78 @@ export class FavoritesService {
         },
       },
       { $unwind: '$product' },
+      // Ensure imageIds is an array
+      {
+        $addFields: {
+          'product.imageIds': {
+            $cond: {
+              if: { $isArray: '$product.imageIds' },
+              then: '$product.imageIds',
+              else: [],
+            },
+          },
+        },
+      },
+      // Lookup main image
+      {
+        $lookup: {
+          from: 'media',
+          localField: 'product.mainImageId',
+          foreignField: '_id',
+          as: 'mainImage',
+        },
+      },
+      // Lookup first image from imageIds as fallback
+      {
+        $lookup: {
+          from: 'media',
+          let: { imageIds: '$product.imageIds' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [{ $gt: [{ $size: '$$imageIds' }, 0] }, { $in: ['$_id', '$$imageIds'] }],
+                },
+              },
+            },
+            { $limit: 1 },
+          ],
+          as: 'fallbackImage',
+        },
+      },
+      {
+        $addFields: {
+          'product.mainImageId': {
+            $cond: {
+              // If mainImage exists, use it
+              if: { $gt: [{ $size: '$mainImage' }, 0] },
+              then: { $arrayElemAt: ['$mainImage', 0] },
+              else: {
+                // Otherwise, use first image from imageIds if available
+                $cond: {
+                  if: { $gt: [{ $size: '$fallbackImage' }, 0] },
+                  then: { $arrayElemAt: ['$fallbackImage', 0] },
+                  else: null,
+                },
+              },
+            },
+          },
+        },
+      },
     ]);
 
-    return results.map(r => ({
-      productId: r._id,
-      count: r.count,
-      product: r.product,
-    }));
+    return {
+      data: results.map((r) => ({
+        productId: r._id,
+        count: r.count,
+        product: r.product,
+      })),
+      meta: {
+        total,
+        limit,
+      },
+    };
   }
-
 
   async incrementViews(favoriteId: string) {
     await this.favoriteModel.updateOne(
@@ -366,7 +437,7 @@ export class FavoritesService {
       {
         $inc: { viewsCount: 1 },
         $set: { lastViewedAt: new Date() },
-      }
+      },
     );
   }
 
@@ -417,12 +488,11 @@ export class FavoritesService {
       }));
     }
 
-    const preparedProducts =
-      await this.publicProductsPresenter.buildProductsCollectionResponse(
-        productRecords,
-        options.discountPercent,
-        options.currency,
-      );
+    const preparedProducts = await this.publicProductsPresenter.buildProductsCollectionResponse(
+      productRecords,
+      options.discountPercent,
+      options.currency,
+    );
 
     const simplifiedMap = new Map<string, SimplifiedProductRecord>();
 
@@ -454,10 +524,10 @@ export class FavoritesService {
         product && typeof product === 'object'
           ? this.extractIdString((product as Record<string, unknown>)['_id'])
           : typeof product === 'string'
-          ? product
-          : null;
+            ? product
+            : null;
 
-      const simplifiedProduct = productId ? simplifiedMap.get(productId) ?? null : null;
+      const simplifiedProduct = productId ? (simplifiedMap.get(productId) ?? null) : null;
 
       const enrichedFavorite: FavoriteLean = {
         ...favorite,
@@ -500,20 +570,21 @@ export class FavoritesService {
     return null;
   }
 
-  private pickFavoriteProductFields(product: Record<string, unknown>): SimplifiedProductRecord | null {
+  private pickFavoriteProductFields(
+    product: Record<string, unknown>,
+  ): SimplifiedProductRecord | null {
     if (!product) {
       return null;
     }
 
     const pricingRaw = product['pricingByCurrency'];
     const pricingByCurrency =
-      pricingRaw && typeof pricingRaw === 'object'
-        ? (pricingRaw as Record<string, unknown>)
-        : {};
+      pricingRaw && typeof pricingRaw === 'object' ? (pricingRaw as Record<string, unknown>) : {};
 
-    const useManualRating = typeof product['useManualRating'] === 'boolean'
-      ? (product['useManualRating'] as boolean)
-      : false;
+    const useManualRating =
+      typeof product['useManualRating'] === 'boolean'
+        ? (product['useManualRating'] as boolean)
+        : false;
 
     const manualRating =
       typeof product['manualRating'] === 'number' ? (product['manualRating'] as number) : undefined;
@@ -523,8 +594,8 @@ export class FavoritesService {
         : undefined;
 
     const rating = useManualRating
-      ? manualRating ?? averageRating ?? 0
-      : averageRating ?? manualRating ?? 0;
+      ? (manualRating ?? averageRating ?? 0)
+      : (averageRating ?? manualRating ?? 0);
 
     const manualReviewsCount =
       typeof product['manualReviewsCount'] === 'number'
@@ -534,8 +605,8 @@ export class FavoritesService {
       typeof product['reviewsCount'] === 'number' ? (product['reviewsCount'] as number) : undefined;
 
     const reviewsCount = useManualRating
-      ? manualReviewsCount ?? 0
-      : reviewsCountRaw ?? manualReviewsCount ?? 0;
+      ? (manualReviewsCount ?? 0)
+      : (reviewsCountRaw ?? manualReviewsCount ?? 0);
 
     const result: SimplifiedProductRecord = {
       rating,

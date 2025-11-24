@@ -7,9 +7,6 @@ import {
   FilterAlt,
   TrendingUp,
   TextFields,
-  Numbers,
-  ToggleOn,
-  SelectAll,
   ColorLens,
 } from '@mui/icons-material';
 import type { AttributeStats } from '../types/attribute.types';
@@ -27,42 +24,56 @@ const StatCard: React.FC<{
   subtitle?: string;
 }> = ({ title, value, icon, color, subtitle }) => {
   return (
-  <Card sx={{ height: '100%' }}>
-    <CardContent
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        p: { xs: 2, sm: 3 },
-        height: '100%',
-      }}
-    >
-      <Box
+    <Card sx={{ height: '100%' }}>
+      <CardContent
         sx={{
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          mb: 2,
+          textAlign: 'center',
+          p: { xs: 2, sm: 3 },
+          height: '100%',
         }}
       >
-        <Box sx={{ color: `${color}.main` }}>{icon}</Box>
-      </Box>
-      <Typography variant="h3" fontWeight="bold" color={`${color}.main`} gutterBottom sx={{ textAlign: 'center', width: '100%' }}>
-        {value ? value.toLocaleString() : '0'}
-      </Typography>
-      <Typography variant="h6" color="text.secondary" sx={{ textAlign: 'center', width: '100%', mb: subtitle ? 1 : 0 }}>
-        {title}
-      </Typography>
-      {subtitle && (
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', width: '100%' }}>
-          {subtitle}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mb: 2,
+          }}
+        >
+          <Box sx={{ color: `${color}.main` }}>{icon}</Box>
+        </Box>
+        <Typography
+          variant="h3"
+          fontWeight="bold"
+          color={`${color}.main`}
+          gutterBottom
+          sx={{ textAlign: 'center', width: '100%' }}
+        >
+          {value ? value.toLocaleString() : '0'}
         </Typography>
-      )}
-    </CardContent>
-  </Card>
-);
+        <Typography
+          variant="h6"
+          color="text.secondary"
+          sx={{ textAlign: 'center', width: '100%', mb: subtitle ? 1 : 0 }}
+        >
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ textAlign: 'center', width: '100%' }}
+          >
+            {subtitle}
+          </Typography>
+        )}
+      </CardContent>
+    </Card>
+  );
 };
 
 const TypeStatsCard: React.FC<{ stats: AttributeStats }> = ({ stats }) => {
@@ -84,7 +95,9 @@ const TypeStatsCard: React.FC<{ stats: AttributeStats }> = ({ stats }) => {
           }}
         >
           <Category color="primary" sx={{ mb: 2 }} />
-          <Typography variant="h6" sx={{ mb: 1 }}>{t('stats.typeDistribution')}</Typography>
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            {t('stats.typeDistribution')}
+          </Typography>
           <Typography variant="body2" color="text.secondary">
             {t('stats.noData')}
           </Typography>
@@ -94,12 +107,20 @@ const TypeStatsCard: React.FC<{ stats: AttributeStats }> = ({ stats }) => {
   }
 
   const typeData = [
-    { key: 'select', label: t('typeLabels.select'), value: stats.byType.select || 0, icon: SelectAll, color: 'primary' },
-    { key: 'multiselect', label: t('typeLabels.multiselect'), value: stats.byType.multiselect || 0, icon: SelectAll, color: 'secondary' },
-    { key: 'text', label: t('typeLabels.text'), value: stats.byType.text || 0, icon: TextFields, color: 'info' },
-    { key: 'number', label: t('typeLabels.number'), value: stats.byType.number || 0, icon: Numbers, color: 'warning' },
-    { key: 'boolean', label: t('typeLabels.boolean'), value: stats.byType.boolean || 0, icon: ToggleOn, color: 'success' },
-    { key: 'color', label: t('typeLabels.color'), value: stats.byType.color || 0, icon: ColorLens, color: 'warning' },
+    {
+      key: 'text',
+      label: t('typeLabels.text'),
+      value: stats.byType.text || 0,
+      icon: TextFields,
+      color: 'info',
+    },
+    {
+      key: 'color',
+      label: t('typeLabels.color'),
+      value: stats.byType.color || 0,
+      icon: ColorLens,
+      color: 'warning',
+    },
   ];
 
   return (
@@ -227,7 +248,9 @@ export const AttributeStatsCards: React.FC<AttributeStatsCardsProps> = ({
             value={stats.active}
             icon={<CheckCircle />}
             color="success"
-            subtitle={t('stats.activeDesc', { percentage: ((stats.active / stats.total) * 100).toFixed(1) })}
+            subtitle={t('stats.activeDesc', {
+              percentage: ((stats.active / stats.total) * 100).toFixed(1),
+            })}
           />
         </Grid>
         <Grid size={{ xs: 6, sm: 6, md: 2.4 }}>
@@ -236,7 +259,9 @@ export const AttributeStatsCards: React.FC<AttributeStatsCardsProps> = ({
             value={stats.filterable}
             icon={<FilterAlt />}
             color="info"
-            subtitle={t('stats.filterableDesc', { percentage: ((stats.filterable / stats.total) * 100).toFixed(1) })}
+            subtitle={t('stats.filterableDesc', {
+              percentage: ((stats.filterable / stats.total) * 100).toFixed(1),
+            })}
           />
         </Grid>
         <Grid size={{ xs: 6, sm: 6, md: 2.4 }}>

@@ -3,15 +3,7 @@ import { BaseEntity, ListParams } from '@/shared/types/common.types';
 // Attribute Type - متطابق مع Backend
 export enum AttributeType {
   // eslint-disable-next-line no-unused-vars
-  SELECT = 'select',
-  // eslint-disable-next-line no-unused-vars
-  MULTISELECT = 'multiselect',
-  // eslint-disable-next-line no-unused-vars
   TEXT = 'text',
-  // eslint-disable-next-line no-unused-vars
-  NUMBER = 'number',
-  // eslint-disable-next-line no-unused-vars
-  BOOLEAN = 'boolean',
   // eslint-disable-next-line no-unused-vars
   COLOR = 'color',
 }
@@ -164,11 +156,7 @@ export interface AttributeStats {
   active: number;
   filterable: number;
   byType: {
-    select: number;
-    multiselect: number;
     text: number;
-    number: number;
-    boolean: number;
     color: number;
   };
 }

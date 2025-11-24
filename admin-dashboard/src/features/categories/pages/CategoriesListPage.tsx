@@ -259,7 +259,11 @@ export const CategoriesListPage: React.FC = () => {
       headerName: t('fields.createdAt'),
       width: isMobile ? 100 : 140,
       minWidth: 100,
-      valueFormatter: (value) => formatDate(value as Date),
+      valueFormatter: (value) => {
+        if (!value) return '-';
+        const dateValue = typeof value === 'string' ? new Date(value) : value;
+        return formatDate(dateValue, 'yyyy-MM-dd HH:mm:ss', 'en');
+      },
     },
     {
       field: 'actions',
@@ -362,11 +366,6 @@ export const CategoriesListPage: React.FC = () => {
           mb: 2, 
           borderBottom: 1, 
           borderColor: 'divider', 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between', 
-          alignItems: { xs: 'stretch', sm: 'center' },
-          gap: { xs: 2, sm: 0 },
         }}
       >
         <Tabs 
@@ -390,18 +389,6 @@ export const CategoriesListPage: React.FC = () => {
           />
           <Tab label={t('categories.listView')} value="list" />
         </Tabs>
-        <Button
-          startIcon={<Refresh />}
-          onClick={() => refetch()}
-          variant="outlined"
-          size={isMobile ? 'small' : 'medium'}
-          sx={{ 
-            mr: { xs: 0, sm: 2 },
-            width: { xs: '100%', sm: 'auto' },
-          }}
-        >
-          {t('categories.refresh')}
-        </Button>
       </Box>
 
       {/* Tree View */}
@@ -409,6 +396,7 @@ export const CategoriesListPage: React.FC = () => {
         <CategoryTreeView
           onEdit={(category) => navigate(`/categories/${category._id}`)}
           onDelete={handleDelete}
+          filters={filters}
         />
       )}
 

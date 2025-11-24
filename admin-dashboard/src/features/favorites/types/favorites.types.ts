@@ -14,9 +14,18 @@ export interface MostFavoritedProduct {
     nameAr?: string;
     nameEn?: string;
     slug?: string;
-    mainImageId?: {
+    mainImageId?: string | {
+      _id?: string;
       url?: string;
     };
+  };
+}
+
+export interface MostFavoritedProductsResponse {
+  data: MostFavoritedProduct[];
+  meta: {
+    total: number;
+    limit: number;
   };
 }
 

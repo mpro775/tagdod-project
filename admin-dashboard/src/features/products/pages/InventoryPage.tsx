@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, useTheme } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  useTheme,
+  Breadcrumbs,
+  Link,
+  Alert,
+} from '@mui/material';
+import { ArrowBack, Home, ChevronRight, Warning } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
@@ -34,6 +46,47 @@ export const InventoryPage: React.FC = () => {
 
   return (
     <Box>
+      {/* Breadcrumbs */}
+      <Breadcrumbs 
+        separator={<ChevronRight fontSize="small" />} 
+        sx={{ mb: 2 }}
+        aria-label="breadcrumb"
+      >
+        <Link
+          color="inherit"
+          href="/products"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/products');
+          }}
+          sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+        >
+          <Home sx={{ mr: 0.5 }} fontSize="inherit" />
+          {t('products:list.title', 'المنتجات')}
+        </Link>
+        <Typography color="text.primary">
+          {t('products:inventory.title', 'إدارة المخزون')}
+        </Typography>
+      </Breadcrumbs>
+
+      {/* Stock Alerts Banner */}
+      <Alert 
+        severity="info" 
+        icon={<Warning />}
+        sx={{ mb: 2 }}
+        action={
+          <Button 
+            size="small" 
+            onClick={() => navigate('/products/inventory')}
+            sx={{ textDecoration: 'none' }}
+          >
+            {t('products:inventory.viewAll', 'عرض الكل')}
+          </Button>
+        }
+      >
+        {t('products:inventory.stockAlertsInfo', 'راقب المخزون المنخفض والمنتجات النافذة')}
+      </Alert>
+
       {/* Header */}
       <Box 
         display="flex" 

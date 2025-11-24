@@ -5,6 +5,7 @@ export { AddressesDashboardPage } from './pages/AddressesDashboardPage';
 export { AddressStatsCards } from './components/AddressStatsCards';
 export { TopCitiesChart } from './components/TopCitiesChart';
 export { AddressCard } from './components/AddressCard';
+export { AddressMap } from './components/AddressMap';
 
 // Hooks
 export * from './hooks/useAddresses';

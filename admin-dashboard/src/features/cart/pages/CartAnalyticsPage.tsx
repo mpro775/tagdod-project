@@ -16,20 +16,11 @@ import {
   Tab,
   Paper,
   useTheme,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
 } from '@mui/material';
 import {
   Refresh,
   TrendingUp,
   TrendingDown,
-  MonetizationOn,
-  ShoppingCart,
   Email,
   Assessment,
   ArrowBack,
@@ -41,8 +32,6 @@ import { useCartDashboard } from '../hooks/useCart';
 import { CartStatsCards } from '../components';
 import { PieChartComponent } from '@/features/analytics/components/PieChartComponent';
 import { LineChartComponent } from '@/features/analytics/components/LineChartComponent';
-import { BarChartComponent } from '@/features/analytics/components/BarChartComponent';
-import { formatCurrency } from '../api/cartApi';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -87,7 +76,7 @@ export const CartAnalyticsPage: React.FC = () => {
       { name: t('status.active'), value: overview.activeCarts },
       { name: t('status.abandoned'), value: overview.abandonedCarts },
       { name: t('status.converted'), value: overview.convertedCarts },
-    ].filter(item => item.value > 0);
+    ].filter((item) => item.value > 0);
   }, [overview, t]);
 
   const conversionRateChartData = useMemo(() => {
@@ -99,61 +88,6 @@ export const CartAnalyticsPage: React.FC = () => {
       total: item.totalCarts,
     }));
   }, [conversionRates]);
-
-  const revenueTrendsData = useMemo(() => {
-    if (!analytics?.trends?.recentActivity || !Array.isArray(analytics.trends.recentActivity)) return [];
-    return analytics.trends.recentActivity.map((item: any) => {
-      // Build date string with proper zero-padding
-      const year = item._id?.year || new Date().getFullYear();
-      const month = String(item._id?.month || 1).padStart(2, '0');
-      const day = String(item._id?.day || 1).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
-      const date = new Date(dateStr);
-      
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        console.warn('Invalid date:', dateStr, item);
-        return {
-          name: `${day}/${month}/${year}`,
-          value: item.totalValue || 0,
-          count: item.count || 0,
-        };
-      }
-      
-      return {
-        name: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        value: Number(item.totalValue) || 0,
-        count: Number(item.count) || 0,
-      };
-    }).filter(item => item.value !== undefined && item.value !== null);
-  }, [analytics]);
-
-  const cartValueDistributionData = useMemo(() => {
-    if (!analytics?.insights?.cartValueDistribution) return [];
-    return analytics.insights.cartValueDistribution.map((item: any) => ({
-      name: item._id,
-      value: item.count,
-      totalValue: item.totalValue || 0,
-    }));
-  }, [analytics]);
-
-  const hourlyActivityData = useMemo(() => {
-    if (!analytics?.trends?.hourlyActivity) return [];
-    return analytics.trends.hourlyActivity.map((item: any) => ({
-      name: `${item._id}:00`,
-      value: item.count || 0,
-      totalValue: item.totalValue || 0,
-    }));
-  }, [analytics]);
-
-  const topProductsData = useMemo(() => {
-    if (!analytics?.insights?.topProducts) return [];
-    return analytics.insights.topProducts.slice(0, 10).map((item: any) => ({
-      name: item.name || 'غير معروف',
-      value: item.cartCount || 0,
-      quantity: item.totalQuantity || 0,
-    }));
-  }, [analytics]);
 
   // Event handlers
   const handlePeriodChange = (event: any) => {
@@ -198,9 +132,15 @@ export const CartAnalyticsPage: React.FC = () => {
     if (recent.length === 0 || older.length === 0) return 0;
 
     const recentAvg =
-      recent.reduce((sum: number, day: any) => sum + ((day.totalCarts || 0) - (day.convertedCarts || 0)), 0) / recent.length;
+      recent.reduce(
+        (sum: number, day: any) => sum + ((day.totalCarts || 0) - (day.convertedCarts || 0)),
+        0
+      ) / recent.length;
     const olderAvg =
-      older.reduce((sum: number, day: any) => sum + ((day.totalCarts || 0) - (day.convertedCarts || 0)), 0) / older.length;
+      older.reduce(
+        (sum: number, day: any) => sum + ((day.totalCarts || 0) - (day.convertedCarts || 0)),
+        0
+      ) / older.length;
 
     if (olderAvg === 0) return 0;
     return ((recentAvg - olderAvg) / olderAvg) * 100;
@@ -209,11 +149,11 @@ export const CartAnalyticsPage: React.FC = () => {
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
       {/* Header */}
-      <Box 
-        display="flex" 
+      <Box
+        display="flex"
         flexDirection={{ xs: 'column', sm: 'row' }}
         alignItems={{ xs: 'flex-start', sm: 'center' }}
-        justifyContent="space-between" 
+        justifyContent="space-between"
         mb={3}
         gap={2}
       >
@@ -227,10 +167,10 @@ export const CartAnalyticsPage: React.FC = () => {
             {t('actions.back')}
           </Button>
           <Assessment fontSize={isMobile ? 'medium' : 'large'} color="primary" />
-          <Typography 
-            variant="h4" 
-            component="h1" 
-            sx={{ 
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
               fontWeight: 'bold',
               fontSize: { xs: '1.5rem', sm: '2rem' },
               color: 'text.primary',
@@ -239,21 +179,17 @@ export const CartAnalyticsPage: React.FC = () => {
             {t('navigation.analytics')}
           </Typography>
         </Box>
-        <Box 
-          display="flex" 
+        <Box
+          display="flex"
           gap={1}
           flexDirection={{ xs: 'column', sm: 'row' }}
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
-          <FormControl 
-            size="small" 
-            sx={{ minWidth: { xs: '100%', sm: 120 } }}
-            fullWidth={isMobile}
-          >
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 120 } }} fullWidth={isMobile}>
             <InputLabel>{t('stats.period.label')}</InputLabel>
-            <Select 
-              value={period} 
-              onChange={(event) => handlePeriodChange(event as any)} 
+            <Select
+              value={period}
+              onChange={(event) => handlePeriodChange(event as any)}
               label={t('stats.period.label')}
             >
               <MenuItem value="7">{t('stats.period.7days')}</MenuItem>
@@ -291,8 +227,8 @@ export const CartAnalyticsPage: React.FC = () => {
       />
 
       {/* Analytics Tabs */}
-      <Paper 
-        sx={{ 
+      <Paper
+        sx={{
           mt: 3,
           bgcolor: 'background.paper',
         }}
@@ -314,33 +250,23 @@ export const CartAnalyticsPage: React.FC = () => {
             },
           }}
         >
-          <Tab 
-            label={isMobile ? undefined : t('analytics.tabs.overview')} 
+          <Tab
+            label={isMobile ? undefined : t('analytics.tabs.overview')}
             icon={<Assessment />}
             iconPosition={isMobile ? 'top' : 'start'}
           />
-          <Tab 
-            label={isMobile ? undefined : t('analytics.tabs.conversion')} 
+          <Tab
+            label={isMobile ? undefined : t('analytics.tabs.conversion')}
             icon={<TrendingUp />}
             iconPosition={isMobile ? 'top' : 'start'}
           />
-          <Tab 
-            label={isMobile ? undefined : t('analytics.tabs.abandoned')} 
+          <Tab
+            label={isMobile ? undefined : t('analytics.tabs.abandoned')}
             icon={<TrendingDown />}
             iconPosition={isMobile ? 'top' : 'start'}
           />
-          <Tab 
-            label={isMobile ? undefined : t('analytics.tabs.revenue')} 
-            icon={<MonetizationOn />}
-            iconPosition={isMobile ? 'top' : 'start'}
-          />
-          <Tab 
-            label={isMobile ? undefined : t('analytics.tabs.customerBehavior')} 
-            icon={<ShoppingCart />}
-            iconPosition={isMobile ? 'top' : 'start'}
-          />
-          <Tab 
-            label={isMobile ? undefined : t('analytics.tabs.recovery')} 
+          <Tab
+            label={isMobile ? undefined : t('analytics.tabs.recovery')}
             icon={<Email />}
             iconPosition={isMobile ? 'top' : 'start'}
           />
@@ -353,10 +279,10 @@ export const CartAnalyticsPage: React.FC = () => {
             <Grid size={{ xs: 12, md: 8 }}>
               <Card sx={{ bgcolor: 'background.paper', height: '100%' }}>
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
+                  <Typography
+                    variant="h6"
                     gutterBottom
-                    sx={{ 
+                    sx={{
                       fontSize: { xs: '1rem', sm: '1.25rem' },
                       fontWeight: 'bold',
                       color: 'text.primary',
@@ -374,13 +300,17 @@ export const CartAnalyticsPage: React.FC = () => {
                       data={conversionRateChartData}
                       height={300}
                       lines={[
-                        { dataKey: 'value', stroke: '#2196f3', name: t('analytics.charts.conversionRate') },
+                        {
+                          dataKey: 'value',
+                          stroke: '#2196f3',
+                          name: t('analytics.charts.conversionRate'),
+                        },
                       ]}
                       xAxisKey="name"
                       yAxisLabel="%"
                     />
                   ) : (
-                    <Typography 
+                    <Typography
                       color="text.secondary"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                     >
@@ -395,10 +325,10 @@ export const CartAnalyticsPage: React.FC = () => {
             <Grid size={{ xs: 12, md: 4 }}>
               <Card sx={{ bgcolor: 'background.paper', height: '100%' }}>
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
+                  <Typography
+                    variant="h6"
                     gutterBottom
-                    sx={{ 
+                    sx={{
                       fontSize: { xs: '1rem', sm: '1.25rem' },
                       fontWeight: 'bold',
                       color: 'text.primary',
@@ -409,17 +339,17 @@ export const CartAnalyticsPage: React.FC = () => {
                   </Typography>
                   <Box display="flex" flexDirection="column" gap={2}>
                     <Box>
-                      <Typography 
-                        variant="body2" 
+                      <Typography
+                        variant="body2"
                         color="text.secondary"
                         sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
                       >
                         {t('analytics.charts.currentConversionRate')}
                       </Typography>
-                      <Typography 
-                        variant="h4" 
+                      <Typography
+                        variant="h4"
                         color="primary.main"
-                        sx={{ 
+                        sx={{
                           fontSize: { xs: '1.5rem', sm: '2rem' },
                           fontWeight: 'bold',
                           mb: 0.5,
@@ -428,12 +358,12 @@ export const CartAnalyticsPage: React.FC = () => {
                         {statistics?.allTime?.conversionRate !== undefined
                           ? `${statistics.allTime.conversionRate.toFixed(1)}%`
                           : overview?.conversionRate !== undefined
-                            ? `${overview.conversionRate.toFixed(1)}%`
-                            : '0%'}
+                          ? `${overview.conversionRate.toFixed(1)}%`
+                          : '0%'}
                       </Typography>
                       <Typography
                         variant="caption"
-                        sx={{ 
+                        sx={{
                           fontSize: { xs: '0.65rem', sm: '0.75rem' },
                           color: getConversionTrend() >= 0 ? 'success.main' : 'error.main',
                         }}
@@ -444,17 +374,17 @@ export const CartAnalyticsPage: React.FC = () => {
                     </Box>
 
                     <Box>
-                      <Typography 
-                        variant="body2" 
+                      <Typography
+                        variant="body2"
                         color="text.secondary"
                         sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
                       >
                         {t('analytics.charts.currentAbandonmentRate')}
                       </Typography>
-                      <Typography 
-                        variant="h4" 
+                      <Typography
+                        variant="h4"
                         color="warning.main"
-                        sx={{ 
+                        sx={{
                           fontSize: { xs: '1.5rem', sm: '2rem' },
                           fontWeight: 'bold',
                           mb: 0.5,
@@ -463,12 +393,12 @@ export const CartAnalyticsPage: React.FC = () => {
                         {statistics?.allTime?.abandonmentRate !== undefined
                           ? `${statistics.allTime.abandonmentRate.toFixed(1)}%`
                           : overview?.abandonmentRate !== undefined
-                            ? `${overview.abandonmentRate.toFixed(1)}%`
-                            : '0%'}
+                          ? `${overview.abandonmentRate.toFixed(1)}%`
+                          : '0%'}
                       </Typography>
                       <Typography
                         variant="caption"
-                        sx={{ 
+                        sx={{
                           fontSize: { xs: '0.65rem', sm: '0.75rem' },
                           color: getAbandonmentTrend() >= 0 ? 'error.main' : 'success.main',
                         }}
@@ -486,10 +416,10 @@ export const CartAnalyticsPage: React.FC = () => {
             <Grid size={{ xs: 12, md: 6 }}>
               <Card sx={{ bgcolor: 'background.paper', height: '100%' }}>
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
+                  <Typography
+                    variant="h6"
                     gutterBottom
-                    sx={{ 
+                    sx={{
                       fontSize: { xs: '1rem', sm: '1.25rem' },
                       fontWeight: 'bold',
                       color: 'text.primary',
@@ -503,53 +433,9 @@ export const CartAnalyticsPage: React.FC = () => {
                       <CircularProgress />
                     </Box>
                   ) : statusDistributionData.length > 0 ? (
-                    <PieChartComponent
-                      data={statusDistributionData}
-                      height={250}
-                    />
+                    <PieChartComponent data={statusDistributionData} height={250} />
                   ) : (
-                    <Typography 
-                      color="text.secondary"
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      {t('analytics.charts.noData')}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Revenue Trends */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Card sx={{ bgcolor: 'background.paper', height: '100%' }}>
-                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ 
-                      fontSize: { xs: '1rem', sm: '1.25rem' },
-                      fontWeight: 'bold',
-                      color: 'text.primary',
-                      mb: 2,
-                    }}
-                  >
-                    {t('analytics.charts.revenueTrends')}
-                  </Typography>
-                  {isLoading ? (
-                    <Box display="flex" justifyContent="center" p={4}>
-                      <CircularProgress />
-                    </Box>
-                  ) : revenueTrendsData.length > 0 ? (
-                    <BarChartComponent
-                      data={revenueTrendsData}
-                      height={250}
-                      bars={[
-                        { dataKey: 'value', fill: '#4caf50', name: t('analytics.charts.revenue') },
-                      ]}
-                      xAxisKey="name"
-                    />
-                  ) : (
-                    <Typography 
+                    <Typography
                       color="text.secondary"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                     >
@@ -568,10 +454,10 @@ export const CartAnalyticsPage: React.FC = () => {
             <Grid size={{ xs: 12 }}>
               <Card sx={{ bgcolor: 'background.paper' }}>
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
+                  <Typography
+                    variant="h6"
                     gutterBottom
-                    sx={{ 
+                    sx={{
                       fontSize: { xs: '1rem', sm: '1.25rem' },
                       fontWeight: 'bold',
                       color: 'text.primary',
@@ -591,7 +477,11 @@ export const CartAnalyticsPage: React.FC = () => {
                           data={conversionRateChartData}
                           height={350}
                           lines={[
-                            { dataKey: 'value', stroke: '#2196f3', name: t('analytics.charts.conversionRate') },
+                            {
+                              dataKey: 'value',
+                              stroke: '#2196f3',
+                              name: t('analytics.charts.conversionRate'),
+                            },
                           ]}
                           xAxisKey="name"
                           yAxisLabel="%"
@@ -599,25 +489,28 @@ export const CartAnalyticsPage: React.FC = () => {
                       </Box>
                       {conversionRates?.averageRate !== undefined && (
                         <Box mt={2}>
-                          <Paper 
-                            sx={{ 
+                          <Paper
+                            sx={{
                               p: { xs: 1.5, sm: 2 },
-                              bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                              bgcolor:
+                                theme.palette.mode === 'dark'
+                                  ? 'rgba(255, 255, 255, 0.05)'
+                                  : 'grey.50',
                               border: 1,
                               borderColor: 'divider',
                             }}
                           >
-                            <Typography 
-                              variant="body2" 
+                            <Typography
+                              variant="body2"
                               color="text.secondary"
                               sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
                             >
                               {t('analytics.charts.averageRate')}
                             </Typography>
-                            <Typography 
-                              variant="h5" 
+                            <Typography
+                              variant="h5"
                               color="primary.main"
-                              sx={{ 
+                              sx={{
                                 fontSize: { xs: '1.25rem', sm: '1.5rem' },
                                 fontWeight: 'bold',
                               }}
@@ -629,7 +522,7 @@ export const CartAnalyticsPage: React.FC = () => {
                       )}
                     </Box>
                   ) : (
-                    <Typography 
+                    <Typography
                       color="text.secondary"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                     >
@@ -648,10 +541,10 @@ export const CartAnalyticsPage: React.FC = () => {
             <Grid size={{ xs: 12 }}>
               <Card sx={{ bgcolor: 'background.paper' }}>
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
+                  <Typography
+                    variant="h6"
                     gutterBottom
-                    sx={{ 
+                    sx={{
                       fontSize: { xs: '1rem', sm: '1.25rem' },
                       fontWeight: 'bold',
                       color: 'text.primary',
@@ -667,342 +560,86 @@ export const CartAnalyticsPage: React.FC = () => {
                   ) : overview ? (
                     <Grid container spacing={{ xs: 2, sm: 3 }}>
                       <Grid size={{ xs: 12, md: 6 }}>
-                        <Paper 
-                          sx={{ 
+                        <Paper
+                          sx={{
                             p: { xs: 2, sm: 3 },
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                            bgcolor:
+                              theme.palette.mode === 'dark'
+                                ? 'rgba(255, 255, 255, 0.05)'
+                                : 'grey.50',
                             border: 1,
                             borderColor: 'divider',
                           }}
                         >
-                          <Typography 
-                            variant="body2" 
+                          <Typography
+                            variant="body2"
                             color="text.secondary"
                             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 1 }}
                           >
                             {t('analytics.charts.totalAbandoned')}
                           </Typography>
-                          <Typography 
-                            variant="h4" 
+                          <Typography
+                            variant="h4"
                             color="warning.main"
-                            sx={{ 
+                            sx={{
                               fontSize: { xs: '1.5rem', sm: '2rem' },
                               fontWeight: 'bold',
                             }}
                           >
                             {overview.abandonedCarts}
                           </Typography>
-                          <Typography 
-                            variant="body2" 
+                          <Typography
+                            variant="body2"
                             color="text.secondary"
                             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mt: 1 }}
                           >
-                            {t('analytics.charts.abandonmentRate')}: {overview.abandonmentRate.toFixed(1)}%
+                            {t('analytics.charts.abandonmentRate')}:{' '}
+                            {overview.abandonmentRate.toFixed(1)}%
                           </Typography>
                         </Paper>
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }}>
-                        <Paper 
-                          sx={{ 
+                        <Paper
+                          sx={{
                             p: { xs: 2, sm: 3 },
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                            bgcolor:
+                              theme.palette.mode === 'dark'
+                                ? 'rgba(255, 255, 255, 0.05)'
+                                : 'grey.50',
                             border: 1,
                             borderColor: 'divider',
                           }}
                         >
-                          <Typography 
-                            variant="body2" 
+                          <Typography
+                            variant="body2"
                             color="text.secondary"
                             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 1 }}
                           >
                             {t('analytics.charts.totalCarts')}
                           </Typography>
-                          <Typography 
-                            variant="h4" 
+                          <Typography
+                            variant="h4"
                             color="primary.main"
-                            sx={{ 
+                            sx={{
                               fontSize: { xs: '1.5rem', sm: '2rem' },
                               fontWeight: 'bold',
                             }}
                           >
                             {overview.totalCarts}
                           </Typography>
-                          <Typography 
-                            variant="body2" 
+                          <Typography
+                            variant="body2"
                             color="text.secondary"
                             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mt: 1 }}
                           >
-                            {t('analytics.charts.conversionRate')}: {overview.conversionRate.toFixed(1)}%
+                            {t('analytics.charts.conversionRate')}:{' '}
+                            {overview.conversionRate.toFixed(1)}%
                           </Typography>
                         </Paper>
                       </Grid>
                     </Grid>
                   ) : (
-                    <Typography 
-                      color="text.secondary"
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      {t('analytics.charts.noData')}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </TabPanel>
-
-        {/* Revenue Tab */}
-        <TabPanel value={tabValue} index={3}>
-          <Grid container spacing={{ xs: 2, sm: 3 }}>
-            <Grid size={{ xs: 12 }}>
-              <Card sx={{ bgcolor: 'background.paper' }}>
-                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ 
-                      fontSize: { xs: '1rem', sm: '1.25rem' },
-                      fontWeight: 'bold',
-                      color: 'text.primary',
-                      mb: 2,
-                    }}
-                  >
-                    {t('analytics.charts.revenueContent')}
-                  </Typography>
-                  {isLoading ? (
-                    <Box display="flex" justifyContent="center" p={4}>
-                      <CircularProgress />
-                    </Box>
-                  ) : revenueTrendsData.length > 0 ? (
-                    <Box>
-                      <BarChartComponent
-                        data={revenueTrendsData}
-                        height={350}
-                        bars={[
-                          { dataKey: 'value', fill: '#4caf50', name: t('analytics.charts.revenue') },
-                        ]}
-                        xAxisKey="name"
-                      />
-                      {overview && (
-                        <Box mt={3}>
-                          <Grid container spacing={2}>
-                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                              <Paper 
-                                sx={{ 
-                                  p: { xs: 1.5, sm: 2 },
-                                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
-                                  border: 1,
-                                  borderColor: 'divider',
-                                }}
-                              >
-                                <Typography 
-                                  variant="body2" 
-                                  color="text.secondary"
-                                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                                >
-                                  {t('analytics.charts.avgCartValue')}
-                                </Typography>
-                                <Typography 
-                                  variant="h6" 
-                                  color="primary.main"
-                                  sx={{ 
-                                    fontSize: { xs: '1rem', sm: '1.25rem' },
-                                    fontWeight: 'bold',
-                                    mt: 0.5,
-                                  }}
-                                >
-                                  {formatCurrency(overview.avgCartValue)}
-                                </Typography>
-                              </Paper>
-                            </Grid>
-                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                              <Paper 
-                                sx={{ 
-                                  p: { xs: 1.5, sm: 2 },
-                                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
-                                  border: 1,
-                                  borderColor: 'divider',
-                                }}
-                              >
-                                <Typography 
-                                  variant="body2" 
-                                  color="text.secondary"
-                                  sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                                >
-                                  {t('analytics.charts.avgItemsPerCart')}
-                                </Typography>
-                                <Typography 
-                                  variant="h6" 
-                                  color="primary.main"
-                                  sx={{ 
-                                    fontSize: { xs: '1rem', sm: '1.25rem' },
-                                    fontWeight: 'bold',
-                                    mt: 0.5,
-                                  }}
-                                >
-                                  {overview.avgItemsPerCart.toFixed(1)}
-                                </Typography>
-                              </Paper>
-                            </Grid>
-                          </Grid>
-                        </Box>
-                      )}
-                    </Box>
-                  ) : (
-                    <Typography 
-                      color="text.secondary"
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      {t('analytics.charts.noData')}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </TabPanel>
-
-        {/* Customer Behavior Tab */}
-        <TabPanel value={tabValue} index={4}>
-          <Grid container spacing={{ xs: 2, sm: 3 }}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Card sx={{ bgcolor: 'background.paper', height: '100%' }}>
-                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ 
-                      fontSize: { xs: '1rem', sm: '1.25rem' },
-                      fontWeight: 'bold',
-                      color: 'text.primary',
-                      mb: 2,
-                    }}
-                  >
-                    {t('analytics.charts.hourlyActivity')}
-                  </Typography>
-                  {isLoading ? (
-                    <Box display="flex" justifyContent="center" p={4}>
-                      <CircularProgress />
-                    </Box>
-                  ) : hourlyActivityData.length > 0 ? (
-                    <Box sx={{ mt: 2 }}>
-                      <BarChartComponent
-                        data={hourlyActivityData}
-                        height={300}
-                        bars={[
-                          { dataKey: 'value', fill: '#2196f3', name: t('analytics.charts.cartCount') },
-                        ]}
-                        xAxisKey="name"
-                        disableCard={true}
-                      />
-                    </Box>
-                  ) : (
-                    <Typography 
-                      color="text.secondary"
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      {t('analytics.charts.noData')}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Card sx={{ bgcolor: 'background.paper', height: '100%' }}>
-                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ 
-                      fontSize: { xs: '1rem', sm: '1.25rem' },
-                      fontWeight: 'bold',
-                      color: 'text.primary',
-                      mb: 2,
-                    }}
-                  >
-                    {t('analytics.charts.topProducts')}
-                  </Typography>
-                  {isLoading ? (
-                    <Box display="flex" justifyContent="center" p={4}>
-                      <CircularProgress />
-                    </Box>
-                  ) : topProductsData.length > 0 ? (
-                    <TableContainer>
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                              {t('analytics.charts.product')}
-                            </TableCell>
-                            <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                              {t('analytics.charts.cartCount')}
-                            </TableCell>
-                            <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                              {t('analytics.charts.quantity')}
-                            </TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {topProductsData.map((product, index) => (
-                            <TableRow key={index}>
-                              <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                                {product.name}
-                              </TableCell>
-                              <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                                <Chip label={product.value} size="small" color="primary" />
-                              </TableCell>
-                              <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                                {product.quantity}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  ) : (
-                    <Typography 
-                      color="text.secondary"
-                      sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                    >
-                      {t('analytics.charts.noData')}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <Card sx={{ bgcolor: 'background.paper' }}>
-                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom
-                    sx={{ 
-                      fontSize: { xs: '1rem', sm: '1.25rem' },
-                      fontWeight: 'bold',
-                      color: 'text.primary',
-                      mb: 2,
-                    }}
-                  >
-                    {t('analytics.charts.cartValueDistribution')}
-                  </Typography>
-                  {isLoading ? (
-                    <Box display="flex" justifyContent="center" p={4}>
-                      <CircularProgress />
-                    </Box>
-                  ) : cartValueDistributionData.length > 0 ? (
-                    <Box sx={{ mt: 2 }}>
-                      <BarChartComponent
-                        data={cartValueDistributionData}
-                        height={300}
-                        bars={[
-                          { dataKey: 'value', fill: '#ff9800', name: t('analytics.charts.cartCount') },
-                        ]}
-                        xAxisKey="name"
-                        disableCard={true}
-                      />
-                    </Box>
-                  ) : (
-                    <Typography 
+                    <Typography
                       color="text.secondary"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                     >
@@ -1016,15 +653,15 @@ export const CartAnalyticsPage: React.FC = () => {
         </TabPanel>
 
         {/* Recovery Tab */}
-        <TabPanel value={tabValue} index={5}>
+        <TabPanel value={tabValue} index={3}>
           <Grid container spacing={{ xs: 2, sm: 3 }}>
             <Grid size={{ xs: 12 }}>
               <Card sx={{ bgcolor: 'background.paper' }}>
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <Typography 
-                    variant="h6" 
+                  <Typography
+                    variant="h6"
                     gutterBottom
-                    sx={{ 
+                    sx={{
                       fontSize: { xs: '1rem', sm: '1.25rem' },
                       fontWeight: 'bold',
                       color: 'text.primary',
@@ -1040,25 +677,28 @@ export const CartAnalyticsPage: React.FC = () => {
                   ) : overview ? (
                     <Grid container spacing={{ xs: 2, sm: 3 }}>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Paper 
-                          sx={{ 
+                        <Paper
+                          sx={{
                             p: { xs: 1.5, sm: 2 },
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                            bgcolor:
+                              theme.palette.mode === 'dark'
+                                ? 'rgba(255, 255, 255, 0.05)'
+                                : 'grey.50',
                             border: 1,
                             borderColor: 'divider',
                           }}
                         >
-                          <Typography 
-                            variant="body2" 
+                          <Typography
+                            variant="body2"
                             color="text.secondary"
                             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
                           >
                             {t('analytics.charts.abandonedCarts')}
                           </Typography>
-                          <Typography 
-                            variant="h5" 
+                          <Typography
+                            variant="h5"
                             color="warning.main"
-                            sx={{ 
+                            sx={{
                               fontSize: { xs: '1.25rem', sm: '1.5rem' },
                               fontWeight: 'bold',
                             }}
@@ -1068,25 +708,28 @@ export const CartAnalyticsPage: React.FC = () => {
                         </Paper>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Paper 
-                          sx={{ 
+                        <Paper
+                          sx={{
                             p: { xs: 1.5, sm: 2 },
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                            bgcolor:
+                              theme.palette.mode === 'dark'
+                                ? 'rgba(255, 255, 255, 0.05)'
+                                : 'grey.50',
                             border: 1,
                             borderColor: 'divider',
                           }}
                         >
-                          <Typography 
-                            variant="body2" 
+                          <Typography
+                            variant="body2"
                             color="text.secondary"
                             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
                           >
                             {t('analytics.charts.convertedCarts')}
                           </Typography>
-                          <Typography 
-                            variant="h5" 
+                          <Typography
+                            variant="h5"
                             color="success.main"
-                            sx={{ 
+                            sx={{
                               fontSize: { xs: '1.25rem', sm: '1.5rem' },
                               fontWeight: 'bold',
                             }}
@@ -1096,25 +739,28 @@ export const CartAnalyticsPage: React.FC = () => {
                         </Paper>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Paper 
-                          sx={{ 
+                        <Paper
+                          sx={{
                             p: { xs: 1.5, sm: 2 },
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                            bgcolor:
+                              theme.palette.mode === 'dark'
+                                ? 'rgba(255, 255, 255, 0.05)'
+                                : 'grey.50',
                             border: 1,
                             borderColor: 'divider',
                           }}
                         >
-                          <Typography 
-                            variant="body2" 
+                          <Typography
+                            variant="body2"
                             color="text.secondary"
                             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
                           >
                             {t('analytics.charts.conversionRate')}
                           </Typography>
-                          <Typography 
-                            variant="h5" 
+                          <Typography
+                            variant="h5"
                             color="primary.main"
-                            sx={{ 
+                            sx={{
                               fontSize: { xs: '1.25rem', sm: '1.5rem' },
                               fontWeight: 'bold',
                             }}
@@ -1124,25 +770,28 @@ export const CartAnalyticsPage: React.FC = () => {
                         </Paper>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Paper 
-                          sx={{ 
+                        <Paper
+                          sx={{
                             p: { xs: 1.5, sm: 2 },
-                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                            bgcolor:
+                              theme.palette.mode === 'dark'
+                                ? 'rgba(255, 255, 255, 0.05)'
+                                : 'grey.50',
                             border: 1,
                             borderColor: 'divider',
                           }}
                         >
-                          <Typography 
-                            variant="body2" 
+                          <Typography
+                            variant="body2"
                             color="text.secondary"
                             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' }, mb: 0.5 }}
                           >
                             {t('analytics.charts.abandonmentRate')}
                           </Typography>
-                          <Typography 
-                            variant="h5" 
+                          <Typography
+                            variant="h5"
                             color="error.main"
-                            sx={{ 
+                            sx={{
                               fontSize: { xs: '1.25rem', sm: '1.5rem' },
                               fontWeight: 'bold',
                             }}
@@ -1153,7 +802,7 @@ export const CartAnalyticsPage: React.FC = () => {
                       </Grid>
                     </Grid>
                   ) : (
-                    <Typography 
+                    <Typography
                       color="text.secondary"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                     >

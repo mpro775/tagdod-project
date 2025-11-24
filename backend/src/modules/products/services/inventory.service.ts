@@ -1,15 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import {  Model, Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Variant, VariantAttribute } from '../schemas/variant.schema';
 import { Product } from '../schemas/product.schema';
-import { 
-  VariantNotFoundException,
-  ProductNotFoundException,
- 
-} from '../../../shared/exceptions';
+import { VariantNotFoundException, ProductNotFoundException } from '../../../shared/exceptions';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { NotificationType, NotificationChannel, NotificationPriority, NotificationCategory } from '../../notifications/enums/notification.enums';
+import {
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+  NotificationCategory,
+} from '../../notifications/enums/notification.enums';
+import { User, UserRole } from '../../users/schemas/user.schema';
 
 interface PopulatedProduct {
   _id: Types.ObjectId | string;
@@ -18,7 +20,9 @@ interface PopulatedProduct {
 }
 
 function isPopulatedProduct(product: unknown): product is PopulatedProduct {
-  return typeof product === 'object' && product !== null && ('name' in product || 'nameEn' in product);
+  return (
+    typeof product === 'object' && product !== null && ('name' in product || 'nameEn' in product)
+  );
 }
 
 @Injectable()
@@ -28,16 +32,17 @@ export class InventoryService {
   constructor(
     @InjectModel(Variant.name) private variantModel: Model<Variant>,
     @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(User.name) private userModel: Model<User>,
     private notificationService: NotificationService,
   ) {}
 
   // ==================== Stock Management ====================
 
   async updateStock(
-    variantId: string, 
-    quantity: number, 
+    variantId: string,
+    quantity: number,
     operation: 'add' | 'subtract' = 'subtract',
-    reason?: string
+    reason?: string,
   ): Promise<{ success: boolean; newStock: number; message?: string }> {
     const variant = await this.variantModel.findById(variantId);
 
@@ -45,9 +50,8 @@ export class InventoryService {
       throw new VariantNotFoundException({ variantId });
     }
 
-    const update = operation === 'add' 
-      ? { $inc: { stock: quantity } } 
-      : { $inc: { stock: -quantity } };
+    const update =
+      operation === 'add' ? { $inc: { stock: quantity } } : { $inc: { stock: -quantity } };
 
     await this.variantModel.updateOne({ _id: variantId }, update);
 
@@ -60,13 +64,13 @@ export class InventoryService {
 
     // تسجيل العملية
     this.logger.log(
-      `Stock ${operation} for variant ${variantId}: ${quantity} units. New stock: ${newStock}. Reason: ${reason || 'Manual update'}`
+      `Stock ${operation} for variant ${variantId}: ${quantity} units. New stock: ${newStock}. Reason: ${reason || 'Manual update'}`,
     );
 
     return {
       success: true,
       newStock,
-      message: `تم ${operation === 'add' ? 'إضافة' : 'خصم'} ${quantity} وحدة. المخزون الجديد: ${newStock}`
+      message: `تم ${operation === 'add' ? 'إضافة' : 'خصم'} ${quantity} وحدة. المخزون الجديد: ${newStock}`,
     };
   }
 
@@ -74,7 +78,7 @@ export class InventoryService {
     productId: string,
     quantity: number,
     operation: 'add' | 'subtract' = 'subtract',
-    reason?: string
+    reason?: string,
   ): Promise<{ success: boolean; newStock: number; message?: string }> {
     const product = await this.productModel.findById(productId);
 
@@ -103,7 +107,11 @@ export class InventoryService {
     };
   }
 
-  async setStock(variantId: string, newStock: number, reason?: string): Promise<{
+  async setStock(
+    variantId: string,
+    newStock: number,
+    reason?: string,
+  ): Promise<{
     success: boolean;
     oldStock: number;
     newStock: number;
@@ -117,32 +125,29 @@ export class InventoryService {
 
     const oldStock = variant.stock;
 
-    await this.variantModel.updateOne(
-      { _id: variantId },
-      { $set: { stock: newStock } }
-    );
+    await this.variantModel.updateOne({ _id: variantId }, { $set: { stock: newStock } });
 
     // فحص المخزون المنخفض
     await this.checkLowStock(variantId);
 
     // تسجيل العملية
     this.logger.log(
-      `Stock set for variant ${variantId}: ${oldStock} -> ${newStock}. Reason: ${reason || 'Manual update'}`
+      `Stock set for variant ${variantId}: ${oldStock} -> ${newStock}. Reason: ${reason || 'Manual update'}`,
     );
 
     return {
       success: true,
       oldStock,
       newStock,
-      message: `تم تحديث المخزون من ${oldStock} إلى ${newStock}`
+      message: `تم تحديث المخزون من ${oldStock} إلى ${newStock}`,
     };
   }
 
   // ==================== Availability Check ====================
 
   async checkAvailability(
-    variantId: string, 
-    requestedQuantity: number
+    variantId: string,
+    requestedQuantity: number,
   ): Promise<{
     available: boolean;
     reason?: string;
@@ -167,31 +172,31 @@ export class InventoryService {
 
     if (variant.trackInventory && variant.stock < requestedQuantity) {
       if (!variant.allowBackorder) {
-        return { 
-          available: false, 
+        return {
+          available: false,
           reason: 'INSUFFICIENT_STOCK',
           availableStock: variant.stock,
-          canBackorder: false
+          canBackorder: false,
         };
       }
       return {
         available: true,
         reason: 'BACKORDER_ALLOWED',
         availableStock: variant.stock,
-        canBackorder: true
+        canBackorder: true,
       };
     }
 
-    return { 
-      available: true, 
+    return {
+      available: true,
       availableStock: variant.stock,
-      canBackorder: variant.allowBackorder
+      canBackorder: variant.allowBackorder,
     };
   }
 
   async checkProductAvailability(
     productId: string,
-    requestedQuantity: number
+    requestedQuantity: number,
   ): Promise<{
     available: boolean;
     reason?: string;
@@ -244,22 +249,24 @@ export class InventoryService {
   }
 
   async checkMultipleAvailability(
-    requests: Array<{ variantId: string; quantity: number }>
-  ): Promise<Array<{
-    variantId: string;
-    available: boolean;
-    reason?: string;
-    availableStock?: number;
-    canBackorder?: boolean;
-  }>> {
+    requests: Array<{ variantId: string; quantity: number }>,
+  ): Promise<
+    Array<{
+      variantId: string;
+      available: boolean;
+      reason?: string;
+      availableStock?: number;
+      canBackorder?: boolean;
+    }>
+  > {
     const results = await Promise.all(
       requests.map(async (request) => {
         const result = await this.checkAvailability(request.variantId, request.quantity);
         return {
           variantId: request.variantId,
-          ...result
+          ...result,
         };
-      })
+      }),
     );
 
     return results;
@@ -276,7 +283,9 @@ export class InventoryService {
 
     // التحقق من صحة قيم المخزون
     if (isNaN(variant.stock) || isNaN(variant.minStock)) {
-      this.logger.warn(`Invalid stock values for variant ${variantId}: stock=${variant.stock}, minStock=${variant.minStock}`);
+      this.logger.warn(
+        `Invalid stock values for variant ${variantId}: stock=${variant.stock}, minStock=${variant.minStock}`,
+      );
       return;
     }
 
@@ -310,9 +319,14 @@ export class InventoryService {
         isSystemGenerated: true,
       });
 
-      this.logger.warn(`LOW STOCK ALERT: Variant ${variant._id.toString()} has ${variant.stock} units (minimum: ${variant.minStock})`);
+      this.logger.warn(
+        `LOW STOCK ALERT: Variant ${variant._id.toString()} has ${variant.stock} units (minimum: ${variant.minStock})`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to send low stock alert for variant ${variant._id.toString()}:`, error);
+      this.logger.error(
+        `Failed to send low stock alert for variant ${variant._id.toString()}:`,
+        error,
+      );
     }
   }
 
@@ -336,7 +350,10 @@ export class InventoryService {
 
       this.logger.error(`OUT OF STOCK ALERT: Variant ${variant._id.toString()} is out of stock`);
     } catch (error) {
-      this.logger.error(`Failed to send out of stock alert for variant ${variant._id.toString()}:`, error);
+      this.logger.error(
+        `Failed to send out of stock alert for variant ${variant._id.toString()}:`,
+        error,
+      );
     }
   }
 
@@ -356,7 +373,9 @@ export class InventoryService {
     }
 
     if (!Number.isFinite(minStock) || minStock < 0) {
-      this.logger.warn(`Invalid minStock values for product ${productId}: minStock=${product.minStock}`);
+      this.logger.warn(
+        `Invalid minStock values for product ${productId}: minStock=${product.minStock}`,
+      );
       return;
     }
 
@@ -366,6 +385,44 @@ export class InventoryService {
 
     if (stock === 0) {
       await this.sendProductOutOfStockAlert(productId, product.name);
+    }
+  }
+
+  private async notifyAdmins(
+    type: NotificationType,
+    title: string,
+    message: string,
+    messageEn: string,
+    data?: Record<string, unknown>,
+  ) {
+    try {
+      if (!this.notificationService) return;
+
+      const admins = await this.userModel
+        .find({
+          roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+          status: 'ACTIVE',
+        })
+        .select('_id')
+        .lean();
+
+      const notificationPromises = admins.map((admin) =>
+        this.notificationService!.createNotification({
+          recipientId: admin._id.toString(),
+          type,
+          title,
+          message,
+          messageEn,
+          data,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+        }),
+      );
+
+      await Promise.all(notificationPromises);
+      this.logger.log(`Sent ${type} notification to ${admins.length} admin(s)`);
+    } catch (error) {
+      this.logger.warn(`Failed to notify admins:`, error);
     }
   }
 
@@ -380,23 +437,21 @@ export class InventoryService {
         return;
       }
 
-      await this.notificationService.createNotification({
-        type: NotificationType.LOW_STOCK,
-        title: 'تنبيه مخزون منخفض',
-        message: `المنتج ${product.name} يحتوي على مخزون منخفض: ${stock} (الحد الأدنى: ${minStock})`,
-        messageEn: `Product ${product.nameEn ?? product.name} has low stock: ${stock} (minimum: ${minStock})`,
-        channel: NotificationChannel.DASHBOARD,
-        priority: NotificationPriority.HIGH,
-        category: NotificationCategory.PRODUCT,
-        data: {
+      await this.notifyAdmins(
+        NotificationType.LOW_STOCK,
+        'تنبيه مخزون منخفض',
+        `المنتج ${product.name} يحتوي على مخزون منخفض: ${stock} (الحد الأدنى: ${minStock})`,
+        `Product ${product.nameEn ?? product.name} has low stock: ${stock} (minimum: ${minStock})`,
+        {
           productId,
           currentStock: stock,
           minStock,
         },
-        isSystemGenerated: true,
-      });
+      );
 
-      this.logger.warn(`LOW STOCK ALERT: Product ${productId} has ${stock} units (minimum: ${minStock})`);
+      this.logger.warn(
+        `LOW STOCK ALERT: Product ${productId} has ${stock} units (minimum: ${minStock})`,
+      );
     } catch (error) {
       this.logger.error(`Failed to send low stock alert for product ${productId}:`, error);
     }
@@ -404,20 +459,16 @@ export class InventoryService {
 
   private async sendProductOutOfStockAlert(productId: string, productName?: string): Promise<void> {
     try {
-      await this.notificationService.createNotification({
-        type: NotificationType.OUT_OF_STOCK,
-        title: 'تنبيه نفاد المخزون',
-        message: `المنتج ${productName ?? productId} نفد من المخزون`,
-        messageEn: `Product ${productName ?? productId} is out of stock`,
-        channel: NotificationChannel.DASHBOARD,
-        priority: NotificationPriority.HIGH,
-        category: NotificationCategory.PRODUCT,
-        data: {
+      await this.notifyAdmins(
+        NotificationType.OUT_OF_STOCK,
+        'تنبيه نفاد المخزون',
+        `المنتج ${productName ?? productId} نفد من المخزون`,
+        `Product ${productName ?? productId} is out of stock`,
+        {
           productId,
           currentStock: 0,
         },
-        isSystemGenerated: true,
-      });
+      );
 
       this.logger.error(`OUT OF STOCK ALERT: Product ${productId} is out of stock`);
     } catch (error) {
@@ -427,17 +478,19 @@ export class InventoryService {
 
   // ==================== Inventory Reports ====================
 
-  async getLowStockVariants(threshold?: number): Promise<Array<{
-    variantId: string;
-    productId: string;
-    productName?: string;
-    productNameEn?: string;
-    variantName?: string;
-    sku?: string;
-    currentStock: number;
-    minStock: number;
-    difference: number;
-  }>> {
+  async getLowStockVariants(threshold?: number): Promise<
+    Array<{
+      variantId: string;
+      productId: string;
+      productName?: string;
+      productNameEn?: string;
+      variantName?: string;
+      sku?: string;
+      currentStock: number;
+      minStock: number;
+      difference: number;
+    }>
+  > {
     try {
       // جلب جميع الـ variants النشطة ثم تصفيتها في JavaScript (تجنب مشاكل NaN في MongoDB)
       const variants = await this.variantModel
@@ -451,17 +504,19 @@ export class InventoryService {
         .lean();
 
       // تصفية في JavaScript لتجنب مشاكل NaN
-      const validVariants = variants.filter(variant => {
+      const validVariants = variants.filter((variant) => {
         // التأكد من أن القيم أرقام صحيحة
-        const stockIsValid = typeof variant.stock === 'number' && 
-                            !isNaN(variant.stock) && 
-                            isFinite(variant.stock) && 
-                            variant.stock !== null;
-        
-        const minStockIsValid = typeof variant.minStock === 'number' && 
-                               !isNaN(variant.minStock) && 
-                               isFinite(variant.minStock) && 
-                               variant.minStock !== null;
+        const stockIsValid =
+          typeof variant.stock === 'number' &&
+          !isNaN(variant.stock) &&
+          isFinite(variant.stock) &&
+          variant.stock !== null;
+
+        const minStockIsValid =
+          typeof variant.minStock === 'number' &&
+          !isNaN(variant.minStock) &&
+          isFinite(variant.minStock) &&
+          variant.minStock !== null;
 
         if (!stockIsValid || !minStockIsValid) {
           return false;
@@ -480,11 +535,11 @@ export class InventoryService {
         }
       });
 
-      return validVariants.map(variant => {
+      return validVariants.map((variant) => {
         const product = variant.productId;
         const productName = isPopulatedProduct(product) ? product.name : undefined;
         const productNameEn = isPopulatedProduct(product) ? product.nameEn : undefined;
-        
+
         // بناء اسم الـ variant من سمات المنتج + سمات الـ variant
         let variantName = productName || '';
         if (variant.attributeValues && variant.attributeValues.length > 0) {
@@ -497,11 +552,11 @@ export class InventoryService {
           }
         }
 
-        const productIdStr = isPopulatedProduct(product) 
-          ? product._id.toString() 
-          : (typeof product === 'object' && product !== null 
-              ? (product as Types.ObjectId).toString() 
-              : String(product));
+        const productIdStr = isPopulatedProduct(product)
+          ? product._id.toString()
+          : typeof product === 'object' && product !== null
+            ? (product as Types.ObjectId).toString()
+            : String(product);
 
         return {
           variantId: variant._id.toString(),
@@ -512,26 +567,28 @@ export class InventoryService {
           sku: variant.sku,
           currentStock: variant.stock,
           minStock: variant.minStock,
-          difference: variant.minStock - variant.stock
+          difference: variant.minStock - variant.stock,
         };
       });
     } catch (error) {
       this.logger.error('Error getting low stock variants:', error);
-      
+
       // إرجاع مصفوفة فارغة بدلاً من رمي خطأ
       this.logger.warn('Returning empty array due to query error');
       return [];
     }
   }
 
-  async getOutOfStockVariants(): Promise<Array<{
-    variantId: string;
-    productId: string;
-    productName?: string;
-    productNameEn?: string;
-    variantName?: string;
-    sku?: string;
-  }>> {
+  async getOutOfStockVariants(): Promise<
+    Array<{
+      variantId: string;
+      productId: string;
+      productName?: string;
+      productNameEn?: string;
+      variantName?: string;
+      sku?: string;
+    }>
+  > {
     try {
       // جلب الـ variants ثم تصفيتها في JavaScript
       const variants = await this.variantModel
@@ -546,17 +603,16 @@ export class InventoryService {
 
       // تصفية في JavaScript لتجنب مشاكل NaN
       return variants
-        .filter(variant => {
-          const stockIsValid = typeof variant.stock === 'number' && 
-                              !isNaN(variant.stock) && 
-                              isFinite(variant.stock);
+        .filter((variant) => {
+          const stockIsValid =
+            typeof variant.stock === 'number' && !isNaN(variant.stock) && isFinite(variant.stock);
           return stockIsValid && variant.stock === 0;
         })
-        .map(variant => {
+        .map((variant) => {
           const product = variant.productId;
           const productName = isPopulatedProduct(product) ? product.name : undefined;
           const productNameEn = isPopulatedProduct(product) ? product.nameEn : undefined;
-          
+
           // بناء اسم الـ variant من سمات المنتج + سمات الـ variant
           let variantName = productName || '';
           if (variant.attributeValues && variant.attributeValues.length > 0) {
@@ -569,11 +625,11 @@ export class InventoryService {
             }
           }
 
-          const productIdStr = isPopulatedProduct(product) 
-            ? product._id.toString() 
-            : (typeof product === 'object' && product !== null 
-                ? (product as Types.ObjectId).toString() 
-                : String(product));
+          const productIdStr = isPopulatedProduct(product)
+            ? product._id.toString()
+            : typeof product === 'object' && product !== null
+              ? (product as Types.ObjectId).toString()
+              : String(product);
 
           return {
             variantId: variant._id.toString(),
@@ -581,12 +637,12 @@ export class InventoryService {
             productName,
             productNameEn,
             variantName: variantName || variant.sku || undefined,
-            sku: variant.sku
+            sku: variant.sku,
           };
         });
     } catch (error) {
       this.logger.error('Error getting out of stock variants:', error);
-      
+
       // إرجاع مصفوفة فارغة بدلاً من رمي خطأ
       this.logger.warn('Returning empty array due to query error');
       return [];
@@ -620,14 +676,14 @@ export class InventoryService {
   }> {
     const [totalVariants, inStock, lowStockVariants, outOfStockVariants] = await Promise.all([
       this.variantModel.countDocuments({ deletedAt: null, isActive: true }),
-      this.variantModel.countDocuments({ 
-        deletedAt: null, 
+      this.variantModel.countDocuments({
+        deletedAt: null,
         isActive: true,
         trackInventory: true,
-        stock: { $gt: 0 }
+        stock: { $gt: 0 },
       }),
       this.getLowStockVariants(),
-      this.getOutOfStockVariants()
+      this.getOutOfStockVariants(),
     ]);
 
     return {
@@ -636,7 +692,7 @@ export class InventoryService {
       lowStock: lowStockVariants.length,
       outOfStock: outOfStockVariants.length,
       lowStockVariants,
-      outOfStockVariants
+      outOfStockVariants,
     };
   }
 
@@ -648,7 +704,7 @@ export class InventoryService {
       quantity: number;
       operation: 'add' | 'subtract' | 'set';
       reason?: string;
-    }>
+    }>,
   ): Promise<{
     success: number;
     failed: number;
@@ -663,14 +719,19 @@ export class InventoryService {
         if (update.operation === 'set') {
           await this.setStock(update.variantId, update.quantity, update.reason);
         } else {
-          await this.updateStock(update.variantId, update.quantity, update.operation, update.reason);
+          await this.updateStock(
+            update.variantId,
+            update.quantity,
+            update.operation,
+            update.reason,
+          );
         }
         success++;
       } catch (error) {
         failed++;
         errors.push({
           variantId: update.variantId,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }

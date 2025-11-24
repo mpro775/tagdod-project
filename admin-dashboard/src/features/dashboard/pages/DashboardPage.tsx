@@ -22,7 +22,6 @@ import {
   QuickStatsWidget,
   RevenueChart,
   TopProductsWidget,
-  ActivityTimeline,
   RecentOrders,
   QuickActions
 } from '../components';
@@ -241,17 +240,11 @@ export const DashboardPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Recent Orders & Activity Timeline */}
+      {/* Recent Orders */}
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, lg: 7 }}>
+        <Grid size={{ xs: 12 }}>
           <RecentOrders
             orders={recentOrdersData}
-            isLoading={ordersLoading}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, lg: 5 }}>
-          <ActivityTimeline 
-            recentOrders={recentOrdersData}
             isLoading={ordersLoading}
           />
         </Grid>

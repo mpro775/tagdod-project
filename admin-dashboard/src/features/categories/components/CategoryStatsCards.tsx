@@ -156,21 +156,6 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
           </Grid>
         ))}
       </Grid>
-
-      {stats && (
-        <Box sx={{ 
-          mt: 2, 
-          p: 2, 
-          bgcolor: 'background.default', 
-          borderRadius: 1,
-          border: 1,
-          borderColor: 'divider',
-        }}>
-          <Typography variant="body2" color="text.secondary">
-            {t('stats.lastUpdate')} {new Date().toLocaleString('ar-SA')}
-          </Typography>
-        </Box>
-      )}
     </Box>
   );
 };

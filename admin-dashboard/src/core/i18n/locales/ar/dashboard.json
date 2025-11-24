@@ -74,9 +74,24 @@
       "completed": "مكتمل",
       "pending": "معلق",
       "processing": "قيد المعالجة",
+      "confirmed": "مؤكد",
       "cancelled": "ملغي",
       "unknown": "غير محدد"
-    }
+    },
+    "paymentStatus": {
+      "paid": "مدفوع",
+      "pending": "معلق",
+      "failed": "فاشل"
+    },
+    "paymentMethod": {
+      "cod": "الدفع عند الاستلام",
+      "bankTransfer": "تحويل بنكي",
+      "wallet": "محفظة",
+      "card": "بطاقة"
+    },
+    "viewDetails": "عرض التفاصيل",
+    "invoice": "فاتورة: {{number}}",
+    "andMore": "و {{count}} منتج آخر"
   },
   "quickActions": {
     "title": "إجراءات سريعة",

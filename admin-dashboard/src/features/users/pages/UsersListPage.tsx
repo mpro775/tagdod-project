@@ -43,7 +43,6 @@ export const UsersListPage: React.FC = () => {
     search: '',
     status: undefined as UserStatus | undefined,
     role: undefined as any,
-    isAdmin: undefined as boolean | undefined,
     includeDeleted: false,
   });
   
@@ -64,7 +63,6 @@ export const UsersListPage: React.FC = () => {
     search: filters.search,
     status: filters.status,
     role: filters.role,
-    isAdmin: filters.isAdmin,
     includeDeleted: filters.includeDeleted,
     sortBy: sortModel[0]?.field || 'createdAt',
     sortOrder: sortModel[0]?.sort || 'desc',
@@ -106,7 +104,6 @@ export const UsersListPage: React.FC = () => {
       search: '',
       status: undefined,
       role: undefined,
-      isAdmin: undefined,
       includeDeleted: false,
     });
     setPaginationModel(prev => ({ ...prev, page: 0 }));
@@ -146,7 +143,6 @@ export const UsersListPage: React.FC = () => {
             search: filters.search,
             status: filters.status,
             role: filters.role,
-            isAdmin: filters.isAdmin,
             includeDeleted: filters.includeDeleted,
           }}
           onFiltersChange={(newFilters) => {
@@ -154,7 +150,6 @@ export const UsersListPage: React.FC = () => {
               search: newFilters.search,
               status: newFilters.status,
               role: newFilters.role,
-              isAdmin: newFilters.isAdmin,
               includeDeleted: newFilters.includeDeleted || false,
             });
             setPaginationModel(prev => ({ ...prev, page: 0 }));
@@ -204,10 +199,6 @@ export const UsersListPage: React.FC = () => {
           onPaginationModelChange={setPaginationModel}
           sortModel={sortModel}
           onSortModelChange={setSortModel}
-          searchPlaceholder={t('users:list.searchPlaceholder', 'البحث في المستخدمين...')}
-          onSearch={(search) => {
-            setFilters(prev => ({ ...prev, search }));
-          }}
           getRowId={(row: any) => row._id}
           onRowClick={(params) => {
             const row = params.row as User;

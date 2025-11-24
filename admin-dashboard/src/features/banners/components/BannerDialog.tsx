@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -136,24 +136,34 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
   const watchedNavigationType = watch('navigationType');
 
   // Load products when navigation type is PRODUCT
-  useEffect(() => {
-    if (watchedNavigationType === BannerNavigationType.PRODUCT) {
-      loadProducts();
-    }
-  }, [watchedNavigationType]);
-
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setLoadingProducts(true);
       const response = await productsApi.list({ page: 1, limit: 100, status: 'active' as any });
       const productsData = Array.isArray(response.data) ? response.data : [];
-      setProducts(productsData.map((p: any) => ({ _id: p._id, name: p.name || p.nameAr || '' })));
+      setProducts(
+        productsData.map((p: any) => ({ 
+          _id: p._id, 
+          name: p.name || p.nameEn || p.sku || 'بدون اسم' 
+        }))
+      );
     } catch (error) {
       console.error('Error loading products:', error);
+      toast.error(t('messages.loadProductsFailed', 'فشل تحميل المنتجات'));
+      setProducts([]);
     } finally {
       setLoadingProducts(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    if (watchedNavigationType === BannerNavigationType.PRODUCT) {
+      loadProducts();
+    } else {
+      // Reset products when navigation type changes away from PRODUCT
+      setProducts([]);
+    }
+  }, [watchedNavigationType, loadProducts]);
 
   useEffect(() => {
     if (banner && isEditing) {
@@ -492,16 +502,44 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                             {...field} 
                             label={t('form.navigationTarget.label', 'المنتج')} 
                             disabled={isLoading || loadingProducts}
+                            displayEmpty
+                            renderValue={(selected) => {
+                              if (!selected) {
+                                return <Typography color="text.secondary">{t('form.navigationTarget.placeholder', 'اختر منتج')}</Typography>;
+                              }
+                              const selectedProduct = products.find(p => p._id === selected);
+                              return selectedProduct?.name || selected;
+                            }}
                           >
-                            {products.map((prod) => (
-                              <MenuItem key={prod._id} value={prod._id}>
-                                {prod.name}
+                            {loadingProducts ? (
+                              <MenuItem disabled>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                  <CircularProgress size={16} />
+                                  <Typography>{t('loading', 'جاري التحميل...')}</Typography>
+                                </Box>
                               </MenuItem>
-                            ))}
+                            ) : products.length === 0 ? (
+                              <MenuItem disabled>
+                                <Typography color="text.secondary">
+                                  {t('form.navigationTarget.noProducts', 'لا توجد منتجات متاحة')}
+                                </Typography>
+                              </MenuItem>
+                            ) : (
+                              products.map((prod) => (
+                                <MenuItem key={prod._id} value={prod._id}>
+                                  {prod.name || prod._id}
+                                </MenuItem>
+                              ))
+                            )}
                           </Select>
                           {errors.navigationTarget && (
                             <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
                               {errors.navigationTarget.message}
+                            </Typography>
+                          )}
+                          {!loadingProducts && products.length === 0 && (
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.75 }}>
+                              {t('form.navigationTarget.noProductsHelper', 'لا توجد منتجات نشطة. يرجى التأكد من وجود منتجات نشطة أولاً.')}
                             </Typography>
                           )}
                         </FormControl>

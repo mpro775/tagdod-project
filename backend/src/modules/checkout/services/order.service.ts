@@ -2602,10 +2602,16 @@ export class OrderService {
     }
 
     await order.save();
-    this.logger.log(`Order ${order.orderNumber} status updated to ${newStatus}`);
+    this.logger.log(
+      `Order ${order.orderNumber} status updated to ${newStatus} (from ${previousStatus}) by ${changedByRole}`,
+    );
 
     // إرسال الفاتورة عند تأكيد الطلب أو إكماله
+    // يتم توليد الفاتورة عند تحديث الحالة إلى CONFIRMED أو COMPLETED من أي مصدر (لوحة التحكم، النظام، العميل)
     if (newStatus === OrderStatus.CONFIRMED || newStatus === OrderStatus.COMPLETED) {
+      this.logger.log(
+        `Generating invoice for order ${order.orderNumber} - Status changed to ${newStatus} by ${changedByRole}`,
+      );
       // استخدام orderId بدلاً من order object لتجنب ParallelSaveError
       this.sendOrderInvoiceForStatus(order._id.toString()).catch((err: any) => {
         this.logger.error(`Failed to send invoice for order ${order.orderNumber}:`, err);
@@ -3713,7 +3719,8 @@ export class OrderService {
    */
   async getStats(): Promise<{
     total: number;
-    pending: number;
+    pending_payment: number;
+    confirmed: number;
     processing: number;
     completed: number;
     onHold: number;
@@ -3735,7 +3742,10 @@ export class OrderService {
           $group: {
             _id: null,
             total: { $sum: 1 },
-            pending: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.PENDING_PAYMENT] }, 1, 0] } },
+            pending_payment: {
+              $sum: { $cond: [{ $eq: ['$status', OrderStatus.PENDING_PAYMENT] }, 1, 0] },
+            },
+            confirmed: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.CONFIRMED] }, 1, 0] } },
             processing: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.PROCESSING] }, 1, 0] } },
             completed: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.COMPLETED] }, 1, 0] } },
             onHold: { $sum: { $cond: [{ $eq: ['$status', OrderStatus.ON_HOLD] }, 1, 0] } },
@@ -3754,7 +3764,8 @@ export class OrderService {
 
       const result = stats[0] || {
         total: 0,
-        pending: 0,
+        pending_payment: 0,
+        confirmed: 0,
         processing: 0,
         completed: 0,
         onHold: 0,
@@ -3775,7 +3786,8 @@ export class OrderService {
 
       return {
         total: result.total,
-        pending: result.pending,
+        pending_payment: result.pending_payment,
+        confirmed: result.confirmed,
         processing: result.processing,
         completed: result.completed,
         onHold: result.onHold,
@@ -3792,7 +3804,8 @@ export class OrderService {
       // في حالة حدوث خطأ، نعيد قيم افتراضية
       return {
         total: 0,
-        pending: 0,
+        pending_payment: 0,
+        confirmed: 0,
         processing: 0,
         completed: 0,
         onHold: 0,
@@ -4280,7 +4293,10 @@ export class OrderService {
             }
             @page {
               size: A4;
-              margin: 0;
+              margin-top: 30mm;
+              margin-bottom: 30mm;
+              margin-left: 0;
+              margin-right: 0;
             }
             * {
               margin: 0;
@@ -4290,7 +4306,7 @@ export class OrderService {
             body {
               font-family: 'Cairo', sans-serif !important;
               direction: rtl;
-              padding: 0;
+              padding: 30mm 0; /* هامش 3 سم من الأعلى والأسفل لإظهار ترويسة الشركة */
               margin: 0;
               ${letterheadBase64 ? `background-image: url('${letterheadBase64}');` : 'background: #fff;'}
               background-size: cover;
@@ -4754,9 +4770,9 @@ export class OrderService {
           format: 'A4',
           printBackground: true,
           margin: {
-            top: '10mm',
+            top: '30mm', // 3 سم من الأعلى لإظهار ترويسة الشركة
             right: '15mm',
-            bottom: '15mm',
+            bottom: '30mm', // 3 سم من الأسفل لإظهار ترويسة الشركة
             left: '15mm',
           },
         });
@@ -4782,10 +4798,13 @@ export class OrderService {
 
   /**
    * إرسال الفاتورة عند تغيير الحالة (CONFIRMED أو COMPLETED)
+   * يتم استدعاء هذه الدالة تلقائياً عند تحديث حالة الطلب إلى CONFIRMED أو COMPLETED
+   * سواء كان التحديث من لوحة التحكم أو من النظام أو من العميل
    */
   private async sendOrderInvoiceForStatus(orderId: string): Promise<void> {
     let orderNumber = orderId; // للاستخدام في catch block
     try {
+      this.logger.log(`Starting invoice generation for order ${orderId}`);
       // جلب نسخة جديدة من الطلب لتجنب ParallelSaveError
       const order = await this.orderModel.findById(orderId);
       if (!order) {
@@ -4794,6 +4813,7 @@ export class OrderService {
       }
 
       orderNumber = order.orderNumber;
+      this.logger.log(`Processing invoice for order ${orderNumber} with status ${order.status}`);
 
       // التحقق من أن الفاتورة لم يتم إرسالها مسبقاً (اختياري - يمكن إزالة هذا إذا أردت إعادة الإرسال)
       // يمكن إضافة حقل `invoiceSentAt` لتتبع ذلك
@@ -4981,6 +5001,60 @@ export class OrderService {
     } catch (error) {
       this.logger.error(`Error sending invoice email for order ${order.orderNumber}:`, error);
       // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
+    }
+  }
+
+  /**
+   * توليد وإرسال الفاتورة يدوياً إلى إيميل المبيعات
+   * يمكن استدعاء هذه الدالة من لوحة التحكم لإرسال الفاتورة يدوياً
+   */
+  async manuallySendInvoiceToSales(orderId: string): Promise<{
+    success: boolean;
+    message: string;
+    invoiceNumber?: string;
+    emailSent?: boolean;
+    error?: string;
+  }> {
+    try {
+      const order = await this.orderModel.findById(orderId);
+      if (!order) {
+        throw new OrderNotFoundException();
+      }
+
+      // إنشاء رقم فاتورة إذا لم يكن موجوداً
+      if (!order.invoiceNumber) {
+        const year = new Date().getFullYear();
+        const count = await this.orderModel.countDocuments({
+          invoiceNumber: { $exists: true },
+          createdAt: { $gte: new Date(`${year}-01-01`), $lt: new Date(`${year + 1}-01-01`) },
+        });
+        order.invoiceNumber = `INV-${year}-${String(count + 1).padStart(5, '0')}`;
+        await order.save();
+      }
+
+      // إنشاء PDF الفاتورة
+      const pdfBuffer = await this.generateOrderInvoicePDF(order);
+      this.logger.log(
+        `PDF generated successfully for manual invoice send - order ${order.orderNumber}, size: ${pdfBuffer.length} bytes`,
+      );
+
+      // إرسال الفاتورة إلى إيميل المبيعات
+      await this.sendOrderInvoiceEmail(order, pdfBuffer);
+
+      return {
+        success: true,
+        message: `تم توليد وإرسال الفاتورة بنجاح إلى إيميل المبيعات`,
+        invoiceNumber: order.invoiceNumber,
+        emailSent: true,
+      };
+    } catch (error) {
+      this.logger.error(`Error manually sending invoice for order ${orderId}:`, error);
+      return {
+        success: false,
+        message: `فشل في إرسال الفاتورة: ${(error as Error).message}`,
+        error: (error as Error).message,
+        emailSent: false,
+      };
     }
   }
 }

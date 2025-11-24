@@ -38,13 +38,15 @@ import {
   LocationCity,
   LocalOffer,
   Add,
-  AttachMoney,
 } from '@mui/icons-material';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useEngineers, useEngineersOverviewStatistics } from '../hooks/useServices';
 import { useSuspendUser, useActivateUser } from '../../users/hooks/useUsers';
-import { useEngineerCoupons, useEngineerCouponStats } from '@/features/marketing/hooks/useMarketing';
+import {
+  useEngineerCoupons,
+  useEngineerCouponStats,
+} from '@/features/marketing/hooks/useMarketing';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
 import { getCityEmoji } from '@/shared/constants/yemeni-cities';
 import { useTranslation } from 'react-i18next';
@@ -66,11 +68,20 @@ export const EngineersManagementPage: React.FC = () => {
     pageSize: 20,
   });
 
-  const { data: engineersData, isLoading: isEngineersLoading, error: engineersError, refetch } = useEngineers({ search: searchTerm });
-  const { data: engineersStats, isLoading: isStatsLoading, error: statsError } = useEngineersOverviewStatistics();
+  const {
+    data: engineersData,
+    isLoading: isEngineersLoading,
+    error: engineersError,
+    refetch,
+  } = useEngineers({ search: searchTerm });
+  const {
+    data: engineersStats,
+    isLoading: isStatsLoading,
+    error: statsError,
+  } = useEngineersOverviewStatistics();
   const suspendUserMutation = useSuspendUser();
   const activateUserMutation = useActivateUser();
-  
+
   // Engineer coupons data
   const engineerId = selectedEngineer?.engineerId || selectedEngineer?._id;
   const { data: engineerCoupons, isLoading: couponsLoading } = useEngineerCoupons(engineerId || '');
@@ -131,11 +142,11 @@ export const EngineersManagementPage: React.FC = () => {
       minWidth: 200,
       flex: 1.5,
       renderCell: (params) => (
-        <Box 
-          display="flex" 
-          alignItems="center" 
+        <Box
+          display="flex"
+          alignItems="center"
           gap={1.5}
-          sx={{ 
+          sx={{
             width: '100%',
             height: '100%',
             py: 0.5,
@@ -145,10 +156,10 @@ export const EngineersManagementPage: React.FC = () => {
             {params.row.engineerName?.charAt(0) || '?'}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography 
-              variant="body2" 
+            <Typography
+              variant="body2"
               fontWeight="medium"
-              sx={{ 
+              sx={{
                 lineHeight: 1.4,
                 mb: 0.25,
                 overflow: 'hidden',
@@ -160,10 +171,10 @@ export const EngineersManagementPage: React.FC = () => {
             >
               {params.row.engineerName}
             </Typography>
-            <Typography 
-              variant="caption" 
+            <Typography
+              variant="caption"
               color="text.secondary"
-              sx={{ 
+              sx={{
                 lineHeight: 1.3,
                 mb: 0.25,
                 display: 'block',
@@ -172,10 +183,10 @@ export const EngineersManagementPage: React.FC = () => {
               {params.row.engineerPhone}
             </Typography>
             <Box display="flex" alignItems="center" mt={0.25}>
-              <Chip 
-                label={params.row.specialization || t('services:engineers.general')} 
-                size="small" 
-                color="info" 
+              <Chip
+                label={params.row.specialization || t('services:engineers.general')}
+                size="small"
+                color="info"
                 variant="outlined"
                 sx={{ height: 20, fontSize: '0.65rem' }}
               />
@@ -191,20 +202,20 @@ export const EngineersManagementPage: React.FC = () => {
       flex: 0.8,
       renderCell: (params) => (
         <Box sx={{ py: 0.5 }}>
-          <Typography 
-            variant="body2" 
+          <Typography
+            variant="body2"
             fontWeight="medium"
-            sx={{ 
+            sx={{
               lineHeight: 1.4,
               mb: 0.25,
             }}
           >
             {formatNumber(params.row.totalRequests)}
           </Typography>
-          <Typography 
-            variant="caption" 
+          <Typography
+            variant="caption"
             color="text.secondary"
-            sx={{ 
+            sx={{
               lineHeight: 1.3,
               display: 'block',
             }}
@@ -255,12 +266,12 @@ export const EngineersManagementPage: React.FC = () => {
       flex: 0.8,
       renderCell: (params) => (
         <Box display="flex" alignItems="center">
-          <Star 
-            sx={{ 
-              color: 'warning.main', 
+          <Star
+            sx={{
+              color: 'warning.main',
               mr: 0.5,
-              fontSize: '1rem'
-            }} 
+              fontSize: '1rem',
+            }}
           />
           <Chip
             label={params.row.averageRating.toFixed(1)}
@@ -304,24 +315,22 @@ export const EngineersManagementPage: React.FC = () => {
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Tooltip title={t('common:actions.view')}>
-            <IconButton
-              size="small"
-              onClick={() => handleViewDetails(params.row)}
-              color="primary"
-            >
+            <IconButton size="small" onClick={() => handleViewDetails(params.row)} color="primary">
               <Visibility />
             </IconButton>
           </Tooltip>
           <Tooltip title={t('common:actions.edit')}>
-            <IconButton
-              size="small"
-              onClick={() => handleEditEngineer(params.row)}
-              color="info"
-            >
+            <IconButton size="small" onClick={() => handleEditEngineer(params.row)} color="info">
               <Edit />
             </IconButton>
           </Tooltip>
-          <Tooltip title={params.row.isActive ? t('services:engineers.suspend') : t('services:engineers.activate')}>
+          <Tooltip
+            title={
+              params.row.isActive
+                ? t('services:engineers.suspend')
+                : t('services:engineers.activate')
+            }
+          >
             <IconButton
               size="small"
               onClick={() => handleToggleStatus(params.row)}
@@ -339,12 +348,10 @@ export const EngineersManagementPage: React.FC = () => {
     return (
       <Box>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4">
-            {t('services:engineers.title')}
-          </Typography>
+          <Typography variant="h4">{t('services:engineers.title')}</Typography>
           <Skeleton variant="rectangular" width={120} height={36} />
         </Box>
-        
+
         <Grid container spacing={3} sx={{ mb: 3 }}>
           {[1, 2, 3, 4].map((i) => (
             <Grid key={i} size={{ xs: 6, sm: 6, md: 3 }}>
@@ -358,7 +365,7 @@ export const EngineersManagementPage: React.FC = () => {
             </Grid>
           ))}
         </Grid>
-        
+
         <Card sx={{ bgcolor: 'background.paper' }}>
           <CardContent>
             <Skeleton variant="rectangular" height={400} />
@@ -372,9 +379,7 @@ export const EngineersManagementPage: React.FC = () => {
     return (
       <Box>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4">
-            {t('services:engineers.title')}
-          </Typography>
+          <Typography variant="h4">{t('services:engineers.title')}</Typography>
           <Button variant="outlined" startIcon={<Refresh />} onClick={() => refetch()}>
             {t('common:actions.retry')}
           </Button>
@@ -388,11 +393,11 @@ export const EngineersManagementPage: React.FC = () => {
 
   return (
     <Box>
-      <Box 
-        display="flex" 
+      <Box
+        display="flex"
         flexDirection={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between" 
-        alignItems={{ xs: 'flex-start', sm: 'center' }} 
+        justifyContent="space-between"
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
         gap={{ xs: 2, sm: 0 }}
         mb={3}
       >
@@ -404,8 +409,8 @@ export const EngineersManagementPage: React.FC = () => {
             {t('services:engineers.description')}
           </Typography>
         </Box>
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
           spacing={1}
           width={{ xs: '100%', sm: 'auto' }}
         >
@@ -419,21 +424,16 @@ export const EngineersManagementPage: React.FC = () => {
             size="small"
             fullWidth={isMobile}
           />
-          <Button 
-            variant="outlined" 
-            startIcon={<Refresh />} 
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
             size="small"
             onClick={() => refetch()}
             fullWidth={isMobile}
           >
             {t('common:actions.refresh')}
           </Button>
-          <Button 
-            variant="contained" 
-            startIcon={<Download />} 
-            size="small"
-            fullWidth={isMobile}
-          >
+          <Button variant="contained" startIcon={<Download />} size="small" fullWidth={isMobile}>
             {t('common:actions.export')}
           </Button>
         </Stack>
@@ -571,10 +571,10 @@ export const EngineersManagementPage: React.FC = () => {
       </Box>
 
       {/* حوار تفاصيل المهندس */}
-      <Dialog 
-        open={detailsDialogOpen} 
-        onClose={() => setDetailsDialogOpen(false)} 
-        maxWidth="md" 
+      <Dialog
+        open={detailsDialogOpen}
+        onClose={() => setDetailsDialogOpen(false)}
+        maxWidth="md"
         fullWidth
         PaperProps={{
           sx: {
@@ -582,15 +582,18 @@ export const EngineersManagementPage: React.FC = () => {
           },
         }}
       >
-        <DialogTitle>
-          {t('services:engineers.detailsTitle')}
-        </DialogTitle>
+        <DialogTitle>{t('services:engineers.detailsTitle')}</DialogTitle>
         <DialogContent>
           {selectedEngineer && (
             <Box>
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
+                  <Card
+                    sx={{
+                      bgcolor: 'background.paper',
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
                         {t('services:engineers.personalInfo')}
@@ -600,9 +603,7 @@ export const EngineersManagementPage: React.FC = () => {
                           {selectedEngineer.engineerName.charAt(0)}
                         </Avatar>
                         <Box>
-                          <Typography variant="h6">
-                            {selectedEngineer.engineerName}
-                          </Typography>
+                          <Typography variant="h6">{selectedEngineer.engineerName}</Typography>
                           <Box display="flex" alignItems="center">
                             <Phone sx={{ mr: 1, fontSize: '1rem', color: 'text.secondary' }} />
                             <Typography variant="body2" color="text.secondary">
@@ -616,7 +617,12 @@ export const EngineersManagementPage: React.FC = () => {
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
+                  <Card
+                    sx={{
+                      bgcolor: 'background.paper',
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
                         {t('services:engineers.statistics')}
@@ -668,7 +674,12 @@ export const EngineersManagementPage: React.FC = () => {
                 </Grid>
 
                 <Grid size={{ xs: 12 }}>
-                  <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
+                  <Card
+                    sx={{
+                      bgcolor: 'background.paper',
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
                         {t('services:engineers.completionRate')}
@@ -680,7 +691,9 @@ export const EngineersManagementPage: React.FC = () => {
                         <LinearProgress
                           variant="determinate"
                           value={selectedEngineer.completionRate || 0}
-                          color={getCompletionRateColor(selectedEngineer.completionRate || 0) as any}
+                          color={
+                            getCompletionRateColor(selectedEngineer.completionRate || 0) as any
+                          }
                           sx={{ flexGrow: 1, height: 12, borderRadius: 6 }}
                         />
                       </Box>
@@ -696,7 +709,12 @@ export const EngineersManagementPage: React.FC = () => {
 
                 {/* Engineer Coupons Section */}
                 <Grid size={{ xs: 12 }}>
-                  <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
+                  <Card
+                    sx={{
+                      bgcolor: 'background.paper',
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
                     <CardContent>
                       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                         <Typography variant="h6" gutterBottom>
@@ -794,12 +812,18 @@ export const EngineersManagementPage: React.FC = () => {
                                       </Typography>
                                     </Box>
                                     <Box textAlign="right">
-                                      <Typography variant="body2" fontWeight="medium" color="success.main">
-                                        {formatNumber(coupon.usedCount || 0)} {t('services:engineers.uses', 'استخدام')}
+                                      <Typography
+                                        variant="body2"
+                                        fontWeight="medium"
+                                        color="success.main"
+                                      >
+                                        {formatNumber(coupon.usedCount || 0)}{' '}
+                                        {t('services:engineers.uses', 'استخدام')}
                                       </Typography>
                                       {coupon.commissionRate && (
                                         <Typography variant="caption" color="text.secondary">
-                                          {coupon.commissionRate}% {t('services:engineers.commission', 'عمولة')}
+                                          {coupon.commissionRate}%{' '}
+                                          {t('services:engineers.commission', 'عمولة')}
                                         </Typography>
                                       )}
                                     </Box>
@@ -813,7 +837,8 @@ export const EngineersManagementPage: React.FC = () => {
                                       navigate(`/coupons?engineerId=${engineerId}`);
                                     }}
                                   >
-                                    {t('services:engineers.viewAll', 'عرض الكل')} ({engineerCoupons.length})
+                                    {t('services:engineers.viewAll', 'عرض الكل')} (
+                                    {engineerCoupons.length})
                                   </Button>
                                 )}
                               </Stack>
@@ -837,9 +862,7 @@ export const EngineersManagementPage: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailsDialogOpen(false)}>
-            {t('common:actions.close')}
-          </Button>
+          <Button onClick={() => setDetailsDialogOpen(false)}>{t('common:actions.close')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

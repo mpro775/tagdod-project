@@ -4887,6 +4887,34 @@
           }
         },
         {
+          "name": "توليد وإرسال الفاتورة يدوياً",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/{id}/send-invoice",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "{id}",
+                "send-invoice"
+              ]
+            },
+            "description": "توليد وإرسال الفاتورة إلى إيميل المبيعات يدوياً (في حال لم يصل الإيميل تلقائياً)"
+          }
+        },
+        {
           "name": "تحديث حالة عدة طلبات",
           "request": {
             "method": "POST",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -30,6 +30,13 @@ import {
   Skeleton,
   useTheme,
   Drawer,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  Menu,
+  Tooltip,
+  Paper,
+  Divider,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -47,6 +54,11 @@ import {
   Notes,
   AttachMoney,
   Warning,
+  CheckCircle,
+  MoreVert,
+  KeyboardArrowDown,
+  CreditCard,
+  Email,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -63,6 +75,7 @@ import {
   useCancelOrder,
   useAddOrderNotes,
   useVerifyPayment,
+  useSendInvoice,
 } from '../hooks/useOrders';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
 import {
@@ -78,8 +91,6 @@ import {
 } from '../types/order.types';
 import { ar } from 'date-fns/locale';
 import { OrderTimeline, OrderStatusChip, RatingCard } from '../components';
-
-import { CreditCard } from '@mui/icons-material';
 import { useUser } from '@/features/users/hooks/useUsers';
 
 export const OrderDetailsPage: React.FC = () => {
@@ -89,6 +100,9 @@ export const OrderDetailsPage: React.FC = () => {
   const theme = useTheme();
   const { isMobile } = useBreakpoint();
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
+  const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(null);
+  const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
+  const [speedDialOpen, setSpeedDialOpen] = useState(false);
 
   // Dialog states
   const [updateStatusDialog, setUpdateStatusDialog] = useState(false);
@@ -130,11 +144,337 @@ export const OrderDetailsPage: React.FC = () => {
   const cancelMutation = useCancelOrder();
   const addNotesMutation = useAddOrderNotes();
   const verifyPaymentMutation = useVerifyPayment();
+  const sendInvoiceMutation = useSendInvoice();
   const { data: customer, isLoading: isCustomerLoading } = useUser(order?.userId ?? '');
+
+  // Helper function to round to 2 decimal places
+  const roundToTwoDecimals = (value: number): number => {
+    return Math.round(value * 100) / 100;
+  };
+
+  // Quick payment verification handler - يفتح dialog مع ملء المبلغ تلقائياً
+  const handleQuickVerifyPayment = () => {
+    if (!order) return;
+
+    // ملء المبلغ المطلوب تلقائياً
+    setVerifyPaymentForm({
+      verifiedAmount: roundToTwoDecimals(order.total),
+      verifiedCurrency: (order.currency || 'YER') as 'YER' | 'SAR' | 'USD',
+      notes: '',
+    });
+
+    setVerifyPaymentDialog(true);
+  };
+
+  // Get next available statuses based on backend state machine logic
+  const getNextAvailableStatuses = useMemo(() => {
+    if (!order) return [];
+
+    const currentStatus = order.status;
+    const isPaid = order.paymentStatus === PaymentStatus.PAID;
+
+    // State machine transitions from backend
+    const transitions: Record<OrderStatus, OrderStatus[]> = {
+      [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
+      [OrderStatus.PROCESSING]: [
+        OrderStatus.COMPLETED,
+        OrderStatus.RETURNED,
+        OrderStatus.ON_HOLD,
+        OrderStatus.CANCELLED,
+      ],
+      [OrderStatus.COMPLETED]: [],
+      [OrderStatus.ON_HOLD]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
+      [OrderStatus.CANCELLED]: [],
+      [OrderStatus.RETURNED]: [OrderStatus.REFUNDED],
+      [OrderStatus.REFUNDED]: [],
+    };
+
+    // Get valid next states from state machine
+    const validNextStates = transitions[currentStatus] || [];
+
+    // Filter based on payment requirements
+    const statusesRequiringPayment = [
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+      OrderStatus.COMPLETED,
+    ];
+
+    return validNextStates.filter((status) => {
+      // Don't show if payment required but not paid (except CANCELLED)
+      if (
+        statusesRequiringPayment.includes(status) &&
+        status !== OrderStatus.CANCELLED &&
+        !isPaid
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [order]);
+
+  // Get quick actions based on order status and backend logic
+  const getQuickActions = useMemo(() => {
+    if (!order) return [];
+
+    const actions: Array<{
+      label: string;
+      icon: React.ReactNode;
+      color: 'primary' | 'success' | 'warning' | 'error';
+      onClick: () => void;
+      priority?: number; // للترتيب حسب الأولوية
+    }> = [];
+
+    const currentStatus = order.status;
+    const paymentStatus = order.paymentStatus;
+    const isPaid = paymentStatus === PaymentStatus.PAID;
+    const isBankTransfer = order.paymentMethod === PaymentMethod.BANK_TRANSFER;
+    const hasLocalPaymentAccount = !!order.localPaymentAccountId;
+
+    // 1. التحقق من الدفع (أولوية عالية) - فقط للطلبات في انتظار الدفع
+    if (
+      currentStatus === OrderStatus.PENDING_PAYMENT &&
+      isBankTransfer &&
+      hasLocalPaymentAccount &&
+      paymentStatus === PaymentStatus.PENDING
+    ) {
+      actions.push({
+        label: t('actions.verifyPayment', { defaultValue: 'التحقق من الدفع' }),
+        icon: <CreditCard />,
+        color: 'primary',
+        priority: 1,
+        onClick: handleQuickVerifyPayment,
+      });
+    }
+
+    // 2. تأكيد الطلب - بعد التحقق من الدفع أو إذا كان الدفع مكتملاً
+    if (currentStatus === OrderStatus.PENDING_PAYMENT && isPaid) {
+      actions.push({
+        label: t('actions.confirmOrder', { defaultValue: 'تأكيد الطلب' }),
+        icon: <CheckCircle />,
+        color: 'success',
+        priority: 2,
+        onClick: async () => {
+          if (!id) return;
+          try {
+            await updateStatusMutation.mutateAsync({
+              id,
+              data: { status: OrderStatus.CONFIRMED },
+            });
+          } catch (error) {
+            console.error('Confirm order failed:', error);
+          }
+        },
+      });
+    }
+
+    // 3. بدء التجهيز - من حالة CONFIRMED
+    if (currentStatus === OrderStatus.CONFIRMED && isPaid) {
+      actions.push({
+        label: t('actions.startProcessing', { defaultValue: 'بدء التجهيز' }),
+        icon: <LocalShipping />,
+        color: 'primary',
+        priority: 3,
+        onClick: async () => {
+          if (!id) return;
+          try {
+            await updateStatusMutation.mutateAsync({
+              id,
+              data: { status: OrderStatus.PROCESSING },
+            });
+          } catch (error) {
+            console.error('Start processing failed:', error);
+          }
+        },
+      });
+    }
+
+    // 4. إعادة التجهيز - من حالة ON_HOLD
+    if (currentStatus === OrderStatus.ON_HOLD && isPaid) {
+      actions.push({
+        label: t('actions.resumeProcessing', { defaultValue: 'إعادة التجهيز' }),
+        icon: <LocalShipping />,
+        color: 'primary',
+        priority: 4,
+        onClick: async () => {
+          if (!id) return;
+          try {
+            await updateStatusMutation.mutateAsync({
+              id,
+              data: { status: OrderStatus.PROCESSING },
+            });
+          } catch (error) {
+            console.error('Resume processing failed:', error);
+          }
+        },
+      });
+    }
+
+    // 5. شحن الطلب - من حالة PROCESSING
+    if (currentStatus === OrderStatus.PROCESSING) {
+      actions.push({
+        label: t('actions.shipOrder'),
+        icon: <LocalShipping />,
+        color: 'success',
+        priority: 5,
+        onClick: () => setShipDialog(true),
+      });
+    }
+
+    // 6. إتمام الطلب - من حالة PROCESSING
+    if (currentStatus === OrderStatus.PROCESSING && isPaid) {
+      actions.push({
+        label: t('actions.completeOrder', { defaultValue: 'إتمام الطلب' }),
+        icon: <CheckCircle />,
+        color: 'success',
+        priority: 6,
+        onClick: async () => {
+          if (!id) return;
+          try {
+            await updateStatusMutation.mutateAsync({
+              id,
+              data: { status: OrderStatus.COMPLETED },
+            });
+          } catch (error) {
+            console.error('Complete order failed:', error);
+          }
+        },
+      });
+    }
+
+    // 7. إرجاع الطلب - من حالة PROCESSING
+    if (currentStatus === OrderStatus.PROCESSING) {
+      actions.push({
+        label: t('actions.returnOrder', { defaultValue: 'إرجاع الطلب' }),
+        icon: <Refresh />,
+        color: 'warning',
+        priority: 7,
+        onClick: async () => {
+          if (!id) return;
+          try {
+            await updateStatusMutation.mutateAsync({
+              id,
+              data: { status: OrderStatus.RETURNED },
+            });
+          } catch (error) {
+            console.error('Return order failed:', error);
+          }
+        },
+      });
+    }
+
+    // 8. استرداد المبلغ - من حالة COMPLETED أو RETURNED
+    if ([OrderStatus.COMPLETED, OrderStatus.RETURNED].includes(currentStatus)) {
+      actions.push({
+        label: t('actions.refundOrder'),
+        icon: <Refresh />,
+        color: 'warning',
+        priority: 8,
+        onClick: () => setRefundDialog(true),
+      });
+    }
+
+    // 9. استرداد نهائي - من حالة RETURNED
+    if (currentStatus === OrderStatus.RETURNED) {
+      actions.push({
+        label: t('actions.markRefunded', { defaultValue: 'تسجيل الاسترداد' }),
+        icon: <Refresh />,
+        color: 'warning',
+        priority: 9,
+        onClick: async () => {
+          if (!id) return;
+          try {
+            await updateStatusMutation.mutateAsync({
+              id,
+              data: { status: OrderStatus.REFUNDED },
+            });
+          } catch (error) {
+            console.error('Mark refunded failed:', error);
+          }
+        },
+      });
+    }
+
+    // 10. إرسال فاتورة يدوياً - متاح لجميع الطلبات المؤكدة أو المكتملة
+    if (
+      [OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.COMPLETED].includes(currentStatus)
+    ) {
+      actions.push({
+        label: t('actions.sendInvoice', { defaultValue: 'إرسال الفاتورة' }),
+        icon: <Email />,
+        color: 'primary',
+        priority: 11,
+        onClick: async () => {
+          if (!id) return;
+          try {
+            await sendInvoiceMutation.mutateAsync(id);
+          } catch (error) {
+            console.error('Send invoice failed:', error);
+          }
+        },
+      });
+    }
+
+    // 11. إلغاء الطلب - من الحالات المسموح إلغاؤها
+    const cancellableStatuses = [
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+      OrderStatus.ON_HOLD,
+    ];
+
+    if (cancellableStatuses.includes(currentStatus)) {
+      actions.push({
+        label: t('actions.cancelOrder'),
+        icon: <Cancel />,
+        color: 'error',
+        priority: 12,
+        onClick: () => setCancelDialog(true),
+      });
+    }
+
+    // ترتيب الإجراءات حسب الأولوية
+    return actions.sort((a, b) => (a.priority || 99) - (b.priority || 99));
+  }, [order, id, t, updateStatusMutation, handleQuickVerifyPayment, sendInvoiceMutation]);
+
+  // Handle status change from chip
+  const handleStatusChipClick = (event: React.MouseEvent<HTMLElement>) => {
+    setStatusMenuAnchor(event.currentTarget);
+  };
+
+  const handleStatusSelect = async (newStatus: OrderStatus) => {
+    if (!id || !order) return;
+
+    setStatusMenuAnchor(null);
+
+    // Check payment requirement
+    const statusesRequiringPayment = [
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+      OrderStatus.COMPLETED,
+    ];
+
+    if (
+      statusesRequiringPayment.includes(newStatus) &&
+      order.paymentStatus !== PaymentStatus.PAID
+    ) {
+      toast.error(`لا يمكن تغيير حالة الطلب إلى ${t(`status.${newStatus}`)} بدون إتمام الدفع.`);
+      return;
+    }
+
+    try {
+      await updateStatusMutation.mutateAsync({
+        id,
+        data: { status: newStatus },
+      });
+    } catch (error) {
+      console.error('Update status failed:', error);
+    }
+  };
 
   const handleUpdateStatus = async () => {
     if (!id || !order) return;
-    
+
     // التحقق من الدفع قبل السماح بتغيير الحالة
     const statusesRequiringPayment = [
       OrderStatus.CONFIRMED,
@@ -150,7 +490,9 @@ export const OrderDetailsPage: React.FC = () => {
     ) {
       // إظهار تحذير للمستخدم
       toast.error(
-        `لا يمكن تغيير حالة الطلب إلى ${t(`status.${statusForm.status}`)} بدون إتمام الدفع. حالة الدفع الحالية: ${t(`payment.status.${order.paymentStatus}`)}`
+        `لا يمكن تغيير حالة الطلب إلى ${t(
+          `status.${statusForm.status}`
+        )} بدون إتمام الدفع. حالة الدفع الحالية: ${t(`payment.status.${order.paymentStatus}`)}`
       );
       return;
     }
@@ -219,17 +561,12 @@ export const OrderDetailsPage: React.FC = () => {
       setVerifyPaymentDialog(false);
       setVerifyPaymentForm({
         verifiedAmount: 0,
-        verifiedCurrency: order?.currency as 'YER' | 'SAR' | 'USD' || 'YER',
+        verifiedCurrency: (order?.currency as 'YER' | 'SAR' | 'USD') || 'YER',
         notes: '',
       });
     } catch (error) {
       console.error('Verify payment failed:', error);
     }
-  };
-
-  // Helper function to round to 2 decimal places
-  const roundToTwoDecimals = (value: number): number => {
-    return Math.round(value * 100) / 100;
   };
 
   // Initialize verify payment form when order loads or dialog opens
@@ -239,13 +576,15 @@ export const OrderDetailsPage: React.FC = () => {
         const initialAmount = order.verifiedPaymentAmount || order.total || 0;
         setVerifyPaymentForm({
           verifiedAmount: roundToTwoDecimals(initialAmount),
-          verifiedCurrency: (order.verifiedPaymentCurrency || order.currency || 'YER') as 'YER' | 'SAR' | 'USD',
+          verifiedCurrency: (order.verifiedPaymentCurrency || order.currency || 'YER') as
+            | 'YER'
+            | 'SAR'
+            | 'USD',
           notes: order.paymentVerificationNotes || '',
         });
       }
     }
   }, [order, verifyPaymentDialog]);
-
 
   if (isLoading) {
     return (
@@ -266,7 +605,10 @@ export const OrderDetailsPage: React.FC = () => {
   const orderItems = Array.isArray(order.items) ? order.items : [];
   const deliveryAddress = order?.deliveryAddress;
   const addressLabel = (deliveryAddress as { label?: string } | undefined)?.label;
-  const customerNameFromUser = [customer?.firstName, customer?.lastName].filter(Boolean).join(' ').trim();
+  const customerNameFromUser = [customer?.firstName, customer?.lastName]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
   const displayCustomerName =
     customerNameFromUser ||
     deliveryAddress?.recipientName ||
@@ -280,17 +622,24 @@ export const OrderDetailsPage: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ar}>
       <Box sx={{ p: { xs: 1.5, sm: 2, md: 3 } }}>
-        {/* Header */}
+        {/* Enhanced Header with Quick Actions */}
         <Box
           sx={{
             mb: { xs: 2, md: 3 },
             display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'flex-start', sm: 'center' },
+            flexDirection: 'column',
             gap: 2,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+          {/* Title Row */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              flexWrap: 'wrap',
+            }}
+          >
             <IconButton onClick={() => navigate('/orders')} sx={{ mr: { xs: 0, sm: 1 } }}>
               <ArrowBack />
             </IconButton>
@@ -306,137 +655,338 @@ export const OrderDetailsPage: React.FC = () => {
                 {t('details.orderCreatedAt')} {formatDate(order.createdAt)}
               </Typography>
             </Box>
+
+            {/* Unified Action Menu */}
+            {!isMobile && (
+              <Tooltip title={t('actions.moreActions', { defaultValue: 'المزيد من الإجراءات' })}>
+                <IconButton
+                  onClick={(e) => setActionMenuAnchor(e.currentTarget)}
+                  sx={{ ml: 'auto' }}
+                >
+                  <MoreVert />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
-          {isMobile ? (
-            <>
-              <Button
-                variant="contained"
-                fullWidth
-                startIcon={<Edit />}
-                onClick={() => setMobileActionsOpen(true)}
+
+          {/* Quick Actions Bar */}
+          {getQuickActions.length > 0 && (
+            <Paper
+              elevation={2}
+              sx={{
+                p: 1.5,
+                bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
+                borderRadius: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  flexWrap: 'wrap',
+                }}
               >
-                {t('actions.updateStatus')}
-              </Button>
-              <Drawer
-                anchor="bottom"
-                open={mobileActionsOpen}
-                onClose={() => setMobileActionsOpen(false)}
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontWeight: 'bold', mr: 1 }}
+                >
+                  {t('actions.quickActions', { defaultValue: 'إجراءات سريعة' })}:
+                </Typography>
+                {getQuickActions.map((action, index) => (
+                  <Button
+                    key={index}
+                    variant="contained"
+                    color={action.color}
+                    size="small"
+                    startIcon={action.icon}
+                    onClick={action.onClick}
+                    sx={{
+                      textTransform: 'none',
+                      borderRadius: 2,
+                      px: 2,
+                    }}
+                  >
+                    {action.label}
+                  </Button>
+                ))}
+              </Box>
+            </Paper>
+          )}
+
+          {/* Status Overview with Inline Change */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              flexWrap: 'wrap',
+              p: 2,
+              bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'grey.50',
+              borderRadius: 2,
+            }}
+          >
+            <Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mb: 0.5 }}
               >
-                <Box sx={{ p: 2 }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    {t('actions.updateStatus')}
-                  </Typography>
-                  <Stack spacing={1}>
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={<Edit />}
-                      onClick={() => {
-                        setMobileActionsOpen(false);
-                        setUpdateStatusDialog(true);
-                      }}
+                {t('details.orderStatus')}
+              </Typography>
+              <Tooltip title={t('actions.clickToChange', { defaultValue: 'انقر لتغيير الحالة' })}>
+                <Chip
+                  label={t(`status.${order.status}`)}
+                  onClick={handleStatusChipClick}
+                  icon={<KeyboardArrowDown />}
+                  color={
+                    order.status === OrderStatus.COMPLETED
+                      ? 'success'
+                      : order.status === OrderStatus.CANCELLED
+                      ? 'error'
+                      : order.status === OrderStatus.PROCESSING
+                      ? 'primary'
+                      : 'default'
+                  }
+                  sx={{
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      bgcolor: theme.palette.action.hover,
+                    },
+                  }}
+                />
+              </Tooltip>
+            </Box>
+
+            <Divider orientation="vertical" flexItem />
+
+            <Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mb: 0.5 }}
+              >
+                {t('details.paymentStatus')}
+              </Typography>
+              <Chip
+                label={t(`payment.status.${order.paymentStatus}`)}
+                color={order.paymentStatus === PaymentStatus.PAID ? 'success' : 'warning'}
+              />
+            </Box>
+
+            <Divider orientation="vertical" flexItem />
+
+            <Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mb: 0.5 }}
+              >
+                {t('details.total')}
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                {formatCurrency(order.total, order.currency)}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Status Change Menu */}
+        <Menu
+          anchorEl={statusMenuAnchor}
+          open={Boolean(statusMenuAnchor)}
+          onClose={() => setStatusMenuAnchor(null)}
+          PaperProps={{
+            sx: { minWidth: 200, maxHeight: 400 },
+          }}
+        >
+          <MenuItem disabled>
+            <Typography variant="caption" color="text.secondary">
+              {t('actions.selectNewStatus', { defaultValue: 'اختر الحالة الجديدة' })}
+            </Typography>
+          </MenuItem>
+          <Divider />
+          {getNextAvailableStatuses.map((status) => {
+            const requiresPayment =
+              [OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.COMPLETED].includes(
+                status
+              ) && order?.paymentStatus !== PaymentStatus.PAID;
+
+            return (
+              <MenuItem
+                key={status}
+                onClick={() => handleStatusSelect(status)}
+                disabled={requiresPayment}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                  <Typography>{t(`status.${status}`)}</Typography>
+                  {requiresPayment && (
+                    <Tooltip
+                      title={t('actions.paymentRequired', { defaultValue: 'يتطلب إتمام الدفع' })}
                     >
-                      {t('actions.updateStatus')}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={<LocalShipping />}
-                      onClick={() => {
-                        setMobileActionsOpen(false);
-                        setShipDialog(true);
-                      }}
-                      disabled={order.status !== OrderStatus.PROCESSING}
-                    >
-                      {t('actions.shipOrder')}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={<Refresh />}
-                      onClick={() => {
-                        setMobileActionsOpen(false);
-                        setRefundDialog(true);
-                      }}
-                      disabled={
-                        ![OrderStatus.COMPLETED, OrderStatus.RETURNED].includes(order.status)
-                      }
-                    >
-                      {t('actions.refundOrder')}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      startIcon={<Cancel />}
-                      onClick={() => {
-                        setMobileActionsOpen(false);
-                        setCancelDialog(true);
-                      }}
-                      disabled={
-                        [
-                          OrderStatus.CANCELLED,
-                          OrderStatus.COMPLETED,
-                          OrderStatus.RETURNED,
-                          OrderStatus.REFUNDED,
-                        ].includes(order.status)
-                      }
-                    >
-                      {t('actions.cancelOrder')}
-                    </Button>
-                  </Stack>
+                      <Warning fontSize="small" color="warning" />
+                    </Tooltip>
+                  )}
                 </Box>
-              </Drawer>
-            </>
-          ) : (
-            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-              <Button
-                variant="outlined"
-                size={isMobile ? 'small' : 'medium'}
-                startIcon={<Edit />}
-                onClick={() => setUpdateStatusDialog(true)}
-              >
+              </MenuItem>
+            );
+          })}
+        </Menu>
+
+        {/* Unified Action Menu */}
+        <Menu
+          anchorEl={actionMenuAnchor}
+          open={Boolean(actionMenuAnchor)}
+          onClose={() => setActionMenuAnchor(null)}
+        >
+          <MenuItem
+            onClick={() => {
+              setActionMenuAnchor(null);
+              setUpdateStatusDialog(true);
+            }}
+          >
+            <ListItemIcon>
+              <Edit fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('actions.updateStatus')}</ListItemText>
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setActionMenuAnchor(null);
+              setShipDialog(true);
+            }}
+            disabled={order.status !== OrderStatus.PROCESSING}
+          >
+            <ListItemIcon>
+              <LocalShipping fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('actions.shipOrder')}</ListItemText>
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setActionMenuAnchor(null);
+              setRefundDialog(true);
+            }}
+            disabled={![OrderStatus.COMPLETED, OrderStatus.RETURNED].includes(order.status)}
+          >
+            <ListItemIcon>
+              <Refresh fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('actions.refundOrder')}</ListItemText>
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setActionMenuAnchor(null);
+              setCancelDialog(true);
+            }}
+            disabled={[
+              OrderStatus.CANCELLED,
+              OrderStatus.COMPLETED,
+              OrderStatus.RETURNED,
+              OrderStatus.REFUNDED,
+            ].includes(order.status)}
+          >
+            <ListItemIcon>
+              <Cancel fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('actions.cancelOrder')}</ListItemText>
+          </MenuItem>
+          <Divider />
+          <MenuItem
+            onClick={() => {
+              setActionMenuAnchor(null);
+              setNotesDialog(true);
+            }}
+          >
+            <ListItemIcon>
+              <Notes fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('actions.addNotes', { defaultValue: 'إضافة ملاحظات' })}</ListItemText>
+          </MenuItem>
+        </Menu>
+
+        {/* Mobile Actions - Simplified */}
+        {isMobile && (
+          <Button
+            variant="contained"
+            fullWidth
+            startIcon={<Edit />}
+            onClick={() => setMobileActionsOpen(true)}
+          >
+            {t('actions.updateStatus')}
+          </Button>
+        )}
+
+        {/* Mobile Actions Drawer */}
+        {isMobile && (
+          <Drawer
+            anchor="bottom"
+            open={mobileActionsOpen}
+            onClose={() => setMobileActionsOpen(false)}
+          >
+            <Box sx={{ p: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
                 {t('actions.updateStatus')}
-              </Button>
-              <Button
-                variant="outlined"
-                size={isMobile ? 'small' : 'medium'}
-                startIcon={<LocalShipping />}
-                onClick={() => setShipDialog(true)}
-                disabled={order.status !== OrderStatus.PROCESSING}
-              >
-                {t('actions.shipOrder')}
-              </Button>
-              <Button
-                variant="outlined"
-                size={isMobile ? 'small' : 'medium'}
-                startIcon={<Refresh />}
-                onClick={() => setRefundDialog(true)}
-                disabled={![
-                  OrderStatus.COMPLETED,
-                  OrderStatus.RETURNED,
-                ].includes(order.status)}
-              >
-                {t('actions.refundOrder')}
-              </Button>
-              <Button
-                variant="outlined"
-                size={isMobile ? 'small' : 'medium'}
-                startIcon={<Cancel />}
-                onClick={() => setCancelDialog(true)}
-                disabled={
-                  [
+              </Typography>
+              <Stack spacing={1}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<Edit />}
+                  onClick={() => {
+                    setMobileActionsOpen(false);
+                    setUpdateStatusDialog(true);
+                  }}
+                >
+                  {t('actions.updateStatus')}
+                </Button>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<LocalShipping />}
+                  onClick={() => {
+                    setMobileActionsOpen(false);
+                    setShipDialog(true);
+                  }}
+                  disabled={order.status !== OrderStatus.PROCESSING}
+                >
+                  {t('actions.shipOrder')}
+                </Button>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<Refresh />}
+                  onClick={() => {
+                    setMobileActionsOpen(false);
+                    setRefundDialog(true);
+                  }}
+                  disabled={![OrderStatus.COMPLETED, OrderStatus.RETURNED].includes(order.status)}
+                >
+                  {t('actions.refundOrder')}
+                </Button>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<Cancel />}
+                  onClick={() => {
+                    setMobileActionsOpen(false);
+                    setCancelDialog(true);
+                  }}
+                  disabled={[
                     OrderStatus.CANCELLED,
                     OrderStatus.COMPLETED,
                     OrderStatus.RETURNED,
                     OrderStatus.REFUNDED,
-                  ].includes(order.status)
-                }
-              >
-                {t('actions.cancelOrder')}
-              </Button>
-            </Stack>
-          )}
-        </Box>
+                  ].includes(order.status)}
+                >
+                  {t('actions.cancelOrder')}
+                </Button>
+              </Stack>
+            </Box>
+          </Drawer>
+        )}
 
         <Grid container spacing={{ xs: 2, md: 3 }}>
           {/* Order Overview */}
@@ -458,15 +1008,24 @@ export const OrderDetailsPage: React.FC = () => {
                 <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Box textAlign="center">
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', mb: 0.5 }}
+                      >
                         {t('details.orderStatus')}
                       </Typography>
                       <OrderStatusChip status={order.status} size={isMobile ? 'small' : 'medium'} />
                     </Box>
                   </Grid>
+                  {/* Note: Status can be changed inline from the header Quick Actions */}
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Box textAlign="center">
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', mb: 0.5 }}
+                      >
                         {t('details.paymentStatus')}
                       </Typography>
                       <Chip
@@ -478,14 +1037,20 @@ export const OrderDetailsPage: React.FC = () => {
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Box textAlign="center">
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', mb: 0.5 }}
+                      >
                         {t('details.paymentMethod')}
                       </Typography>
                       <Chip
                         label={
-                          order.localPaymentAccountType === 'wallet' && order.paymentMethod === PaymentMethod.BANK_TRANSFER
+                          order.localPaymentAccountType === 'wallet' &&
+                          order.paymentMethod === PaymentMethod.BANK_TRANSFER
                             ? t('payment.method.WALLET', { defaultValue: 'محفظة' })
-                            : order.localPaymentAccountType === 'bank' && order.paymentMethod === PaymentMethod.BANK_TRANSFER
+                            : order.localPaymentAccountType === 'bank' &&
+                              order.paymentMethod === PaymentMethod.BANK_TRANSFER
                             ? t('payment.method.BANK_TRANSFER', { defaultValue: 'تحويل بنكي' })
                             : t(`payment.method.${order.paymentMethod}`)
                         }
@@ -497,7 +1062,11 @@ export const OrderDetailsPage: React.FC = () => {
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Box textAlign="center">
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', mb: 0.5 }}
+                      >
                         {t('details.total')}
                       </Typography>
                       <Typography variant={isMobile ? 'body1' : 'h6'} sx={{ fontWeight: 'bold' }}>
@@ -557,81 +1126,94 @@ export const OrderDetailsPage: React.FC = () => {
                         }
                         secondary={
                           <Box>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: 'block', mb: 0.5 }}
+                            >
                               {t('details.quantity')}: {item.qty} | {t('details.price')}:{' '}
                               {formatCurrency(item.finalPrice, order.currency)}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              {t('details.lineTotal')}: {formatCurrency(item.lineTotal, order.currency)}
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: 'block' }}
+                            >
+                              {t('details.lineTotal')}:{' '}
+                              {formatCurrency(item.lineTotal, order.currency)}
                             </Typography>
                             {/* Variant Attributes - Professional Display */}
-                            {item.snapshot.variantAttributes && item.snapshot.variantAttributes.length > 0 && (
-                              <Box sx={{ mt: 1.5 }}>
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    display: 'block',
-                                    mb: 1,
-                                    fontWeight: 'medium',
-                                    color: 'text.secondary',
-                                  }}
-                                >
-                                  {t('details.variantAttributes', { defaultValue: 'السمات المختارة' })}:
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 1,
-                                    p: 1.5,
-                                    bgcolor:
-                                      theme.palette.mode === 'dark'
-                                        ? 'rgba(255, 255, 255, 0.05)'
-                                        : 'grey.50',
-                                    borderRadius: 1,
-                                    border: `1px solid ${theme.palette.divider}`,
-                                  }}
-                                >
-                                  {item.snapshot.variantAttributes.map((attr, attrIndex) => (
-                                    <Box
-                                      key={attrIndex}
-                                      sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                        flexWrap: 'wrap',
-                                      }}
-                                    >
-                                      <Typography
-                                        variant="caption"
+                            {item.snapshot.variantAttributes &&
+                              item.snapshot.variantAttributes.length > 0 && (
+                                <Box sx={{ mt: 1.5 }}>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      display: 'block',
+                                      mb: 1,
+                                      fontWeight: 'medium',
+                                      color: 'text.secondary',
+                                    }}
+                                  >
+                                    {t('details.variantAttributes', {
+                                      defaultValue: 'السمات المختارة',
+                                    })}
+                                    :
+                                  </Typography>
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: 1,
+                                      p: 1.5,
+                                      bgcolor:
+                                        theme.palette.mode === 'dark'
+                                          ? 'rgba(255, 255, 255, 0.05)'
+                                          : 'grey.50',
+                                      borderRadius: 1,
+                                      border: `1px solid ${theme.palette.divider}`,
+                                    }}
+                                  >
+                                    {item.snapshot.variantAttributes.map((attr, attrIndex) => (
+                                      <Box
+                                        key={attrIndex}
                                         sx={{
-                                          fontWeight: 'bold',
-                                          color: 'primary.main',
-                                          minWidth: 'fit-content',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 1,
+                                          flexWrap: 'wrap',
                                         }}
                                       >
-                                        {attr.attributeName || attr.attributeNameEn || 'سمة'}:
-                                      </Typography>
-                                      <Chip
-                                        label={attr.value || attr.valueEn || 'غير محدد'}
-                                        size="small"
-                                        sx={{
-                                          bgcolor:
-                                            theme.palette.mode === 'dark'
-                                              ? 'rgba(255, 255, 255, 0.12)'
-                                              : 'background.paper',
-                                          border: `1px solid ${theme.palette.primary.main}20`,
-                                          fontWeight: 'medium',
-                                          '& .MuiChip-label': {
-                                            px: 1.5,
-                                          },
-                                        }}
-                                      />
-                                    </Box>
-                                  ))}
+                                        <Typography
+                                          variant="caption"
+                                          sx={{
+                                            fontWeight: 'bold',
+                                            color: 'primary.main',
+                                            minWidth: 'fit-content',
+                                          }}
+                                        >
+                                          {attr.attributeName || attr.attributeNameEn || 'سمة'}:
+                                        </Typography>
+                                        <Chip
+                                          label={attr.value || attr.valueEn || 'غير محدد'}
+                                          size="small"
+                                          sx={{
+                                            bgcolor:
+                                              theme.palette.mode === 'dark'
+                                                ? 'rgba(255, 255, 255, 0.12)'
+                                                : 'background.paper',
+                                            border: `1px solid ${theme.palette.primary.main}20`,
+                                            fontWeight: 'medium',
+                                            '& .MuiChip-label': {
+                                              px: 1.5,
+                                            },
+                                          }}
+                                        />
+                                      </Box>
+                                    ))}
+                                  </Box>
                                 </Box>
-                              </Box>
-                            )}
+                              )}
                             {/* Fallback to old attributes format for backward compatibility */}
                             {(!item.snapshot.variantAttributes ||
                               item.snapshot.variantAttributes.length === 0) &&
@@ -663,11 +1245,14 @@ export const OrderDetailsPage: React.FC = () => {
             </Card>
 
             {/* Discounts & Coupons Breakdown */}
-            {(order.itemsDiscount > 0 || order.couponDiscount > 0 || (order.appliedCoupons && order.appliedCoupons.length > 0)) && (
+            {(order.itemsDiscount > 0 ||
+              order.couponDiscount > 0 ||
+              (order.appliedCoupons && order.appliedCoupons.length > 0)) && (
               <Card
                 sx={{
                   mb: { xs: 2, md: 3 },
-                  bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
+                  bgcolor:
+                    theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
                 }}
               >
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
@@ -678,12 +1263,22 @@ export const OrderDetailsPage: React.FC = () => {
                     <AttachMoney />
                     {t('details.discountsAndCoupons', { defaultValue: 'الخصومات والكوبونات' })}
                   </Typography>
-                  
+
                   {/* Items Discount */}
                   {order.itemsDiscount > 0 && (
-                    <Box sx={{ mb: 2, p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50', borderRadius: 1 }}>
+                    <Box
+                      sx={{
+                        mb: 2,
+                        p: 2,
+                        bgcolor:
+                          theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                        borderRadius: 1,
+                      }}
+                    >
                       <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                        {t('details.itemsDiscount', { defaultValue: 'خصم المنتجات (من العروض الترويجية)' })}
+                        {t('details.itemsDiscount', {
+                          defaultValue: 'خصم المنتجات (من العروض الترويجية)',
+                        })}
                       </Typography>
                       <Typography variant="h6" color="success.main">
                         -{formatCurrency(order.itemsDiscount, order.currency)}
@@ -695,7 +1290,8 @@ export const OrderDetailsPage: React.FC = () => {
                   {order.appliedCoupons && order.appliedCoupons.length > 0 ? (
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold' }}>
-                        {t('details.appliedCoupons', { defaultValue: 'الكوبونات المطبقة' })} ({order.appliedCoupons.length})
+                        {t('details.appliedCoupons', { defaultValue: 'الكوبونات المطبقة' })} (
+                        {order.appliedCoupons.length})
                       </Typography>
                       <Stack spacing={1.5}>
                         {order.appliedCoupons.map((coupon, index) => (
@@ -703,12 +1299,22 @@ export const OrderDetailsPage: React.FC = () => {
                             key={index}
                             sx={{
                               p: 2,
-                              bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                              bgcolor:
+                                theme.palette.mode === 'dark'
+                                  ? 'rgba(255, 255, 255, 0.05)'
+                                  : 'grey.50',
                               borderRadius: 1,
                               border: `1px solid ${theme.palette.divider}`,
                             }}
                           >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                mb: 0.5,
+                              }}
+                            >
                               <Box>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
                                   {coupon.code}
@@ -734,7 +1340,10 @@ export const OrderDetailsPage: React.FC = () => {
                             )}
                             {coupon.details.discountAmount && (
                               <Chip
-                                label={formatCurrency(coupon.details.discountAmount, order.currency)}
+                                label={formatCurrency(
+                                  coupon.details.discountAmount,
+                                  order.currency
+                                )}
                                 size="small"
                                 color="primary"
                                 variant="outlined"
@@ -745,9 +1354,17 @@ export const OrderDetailsPage: React.FC = () => {
                         ))}
                       </Stack>
                       <Box sx={{ mt: 2, pt: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
                           <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                            {t('details.totalCouponDiscount', { defaultValue: 'إجمالي خصم الكوبونات' })}
+                            {t('details.totalCouponDiscount', {
+                              defaultValue: 'إجمالي خصم الكوبونات',
+                            })}
                           </Typography>
                           <Typography variant="h6" color="success.main">
                             -{formatCurrency(order.couponDiscount, order.currency)}
@@ -758,10 +1375,19 @@ export const OrderDetailsPage: React.FC = () => {
                   ) : (
                     // Backward compatibility: show single coupon
                     order.couponDiscount > 0 && (
-                      <Box sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50', borderRadius: 1 }}>
+                      <Box
+                        sx={{
+                          p: 2,
+                          bgcolor:
+                            theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                          borderRadius: 1,
+                        }}
+                      >
                         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
                           {order.appliedCouponCode || order.couponDetails?.code
-                            ? `${t('details.coupon', { defaultValue: 'كوبون' })}: ${order.appliedCouponCode || order.couponDetails?.code}`
+                            ? `${t('details.coupon', { defaultValue: 'كوبون' })}: ${
+                                order.appliedCouponCode || order.couponDetails?.code
+                              }`
                             : t('details.couponDiscount', { defaultValue: 'خصم الكوبون' })}
                         </Typography>
                         <Typography variant="h6" color="success.main">
@@ -774,7 +1400,13 @@ export const OrderDetailsPage: React.FC = () => {
                   {/* Total Discount */}
                   {order.totalDiscount > 0 && (
                     <Box sx={{ mt: 2, pt: 2, borderTop: `2px solid ${theme.palette.divider}` }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                           {t('details.totalDiscount', { defaultValue: 'إجمالي الخصومات' })}
                         </Typography>
@@ -824,36 +1456,40 @@ export const OrderDetailsPage: React.FC = () => {
                     <ListItemIcon>
                       <Person fontSize="small" />
                     </ListItemIcon>
-                  <ListItemText
-                    primary={t('details.customerName')}
-                    secondary={
-                      isCustomerLoading
-                        ? t('details.loadingCustomer', { defaultValue: 'جاري تحميل بيانات العميل...' })
-                        : displayCustomerName
-                    }
-                  />
+                    <ListItemText
+                      primary={t('details.customerName')}
+                      secondary={
+                        isCustomerLoading
+                          ? t('details.loadingCustomer', {
+                              defaultValue: 'جاري تحميل بيانات العميل...',
+                            })
+                          : displayCustomerName
+                      }
+                    />
                   </ListItem>
                   <ListItem>
                     <ListItemIcon>
                       <Phone fontSize="small" />
                     </ListItemIcon>
-                  <ListItemText
-                    primary={t('details.phone')}
-                    secondary={
-                      isCustomerLoading
-                        ? t('details.loadingCustomer', { defaultValue: 'جاري تحميل بيانات العميل...' })
-                        : displayCustomerPhone
-                    }
-                  />
-                  </ListItem>
-                {!customer && (
-                  <ListItem>
                     <ListItemText
-                      primary={t('details.customerId', { defaultValue: 'معرف العميل' })}
-                      secondary={order.userId}
+                      primary={t('details.phone')}
+                      secondary={
+                        isCustomerLoading
+                          ? t('details.loadingCustomer', {
+                              defaultValue: 'جاري تحميل بيانات العميل...',
+                            })
+                          : displayCustomerPhone
+                      }
                     />
                   </ListItem>
-                )}
+                  {!customer && (
+                    <ListItem>
+                      <ListItemText
+                        primary={t('details.customerId', { defaultValue: 'معرف العميل' })}
+                        secondary={order.userId}
+                      />
+                    </ListItem>
+                  )}
                 </List>
               </CardContent>
             </Card>
@@ -886,36 +1522,61 @@ export const OrderDetailsPage: React.FC = () => {
                       {deliveryAddress.recipientName || addressLabel || displayCustomerName}
                     </Typography>
                     {deliveryAddress.line1 && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block' }}
+                      >
                         {deliveryAddress.line1}
                       </Typography>
                     )}
                     {deliveryAddress.line2 && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block' }}
+                      >
                         {deliveryAddress.line2}
                       </Typography>
                     )}
-                    {(deliveryAddress.city || deliveryAddress.region || deliveryAddress.country) && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                    {(deliveryAddress.city ||
+                      deliveryAddress.region ||
+                      deliveryAddress.country) && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block' }}
+                      >
                         {[deliveryAddress.city, deliveryAddress.region, deliveryAddress.country]
                           .filter(Boolean)
                           .join(', ')}
                       </Typography>
                     )}
                     {deliveryAddress.postalCode && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', mt: 0.5 }}
+                      >
                         {t('details.postalCode')}: {deliveryAddress.postalCode}
                       </Typography>
                     )}
                     {deliveryAddress.notes && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                        {t('details.addressNotes', { defaultValue: 'ملاحظات العنوان' })}: {deliveryAddress.notes}
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', mt: 0.5 }}
+                      >
+                        {t('details.addressNotes', { defaultValue: 'ملاحظات العنوان' })}:{' '}
+                        {deliveryAddress.notes}
                       </Typography>
                     )}
                   </Box>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    {t('details.noDeliveryAddress', { defaultValue: 'لا توجد بيانات عنوان للتسليم' })}
+                    {t('details.noDeliveryAddress', {
+                      defaultValue: 'لا توجد بيانات عنوان للتسليم',
+                    })}
                   </Typography>
                 )}
               </CardContent>
@@ -926,7 +1587,8 @@ export const OrderDetailsPage: React.FC = () => {
               <Card
                 sx={{
                   mb: { xs: 2, md: 3 },
-                  bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
+                  bgcolor:
+                    theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
                 }}
               >
                 <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
@@ -940,10 +1602,7 @@ export const OrderDetailsPage: React.FC = () => {
                       mb: 2,
                     }}
                   >
-                    <Typography
-                      variant="h6"
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                    >
+                    <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <CreditCard />
                       {t('details.localPaymentInfo')}
                     </Typography>
@@ -1019,13 +1678,14 @@ export const OrderDetailsPage: React.FC = () => {
                         </ListItem>
                       </>
                     )}
-                    {order.paymentStatus === PaymentStatus.PENDING && !order.verifiedPaymentAmount && (
-                      <ListItem>
-                        <Alert severity="warning" sx={{ width: '100%' }}>
-                          {t('details.paymentPending')}
-                        </Alert>
-                      </ListItem>
-                    )}
+                    {order.paymentStatus === PaymentStatus.PENDING &&
+                      !order.verifiedPaymentAmount && (
+                        <ListItem>
+                          <Alert severity="warning" sx={{ width: '100%' }}>
+                            {t('details.paymentPending')}
+                          </Alert>
+                        </ListItem>
+                      )}
                   </List>
                 </CardContent>
               </Card>
@@ -1117,7 +1777,8 @@ export const OrderDetailsPage: React.FC = () => {
                 </Box>
                 <Accordion
                   sx={{
-                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                    bgcolor:
+                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
                     mb: 1,
                   }}
                 >
@@ -1134,7 +1795,8 @@ export const OrderDetailsPage: React.FC = () => {
                 </Accordion>
                 <Accordion
                   sx={{
-                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                    bgcolor:
+                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
                     mb: 1,
                   }}
                 >
@@ -1151,7 +1813,8 @@ export const OrderDetailsPage: React.FC = () => {
                 </Accordion>
                 <Accordion
                   sx={{
-                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                    bgcolor:
+                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
                   }}
                 >
                   <AccordionSummary expandIcon={<ExpandMore />}>
@@ -1196,47 +1859,48 @@ export const OrderDetailsPage: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
-            
+
             {/* Payment Status Warning */}
-            {order && (() => {
-              const statusesRequiringPayment = [
-                OrderStatus.CONFIRMED,
-                OrderStatus.PROCESSING,
-                OrderStatus.COMPLETED,
-              ];
+            {order &&
+              (() => {
+                const statusesRequiringPayment = [
+                  OrderStatus.CONFIRMED,
+                  OrderStatus.PROCESSING,
+                  OrderStatus.COMPLETED,
+                ];
 
-              const requiresPayment = 
-                statusesRequiringPayment.includes(statusForm.status) &&
-                statusForm.status !== OrderStatus.CANCELLED &&
-                order.paymentStatus !== PaymentStatus.PAID;
+                const requiresPayment =
+                  statusesRequiringPayment.includes(statusForm.status) &&
+                  statusForm.status !== OrderStatus.CANCELLED &&
+                  order.paymentStatus !== PaymentStatus.PAID;
 
-              return requiresPayment ? (
-                <Alert 
-                  severity="warning" 
-                  icon={<Warning />}
-                  sx={{ mt: 2 }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                    {t('dialogs.updateStatus.paymentRequired', { 
-                      defaultValue: 'تحذير: هذه الحالة تتطلب إتمام الدفع' 
-                    })}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {t('dialogs.updateStatus.paymentRequiredMessage', {
-                      defaultValue: 'حالة الدفع الحالية: {status}',
-                      status: t(`payment.status.${order.paymentStatus}`)
-                    })}
-                  </Typography>
-                  {order.paymentMethod === PaymentMethod.BANK_TRANSFER && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      {t('dialogs.updateStatus.verifyPaymentFirst', {
-                        defaultValue: 'يرجى التحقق من الدفع أولاً قبل تغيير الحالة'
+                return requiresPayment ? (
+                  <Alert severity="warning" icon={<Warning />} sx={{ mt: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                      {t('dialogs.updateStatus.paymentRequired', {
+                        defaultValue: 'تحذير: هذه الحالة تتطلب إتمام الدفع',
                       })}
                     </Typography>
-                  )}
-                </Alert>
-              ) : null;
-            })()}
+                    <Typography variant="caption" color="text.secondary">
+                      {t('dialogs.updateStatus.paymentRequiredMessage', {
+                        defaultValue: 'حالة الدفع الحالية: {status}',
+                        status: t(`payment.status.${order.paymentStatus}`),
+                      })}
+                    </Typography>
+                    {order.paymentMethod === PaymentMethod.BANK_TRANSFER && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', mt: 0.5 }}
+                      >
+                        {t('dialogs.updateStatus.verifyPaymentFirst', {
+                          defaultValue: 'يرجى التحقق من الدفع أولاً قبل تغيير الحالة',
+                        })}
+                      </Typography>
+                    )}
+                  </Alert>
+                ) : null;
+              })()}
 
             <TextField
               fullWidth
@@ -1249,9 +1913,7 @@ export const OrderDetailsPage: React.FC = () => {
             />
           </DialogContent>
           <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
-            <Button onClick={() => setUpdateStatusDialog(false)}>
-              {t('actions.cancel')}
-            </Button>
+            <Button onClick={() => setUpdateStatusDialog(false)}>{t('actions.cancel')}</Button>
             <Button
               onClick={handleUpdateStatus}
               variant="contained"
@@ -1541,9 +2203,7 @@ export const OrderDetailsPage: React.FC = () => {
 
               {order && verifyPaymentForm.verifiedAmount > 0 && (
                 <Alert
-                  severity={
-                    verifyPaymentForm.verifiedAmount >= order.total ? 'success' : 'warning'
-                  }
+                  severity={verifyPaymentForm.verifiedAmount >= order.total ? 'success' : 'warning'}
                 >
                   {verifyPaymentForm.verifiedAmount >= order.total
                     ? t('dialogs.verifyPayment.amountSufficient')
@@ -1558,9 +2218,7 @@ export const OrderDetailsPage: React.FC = () => {
             </Box>
           </DialogContent>
           <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
-            <Button onClick={() => setVerifyPaymentDialog(false)}>
-              {t('actions.cancel')}
-            </Button>
+            <Button onClick={() => setVerifyPaymentDialog(false)}>{t('actions.cancel')}</Button>
             <Button
               onClick={handleVerifyPayment}
               variant="contained"
@@ -1570,6 +2228,47 @@ export const OrderDetailsPage: React.FC = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Speed Dial for Mobile */}
+        {isMobile && getQuickActions.length > 0 && (
+          <SpeedDial
+            ariaLabel="Order Actions"
+            sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000 }}
+            icon={<SpeedDialIcon />}
+            onClose={() => setSpeedDialOpen(false)}
+            onOpen={() => setSpeedDialOpen(true)}
+            open={speedDialOpen}
+          >
+            {getQuickActions.map((action, index) => (
+              <SpeedDialAction
+                key={index}
+                icon={action.icon}
+                tooltipTitle={action.label}
+                onClick={() => {
+                  setSpeedDialOpen(false);
+                  action.onClick();
+                }}
+                FabProps={{ color: action.color }}
+              />
+            ))}
+            <SpeedDialAction
+              icon={<Edit />}
+              tooltipTitle={t('actions.updateStatus')}
+              onClick={() => {
+                setSpeedDialOpen(false);
+                setUpdateStatusDialog(true);
+              }}
+            />
+            <SpeedDialAction
+              icon={<Notes />}
+              tooltipTitle={t('actions.addNotes', { defaultValue: 'إضافة ملاحظات' })}
+              onClick={() => {
+                setSpeedDialOpen(false);
+                setNotesDialog(true);
+              }}
+            />
+          </SpeedDial>
+        )}
       </Box>
     </LocalizationProvider>
   );

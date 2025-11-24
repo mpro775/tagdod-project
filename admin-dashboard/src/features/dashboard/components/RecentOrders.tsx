@@ -1,23 +1,29 @@
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
+import {
+  Card,
+  CardContent,
+  Typography,
   Box,
   Chip,
   Avatar,
   IconButton,
   alpha,
   useTheme,
-  Skeleton
+  Skeleton,
+  Divider,
+  Stack,
+  Tooltip,
 } from '@mui/material';
-import { Visibility } from '@mui/icons-material';
+import { Visibility, Phone, LocationOn, Payment, Receipt, ShoppingCart } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 interface Order {
-  id: string;
+  id?: string;
   _id?: string;
   orderNumber?: string;
+  customerName?: string;
+  customerPhone?: string;
   customer?: {
     name: string;
     avatar?: string;
@@ -25,8 +31,23 @@ interface Order {
   guestInfo?: {
     name: string;
   };
+  metadata?: {
+    customer?: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+    };
+  };
   total?: number;
-  status: 'completed' | 'pending' | 'cancelled' | 'processing' | string;
+  status: 'completed' | 'pending' | 'cancelled' | 'processing' | 'confirmed' | string;
+  paymentStatus?: 'paid' | 'pending' | 'failed' | string;
+  paymentMethod?: 'COD' | 'BANK_TRANSFER' | 'WALLET' | 'CARD' | string;
+  deliveryAddress?: {
+    city?: string;
+    line1?: string;
+    label?: string;
+  };
+  invoiceNumber?: string;
   items?: any[];
   date?: string;
   createdAt?: string;
@@ -39,6 +60,7 @@ interface RecentOrdersProps {
 
 export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const { t, i18n } = useTranslation(['dashboard']);
   // Use Gregorian calendar (Miladi) - 'ar' uses Gregorian, 'ar-SA' uses Hijri
   const dateFormatter = React.useMemo(
@@ -77,10 +99,17 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
 
   const getStatusConfig = (status: string) => {
     const normalized = status?.toLowerCase();
-    const statusMap: Record<string, { key: string; color: 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning' }> = {
+    const statusMap: Record<
+      string,
+      {
+        key: string;
+        color: 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+      }
+    > = {
       completed: { key: 'completed', color: 'success' },
       pending: { key: 'pending', color: 'warning' },
       processing: { key: 'processing', color: 'info' },
+      confirmed: { key: 'confirmed', color: 'info' },
       cancelled: { key: 'cancelled', color: 'error' },
     };
 
@@ -92,6 +121,35 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
     };
   };
 
+  const getPaymentMethodLabel = (method?: string): string => {
+    if (!method) return '';
+    const methodMap: Record<string, string> = {
+      COD: t('recentOrders.paymentMethod.cod', 'الدفع عند الاستلام'),
+      BANK_TRANSFER: t('recentOrders.paymentMethod.bankTransfer', 'تحويل بنكي'),
+      WALLET: t('recentOrders.paymentMethod.wallet', 'محفظة'),
+      CARD: t('recentOrders.paymentMethod.card', 'بطاقة'),
+    };
+    return methodMap[method] || method;
+  };
+
+  const getPaymentStatusConfig = (status?: string) => {
+    if (!status) return null;
+    const normalized = status?.toLowerCase();
+    const statusMap: Record<string, { key: string; color: 'success' | 'warning' | 'error' }> = {
+      paid: { key: 'paid', color: 'success' },
+      pending: { key: 'pending', color: 'warning' },
+      failed: { key: 'failed', color: 'error' },
+    };
+    const config = statusMap[normalized || ''] || {
+      key: normalized || 'unknown',
+      color: 'warning' as const,
+    };
+    return {
+      label: t(`recentOrders.paymentStatus.${config.key}`, status),
+      color: config.color,
+    };
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -99,15 +157,38 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             {t('recentOrders.title', 'الطلبات الأخيرة')}
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {[1, 2, 3, 4].map((item) => (
-              <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Skeleton variant="circular" width={48} height={48} />
-                <Box sx={{ flex: 1 }}>
-                  <Skeleton variant="text" width="60%" height={18} />
-                  <Skeleton variant="text" width="40%" height={14} />
+              <Box
+                key={item}
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                  <Skeleton variant="circular" width={56} height={56} />
+                  <Box sx={{ flex: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                      <Skeleton variant="text" width={120} height={20} />
+                      <Skeleton
+                        variant="rectangular"
+                        width={80}
+                        height={22}
+                        sx={{ borderRadius: 1 }}
+                      />
+                    </Box>
+                    <Skeleton variant="text" width="40%" height={18} />
+                    <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                      <Skeleton variant="text" width={100} height={14} />
+                      <Skeleton variant="text" width={80} height={14} />
+                    </Box>
+                  </Box>
+                  <Skeleton variant="text" width={80} height={24} />
                 </Box>
-                <Skeleton variant="text" width={80} height={20} />
+                <Skeleton variant="rectangular" width="100%" height={1} sx={{ mb: 1.5 }} />
+                <Skeleton variant="text" width="60%" height={14} />
               </Box>
             ))}
           </Box>
@@ -148,81 +229,213 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           {ordersList.map((order, index) => {
-            const customerName = order.customer?.name || order.guestInfo?.name || t('recentOrders.defaultCustomer', 'عميل');
+            const customerName =
+              order.customerName ||
+              order.customer?.name ||
+              order.guestInfo?.name ||
+              t('recentOrders.defaultCustomer', 'عميل');
+            const customerPhone = order.customerPhone || order.metadata?.customer?.phone || '';
             const itemsCount = order.items?.length || 0;
             const orderDate = order.createdAt ? formatDate(order.createdAt) : '';
             const statusConfig = getStatusConfig(order.status);
+            const paymentStatusConfig = getPaymentStatusConfig(order.paymentStatus);
             const orderKey = order._id || order.id || `order-${index}`;
-            const orderTotalLabel = order.total !== undefined && order.total !== null
-              ? currencyFormatter.format(order.total)
-              : t('recentOrders.amountPlaceholder', '—');
-            
+            const orderTotalLabel =
+              order.total !== undefined && order.total !== null
+                ? currencyFormatter.format(order.total)
+                : t('recentOrders.amountPlaceholder', '—');
+
+            // Get first product name for preview
+            const firstProduct = order.items?.[0]?.snapshot?.name || '';
+            const city = order.deliveryAddress?.city || '';
+
+            const handleOrderClick = () => {
+              const orderId = order._id || order.id;
+              if (orderId) {
+                navigate(`/orders/${orderId}`);
+              }
+            };
+
             return (
-            <Box
-              key={orderKey}
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                bgcolor: alpha(theme.palette.primary.main, 0.02),
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  bgcolor: alpha(theme.palette.primary.main, 0.05),
-                  borderColor: alpha(theme.palette.primary.main, 0.15),
-                  transform: 'translateX(-4px)',
-                },
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar
+              <Box
+                key={orderKey}
+                onClick={handleOrderClick}
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  bgcolor: alpha(theme.palette.primary.main, 0.02),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+                  transition: 'all 0.2s ease-in-out',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.primary.main, 0.05),
+                    borderColor: alpha(theme.palette.primary.main, 0.15),
+                    transform: 'translateY(-2px)',
+                    boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
+                  },
+                }}
+              >
+                {/* Header Row */}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                  <Avatar
+                    sx={{
+                      bgcolor: 'primary.main',
+                      width: 56,
+                      height: 56,
+                      fontSize: '1.25rem',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {customerName?.charAt(0) || t('recentOrders.defaultInitial', 'ع')}
+                  </Avatar>
+
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 1,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="700"
+                        sx={{ color: 'primary.main' }}
+                      >
+                        {t('recentOrders.orderNumber', 'طلب #{{number}}', {
+                          number: order.orderNumber || (order._id || order.id || '').slice(-6),
+                        })}
+                      </Typography>
+                      <Chip
+                        label={statusConfig.label}
+                        color={statusConfig.color}
+                        size="small"
+                        sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
+                      />
+                      {paymentStatusConfig && (
+                        <Chip
+                          label={paymentStatusConfig.label}
+                          color={paymentStatusConfig.color}
+                          size="small"
+                          variant="outlined"
+                          sx={{ height: 22, fontSize: '0.7rem', fontWeight: 500 }}
+                        />
+                      )}
+                    </Box>
+
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 0.5 }}>
+                      {customerName}
+                    </Typography>
+
+                    {/* Customer Details Row */}
+                    <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                      {customerPhone && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Phone sx={{ fontSize: 14, color: 'text.secondary' }} />
+                          <Typography variant="caption" color="text.secondary">
+                            {customerPhone}
+                          </Typography>
+                        </Box>
+                      )}
+                      {city && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <LocationOn sx={{ fontSize: 14, color: 'text.secondary' }} />
+                          <Typography variant="caption" color="text.secondary">
+                            {city}
+                          </Typography>
+                        </Box>
+                      )}
+                      {order.paymentMethod && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Payment sx={{ fontSize: 14, color: 'text.secondary' }} />
+                          <Typography variant="caption" color="text.secondary">
+                            {getPaymentMethodLabel(order.paymentMethod)}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Box>
+
+                  <Box sx={{ textAlign: i18n.language === 'ar' ? 'left' : 'right', minWidth: 100 }}>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color="success.main"
+                      sx={{ mb: 0.5 }}
+                    >
+                      {orderTotalLabel}
+                    </Typography>
+                    {orderDate && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {orderDate}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Tooltip title={t('recentOrders.viewDetails', 'عرض التفاصيل')}>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOrderClick();
+                      }}
+                      sx={{
+                        color: 'primary.main',
+                        '&:hover': {
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        },
+                      }}
+                    >
+                      <Visibility fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+
+                <Divider sx={{ my: 1.5 }} />
+
+                {/* Order Details Row */}
+                <Box
                   sx={{
-                    bgcolor: 'primary.main',
-                    width: 48,
-                    height: 48,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 1,
                   }}
                 >
-                  {customerName?.charAt(0) || t('recentOrders.defaultInitial', 'ع')}
-                </Avatar>
-
-                <Box sx={{ flex: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <Typography variant="body2" fontWeight="600">
-                      {t('recentOrders.orderNumber', 'طلب #{{number}}', {
-                        number: order.orderNumber || (order._id || order.id || '').slice(-6),
-                      })}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 0 }}>
+                    <ShoppingCart sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+                      {firstProduct ? (
+                        <>
+                          <strong>{firstProduct}</strong>
+                          {itemsCount > 1 &&
+                            ` ${t('recentOrders.andMore', 'و {{count}} منتج آخر', {
+                              count: itemsCount - 1,
+                            })}`}
+                        </>
+                      ) : (
+                        t('recentOrders.itemsCount', '{{count}} منتج', { count: itemsCount })
+                      )}
                     </Typography>
-                    <Chip
-                      label={statusConfig.label}
-                      color={statusConfig.color}
-                      size="small"
-                      sx={{ height: 20, fontSize: '0.7rem' }}
-                    />
                   </Box>
-                  
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    {customerName}
-                    {itemsCount > 0 && ` • ${t('recentOrders.itemsCount', '{{count}} منتج', { count: itemsCount })}`}
-                  </Typography>
-                </Box>
 
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography variant="h6" fontWeight="bold" color="success.main">
-                    {orderTotalLabel}
-                  </Typography>
-                  {orderDate && (
-                    <Typography variant="caption" color="text.secondary">
-                      {orderDate}
-                    </Typography>
+                  {order.invoiceNumber && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Receipt sx={{ fontSize: 14, color: 'text.secondary' }} />
+                      <Typography variant="caption" color="text.secondary" fontWeight="500">
+                        {t('recentOrders.invoice', 'فاتورة: {{number}}', {
+                          number: order.invoiceNumber,
+                        })}
+                      </Typography>
+                    </Box>
                   )}
                 </Box>
-
-                <IconButton size="small" sx={{ color: 'primary.main' }}>
-                  <Visibility fontSize="small" />
-                </IconButton>
               </Box>
-            </Box>
             );
           })}
         </Box>
@@ -230,4 +443,3 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
     </Card>
   );
 };
-

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -33,6 +33,59 @@ import type { Product, Variant } from '@/features/products/types/product.types';
 import type { Brand } from '@/features/brands/types/brand.types';
 
 type DiscountType = 'percent' | 'fixed' | 'special' | null;
+
+// خيار "الكل" للفئات والمنتجات والعلامات التجارية
+const ALL_OPTION_CATEGORY: Category = {
+  _id: '__ALL__',
+  name: 'الكل (تطبق على الجميع)',
+  nameEn: 'All',
+  slug: '__all__',
+  parentId: null,
+  order: 0,
+  isActive: true,
+  isFeatured: false,
+  productsCount: 0,
+  childrenCount: 0,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const ALL_OPTION_PRODUCT: Product = {
+  _id: '__ALL__',
+  name: 'الكل (تطبق على الجميع)',
+  nameEn: 'All',
+  slug: '__all__',
+  description: '',
+  descriptionEn: '',
+  categoryId: '',
+  status: ProductStatus.ACTIVE,
+  isActive: true,
+  isFeatured: false,
+  isNew: false,
+  isBestseller: false,
+  viewsCount: 0,
+  salesCount: 0,
+  variantsCount: 0,
+  reviewsCount: 0,
+  averageRating: 0,
+  order: 0,
+  attributes: [],
+  imageIds: [],
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const ALL_OPTION_BRAND: Brand = {
+  _id: '__ALL__',
+  name: 'الكل (تطبق على الجميع)',
+  nameEn: 'All',
+  slug: '__all__',
+  image: '',
+  isActive: true,
+  sortOrder: 0,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
 
 const CreatePriceRulePage: React.FC = () => {
   const navigate = useNavigate();
@@ -84,15 +137,35 @@ const CreatePriceRulePage: React.FC = () => {
 
   // Fetch categories, products, brands
   const { data: categories = [], isLoading: categoriesLoading } = useCategories({ isActive: true });
+
+  // تصفية المنتجات حسب الفئة المختارة
   const { data: productsResponse, isLoading: productsLoading } = useProducts({
     page: 1,
     limit: 100,
     search: productSearchQuery || undefined,
     status: ProductStatus.ACTIVE,
+    categoryId:
+      selectedCategory && selectedCategory._id !== ALL_OPTION_CATEGORY._id
+        ? selectedCategory._id
+        : undefined, // إضافة التصفية حسب الفئة
   });
   const products = productsResponse?.data || [];
-  const { data: brandsResponse, isLoading: brandsLoading } = useBrands({ isActive: true, limit: 100 });
+
+  const { data: brandsResponse, isLoading: brandsLoading } = useBrands({
+    isActive: true,
+    limit: 100,
+  });
   const brands = brandsResponse?.data || [];
+
+  // إضافة خيار "الكل" في بداية القوائم
+  const categoriesWithAll = useMemo(() => [ALL_OPTION_CATEGORY, ...categories], [categories]);
+  const productsWithAll = useMemo(() => [ALL_OPTION_PRODUCT, ...products], [products]);
+  const brandsWithAll = useMemo(() => [ALL_OPTION_BRAND, ...brands], [brands]);
+
+  // استخدام useRef لتخزين مراجع ثابتة لخيارات "الكل" لتجنب حلقة التحديثات
+  const allCategoryRef = React.useRef(ALL_OPTION_CATEGORY);
+  const allProductRef = React.useRef(ALL_OPTION_PRODUCT);
+  const allBrandRef = React.useRef(ALL_OPTION_BRAND);
 
   // Fetch variants when product is selected
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -101,7 +174,8 @@ const CreatePriceRulePage: React.FC = () => {
   React.useEffect(() => {
     if (selectedProduct?._id) {
       setVariantsLoading(true);
-      productsApi.listVariants(selectedProduct._id)
+      productsApi
+        .listVariants(selectedProduct._id)
         .then((data) => {
           setVariants(data);
           setVariantsLoading(false);
@@ -117,7 +191,7 @@ const CreatePriceRulePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate discount type is selected
     if (!discountType) {
       toast.error('يرجى اختيار نوع الخصم');
@@ -183,14 +257,80 @@ const CreatePriceRulePage: React.FC = () => {
   };
 
   const handleCategoryChange = (_event: any, value: Category | null) => {
-    setSelectedCategory(value);
-    handleNestedChange('conditions', 'categoryId', value?._id || '');
+    if (!value) return;
+
+    // إذا تم اختيار "الكل"، تعيين null
+    const categoryValue = value._id === ALL_OPTION_CATEGORY._id ? null : value;
+
+    // تجنب التحديث إذا كانت القيمة الجديدة نفس القيمة الحالية
+    const currentCategoryId = selectedCategory?._id || null;
+    const newCategoryId = categoryValue?._id || null;
+    if (currentCategoryId === newCategoryId) {
+      return;
+    }
+
+    setSelectedCategory(categoryValue);
+    handleNestedChange('conditions', 'categoryId', categoryValue?._id || '');
+
+    // إعادة تعيين المنتج والمتغير عند تغيير الفئة
+    if (!categoryValue || value?._id === ALL_OPTION_CATEGORY._id) {
+      // إذا تم إلغاء اختيار الفئة أو اختيار "الكل"، إعادة تعيين المنتج والمتغير
+      setSelectedProduct(null);
+      setSelectedVariant(null);
+      handleNestedChange('conditions', 'productId', '');
+      handleNestedChange('conditions', 'variantId', '');
+    } else {
+      // إذا تم اختيار فئة جديدة، التحقق من أن المنتج المختار ينتمي لها
+      if (
+        selectedProduct &&
+        selectedProduct._id !== ALL_OPTION_PRODUCT._id &&
+        selectedProduct.categoryId
+      ) {
+        const productCategoryId =
+          typeof selectedProduct.categoryId === 'string'
+            ? selectedProduct.categoryId
+            : selectedProduct.categoryId._id;
+
+        if (productCategoryId !== categoryValue._id) {
+          // المنتج المختار لا ينتمي للفئة الجديدة، إعادة تعيينه
+          setSelectedProduct(null);
+          setSelectedVariant(null);
+          handleNestedChange('conditions', 'productId', '');
+          handleNestedChange('conditions', 'variantId', '');
+        }
+      }
+    }
   };
 
   const handleProductChange = (_event: any, value: Product | null) => {
-    setSelectedProduct(value);
+    if (!value) return;
+
+    // إذا تم اختيار "الكل"، تعيين null
+    const productValue = value._id === ALL_OPTION_PRODUCT._id ? null : value;
+
+    // تجنب التحديث إذا كانت القيمة الجديدة نفس القيمة الحالية
+    const currentProductId = selectedProduct?._id || null;
+    const newProductId = productValue?._id || null;
+    if (currentProductId === newProductId) {
+      return;
+    }
+
+    // التحقق من أن المنتج ينتمي للفئة المختارة (إن وجدت)
+    if (productValue && selectedCategory && selectedCategory._id) {
+      const productCategoryId =
+        typeof productValue.categoryId === 'string'
+          ? productValue.categoryId
+          : productValue.categoryId?._id;
+
+      if (productCategoryId !== selectedCategory._id) {
+        toast.error('المنتج المحدد لا ينتمي للفئة المختارة');
+        return; // منع اختيار المنتج
+      }
+    }
+
+    setSelectedProduct(productValue);
     setSelectedVariant(null);
-    handleNestedChange('conditions', 'productId', value?._id || '');
+    handleNestedChange('conditions', 'productId', productValue?._id || '');
     handleNestedChange('conditions', 'variantId', '');
   };
 
@@ -200,8 +340,20 @@ const CreatePriceRulePage: React.FC = () => {
   };
 
   const handleBrandChange = (_event: any, value: Brand | null) => {
-    setSelectedBrand(value);
-    handleNestedChange('conditions', 'brandId', value?._id || '');
+    if (!value) return;
+
+    // إذا تم اختيار "الكل"، تعيين null
+    const brandValue = value._id === ALL_OPTION_BRAND._id ? null : value;
+
+    // تجنب التحديث إذا كانت القيمة الجديدة نفس القيمة الحالية
+    const currentBrandId = selectedBrand?._id || null;
+    const newBrandId = brandValue?._id || null;
+    if (currentBrandId === newBrandId) {
+      return;
+    }
+
+    setSelectedBrand(brandValue);
+    handleNestedChange('conditions', 'brandId', brandValue?._id || '');
   };
 
   const handleGiftProductChange = (_event: any, value: Product | null) => {
@@ -221,11 +373,7 @@ const CreatePriceRulePage: React.FC = () => {
         >
           {t('form.cancel')}
         </Button>
-        <Typography 
-          variant="h4" 
-          gutterBottom
-          sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
-        >
+        <Typography variant="h4" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
           {t('priceRules.createNew')}
         </Typography>
       </Box>
@@ -242,8 +390,8 @@ const CreatePriceRulePage: React.FC = () => {
           <Grid size={{ xs: 12 }}>
             <Card>
               <CardContent>
-                <Typography 
-                  variant="h6" 
+                <Typography
+                  variant="h6"
                   gutterBottom
                   sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
                 >
@@ -270,7 +418,7 @@ const CreatePriceRulePage: React.FC = () => {
                       required
                       size={isMobile ? 'small' : 'medium'}
                       InputProps={{
-                        inputProps: { min: 1 }
+                        inputProps: { min: 1 },
                       }}
                     />
                   </Grid>
@@ -332,8 +480,8 @@ const CreatePriceRulePage: React.FC = () => {
           <Grid size={{ xs: 12 }}>
             <Card>
               <CardContent>
-                <Typography 
-                  variant="h6" 
+                <Typography
+                  variant="h6"
                   gutterBottom
                   sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
                 >
@@ -342,9 +490,9 @@ const CreatePriceRulePage: React.FC = () => {
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Autocomplete
-                      options={categories}
+                      options={categoriesWithAll}
                       getOptionLabel={(option) => option.name || ''}
-                      value={selectedCategory}
+                      value={selectedCategory || allCategoryRef.current}
                       onChange={handleCategoryChange}
                       loading={categoriesLoading}
                       size={isMobile ? 'small' : 'medium'}
@@ -352,19 +500,27 @@ const CreatePriceRulePage: React.FC = () => {
                         <TextField
                           {...params}
                           label={t('form.categoryId')}
-                          placeholder="جميع الفئات (تطبق على الكل)"
+                          placeholder="اختر فئة أو الكل"
                         />
                       )}
-                      isOptionEqualToValue={(option, value) => option._id === value._id}
+                      isOptionEqualToValue={(option, value) => {
+                        if (!value) return false;
+                        return option._id === value._id;
+                      }}
                       noOptionsText="لا توجد فئات"
                       loadingText="جاري التحميل..."
+                      renderOption={(props, option) => (
+                        <li {...props} key={option._id}>
+                          <strong>{option.name}</strong>
+                        </li>
+                      )}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Autocomplete
-                      options={products}
+                      options={productsWithAll}
                       getOptionLabel={(option) => option.name || ''}
-                      value={selectedProduct}
+                      value={selectedProduct || allProductRef.current}
                       onChange={handleProductChange}
                       loading={productsLoading}
                       size={isMobile ? 'small' : 'medium'}
@@ -376,20 +532,44 @@ const CreatePriceRulePage: React.FC = () => {
                         <TextField
                           {...params}
                           label={t('form.productId')}
-                          placeholder="جميع المنتجات (تطبق على الكل)"
+                          placeholder={
+                            selectedCategory && selectedCategory._id !== ALL_OPTION_CATEGORY._id
+                              ? `منتجات فئة: ${selectedCategory.name}`
+                              : 'اختر منتج أو الكل'
+                          }
+                          helperText={
+                            selectedCategory && selectedCategory._id !== ALL_OPTION_CATEGORY._id
+                              ? `يتم عرض المنتجات من فئة "${selectedCategory.name}" فقط`
+                              : undefined
+                          }
                         />
                       )}
-                      isOptionEqualToValue={(option, value) => option._id === value._id}
-                      noOptionsText="لا توجد منتجات"
+                      isOptionEqualToValue={(option, value) => {
+                        if (!value) return false;
+                        return option._id === value._id;
+                      }}
+                      noOptionsText={
+                        selectedCategory && selectedCategory._id !== ALL_OPTION_CATEGORY._id
+                          ? `لا توجد منتجات في فئة "${selectedCategory.name}"`
+                          : 'لا توجد منتجات'
+                      }
                       loadingText="جاري التحميل..."
+                      renderOption={(props, option) => (
+                        <li {...props} key={option._id}>
+                          <strong>{option.name}</strong>
+                        </li>
+                      )}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Autocomplete
                       options={variants}
                       getOptionLabel={(option) => {
-                        const attrs = option.attributeValues?.map((av: any) => av.value).join(', ') || '';
-                        return `${selectedProduct?.name || ''} - ${attrs || option.sku || option._id}`;
+                        const attrs =
+                          option.attributeValues?.map((av: any) => av.value).join(', ') || '';
+                        return `${selectedProduct?.name || ''} - ${
+                          attrs || option.sku || option._id
+                        }`;
                       }}
                       value={selectedVariant}
                       onChange={handleVariantChange}
@@ -400,19 +580,32 @@ const CreatePriceRulePage: React.FC = () => {
                         <TextField
                           {...params}
                           label={t('form.variantId')}
-                          placeholder={selectedProduct ? "جميع المتغيرات (تطبق على الكل)" : "اختر منتج أولاً"}
+                          placeholder={
+                            selectedProduct
+                              ? `متغيرات منتج: ${selectedProduct.name}`
+                              : 'اختر منتج أولاً'
+                          }
+                          helperText={
+                            selectedProduct
+                              ? `يتم عرض متغيرات "${selectedProduct.name}" فقط`
+                              : undefined
+                          }
                         />
                       )}
                       isOptionEqualToValue={(option, value) => option._id === value._id}
-                      noOptionsText={selectedProduct ? "لا توجد متغيرات" : "اختر منتج أولاً"}
+                      noOptionsText={
+                        selectedProduct
+                          ? `لا توجد متغيرات للمنتج "${selectedProduct.name}"`
+                          : 'اختر منتج أولاً'
+                      }
                       loadingText="جاري التحميل..."
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Autocomplete
-                      options={brands}
+                      options={brandsWithAll}
                       getOptionLabel={(option) => option.name || ''}
-                      value={selectedBrand}
+                      value={selectedBrand || allBrandRef.current}
                       onChange={handleBrandChange}
                       loading={brandsLoading}
                       size={isMobile ? 'small' : 'medium'}
@@ -420,12 +613,20 @@ const CreatePriceRulePage: React.FC = () => {
                         <TextField
                           {...params}
                           label={t('form.brandId')}
-                          placeholder="جميع العلامات التجارية (تطبق على الكل)"
+                          placeholder="اختر علامة تجارية أو الكل"
                         />
                       )}
-                      isOptionEqualToValue={(option, value) => option._id === value._id}
+                      isOptionEqualToValue={(option, value) => {
+                        if (!value) return false;
+                        return option._id === value._id;
+                      }}
                       noOptionsText="لا توجد علامات تجارية"
                       loadingText="جاري التحميل..."
+                      renderOption={(props, option) => (
+                        <li {...props} key={option._id}>
+                          <strong>{option.name}</strong>
+                        </li>
+                      )}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
@@ -449,7 +650,7 @@ const CreatePriceRulePage: React.FC = () => {
                       }
                       size={isMobile ? 'small' : 'medium'}
                       InputProps={{
-                        inputProps: { min: 1 }
+                        inputProps: { min: 1 },
                       }}
                     />
                   </Grid>
@@ -462,8 +663,8 @@ const CreatePriceRulePage: React.FC = () => {
           <Grid size={{ xs: 12 }}>
             <Card>
               <CardContent>
-                <Typography 
-                  variant="h6" 
+                <Typography
+                  variant="h6"
                   gutterBottom
                   sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
                 >
@@ -478,8 +679,16 @@ const CreatePriceRulePage: React.FC = () => {
                         value={discountType || ''}
                         onChange={(e) => handleDiscountTypeChange(e.target.value as DiscountType)}
                       >
-                        <FormControlLabel value="percent" control={<Radio />} label="نسبة مئوية (%)" />
-                        <FormControlLabel value="fixed" control={<Radio />} label="قيمة ثابتة ($)" />
+                        <FormControlLabel
+                          value="percent"
+                          control={<Radio />}
+                          label="نسبة مئوية (%)"
+                        />
+                        <FormControlLabel
+                          value="fixed"
+                          control={<Radio />}
+                          label="قيمة ثابتة ($)"
+                        />
                         <FormControlLabel value="special" control={<Radio />} label="سعر خاص ($)" />
                       </RadioGroup>
                     </FormControl>
@@ -492,11 +701,15 @@ const CreatePriceRulePage: React.FC = () => {
                         type="number"
                         value={formData.effects.percentOff || ''}
                         onChange={(e) =>
-                          handleNestedChange('effects', 'percentOff', parseFloat(e.target.value) || 0)
+                          handleNestedChange(
+                            'effects',
+                            'percentOff',
+                            parseFloat(e.target.value) || 0
+                          )
                         }
                         size={isMobile ? 'small' : 'medium'}
                         InputProps={{
-                          inputProps: { min: 0, max: 100, step: 0.01 }
+                          inputProps: { min: 0, max: 100, step: 0.01 },
                         }}
                         helperText="الخصم سيظهر تلقائياً كـ: خصم {النسبة}%"
                       />
@@ -510,11 +723,15 @@ const CreatePriceRulePage: React.FC = () => {
                         type="number"
                         value={formData.effects.amountOff || ''}
                         onChange={(e) =>
-                          handleNestedChange('effects', 'amountOff', parseFloat(e.target.value) || 0)
+                          handleNestedChange(
+                            'effects',
+                            'amountOff',
+                            parseFloat(e.target.value) || 0
+                          )
                         }
                         size={isMobile ? 'small' : 'medium'}
                         InputProps={{
-                          inputProps: { min: 0, step: 0.01 }
+                          inputProps: { min: 0, step: 0.01 },
                         }}
                         helperText="الخصم سيظهر تلقائياً كـ: خصم {القيمة}$"
                       />
@@ -528,11 +745,15 @@ const CreatePriceRulePage: React.FC = () => {
                         type="number"
                         value={formData.effects.specialPrice || ''}
                         onChange={(e) =>
-                          handleNestedChange('effects', 'specialPrice', parseFloat(e.target.value) || 0)
+                          handleNestedChange(
+                            'effects',
+                            'specialPrice',
+                            parseFloat(e.target.value) || 0
+                          )
                         }
                         size={isMobile ? 'small' : 'medium'}
                         InputProps={{
-                          inputProps: { min: 0, step: 0.01 }
+                          inputProps: { min: 0, step: 0.01 },
                         }}
                         helperText="سيظهر تلقائياً كـ: عرض خاص"
                       />
@@ -572,8 +793,8 @@ const CreatePriceRulePage: React.FC = () => {
           <Grid size={{ xs: 12 }}>
             <Card>
               <CardContent>
-                <Typography 
-                  variant="h6" 
+                <Typography
+                  variant="h6"
                   gutterBottom
                   sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
                 >
@@ -591,7 +812,7 @@ const CreatePriceRulePage: React.FC = () => {
                       }
                       size={isMobile ? 'small' : 'medium'}
                       InputProps={{
-                        inputProps: { min: 0 }
+                        inputProps: { min: 0 },
                       }}
                     />
                   </Grid>
@@ -610,7 +831,7 @@ const CreatePriceRulePage: React.FC = () => {
                       }
                       size={isMobile ? 'small' : 'medium'}
                       InputProps={{
-                        inputProps: { min: 0 }
+                        inputProps: { min: 0 },
                       }}
                     />
                   </Grid>
@@ -621,12 +842,12 @@ const CreatePriceRulePage: React.FC = () => {
 
           {/* Actions */}
           <Grid size={{ xs: 12 }}>
-            <Stack 
-              direction={{ xs: 'column', sm: 'row' }} 
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
               spacing={2}
-              sx={{ 
+              sx={{
                 justifyContent: 'flex-end',
-                width: '100%'
+                width: '100%',
               }}
             >
               <Button

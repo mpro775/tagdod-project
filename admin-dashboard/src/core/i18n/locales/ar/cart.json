@@ -273,6 +273,8 @@
     "confirm": "تأكيد",
     "save": "حفظ",
     "send": "إرسال",
+    "close": "إغلاق",
+    "closeButton": "إغلاق النموذج",
     "sendAllReminders": "إرسال جميع التذكيرات",
     "quickActions": "إجراءات سريعة",
     "sendRemindersToNewCarts": "إرسال تذكيرات للسلات الجديدة ({{count}})",
@@ -413,7 +415,8 @@
       "fields": {
         "reminderType": "نوع التذكير",
         "customMessage": "رسالة مخصصة (اختيارية)"
-      }
+      },
+      "comingSoon": "هذه الميزة ضمن أفكار التطوير وسيتم إطلاقها قريباً"
     }
   },
   "messages": {

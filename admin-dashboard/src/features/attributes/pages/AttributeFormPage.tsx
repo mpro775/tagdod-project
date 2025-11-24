@@ -75,7 +75,7 @@ export const AttributeFormPage: React.FC = () => {
     defaultValues: {
       name: '',
       nameEn: '',
-      type: AttributeType.SELECT,
+      type: AttributeType.TEXT,
       isActive: true,
       isFilterable: true,
       isRequired: false,
@@ -180,12 +180,8 @@ export const AttributeFormPage: React.FC = () => {
                 name="type"
                 label={t('form.attributeType')}
                 options={[
-                  { value: AttributeType.SELECT, label: t('types.select') },
-                  { value: AttributeType.MULTISELECT, label: t('types.multiselect') },
-                  { value: AttributeType.COLOR, label: t('types.color') },
                   { value: AttributeType.TEXT, label: t('types.text') },
-                  { value: AttributeType.NUMBER, label: t('types.number') },
-                  { value: AttributeType.BOOLEAN, label: t('types.boolean') },
+                  { value: AttributeType.COLOR, label: t('types.color') },
                 ]}
               />
             </Grid>

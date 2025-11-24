@@ -311,6 +311,7 @@ export interface ListProductsParams extends ListParams {
   status?: ProductStatus;
   isFeatured?: boolean;
   isNew?: boolean;
+  isBestseller?: boolean;
   includeDeleted?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';

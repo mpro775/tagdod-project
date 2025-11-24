@@ -22,6 +22,7 @@ import {
   Skeleton,
   Alert,
   useTheme,
+  Tooltip,
 } from '@mui/material';
 import {
   Close,
@@ -64,10 +65,6 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
   const theme = useTheme();
   const { isMobile } = useBreakpoint();
 
-  if (!cart && !isLoading) {
-    return null;
-  }
-
   const selectedSummary = React.useMemo(
     () => (cart ? getCartSummary(cart, cart.currency) : undefined),
     [cart],
@@ -79,9 +76,23 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
 
   const resolveItemPricing = React.useCallback(
     (item: Cart['items'][number]) => {
-      const pricingMap = item.pricing?.currencies;
       const preferredCurrency = (selectedSummary?.currency || cart?.currency || 'USD').toUpperCase();
+      
+      // Handle new API structure: pricing.currency, pricing.basePrice, pricing.finalPrice, pricing.discount
+      if (item.pricing && 'currency' in item.pricing && 'finalPrice' in item.pricing) {
+        const pricing = item.pricing as any;
+        return {
+          currency: pricing.currency || preferredCurrency,
+          pricing: {
+            base: pricing.basePrice || 0,
+            final: pricing.finalPrice || 0,
+            discount: pricing.discount || 0,
+          },
+        };
+      }
 
+      // Handle old API structure: pricing.currencies (Record format)
+      const pricingMap = item.pricing?.currencies;
       if (pricingMap) {
         if (pricingMap[preferredCurrency]) {
           return { currency: preferredCurrency, pricing: pricingMap[preferredCurrency] };
@@ -107,7 +118,14 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
   );
 
   const getCartItemsCount = () => {
-    return cart?.items?.length || 0;
+    // Try to use itemsCount from pricingSummary first (more accurate)
+    if (selectedSummary?.itemsCount !== undefined) {
+      return selectedSummary.itemsCount;
+    }
+    // Fallback to calculating from items array
+    if (!cart?.items || cart.items.length === 0) return 0;
+    // Calculate total quantity (sum of all item quantities)
+    return cart.items.reduce((sum, item) => sum + (item.qty ?? 0), 0);
   };
 
   const getUserDisplayName = () => {
@@ -184,18 +202,20 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
               {t('details.title')}
             </Typography>
           </Box>
-          <IconButton 
-            onClick={onClose} 
-            size="small"
-            sx={{ 
-              color: 'text.secondary',
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
-            }}
-          >
-            <Close />
-          </IconButton>
+          <Tooltip title={t('actions.closeButton')}>
+            <IconButton 
+              onClick={onClose} 
+              size="small"
+              sx={{ 
+                color: 'text.secondary',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <Close />
+            </IconButton>
+          </Tooltip>
         </Box>
       </DialogTitle>
 
@@ -293,8 +313,9 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                     <Typography 
                       variant="h6"
                       sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                      dir="ltr"
                     >
-                      {getCartItemsCount()}
+                      {getCartItemsCount().toLocaleString('en-US')}
                     </Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -312,6 +333,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                         fontSize: { xs: '1rem', sm: '1.25rem' },
                         fontWeight: 'bold',
                       }}
+                      dir="ltr"
                     >
                       {formatCurrency(getCartTotal(), cart.currency)}
                     </Typography>
@@ -327,6 +349,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                     <Typography 
                       variant="body2"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      dir="ltr"
                     >
                       {getLastActivity()}
                     </Typography>
@@ -474,6 +497,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                     <Typography 
                       variant="body2"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      dir="ltr"
                     >
                       {formatDate(cart.createdAt)}
                     </Typography>
@@ -489,6 +513,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                     <Typography 
                       variant="body2"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      dir="ltr"
                     >
                       {formatDate(cart.updatedAt)}
                     </Typography>
@@ -519,8 +544,9 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                     <Typography 
                       variant="body2"
                       sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                      dir="ltr"
                     >
-                      {cart.abandonmentEmailsSent || 0}
+                      {(cart.abandonmentEmailsSent || 0).toLocaleString('en-US')}
                     </Typography>
                   </Grid>
                 </Grid>
@@ -555,7 +581,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                       <TableHead
                         sx={{
                           backgroundColor: theme.palette.mode === 'dark'
-                            ? 'rgba(255, 255, 255, 0.05)'
+                            ? theme.palette.grey[900]
                             : 'grey.50',
                         }}
                       >
@@ -563,8 +589,10 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                           <TableCell 
                             sx={{ 
                               fontWeight: 'bold', 
-                              color: 'text.primary',
+                              color: theme.palette.mode === 'dark' ? 'text.primary' : 'text.primary',
                               fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                              backgroundColor: 'transparent',
+                              borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'}`,
                             }}
                           >
                             {t('details.itemsTable.product')}
@@ -572,8 +600,10 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                           <TableCell 
                             sx={{ 
                               fontWeight: 'bold', 
-                              color: 'text.primary',
+                              color: theme.palette.mode === 'dark' ? 'text.primary' : 'text.primary',
                               fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                              backgroundColor: 'transparent',
+                              borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'}`,
                             }}
                           >
                             {t('details.itemsTable.quantity')}
@@ -581,8 +611,10 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                           <TableCell 
                             sx={{ 
                               fontWeight: 'bold', 
-                              color: 'text.primary',
+                              color: theme.palette.mode === 'dark' ? 'text.primary' : 'text.primary',
                               fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                              backgroundColor: 'transparent',
+                              borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'}`,
                             }}
                           >
                             {t('details.itemsTable.price')}
@@ -590,8 +622,10 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                           <TableCell 
                             sx={{ 
                               fontWeight: 'bold', 
-                              color: 'text.primary',
+                              color: theme.palette.mode === 'dark' ? 'text.primary' : 'text.primary',
                               fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                              backgroundColor: 'transparent',
+                              borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'}`,
                             }}
                           >
                             {t('details.itemsTable.total')}
@@ -627,11 +661,13 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                             </TableCell>
                             <TableCell
                               sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                              dir="ltr"
                             >
-                              {item.qty}
+                              {item.qty.toLocaleString('en-US')}
                             </TableCell>
                             <TableCell
                               sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                              dir="ltr"
                             >
                                 {formatCurrency(pricing.final || 0, displayCurrency)}
                             </TableCell>
@@ -640,6 +676,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                                 fontSize: { xs: '0.75rem', sm: '0.875rem' },
                                 fontWeight: 'medium',
                               }}
+                              dir="ltr"
                             >
                                 {formatCurrency(
                                   (pricing.final || 0) * item.qty,
@@ -691,6 +728,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                       <Typography 
                         variant="body2"
                         sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                        dir="ltr"
                       >
                         {formatCurrency(cart.pricingSummary.subtotal, cart.currency)}
                       </Typography>
@@ -706,6 +744,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                       <Typography 
                         variant="body2"
                         sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                        dir="ltr"
                       >
                         {formatCurrency(cart.pricingSummary.promotionDiscount, cart.currency)}
                       </Typography>
@@ -721,6 +760,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                       <Typography 
                         variant="body2"
                         sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                        dir="ltr"
                       >
                         {formatCurrency(cart.pricingSummary.couponDiscount, cart.currency)}
                       </Typography>
@@ -740,6 +780,7 @@ export const CartDetailsModal: React.FC<CartDetailsModalProps> = ({
                           fontSize: { xs: '1rem', sm: '1.25rem' },
                           fontWeight: 'bold',
                         }}
+                        dir="ltr"
                       >
                         {formatCurrency(cart.pricingSummary.total, cart.currency)}
                       </Typography>

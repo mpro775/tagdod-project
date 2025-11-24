@@ -155,13 +155,18 @@ export const BannerStatsCards: React.FC = () => {
     totalViews = 0,
     totalClicks = 0,
     totalConversions = 0,
+    // API returns averageCTR, but we also check for averageClickThroughRate for backward compatibility
+    averageCTR = 0,
     averageClickThroughRate = 0,
     averageConversionRate = 0,
   } = analytics;
 
   const activePercentage = totalBanners > 0 ? (activeBanners / totalBanners) * 100 : 0;
-  const ctrPercentage = (averageClickThroughRate || 0) * 100;
-  const conversionPercentage = (averageConversionRate || 0) * 100;
+  // Use averageCTR if available (from API), otherwise use averageClickThroughRate
+  // Both come as percentage (e.g., 100 means 100%), so don't multiply by 100
+  const ctrPercentage = averageCTR || averageClickThroughRate || 0;
+  // averageConversionRate comes as percentage (e.g., 100 means 100%), so don't multiply by 100
+  const conversionPercentage = averageConversionRate || 0;
 
   return (
     <Grid container spacing={2}>

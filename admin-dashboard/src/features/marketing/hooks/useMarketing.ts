@@ -15,7 +15,6 @@ import type {
   ValidateCouponDto,
   PricingQueryDto,
   CreateEngineerCouponDto,
-  EngineerCouponStats,
 } from '../api/marketingApi';
 
 const MARKETING_KEY = 'marketing';

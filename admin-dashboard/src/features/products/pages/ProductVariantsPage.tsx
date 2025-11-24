@@ -17,8 +17,10 @@ import {
   IconButton,
   Tooltip,
   Stack,
+  Paper,
 } from '@mui/material';
-import { ArrowBack, Add, Save, Cancel, Edit, Delete, Check, Close } from '@mui/icons-material';
+import { ArrowBack, Add, Save, Cancel, Edit, Delete, Check, Close, SelectAll, Deselect, Clear, Home, ChevronRight } from '@mui/icons-material';
+import { Breadcrumbs, Link } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -64,6 +66,9 @@ export const ProductVariantsPage: React.FC = () => {
     pageSize: 20,
   });
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
+  const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
+  const [bulkEditDialogOpen, setBulkEditDialogOpen] = useState(false);
+  const [bulkEditData, setBulkEditData] = useState<{ price?: number; stock?: number }>({});
 
   // Form
   const methods = useForm<VariantFormData>({
@@ -149,6 +154,73 @@ export const ProductVariantsPage: React.FC = () => {
         },
       }
     );
+  };
+
+  // Bulk Actions
+  const handleBulkDelete = async () => {
+    if (selectedVariants.length === 0) return;
+    const confirmed = await confirmDialog({
+      title: t('products:variants.bulkDeleteTitle', 'تأكيد الحذف الجماعي'),
+      message: t('products:variants.bulkDeleteConfirm', { count: selectedVariants.length }),
+      type: 'warning',
+      confirmColor: 'error',
+    });
+    if (confirmed) {
+      Promise.all(selectedVariants.map(variantId => 
+        new Promise((resolve) => {
+          deleteVariant(
+            { productId: id!, variantId },
+            {
+              onSuccess: () => resolve(true),
+              onError: () => resolve(false),
+            }
+          );
+        })
+      )).then(() => {
+        setSelectedVariants([]);
+        refetch();
+        toast.success(t('products:messages.bulkDeleteSuccess', { count: selectedVariants.length }));
+      });
+    }
+  };
+
+  const handleBulkEdit = () => {
+    if (selectedVariants.length === 0) return;
+    setBulkEditDialogOpen(true);
+  };
+
+  const handleBulkEditSave = () => {
+    if (selectedVariants.length === 0) return;
+    
+    Promise.all(selectedVariants.map(variantId => 
+      new Promise((resolve) => {
+        const updateData: any = {};
+        if (bulkEditData.price !== undefined) updateData.price = bulkEditData.price;
+        if (bulkEditData.stock !== undefined) updateData.stock = bulkEditData.stock;
+        
+        updateVariant(
+          { productId: id!, variantId, data: updateData },
+          {
+            onSuccess: () => resolve(true),
+            onError: () => resolve(false),
+          }
+        );
+      })
+    )).then(() => {
+      setSelectedVariants([]);
+      setBulkEditDialogOpen(false);
+      setBulkEditData({});
+      refetch();
+      toast.success(t('products:messages.bulkUpdateSuccess', { count: selectedVariants.length }));
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedVariants.length === (variants?.length || 0)) {
+      setSelectedVariants([]);
+    } else {
+      setSelectedVariants(variants?.map((v: Variant) => v._id) || []);
+    }
   };
 
   const onSubmit = (data: VariantFormData) => {
@@ -467,6 +539,40 @@ export const ProductVariantsPage: React.FC = () => {
 
   return (
     <Box>
+      {/* Breadcrumbs */}
+      <Breadcrumbs 
+        separator={<ChevronRight fontSize="small" />} 
+        sx={{ mb: 2 }}
+        aria-label="breadcrumb"
+      >
+        <Link
+          color="inherit"
+          href="/products"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/products');
+          }}
+          sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+        >
+          <Home sx={{ mr: 0.5 }} fontSize="inherit" />
+          {t('products:list.title', 'المنتجات')}
+        </Link>
+        <Link
+          color="inherit"
+          href={`/products/${id}`}
+          onClick={(e) => {
+            e.preventDefault();
+            navigate(`/products/${id}`);
+          }}
+          sx={{ textDecoration: 'none' }}
+        >
+          {product?.name || t('products:variants.product', 'المنتج')}
+        </Link>
+        <Typography color="text.primary">
+          {t('products:variants.manage', 'إدارة المتغيرات')}
+        </Typography>
+      </Breadcrumbs>
+
       {/* Header */}
       <Box
         display="flex"
@@ -535,6 +641,67 @@ export const ProductVariantsPage: React.FC = () => {
           {t('products:variants.add', 'إضافة متغير')}
         </Button>
       </Box>
+
+      {/* Bulk Actions Toolbar */}
+      {selectedVariants.length > 0 && (
+        <Paper 
+          sx={{ 
+            p: { xs: 1.5, sm: 2 }, 
+            mb: 2,
+            bgcolor: 'primary.light',
+            border: '1px solid',
+            borderColor: 'primary.main',
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+            <Typography variant="body1" fontWeight="medium">
+              {t('products:variants.selectedCount', 'تم اختيار {{count}} متغير', { count: selectedVariants.length })}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                startIcon={<Edit />}
+                onClick={handleBulkEdit}
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
+              >
+                {t('products:variants.bulkEdit', 'تعديل جماعي')}
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                size="small"
+                startIcon={<Delete />}
+                onClick={handleBulkDelete}
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
+              >
+                {t('products:variants.bulkDelete', 'حذف المحدد')}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={selectedVariants.length === (variants?.length || 0) ? <Deselect /> : <SelectAll />}
+                onClick={handleSelectAll}
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
+              >
+                {selectedVariants.length === (variants?.length || 0) 
+                  ? t('products:variants.deselectAll', 'إلغاء تحديد الكل')
+                  : t('products:variants.selectAll', 'تحديد الكل')}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Clear />}
+                onClick={() => setSelectedVariants([])}
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
+              >
+                {t('products:variants.clearSelection', 'مسح التحديد')}
+              </Button>
+            </Stack>
+          </Box>
+        </Paper>
+      )}
 
       {/* Variants Display */}
       {loadingVariants ? (
@@ -617,6 +784,8 @@ export const ProductVariantsPage: React.FC = () => {
               sortModel={sortModel}
               onSortModelChange={setSortModel}
               getRowId={(row: unknown) => (row as Variant)?._id || ''}
+              selectable={true}
+              onRowSelectionModelChange={(selection) => setSelectedVariants(selection as string[])}
               height={600}
             />
           )}
@@ -702,6 +871,57 @@ export const ProductVariantsPage: React.FC = () => {
             fullWidth={isMobile}
           >
             {t('common:actions.add', 'إضافة')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Bulk Edit Dialog */}
+      <Dialog
+        open={bulkEditDialogOpen}
+        onClose={() => setBulkEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={isMobile}
+      >
+        <DialogTitle>
+          {t('products:variants.bulkEditTitle', 'تعديل جماعي للمتغيرات')}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+            <Alert severity="info">
+              {t('products:variants.bulkEditInfo', 'سيتم تطبيق التغييرات على {{count}} متغير', { count: selectedVariants.length })}
+            </Alert>
+            <TextField
+              label={t('products:variants.form.price', 'السعر')}
+              type="number"
+              value={bulkEditData.price || ''}
+              onChange={(e) => setBulkEditData({ ...bulkEditData, price: Number(e.target.value) })}
+              fullWidth
+              inputProps={{ min: 0, step: 0.01 }}
+              helperText={t('products:variants.bulkEditPriceHelp', 'اتركه فارغاً إذا لم ترد تغييره')}
+            />
+            <TextField
+              label={t('products:variants.form.stock', 'المخزون')}
+              type="number"
+              value={bulkEditData.stock || ''}
+              onChange={(e) => setBulkEditData({ ...bulkEditData, stock: Number(e.target.value) })}
+              fullWidth
+              inputProps={{ min: 0 }}
+              helperText={t('products:variants.bulkEditStockHelp', 'اتركه فارغاً إذا لم ترد تغييره')}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkEditDialogOpen(false)} startIcon={<Cancel />}>
+            {t('common:actions.cancel', 'إلغاء')}
+          </Button>
+          <Button
+            onClick={handleBulkEditSave}
+            variant="contained"
+            startIcon={<Save />}
+            disabled={bulkEditData.price === undefined && bulkEditData.stock === undefined}
+          >
+            {t('common:actions.save', 'حفظ')}
           </Button>
         </DialogActions>
       </Dialog>

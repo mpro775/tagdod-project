@@ -517,3 +517,20 @@ export const useVerifyPayment = () => {
     onError: ErrorHandler.showError,
   });
 };
+
+// Send invoice manually
+export const useSendInvoice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ordersApi.sendInvoice(id),
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || 'تم إرسال الفاتورة بنجاح إلى إيميل المبيعات');
+        queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
+      } else {
+        toast.error(data.message || 'فشل في إرسال الفاتورة');
+      }
+    },
+    onError: ErrorHandler.showError,
+  });
+};

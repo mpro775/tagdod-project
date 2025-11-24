@@ -7,8 +7,13 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  Card,
+  CardMedia,
+  CardContent,
+  Paper,
+  Stack,
 } from '@mui/material';
-import { Link as LinkIcon } from '@mui/icons-material';
+import { Link as LinkIcon, Image as ImageIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { productsApi } from '../api/productsApi';
 import type { Product } from '../types/product.types';
@@ -145,18 +150,62 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
             />
           ))
         }
-        renderOption={(props, option: Product) => (
-          <li {...props} key={option._id}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-              <Typography variant="body2" fontWeight="medium">
-                {option.name}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {option.nameEn} {option.category && `• ${option.category.name}`}
-              </Typography>
-            </Box>
-          </li>
-        )}
+        renderOption={(props, option: Product) => {
+          const imageUrl = typeof option.mainImageId === 'object' 
+            ? option.mainImageId?.url 
+            : option.mainImage || undefined;
+          
+          return (
+            <li {...props} key={option._id}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                {imageUrl ? (
+                  <Box
+                    component="img"
+                    src={imageUrl}
+                    alt={option.name}
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'action.hover',
+                      borderRadius: 1,
+                    }}
+                  >
+                    <ImageIcon sx={{ color: 'text.secondary' }} />
+                  </Box>
+                )}
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight="medium" noWrap>
+                    {option.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {option.nameEn}
+                  </Typography>
+                  {option.category && (
+                    <Chip 
+                      label={typeof option.category === 'object' ? option.category.name : option.category} 
+                      size="small" 
+                      sx={{ mt: 0.5, height: 20 }}
+                    />
+                  )}
+                </Box>
+              </Box>
+            </li>
+          );
+        }}
         noOptionsText={t('products:form.noProductsAvailable', 'لا توجد منتجات متاحة')}
         loadingText={t('common:common.loading', 'جاري التحميل...')}
         sx={{
@@ -167,22 +216,63 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
       />
 
       {selectedProducts.length > 0 && (
-        <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="caption" color="text.secondary" gutterBottom>
-            {t('products:form.selectedProducts', 'المنتجات المحددة')} ({selectedProducts.length}):
+        <Paper sx={{ mt: 2, p: 2 }}>
+          <Typography variant="subtitle2" fontWeight="medium" gutterBottom>
+            {t('products:form.selectedProducts', 'المنتجات المحددة')} ({selectedProducts.length})
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-            {selectedProducts.map((product: Product) => (
-              <Chip
-                key={product._id}
-                label={product.name}
-                size="small"
-                color="success"
-                variant="filled"
-              />
-            ))}
-          </Box>
-        </Box>
+          <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
+            {selectedProducts.map((product: Product) => {
+              const imageUrl = typeof product.mainImageId === 'object' 
+                ? product.mainImageId?.url 
+                : product.mainImage || undefined;
+              
+              return (
+                <Card
+                  key={product._id}
+                  sx={{
+                    width: { xs: '100%', sm: 200 },
+                    position: 'relative',
+                  }}
+                  variant="outlined"
+                >
+                  {imageUrl && (
+                    <CardMedia
+                      component="img"
+                      height="100"
+                      image={imageUrl}
+                      alt={product.name}
+                      sx={{ objectFit: 'cover' }}
+                    />
+                  )}
+                  <CardContent sx={{ p: 1.5 }}>
+                    <Typography variant="body2" fontWeight="medium" noWrap>
+                      {product.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {product.nameEn}
+                    </Typography>
+                  </CardContent>
+                  <Chip
+                    label={product.name}
+                    size="small"
+                    color="primary"
+                    onDelete={() => {
+                      const newProducts = selectedProducts.filter((p) => p._id !== product._id);
+                      setSelectedProducts(newProducts);
+                      onChange(newProducts.map((p) => p._id));
+                    }}
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      bgcolor: 'background.paper',
+                    }}
+                  />
+                </Card>
+              );
+            })}
+          </Stack>
+        </Paper>
       )}
     </Box>
   );

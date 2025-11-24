@@ -139,12 +139,8 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
               label={t('filters.attributeType')}
             >
               <MenuItem value="">{t('filters.allTypes')}</MenuItem>
-              <MenuItem value="select">{t('typeLabels.select')}</MenuItem>
-              <MenuItem value="multiselect">{t('typeLabels.multiselect')}</MenuItem>
-              <MenuItem value="color">{t('typeLabels.color')}</MenuItem>
               <MenuItem value="text">{t('typeLabels.text')}</MenuItem>
-              <MenuItem value="number">{t('typeLabels.number')}</MenuItem>
-              <MenuItem value="boolean">{t('typeLabels.boolean')}</MenuItem>
+              <MenuItem value="color">{t('typeLabels.color')}</MenuItem>
             </Select>
           </FormControl>
         </Grid>

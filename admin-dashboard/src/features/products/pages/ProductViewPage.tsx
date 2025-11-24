@@ -14,8 +14,10 @@ import {
   CircularProgress,
   Rating,
   Stack,
+  Breadcrumbs,
+  Link,
 } from '@mui/material';
-import { ArrowBack, Edit, Inventory, Star, NewReleases } from '@mui/icons-material';
+import { ArrowBack, Edit, Inventory, Star, NewReleases, Home, ChevronRight } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useProduct, useProductVariants } from '../hooks/useProducts';
@@ -94,6 +96,29 @@ export const ProductViewPage: React.FC = () => {
 
   return (
     <Box>
+      {/* Breadcrumbs */}
+      <Breadcrumbs 
+        separator={<ChevronRight fontSize="small" />} 
+        sx={{ mb: 2 }}
+        aria-label="breadcrumb"
+      >
+        <Link
+          color="inherit"
+          href="/products"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/products');
+          }}
+          sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+        >
+          <Home sx={{ mr: 0.5 }} fontSize="inherit" />
+          {t('products:list.title', 'المنتجات')}
+        </Link>
+        <Typography color="text.primary">
+          {product.name}
+        </Typography>
+      </Breadcrumbs>
+
       {/* Header */}
       <Box
         display="flex"
@@ -121,7 +146,7 @@ export const ProductViewPage: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<Edit />}
-            onClick={() => navigate(`/products/${id}/edit`)}
+            onClick={() => navigate(`/products/${id}`)}
             fullWidth={isMobile}
           >
             {t('view.edit')}

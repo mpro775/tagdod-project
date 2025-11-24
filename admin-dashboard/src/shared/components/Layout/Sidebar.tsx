@@ -74,435 +74,418 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   const { user } = useAuthStore();
   const activeItemRef = useRef<HTMLDivElement | null>(null);
 
-  const menuItems: MenuItem[] = React.useMemo(() => ([
-    {
-      id: 'dashboard',
-      label: t('navigation.dashboard'),
-      icon: <Dashboard />,
-      path: '/dashboard',
-    },
-    {
-      id: 'users',
-      label: t('navigation.users'),
-      icon: <People />,
-      children: [
-        {
-          id: 'users-list',
-          label: t('navigation.usersList', 'قائمة المستخدمين'),
-          icon: <People />,
-          path: '/users',
-        },
-        {
-          id: 'users-analytics',
-          label: t('navigation.usersAnalytics', 'تحليلات المستخدمين'),
-          icon: <Assessment />,
-          path: '/users/analytics',
-        },
-        {
-          id: 'users-deleted',
-          label: t('navigation.usersDeleted', 'الحسابات المحذوفة'),
-          icon: <DeleteForever />,
-          path: '/users/deleted',
-        },
-        {
-          id: 'users-verification',
-          label: t('navigation.verificationRequests', 'طلبات التحقق'),
-          icon: <VerifiedUser />,
-          path: '/users/verification-requests',
-        },
-        {
-          id: 'users-addresses',
-          label: t('navigation.addresses', 'العناوين'),
-          icon: <LocationOn />,
-          path: '/admin/addresses',
-        },
-        {
-          id: 'users-favorites',
-          label: t('navigation.favorites', 'المفضلة'),
-          icon: <Favorite />,
-          path: '/admin/favorites',
-        },
-      ],
-    },
-    {
-      id: 'catalog',
-      label: t('navigation.catalog'),
-      icon: <Inventory />,
-      children: [
-        {
-          id: 'products',
-          label: t('navigation.products'),
-          icon: <Inventory />,
-          children: [
-            {
-              id: 'products-list',
-              label: t('navigation.productsList', 'قائمة المنتجات'),
-              icon: <Inventory />,
-              path: '/products',
-            },
-            {
-              id: 'products-analytics',
-              label: t('navigation.productsAnalytics', 'تحليلات المنتجات'),
-              icon: <Assessment />,
-              path: '/products/analytics',
-            },
-            {
-              id: 'products-inventory',
-              label: t('navigation.productsInventory', 'إدارة المخزون'),
-              icon: <ViewModule />,
-              path: '/products/inventory',
-            },
-          ],
-        },
-        {
-          id: 'categories',
-          label: t('navigation.categories'),
-          icon: <Category />,
-          path: '/categories',
-        },
-        {
-          id: 'attributes',
-          label: t('navigation.attributes'),
-          icon: <Tune />,
-          path: '/attributes',
-        },
-        {
-          id: 'brands',
-          label: t('navigation.brands'),
-          icon: <Storefront />,
-          path: '/brands',
-        },
-      ],
-    },
-    {
-      id: 'sales',
-      label: t('navigation.sales'),
-      icon: <ShoppingCart />,
-      children: [
-        {
-          id: 'orders',
-          label: t('navigation.orders'),
-          icon: <Receipt />,
-          children: [
-            {
-              id: 'orders-list',
-              label: t('navigation.ordersList', 'قائمة الطلبات'),
-              icon: <Receipt />,
-              path: '/orders',
-            },
-            {
-              id: 'orders-analytics',
-              label: t('navigation.ordersAnalytics', 'تحليلات الطلبات'),
-              icon: <Assessment />,
-              path: '/orders/analytics',
-            },
-          ],
-        },
-        {
-          id: 'carts',
-          label: t('navigation.cartsManagement', 'إدارة السلال'),
-          icon: <ShoppingCart />,
-          children: [
-            {
-              id: 'carts-list',
-              label: t('navigation.cartsList', 'قائمة السلال'),
-              icon: <ShoppingCart />,
-              path: '/carts',
-            },
-            {
-              id: 'carts-abandoned',
-              label: t('navigation.cartsAbandoned', 'السلال المتروكة'),
-              icon: <ShoppingCart />,
-              path: '/carts/abandoned',
-            },
-            {
-              id: 'carts-analytics',
-              label: t('navigation.cartsAnalytics', 'تحليلات السلة'),
-              icon: <Assessment />,
-              path: '/carts/analytics',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'marketing',
-      label: t('navigation.marketing', 'التسويق'),
-      icon: <Campaign />,
-      children: [
-        {
-          id: 'marketing-dashboard',
-          label: t('navigation.marketingDashboard', 'لوحة التسويق'),
-          icon: <Dashboard />,
-          path: '/marketing',
-        },
-        {
-          id: 'price-rules',
-          label: t('navigation.priceRules', 'قواعد الأسعار'),
-          icon: <LocalOffer />,
-          path: '/marketing/price-rules',
-        },
-        {
-          id: 'banners',
-          label: t('navigation.banners', 'البنرات'),
-          icon: <Campaign />,
-          children: [
-            {
-              id: 'banners-list',
-              label: t('navigation.bannersList', 'قائمة البنرات'),
-              icon: <Campaign />,
-              path: '/banners',
-            },
-            {
-              id: 'banners-analytics',
-              label: t('navigation.bannersAnalytics', 'تحليلات البنرات'),
-              icon: <Assessment />,
-              path: '/banners/analytics',
-            },
-          ],
-        },
-        {
-          id: 'coupons',
-          label: t('navigation.coupons', 'الكوبونات'),
-          icon: <LocalOffer />,
-          children: [
-            {
-              id: 'coupons-list',
-              label: t('navigation.couponsList', 'قائمة الكوبونات'),
-              icon: <LocalOffer />,
-              path: '/coupons',
-            },
-            {
-              id: 'coupons-analytics',
-              label: t('navigation.couponsAnalytics', 'تحليلات الكوبونات'),
-              icon: <Assessment />,
-              path: '/coupons/analytics',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'services',
-      label: t('navigation.services', 'الخدمات'),
-      icon: <Build />,
-      children: [
-        {
-          id: 'services-overview',
-          label: t('navigation.servicesOverview', 'نظرة عامة'),
-          icon: <Dashboard />,
-          path: '/services',
-        },
-        {
-          id: 'services-requests',
-          label: t('navigation.servicesRequests', 'طلبات الخدمات'),
-          icon: <Build />,
-          path: '/services/requests',
-        },
-        {
-          id: 'services-engineers',
-          label: t('navigation.servicesEngineers', 'إدارة المهندسين'),
-          icon: <People />,
-          path: '/services/engineers',
-        },
-        {
-          id: 'services-offers',
-          label: t('navigation.servicesOffers', 'إدارة العروض'),
-          icon: <LocalOffer />,
-          path: '/services/offers',
-        },
-        {
-          id: 'services-analytics',
-          label: t('navigation.servicesAnalytics', 'تحليلات الخدمات'),
-          icon: <Analytics />,
-          path: '/services/analytics',
-        },
-      ],
-    },
-    {
-      id: 'media',
-      label: t('navigation.media', 'مكتبة الوسائط'),
-      icon: <PhotoLibrary />,
-      children: [
-        {
-          id: 'media-library',
-          label: t('navigation.mediaLibrary', 'مكتبة الوسائط'),
-          icon: <PhotoLibrary />,
-          path: '/media',
-        },
-        {
-          id: 'media-analytics',
-          label: t('navigation.mediaAnalytics', 'إحصائيات الوسائط'),
-          icon: <Assessment />,
-          path: '/media/analytics',
-        },
-      ],
-    },
-    {
-      id: 'analytics',
-      label: t('navigation.analytics', 'الإحصائيات'),
-      icon: <Analytics />,
-      children: [
-        {
-          id: 'analytics-dashboard',
-          label: t('navigation.analyticsDashboard', 'لوحة الإحصائيات'),
-          icon: <Analytics />,
-          path: '/analytics',
-        },
-        {
-          id: 'analytics-main',
-          label: t('navigation.analyticsMain', 'نظام التحليلات الشامل'),
-          icon: <Dashboard />,
-          path: '/analytics/main',
-        },
-        {
-          id: 'analytics-advanced',
-          label: t('navigation.analyticsAdvanced', 'إحصائيات متقدمة'),
-          icon: <Assessment />,
-          path: '/analytics/advanced',
-        },
-        {
-          id: 'analytics-export',
-          label: t('navigation.analyticsExport', 'تصدير البيانات'),
-          icon: <GetApp />,
-          path: '/analytics/export',
-        },
-        {
-          id: 'analytics-reports',
-          label: t('navigation.analyticsReports', 'إدارة التقارير'),
-          icon: <Description />,
-          path: '/analytics/reports',
-        },
-      ],
-    },
-    {
-      id: 'audit',
-      label: t('navigation.audit', 'السجلات والتدقيق'),
-      icon: <Security />,
-      children: [
-        {
-          id: 'audit-logs',
-          label: t('navigation.auditLogs', 'سجلات التدقيق'),
-          icon: <Security />,
-          path: '/audit',
-        },
-        {
-          id: 'audit-main',
-          label: t('navigation.auditMain', 'نظام التدقيق الشامل'),
-          icon: <Dashboard />,
-          path: '/audit/main',
-        },
-        {
-          id: 'audit-analytics',
-          label: t('navigation.auditAnalytics', 'تحليلات التدقيق'),
-          icon: <Assessment />,
-          path: '/audit/analytics',
-        },
-      ],
-    },
-    {
-      id: 'support',
-      label: t('navigation.support', 'الدعم الفني'),
-      icon: <Support />,
-      children: [
-        {
-          id: 'support-tickets',
-          label: t('navigation.supportTickets', 'قائمة التذاكر'),
-          icon: <Support />,
-          path: '/support',
-        },
-        {
-          id: 'support-stats',
-          label: t('navigation.supportStats', 'إحصائيات الدعم'),
-          icon: <Assessment />,
-          path: '/support/stats',
-        },
-        {
-          id: 'support-canned-responses',
-          label: t('navigation.supportCannedResponses', 'الردود الجاهزة'),
-          icon: <ViewModule />,
-          path: '/support/canned-responses',
-        },
-      ],
-    },
-    {
-      id: 'notifications',
-      label: t('navigation.notifications', 'الإشعارات'),
-      icon: <Notifications />,
-      children: [
-        {
-          id: 'notifications-list',
-          label: t('navigation.notificationsList', 'قائمة الإشعارات'),
-          icon: <Notifications />,
-          path: '/notifications',
-        },
-        {
-          id: 'notifications-analytics',
-          label: t('navigation.notificationsAnalytics', 'إحصائيات الإشعارات'),
-          icon: <Assessment />,
-          path: '/notifications/analytics',
-        },
-        {
-          id: 'notifications-templates',
-          label: t('navigation.notificationsTemplates', 'قوالب الإشعارات'),
-          icon: <ViewModule />,
-          path: '/notifications/templates',
-        },
-      ],
-    },
-    {
-      id: 'system-management',
-      label: t('navigation.systemManagement', 'إدارة النظام'),
-      icon: <AdminPanelSettings />,
-      children: [
-        {
-          id: 'system-monitoring',
-          label: t('navigation.systemMonitoring', 'مراقبة الأداء'),
-          icon: <Monitor />,
-          path: '/system/monitoring',
-        },
-        {
-          id: 'error-logs',
-          label: t('navigation.errorLogs', 'سجلات الأخطاء'),
-          icon: <BugReport />,
-          path: '/system/error-logs',
-        },
-        
-        {
-          id: 'system-settings',
-          label: t('navigation.systemSettings', 'إعدادات النظام'),
-          icon: <Settings />,
-          path: '/system/settings',
-        },
-        {
-          id: 'policies',
-          label: t('navigation.policies', 'السياسات'),
-          icon: <Policy />,
-          path: '/policies',
-        },
-      ],
-    },
-    {
-      id: 'exchange-rates',
-      label: t('navigation.exchangeRates', 'أسعار الصرف'),
-      icon: <Assessment />,
-      path: '/exchange-rates',
-    },
-    {
-      id: 'admin-management',
-      label: t('navigation.adminManagement'),
-      icon: <AdminPanelSettings />,
-      children: [
-        {
-          id: 'admin-search',
-          label: t('navigation.search'),
-          icon: <SearchIcon />,
-          path: '/admin/search',
-        },
-      ],
-    },
-  
-  ]), [t, i18n.language]);
+  const menuItems: MenuItem[] = React.useMemo(
+    () => [
+      {
+        id: 'dashboard',
+        label: t('navigation.dashboard'),
+        icon: <Dashboard />,
+        path: '/dashboard',
+      },
+      {
+        id: 'users',
+        label: t('navigation.users'),
+        icon: <People />,
+        children: [
+          {
+            id: 'users-list',
+            label: t('navigation.usersList', 'قائمة المستخدمين'),
+            icon: <People />,
+            path: '/users',
+          },
+          {
+            id: 'users-analytics',
+            label: t('navigation.usersAnalytics', 'تحليلات المستخدمين'),
+            icon: <Assessment />,
+            path: '/users/analytics',
+          },
+          {
+            id: 'users-deleted',
+            label: t('navigation.usersDeleted', 'الحسابات المحذوفة'),
+            icon: <DeleteForever />,
+            path: '/users/deleted',
+          },
+          {
+            id: 'users-verification',
+            label: t('navigation.verificationRequests', 'طلبات التحقق'),
+            icon: <VerifiedUser />,
+            path: '/users/verification-requests',
+          },
+          {
+            id: 'users-addresses',
+            label: t('navigation.addresses', 'العناوين'),
+            icon: <LocationOn />,
+            path: '/admin/addresses',
+          },
+          {
+            id: 'users-favorites',
+            label: t('navigation.favorites', 'المفضلة'),
+            icon: <Favorite />,
+            path: '/admin/favorites',
+          },
+        ],
+      },
+      {
+        id: 'catalog',
+        label: t('navigation.catalog'),
+        icon: <Inventory />,
+        children: [
+          {
+            id: 'products',
+            label: t('navigation.products'),
+            icon: <Inventory />,
+            children: [
+              {
+                id: 'products-list',
+                label: t('navigation.productsList', 'قائمة المنتجات'),
+                icon: <Inventory />,
+                path: '/products',
+              },
+              {
+                id: 'products-analytics',
+                label: t('navigation.productsAnalytics', 'تحليلات المنتجات'),
+                icon: <Assessment />,
+                path: '/products/analytics',
+              },
+              {
+                id: 'products-inventory',
+                label: t('navigation.productsInventory', 'إدارة المخزون'),
+                icon: <ViewModule />,
+                path: '/products/inventory',
+              },
+            ],
+          },
+          {
+            id: 'categories',
+            label: t('navigation.categories'),
+            icon: <Category />,
+            path: '/categories',
+          },
+          {
+            id: 'attributes',
+            label: t('navigation.attributes'),
+            icon: <Tune />,
+            path: '/attributes',
+          },
+          {
+            id: 'brands',
+            label: t('navigation.brands'),
+            icon: <Storefront />,
+            path: '/brands',
+          },
+        ],
+      },
+      {
+        id: 'sales',
+        label: t('navigation.sales'),
+        icon: <ShoppingCart />,
+        children: [
+          {
+            id: 'orders',
+            label: t('navigation.orders'),
+            icon: <Receipt />,
+            children: [
+              {
+                id: 'orders-list',
+                label: t('navigation.ordersList', 'قائمة الطلبات'),
+                icon: <Receipt />,
+                path: '/orders',
+              },
+              {
+                id: 'orders-analytics',
+                label: t('navigation.ordersAnalytics', 'تحليلات الطلبات'),
+                icon: <Assessment />,
+                path: '/orders/analytics',
+              },
+            ],
+          },
+          {
+            id: 'carts',
+            label: t('navigation.cartsManagement', 'إدارة السلال'),
+            icon: <ShoppingCart />,
+            children: [
+              {
+                id: 'carts-list',
+                label: t('navigation.cartsList', 'قائمة السلال'),
+                icon: <ShoppingCart />,
+                path: '/carts',
+              },
+              {
+                id: 'carts-analytics',
+                label: t('navigation.cartsAnalytics', 'تحليلات السلة'),
+                icon: <Assessment />,
+                path: '/carts/analytics',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'marketing',
+        label: t('navigation.marketing', 'التسويق'),
+        icon: <Campaign />,
+        children: [
+          {
+            id: 'marketing-dashboard',
+            label: t('navigation.marketingDashboard', 'لوحة التسويق'),
+            icon: <Dashboard />,
+            path: '/marketing',
+          },
+          {
+            id: 'price-rules',
+            label: t('navigation.priceRules', 'قواعد الأسعار'),
+            icon: <LocalOffer />,
+            path: '/marketing/price-rules',
+          },
+          {
+            id: 'banners',
+            label: t('navigation.banners', 'البنرات'),
+            icon: <Campaign />,
+            path: '/banners',
+          },
+          {
+            id: 'coupons',
+            label: t('navigation.coupons', 'الكوبونات'),
+            icon: <LocalOffer />,
+            children: [
+              {
+                id: 'coupons-list',
+                label: t('navigation.couponsList', 'قائمة الكوبونات'),
+                icon: <LocalOffer />,
+                path: '/coupons',
+              },
+              {
+                id: 'coupons-analytics',
+                label: t('navigation.couponsAnalytics', 'تحليلات الكوبونات'),
+                icon: <Assessment />,
+                path: '/coupons/analytics',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'services',
+        label: t('navigation.services', 'الخدمات'),
+        icon: <Build />,
+        children: [
+          {
+            id: 'services-overview',
+            label: t('navigation.servicesOverview', 'نظرة عامة'),
+            icon: <Dashboard />,
+            path: '/services',
+          },
+          {
+            id: 'services-requests',
+            label: t('navigation.servicesRequests', 'طلبات الخدمات'),
+            icon: <Build />,
+            path: '/services/requests',
+          },
+          {
+            id: 'services-engineers',
+            label: t('navigation.servicesEngineers', 'إدارة المهندسين'),
+            icon: <People />,
+            path: '/services/engineers',
+          },
+          {
+            id: 'services-offers',
+            label: t('navigation.servicesOffers', 'إدارة العروض'),
+            icon: <LocalOffer />,
+            path: '/services/offers',
+          },
+          {
+            id: 'services-analytics',
+            label: t('navigation.servicesAnalytics', 'تحليلات الخدمات'),
+            icon: <Analytics />,
+            path: '/services/analytics',
+          },
+        ],
+      },
+      {
+        id: 'media',
+        label: t('navigation.media', 'مكتبة الوسائط'),
+        icon: <PhotoLibrary />,
+        children: [
+          {
+            id: 'media-library',
+            label: t('navigation.mediaLibrary', 'مكتبة الوسائط'),
+            icon: <PhotoLibrary />,
+            path: '/media',
+          },
+          {
+            id: 'media-analytics',
+            label: t('navigation.mediaAnalytics', 'إحصائيات الوسائط'),
+            icon: <Assessment />,
+            path: '/media/analytics',
+          },
+        ],
+      },
+      {
+        id: 'analytics',
+        label: t('navigation.analytics', 'الإحصائيات'),
+        icon: <Analytics />,
+        children: [
+          {
+            id: 'analytics-dashboard',
+            label: t('navigation.analyticsDashboard', 'لوحة الإحصائيات'),
+            icon: <Analytics />,
+            path: '/analytics',
+          },
+          {
+            id: 'analytics-main',
+            label: t('navigation.analyticsMain', 'نظام التحليلات الشامل'),
+            icon: <Dashboard />,
+            path: '/analytics/main',
+          },
+          {
+            id: 'analytics-advanced',
+            label: t('navigation.analyticsAdvanced', 'إحصائيات متقدمة'),
+            icon: <Assessment />,
+            path: '/analytics/advanced',
+          },
+          {
+            id: 'analytics-export',
+            label: t('navigation.analyticsExport', 'تصدير البيانات'),
+            icon: <GetApp />,
+            path: '/analytics/export',
+          },
+          {
+            id: 'analytics-reports',
+            label: t('navigation.analyticsReports', 'إدارة التقارير'),
+            icon: <Description />,
+            path: '/analytics/reports',
+          },
+        ],
+      },
+      {
+        id: 'audit',
+        label: t('navigation.audit', 'السجلات والتدقيق'),
+        icon: <Security />,
+        children: [
+          {
+            id: 'audit-logs',
+            label: t('navigation.auditLogs', 'سجلات التدقيق'),
+            icon: <Security />,
+            path: '/audit',
+          },
+          {
+            id: 'audit-main',
+            label: t('navigation.auditMain', 'نظام التدقيق الشامل'),
+            icon: <Dashboard />,
+            path: '/audit/main',
+          },
+          {
+            id: 'audit-analytics',
+            label: t('navigation.auditAnalytics', 'تحليلات التدقيق'),
+            icon: <Assessment />,
+            path: '/audit/analytics',
+          },
+        ],
+      },
+      {
+        id: 'support',
+        label: t('navigation.support', 'الدعم الفني'),
+        icon: <Support />,
+        children: [
+          {
+            id: 'support-tickets',
+            label: t('navigation.supportTickets', 'قائمة التذاكر'),
+            icon: <Support />,
+            path: '/support',
+          },
+          {
+            id: 'support-stats',
+            label: t('navigation.supportStats', 'إحصائيات الدعم'),
+            icon: <Assessment />,
+            path: '/support/stats',
+          },
+          {
+            id: 'support-canned-responses',
+            label: t('navigation.supportCannedResponses', 'الردود الجاهزة'),
+            icon: <ViewModule />,
+            path: '/support/canned-responses',
+          },
+        ],
+      },
+      {
+        id: 'notifications',
+        label: t('navigation.notifications', 'الإشعارات'),
+        icon: <Notifications />,
+        children: [
+          {
+            id: 'notifications-list',
+            label: t('navigation.notificationsList', 'قائمة الإشعارات'),
+            icon: <Notifications />,
+            path: '/notifications',
+          },
+          {
+            id: 'notifications-analytics',
+            label: t('navigation.notificationsAnalytics', 'إحصائيات الإشعارات'),
+            icon: <Assessment />,
+            path: '/notifications/analytics',
+          },
+          {
+            id: 'notifications-templates',
+            label: t('navigation.notificationsTemplates', 'قوالب الإشعارات'),
+            icon: <ViewModule />,
+            path: '/notifications/templates',
+          },
+        ],
+      },
+      {
+        id: 'system-management',
+        label: t('navigation.systemManagement', 'إدارة النظام'),
+        icon: <AdminPanelSettings />,
+        children: [
+          {
+            id: 'system-monitoring',
+            label: t('navigation.systemMonitoring', 'مراقبة الأداء'),
+            icon: <Monitor />,
+            path: '/system/monitoring',
+          },
+          {
+            id: 'error-logs',
+            label: t('navigation.errorLogs', 'سجلات الأخطاء'),
+            icon: <BugReport />,
+            path: '/system/error-logs',
+          },
+
+          {
+            id: 'system-settings',
+            label: t('navigation.systemSettings', 'إعدادات النظام'),
+            icon: <Settings />,
+            path: '/system/settings',
+          },
+          {
+            id: 'policies',
+            label: t('navigation.policies', 'السياسات'),
+            icon: <Policy />,
+            path: '/policies',
+          },
+        ],
+      },
+      {
+        id: 'exchange-rates',
+        label: t('navigation.exchangeRates', 'أسعار الصرف'),
+        icon: <Assessment />,
+        path: '/exchange-rates',
+      },
+      {
+        id: 'admin-management',
+        label: t('navigation.adminManagement'),
+        icon: <AdminPanelSettings />,
+        children: [
+          {
+            id: 'admin-search',
+            label: t('navigation.search'),
+            icon: <SearchIcon />,
+            path: '/admin/search',
+          },
+        ],
+      },
+    ],
+    [t, i18n.language]
+  );
 
   // Filter menu items based on user permissions
   const userPermissions = user?.permissions || [];
@@ -514,7 +497,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   useEffect(() => {
     const findActiveParents = (items: MenuItem[], path: string): string[] => {
       const parents: string[] = [];
-      
+
       const traverse = (items: MenuItem[], currentPath: string[] = []): boolean => {
         for (const item of items) {
           if (item.path && path.startsWith(item.path)) {
@@ -530,7 +513,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
         }
         return false;
       };
-      
+
       traverse(items);
       return parents;
     };

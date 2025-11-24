@@ -34,11 +34,7 @@ import type { Attribute, AttributeType, ListAttributesParams } from '../types/at
 
 // eslint-disable-next-line no-unused-vars
 const getAttributeTypeLabels = (t: (key: string) => string): Record<AttributeType, string> => ({
-  select: t('typeLabels.select'),
-  multiselect: t('typeLabels.multiselect'),
   text: t('typeLabels.text'),
-  number: t('typeLabels.number'),
-  boolean: t('typeLabels.boolean'),
   color: t('typeLabels.color'),
 });
 
@@ -46,11 +42,7 @@ const attributeTypeColors: Record<
   AttributeType,
   'default' | 'primary' | 'secondary' | 'info' | 'warning' | 'success'
 > = {
-  select: 'primary',
-  multiselect: 'secondary',
   text: 'default',
-  number: 'warning',
-  boolean: 'success',
   color: 'info',
 };
 

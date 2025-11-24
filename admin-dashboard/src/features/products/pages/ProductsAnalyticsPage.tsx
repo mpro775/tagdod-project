@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -16,6 +16,10 @@ import {
   Paper,
   Chip,
   Stack,
+  TextField,
+  Breadcrumbs,
+  Link,
+  LinearProgress,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -25,6 +29,10 @@ import {
   NewReleases,
   Refresh,
   Download,
+  Home,
+  ChevronRight,
+  DateRange,
+  Clear,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -39,8 +47,19 @@ export const ProductsAnalyticsPage: React.FC = () => {
   const { t } = useTranslation(['products', 'common']);
   const { isMobile } = useBreakpoint();
 
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: '',
+    end: '',
+  });
+
   const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useProductStats();
   const { data: inventorySummary, isLoading: loadingInventory } = useInventorySummary();
+
+  const clearDateRange = () => {
+    setDateRange({ start: '', end: '' });
+  };
+
+  const hasDateRange = dateRange.start || dateRange.end;
 
   const handleRefresh = () => {
     refetchStats();
@@ -60,48 +79,114 @@ export const ProductsAnalyticsPage: React.FC = () => {
 
   return (
     <Box>
-      {/* Header */}
-      <Box
-        display="flex"
-        flexDirection={isMobile ? 'column' : 'row'}
-        alignItems={isMobile ? 'stretch' : 'center'}
-        gap={2}
-        mb={3}
+      {/* Breadcrumbs */}
+      <Breadcrumbs 
+        separator={<ChevronRight fontSize="small" />} 
+        sx={{ mb: 2 }}
+        aria-label="breadcrumb"
       >
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBack />}
-          onClick={() => navigate('/products')}
-          fullWidth={isMobile}
+        <Link
+          color="inherit"
+          href="/products"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/products');
+          }}
+          sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
         >
-          {t('products:stats.backToProducts', 'العودة للمنتجات')}
-        </Button>
-        <Typography variant={isMobile ? 'h5' : 'h4'} component="h1" sx={{ flex: 1 }}>
+          <Home sx={{ mr: 0.5 }} fontSize="inherit" />
+          {t('products:list.title', 'المنتجات')}
+        </Link>
+        <Typography color="text.primary">
           {t('products:stats.title', 'إحصائيات المنتجات')}
         </Typography>
-        <Stack
-          direction={isMobile ? 'column' : 'row'}
-          spacing={1}
-          sx={{ width: isMobile ? '100%' : 'auto', ml: isMobile ? 0 : 'auto' }}
+      </Breadcrumbs>
+
+      {/* Header */}
+      <Card sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
+        <Box
+          display="flex"
+          flexDirection={isMobile ? 'column' : 'row'}
+          alignItems={isMobile ? 'stretch' : 'center'}
+          gap={2}
+          mb={2}
         >
           <Button
             variant="outlined"
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/products')}
             fullWidth={isMobile}
+            size={isMobile ? 'small' : 'medium'}
           >
-            {t('common:actions.refresh', 'تحديث')}
+            {t('products:stats.backToProducts', 'العودة للمنتجات')}
           </Button>
-          <Button
-            variant="contained"
-            startIcon={<Download />}
-            onClick={handleExportData}
-            fullWidth={isMobile}
+          <Typography variant={isMobile ? 'h5' : 'h4'} component="h1" sx={{ flex: 1 }}>
+            {t('products:stats.title', 'إحصائيات المنتجات')}
+          </Typography>
+          <Stack
+            direction={isMobile ? 'column' : 'row'}
+            spacing={1}
+            sx={{ width: isMobile ? '100%' : 'auto', ml: isMobile ? 0 : 'auto' }}
           >
-            {t('products:stats.export', 'تصدير البيانات')}
-          </Button>
-        </Stack>
-      </Box>
+            <Button
+              variant="outlined"
+              startIcon={<Refresh />}
+              onClick={handleRefresh}
+              fullWidth={isMobile}
+              size={isMobile ? 'small' : 'medium'}
+            >
+              {t('common:actions.refresh', 'تحديث')}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Download />}
+              onClick={handleExportData}
+              fullWidth={isMobile}
+              size={isMobile ? 'small' : 'medium'}
+            >
+              {t('products:stats.export', 'تصدير البيانات')}
+            </Button>
+          </Stack>
+        </Box>
+
+        {/* Date Range Picker */}
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <DateRange sx={{ color: 'text.secondary' }} />
+          <TextField
+            label={t('products:stats.dateFrom', 'من تاريخ')}
+            type="date"
+            value={dateRange.start}
+            onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+            InputLabelProps={{ shrink: true }}
+            size="small"
+            sx={{ minWidth: { xs: '100%', sm: 180 } }}
+          />
+          <TextField
+            label={t('products:stats.dateTo', 'إلى تاريخ')}
+            type="date"
+            value={dateRange.end}
+            onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+            InputLabelProps={{ shrink: true }}
+            size="small"
+            sx={{ minWidth: { xs: '100%', sm: 180 } }}
+          />
+          {hasDateRange && (
+            <Button
+              variant="outlined"
+              startIcon={<Clear />}
+              onClick={clearDateRange}
+              size="small"
+            >
+              {t('common:actions.clear', 'مسح')}
+            </Button>
+          )}
+        </Box>
+      </Card>
+
+      {/* Loading Indicator */}
+      {loadingStats && (
+        <LinearProgress sx={{ mb: 2 }} />
+      )}
 
       {/* Overview Cards - 2 cards per row on mobile */}
       <Grid container spacing={3} mb={3}>

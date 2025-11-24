@@ -30,14 +30,12 @@ interface UsersFilterProps {
     search: string;
     status?: UserStatus;
     role?: UserRole;
-    isAdmin?: boolean;
     includeDeleted?: boolean;
   };
   onFiltersChange: (filters: {
     search: string;
     status?: UserStatus;
     role?: UserRole;
-    isAdmin?: boolean;
     includeDeleted?: boolean;
   }) => void;
   onClearFilters: () => void;
@@ -79,7 +77,6 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
     filters.search ||
     filters.status ||
     filters.role ||
-    filters.isAdmin !== undefined ||
     filters.includeDeleted;
 
   const getActiveFiltersCount = () => {
@@ -87,7 +84,6 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
     if (filters.search) count++;
     if (filters.status) count++;
     if (filters.role) count++;
-    if (filters.isAdmin !== undefined) count++;
     if (filters.includeDeleted) count++;
     return count;
   };
@@ -203,7 +199,7 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
           </Grid>
 
           {/* الدور */}
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
               <InputLabel>{t('users:filter.role', 'الدور')}</InputLabel>
               <Select
@@ -221,33 +217,8 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
             </FormControl>
           </Grid>
 
-          {/* نوع المستخدم */}
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 2 }}>
-            <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
-              <InputLabel>{t('users:filter.userType', 'نوع المستخدم')}</InputLabel>
-              <Select
-                value={filters.isAdmin === undefined ? '' : filters.isAdmin ? 'admin' : 'user'}
-                onChange={(e) => {
-                  const value = e.target.value as '' | 'admin' | 'user';
-                  if (value === '') {
-                    handleFilterChange('isAdmin', undefined);
-                  } else {
-                    handleFilterChange('isAdmin', value === 'admin');
-                  }
-                }}
-                label={t('users:filter.userType', 'نوع المستخدم')}
-              >
-                <MenuItem value="">{t('users:filter.allTypes', 'جميع الأنواع')}</MenuItem>
-                <MenuItem value="admin">{t('users:filter.admins', 'مديرين')}</MenuItem>
-                <MenuItem value="user">
-                  {t('users:filter.regularUsers', 'مستخدمين عاديين')}
-                </MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
           {/* الإجراءات */}
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
             <Box
               sx={{
                 display: 'flex',
@@ -310,17 +281,6 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
                 <Chip
                   label={t('users:filter.roleLabel', 'دور:') + ` ${ROLE_LABELS[filters.role]}`}
                   onDelete={() => handleFilterChange('role', undefined)}
-                  size="small"
-                  sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
-                />
-              )}
-              {filters.isAdmin !== undefined && (
-                <Chip
-                  label={
-                    t('users:filter.typeLabel', 'نوع:') +
-                    ` ${filters.isAdmin ? t('users:filter.admins', 'مديرين') : t('users:filter.regularUsers', 'مستخدمين عاديين')}`
-                  }
-                  onDelete={() => handleFilterChange('isAdmin', undefined)}
                   size="small"
                   sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                 />

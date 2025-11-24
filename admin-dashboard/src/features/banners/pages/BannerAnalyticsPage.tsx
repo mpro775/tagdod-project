@@ -27,10 +27,7 @@ import {
   Campaign,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { GridColDef } from '@mui/x-data-grid';
-import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useBannersAnalytics } from '../hooks/useBanners';
 import { BannerLocation } from '../types/banner.types';
@@ -176,108 +173,16 @@ const LoadingSkeleton: React.FC = () => (
   </Grid>
 );
 
-const getTopBannersColumns = (t: TFunction): GridColDef[] => [
-  {
-    field: 'title',
-    headerName: t('analytics.banner'),
-    width: 300,
-    renderCell: (params) => {
-      const banner = params.row as Banner & { imageUrl?: string };
-      return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar
-            src={banner.imageUrl}
-            alt={banner.title}
-            variant="rounded"
-            sx={{ width: 50, height: 35 }}
-          />
-          <Box>
-            <Typography variant="body2" fontWeight="bold">
-              {banner.title}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {t(`form.location.${banner.location}`, { defaultValue: banner.location })}
-            </Typography>
-          </Box>
-        </Box>
-      );
-    },
-  },
-  {
-    field: 'viewCount',
-    headerName: t('analytics.views'),
-    width: 120,
-    align: 'center',
-    renderCell: (params) => formatNumber(params.value as number),
-  },
-  {
-    field: 'clickCount',
-    headerName: t('analytics.clicks'),
-    width: 120,
-    align: 'center',
-    renderCell: (params) => formatNumber(params.value as number),
-  },
-  {
-    field: 'conversionCount',
-    headerName: t('analytics.conversions'),
-    width: 120,
-    align: 'center',
-    renderCell: (params) => formatNumber(params.value as number),
-  },
-  {
-    field: 'ctr',
-    headerName: t('analytics.clickRate'),
-    width: 130,
-    align: 'center',
-    renderCell: (params) => {
-      const banner = params.row as Banner & { viewCount: number; clickCount: number };
-      const ctr = banner.viewCount > 0 ? (banner.clickCount / banner.viewCount) * 100 : 0;
-      return (
-        <Chip
-          label={formatPercentage(ctr)}
-          size="small"
-          color={ctr > 5 ? 'success' : ctr > 2 ? 'warning' : 'default'}
-        />
-      );
-    },
-  },
-  {
-    field: 'conversionRate',
-    headerName: t('analytics.conversionRate'),
-    width: 140,
-    align: 'center',
-    renderCell: (params) => {
-      const banner = params.row as Banner & { clickCount: number; conversionCount: number };
-      const conversionRate = banner.clickCount > 0 ? (banner.conversionCount / banner.clickCount) * 100 : 0;
-      return (
-        <Chip
-          label={formatPercentage(conversionRate)}
-          size="small"
-          color={conversionRate > 10 ? 'success' : conversionRate > 5 ? 'warning' : 'default'}
-        />
-      );
-    },
-  },
-  {
-    field: 'isActive',
-    headerName: t('analytics.status'),
-    width: 100,
-    align: 'center',
-    renderCell: (params) => (
-      <Chip
-        label={params.value ? t('stats.active') : t('stats.inactive')}
-        size="small"
-        color={params.value ? 'success' : 'default'}
-      />
-    ),
-  },
-];
-
-// Analytics Banner Card for mobile view
-const AnalyticsBannerCard: React.FC<{ banner: Banner & { imageUrl?: string } }> = ({ banner }) => {
+// Analytics Banner Card component
+const AnalyticsBannerCard: React.FC<{ banner: Banner & { imageUrl?: string; views?: number; clicks?: number; ctr?: number; conversions?: number } }> = ({ banner }) => {
   const { t } = useTranslation('banners');
-  const ctr = banner.viewCount > 0 ? (banner.clickCount / banner.viewCount) * 100 : 0;
-  const conversionRate = banner.clickCount > 0 ? (banner.conversionCount / banner.clickCount) * 100 : 0;
+  // Use data from topPerforming if available (views, clicks, ctr), otherwise use Banner fields (viewCount, clickCount)
+  const views = (banner as any).views ?? banner.viewCount ?? 0;
+  const clicks = (banner as any).clicks ?? banner.clickCount ?? 0;
+  const conversions = (banner as any).conversions ?? banner.conversionCount ?? 0;
+  // Use ctr from API if available (already a percentage), otherwise calculate it
+  const ctr = (banner as any).ctr ?? (views > 0 ? (clicks / views) * 100 : 0);
+  const conversionRate = clicks > 0 ? (conversions / clicks) * 100 : 0;
 
   return (
     <Card sx={{ bgcolor: 'background.paper', mb: 2 }}>
@@ -302,13 +207,13 @@ const AnalyticsBannerCard: React.FC<{ banner: Banner & { imageUrl?: string } }> 
               color="text.secondary"
               sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
             >
-              {t(`form.location.${banner.location}`, { defaultValue: banner.location })}
+              {banner.location ? t(`form.location.${banner.location}`, { defaultValue: banner.location }) : ''}
             </Typography>
           </Box>
           <Chip
-            label={banner.isActive ? t('stats.active') : t('stats.inactive')}
+            label={(banner.isActive !== undefined ? banner.isActive : true) ? t('stats.active') : t('stats.inactive')}
             size="small"
-            color={banner.isActive ? 'success' : 'default'}
+            color={(banner.isActive !== undefined ? banner.isActive : true) ? 'success' : 'default'}
             sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
           />
         </Box>
@@ -328,7 +233,7 @@ const AnalyticsBannerCard: React.FC<{ banner: Banner & { imageUrl?: string } }> 
                 fontWeight="bold"
                 sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
               >
-                {formatNumber(banner.viewCount || 0)}
+                {formatNumber(views)}
               </Typography>
             </Box>
           </Grid>
@@ -346,7 +251,7 @@ const AnalyticsBannerCard: React.FC<{ banner: Banner & { imageUrl?: string } }> 
                 fontWeight="bold"
                 sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
               >
-                {formatNumber(banner.clickCount || 0)}
+                {formatNumber(clicks)}
               </Typography>
             </Box>
           </Grid>
@@ -364,7 +269,7 @@ const AnalyticsBannerCard: React.FC<{ banner: Banner & { imageUrl?: string } }> 
                 fontWeight="bold"
                 sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
               >
-                {formatNumber(banner.conversionCount || 0)}
+                {formatNumber(conversions)}
               </Typography>
             </Box>
           </Grid>
@@ -507,14 +412,24 @@ export const BannerAnalyticsPage: React.FC = () => {
     totalViews = 0,
     totalClicks = 0,
     totalConversions = 0,
+    // API returns averageCTR, but we also check for averageClickThroughRate for backward compatibility
+    averageCTR = 0,
     averageClickThroughRate = 0,
     averageConversionRate = 0,
+    // API returns topPerforming, but we also check for topPerformingBanners for backward compatibility
+    topPerforming = [],
     topPerformingBanners = [],
   } = analytics || {};
 
   const activePercentage = totalBanners > 0 ? (activeBanners / totalBanners) * 100 : 0;
-  const ctrPercentage = (averageClickThroughRate || 0) * 100;
-  const conversionPercentage = (averageConversionRate || 0) * 100;
+  // Use averageCTR if available (from API), otherwise use averageClickThroughRate
+  // Both come as percentage (e.g., 100 means 100%), so don't multiply by 100
+  const ctrPercentage = averageCTR || averageClickThroughRate || 0;
+  // averageConversionRate comes as percentage (e.g., 100 means 100%), so don't multiply by 100
+  const conversionPercentage = averageConversionRate || 0;
+  
+  // Use topPerforming if available (from API), otherwise use topPerformingBanners
+  const topBanners = topPerforming.length > 0 ? topPerforming : topPerformingBanners;
 
   return (
     <Box>
@@ -757,49 +672,40 @@ export const BannerAnalyticsPage: React.FC = () => {
       </Grid>
 
       {/* Top Performing Banners */}
-      {isMobile ? (
-        <Box>
-          <Typography 
-            variant="h6" 
-            gutterBottom
-            sx={{ fontSize: { xs: '1rem', sm: '1.25rem' }, mb: 2 }}
+      <Box>
+        <Typography 
+          variant="h6" 
+          gutterBottom
+          sx={{ fontSize: { xs: '1rem', sm: '1.25rem' }, mb: 2 }}
+        >
+          {t('analytics.topBanners')}
+        </Typography>
+        {topBanners && topBanners.length > 0 ? (
+          <Grid container spacing={2}>
+            {topBanners.map((banner: any) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={banner._id || banner.id}>
+                <AnalyticsBannerCard banner={banner as Banner & { imageUrl?: string; views?: number; clicks?: number; ctr?: number; conversions?: number }} />
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Box
+            textAlign="center"
+            py={4}
+            sx={{
+              bgcolor: 'background.paper',
+              borderRadius: 2,
+              border: '1px dashed',
+              borderColor: 'divider',
+            }}
           >
-            {t('analytics.topBanners')}
-          </Typography>
-          {topPerformingBanners && topPerformingBanners.length > 0 ? (
-            topPerformingBanners.map((banner) => (
-              <AnalyticsBannerCard key={banner._id} banner={banner as Banner & { imageUrl?: string }} />
-            ))
-          ) : (
-            <Box
-              textAlign="center"
-              py={4}
-              sx={{
-                bgcolor: 'background.paper',
-                borderRadius: 2,
-                border: '1px dashed',
-                borderColor: 'divider',
-              }}
-            >
-              <Analytics sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-              <Typography variant="body2" color="text.secondary">
-                {t('analytics.noData') || 'لا توجد بيانات'}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      ) : (
-        <DataTable
-          title={t('analytics.topBanners')}
-          columns={getTopBannersColumns(t)}
-          rows={topPerformingBanners || []}
-          loading={false}
-          paginationModel={{ page: 0, pageSize: 10 }}
-          onPaginationModelChange={() => {}}
-          getRowId={(row) => (row as Banner)._id}
-          height="500px"
-        />
-      )}
+            <Analytics sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+            <Typography variant="body2" color="text.secondary">
+              {t('analytics.noData') || 'لا توجد بيانات'}
+            </Typography>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 };

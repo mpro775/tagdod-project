@@ -256,6 +256,57 @@ export class AdminOrderController {
     };
   }
 
+  @Post(':id([0-9a-fA-F]{24})/send-invoice')
+  @ApiOperation({ 
+    summary: 'توليد وإرسال الفاتورة يدوياً',
+    description: 'توليد وإرسال الفاتورة إلى إيميل المبيعات يدوياً (في حال لم يصل الإيميل تلقائياً)'
+  })
+  @ApiParam({ name: 'id', description: 'معرف الطلب' })
+  @ApiResponse({ status: 200, description: 'تم إرسال الفاتورة بنجاح' })
+  @ApiResponse({ status: 404, description: 'الطلب غير موجود' })
+  @ApiResponse({ status: 500, description: 'فشل في إرسال الفاتورة' })
+  async sendInvoiceManually(
+    @Req() req: ExpressRequest,
+    @Param('id') orderId: string
+  ) {
+    const adminId = this.getUserId(req);
+    const result = await this.orderService.manuallySendInvoiceToSales(orderId);
+
+    // تسجيل العملية في audit
+    if (result.success) {
+      const order = await this.orderService.getOrderDetails(orderId);
+      this.auditService.logOrderEvent({
+        userId: String(order.userId),
+        orderId,
+        action: 'invoice_sent_manually',
+        orderNumber: order.orderNumber,
+        totalAmount: order.total,
+        currency: order.currency,
+        performedBy: adminId,
+        reason: 'إرسال يدوي للفاتورة من لوحة التحكم',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      }).catch(err => this.logger.error('Failed to log manual invoice send', err));
+    }
+
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.message,
+        error: result.error,
+        invoiceNumber: result.invoiceNumber,
+        emailSent: result.emailSent,
+      };
+    }
+
+    return {
+      success: true,
+      message: result.message,
+      invoiceNumber: result.invoiceNumber,
+      emailSent: result.emailSent,
+    };
+  }
+
   // ===== Bulk Operations =====
 
   @Post('bulk/update-status')

@@ -1,6 +1,6 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { favoritesApi } from '../api/favoritesApi';
-import type { FavoritesStats, MostFavoritedProduct } from '../types/favorites.types';
+import type { FavoritesStats, MostFavoritedProductsResponse } from '../types/favorites.types';
 
 const favoritesKeys = {
   all: ['favorites'] as const,
@@ -17,7 +17,10 @@ export const useFavoritesStats = (options?: UseQueryOptions<FavoritesStats>) =>
     ...options,
   });
 
-export const useMostFavoritedProducts = (limit = 10, options?: UseQueryOptions<MostFavoritedProduct[]>) =>
+export const useMostFavoritedProducts = (
+  limit = 10,
+  options?: UseQueryOptions<MostFavoritedProductsResponse>
+) =>
   useQuery({
     queryKey: favoritesKeys.mostFavorited(limit),
     queryFn: () => favoritesApi.getMostFavorited(limit),
@@ -39,5 +42,3 @@ export const useUserFavoritesCount = (userId: string, options?: UseQueryOptions<
     enabled: Boolean(userId),
     ...options,
   });
-
-

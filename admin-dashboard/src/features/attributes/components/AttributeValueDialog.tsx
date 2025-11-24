@@ -37,7 +37,7 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
   onSave,
   editingValue,
   isLoading = false,
-  attributeType = AttributeType.SELECT,
+  attributeType = AttributeType.TEXT,
 }) => {
   const { t } = useTranslation('attributes');
   const [formData, setFormData] = useState<AttributeValueFormData>({
@@ -53,9 +53,7 @@ const AttributeValueDialog: React.FC<AttributeValueDialogProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const supportsVisualFields = [AttributeType.SELECT, AttributeType.MULTISELECT, AttributeType.COLOR].includes(
-    attributeType
-  );
+  const supportsVisualFields = attributeType === AttributeType.COLOR;
   const requiresHexCode = attributeType === AttributeType.COLOR;
   const showImageFields = supportsVisualFields;
   const validHexCode =

@@ -12,14 +12,12 @@ import {
   Pagination,
   Stack,
 } from '@mui/material';
-import { Add, Analytics, Campaign } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Add, Campaign } from '@mui/icons-material';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { BannerStatsCards } from '../components/BannerStatsCards';
 import { BannerFilters } from '../components/BannerFilters';
-import { BannerTable } from '../components/BannerTable';
 import { BannerCard } from '../components/BannerCard';
 import { BannerDialog } from '../components/BannerDialog';
 import {
@@ -37,7 +35,6 @@ import type {
 } from '../types/banner.types';
 
 export const BannersListPage: React.FC = () => {
-  const navigate = useNavigate();
   const { t } = useTranslation('banners');
   const { isMobile } = useBreakpoint();
 
@@ -48,7 +45,6 @@ export const BannersListPage: React.FC = () => {
     sortBy: 'sortOrder',
     sortOrder: 'asc',
   });
-  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | undefined>();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -67,7 +63,6 @@ export const BannersListPage: React.FC = () => {
   // Event handlers
   const handleFiltersChange = (newFilters: ListBannersDto) => {
     setFilters(newFilters);
-    setPaginationModel({ page: 0, pageSize: newFilters.limit || 20 });
   };
 
   const handleResetFilters = () => {
@@ -78,15 +73,12 @@ export const BannersListPage: React.FC = () => {
       sortOrder: 'asc',
     };
     setFilters(resetFilters);
-    setPaginationModel({ page: 0, pageSize: 20 });
   };
 
-  const handlePaginationModelChange = (model: { page: number; pageSize: number }) => {
-    setPaginationModel(model);
+  const handlePaginationChange = (page: number) => {
     setFilters((prev) => ({
       ...prev,
-      page: model.page + 1,
-      limit: model.pageSize,
+      page,
     }));
   };
 
@@ -109,9 +101,11 @@ export const BannersListPage: React.FC = () => {
     toggleStatus(banner._id, {
       onSuccess: () => {
         refetch();
-        toast.success(t('messages.toggled', {
-          action: banner.isActive ? t('messages.deactivated') : t('messages.activated')
-        }));
+        toast.success(
+          t('messages.toggled', {
+            action: banner.isActive ? t('messages.deactivated') : t('messages.activated'),
+          })
+        );
       },
     });
   };
@@ -155,16 +149,12 @@ export const BannersListPage: React.FC = () => {
     setBannerToDelete(undefined);
   };
 
-  const handleViewAnalytics = () => {
-    navigate('/banners/analytics');
-  };
-
   return (
     <Box>
       {/* Header */}
       <Box mb={3}>
-        <Box 
-          display="flex" 
+        <Box
+          display="flex"
           flexDirection={{ xs: 'column', sm: 'row' }}
           alignItems={{ xs: 'flex-start', sm: 'center' }}
           justifyContent="space-between"
@@ -173,31 +163,18 @@ export const BannersListPage: React.FC = () => {
         >
           <Box display="flex" alignItems="center" gap={2}>
             <Campaign fontSize={isMobile ? 'medium' : 'large'} color="primary" />
-            <Typography 
-              variant="h4" 
-              component="h1"
-              sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
-            >
+            <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
               {t('pageTitle')}
             </Typography>
           </Box>
-          <Stack 
+          <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1.5}
             sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
-            <Button 
-              variant="outlined" 
-              startIcon={<Analytics />} 
-              onClick={handleViewAnalytics}
-              fullWidth={isMobile}
-              size={isMobile ? 'medium' : 'large'}
-            >
-              {t('viewAnalytics')}
-            </Button>
-            <Button 
-              variant="contained" 
-              startIcon={<Add />} 
+            <Button
+              variant="contained"
+              startIcon={<Add />}
               onClick={handleAddBanner}
               fullWidth={isMobile}
               size={isMobile ? 'medium' : 'large'}
@@ -219,92 +196,79 @@ export const BannersListPage: React.FC = () => {
         isLoading={isLoading}
       />
 
-      {/* Banners Table or Cards */}
-      {isMobile ? (
-        <Box>
-          {isLoading ? (
+      {/* Banners Cards */}
+      <Box>
+        {isLoading ? (
+          <Grid container spacing={2}>
+            {[...Array(6)].map((_, index) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={index}>
+                <Box
+                  sx={{
+                    height: 400,
+                    borderRadius: 2,
+                    bgcolor: 'background.paper',
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                    '@keyframes pulse': {
+                      '0%, 100%': { opacity: 1 },
+                      '50%': { opacity: 0.5 },
+                    },
+                  }}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        ) : banners.length === 0 ? (
+          <Box
+            textAlign="center"
+            py={8}
+            sx={{
+              bgcolor: 'background.paper',
+              borderRadius: 2,
+              border: '1px dashed',
+              borderColor: 'divider',
+            }}
+          >
+            <Campaign sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              {t('noBanners')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              {t('noBannersDescription')}
+            </Typography>
+            <Button variant="contained" startIcon={<Add />} onClick={handleAddBanner}>
+              {t('addBanner')}
+            </Button>
+          </Box>
+        ) : (
+          <>
             <Grid container spacing={2}>
-              {[...Array(6)].map((_, index) => (
-                <Grid size={{ xs: 12 }} key={index}>
-                  <Box
-                    sx={{
-                      height: 400,
-                      borderRadius: 2,
-                      bgcolor: 'background.paper',
-                      animation: 'pulse 1.5s ease-in-out infinite',
-                      '@keyframes pulse': {
-                        '0%, 100%': { opacity: 1 },
-                        '50%': { opacity: 0.5 },
-                      },
-                    }}
+              {banners.map((banner) => (
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={banner._id}>
+                  <BannerCard
+                    banner={banner}
+                    onEdit={handleEditBanner}
+                    onDelete={handleDeleteBanner}
+                    onToggleStatus={handleToggleStatus}
                   />
                 </Grid>
               ))}
             </Grid>
-          ) : banners.length === 0 ? (
-            <Box
-              textAlign="center"
-              py={8}
-              sx={{
-                bgcolor: 'background.paper',
-                borderRadius: 2,
-                border: '1px dashed',
-                borderColor: 'divider',
-              }}
-            >
-              <Campaign sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                {t('noBanners')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" mb={3}>
-                {t('noBannersDescription')}
-              </Typography>
-              <Button variant="contained" startIcon={<Add />} onClick={handleAddBanner}>
-                {t('addBanner')}
-              </Button>
-            </Box>
-          ) : (
-            <>
-              <Grid container spacing={2}>
-                {banners.map((banner) => (
-                  <Grid size={{ xs: 12 }} key={banner._id}>
-                    <BannerCard
-                      banner={banner}
-                      onEdit={handleEditBanner}
-                      onDelete={handleDeleteBanner}
-                      onToggleStatus={handleToggleStatus}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-              {pagination && pagination.pages > 1 && (
-                <Box display="flex" justifyContent="center" mt={4}>
-                  <Pagination
-                    count={pagination.pages}
-                    page={filters.page || 1}
-                    onChange={(_, page) => {
-                      handlePaginationModelChange({ page: page - 1, pageSize: filters.limit || 20 });
-                    }}
-                    color="primary"
-                    size={isMobile ? 'small' : 'medium'}
-                  />
-                </Box>
-              )}
-            </>
-          )}
-        </Box>
-      ) : (
-        <BannerTable
-          banners={banners}
-          isLoading={isLoading}
-          onEdit={handleEditBanner}
-          onDelete={handleDeleteBanner}
-          onToggleStatus={handleToggleStatus}
-          paginationModel={paginationModel}
-          onPaginationModelChange={handlePaginationModelChange}
-          rowCount={pagination?.total || 0}
-        />
-      )}
+            {pagination && pagination.pages > 1 && (
+              <Box display="flex" justifyContent="center" mt={4}>
+                <Pagination
+                  count={pagination.pages}
+                  page={filters.page || 1}
+                  onChange={(_, page) => {
+                    handlePaginationChange(page);
+                  }}
+                  color="primary"
+                  size={isMobile ? 'small' : 'medium'}
+                />
+              </Box>
+            )}
+          </>
+        )}
+      </Box>
 
       {/* Banner Dialog */}
       <BannerDialog
@@ -316,10 +280,10 @@ export const BannersListPage: React.FC = () => {
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog 
-        open={deleteConfirmOpen} 
-        onClose={handleCancelDelete} 
-        maxWidth="sm" 
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={handleCancelDelete}
+        maxWidth="sm"
         fullWidth
         aria-labelledby="delete-dialog-title"
         aria-describedby="delete-dialog-description"

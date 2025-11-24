@@ -128,6 +128,8 @@
   },
   "stats": {
     "total": "Total Orders",
+    "pending_payment": "Pending Payment",
+    "confirmed": "Confirmed",
     "processing": "Processing",
     "completed": "Completed",
     "onHold": "On Hold",

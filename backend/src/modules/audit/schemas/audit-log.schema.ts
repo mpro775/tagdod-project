@@ -40,6 +40,7 @@ export enum AuditAction {
   ORDER_REFUNDED = 'order.refunded',
   ORDER_STATUS_CHANGED = 'order.status.changed',
   ORDER_UPDATED_BY_ADMIN = 'order.updated.by.admin',
+  ORDER_INVOICE_SENT_MANUALLY = 'order.invoice.sent.manually',
 
   // Payments
   PAYMENT_INITIATED = 'payment.initiated',

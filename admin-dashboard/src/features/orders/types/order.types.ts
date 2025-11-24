@@ -377,7 +377,8 @@ export interface OrderAnalyticsParams {
 // Order Statistics
 export interface OrderStats {
   total: number;
-  pending: number;
+  pending_payment: number;
+  confirmed: number;
   processing: number;
   completed: number;
   onHold: number;

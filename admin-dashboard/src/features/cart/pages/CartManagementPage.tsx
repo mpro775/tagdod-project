@@ -19,7 +19,14 @@ import {
   Divider,
   Pagination,
 } from '@mui/material';
-import { Refresh, Delete, Visibility, ShoppingCartCheckout, Email, ShoppingCart } from '@mui/icons-material';
+import {
+  Refresh,
+  Delete,
+  Visibility,
+  ShoppingCartCheckout,
+  Email,
+  ShoppingCart,
+} from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
@@ -234,11 +241,7 @@ export const CartManagementPage: React.FC = () => {
   const getUserDisplayName = useCallback(
     (cart: Cart) => {
       if (cart.user) {
-        return (
-          cart.user.name ||
-          cart.user.email ||
-          t('list.user.unknown')
-        );
+        return cart.user.name || cart.user.email || t('list.user.unknown');
       }
       return cart.deviceId
         ? `${t('list.user.device')} ${cart.deviceId.slice(-8)}`
@@ -250,11 +253,7 @@ export const CartManagementPage: React.FC = () => {
   const getUserContact = useCallback(
     (cart: Cart) => {
       if (cart.user) {
-        return (
-          cart.user.email ||
-          cart.user.phone ||
-          t('list.user.noContact')
-        );
+        return cart.user.email || cart.user.phone || t('list.user.noContact');
       }
       return t('list.user.noContact');
     },
@@ -262,7 +261,14 @@ export const CartManagementPage: React.FC = () => {
   );
 
   const getCartItemsCount = useCallback((cart?: Cart | null) => {
-    if (!cart?.items) return 0;
+    if (!cart) return 0;
+    // Try to use itemsCount from pricingSummary first (more accurate)
+    const summary = getCartSummary(cart, cart.currency);
+    if (summary?.itemsCount !== undefined) {
+      return summary.itemsCount;
+    }
+    // Fallback to calculating from items array
+    if (!cart.items || cart.items.length === 0) return 0;
     return cart.items.reduce((sum, item) => sum + (item.qty ?? 0), 0);
   }, []);
   const getCartDisplayTotals = useCallback((cart: Cart) => {
@@ -293,9 +299,9 @@ export const CartManagementPage: React.FC = () => {
           const hasUser = !!cart.user;
           return (
             <Box display="flex" alignItems="center" gap={1}>
-              <Avatar 
-                sx={{ 
-                  width: { xs: 24, sm: 32 }, 
+              <Avatar
+                sx={{
+                  width: { xs: 24, sm: 32 },
                   height: { xs: 24, sm: 32 },
                   fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   bgcolor: theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.light',
@@ -305,10 +311,10 @@ export const CartManagementPage: React.FC = () => {
                 {hasUser ? 'U' : 'D'}
               </Avatar>
               <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Typography 
-                  variant="body2" 
+                <Typography
+                  variant="body2"
                   fontWeight="medium"
-                  sx={{ 
+                  sx={{
                     fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     color: 'text.primary',
                     overflow: 'hidden',
@@ -318,10 +324,10 @@ export const CartManagementPage: React.FC = () => {
                 >
                   {getUserDisplayName(cart)}
                 </Typography>
-                <Typography 
-                  variant="caption" 
+                <Typography
+                  variant="caption"
                   color="text.secondary"
-                  sx={{ 
+                  sx={{
                     fontSize: { xs: '0.65rem', sm: '0.75rem' },
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -348,10 +354,8 @@ export const CartManagementPage: React.FC = () => {
             <Chip
               label={formatCartStatus(cart.status)}
               size="small"
-              sx={{ 
-                backgroundColor: theme.palette.mode === 'dark' 
-                  ? `${color}30` 
-                  : `${color}20`, 
+              sx={{
+                backgroundColor: theme.palette.mode === 'dark' ? `${color}30` : `${color}20`,
                 color,
                 border: `1px solid ${color}${theme.palette.mode === 'dark' ? '60' : '40'}`,
                 fontSize: { xs: '0.65rem', sm: '0.75rem' },
@@ -370,6 +374,22 @@ export const CartManagementPage: React.FC = () => {
           const cart = params?.row as Cart | undefined;
           return cart ? getCartItemsCount(cart) : 0;
         },
+        renderCell: (params) => {
+          const cart = params.row as Cart;
+          const count = getCartItemsCount(cart);
+          return (
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                color: 'text.primary',
+              }}
+              dir="ltr"
+            >
+              {count.toLocaleString('en-US')}
+            </Typography>
+          );
+        },
       },
       {
         field: 'totalValue',
@@ -380,10 +400,10 @@ export const CartManagementPage: React.FC = () => {
           const cart = params.row as Cart;
           const totals = getCartDisplayTotals(cart);
           return (
-            <Typography 
-              variant="body2" 
+            <Typography
+              variant="body2"
               fontWeight="medium"
-              sx={{ 
+              sx={{
                 fontSize: { xs: '0.75rem', sm: '0.875rem' },
                 color: 'text.primary',
               }}
@@ -403,57 +423,25 @@ export const CartManagementPage: React.FC = () => {
           const cart = params.row as Cart;
           return (
             <Box>
-              <Typography 
-                variant="caption" 
+              <Typography
+                variant="caption"
                 color="text.secondary"
-                sx={{ 
+                sx={{
                   fontSize: { xs: '0.65rem', sm: '0.75rem' },
                   display: 'block',
                 }}
               >
                 {formatDate(cart.createdAt)}
               </Typography>
-              <Typography 
+              <Typography
                 variant="body2"
-                sx={{ 
+                sx={{
                   fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   color: 'text.primary',
                 }}
               >
                 {getLastActivity(cart)}
               </Typography>
-            </Box>
-          );
-        },
-      },
-      {
-        field: 'additionalInfo',
-        headerName: t('list.columns.additionalInfo') as string,
-        flex: isMobile ? 0 : 1,
-        minWidth: isMobile ? 120 : 150,
-        sortable: false,
-        renderCell: (params) => {
-          const cart = params.row as Cart;
-          return (
-            <Box display="flex" alignItems="center" gap={0.5} flexWrap="wrap">
-              {cart.isAbandoned && (
-                <Chip
-                  label={t('list.status.emailsSent', { count: cart.abandonmentEmailsSent })}
-                  size="small"
-                  color="warning"
-                  variant="outlined"
-                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-                />
-              )}
-              {cart.convertedToOrderId && (
-                <Chip
-                  label={t('list.status.convertedToOrder')}
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                  sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-                />
-              )}
             </Box>
           );
         },
@@ -472,8 +460,8 @@ export const CartManagementPage: React.FC = () => {
           return (
             <Box display="flex" alignItems="center" gap={0.25}>
               <Tooltip title={t('list.menu.viewDetails') as string}>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => handleViewCart(cart)}
                   sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
                 >
@@ -482,8 +470,8 @@ export const CartManagementPage: React.FC = () => {
               </Tooltip>
               {canConvert && (
                 <Tooltip title={t('list.menu.convertToOrder') as string}>
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     onClick={() => handleConvertToOrder(cart)}
                     sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
                   >
@@ -493,8 +481,8 @@ export const CartManagementPage: React.FC = () => {
               )}
               {canSendReminder && (
                 <Tooltip title={t('list.menu.sendReminder') as string}>
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     onClick={() => handleSendReminder(cart)}
                     sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
                   >
@@ -503,9 +491,9 @@ export const CartManagementPage: React.FC = () => {
                 </Tooltip>
               )}
               <Tooltip title={t('list.menu.deleteCart') as string}>
-                <IconButton 
-                  size="small" 
-                  color="error" 
+                <IconButton
+                  size="small"
+                  color="error"
                   onClick={() => handleDeleteCart(cart)}
                   sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
                 >
@@ -542,7 +530,7 @@ export const CartManagementPage: React.FC = () => {
   // Toggle cart selection
   const handleToggleCartSelection = (cartId: string) => {
     const ids = selectedCarts.includes(cartId)
-      ? selectedCarts.filter(id => id !== cartId)
+      ? selectedCarts.filter((id) => id !== cartId)
       : [...selectedCarts, cartId];
     if (ids.length === 0) {
       deselectAll();
@@ -554,20 +542,20 @@ export const CartManagementPage: React.FC = () => {
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
       {/* Header */}
-      <Box 
-        display="flex" 
-        alignItems="center" 
-        justifyContent="space-between" 
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
         mb={3}
         flexDirection={{ xs: 'column', sm: 'row' }}
         gap={{ xs: 2, sm: 0 }}
       >
         <Box display="flex" alignItems="center" gap={2}>
           <ShoppingCart fontSize={isMobile ? 'medium' : 'large'} color="primary" />
-          <Typography 
-            variant="h4" 
-            component="h1" 
-            sx={{ 
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
               fontWeight: 'bold',
               fontSize: { xs: '1.5rem', sm: '2rem' },
               color: 'text.primary',
@@ -598,13 +586,15 @@ export const CartManagementPage: React.FC = () => {
       )}
 
       {/* Statistics Cards */}
-      <CartStatsCards
-        statistics={statistics}
-        analytics={analytics}
-        isLoading={isLoading || dashboardLoading}
-        onRefresh={handleRefresh}
-        carts={cartData?.carts}
-      />
+      <Box sx={{ mb: 3 }}>
+        <CartStatsCards
+          statistics={statistics}
+          analytics={analytics}
+          isLoading={isLoading || dashboardLoading}
+          onRefresh={handleRefresh}
+          carts={cartData?.carts}
+        />
+      </Box>
 
       {/* Filters */}
       <CartFiltersComponent
@@ -627,22 +617,17 @@ export const CartManagementPage: React.FC = () => {
           borderRadius={1}
           flexWrap="wrap"
         >
-          <Typography 
-            variant="body2" 
+          <Typography
+            variant="body2"
             color={theme.palette.mode === 'dark' ? 'primary.contrastText' : 'primary.dark'}
-            sx={{ 
+            sx={{
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
               flex: { xs: '1 1 100%', sm: '0 0 auto' },
             }}
           >
             {t('bulk.selected', { count: selectedCarts.length })}
           </Typography>
-          <Box 
-            display="flex" 
-            gap={1} 
-            flexWrap="wrap"
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
+          <Box display="flex" gap={1} flexWrap="wrap" sx={{ width: { xs: '100%', sm: 'auto' } }}>
             <Button
               size={isMobile ? 'small' : 'medium'}
               variant="contained"
@@ -664,9 +649,9 @@ export const CartManagementPage: React.FC = () => {
             >
               {t('actions.bulkClear')}
             </Button>
-            <Button 
+            <Button
               size={isMobile ? 'small' : 'medium'}
-              variant="outlined" 
+              variant="outlined"
               onClick={() => handleSelectAll([])}
               fullWidth={isMobile}
             >
@@ -711,7 +696,7 @@ export const CartManagementPage: React.FC = () => {
                   const canSendReminder = cart.isAbandoned || cart.status === 'abandoned';
                   const canConvert = cart.status === 'active' && getCartItemsCount(cart) > 0;
                   const isSelected = selectedCarts.includes(cart._id);
-                  
+
                   return (
                     <Grid key={cart._id} size={{ xs: 6 }}>
                       <Card
@@ -719,7 +704,9 @@ export const CartManagementPage: React.FC = () => {
                           height: '100%',
                           display: 'flex',
                           flexDirection: 'column',
-                          border: isSelected ? `2px solid ${theme.palette.primary.main}` : '1px solid',
+                          border: isSelected
+                            ? `2px solid ${theme.palette.primary.main}`
+                            : '1px solid',
                           borderColor: isSelected ? 'primary.main' : 'divider',
                           cursor: 'pointer',
                           transition: 'all 0.2s ease-in-out',
@@ -747,11 +734,14 @@ export const CartManagementPage: React.FC = () => {
                               label={formatCartStatus(cart.status)}
                               size="small"
                               sx={{
-                                backgroundColor: theme.palette.mode === 'dark'
-                                  ? `${getStatusColor(cart.status)}30`
-                                  : `${getStatusColor(cart.status)}20`,
+                                backgroundColor:
+                                  theme.palette.mode === 'dark'
+                                    ? `${getStatusColor(cart.status)}30`
+                                    : `${getStatusColor(cart.status)}20`,
                                 color: getStatusColor(cart.status),
-                                border: `1px solid ${getStatusColor(cart.status)}${theme.palette.mode === 'dark' ? '60' : '40'}`,
+                                border: `1px solid ${getStatusColor(cart.status)}${
+                                  theme.palette.mode === 'dark' ? '60' : '40'
+                                }`,
                                 fontSize: '0.7rem',
                                 height: 20,
                               }}
@@ -765,7 +755,8 @@ export const CartManagementPage: React.FC = () => {
                                 width: 32,
                                 height: 32,
                                 fontSize: '0.75rem',
-                                bgcolor: theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.light',
+                                bgcolor:
+                                  theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.light',
                                 color: 'primary.contrastText',
                               }}
                             >
@@ -795,8 +786,8 @@ export const CartManagementPage: React.FC = () => {
                               <Typography variant="caption" color="text.secondary">
                                 {t('list.columns.itemsCount')}
                               </Typography>
-                              <Typography variant="body2" fontWeight="medium">
-                                {getCartItemsCount(cart)}
+                              <Typography variant="body2" fontWeight="medium" dir="ltr">
+                                {getCartItemsCount(cart).toLocaleString('en-US')}
                               </Typography>
                             </Box>
                             <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -825,7 +816,9 @@ export const CartManagementPage: React.FC = () => {
                             <Box mt={1}>
                               {cart.isAbandoned && (
                                 <Chip
-                                  label={t('list.status.emailsSent', { count: cart.abandonmentEmailsSent })}
+                                  label={t('list.status.emailsSent', {
+                                    count: cart.abandonmentEmailsSent,
+                                  })}
                                   size="small"
                                   color="warning"
                                   variant="outlined"
@@ -956,9 +949,9 @@ export const CartManagementPage: React.FC = () => {
         <Fab
           color="primary"
           aria-label="refresh"
-          sx={{ 
-            position: 'fixed', 
-            bottom: 16, 
+          sx={{
+            position: 'fixed',
+            bottom: 16,
             right: 16,
             display: { xs: 'flex', sm: 'none' },
           }}

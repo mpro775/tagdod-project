@@ -390,7 +390,7 @@ export class AuditService {
   async logOrderEvent(data: {
     userId: string;
     orderId: string;
-    action: 'created' | 'cancelled' | 'refunded' | 'status_changed' | 'updated_by_admin';
+    action: 'created' | 'cancelled' | 'refunded' | 'status_changed' | 'updated_by_admin' | 'invoice_sent_manually';
     orderNumber: string;
     oldStatus?: string;
     newStatus?: string;
@@ -419,6 +419,9 @@ export class AuditService {
           break;
         case 'updated_by_admin':
           auditAction = AuditAction.ORDER_UPDATED_BY_ADMIN;
+          break;
+        case 'invoice_sent_manually':
+          auditAction = AuditAction.ORDER_INVOICE_SENT_MANUALLY;
           break;
         default:
           return;

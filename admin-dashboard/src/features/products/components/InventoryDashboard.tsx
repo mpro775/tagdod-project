@@ -12,7 +12,7 @@ import {
   CircularProgress,
   Grid,
 } from '@mui/material';
-import { Inventory, Warning, TrendingDown, TrendingUp, Refresh } from '@mui/icons-material';
+import { Inventory, Warning, TrendingDown, TrendingUp, Refresh, CheckCircle } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import {
   useInventorySummary,
@@ -88,6 +88,54 @@ export const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onVarian
 
   return (
     <Box>
+      {/* Stock Alerts Summary */}
+      {(lowStockVariants && lowStockVariants.length > 0) || (outOfStockVariants && outOfStockVariants.length > 0) ? (
+        <Box mb={3}>
+          <Grid container spacing={2}>
+            {outOfStockVariants && outOfStockVariants.length > 0 && (
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Alert 
+                  severity="error" 
+                  icon={<Warning />}
+                  action={
+                    <Chip 
+                      label={outOfStockVariants.length} 
+                      color="error" 
+                      size="small"
+                    />
+                  }
+                >
+                  {t('products:inventory.outOfStockAlert', '{{count}} منتج نافذ من المخزون', { count: outOfStockVariants.length })}
+                </Alert>
+              </Grid>
+            )}
+            {lowStockVariants && lowStockVariants.length > 0 && (
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Alert 
+                  severity="warning" 
+                  icon={<Warning />}
+                  action={
+                    <Chip 
+                      label={lowStockVariants.length} 
+                      color="warning" 
+                      size="small"
+                    />
+                  }
+                >
+                  {t('products:inventory.lowStockAlert', '{{count}} منتج بمخزون منخفض', { count: lowStockVariants.length })}
+                </Alert>
+              </Grid>
+            )}
+          </Grid>
+        </Box>
+      ) : (
+        <Box mb={3}>
+          <Alert severity="success" icon={<CheckCircle />}>
+            {t('products:inventory.allStockGood', 'جميع المنتجات متوفرة في المخزون')}
+          </Alert>
+        </Box>
+      )}
+
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
         <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.25rem', sm: '2.125rem' } }}>

@@ -105,6 +105,13 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         }
         break;
 
+      case NotificationType.LOW_STOCK:
+      case NotificationType.OUT_OF_STOCK:
+        if (data?.productId) {
+          return `/products/${data.productId}`;
+        }
+        return '/products/inventory';
+
       default:
         return null;
     }
@@ -154,6 +161,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
       case NotificationType.TICKET_CREATED:
       case NotificationType.SUPPORT_MESSAGE_RECEIVED:
         return '💬';
+      case NotificationType.LOW_STOCK:
+      case NotificationType.OUT_OF_STOCK:
+        return '📦';
       default:
         return '🔔';
     }
@@ -169,6 +179,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         return 'error';
       case NotificationType.ORDER_RATED:
         return 'info';
+      case NotificationType.LOW_STOCK:
+      case NotificationType.OUT_OF_STOCK:
+        return 'warning';
       default:
         return 'default';
     }

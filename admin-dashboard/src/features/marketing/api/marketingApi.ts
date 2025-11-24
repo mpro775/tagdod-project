@@ -16,12 +16,32 @@ function extractResponseData<T>(response: { data?: any }): T {
     const keys = Object.keys(outer);
 
     const isApiEnvelope =
-      'success' in outer && 'data' in outer && keys.every((key) => ['success', 'data', 'requestId'].includes(key));
+      'success' in outer &&
+      'data' in outer &&
+      keys.every((key) => ['success', 'data', 'requestId'].includes(key));
 
     const isDataOnlyWrapper = keys.length === 1 && 'data' in outer;
 
     if (isApiEnvelope || isDataOnlyWrapper) {
-      return extractResponseData<T>({ data: (outer as { data?: unknown }).data });
+      // Recursively extract nested data
+      const innerData = (outer as { data?: unknown }).data;
+      return extractResponseData<T>({ data: innerData });
+    }
+
+    // Check if the object itself has nested data structure (double nesting)
+    if ('data' in outer && typeof outer.data === 'object' && !Array.isArray(outer.data)) {
+      const innerData = outer.data;
+      // Check if inner data is also an envelope
+      if (innerData && typeof innerData === 'object' && !Array.isArray(innerData)) {
+        const innerKeys = Object.keys(innerData);
+        const isInnerEnvelope =
+          'success' in innerData &&
+          'data' in innerData &&
+          innerKeys.every((key) => ['success', 'data', 'requestId'].includes(key));
+        if (isInnerEnvelope) {
+          return extractResponseData<T>({ data: (innerData as { data?: unknown }).data });
+        }
+      }
     }
   }
 
@@ -119,7 +139,12 @@ export interface Coupon {
   usedCount: number;
   validFrom: Date;
   validUntil: Date;
-  appliesTo: 'all_products' | 'specific_products' | 'specific_categories' | 'specific_brands' | 'minimum_order_amount';
+  appliesTo:
+    | 'all_products'
+    | 'specific_products'
+    | 'specific_categories'
+    | 'specific_brands'
+    | 'minimum_order_amount';
   applicableProductIds: string[];
   applicableCategoryIds: string[];
   applicableBrandIds: string[];
@@ -164,7 +189,12 @@ export interface CreateCouponDto {
   usageLimitPerUser?: number;
   validFrom: string;
   validUntil: string;
-  appliesTo?: 'all_products' | 'specific_products' | 'specific_categories' | 'specific_brands' | 'minimum_order_amount';
+  appliesTo?:
+    | 'all_products'
+    | 'specific_products'
+    | 'specific_categories'
+    | 'specific_brands'
+    | 'minimum_order_amount';
   applicableProductIds?: string[];
   applicableCategoryIds?: string[];
   applicableBrandIds?: string[];
@@ -221,7 +251,12 @@ export interface UpdateCouponDto {
   usageLimitPerUser?: number;
   validFrom?: string;
   validUntil?: string;
-  appliesTo?: 'all_products' | 'specific_products' | 'specific_categories' | 'specific_brands' | 'minimum_order_amount';
+  appliesTo?:
+    | 'all_products'
+    | 'specific_products'
+    | 'specific_categories'
+    | 'specific_brands'
+    | 'minimum_order_amount';
   applicableProductIds?: string[];
   applicableCategoryIds?: string[];
   applicableBrandIds?: string[];
@@ -273,8 +308,23 @@ export interface Banner {
   imageUrl: string;
   linkUrl?: string;
   altText?: string;
-  location: 'home_top' | 'home_middle' | 'home_bottom' | 'category_top' | 'product_page' | 'cart_page' | 'checkout_page' | 'sidebar' | 'footer';
-  promotionType?: 'discount' | 'free_shipping' | 'new_arrival' | 'sale' | 'seasonal' | 'brand_promotion';
+  location:
+    | 'home_top'
+    | 'home_middle'
+    | 'home_bottom'
+    | 'category_top'
+    | 'product_page'
+    | 'cart_page'
+    | 'checkout_page'
+    | 'sidebar'
+    | 'footer';
+  promotionType?:
+    | 'discount'
+    | 'free_shipping'
+    | 'new_arrival'
+    | 'sale'
+    | 'seasonal'
+    | 'brand_promotion';
   isActive: boolean;
   sortOrder: number;
   startDate?: Date;
@@ -296,8 +346,23 @@ export interface CreateBannerDto {
   imageUrl: string;
   linkUrl?: string;
   altText?: string;
-  location: 'home_top' | 'home_middle' | 'home_bottom' | 'category_top' | 'product_page' | 'cart_page' | 'checkout_page' | 'sidebar' | 'footer';
-  promotionType?: 'discount' | 'free_shipping' | 'new_arrival' | 'sale' | 'seasonal' | 'brand_promotion';
+  location:
+    | 'home_top'
+    | 'home_middle'
+    | 'home_bottom'
+    | 'category_top'
+    | 'product_page'
+    | 'cart_page'
+    | 'checkout_page'
+    | 'sidebar'
+    | 'footer';
+  promotionType?:
+    | 'discount'
+    | 'free_shipping'
+    | 'new_arrival'
+    | 'sale'
+    | 'seasonal'
+    | 'brand_promotion';
   isActive?: boolean;
   sortOrder?: number;
   startDate?: string;
@@ -314,8 +379,23 @@ export interface UpdateBannerDto {
   imageUrl?: string;
   linkUrl?: string;
   altText?: string;
-  location?: 'home_top' | 'home_middle' | 'home_bottom' | 'category_top' | 'product_page' | 'cart_page' | 'checkout_page' | 'sidebar' | 'footer';
-  promotionType?: 'discount' | 'free_shipping' | 'new_arrival' | 'sale' | 'seasonal' | 'brand_promotion';
+  location?:
+    | 'home_top'
+    | 'home_middle'
+    | 'home_bottom'
+    | 'category_top'
+    | 'product_page'
+    | 'cart_page'
+    | 'checkout_page'
+    | 'sidebar'
+    | 'footer';
+  promotionType?:
+    | 'discount'
+    | 'free_shipping'
+    | 'new_arrival'
+    | 'sale'
+    | 'seasonal'
+    | 'brand_promotion';
   isActive?: boolean;
   sortOrder?: number;
   startDate?: string;
@@ -372,7 +452,7 @@ export interface EffectivePriceResult {
 // API Functions
 export const marketingApi = {
   // ==================== PRICE RULES ====================
-  
+
   createPriceRule: async (data: CreatePriceRuleDto): Promise<PriceRule> => {
     const response = await apiClient.post<ApiResponse<PriceRule>>(
       '/admin/marketing/price-rules',
@@ -382,10 +462,9 @@ export const marketingApi = {
   },
 
   listPriceRules: async (params?: ListPriceRulesParams): Promise<PriceRule[]> => {
-    const response = await apiClient.get<ApiResponse<PriceRule[]>>(
-      '/admin/marketing/price-rules',
-      { params }
-    );
+    const response = await apiClient.get<ApiResponse<PriceRule[]>>('/admin/marketing/price-rules', {
+      params,
+    });
     return extractResponseData<PriceRule[]>(response);
   },
 
@@ -430,19 +509,19 @@ export const marketingApi = {
   // ==================== COUPONS ====================
 
   createCoupon: async (data: CreateCouponDto): Promise<Coupon> => {
-    const response = await apiClient.post<ApiResponse<Coupon>>(
-      '/admin/marketing/coupons',
-      data
-    );
+    const response = await apiClient.post<ApiResponse<Coupon>>('/admin/marketing/coupons', data);
     return extractResponseData<Coupon>(response);
   },
 
   listCoupons: async (params?: ListCouponsParams): Promise<PaginatedResponse<Coupon>> => {
-    const response = await apiClient.get<ApiResponse<{ data: Coupon[]; meta?: PaginationMeta; pagination?: any }>>(
-      '/admin/marketing/coupons',
-      { params }
-    );
-    const result = extractResponseData<{ data?: Coupon[]; meta?: PaginationMeta; pagination?: any }>(response);
+    const response = await apiClient.get<
+      ApiResponse<{ data: Coupon[]; meta?: PaginationMeta; pagination?: any }>
+    >('/admin/marketing/coupons', { params });
+    const result = extractResponseData<{
+      data?: Coupon[];
+      meta?: PaginationMeta;
+      pagination?: any;
+    }>(response);
 
     const pagination = result.meta ?? result.pagination;
 
@@ -453,19 +532,24 @@ export const marketingApi = {
         pagination?.pageSize ??
         params?.limit ??
         (Array.isArray(result.data) ? result.data.length : 0),
-      total: pagination?.total ?? pagination?.totalItems ?? (Array.isArray(result.data) ? result.data.length : 0),
+      total:
+        pagination?.total ??
+        pagination?.totalItems ??
+        (Array.isArray(result.data) ? result.data.length : 0),
       totalPages:
         pagination?.totalPages ??
         pagination?.pages ??
         Math.max(
           1,
           Math.ceil(
-            (pagination?.total ?? pagination?.totalItems ?? (Array.isArray(result.data) ? result.data.length : 0)) /
+            (pagination?.total ??
+              pagination?.totalItems ??
+              (Array.isArray(result.data) ? result.data.length : 0)) /
               (pagination?.limit ??
                 pagination?.pageSize ??
                 params?.limit ??
-                (Array.isArray(result.data) && result.data.length > 0 ? result.data.length : 1)),
-          ),
+                (Array.isArray(result.data) && result.data.length > 0 ? result.data.length : 1))
+          )
         ),
     };
 
@@ -476,9 +560,7 @@ export const marketingApi = {
   },
 
   getCoupon: async (id: string): Promise<Coupon> => {
-    const response = await apiClient.get<ApiResponse<Coupon>>(
-      `/admin/marketing/coupons/${id}`
-    );
+    const response = await apiClient.get<ApiResponse<Coupon>>(`/admin/marketing/coupons/${id}`);
     return extractResponseData<Coupon>(response);
   },
 
@@ -499,10 +581,9 @@ export const marketingApi = {
   },
 
   toggleCouponStatus: async (id: string): Promise<Coupon> => {
-    const response = await apiClient.patch<ApiResponse<Coupon>>(
-      `/admin/marketing/coupons/${id}`,
-      { status: 'toggle' }
-    );
+    const response = await apiClient.patch<ApiResponse<Coupon>>(`/admin/marketing/coupons/${id}`, {
+      status: 'toggle',
+    });
     return extractResponseData<Coupon>(response);
   },
 
@@ -514,17 +595,23 @@ export const marketingApi = {
   },
 
   getCouponUsageHistory: async (id: string) => {
-    const response = await apiClient.get<ApiResponse<any>>(`/admin/marketing/coupons/${id}/usage-history`);
+    const response = await apiClient.get<ApiResponse<any>>(
+      `/admin/marketing/coupons/${id}/usage-history`
+    );
     return extractResponseData<any>(response);
   },
 
   getCouponsAnalytics: async (period: number = 30) => {
-    const response = await apiClient.get<ApiResponse<any>>(`/admin/marketing/coupons/analytics?period=${period}`);
+    const response = await apiClient.get<ApiResponse<any>>(
+      `/admin/marketing/coupons/analytics?period=${period}`
+    );
     return extractResponseData<any>(response);
   },
 
   getCouponsStatistics: async (period: number = 30) => {
-    const response = await apiClient.get<ApiResponse<any>>(`/admin/marketing/coupons/statistics?period=${period}`);
+    const response = await apiClient.get<ApiResponse<any>>(
+      `/admin/marketing/coupons/statistics?period=${period}`
+    );
     return extractResponseData<any>(response);
   },
 
@@ -551,17 +638,14 @@ export const marketingApi = {
   },
 
   getAutoApplyCoupons: async (userId?: string, accountType?: string) => {
-    const response = await apiClient.get<ApiResponse<any[]>>(
-      '/marketing/coupons/auto-apply',
-      { params: { userId, accountType } }
-    );
+    const response = await apiClient.get<ApiResponse<any[]>>('/marketing/coupons/auto-apply', {
+      params: { userId, accountType },
+    });
     return extractResponseData<any[]>(response);
   },
 
   getCouponByCode: async (code: string) => {
-    const response = await apiClient.get<ApiResponse<any>>(
-      `/marketing/coupons/code/${code}`
-    );
+    const response = await apiClient.get<ApiResponse<any>>(`/marketing/coupons/code/${code}`);
     return extractResponseData<any>(response);
   },
 
@@ -578,21 +662,23 @@ export const marketingApi = {
     usageLimit?: number;
     usageLimitPerUser?: number;
   }) => {
-    const response = await apiClient.post<ApiResponse<{ success: boolean; generated: number; coupons: Coupon[] }>>(
-      '/admin/marketing/coupons/bulk-generate',
-      data
+    const response = await apiClient.post<
+      ApiResponse<{ success: boolean; generated: number; coupons: Coupon[] }>
+    >('/admin/marketing/coupons/bulk-generate', data);
+    return extractResponseData<{ success: boolean; generated: number; coupons: Coupon[] }>(
+      response
     );
-    return extractResponseData<{ success: boolean; generated: number; coupons: Coupon[] }>(response);
   },
 
-
-  validateCouponCode: async (code: string, userId?: string, orderAmount?: number, productIds?: string[]) => {
-    const response = await apiClient.get<ApiResponse<any>>(
-      '/marketing/coupons/validate',
-      {
-        params: { code, userId, orderAmount, productIds }
-      }
-    );
+  validateCouponCode: async (
+    code: string,
+    userId?: string,
+    orderAmount?: number,
+    productIds?: string[]
+  ) => {
+    const response = await apiClient.get<ApiResponse<any>>('/marketing/coupons/validate', {
+      params: { code, userId, orderAmount, productIds },
+    });
     return extractResponseData<any>(response);
   },
 
@@ -623,10 +709,7 @@ export const marketingApi = {
   // ==================== BANNERS ====================
 
   createBanner: async (data: CreateBannerDto): Promise<Banner> => {
-    const response = await apiClient.post<ApiResponse<Banner>>(
-      '/admin/marketing/banners',
-      data
-    );
+    const response = await apiClient.post<ApiResponse<Banner>>('/admin/marketing/banners', data);
     return extractResponseData<Banner>(response);
   },
 
@@ -643,9 +726,7 @@ export const marketingApi = {
   },
 
   getBanner: async (id: string): Promise<Banner> => {
-    const response = await apiClient.get<ApiResponse<Banner>>(
-      `/admin/marketing/banners/${id}`
-    );
+    const response = await apiClient.get<ApiResponse<Banner>>(`/admin/marketing/banners/${id}`);
     return extractResponseData<Banner>(response);
   },
 
@@ -683,10 +764,9 @@ export const marketingApi = {
   },
 
   getActiveBanners: async (location?: string): Promise<Banner[]> => {
-    const response = await apiClient.get<ApiResponse<Banner[]>>(
-      '/marketing/banners',
-      { params: location ? { location } : {} }
-    );
+    const response = await apiClient.get<ApiResponse<Banner[]>>('/marketing/banners', {
+      params: location ? { location } : {},
+    });
     return extractResponseData<Banner[]>(response);
   },
 

@@ -39,12 +39,14 @@ import {
   Replay,
   Paid,
   ExpandMore,
+  Payment,
+  Verified,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useNavigate } from 'react-router-dom';
-import { GridColDef } from '@mui/x-data-grid';
+import { GridColDef, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useOrders, useOrderStats, useBulkUpdateOrderStatus, useExportOrders } from '../hooks/useOrders';
@@ -81,6 +83,9 @@ export const OrdersListPage: React.FC = () => {
   const { t } = useTranslation('orders');
   const { isMobile } = useBreakpoint();
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
+  const [sortModel, setSortModel] = useState<GridSortModel>([
+    { field: 'createdAt', sort: 'desc' },
+  ]);
   const [filters, setFilters] = useState<ListOrdersParams>({
     page: 1,
     limit: 20,
@@ -119,6 +124,21 @@ export const OrdersListPage: React.FC = () => {
     }));
   }, [paginationModel]);
 
+  // Update filters when sort model changes
+  React.useEffect(() => {
+    if (sortModel.length > 0) {
+      const sortField = sortModel[0].field;
+      const sortOrder = sortModel[0].sort === 'asc' ? 'asc' : 'desc';
+      setFilters((prev) => ({
+        ...prev,
+        sortBy: sortField,
+        sortOrder,
+        page: 1, // Reset to first page when sorting changes
+      }));
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    }
+  }, [sortModel]);
+
   const handleFilterChange = (key: keyof ListOrdersParams, value: any) => {
     setFilters((prev) => ({
       ...prev,
@@ -136,6 +156,7 @@ export const OrdersListPage: React.FC = () => {
       sortOrder: 'desc',
     });
     setPaginationModel({ page: 0, pageSize: 20 });
+    setSortModel([{ field: 'createdAt', sort: 'desc' }]);
   };
 
   const handleBulkStatusUpdate = async (status: OrderStatus) => {
@@ -321,6 +342,18 @@ export const OrdersListPage: React.FC = () => {
         color: 'primary' as const,
       },
       {
+        title: t('stats.pending_payment'),
+        value: stats.pending_payment || 0,
+        icon: <Payment color="warning" />,
+        color: 'warning' as const,
+      },
+      {
+        title: t('stats.confirmed'),
+        value: stats.confirmed || 0,
+        icon: <Verified color="info" />,
+        color: 'info' as const,
+      },
+      {
         title: t('stats.processing'),
         value: stats.processing || 0,
         icon: <TrendingUp color="warning" />,
@@ -402,8 +435,8 @@ export const OrdersListPage: React.FC = () => {
         {/* Stats Cards */}
         {statsLoading ? (
           <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
-            {[...Array(5)].map((_, index) => (
-              <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index}>
+            {[...Array(9)].map((_, index) => (
+              <Grid size={{ xs: 6, sm: 4, md: 2 }} key={index}>
                 <Card sx={{ bgcolor: 'background.paper', height: '100%' }}>
                   <CardContent sx={{ textAlign: 'center', p: isMobile ? 1.5 : 3 }}>
                     <Skeleton variant="circular" width={40} height={40} sx={{ mx: 'auto', mb: 1 }} />
@@ -417,7 +450,7 @@ export const OrdersListPage: React.FC = () => {
         ) : statsCards ? (
           <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
             {statsCards.map((stat, index) => (
-              <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={index}>
+              <Grid size={{ xs: 6, sm: 4, md: 2 }} key={index}>
                 <Card
                   component="div"
                   sx={{
@@ -526,7 +559,6 @@ export const OrdersListPage: React.FC = () => {
                 >
                   <MenuItem value="">{t('filters.paymentMethod.all')}</MenuItem>
                   <MenuItem value="COD">{t('payment.method.COD')}</MenuItem>
-                  <MenuItem value="ONLINE">{t('payment.method.ONLINE')}</MenuItem>
                   <MenuItem value="WALLET">{t('payment.method.WALLET')}</MenuItem>
                   <MenuItem value="BANK_TRANSFER">{t('payment.method.BANK_TRANSFER')}</MenuItem>
                 </Select>
@@ -669,6 +701,11 @@ export const OrdersListPage: React.FC = () => {
               loading={isLoading}
               paginationModel={paginationModel}
               onPaginationModelChange={setPaginationModel}
+              rowCount={data?.meta?.total ?? 0}
+              paginationMode="server"
+              sortModel={sortModel}
+              onSortModelChange={setSortModel}
+              sortingMode="server"
               getRowId={(row: unknown) => (row as Order)._id as string}
               onRowClick={(params) => {
                 const row = params.row as Order;
