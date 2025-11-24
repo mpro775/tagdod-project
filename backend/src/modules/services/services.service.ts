@@ -1,11 +1,13 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
+import { Injectable, Logger, Optional, Inject, forwardRef } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
 import { ServiceRequest } from './schemas/service-request.schema';
 import { EngineerOffer } from './schemas/engineer-offer.schema';
 import { User } from '../users/schemas/user.schema';
+import { EngineerProfile } from '../users/schemas/engineer-profile.schema';
 import { AddressesService } from '../addresses/addresses.service';
 import { NotificationService } from '../notifications/services/notification.service';
+import { EngineerProfileService } from '../users/services/engineer-profile.service';
 import {
   NotificationType,
   NotificationChannel,
@@ -29,6 +31,29 @@ interface PopulatedEngineer {
   lastName?: string;
   phone?: string;
   jobTitle?: string | null;
+}
+
+// Helper function to check if engineer is populated
+function isPopulatedEngineer(
+  engineer: PopulatedEngineer | Types.ObjectId | null | undefined,
+): engineer is PopulatedEngineer {
+  return (
+    engineer !== null &&
+    engineer !== undefined &&
+    !(engineer instanceof Types.ObjectId) &&
+    typeof engineer === 'object' &&
+    '_id' in engineer
+  );
+}
+
+// Helper function to extract ObjectId from engineer
+function extractEngineerId(
+  engineer: PopulatedEngineer | Types.ObjectId | null | undefined,
+): Types.ObjectId | null {
+  if (!engineer) return null;
+  if (engineer instanceof Types.ObjectId) return engineer;
+  if (isPopulatedEngineer(engineer)) return engineer._id;
+  return null;
 }
 
 interface PopulatedAddress {
@@ -80,11 +105,15 @@ export class ServicesService {
     @InjectModel(ServiceRequest.name) private requests: Model<ServiceRequest>,
     @InjectModel(EngineerOffer.name) private offers: Model<EngineerOffer>,
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(EngineerProfile.name) private engineerProfileModel: Model<EngineerProfile>,
     @InjectConnection() private conn: Connection,
     private distanceService: DistanceService,
     private addressesService: AddressesService,
     private uploadService: UploadService,
     @Optional() private notificationService?: NotificationService,
+    @Inject(forwardRef(() => EngineerProfileService))
+    @Optional()
+    private engineerProfileService?: EngineerProfileService,
   ) {}
 
   // Helper method for safe notification sending
@@ -370,15 +399,33 @@ export class ServicesService {
     const requestIds = requests.map((r) => r._id);
     const offers = (await this.offers
       .find({ requestId: { $in: requestIds }, status: 'OFFERED' })
-      .populate('engineerId', 'firstName lastName phone jobTitle')
+      .populate('engineerId', 'firstName lastName phone')
       .sort({ createdAt: 1 })
       .lean()) as EngineerOfferPopulated[];
+
+    // جلب jobTitle من EngineerProfile لجميع المهندسين
+    const engineerIds: Types.ObjectId[] = [];
+    for (const offer of offers) {
+      const id = extractEngineerId(offer.engineerId);
+      if (id) {
+        engineerIds.push(id);
+      }
+    }
+
+    const profiles = await this.engineerProfileModel
+      .find({ userId: { $in: engineerIds } })
+      .select('userId jobTitle')
+      .lean();
+
+    const profilesMap = new Map(profiles.map((p) => [p.userId.toString(), p]));
 
     const offersByRequest = new Map<string, OfferListItem[]>();
 
     for (const offer of offers) {
       const key = String(offer.requestId);
       const engineerData = this.extractEngineer(offer.engineerId);
+      const engineerId = engineerData?._id?.toString();
+      const profile = engineerId ? profilesMap.get(engineerId) : null;
       const engineerPhone: string | null = engineerData?.phone ?? null;
       const engineerName = engineerData
         ? `${engineerData.firstName ?? ''} ${engineerData.lastName ?? ''}`.trim()
@@ -397,7 +444,7 @@ export class ServicesService {
           ? {
               id: String(engineerData._id),
               name: engineerName,
-              jobTitle: engineerData.jobTitle ?? null,
+              jobTitle: profile?.jobTitle ?? null,
               phone: engineerPhone,
               whatsapp,
             }
@@ -481,7 +528,7 @@ export class ServicesService {
       ? status
       : status
         ? [status]
-        : ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'RATED'];
+        : ['ASSIGNED', 'COMPLETED', 'RATED'];
 
     const docs = (await this.requests
       .find({
@@ -554,28 +601,69 @@ export class ServicesService {
     return this.requests.findOne({ _id: requestObjectId, userId: userObjectId }).lean();
   }
 
-  async cancel(userId: string, id: string) {
+  async cancel(userId: string, id: string, reason: string) {
     const userObjectId = new Types.ObjectId(userId);
     const requestObjectId = new Types.ObjectId(id);
     const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
     if (!r) return { error: 'NOT_FOUND' };
-    if (['OPEN', 'OFFERS_COLLECTING'].includes(r.status)) {
-      r.status = 'CANCELLED';
-      await r.save();
-      await this.offers.updateMany(
-        { requestId: r._id, status: 'OFFERED' },
-        { $set: { status: 'REJECTED' } },
-      );
+
+    // التحقق من أن السبب مطلوب
+    if (!reason || reason.trim().length === 0) {
+      return { error: 'REASON_REQUIRED' };
+    }
+
+    // السماح بالإلغاء فقط من حالة ASSIGNED (بعد قبول عرض)
+    if (r.status !== 'ASSIGNED') {
+      return { error: 'CANNOT_CANCEL', message: 'يمكن إلغاء الطلب فقط بعد قبول عرض من مهندس' };
+    }
+
+    // التحقق من عدد الإلغاءات (حد أقصى 3)
+    const cancellationCount = await this.requests.countDocuments({
+      userId: userObjectId,
+      status: 'CANCELLED',
+      cancelledAt: { $exists: true },
+    });
+
+    if (cancellationCount >= 3) {
+      return {
+        error: 'CANCELLATION_LIMIT_REACHED',
+        message:
+          'لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات (3). يرجى الانتظار حتى يتم التعامل مع الخدمات الحالية.',
+      };
+    }
+
+    // تحديث حالة الطلب
+    r.status = 'CANCELLED';
+    r.cancellationReason = reason.trim();
+    r.cancelledAt = new Date();
+    await r.save();
+
+    // تحديث حالة العروض المرتبطة
+    await this.offers.updateMany(
+      { requestId: r._id, status: { $in: ['OFFERED', 'ACCEPTED'] } },
+      { $set: { status: 'CANCELLED' } },
+    );
+
+    // إرسال إشعار للمهندس المقبول عرضه
+    if (r.engineerId) {
       await this.safeNotify(
-        userId,
+        String(r.engineerId),
         NotificationType.SERVICE_REQUEST_CANCELLED,
         'تم إلغاء طلب الخدمة',
-        `تم إلغاء الطلب ${String(r._id)}`,
-        { requestId: String(r._id) },
+        `تم إلغاء الطلب ${String(r._id)} من قبل العميل. السبب: ${reason.trim()}`,
+        { requestId: String(r._id), reason: reason.trim() },
       );
-      return { ok: true };
     }
-    return { error: 'CANNOT_CANCEL' };
+
+    await this.safeNotify(
+      userId,
+      NotificationType.SERVICE_REQUEST_CANCELLED,
+      'تم إلغاء طلب الخدمة',
+      `تم إلغاء الطلب ${String(r._id)}`,
+      { requestId: String(r._id), reason: reason.trim() },
+    );
+
+    return { ok: true };
   }
 
   async deleteRequest(userId: string, id: string) {
@@ -583,11 +671,14 @@ export class ServicesService {
     const requestObjectId = new Types.ObjectId(id);
     const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
     if (!r) return { error: 'NOT_FOUND' };
-    
+
     // يمكن حذف الطلب فقط إذا كان في حالة OPEN أو CANCELLED
     // (لم يتم قبول أي عروض أو تم إلغاؤه)
     if (!['OPEN', 'CANCELLED'].includes(r.status)) {
-      return { error: 'CANNOT_DELETE', message: 'لا يمكن حذف الطلب في حالته الحالية. يمكن حذف الطلبات المفتوحة أو الملغاة فقط.' };
+      return {
+        error: 'CANNOT_DELETE',
+        message: 'لا يمكن حذف الطلب في حالته الحالية. يمكن حذف الطلبات المفتوحة أو الملغاة فقط.',
+      };
     }
 
     // حذف جميع العروض المرتبطة بالطلب
@@ -602,15 +693,15 @@ export class ServicesService {
             // URL format: https://cdn.example.com/services/requests/uuid-filename.jpg
             // أو: https://storage.bunnycdn.com/zone/services/requests/uuid-filename.jpg
             // نحتاج: services/requests/uuid-filename.jpg
-            
+
             const urlObj = new URL(imageUrl);
             let filePath = urlObj.pathname;
-            
+
             // إزالة الـ leading slash
             if (filePath.startsWith('/')) {
               filePath = filePath.substring(1);
             }
-            
+
             // البحث عن مجلد services/requests في المسار
             // إذا كان موجوداً، نأخذ كل شيء بعد storage zone name (إن وجد)
             // أو نأخذ المسار مباشرة إذا كان يبدأ بـ services/
@@ -628,7 +719,7 @@ export class ServicesService {
                 continue; // نتخطى هذه الصورة
               }
             }
-            
+
             if (filePath) {
               await this.uploadService.deleteFile(filePath).catch((err) => {
                 this.logger.warn(`Failed to delete image ${filePath}: ${err.message}`);
@@ -673,10 +764,31 @@ export class ServicesService {
 
     offer.status = 'ACCEPTED';
     await offer.save();
-    await this.offers.updateMany(
-      { requestId: r._id, _id: { $ne: offer._id }, status: 'OFFERED' },
-      { $set: { status: 'REJECTED' } },
-    );
+
+    // تحديث حالة العروض الأخرى إلى OUTBID (تم قبول عرض آخر)
+    const otherOffers = await this.offers.find({
+      requestId: r._id,
+      _id: { $ne: offer._id },
+      status: 'OFFERED',
+    });
+
+    if (otherOffers.length > 0) {
+      await this.offers.updateMany(
+        { requestId: r._id, _id: { $ne: offer._id }, status: 'OFFERED' },
+        { $set: { status: 'OUTBID' } },
+      );
+
+      // إرسال إشعارات للمهندسين الذين تم رفض عروضهم بسبب قبول عرض آخر
+      for (const otherOffer of otherOffers) {
+        await this.safeNotify(
+          String(otherOffer.engineerId),
+          NotificationType.OFFER_REJECTED,
+          'تم قبول عرض آخر',
+          `تم قبول عرض آخر للطلب ${String(r._id)}. تم إيقاف عرضك.`,
+          { requestId: String(r._id), offerId: String(otherOffer._id) },
+        );
+      }
+    }
 
     await this.safeNotify(
       String(offer.engineerId),
@@ -694,9 +806,32 @@ export class ServicesService {
     const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
     if (!r) return { error: 'NOT_FOUND' };
     if (r.status !== 'COMPLETED') return { error: 'NOT_COMPLETED' };
-    r.rating = { score, comment, at: new Date() };
+
+    // التحقق من وجود تعليق (مطلوب)
+    if (!comment || comment.trim().length === 0) {
+      return { error: 'COMMENT_REQUIRED' };
+    }
+
+    r.rating = { score, comment: comment.trim(), at: new Date() };
     r.status = 'RATED';
     await r.save();
+
+    // إضافة التقييم إلى بروفايل المهندس تلقائياً
+    if (r.engineerId && this.engineerProfileService) {
+      try {
+        await this.engineerProfileService.addRatingFromServiceRequest(
+          r.engineerId.toString(),
+          r._id.toString(),
+          userId,
+          score,
+          comment.trim(),
+        );
+      } catch (error) {
+        this.logger.warn(`Failed to add rating to engineer profile: ${error}`);
+        // لا نوقف العملية إذا فشل تحديث البروفايل
+      }
+    }
+
     await this.safeNotify(
       userId,
       NotificationType.SERVICE_RATED,
@@ -708,19 +843,64 @@ export class ServicesService {
   }
 
   // جلب العروض لطلب معين (للعميل)
-  async getOffersForRequest(userId: string, requestId: string) {
+  async getOffersForRequest(
+    userId: string,
+    requestId: string,
+  ): Promise<
+    | { error: string }
+    | Array<{
+        _id: Types.ObjectId;
+        requestId: string | Types.ObjectId;
+        amount: number;
+        note?: string | null;
+        distanceKm?: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        engineerId?:
+          | {
+              _id: Types.ObjectId;
+              firstName?: string;
+              lastName?: string;
+              phone?: string;
+              jobTitle?: string | null;
+            }
+          | Types.ObjectId
+          | null;
+      }>
+  > {
     const userObjectId = new Types.ObjectId(userId);
     const requestObjectId = new Types.ObjectId(requestId);
     const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
     if (!r) return { error: 'REQUEST_NOT_FOUND' };
 
-    const offers = await this.offers
+    const offers = (await this.offers
       .find({ requestId: r._id })
-      .populate('engineerId', 'firstName lastName phone jobTitle')
+      .populate('engineerId', 'firstName lastName phone')
       .sort({ distanceKm: 1, amount: 1 }) // أقرب ثم أرخص
-      .lean();
+      .lean()) as EngineerOfferPopulated[];
 
-    return offers;
+    // جلب jobTitle من EngineerProfile
+    const engineerIds: Types.ObjectId[] = [];
+    for (const offer of offers) {
+      const id = extractEngineerId(offer.engineerId);
+      if (id) {
+        engineerIds.push(id);
+      }
+    }
+
+    const jobTitlesMap = await this.getEngineersJobTitles(engineerIds);
+
+    // إضافة jobTitle للعروض
+    return offers.map((offer) => {
+      const id = extractEngineerId(offer.engineerId);
+      const engineerId = id ? id.toString() : null;
+
+      if (engineerId && jobTitlesMap.has(engineerId) && isPopulatedEngineer(offer.engineerId)) {
+        offer.engineerId.jobTitle = jobTitlesMap.get(engineerId) ?? null;
+      }
+      return offer;
+    });
   }
 
   async getOfferDetails(userId: string, requestId: string, offerId: string) {
@@ -735,7 +915,7 @@ export class ServicesService {
     const offerObjectId = new Types.ObjectId(offerId);
     const offer = await this.offers
       .findOne({ _id: offerObjectId, requestId: request._id })
-      .populate('engineerId', 'firstName lastName phone jobTitle city')
+      .populate('engineerId', 'firstName lastName phone city')
       .lean<EngineerOfferPopulated | null>();
     if (!offer) return { error: 'OFFER_NOT_FOUND' };
 
@@ -745,6 +925,16 @@ export class ServicesService {
       ? `${engineerData.firstName ?? ''} ${engineerData.lastName ?? ''}`.trim()
       : null;
     const whatsapp = engineerPhone ? this.makeWhatsappLink(engineerPhone) : null;
+
+    // جلب jobTitle من EngineerProfile
+    let jobTitle: string | null = null;
+    if (engineerData?._id) {
+      const profile = await this.engineerProfileModel
+        .findOne({ userId: engineerData._id })
+        .select('jobTitle')
+        .lean();
+      jobTitle = profile?.jobTitle ?? null;
+    }
 
     const addressData = this.extractAddress(request.addressId);
 
@@ -760,7 +950,7 @@ export class ServicesService {
         ? {
             id: String(engineerData._id),
             name: engineerName,
-            jobTitle: engineerData.jobTitle ?? null,
+            jobTitle,
             phone: engineerPhone,
             whatsapp,
           }
@@ -869,7 +1059,6 @@ export class ServicesService {
       OPEN: 'بانتظار العروض',
       OFFERS_COLLECTING: 'تجميع العروض',
       ASSIGNED: 'تم قبول العرض',
-      IN_PROGRESS: 'قيد التنفيذ',
       COMPLETED: 'اكتملت الخدمة',
       RATED: 'تم التقييم',
       CANCELLED: 'ملغى',
@@ -883,6 +1072,8 @@ export class ServicesService {
       ACCEPTED: 'عرض مقبول',
       REJECTED: 'عرض مرفوض',
       CANCELLED: 'عرض ملغى',
+      OUTBID: 'تم قبول عرض آخر',
+      EXPIRED: 'عرض منتهي الصلاحية',
     };
     return labels[status] ?? status;
   }
@@ -892,6 +1083,22 @@ export class ServicesService {
   ): PopulatedEngineer | null {
     if (!engineer) return null;
     return engineer instanceof Types.ObjectId ? null : engineer;
+  }
+
+  /**
+   * جلب jobTitle من EngineerProfile لجميع المهندسين دفعة واحدة
+   */
+  private async getEngineersJobTitles(
+    engineerIds: Types.ObjectId[],
+  ): Promise<Map<string, string | null>> {
+    if (engineerIds.length === 0) return new Map();
+
+    const profiles = await this.engineerProfileModel
+      .find({ userId: { $in: engineerIds } })
+      .select('userId jobTitle')
+      .lean();
+
+    return new Map(profiles.map((p) => [p.userId.toString(), p.jobTitle ?? null]));
   }
 
   private extractAddress(
@@ -987,28 +1194,20 @@ export class ServicesService {
     return { ok: true };
   }
 
-  async start(engineerUserId: string, requestId: string) {
-    const r = await this.requests.findById(requestId);
-    if (!r) return { error: 'NOT_FOUND' };
-    if (String(r.engineerId) !== String(engineerUserId)) return { error: 'NOT_ASSIGNED' };
-    if (r.status !== 'ASSIGNED') return { error: 'INVALID_STATUS' };
-    r.status = 'IN_PROGRESS';
-    await r.save();
-    await this.safeNotify(
-      String(r.userId),
-      NotificationType.SERVICE_STARTED,
-      'تم بدء الخدمة',
-      `تم بدء تنفيذ الخدمة للطلب ${String(r._id)}`,
-      { requestId: String(r._id) },
-    );
-    return { ok: true };
+  async start() {
+    // تم إزالة هذه الطريقة لأننا لا نحتاج حالة IN_PROGRESS
+    // يمكن للمهندس الانتقال مباشرة من ASSIGNED إلى COMPLETED
+    return {
+      error: 'DEPRECATED',
+      message: 'تم إزالة هذه الطريقة. يمكن إكمال الخدمة مباشرة من حالة ASSIGNED',
+    };
   }
 
   async complete(engineerUserId: string, requestId: string) {
     const r = await this.requests.findById(requestId);
     if (!r) return { error: 'NOT_FOUND' };
     if (String(r.engineerId) !== String(engineerUserId)) return { error: 'NOT_ASSIGNED' };
-    if (r.status !== 'IN_PROGRESS') return { error: 'INVALID_STATUS' };
+    if (r.status !== 'ASSIGNED') return { error: 'INVALID_STATUS' };
     r.status = 'COMPLETED';
     await r.save();
     await this.safeNotify(
@@ -1150,40 +1349,203 @@ export class ServicesService {
       this.requests
         .find(q)
         .populate('userId', 'firstName lastName phone email')
-        .populate('engineerId', 'firstName lastName phone jobTitle')
+        .populate('engineerId', 'firstName lastName phone')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
       this.requests.countDocuments(q),
     ]);
-    return { items, meta: { page, limit, total } };
+
+    // جلب jobTitle من EngineerProfile لجميع المهندسين
+    const engineerIds: Types.ObjectId[] = [];
+    for (const item of items) {
+      const engineerId = item.engineerId as PopulatedEngineer | Types.ObjectId | null | undefined;
+      const id = extractEngineerId(engineerId);
+      if (id) {
+        engineerIds.push(id);
+      }
+    }
+
+    const jobTitlesMap = await this.getEngineersJobTitles(engineerIds);
+
+    // إضافة jobTitle للعناصر
+    const itemsWithJobTitle = items.map((item) => {
+      const engineerId = item.engineerId as PopulatedEngineer | Types.ObjectId | null | undefined;
+      const id = extractEngineerId(engineerId);
+      const engineerIdStr = id ? id.toString() : null;
+
+      if (engineerIdStr && jobTitlesMap.has(engineerIdStr) && isPopulatedEngineer(engineerId)) {
+        (engineerId as PopulatedEngineer).jobTitle = jobTitlesMap.get(engineerIdStr) ?? null;
+      }
+      return item;
+    });
+
+    return { items: itemsWithJobTitle, meta: { page, limit, total } };
   }
 
-  async adminGetRequest(id: string) {
-    const request = await this.requests
+  async adminGetRequest(id: string): Promise<null | {
+    _id: Types.ObjectId;
+    userId?:
+      | Types.ObjectId
+      | {
+          _id: Types.ObjectId;
+          firstName?: string;
+          lastName?: string;
+          phone?: string;
+          email?: string;
+        }
+      | null;
+    engineerId?:
+      | Types.ObjectId
+      | {
+          _id: Types.ObjectId;
+          firstName?: string;
+          lastName?: string;
+          phone?: string;
+          jobTitle?: string | null;
+        }
+      | null;
+    addressId?:
+      | Types.ObjectId
+      | { _id: Types.ObjectId; label?: string; line1?: string; city?: string }
+      | null;
+    title: string;
+    type?: string;
+    description?: string;
+    images?: string[];
+    city: string;
+    status: string;
+    scheduledAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    location?: { type: string; coordinates: [number, number] };
+    acceptedOffer?: { offerId: string; amount: number; note?: string };
+    rating?: { score?: number; comment?: string; at?: Date };
+    cancellationReason?: string;
+    cancelledAt?: Date;
+    adminNotes?: Array<{ note: string; at: Date }>;
+    offers: Array<{
+      _id: Types.ObjectId;
+      requestId: string | Types.ObjectId;
+      amount: number;
+      note?: string | null;
+      distanceKm?: number;
+      status: string;
+      createdAt: Date;
+      updatedAt: Date;
+      engineerId?:
+        | Types.ObjectId
+        | {
+            _id: Types.ObjectId;
+            firstName?: string;
+            lastName?: string;
+            phone?: string;
+            jobTitle?: string | null;
+          }
+        | null;
+    }>;
+  }> {
+    const request = (await this.requests
       .findById(id)
       .populate('userId', 'firstName lastName phone email')
-      .populate('engineerId', 'firstName lastName phone jobTitle')
-      .lean();
+      .populate('engineerId', 'firstName lastName phone')
+      .lean()) as ServiceRequestPopulated | null;
 
     if (!request) return null;
 
-    const offers = await this.offers
+    const offers = (await this.offers
       .find({ requestId: id })
-      .populate('engineerId', 'firstName lastName phone jobTitle')
+      .populate('engineerId', 'firstName lastName phone')
       .sort({ createdAt: -1 })
-      .lean();
+      .lean()) as EngineerOfferPopulated[];
 
-    return { ...request, offers };
+    // جلب jobTitle من EngineerProfile
+    const engineerIds: Types.ObjectId[] = [];
+    const requestEngineerId = extractEngineerId(request.engineerId);
+    if (requestEngineerId) {
+      engineerIds.push(requestEngineerId);
+    }
+    for (const offer of offers) {
+      const id = extractEngineerId(offer.engineerId);
+      if (id && !engineerIds.some((existingId) => existingId.equals(id))) {
+        engineerIds.push(id);
+      }
+    }
+
+    const jobTitlesMap = await this.getEngineersJobTitles(engineerIds);
+
+    // إضافة jobTitle للطلب
+    if (requestEngineerId && isPopulatedEngineer(request.engineerId)) {
+      const engineerId = requestEngineerId.toString();
+      if (jobTitlesMap.has(engineerId)) {
+        request.engineerId.jobTitle = jobTitlesMap.get(engineerId) ?? null;
+      }
+    }
+
+    // إضافة jobTitle للعروض
+    const offersWithJobTitle = offers.map((offer) => {
+      const id = extractEngineerId(offer.engineerId);
+      const engineerId = id ? id.toString() : null;
+
+      if (engineerId && jobTitlesMap.has(engineerId) && isPopulatedEngineer(offer.engineerId)) {
+        offer.engineerId.jobTitle = jobTitlesMap.get(engineerId) ?? null;
+      }
+      return offer;
+    });
+
+    return { ...request, offers: offersWithJobTitle };
   }
 
-  async adminGetRequestOffers(id: string) {
-    return this.offers
+  async adminGetRequestOffers(id: string): Promise<
+    Array<{
+      _id: Types.ObjectId;
+      requestId: string | Types.ObjectId;
+      amount: number;
+      note?: string | null;
+      distanceKm?: number;
+      status: string;
+      createdAt: Date;
+      updatedAt: Date;
+      engineerId?:
+        | Types.ObjectId
+        | {
+            _id: Types.ObjectId;
+            firstName?: string;
+            lastName?: string;
+            phone?: string;
+            jobTitle?: string | null;
+          }
+        | null;
+    }>
+  > {
+    const offers = (await this.offers
       .find({ requestId: id })
-      .populate('engineerId', 'firstName lastName phone jobTitle')
+      .populate('engineerId', 'firstName lastName phone')
       .sort({ createdAt: -1 })
-      .lean();
+      .lean()) as EngineerOfferPopulated[];
+
+    // جلب jobTitle من EngineerProfile
+    const engineerIds: Types.ObjectId[] = [];
+    for (const offer of offers) {
+      const id = extractEngineerId(offer.engineerId);
+      if (id) {
+        engineerIds.push(id);
+      }
+    }
+
+    const jobTitlesMap = await this.getEngineersJobTitles(engineerIds);
+
+    // إضافة jobTitle للعروض
+    return offers.map((offer) => {
+      const id = extractEngineerId(offer.engineerId);
+      const engineerId = id ? id.toString() : null;
+
+      if (engineerId && jobTitlesMap.has(engineerId) && isPopulatedEngineer(offer.engineerId)) {
+        offer.engineerId.jobTitle = jobTitlesMap.get(engineerId) ?? null;
+      }
+      return offer;
+    });
   }
 
   async adminUpdateRequestStatus(id: string, status: string, note?: string) {
@@ -1194,7 +1556,6 @@ export class ServicesService {
       'OPEN',
       'OFFERS_COLLECTING',
       'ASSIGNED',
-      'IN_PROGRESS',
       'COMPLETED',
       'RATED',
       'CANCELLED',
@@ -1205,7 +1566,6 @@ export class ServicesService {
       | 'OPEN'
       | 'OFFERS_COLLECTING'
       | 'ASSIGNED'
-      | 'IN_PROGRESS'
       | 'COMPLETED'
       | 'RATED'
       | 'CANCELLED';
@@ -1232,6 +1592,8 @@ export class ServicesService {
     if (['COMPLETED', 'RATED', 'CANCELLED'].includes(r.status)) return { error: 'INVALID_STATUS' };
 
     r.status = 'CANCELLED';
+    r.cancellationReason = reason || 'إلغاء إداري';
+    r.cancelledAt = new Date();
     if (reason) {
       r.adminNotes = r.adminNotes || [];
       r.adminNotes.push({ note: `إلغاء إداري: ${reason}`, at: new Date() });
@@ -1633,7 +1995,7 @@ export class ServicesService {
     const total = await this.userModel.countDocuments(matchStage);
 
     const engineers = await engineersQuery
-      .select('_id firstName lastName phone email jobTitle engineer_status')
+      .select('_id firstName lastName phone email engineer_status')
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
@@ -1711,7 +2073,34 @@ export class ServicesService {
     return { items, meta: { page, limit, total } };
   }
 
-  async getEngineerStatistics(engineerId: string) {
+  async getEngineerStatistics(engineerId: string): Promise<{
+    engineer:
+      | Types.ObjectId
+      | {
+          _id: Types.ObjectId;
+          firstName?: string;
+          lastName?: string;
+          phone?: string;
+          email?: string;
+          jobTitle?: string | null;
+        }
+      | null
+      | undefined;
+    statistics: {
+      _id?: Types.ObjectId;
+      totalRequests?: number;
+      completedRequests?: number;
+      assignedRequests?: number;
+      averageRating?: number;
+      totalRevenue?: number;
+      averageRevenue?: number;
+    };
+    offersStats: Array<{
+      _id: string;
+      count: number;
+      averageAmount: number;
+    }>;
+  }> {
     const pipeline = [
       { $match: { engineerId: new Types.ObjectId(engineerId) } },
       {
@@ -1721,8 +2110,8 @@ export class ServicesService {
           completedRequests: {
             $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] },
           },
-          inProgressRequests: {
-            $sum: { $cond: [{ $eq: ['$status', 'IN_PROGRESS'] }, 1, 0] },
+          assignedRequests: {
+            $sum: { $cond: [{ $eq: ['$status', 'ASSIGNED'] }, 1, 0] },
           },
           averageRating: {
             $avg: {
@@ -1758,8 +2147,27 @@ export class ServicesService {
     const stats = await this.requests.aggregate(pipeline);
     const engineer = await this.requests
       .findOne({ engineerId: new Types.ObjectId(engineerId) })
-      .populate('engineerId', 'firstName lastName phone email jobTitle')
+      .populate('engineerId', 'firstName lastName phone email')
       .lean();
+
+    // جلب jobTitle من EngineerProfile
+    const engineerWithJobTitle = engineer?.engineerId as
+      | PopulatedEngineer
+      | Types.ObjectId
+      | null
+      | undefined;
+    if (engineerWithJobTitle) {
+      const engineerId = extractEngineerId(engineerWithJobTitle);
+
+      if (engineerId) {
+        const jobTitlesMap = await this.getEngineersJobTitles([engineerId]);
+        const engineerIdStr = engineerId.toString();
+        if (jobTitlesMap.has(engineerIdStr) && isPopulatedEngineer(engineerWithJobTitle)) {
+          (engineerWithJobTitle as PopulatedEngineer).jobTitle =
+            jobTitlesMap.get(engineerIdStr) ?? null;
+        }
+      }
+    }
 
     const offersStats = await this.offers.aggregate([
       { $match: { engineerId: new Types.ObjectId(engineerId) } },
@@ -1773,7 +2181,7 @@ export class ServicesService {
     ]);
 
     return {
-      engineer: engineer?.engineerId,
+      engineer: engineerWithJobTitle,
       statistics: stats[0] || {},
       offersStats,
     };
@@ -1926,7 +2334,7 @@ export class ServicesService {
       this.offers
         .find(q)
         .populate('requestId', 'title type status createdAt userId addressId')
-        .populate('engineerId', 'firstName lastName phone jobTitle')
+        .populate('engineerId', 'firstName lastName phone')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -1934,7 +2342,39 @@ export class ServicesService {
       this.offers.countDocuments(q),
     ]);
 
-    return { items, meta: { page, limit, total } };
+    // جلب jobTitle من EngineerProfile
+    const engineerIds: Types.ObjectId[] = [];
+    for (const item of items) {
+      const engineerId = item.engineerId as unknown as
+        | PopulatedEngineer
+        | Types.ObjectId
+        | null
+        | undefined;
+      const id = extractEngineerId(engineerId);
+      if (id) {
+        engineerIds.push(id);
+      }
+    }
+
+    const jobTitlesMap = await this.getEngineersJobTitles(engineerIds);
+
+    // إضافة jobTitle للعناصر
+    const itemsWithJobTitle = items.map((item) => {
+      const engineerId = item.engineerId as unknown as
+        | PopulatedEngineer
+        | Types.ObjectId
+        | null
+        | undefined;
+      const id = extractEngineerId(engineerId);
+      const engineerIdStr = id ? id.toString() : null;
+
+      if (engineerIdStr && jobTitlesMap.has(engineerIdStr) && isPopulatedEngineer(engineerId)) {
+        (engineerId as PopulatedEngineer).jobTitle = jobTitlesMap.get(engineerIdStr) ?? null;
+      }
+      return item;
+    });
+
+    return { items: itemsWithJobTitle, meta: { page, limit, total } };
   }
 
   // === إدارة العروض ===
@@ -1953,19 +2393,46 @@ export class ServicesService {
     if (engineerId) q.engineerId = new Types.ObjectId(engineerId);
 
     const skip = (page - 1) * limit;
-    const [items, total] = await Promise.all([
+    const [itemsRaw, total] = await Promise.all([
       this.offers
         .find(q)
         .populate('requestId', 'title type status createdAt userId')
-        .populate('engineerId', 'firstName lastName phone jobTitle')
+        .populate('engineerId', 'firstName lastName phone')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
       this.offers.countDocuments(q),
     ]);
+    const items = itemsRaw as EngineerOfferPopulated[];
 
-    return { items, meta: { page, limit, total } };
+    // جلب jobTitle من EngineerProfile
+    const engineerIds: Types.ObjectId[] = [];
+    for (const item of items) {
+      const id = extractEngineerId(item.engineerId);
+      if (id) {
+        engineerIds.push(id);
+      }
+    }
+
+    const jobTitlesMap = await this.getEngineersJobTitles(engineerIds);
+
+    // إضافة jobTitle للعناصر
+    const itemsWithJobTitle = items.map((item) => {
+      const id = extractEngineerId(item.engineerId);
+      const engineerIdStr = id ? id.toString() : null;
+
+      if (
+        engineerIdStr &&
+        jobTitlesMap.has(engineerIdStr) &&
+        isPopulatedEngineer(item.engineerId)
+      ) {
+        item.engineerId.jobTitle = jobTitlesMap.get(engineerIdStr) ?? null;
+      }
+      return item;
+    });
+
+    return { items: itemsWithJobTitle, meta: { page, limit, total } };
   }
 
   // === قبول عرض من الأدمن ===
@@ -2085,5 +2552,95 @@ export class ServicesService {
 
     this.logger.log(`Admin cancelled offer ${offerId}. Reason: ${reason || 'No reason provided'}`);
     return { ok: true };
+  }
+
+  /**
+   * انتهاء صلاحية الطلبات والعروض القديمة (5 أيام)
+   * يتم استدعاؤها من cron job
+   */
+  async expireOldRequestsAndOffers(): Promise<{ expiredRequests: number; expiredOffers: number }> {
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+
+    // انتهاء صلاحية الطلبات: OPEN أو OFFERS_COLLECTING لمدة 5 أيام بدون قبول عرض
+    const expiredRequestsResult = await this.requests.updateMany(
+      {
+        status: { $in: ['OPEN', 'OFFERS_COLLECTING'] },
+        createdAt: { $lt: fiveDaysAgo },
+        engineerId: null, // لم يتم قبول أي عرض
+      },
+      {
+        $set: {
+          status: 'CANCELLED',
+          cancellationReason: 'انتهت صلاحية الطلب (5 أيام بدون قبول عرض)',
+          cancelledAt: new Date(),
+        },
+      },
+    );
+
+    const expiredRequests = expiredRequestsResult.modifiedCount || 0;
+
+    // إرسال إشعارات للعملاء
+    if (expiredRequests > 0) {
+      const expiredRequestsList = await this.requests
+        .find({
+          status: 'CANCELLED',
+          cancellationReason: 'انتهت صلاحية الطلب (5 أيام بدون قبول عرض)',
+          cancelledAt: { $gte: new Date(Date.now() - 60000) }, // في الدقيقة الأخيرة
+        })
+        .select('userId _id')
+        .lean();
+
+      for (const req of expiredRequestsList) {
+        await this.safeNotify(
+          String(req.userId),
+          NotificationType.SERVICE_REQUEST_CANCELLED,
+          'انتهت صلاحية طلب الخدمة',
+          `انتهت صلاحية الطلب ${String(req._id)} بعد 5 أيام بدون قبول أي عرض`,
+          { requestId: String(req._id) },
+        );
+      }
+    }
+
+    // انتهاء صلاحية العروض: OFFERED لمدة 5 أيام بدون قبول
+    const expiredOffersResult = await this.offers.updateMany(
+      {
+        status: 'OFFERED',
+        createdAt: { $lt: fiveDaysAgo },
+      },
+      {
+        $set: {
+          status: 'EXPIRED',
+        },
+      },
+    );
+
+    const expiredOffers = expiredOffersResult.modifiedCount || 0;
+
+    // إرسال إشعارات للمهندسين
+    if (expiredOffers > 0) {
+      const expiredOffersList = await this.offers
+        .find({
+          status: 'EXPIRED',
+          updatedAt: { $gte: new Date(Date.now() - 60000) }, // في الدقيقة الأخيرة
+        })
+        .select('engineerId requestId _id')
+        .lean();
+
+      for (const offer of expiredOffersList) {
+        await this.safeNotify(
+          String(offer.engineerId),
+          NotificationType.OFFER_CANCELLED,
+          'انتهت صلاحية عرضك',
+          `انتهت صلاحية عرضك للطلب ${String(offer.requestId)} بعد 5 أيام`,
+          { requestId: String(offer.requestId), offerId: String(offer._id) },
+        );
+      }
+    }
+
+    this.logger.log(
+      `Expired ${expiredRequests} requests and ${expiredOffers} offers older than 5 days`,
+    );
+
+    return { expiredRequests, expiredOffers };
   }
 }

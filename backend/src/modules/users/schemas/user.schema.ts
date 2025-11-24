@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -53,9 +53,8 @@ export class User {
   @Prop() firstName?: string;
   @Prop() lastName?: string;
   @Prop() gender?: 'male' | 'female' | 'other';
-  @Prop() jobTitle?: string; // المسمى الوظيفي للمهندس
   @Prop() passwordHash?: string;
-  
+
   // معلومات الموقع
   @Prop({ default: 'صنعاء' }) city?: string; // المدينة (للمهندسين وطلبات الخدمات)
 
@@ -116,25 +115,9 @@ export class User {
   @Prop({ type: Date }) suspendedAt?: Date;
 
   // حقول التحقق (Verification)
-  @Prop() cvFileUrl?: string; // رابط ملف السيرة الذاتية للمهندس (URL من Bunny.net)
   @Prop() storePhotoUrl?: string; // رابط صورة المحل للتاجر (URL من Bunny.net)
   @Prop() storeName?: string; // اسم المحل للتاجر
   @Prop() verificationNote?: string; // ملاحظة التحقق (اختياري)
-
-  // Wallet & Commission System
-  @Prop({ default: 0, min: 0 })
-  walletBalance!: number; // الرصيد الحالي للمهندس
-
-  @Prop({ type: [Object], default: [] })
-  commissionTransactions!: Array<{
-    transactionId: string;
-    type: 'commission' | 'withdrawal' | 'refund';
-    amount: number;
-    orderId?: Types.ObjectId;
-    couponCode?: string;
-    description?: string;
-    createdAt: Date;
-  }>;
 
   // Helper methods
   isAdmin(): boolean {
@@ -214,7 +197,7 @@ export class User {
   rejectEngineer(): void {
     this.engineer_capable = false;
     this.engineer_status = CapabilityStatus.REJECTED;
-    this.roles = this.roles.filter(role => role !== UserRole.ENGINEER);
+    this.roles = this.roles.filter((role) => role !== UserRole.ENGINEER);
   }
 
   approveMerchant(discountPercent: number = 0): void {
@@ -230,7 +213,7 @@ export class User {
     this.merchant_capable = false;
     this.merchant_status = CapabilityStatus.REJECTED;
     this.merchant_discount_percent = 0;
-    this.roles = this.roles.filter(role => role !== UserRole.MERCHANT);
+    this.roles = this.roles.filter((role) => role !== UserRole.MERCHANT);
   }
 
   approveAdmin(): void {
@@ -244,7 +227,7 @@ export class User {
   rejectAdmin(): void {
     this.admin_capable = false;
     this.admin_status = CapabilityStatus.REJECTED;
-    this.roles = this.roles.filter(role => role !== UserRole.ADMIN);
+    this.roles = this.roles.filter((role) => role !== UserRole.ADMIN);
   }
 }
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -259,4 +242,3 @@ UserSchema.index({ status: 1, deletedAt: 1, createdAt: -1 });
 UserSchema.index({ lastActivityAt: -1 });
 UserSchema.index({ status: 1, lastActivityAt: -1 });
 UserSchema.index({ roles: 1, status: 1 }); // فهرس محسن للأدوار والحالة
-UserSchema.index({ walletBalance: 1 }); // Index for wallet balance queries

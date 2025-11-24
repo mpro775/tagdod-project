@@ -1,7 +1,13 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
-import { ExchangeRateSyncJob, ExchangeRateSyncJobDocument, ExchangeRateSyncJobError, ExchangeRateSyncJobReason, ExchangeRateSyncJobStatus } from './schemas/exchange-rate-sync-job.schema';
+import {
+  ExchangeRateSyncJob,
+  ExchangeRateSyncJobDocument,
+  ExchangeRateSyncJobError,
+  ExchangeRateSyncJobReason,
+  ExchangeRateSyncJobStatus,
+} from './schemas/exchange-rate-sync-job.schema';
 import { ExchangeRatesService } from './exchange-rates.service';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
@@ -12,7 +18,6 @@ import {
   ExchangeRateSyncJobNotFoundException,
   ExchangeRateSyncJobInvalidException,
   ExchangeRateSyncFailedException,
-  ErrorCode,
   ProductNotFoundException,
 } from '../../shared/exceptions';
 
@@ -134,7 +139,7 @@ export class ExchangeRateSyncService {
           processedVariants: 0,
           failedProducts: 0,
           failedVariants: 0,
-          errors: [],
+          syncErrors: [],
         },
       },
     );
@@ -215,7 +220,8 @@ export class ExchangeRateSyncService {
       $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
     };
 
-    while (true) {
+    let hasMoreProducts = true;
+    while (hasMoreProducts) {
       const query: FilterQuery<ProductDocument> = { ...baseFilter };
       if (lastProcessedProductId) {
         query._id = { $gt: new Types.ObjectId(lastProcessedProductId) };
@@ -228,7 +234,8 @@ export class ExchangeRateSyncService {
         .lean<ProductDocument[]>();
 
       if (!products.length) {
-        break;
+        hasMoreProducts = false;
+        continue;
       }
 
       for (const product of products) {
@@ -260,8 +267,8 @@ export class ExchangeRateSyncService {
 
           processedVariants += variantResult.processed;
           failedVariants += variantResult.failed;
-          if (variantResult.errors.length > 0) {
-            errors.push(...variantResult.errors);
+          if (variantResult.syncErrors.length > 0) {
+            errors.push(...variantResult.syncErrors);
           }
 
           processedProducts += 1;
@@ -292,7 +299,7 @@ export class ExchangeRateSyncService {
             failedProducts,
             failedVariants,
             lastProcessedProductId,
-            errors: errors.slice(-MAX_ERRORS_RECORDED),
+            syncErrors: errors.slice(-MAX_ERRORS_RECORDED),
           },
         },
       );
@@ -350,7 +357,7 @@ export class ExchangeRateSyncService {
   ): Promise<{
     processed: number;
     failed: number;
-    errors: ExchangeRateSyncJobError[];
+    syncErrors: ExchangeRateSyncJobError[];
   }> {
     const variants = await this.variantModel
       .find({
@@ -360,7 +367,7 @@ export class ExchangeRateSyncService {
       .lean<VariantDocument[]>();
 
     if (!variants.length) {
-      return { processed: 0, failed: 0, errors: [] };
+      return { processed: 0, failed: 0, syncErrors: [] };
     }
 
     const bulkOps = [];
@@ -417,7 +424,7 @@ export class ExchangeRateSyncService {
       await this.variantModel.bulkWrite(bulkOps, { ordered: false });
     }
 
-    return { processed, failed, errors };
+    return { processed, failed, syncErrors: errors };
   }
 
   private async failJob(jobId: string, message: string): Promise<void> {
@@ -431,7 +438,7 @@ export class ExchangeRateSyncService {
           failedAt: new Date(),
         },
         $push: {
-          errors: {
+          syncErrors: {
             $each: [
               {
                 message,
@@ -500,14 +507,16 @@ export class ExchangeRateSyncService {
         syncSnapshot,
       );
 
-      const existingErrors = job.errors ?? [];
+      const existingErrors = job.syncErrors ?? [];
       const removedErrors = existingErrors.filter((error) => error.productId === productId);
       const remainingErrors = existingErrors.filter((error) => error.productId !== productId);
 
       const productLevelErrorsRemoved = removedErrors.some((error) => !error.variantId) ? 1 : 0;
       const variantErrorsRemoved = removedErrors.filter((error) => error.variantId).length;
 
-      const updatedErrors = [...remainingErrors, ...variantResult.errors].slice(-MAX_ERRORS_RECORDED);
+      const updatedErrors = [...remainingErrors, ...variantResult.syncErrors].slice(
+        -MAX_ERRORS_RECORDED,
+      );
 
       const updatedProcessedProducts = job.processedProducts + 1;
       const updatedProcessedVariants = job.processedVariants + variantResult.processed;
@@ -521,7 +530,7 @@ export class ExchangeRateSyncService {
         { _id: jobId },
         {
           $set: {
-            errors: updatedErrors,
+            syncErrors: updatedErrors,
             lastProcessedProductId: productId,
             processedProducts: updatedProcessedProducts,
             processedVariants: updatedProcessedVariants,
@@ -575,4 +584,3 @@ export class ExchangeRateSyncService {
     return JSON.stringify(error);
   }
 }
-

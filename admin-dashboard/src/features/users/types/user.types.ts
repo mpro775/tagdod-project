@@ -204,3 +204,74 @@ export interface VerificationDetails extends VerificationRequest {
 export interface ApproveVerificationDto {
   reason?: string;
 }
+
+// Engineer Profile Types
+export interface EngineerRating {
+  score: number; // 1-5
+  comment: string;
+  customerId: string;
+  customerName?: string;
+  serviceRequestId?: string;
+  orderId?: string;
+  ratedAt: Date | string;
+}
+
+export interface CommissionTransaction {
+  transactionId: string;
+  type: 'commission' | 'withdrawal' | 'refund';
+  amount: number;
+  orderId?: string;
+  couponCode?: string;
+  description?: string;
+  createdAt: Date | string;
+}
+
+export interface EngineerProfileAdmin extends BaseEntity {
+  userId: string;
+  bio?: string;
+  avatarUrl?: string;
+  whatsappNumber?: string;
+  cvFileUrl?: string;
+  jobTitle?: string;
+  ratings: EngineerRating[];
+  totalRatings: number;
+  averageRating: number;
+  ratingDistribution: number[]; // [5stars, 4stars, 3stars, 2stars, 1star]
+  totalCompletedServices: number;
+  totalEarnings: number;
+  walletBalance: number;
+  commissionTransactions: CommissionTransaction[];
+  specialties?: string[];
+  yearsOfExperience?: number;
+  certifications?: string[];
+  languages?: string[];
+}
+
+export interface UpdateEngineerProfileAdminDto {
+  bio?: string;
+  avatarUrl?: string;
+  whatsappNumber?: string;
+  jobTitle?: string;
+  specialties?: string[];
+  yearsOfExperience?: number;
+  certifications?: string[];
+  languages?: string[];
+}
+
+export interface ManageWalletDto {
+  type: 'add' | 'deduct' | 'withdraw';
+  amount: number;
+  reason: string;
+}
+
+export interface SyncStatsDto {
+  syncRatings?: boolean;
+  syncStatistics?: boolean;
+}
+
+export interface GetRatingsQueryDto {
+  page?: number;
+  limit?: number;
+  sortBy?: 'recent' | 'top' | 'oldest';
+  minScore?: number;
+}

@@ -44,7 +44,6 @@ import {
   Assignment,
   Engineering,
   AttachMoney,
-  Schedule,
   CheckCircle,
   Error,
   Warning,
@@ -72,7 +71,6 @@ const statusColors: Record<ServiceStatus, 'default' | 'primary' | 'success' | 'e
     OPEN: 'warning',
     OFFERS_COLLECTING: 'default',
     ASSIGNED: 'primary',
-    IN_PROGRESS: 'primary',
     COMPLETED: 'success',
     RATED: 'success',
     CANCELLED: 'error',
@@ -83,7 +81,6 @@ const getStatusLabel = (status: ServiceStatus, t: any): string => {
     OPEN: 'open',
     OFFERS_COLLECTING: 'offersCollecting',
     ASSIGNED: 'assigned',
-    IN_PROGRESS: 'inProgress',
     COMPLETED: 'completed',
     RATED: 'rated',
     CANCELLED: 'cancelled',
@@ -110,7 +107,6 @@ const statusIcons: Record<ServiceStatus, React.ReactNode> = {
   OPEN: <Warning />,
   OFFERS_COLLECTING: <Assignment />,
   ASSIGNED: <Engineering />,
-  IN_PROGRESS: <Schedule />,
   COMPLETED: <CheckCircle />,
   RATED: <CheckCircle />,
   CANCELLED: <Error />,
@@ -210,10 +206,17 @@ export const ServicesListPage: React.FC = () => {
 
   const handleCancel = async () => {
     if (selectedService) {
+      if (!dialogData.reason || !dialogData.reason.trim()) {
+        showSnackbar(
+          t('messages.cancellationReasonRequired', { defaultValue: 'يجب إدخال سبب الإلغاء' }),
+          'error'
+        );
+        return;
+      }
       try {
         await cancelServiceMutation.mutateAsync({
           id: selectedService._id,
-          reason: dialogData.reason,
+          reason: dialogData.reason.trim(),
         });
         setDialogOpen(false);
         showSnackbar(

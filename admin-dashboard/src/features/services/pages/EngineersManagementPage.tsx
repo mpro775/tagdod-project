@@ -10,10 +10,6 @@ import {
   Avatar,
   LinearProgress,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Skeleton,
   Alert,
   Stack,
@@ -21,14 +17,12 @@ import {
   TextField,
   useTheme,
   useMediaQuery,
-  CircularProgress,
 } from '@mui/material';
 import {
   Engineering,
   Star,
   TrendingUp,
   Visibility,
-  Phone,
   Refresh,
   Download,
   CheckCircle,
@@ -36,21 +30,16 @@ import {
   Edit,
   Block,
   LocationCity,
-  LocalOffer,
-  Add,
 } from '@mui/icons-material';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useEngineers, useEngineersOverviewStatistics } from '../hooks/useServices';
 import { useSuspendUser, useActivateUser } from '../../users/hooks/useUsers';
-import {
-  useEngineerCoupons,
-  useEngineerCouponStats,
-} from '@/features/marketing/hooks/useMarketing';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
 import { getCityEmoji } from '@/shared/constants/yemeni-cities';
 import { useTranslation } from 'react-i18next';
 import { EngineerCard } from '../components/EngineerCard';
+import { EngineerDetailsDialog } from '../components/EngineerDetailsDialog';
 import { useNavigate } from 'react-router-dom';
 
 export const EngineersManagementPage: React.FC = () => {
@@ -82,11 +71,6 @@ export const EngineersManagementPage: React.FC = () => {
   const suspendUserMutation = useSuspendUser();
   const activateUserMutation = useActivateUser();
 
-  // Engineer coupons data
-  const engineerId = selectedEngineer?.engineerId || selectedEngineer?._id;
-  const { data: engineerCoupons, isLoading: couponsLoading } = useEngineerCoupons(engineerId || '');
-  const { data: couponStats, isLoading: statsLoading } = useEngineerCouponStats(engineerId || '');
-
   const engineers = engineersData?.data || [];
   const stats = engineersStats || {};
   const isLoading = isEngineersLoading || isStatsLoading;
@@ -98,7 +82,7 @@ export const EngineersManagementPage: React.FC = () => {
   };
 
   const handleEditEngineer = (engineer: any) => {
-    // Navigate to edit page or open edit dialog
+    // TODO: Navigate to edit page or open edit dialog
     setSelectedEngineer(engineer);
     setDetailsDialogOpen(true);
   };
@@ -182,7 +166,16 @@ export const EngineersManagementPage: React.FC = () => {
             >
               {params.row.engineerPhone}
             </Typography>
-            <Box display="flex" alignItems="center" mt={0.25}>
+            <Box display="flex" alignItems="center" gap={0.5} mt={0.25} flexWrap="wrap">
+              {params.row.jobTitle && (
+                <Chip
+                  label={params.row.jobTitle}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={{ height: 20, fontSize: '0.65rem' }}
+                />
+              )}
               <Chip
                 label={params.row.specialization || t('services:engineers.general')}
                 size="small"
@@ -291,6 +284,52 @@ export const EngineersManagementPage: React.FC = () => {
           {formatCurrency(params.row.totalRevenue)}
         </Typography>
       ),
+    },
+    {
+      field: 'walletBalance',
+      headerName: t('services:engineers.walletBalance', 'الرصيد'),
+      minWidth: 100,
+      flex: 0.7,
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="medium" color="info.main">
+          {formatCurrency(params.row.walletBalance || 0)}
+        </Typography>
+      ),
+    },
+    {
+      field: 'totalRatings',
+      headerName: t('services:engineers.totalRatings', 'التقييمات'),
+      minWidth: 100,
+      flex: 0.7,
+      renderCell: (params) => (
+        <Typography variant="body2" color="text.secondary">
+          {formatNumber(params.row.totalRatings || 0)}
+        </Typography>
+      ),
+    },
+    {
+      field: 'coupons',
+      headerName: t('services:engineers.coupons', 'الكوبونات'),
+      minWidth: 100,
+      flex: 0.7,
+      sortable: false,
+      renderCell: (params) => {
+        const engineerId = params.row.engineerId || params.row._id;
+        const couponCount = params.row.couponCount || 0;
+        return (
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/services/engineers/${engineerId}/coupons`);
+            }}
+            sx={{ textTransform: 'none' }}
+          >
+            {formatNumber(couponCount)} {t('services:engineers.coupons', 'كوبون')}
+          </Button>
+        );
+      },
     },
     {
       field: 'isActive',
@@ -571,300 +610,15 @@ export const EngineersManagementPage: React.FC = () => {
       </Box>
 
       {/* حوار تفاصيل المهندس */}
-      <Dialog
-        open={detailsDialogOpen}
-        onClose={() => setDetailsDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            bgcolor: 'background.paper',
-          },
-        }}
-      >
-        <DialogTitle>{t('services:engineers.detailsTitle')}</DialogTitle>
-        <DialogContent>
-          {selectedEngineer && (
-            <Box>
-              <Grid container spacing={3}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Card
-                    sx={{
-                      bgcolor: 'background.paper',
-                      border: `1px solid ${theme.palette.divider}`,
-                    }}
-                  >
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        {t('services:engineers.personalInfo')}
-                      </Typography>
-                      <Box display="flex" alignItems="center" mb={2}>
-                        <Avatar sx={{ mr: 2, bgcolor: 'primary.main', width: 56, height: 56 }}>
-                          {selectedEngineer.engineerName.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="h6">{selectedEngineer.engineerName}</Typography>
-                          <Box display="flex" alignItems="center">
-                            <Phone sx={{ mr: 1, fontSize: '1rem', color: 'text.secondary' }} />
-                            <Typography variant="body2" color="text.secondary">
-                              {selectedEngineer.engineerPhone}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Card
-                    sx={{
-                      bgcolor: 'background.paper',
-                      border: `1px solid ${theme.palette.divider}`,
-                    }}
-                  >
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        {t('services:engineers.statistics')}
-                      </Typography>
-                      <Grid container spacing={2}>
-                        <Grid size={{ xs: 6 }}>
-                          <Box textAlign="center">
-                            <Typography variant="h4" color="primary">
-                              {formatNumber(selectedEngineer.totalRequests)}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {t('services:engineers.totalRequests')}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid size={{ xs: 6 }}>
-                          <Box textAlign="center">
-                            <Typography variant="h4" color="success.main">
-                              {formatNumber(selectedEngineer.completedRequests)}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {t('services:engineers.completed')}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid size={{ xs: 6 }}>
-                          <Box textAlign="center">
-                            <Typography variant="h4" color="warning.main">
-                              {selectedEngineer.averageRating?.toFixed(1) || '0.0'}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {t('services:engineers.averageRating')}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid size={{ xs: 6 }}>
-                          <Box textAlign="center">
-                            <Typography variant="h4" color="info.main">
-                              {formatCurrency(selectedEngineer.totalRevenue)}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {t('services:engineers.totalRevenue')}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                  <Card
-                    sx={{
-                      bgcolor: 'background.paper',
-                      border: `1px solid ${theme.palette.divider}`,
-                    }}
-                  >
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        {t('services:engineers.completionRate')}
-                      </Typography>
-                      <Box display="flex" alignItems="center">
-                        <Typography variant="h3" color="primary" sx={{ mr: 2 }}>
-                          {selectedEngineer.completionRate?.toFixed(1) || 0}%
-                        </Typography>
-                        <LinearProgress
-                          variant="determinate"
-                          value={selectedEngineer.completionRate || 0}
-                          color={
-                            getCompletionRateColor(selectedEngineer.completionRate || 0) as any
-                          }
-                          sx={{ flexGrow: 1, height: 12, borderRadius: 6 }}
-                        />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" mt={1}>
-                        {t('services:engineers.completionDetails', {
-                          completed: selectedEngineer.completedRequests,
-                          total: selectedEngineer.totalRequests,
-                        })}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-
-                {/* Engineer Coupons Section */}
-                <Grid size={{ xs: 12 }}>
-                  <Card
-                    sx={{
-                      bgcolor: 'background.paper',
-                      border: `1px solid ${theme.palette.divider}`,
-                    }}
-                  >
-                    <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Typography variant="h6" gutterBottom>
-                          {t('services:engineers.coupons', 'كوبونات المهندس')}
-                        </Typography>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<Add />}
-                          onClick={() => {
-                            setDetailsDialogOpen(false);
-                            navigate(`/coupons/new?engineerId=${engineerId}`);
-                          }}
-                        >
-                          {t('services:engineers.createCoupon', 'إنشاء كوبون')}
-                        </Button>
-                      </Box>
-
-                      {couponsLoading || statsLoading ? (
-                        <Box display="flex" justifyContent="center" py={3}>
-                          <CircularProgress size={24} />
-                        </Box>
-                      ) : couponStats ? (
-                        <>
-                          <Grid container spacing={2} sx={{ mb: 2 }}>
-                            <Grid size={{ xs: 6, sm: 3 }}>
-                              <Box textAlign="center">
-                                <Typography variant="h5" color="primary">
-                                  {formatNumber(couponStats.totalCoupons || 0)}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {t('services:engineers.totalCoupons', 'إجمالي الكوبونات')}
-                                </Typography>
-                              </Box>
-                            </Grid>
-                            <Grid size={{ xs: 6, sm: 3 }}>
-                              <Box textAlign="center">
-                                <Typography variant="h5" color="success.main">
-                                  {formatNumber(couponStats.activeCoupons || 0)}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {t('services:engineers.activeCoupons', 'كوبونات نشطة')}
-                                </Typography>
-                              </Box>
-                            </Grid>
-                            <Grid size={{ xs: 6, sm: 3 }}>
-                              <Box textAlign="center">
-                                <Typography variant="h5" color="info.main">
-                                  {formatNumber(couponStats.totalUses || 0)}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {t('services:engineers.totalUses', 'إجمالي الاستخدامات')}
-                                </Typography>
-                              </Box>
-                            </Grid>
-                            <Grid size={{ xs: 6, sm: 3 }}>
-                              <Box textAlign="center">
-                                <Typography variant="h5" color="warning.main">
-                                  {formatCurrency(couponStats.totalCommissionEarned || 0)}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {t('services:engineers.totalCommission', 'إجمالي العمولات')}
-                                </Typography>
-                              </Box>
-                            </Grid>
-                          </Grid>
-
-                          {engineerCoupons && engineerCoupons.length > 0 ? (
-                            <Box>
-                              <Typography variant="subtitle2" gutterBottom sx={{ mb: 1 }}>
-                                {t('services:engineers.couponsList', 'قائمة الكوبونات')}
-                              </Typography>
-                              <Stack spacing={1}>
-                                {engineerCoupons.slice(0, 5).map((coupon: any) => (
-                                  <Box
-                                    key={coupon._id}
-                                    sx={{
-                                      p: 1.5,
-                                      border: `1px solid ${theme.palette.divider}`,
-                                      borderRadius: 1,
-                                      display: 'flex',
-                                      justifyContent: 'space-between',
-                                      alignItems: 'center',
-                                    }}
-                                  >
-                                    <Box>
-                                      <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                                        <LocalOffer fontSize="small" color="primary" />
-                                        <Typography variant="body2" fontWeight="medium">
-                                          {coupon.code}
-                                        </Typography>
-                                      </Box>
-                                      <Typography variant="caption" color="text.secondary">
-                                        {coupon.name}
-                                      </Typography>
-                                    </Box>
-                                    <Box textAlign="right">
-                                      <Typography
-                                        variant="body2"
-                                        fontWeight="medium"
-                                        color="success.main"
-                                      >
-                                        {formatNumber(coupon.usedCount || 0)}{' '}
-                                        {t('services:engineers.uses', 'استخدام')}
-                                      </Typography>
-                                      {coupon.commissionRate && (
-                                        <Typography variant="caption" color="text.secondary">
-                                          {coupon.commissionRate}%{' '}
-                                          {t('services:engineers.commission', 'عمولة')}
-                                        </Typography>
-                                      )}
-                                    </Box>
-                                  </Box>
-                                ))}
-                                {engineerCoupons.length > 5 && (
-                                  <Button
-                                    size="small"
-                                    onClick={() => {
-                                      setDetailsDialogOpen(false);
-                                      navigate(`/coupons?engineerId=${engineerId}`);
-                                    }}
-                                  >
-                                    {t('services:engineers.viewAll', 'عرض الكل')} (
-                                    {engineerCoupons.length})
-                                  </Button>
-                                )}
-                              </Stack>
-                            </Box>
-                          ) : (
-                            <Alert severity="info" sx={{ mt: 2 }}>
-                              {t('services:engineers.noCoupons', 'لا توجد كوبونات لهذا المهندس')}
-                            </Alert>
-                          )}
-                        </>
-                      ) : (
-                        <Alert severity="info">
-                          {t('services:engineers.noCouponData', 'لا توجد بيانات كوبونات')}
-                        </Alert>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDetailsDialogOpen(false)}>{t('common:actions.close')}</Button>
-        </DialogActions>
-      </Dialog>
+      {selectedEngineer && (
+        <EngineerDetailsDialog
+          open={detailsDialogOpen}
+          onClose={() => setDetailsDialogOpen(false)}
+          engineerId={selectedEngineer.engineerId || selectedEngineer._id}
+          engineerData={selectedEngineer}
+          onEdit={() => handleEditEngineer(selectedEngineer)}
+        />
+      )}
     </Box>
   );
 };

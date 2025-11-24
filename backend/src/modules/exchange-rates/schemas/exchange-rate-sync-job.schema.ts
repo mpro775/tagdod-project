@@ -84,7 +84,7 @@ export class ExchangeRateSyncJob {
     ],
     default: [],
   })
-  errors!: ExchangeRateSyncJobError[];
+  syncErrors!: ExchangeRateSyncJobError[];
 }
 
 export type ExchangeRateSyncJobDocument = HydratedDocument<ExchangeRateSyncJob>;

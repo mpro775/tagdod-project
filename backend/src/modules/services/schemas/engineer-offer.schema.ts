@@ -17,8 +17,12 @@ export class EngineerOffer {
   // المسافة بين المهندس والطلب (بالكيلومتر)
   @Prop() distanceKm?: number;
 
-  @Prop({ default: 'OFFERED', enum: ['OFFERED', 'ACCEPTED', 'REJECTED', 'CANCELLED'], index: true })
-  status!: 'OFFERED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
+  @Prop({
+    default: 'OFFERED',
+    enum: ['OFFERED', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'OUTBID', 'EXPIRED'],
+    index: true,
+  })
+  status!: 'OFFERED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'OUTBID' | 'EXPIRED';
 
   @Prop({ default: 0 })
   updatesCount!: number;

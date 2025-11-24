@@ -8,8 +8,6 @@ export enum ServiceStatus {
   // eslint-disable-next-line no-unused-vars
   ASSIGNED = 'ASSIGNED',
   // eslint-disable-next-line no-unused-vars
-  IN_PROGRESS = 'IN_PROGRESS',
-  // eslint-disable-next-line no-unused-vars
   COMPLETED = 'COMPLETED',
   // eslint-disable-next-line no-unused-vars
   RATED = 'RATED',
@@ -59,6 +57,8 @@ export interface ServiceRequest extends BaseEntity {
   engineerId?: string | null;
   acceptedOffer?: AcceptedOffer;
   rating?: ServiceRating;
+  cancellationReason?: string;
+  cancelledAt?: Date;
   adminNotes?: AdminNote[];
   // Populated fields
   user?: User;
@@ -72,7 +72,7 @@ export interface EngineerOffer extends BaseEntity {
   amount: number;
   note?: string;
   distanceKm?: number;
-  status: 'OFFERED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
+  status: 'OFFERED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'OUTBID' | 'EXPIRED';
   // Populated fields
   request?: ServiceRequest;
   engineer?: User;
@@ -213,7 +213,7 @@ export interface EngineerStatisticsDetails {
   statistics: {
     totalRequests: number;
     completedRequests: number;
-    inProgressRequests: number;
+    assignedRequests: number;
     averageRating: number;
     totalRevenue: number;
     averageRevenue: number;

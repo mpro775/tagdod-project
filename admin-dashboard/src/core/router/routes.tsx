@@ -187,6 +187,11 @@ const CouponAnalyticsPage = lazy(() =>
     default: m.CouponAnalyticsPage,
   }))
 );
+const EngineerCouponsPage = lazy(() =>
+  import('@/features/services/pages/EngineerCouponsPage').then((m) => ({
+    default: m.EngineerCouponsPage,
+  }))
+);
 const MediaLibraryPage = lazy(() =>
   import('@/features/media/pages/MediaLibraryPage').then((m) => ({
     default: m.MediaLibraryPage,
@@ -605,6 +610,10 @@ export const routes: RouteObject[] = [
       {
         path: 'services/analytics',
         element: <ServicesAnalyticsPage />,
+      },
+      {
+        path: 'services/engineers/:engineerId/coupons',
+        element: <EngineerCouponsPage />,
       },
 
       // ===========================================

@@ -8,6 +8,7 @@ import { Inventory, InventorySchema } from './schemas/inventory.schema';
 import { Reservation, ReservationSchema } from './schemas/reservation.schema';
 import { InventoryLedger, InventoryLedgerSchema } from './schemas/inventory-ledger.schema';
 import { Cart, CartSchema } from '../cart/schemas/cart.schema';
+import { EngineerProfile, EngineerProfileSchema } from '../users/schemas/engineer-profile.schema';
 
 // Services
 import { OrderService } from './services/order.service';
@@ -41,6 +42,7 @@ import { UploadModule } from '../upload/upload.module';
       { name: Reservation.name, schema: ReservationSchema },
       { name: InventoryLedger.name, schema: InventoryLedgerSchema },
       { name: Cart.name, schema: CartSchema },
+      { name: EngineerProfile.name, schema: EngineerProfileSchema },
     ]),
     ConfigModule,
     CartModule,

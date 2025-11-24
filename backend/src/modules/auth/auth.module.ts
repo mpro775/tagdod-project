@@ -6,6 +6,7 @@ import { TokensService } from './tokens.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { EngineerProfile, EngineerProfileSchema } from '../users/schemas/engineer-profile.schema';
 import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabilities.schema';
 import { FavoritesModule } from '../favorites/favorites.module';
 import { SharedModule } from '../../shared/shared.module';
@@ -17,6 +18,7 @@ import { NotificationsCompleteModule } from '../notifications/notifications-comp
     forwardRef(() => FavoritesModule),
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
+      { name: EngineerProfile.name, schema: EngineerProfileSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
     ]),
     SharedModule,

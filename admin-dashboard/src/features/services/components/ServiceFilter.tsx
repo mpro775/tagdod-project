@@ -61,9 +61,11 @@ export const ServiceFilter: React.FC<ServiceFilterProps> = ({
             type: 'select',
             options: [
               { value: '', label: t('filters.statusOptions.all') },
-              { value: 'PENDING', label: t('status.pending') },
-              { value: 'IN_PROGRESS', label: t('status.inProgress') },
+              { value: 'OPEN', label: t('status.open') },
+              { value: 'OFFERS_COLLECTING', label: t('status.offersCollecting') },
+              { value: 'ASSIGNED', label: t('status.assigned') },
               { value: 'COMPLETED', label: t('status.completed') },
+              { value: 'RATED', label: t('status.rated') },
               { value: 'CANCELLED', label: t('status.cancelled') },
             ],
           },
@@ -157,6 +159,8 @@ export const ServiceFilter: React.FC<ServiceFilterProps> = ({
               { value: 'ACCEPTED', label: t('status.accepted') },
               { value: 'REJECTED', label: t('status.rejected') },
               { value: 'CANCELLED', label: t('status.cancelled') },
+              { value: 'OUTBID', label: t('status.outbid') },
+              { value: 'EXPIRED', label: t('status.expired') },
             ],
           },
           {

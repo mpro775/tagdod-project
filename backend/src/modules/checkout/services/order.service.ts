@@ -15,6 +15,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserRole } from '../../users/schemas/user.schema';
+import { EngineerProfile } from '../../users/schemas/engineer-profile.schema';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
@@ -133,6 +134,7 @@ export class OrderService {
     @InjectModel(Reservation.name) private reservationModel: Model<Reservation>,
     @InjectModel(InventoryLedger.name) private ledgerModel: Model<InventoryLedger>,
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(EngineerProfile.name) private engineerProfileModel: Model<EngineerProfile>,
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
     private cartService: CartService,
     private marketingService: MarketingService,
@@ -4128,18 +4130,32 @@ export class OrderService {
     couponCode: string,
   ): Promise<void> {
     try {
-      const engineer = await this.userModel.findById(engineerId);
-      if (!engineer) {
-        this.logger.warn(`Engineer ${engineerId} not found for commission`);
-        return;
+      // جلب أو إنشاء بروفايل المهندس
+      let profile = await this.engineerProfileModel.findOne({
+        userId: new Types.ObjectId(engineerId),
+      });
+
+      if (!profile) {
+        // إنشاء بروفايل جديد إذا لم يكن موجوداً
+        profile = new this.engineerProfileModel({
+          userId: new Types.ObjectId(engineerId),
+          walletBalance: 0,
+          commissionTransactions: [],
+          ratings: [],
+          totalRatings: 0,
+          averageRating: 0,
+          ratingDistribution: [0, 0, 0, 0, 0],
+          totalCompletedServices: 0,
+          totalEarnings: 0,
+        });
       }
 
       // تحديث الرصيد
-      engineer.walletBalance = (engineer.walletBalance || 0) + amount;
+      profile.walletBalance = (profile.walletBalance || 0) + amount;
 
       // إضافة سجل المعاملة
-      engineer.commissionTransactions = engineer.commissionTransactions || [];
-      engineer.commissionTransactions.push({
+      profile.commissionTransactions = profile.commissionTransactions || [];
+      profile.commissionTransactions.push({
         transactionId: `COMM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: 'commission',
         amount,
@@ -4149,7 +4165,7 @@ export class OrderService {
         createdAt: new Date(),
       });
 
-      await engineer.save();
+      await profile.save();
 
       this.logger.log(
         `Added commission ${amount} to engineer ${engineerId} from coupon ${couponCode}`,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -83,6 +83,8 @@ export const CouponFormPage: React.FC = () => {
   const { t } = useTranslation('coupons');
   const { isMobile } = useBreakpoint();
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const engineerIdFromQuery = searchParams.get('engineerId');
   const isEditing = !!id;
   const [showPreview, setShowPreview] = useState(false);
 
@@ -116,7 +118,7 @@ export const CouponFormPage: React.FC = () => {
   const { mutate: updateCoupon, isPending: updating } = useUpdateCoupon();
   const { mutate: createEngineerCoupon, isPending: creatingEngineer } = useCreateEngineerCoupon();
 
-  const { control, handleSubmit, watch, reset } = useForm<CouponFormData>({
+  const { control, handleSubmit, watch, reset, setValue } = useForm<CouponFormData>({
     defaultValues: {
       code: generateCouponCode(),
       name: '',
@@ -179,8 +181,11 @@ export const CouponFormPage: React.FC = () => {
         engineerId: coupon.engineerId,
         commissionRate: coupon.commissionRate,
       });
+    } else if (!isEditing && engineerIdFromQuery) {
+      // Set engineerId from query params when creating a new coupon
+      setValue('engineerId', engineerIdFromQuery);
     }
-  }, [coupon, isEditing, reset]);
+  }, [coupon, isEditing, reset, engineerIdFromQuery]);
 
   const handlePreviewToggle = () => {
     setShowPreview(!showPreview);

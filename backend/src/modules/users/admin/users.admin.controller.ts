@@ -28,6 +28,7 @@ import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
 import { User, UserRole, UserStatus, CapabilityStatus } from '../schemas/user.schema';
+import { EngineerProfile } from '../schemas/engineer-profile.schema';
 import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
 import { 
   UserNotFoundException,
@@ -55,6 +56,7 @@ export class UsersAdminController {
   private readonly logger = new Logger(UsersAdminController.name);
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(EngineerProfile.name) private engineerProfileModel: Model<EngineerProfile>,
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
     private auditService: AuditService,
 
@@ -485,7 +487,6 @@ export class UsersAdminController {
       firstName: dto.firstName,
       lastName: dto.lastName,
       gender: dto.gender,
-      jobTitle: dto.jobTitle,
       city: dto.city || 'صنعاء', // المدينة - افتراضي صنعاء
       roles: dto.roles || [UserRole.USER],
       permissions: dto.permissions || [],
@@ -541,6 +542,22 @@ export class UsersAdminController {
     };
 
     await this.capsModel.create(capsData);
+
+    // إنشاء بروفايل المهندس إذا كان مهندساً
+    if (dto.capabilityRequest === 'engineer' && dto.jobTitle) {
+      await this.engineerProfileModel.create({
+        userId: user._id,
+        jobTitle: dto.jobTitle,
+        ratings: [],
+        totalRatings: 0,
+        averageRating: 0,
+        ratingDistribution: [0, 0, 0, 0, 0],
+        totalCompletedServices: 0,
+        totalEarnings: 0,
+        walletBalance: 0,
+        commissionTransactions: [],
+      });
+    }
 
     // تسجيل حدث إنشاء المستخدم
     this.auditService.logUserEvent({
@@ -599,8 +616,30 @@ export class UsersAdminController {
     if (dto.firstName !== undefined) user.firstName = dto.firstName;
     if (dto.lastName !== undefined) user.lastName = dto.lastName;
     if (dto.gender !== undefined) user.gender = dto.gender;
-    if (dto.jobTitle !== undefined) user.jobTitle = dto.jobTitle;
     if (dto.city !== undefined) user.city = dto.city;
+
+    // تحديث jobTitle في بروفايل المهندس
+    if (dto.jobTitle !== undefined && user.engineer_capable) {
+      let profile = await this.engineerProfileModel.findOne({ userId: user._id });
+      if (profile) {
+        profile.jobTitle = dto.jobTitle;
+        await profile.save();
+      } else if (dto.jobTitle) {
+        // إنشاء بروفايل جديد إذا لم يكن موجوداً
+        await this.engineerProfileModel.create({
+          userId: user._id,
+          jobTitle: dto.jobTitle,
+          ratings: [],
+          totalRatings: 0,
+          averageRating: 0,
+          ratingDistribution: [0, 0, 0, 0, 0],
+          totalCompletedServices: 0,
+          totalEarnings: 0,
+          walletBalance: 0,
+          commissionTransactions: [],
+        });
+      }
+    }
     if (dto.roles !== undefined) user.roles = dto.roles;
     if (dto.permissions !== undefined) user.permissions = dto.permissions;
     if (dto.status !== undefined) user.status = dto.status;
@@ -1007,19 +1046,32 @@ export class UsersAdminController {
         ],
         deletedAt: null,
       })
-      .select('phone firstName lastName engineer_status merchant_status cvFileUrl storePhotoUrl storeName verificationNote createdAt')
+      .select('phone firstName lastName engineer_status merchant_status storePhotoUrl storeName verificationNote createdAt')
       .sort({ createdAt: -1 })
       .lean();
 
+    // جلب بروفايلات المهندسين
+    const engineerIds = pendingUsers
+      .filter(u => u.engineer_status === CapabilityStatus.PENDING)
+      .map(u => u._id);
+    
+    const profiles = await this.engineerProfileModel
+      .find({ userId: { $in: engineerIds } })
+      .select('userId cvFileUrl')
+      .lean();
+    
+    const profilesMap = new Map(profiles.map(p => [p.userId.toString(), p]));
+
     const formatted = pendingUsers.map(user => {
       const userWithTimestamps = user as typeof user & { createdAt: Date };
+      const profile = profilesMap.get(user._id.toString());
       return {
         id: user._id,
         phone: user.phone,
         firstName: user.firstName,
         lastName: user.lastName,
         verificationType: user.engineer_status === CapabilityStatus.PENDING ? 'engineer' : 'merchant',
-        cvFileUrl: user.cvFileUrl,
+        cvFileUrl: profile?.cvFileUrl,
         storePhotoUrl: user.storePhotoUrl,
         storeName: user.storeName,
         verificationNote: user.verificationNote,
@@ -1066,6 +1118,15 @@ export class UsersAdminController {
       });
     }
 
+    // جلب بروفايل المهندس إذا كان مهندساً
+    let profile = null;
+    if (user.engineer_status === CapabilityStatus.PENDING) {
+      profile = await this.engineerProfileModel
+        .findOne({ userId: user._id })
+        .select('jobTitle cvFileUrl')
+        .lean();
+    }
+
     const userWithTimestamps = user as typeof user & { createdAt: Date; updatedAt: Date };
     return {
       data: {
@@ -1073,9 +1134,9 @@ export class UsersAdminController {
         phone: user.phone,
         firstName: user.firstName,
         lastName: user.lastName,
-        jobTitle: user.jobTitle,
+        jobTitle: profile?.jobTitle,
         verificationType: user.engineer_status === CapabilityStatus.PENDING ? 'engineer' : 'merchant',
-        cvFileUrl: user.cvFileUrl,
+        cvFileUrl: profile?.cvFileUrl,
         storePhotoUrl: user.storePhotoUrl,
         storeName: user.storeName,
         verificationNote: user.verificationNote,
@@ -1229,8 +1290,12 @@ export class UsersAdminController {
       user.engineer_status = CapabilityStatus.REJECTED;
       newValues.engineer_status = user.engineer_status;
       user.roles = user.roles.filter(role => role !== UserRole.ENGINEER);
-      // مسح ملف السيرة الذاتية
-      user.cvFileUrl = undefined;
+      // مسح ملف السيرة الذاتية من بروفايل المهندس
+      const profile = await this.engineerProfileModel.findOne({ userId: user._id });
+      if (profile) {
+        profile.cvFileUrl = undefined;
+        await profile.save();
+      }
     }
 
     if (isMerchantPending) {
@@ -1319,9 +1384,13 @@ export class UsersAdminController {
     } else if (dto.status === CapabilityStatus.REJECTED || dto.status === CapabilityStatus.NONE) {
       user.engineer_capable = false;
       user.roles = user.roles.filter(role => role !== UserRole.ENGINEER);
-      // مسح الملفات عند الرفض
+      // مسح الملفات عند الرفض من بروفايل المهندس
       if (dto.status === CapabilityStatus.REJECTED) {
-        user.cvFileUrl = undefined;
+        const profile = await this.engineerProfileModel.findOne({ userId: user._id });
+        if (profile) {
+          profile.cvFileUrl = undefined;
+          await profile.save();
+        }
       }
     } else if (dto.status === CapabilityStatus.UNVERIFIED || dto.status === CapabilityStatus.PENDING) {
       // في حالة UNVERIFIED أو PENDING، يبقى المستخدم مهندساً (دور ENGINEER موجود)

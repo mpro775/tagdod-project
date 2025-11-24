@@ -41,25 +41,10 @@ export class ServiceRequest {
 
   @Prop({
     default: 'OPEN',
-    enum: [
-      'OPEN',
-      'OFFERS_COLLECTING',
-      'ASSIGNED',
-      'IN_PROGRESS',
-      'COMPLETED',
-      'RATED',
-      'CANCELLED',
-    ],
+    enum: ['OPEN', 'OFFERS_COLLECTING', 'ASSIGNED', 'COMPLETED', 'RATED', 'CANCELLED'],
     index: true,
   })
-  status!:
-    | 'OPEN'
-    | 'OFFERS_COLLECTING'
-    | 'ASSIGNED'
-    | 'IN_PROGRESS'
-    | 'COMPLETED'
-    | 'RATED'
-    | 'CANCELLED';
+  status!: 'OPEN' | 'OFFERS_COLLECTING' | 'ASSIGNED' | 'COMPLETED' | 'RATED' | 'CANCELLED';
 
   @Prop() scheduledAt?: Date;
 
@@ -75,6 +60,10 @@ export class ServiceRequest {
 
   @Prop({ type: [{ note: String, at: Date }], default: [] })
   adminNotes?: Array<{ note: string; at: Date }>;
+
+  // Cancellation fields
+  @Prop() cancellationReason?: string;
+  @Prop() cancelledAt?: Date;
 }
 export const ServiceRequestSchema = SchemaFactory.createForClass(ServiceRequest);
 

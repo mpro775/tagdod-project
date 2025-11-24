@@ -128,6 +128,23 @@ export const ServiceDialog: React.FC<ServiceDialogProps> = ({
                 </Box>
               </Grid>
             </Grid>
+            {service.status === 'CANCELLED' && (service.cancellationReason || service.cancelledAt) && (
+              <Box mt={2} p={2} sx={{ backgroundColor: 'error.light', borderRadius: 1 }}>
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+                  معلومات الإلغاء:
+                </Typography>
+                {service.cancellationReason && (
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>السبب:</strong> {service.cancellationReason}
+                  </Typography>
+                )}
+                {service.cancelledAt && (
+                  <Typography variant="body2" color="textSecondary">
+                    <strong>تاريخ الإلغاء:</strong> {formatDate(service.cancelledAt)}
+                  </Typography>
+                )}
+              </Box>
+            )}
           </CardContent>
         </Card>
       </Grid>

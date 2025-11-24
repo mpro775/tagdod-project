@@ -4365,6 +4365,149 @@
       "description": "Endpoints for تحقق-المستخدمين functionality"
     },
     {
+      "name": "بروفايل المهندس",
+      "item": [
+        {
+          "name": "جلب بروفايل المهندس الحالي",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/engineers/profile/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "engineers",
+                "profile",
+                "me"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "تحديث بروفايل المهندس الحالي",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/engineers/profile/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "engineers",
+                "profile",
+                "me"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "جلب بروفايل مهندس معين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/engineers/profile/{engineerId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "engineers",
+                "profile",
+                "{engineerId}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "جلب تقييمات مهندس معين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/engineers/profile/{engineerId}/ratings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "engineers",
+                "profile",
+                "{engineerId}",
+                "ratings"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "جلب تقييمات المهندس الحالي",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/engineers/profile/me/ratings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "engineers",
+                "profile",
+                "me",
+                "ratings"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ],
+      "description": "Endpoints for بروفايل المهندس functionality"
+    },
+    {
       "name": "الطلبات",
       "item": [
         {
@@ -9744,6 +9887,214 @@
       "description": "Endpoints for إدارة-المستخدمين functionality"
     },
     {
+      "name": "إدارة-بروفايل-المهندس",
+      "item": [
+        {
+          "name": "جلب بروفايل مهندس (إداري)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/{userId}/engineer-profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{userId}",
+                "engineer-profile"
+              ]
+            },
+            "description": "جلب بروفايل مهندس كامل مع جميع المعلومات والإحصائيات والرصيد"
+          }
+        },
+        {
+          "name": "تحديث بروفايل مهندس (إداري)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/{userId}/engineer-profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{userId}",
+                "engineer-profile"
+              ]
+            },
+            "description": "تحديث معلومات بروفايل المهندس بواسطة الأدمن"
+          }
+        },
+        {
+          "name": "جلب تقييمات مهندس (إداري)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/{userId}/engineer-profile/ratings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{userId}",
+                "engineer-profile",
+                "ratings"
+              ]
+            },
+            "description": "جلب تقييمات مهندس مع خيارات التصفية والترتيب"
+          }
+        },
+        {
+          "name": "حذف تقييم مهندس (إداري)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/{userId}/engineer-profile/ratings/{ratingId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{userId}",
+                "engineer-profile",
+                "ratings",
+                "{ratingId}"
+              ]
+            },
+            "description": "حذف تقييم محدد من بروفايل المهندس"
+          }
+        },
+        {
+          "name": "إدارة رصيد المهندس (إداري)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/{userId}/engineer-profile/wallet",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{userId}",
+                "engineer-profile",
+                "wallet"
+              ]
+            },
+            "description": "إضافة أو خصم أو سحب رصيد من حساب المهندس"
+          }
+        },
+        {
+          "name": "جلب سجل معاملات المهندس (إداري)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/{userId}/engineer-profile/transactions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{userId}",
+                "engineer-profile",
+                "transactions"
+              ]
+            },
+            "description": "جلب سجل جميع المعاملات المالية للمهندس"
+          }
+        },
+        {
+          "name": "مزامنة إحصائيات المهندس (إداري)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/{userId}/engineer-profile/sync-stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "{userId}",
+                "engineer-profile",
+                "sync-stats"
+              ]
+            },
+            "description": "مزامنة إحصائيات المهندس من قاعدة البيانات الفعلية"
+          }
+        }
+      ],
+      "description": "Endpoints for إدارة-بروفايل-المهندس functionality"
+    },
+    {
       "name": "التحليلات",
       "item": [
         {
@@ -11537,7 +11888,7 @@
                 "cancel"
               ]
             },
-            "description": "إلغاء طلب خدمة من قبل العميل"
+            "description": "إلغاء طلب خدمة من قبل العميل (يسمح فقط من حالة ASSIGNED، ويطلب سبب إجباري، وحد أقصى 3 إلغاءات)"
           }
         },
         {

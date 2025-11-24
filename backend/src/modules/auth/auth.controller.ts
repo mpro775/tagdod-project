@@ -32,14 +32,21 @@ import { UserSignupDto } from './dto/user-signup.dto';
 import { CheckPhoneDto } from './dto/check-phone.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserRole, UserStatus, CapabilityStatus, UserDocument } from '../users/schemas/user.schema';
+import {
+  User,
+  UserRole,
+  UserStatus,
+  CapabilityStatus,
+  UserDocument,
+} from '../users/schemas/user.schema';
+import { EngineerProfile } from '../users/schemas/engineer-profile.schema';
 import { Capabilities } from '../capabilities/schemas/capabilities.schema';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
-import { 
+import {
   InvalidOTPException,
-  UserNotFoundException, 
+  UserNotFoundException,
   InvalidPasswordException,
   NoPasswordException,
   SuperAdminExistsException,
@@ -47,7 +54,7 @@ import {
   NotAllowedInProductionException,
   InvalidPhoneException,
   AuthException,
-  ErrorCode 
+  ErrorCode,
 } from '../../shared/exceptions';
 import { FavoritesService } from '../favorites/favorites.service';
 import { BiometricService } from './biometric.service';
@@ -64,15 +71,26 @@ export class AuthController {
     private tokens: TokensService,
     private biometric: BiometricService,
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(EngineerProfile.name) private engineerProfileModel: Model<EngineerProfile>,
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
     private favoritesService: FavoritesService,
     private auditService: AuditService,
   ) {}
 
-  private buildAuthResponse(user: UserDocument) {
+  private async buildAuthResponse(user: UserDocument) {
     const isAdminUser =
       Array.isArray(user.roles) &&
       (user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.SUPER_ADMIN));
+
+    // جلب jobTitle من EngineerProfile
+    let jobTitle: string | undefined = undefined;
+    if (user.engineer_capable) {
+      const profile = await this.engineerProfileModel
+        .findOne({ userId: user._id })
+        .select('jobTitle')
+        .lean();
+      jobTitle = profile?.jobTitle;
+    }
 
     const payload = {
       sub: String(user._id),
@@ -95,7 +113,7 @@ export class AuthController {
         lastName: user.lastName,
         gender: user.gender,
         city: user.city,
-        jobTitle: user.jobTitle,
+        jobTitle,
         roles: user.roles || [],
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
@@ -156,7 +174,8 @@ export class AuthController {
   @Post('check-phone')
   @ApiOperation({
     summary: 'التحقق من وجود رقم الهاتف',
-    description: 'يتحقق من وجود رقم الهاتف في النظام بغض النظر عن نوع المستخدم (عميل، مهندس، تاجر، أو أدمن)',
+    description:
+      'يتحقق من وجود رقم الهاتف في النظام بغض النظر عن نوع المستخدم (عميل، مهندس، تاجر، أو أدمن)',
   })
   @ApiBody({ type: CheckPhoneDto })
   @ApiOkResponse({
@@ -295,7 +314,7 @@ export class AuthController {
     if (!user) {
       user = await this.userModel.findOne({ phone: normalizedPhone });
     }
-    
+
     // إذا كان المستخدم موجوداً بالفعل، رفض محاولة إنشاء حساب جديد
     if (user) {
       // التحقق من حالة الحساب أولاً
@@ -310,14 +329,32 @@ export class AuthController {
         this.logger.log(`Account activated via OTP verification: ${normalizedPhone}`);
       } else {
         // المستخدم موجود بحالة غير PENDING - رفض محاولة التسجيل
-        this.logger.warn(`Registration attempt with existing phone: ${dto.phone} (status: ${user.status})`);
+        this.logger.warn(
+          `Registration attempt with existing phone: ${dto.phone} (status: ${user.status})`,
+        );
         throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
       }
 
-      // تحديث المسمى الوظيفي إذا كان المستخدم موجوداً ولكن ليس لديه مسمى
-      if (dto.capabilityRequest === 'engineer' && dto.jobTitle && !user.jobTitle) {
-        user.jobTitle = dto.jobTitle;
-        await user.save();
+      // تحديث المسمى الوظيفي في بروفايل المهندس إذا كان المستخدم موجوداً ولكن ليس لديه مسمى
+      if (dto.capabilityRequest === 'engineer' && dto.jobTitle) {
+        let profile = await this.engineerProfileModel.findOne({ userId: user._id });
+        if (!profile) {
+          profile = new this.engineerProfileModel({
+            userId: user._id,
+            jobTitle: dto.jobTitle,
+            ratings: [],
+            totalRatings: 0,
+            averageRating: 0,
+            ratingDistribution: [0, 0, 0, 0, 0],
+            totalCompletedServices: 0,
+            totalEarnings: 0,
+            walletBalance: 0,
+            commissionTransactions: [],
+          });
+        } else if (!profile.jobTitle) {
+          profile.jobTitle = dto.jobTitle;
+        }
+        await profile.save();
       }
     } else {
       // المستخدم غير موجود - إنشاء حساب جديد
@@ -327,7 +364,6 @@ export class AuthController {
         lastName?: string;
         gender?: 'male' | 'female' | 'other';
         city?: string;
-        jobTitle?: string;
         engineer_capable?: boolean;
         engineer_status?: string;
         merchant_capable?: boolean;
@@ -338,7 +374,6 @@ export class AuthController {
         lastName: dto.lastName,
         gender: dto.gender,
         city: dto.city || 'صنعاء',
-        jobTitle: dto.capabilityRequest === 'engineer' ? dto.jobTitle : undefined,
       };
 
       // تحديث User model مباشرة إذا طلب المستخدم أن يكون مهندساً أو تاجراً
@@ -357,7 +392,7 @@ export class AuthController {
         phone: dto.phone, // حفظ الرقم كما هو (بدون +967)
         status: UserStatus.ACTIVE, // تفعيل الحساب بعد التحقق من OTP
       });
-      
+
       // إنشاء capabilities للمستخدم
       await this.capsModel.create({
         userId: user._id,
@@ -397,12 +432,14 @@ export class AuthController {
     const refresh = this.tokens.signRefresh(payload);
 
     // تسجيل حدث تسجيل الدخول الناجح
-    this.auditService.logAuthEvent({
-      userId: String(user._id),
-      action: 'login_success',
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger.error('Failed to log auth event', err));
+    this.auditService
+      .logAuthEvent({
+        userId: String(user._id),
+        action: 'login_success',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger.error('Failed to log auth event', err));
 
     return {
       tokens: { access, refresh },
@@ -413,7 +450,7 @@ export class AuthController {
         lastName: user.lastName,
         gender: user.gender,
         city: user.city,
-        jobTitle: user.jobTitle,
+        jobTitle: undefined, // سيتم تحديثه من EngineerProfile
         roles: user.roles || [],
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
@@ -437,15 +474,20 @@ export class AuthController {
   @Post('set-password')
   async setPassword(@Req() req: { user: { sub: string } } & Request, @Body() dto: SetPasswordDto) {
     const hashedPassword = await hash(dto.password, 10);
-    await this.userModel.updateOne({ _id: req.user.sub }, { $set: { passwordHash: hashedPassword } });
-    
+    await this.userModel.updateOne(
+      { _id: req.user.sub },
+      { $set: { passwordHash: hashedPassword } },
+    );
+
     // تسجيل حدث تغيير كلمة المرور
-    this.auditService.logAuthEvent({
-      userId: req.user.sub,
-      action: 'password_change',
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger.error('Failed to log auth event', err));
+    this.auditService
+      .logAuthEvent({
+        userId: req.user.sub,
+        action: 'password_change',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger.error('Failed to log auth event', err));
 
     return { updated: true };
   }
@@ -502,7 +544,7 @@ export class AuthController {
     // Send OTP via SMS (requires normalized phone)
     const result = await this.otp.sendOtp(normalizedPhone, 'reset');
     this.logger.log(`OTP sent for password reset to ${normalizedPhone}`);
-    
+
     return { sent: result.sent, devCode: result.devCode };
   }
 
@@ -542,15 +584,17 @@ export class AuthController {
     const hashedPassword = await hash(dto.newPassword, 10);
     await this.userModel.updateOne({ _id: user._id }, { $set: { passwordHash: hashedPassword } });
     this.logger.log(`Password reset successful for ${normalizedPhone}`);
-    
+
     // تسجيل حدث إعادة تعيين كلمة المرور
-    this.auditService.logAuthEvent({
-      userId: String(user._id),
-      action: 'password_reset',
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger.error('Failed to log auth event', err));
-    
+    this.auditService
+      .logAuthEvent({
+        userId: String(user._id),
+        action: 'password_reset',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger.error('Failed to log auth event', err));
+
     return { updated: true };
   }
 
@@ -599,6 +643,16 @@ export class AuthController {
       Array.isArray(user!.roles) &&
       (user!.roles.includes(UserRole.ADMIN) || user!.roles.includes(UserRole.SUPER_ADMIN));
 
+    // جلب jobTitle من EngineerProfile
+    let jobTitle: string | undefined = undefined;
+    if (user!.engineer_capable) {
+      const profile = await this.engineerProfileModel
+        .findOne({ userId: user!._id })
+        .select('jobTitle')
+        .lean();
+      jobTitle = profile?.jobTitle;
+    }
+
     return {
       user: {
         id: user!._id,
@@ -607,7 +661,7 @@ export class AuthController {
         lastName: user!.lastName,
         gender: user!.gender,
         city: user!.city,
-        jobTitle: user!.jobTitle,
+        jobTitle,
         roles: user!.roles || [],
         permissions: user!.permissions || [],
         isAdmin: isAdminUser,
@@ -646,14 +700,37 @@ export class AuthController {
   })
   @ApiBadRequestResponse({ description: 'بيانات غير صحيحة' })
   @ApiUnauthorizedResponse({ description: 'غير مصرح لك' })
-  async updateMe(
-    @Req() req: { user: { sub: string } },
-    @Body() body: UpdateProfileDto,
-  ) {
-    const allowed = ['firstName', 'lastName', 'gender', 'city', 'jobTitle'] as const;
-    const $set: { firstName?: string; lastName?: string; gender?: string; city?: string; jobTitle?: string } = {};
+  async updateMe(@Req() req: { user: { sub: string } }, @Body() body: UpdateProfileDto) {
+    const allowed = ['firstName', 'lastName', 'gender', 'city'] as const;
+    const $set: { firstName?: string; lastName?: string; gender?: string; city?: string } = {};
     for (const k of allowed) if (body[k] !== undefined) $set[k] = body[k];
     await this.userModel.updateOne({ _id: req.user.sub }, { $set });
+
+    // تحديث jobTitle في بروفايل المهندس إذا كان موجوداً
+    if (body.jobTitle !== undefined) {
+      const user = await this.userModel.findById(req.user.sub);
+      if (user?.engineer_capable) {
+        const profile = await this.engineerProfileModel.findOne({ userId: user._id });
+        if (profile) {
+          profile.jobTitle = body.jobTitle;
+          await profile.save();
+        } else if (body.jobTitle) {
+          await this.engineerProfileModel.create({
+            userId: user._id,
+            jobTitle: body.jobTitle,
+            ratings: [],
+            totalRatings: 0,
+            averageRating: 0,
+            ratingDistribution: [0, 0, 0, 0, 0],
+            totalCompletedServices: 0,
+            totalEarnings: 0,
+            walletBalance: 0,
+            commissionTransactions: [],
+          });
+        }
+      }
+    }
+
     return { updated: true };
   }
 
@@ -719,13 +796,12 @@ export class AuthController {
     // البحث في User model مباشرة للحصول على الطلبات قيد المراجعة
     const list = await this.userModel
       .find({
-        $or: [
-          { engineer_status: 'pending' },
-          { merchant_status: 'pending' },
-        ],
+        $or: [{ engineer_status: 'pending' }, { merchant_status: 'pending' }],
         deletedAt: null,
       })
-      .select('phone firstName lastName engineer_status merchant_status cvFileUrl storePhotoUrl storeName verificationNote createdAt')
+      .select(
+        'phone firstName lastName engineer_status merchant_status cvFileUrl storePhotoUrl storeName verificationNote createdAt',
+      )
       .sort({ createdAt: -1 })
       .lean();
     return { items: list };
@@ -774,7 +850,9 @@ export class AuthController {
           body.merchantDiscountPercent < 0 ||
           body.merchantDiscountPercent > 100
         ) {
-          throw new AuthException(ErrorCode.AUTH_INVALID_DISCOUNT, { discount: body.merchantDiscountPercent });
+          throw new AuthException(ErrorCode.AUTH_INVALID_DISCOUNT, {
+            discount: body.merchantDiscountPercent,
+          });
         }
         caps.merchant_discount_percent = body.merchantDiscountPercent;
       } else {
@@ -789,16 +867,18 @@ export class AuthController {
     await caps.save();
 
     // تسجيل حدث الموافقة/الرفض على capability
-    this.auditService.logCapabilityDecision({
-      userId: body.userId,
-      capability: body.capability,
-      action: body.approve ? 'approve' : 'reject',
-      decidedBy: req.user.sub,
-      oldValues,
-      newValues,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger.error('Failed to log capability decision', err));
+    this.auditService
+      .logCapabilityDecision({
+        userId: body.userId,
+        capability: body.capability,
+        action: body.approve ? 'approve' : 'reject',
+        decidedBy: req.user.sub,
+        oldValues,
+        newValues,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger.error('Failed to log capability decision', err));
 
     return { updated: true };
   }
@@ -832,7 +912,6 @@ export class AuthController {
       firstName: 'Super',
       lastName: 'Admin',
       gender: 'male' as const,
-      jobTitle: 'System Administrator',
       passwordHash: await hash('Admin123!@#', 10),
       roles: [UserRole.SUPER_ADMIN],
       permissions: [
@@ -861,6 +940,11 @@ export class AuthController {
     // إنشاء الادمن الرئيسي
     const superAdmin = await this.userModel.create(superAdminData);
 
+    // تحديث User model ليكون مهندساً
+    superAdmin.engineer_capable = true;
+    superAdmin.engineer_status = CapabilityStatus.APPROVED;
+    await superAdmin.save();
+
     // إنشاء capabilities
     const adminCapabilities = {
       userId: superAdmin._id.toString(),
@@ -873,6 +957,20 @@ export class AuthController {
     };
 
     await this.capsModel.create(adminCapabilities);
+
+    // إنشاء EngineerProfile للـ super admin
+    await this.engineerProfileModel.create({
+      userId: superAdmin._id,
+      jobTitle: 'System Administrator',
+      ratings: [],
+      totalRatings: 0,
+      averageRating: 0,
+      ratingDistribution: [0, 0, 0, 0, 0],
+      totalCompletedServices: 0,
+      totalEarnings: 0,
+      walletBalance: 0,
+      commissionTransactions: [],
+    });
 
     return {
       message: 'تم إنشاء الادمن الرئيسي بنجاح',
@@ -895,7 +993,7 @@ export class AuthController {
   @Post('admin-login')
   @ApiOperation({
     summary: 'تسجيل دخول الأدمن/السوبر أدمن بكلمة المرور',
-    description: 'تسجيل دخول المسؤولين باستخدام رقم الهاتف وكلمة المرور'
+    description: 'تسجيل دخول المسؤولين باستخدام رقم الهاتف وكلمة المرور',
   })
   @ApiBody({ type: AdminLoginDto })
   @ApiCreatedResponse({
@@ -958,7 +1056,10 @@ export class AuthController {
     // التحقق من حالة المستخدم
     if (user.status !== UserStatus.ACTIVE) {
       this.logger.warn(`Admin login failed - user not active: ${body.phone}`);
-      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { phone: body.phone, status: user.status });
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, {
+        phone: body.phone,
+        status: user.status,
+      });
     }
 
     // حساب صلاحية الأدمن من الأدوار
@@ -994,7 +1095,7 @@ export class AuthController {
         lastName: user.lastName,
         gender: user.gender,
         city: user.city,
-        jobTitle: user.jobTitle,
+        jobTitle: undefined, // سيتم تحديثه من EngineerProfile
         roles: user.roles || [],
         permissions: user.permissions || [],
         isAdmin: isAdminUser,
@@ -1017,7 +1118,7 @@ export class AuthController {
   @Post('user-signup')
   @ApiOperation({
     summary: 'تسجيل حساب جديد للمستخدم العادي/المهندس/التاجر بكلمة مرور',
-    description: 'إنشاء حساب جديد باستخدام رقم الهاتف وكلمة المرور مع البيانات الأساسية'
+    description: 'إنشاء حساب جديد باستخدام رقم الهاتف وكلمة المرور مع البيانات الأساسية',
   })
   @ApiBody({ type: UserSignupDto })
   @ApiCreatedResponse({
@@ -1092,10 +1193,25 @@ export class AuthController {
       lastName: dto.lastName,
       gender: dto.gender,
       city: dto.city || 'صنعاء',
-      jobTitle: dto.capabilityRequest === 'engineer' ? dto.jobTitle : undefined,
       passwordHash: hashedPassword,
       status: UserStatus.PENDING, // الحساب بحالة PENDING حتى يتم التحقق من OTP
     });
+
+    // إنشاء بروفايل المهندس إذا كان مهندساً
+    if (dto.capabilityRequest === 'engineer' && dto.jobTitle) {
+      await this.engineerProfileModel.create({
+        userId: user._id,
+        jobTitle: dto.jobTitle,
+        ratings: [],
+        totalRatings: 0,
+        averageRating: 0,
+        ratingDistribution: [0, 0, 0, 0, 0],
+        totalCompletedServices: 0,
+        totalEarnings: 0,
+        walletBalance: 0,
+        commissionTransactions: [],
+      });
+    }
 
     // تحديث User model مباشرة إذا طلب المستخدم أن يكون مهندساً أو تاجراً
     if (dto.capabilityRequest) {
@@ -1329,7 +1445,7 @@ export class AuthController {
     });
 
     this.logger.log(`Biometric registration successful: ${body.phone}`);
-    return this.buildAuthResponse(user);
+    return await this.buildAuthResponse(user);
   }
 
   @Post('biometric/login-challenge')
@@ -1499,14 +1615,14 @@ export class AuthController {
     });
 
     this.logger.log(`Biometric login successful: ${body.phone}`);
-    return this.buildAuthResponse(user);
+    return await this.buildAuthResponse(user);
   }
 
   // ==================== تسجيل دخول المستخدم العادي بكلمة المرور ====================
   @Post('user-login')
   @ApiOperation({
     summary: 'تسجيل دخول المستخدم العادي/المهندس/التاجر بكلمة المرور',
-    description: 'تسجيل دخول المستخدمين العاديين باستخدام رقم الهاتف وكلمة المرور'
+    description: 'تسجيل دخول المستخدمين العاديين باستخدام رقم الهاتف وكلمة المرور',
   })
   @ApiBody({ type: UserLoginDto })
   @ApiCreatedResponse({
@@ -1558,69 +1674,82 @@ export class AuthController {
     // التحقق من كلمة المرور
     if (!user.passwordHash) {
       this.logger.warn(`User login failed - no password set: ${body.phone}`);
-      this.auditService.logAuthEvent({
-        userId: String(user._id),
-        action: 'login_failed',
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent'],
-        details: { reason: 'no_password_set' },
-      }).catch(err => this.logger.error('Failed to log auth event', err));
+      this.auditService
+        .logAuthEvent({
+          userId: String(user._id),
+          action: 'login_failed',
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          details: { reason: 'no_password_set' },
+        })
+        .catch((err) => this.logger.error('Failed to log auth event', err));
       throw new AuthException(ErrorCode.AUTH_PASSWORD_NOT_SET, { phone: body.phone });
     }
 
     const isPasswordValid = await compare(body.password, user.passwordHash);
     if (!isPasswordValid) {
       this.logger.warn(`User login failed - invalid password: ${body.phone}`);
-      this.auditService.logAuthEvent({
-        userId: String(user._id),
-        action: 'login_failed',
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent'],
-        details: { reason: 'invalid_password' },
-      }).catch(err => this.logger.error('Failed to log auth event', err));
+      this.auditService
+        .logAuthEvent({
+          userId: String(user._id),
+          action: 'login_failed',
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          details: { reason: 'invalid_password' },
+        })
+        .catch((err) => this.logger.error('Failed to log auth event', err));
       throw new InvalidPasswordException({ phone: body.phone });
     }
 
     // التحقق من حالة المستخدم
     if (user.status === UserStatus.PENDING) {
       this.logger.warn(`User login failed - account pending verification: ${body.phone}`);
-      this.auditService.logAuthEvent({
-        userId: String(user._id),
-        action: 'login_failed',
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent'],
-        details: { reason: 'account_pending' },
-      }).catch(err => this.logger.error('Failed to log auth event', err));
-      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { 
-        phone: body.phone, 
+      this.auditService
+        .logAuthEvent({
+          userId: String(user._id),
+          action: 'login_failed',
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          details: { reason: 'account_pending' },
+        })
+        .catch((err) => this.logger.error('Failed to log auth event', err));
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, {
+        phone: body.phone,
         status: user.status,
-        message: 'الحساب في انتظار التحقق من رقم الهاتف. يرجى التحقق من OTP المرسل'
+        message: 'الحساب في انتظار التحقق من رقم الهاتف. يرجى التحقق من OTP المرسل',
       });
     }
 
     if (user.status !== UserStatus.ACTIVE) {
       this.logger.warn(`User login failed - user not active: ${body.phone}`);
-      this.auditService.logAuthEvent({
-        userId: String(user._id),
-        action: 'login_failed',
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent'],
-        details: { reason: 'user_not_active', status: user.status },
-      }).catch(err => this.logger.error('Failed to log auth event', err));
-      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, { phone: body.phone, status: user.status });
+      this.auditService
+        .logAuthEvent({
+          userId: String(user._id),
+          action: 'login_failed',
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          details: { reason: 'user_not_active', status: user.status },
+        })
+        .catch((err) => this.logger.error('Failed to log auth event', err));
+      throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, {
+        phone: body.phone,
+        status: user.status,
+      });
     }
 
     this.logger.log(`User login successful: ${body.phone}`);
-    
-    // تسجيل حدث تسجيل الدخول الناجح
-    this.auditService.logAuthEvent({
-      userId: String(user._id),
-      action: 'login_success',
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger.error('Failed to log auth event', err));
 
-    return this.buildAuthResponse(user);
+    // تسجيل حدث تسجيل الدخول الناجح
+    this.auditService
+      .logAuthEvent({
+        userId: String(user._id),
+        action: 'login_success',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger.error('Failed to log auth event', err));
+
+    return await this.buildAuthResponse(user);
   }
 
   // ==================== تسجيل دخول السوبر أدمن (للاستخدام في مرحلة التطوير) ====================
@@ -1668,12 +1797,14 @@ export class AuthController {
     const refresh = this.tokens.signRefresh(payload);
 
     // تسجيل حدث تسجيل الدخول الناجح
-    this.auditService.logAuthEvent({
-      userId: String(user._id),
-      action: 'login_success',
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger.error('Failed to log auth event', err));
+    this.auditService
+      .logAuthEvent({
+        userId: String(user._id),
+        action: 'login_success',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger.error('Failed to log auth event', err));
 
     return {
       tokens: { access, refresh },
@@ -1684,7 +1815,7 @@ export class AuthController {
         lastName: user.lastName,
         gender: user.gender,
         city: user.city,
-        jobTitle: user.jobTitle,
+        jobTitle: undefined, // سيتم تحديثه من EngineerProfile
         roles: user.roles || [],
         permissions: user.permissions || [],
         isAdmin: isAdminUser,

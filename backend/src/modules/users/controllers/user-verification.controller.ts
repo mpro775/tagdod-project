@@ -22,8 +22,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { User, UserRole, CapabilityStatus } from '../schemas/user.schema';
+import { EngineerProfile } from '../schemas/engineer-profile.schema';
 import { UploadService } from '../../upload/upload.service';
-import { SubmitVerificationDto, SubmitMerchantVerificationDto } from '../dto/submit-verification.dto';
+import {
+  SubmitVerificationDto,
+  SubmitMerchantVerificationDto,
+} from '../dto/submit-verification.dto';
 import { UserNotFoundException, InvalidFileTypeException } from '../../../shared/exceptions';
 
 @ApiTags('تحقق-المستخدمين')
@@ -33,6 +37,7 @@ import { UserNotFoundException, InvalidFileTypeException } from '../../../shared
 export class UserVerificationController {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(EngineerProfile.name) private engineerProfileModel: Model<EngineerProfile>,
     private uploadService: UploadService,
   ) {}
 
@@ -41,7 +46,7 @@ export class UserVerificationController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'رفع وثائق التحقق',
-    description: 'رفع ملف السيرة الذاتية للمهندس أو صورة المحل للتاجر مع ملاحظة اختيارية'
+    description: 'رفع ملف السيرة الذاتية للمهندس أو صورة المحل للتاجر مع ملاحظة اختيارية',
   })
   @ApiBody({
     schema: {
@@ -50,20 +55,20 @@ export class UserVerificationController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'الملف المطلوب رفعه (CV للمهندس، صورة المحل للتاجر)'
+          description: 'الملف المطلوب رفعه (CV للمهندس، صورة المحل للتاجر)',
         },
         storeName: {
           type: 'string',
           description: 'اسم المحل (مطلوب للتاجر فقط)',
-          example: 'محل الأجهزة الكهربائية'
+          example: 'محل الأجهزة الكهربائية',
         },
         note: {
           type: 'string',
           description: 'ملاحظة اختيارية',
-          example: 'ملاحظة إضافية حول طلب التحقق'
-        }
-      }
-    }
+          example: 'ملاحظة إضافية حول طلب التحقق',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 201,
@@ -196,7 +201,31 @@ export class UserVerificationController {
 
     // تحديث بيانات المستخدم
     if (isEngineer) {
-      user.cvFileUrl = uploadResult.url;
+      // تحديث بروفايل المهندس
+      let profile = await this.engineerProfileModel.findOne({
+        userId: user._id,
+      });
+
+      if (!profile) {
+        // إنشاء بروفايل جديد إذا لم يكن موجوداً
+        profile = new this.engineerProfileModel({
+          userId: user._id,
+          cvFileUrl: uploadResult.url,
+          ratings: [],
+          totalRatings: 0,
+          averageRating: 0,
+          ratingDistribution: [0, 0, 0, 0, 0],
+          totalCompletedServices: 0,
+          totalEarnings: 0,
+          walletBalance: 0,
+          commissionTransactions: [],
+        });
+      } else {
+        profile.cvFileUrl = uploadResult.url;
+      }
+
+      await profile.save();
+
       user.verificationNote = dto.note;
       user.engineer_status = CapabilityStatus.PENDING;
     } else if (isMerchant) {
@@ -219,4 +248,3 @@ export class UserVerificationController {
     };
   }
 }
-

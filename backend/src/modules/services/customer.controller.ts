@@ -32,6 +32,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ServicesService } from './services.service';
 import {
   AcceptOfferDto,
+  CancelServiceRequestDto,
   CreateServiceRequestDto,
   RateServiceDto,
   UpdateServiceRequestDto,
@@ -307,7 +308,7 @@ export class CustomerServicesController {
   @ApiQuery({
     name: 'status',
     required: false,
-    description: 'فلترة حسب حالة الطلب (ASSIGNED, IN_PROGRESS, COMPLETED, RATED)',
+    description: 'فلترة حسب حالة الطلب (ASSIGNED, COMPLETED, RATED)',
   })
   @ApiOkResponse({
     description: 'تم استرداد الطلبات ذات العروض المقبولة بنجاح',
@@ -474,7 +475,11 @@ export class CustomerServicesController {
   @Post(':id/cancel')
   @ApiOperation({
     summary: 'إلغاء طلب خدمة',
-    description: 'إلغاء طلب خدمة من قبل العميل',
+    description: 'إلغاء طلب خدمة من قبل العميل (يسمح فقط من حالة ASSIGNED، ويطلب سبب إجباري، وحد أقصى 3 إلغاءات)',
+  })
+  @ApiBody({
+    type: CancelServiceRequestDto,
+    description: 'سبب الإلغاء (إجباري)',
   })
   @ApiOkResponse({
     description: 'تم إلغاء الطلب بنجاح',
@@ -485,10 +490,23 @@ export class CustomerServicesController {
     },
   })
   @ApiBadRequestResponse({
-    description: 'لا يمكن إلغاء هذا الطلب في حالته الحالية',
+    description: 'لا يمكن إلغاء هذا الطلب (سبب مطلوب، أو حالة غير صالحة، أو وصلت للحد الأقصى)',
     schema: {
-      example: {
-        data: { error: 'CANNOT_CANCEL' },
+      examples: {
+        reasonRequired: {
+          value: { data: { error: 'REASON_REQUIRED' } },
+        },
+        cannotCancel: {
+          value: { data: { error: 'CANNOT_CANCEL', message: 'يمكن إلغاء الطلب فقط بعد قبول عرض من مهندس' } },
+        },
+        limitReached: {
+          value: {
+            data: {
+              error: 'CANCELLATION_LIMIT_REACHED',
+              message: 'لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات (3)',
+            },
+          },
+        },
       },
     },
   })
@@ -500,8 +518,12 @@ export class CustomerServicesController {
       },
     },
   })
-  async cancel(@Req() req: RequestWithUser, @Param('id') id: string) {
-    const data = await this.svc.cancel(req.user!.sub, id);
+  async cancel(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+    @Body() dto: CancelServiceRequestDto,
+  ) {
+    const data = await this.svc.cancel(req.user!.sub, id, dto.reason);
     return { data };
   }
 

@@ -9562,6 +9562,236 @@
         ]
       }
     },
+    "/api/v1/engineers/profile/me": {
+      "get": {
+        "operationId": "getMyProfile",
+        "summary": "جلب بروفايل المهندس الحالي",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم جلب البروفايل بنجاح"
+          },
+          "401": {
+            "description": "غير مصرح"
+          }
+        },
+        "tags": [
+          "بروفايل المهندس"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateMyProfile",
+        "summary": "تحديث بروفايل المهندس الحالي",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEngineerProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث البروفايل بنجاح"
+          },
+          "401": {
+            "description": "غير مصرح"
+          }
+        },
+        "tags": [
+          "بروفايل المهندس"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/engineers/profile/{engineerId}": {
+      "get": {
+        "operationId": "getProfile",
+        "summary": "جلب بروفايل مهندس معين",
+        "parameters": [
+          {
+            "name": "engineerId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المهندس",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب البروفايل بنجاح"
+          },
+          "404": {
+            "description": "المهندس غير موجود"
+          }
+        },
+        "tags": [
+          "بروفايل المهندس"
+        ]
+      }
+    },
+    "/api/v1/engineers/profile/{engineerId}/ratings": {
+      "get": {
+        "operationId": "getRatings",
+        "summary": "جلب تقييمات مهندس معين",
+        "parameters": [
+          {
+            "name": "engineerId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المهندس",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد العناصر في الصفحة",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "طريقة الترتيب",
+            "schema": {
+              "enum": [
+                "recent",
+                "top",
+                "oldest"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "minScore",
+            "required": false,
+            "in": "query",
+            "description": "الحد الأدنى للنجوم",
+            "schema": {
+              "minimum": 1,
+              "maximum": 5,
+              "example": 4,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب التقييمات بنجاح"
+          }
+        },
+        "tags": [
+          "بروفايل المهندس"
+        ]
+      }
+    },
+    "/api/v1/engineers/profile/me/ratings": {
+      "get": {
+        "operationId": "getMyRatings",
+        "summary": "جلب تقييمات المهندس الحالي",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد العناصر في الصفحة",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "طريقة الترتيب",
+            "schema": {
+              "enum": [
+                "recent",
+                "top",
+                "oldest"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "minScore",
+            "required": false,
+            "in": "query",
+            "description": "الحد الأدنى للنجوم",
+            "schema": {
+              "minimum": 1,
+              "maximum": 5,
+              "example": 4,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب التقييمات بنجاح"
+          }
+        },
+        "tags": [
+          "بروفايل المهندس"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/orders/checkout/session": {
       "post": {
         "operationId": "buildCheckoutSession",
@@ -20770,6 +21000,342 @@
         ]
       }
     },
+    "/api/v1/admin/users/{userId}/engineer-profile": {
+      "get": {
+        "operationId": "getEngineerProfile",
+        "summary": "جلب بروفايل مهندس (إداري)",
+        "description": "جلب بروفايل مهندس كامل مع جميع المعلومات والإحصائيات والرصيد",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المستخدم (المهندس)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب البروفايل بنجاح"
+          },
+          "404": {
+            "description": "المهندس غير موجود"
+          }
+        },
+        "tags": [
+          "إدارة-بروفايل-المهندس"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateEngineerProfile",
+        "summary": "تحديث بروفايل مهندس (إداري)",
+        "description": "تحديث معلومات بروفايل المهندس بواسطة الأدمن",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المستخدم (المهندس)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEngineerProfileAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث البروفايل بنجاح"
+          },
+          "404": {
+            "description": "المهندس غير موجود"
+          }
+        },
+        "tags": [
+          "إدارة-بروفايل-المهندس"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{userId}/engineer-profile/ratings": {
+      "get": {
+        "operationId": "getEngineerRatings",
+        "summary": "جلب تقييمات مهندس (إداري)",
+        "description": "جلب تقييمات مهندس مع خيارات التصفية والترتيب",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المستخدم (المهندس)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد العناصر في الصفحة",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "طريقة الترتيب",
+            "schema": {
+              "enum": [
+                "recent",
+                "top",
+                "oldest"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "minScore",
+            "required": false,
+            "in": "query",
+            "description": "الحد الأدنى للنجوم",
+            "schema": {
+              "minimum": 1,
+              "maximum": 5,
+              "example": 4,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب التقييمات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-بروفايل-المهندس"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{userId}/engineer-profile/ratings/{ratingId}": {
+      "delete": {
+        "operationId": "deleteRating",
+        "summary": "حذف تقييم مهندس (إداري)",
+        "description": "حذف تقييم محدد من بروفايل المهندس",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المستخدم (المهندس)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ratingId",
+            "required": true,
+            "in": "path",
+            "description": "معرف التقييم",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف التقييم بنجاح"
+          },
+          "404": {
+            "description": "التقييم غير موجود"
+          }
+        },
+        "tags": [
+          "إدارة-بروفايل-المهندس"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{userId}/engineer-profile/wallet": {
+      "patch": {
+        "operationId": "manageWallet",
+        "summary": "إدارة رصيد المهندس (إداري)",
+        "description": "إضافة أو خصم أو سحب رصيد من حساب المهندس",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المستخدم (المهندس)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManageWalletDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث الرصيد بنجاح"
+          },
+          "400": {
+            "description": "الرصيد غير كافي للخصم/السحب"
+          },
+          "404": {
+            "description": "المهندس غير موجود"
+          }
+        },
+        "tags": [
+          "إدارة-بروفايل-المهندس"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{userId}/engineer-profile/transactions": {
+      "get": {
+        "operationId": "getTransactions",
+        "summary": "جلب سجل معاملات المهندس (إداري)",
+        "description": "جلب سجل جميع المعاملات المالية للمهندس",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المستخدم (المهندس)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب المعاملات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-بروفايل-المهندس"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{userId}/engineer-profile/sync-stats": {
+      "post": {
+        "operationId": "syncStats",
+        "summary": "مزامنة إحصائيات المهندس (إداري)",
+        "description": "مزامنة إحصائيات المهندس من قاعدة البيانات الفعلية",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المستخدم (المهندس)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncStatsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تمت المزامنة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-بروفايل-المهندس"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/analytics/dashboard": {
       "get": {
         "operationId": "getDashboard",
@@ -23582,7 +24148,7 @@
             "name": "status",
             "required": false,
             "in": "query",
-            "description": "فلترة حسب حالة الطلب (ASSIGNED, IN_PROGRESS, COMPLETED, RATED)",
+            "description": "فلترة حسب حالة الطلب (ASSIGNED, COMPLETED, RATED)",
             "schema": {}
           }
         ],
@@ -23918,7 +24484,7 @@
       "post": {
         "operationId": "cancel",
         "summary": "إلغاء طلب خدمة",
-        "description": "إلغاء طلب خدمة من قبل العميل",
+        "description": "إلغاء طلب خدمة من قبل العميل (يسمح فقط من حالة ASSIGNED، ويطلب سبب إجباري، وحد أقصى 3 إلغاءات)",
         "parameters": [
           {
             "name": "id",
@@ -23929,6 +24495,17 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "description": "سبب الإلغاء (إجباري)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelServiceRequestDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "تم إلغاء الطلب بنجاح",
@@ -23945,13 +24522,33 @@
             }
           },
           "400": {
-            "description": "لا يمكن إلغاء هذا الطلب في حالته الحالية",
+            "description": "لا يمكن إلغاء هذا الطلب (سبب مطلوب، أو حالة غير صالحة، أو وصلت للحد الأقصى)",
             "content": {
               "application/json": {
                 "schema": {
-                  "example": {
-                    "data": {
-                      "error": "CANNOT_CANCEL"
+                  "examples": {
+                    "reasonRequired": {
+                      "value": {
+                        "data": {
+                          "error": "REASON_REQUIRED"
+                        }
+                      }
+                    },
+                    "cannotCancel": {
+                      "value": {
+                        "data": {
+                          "error": "CANNOT_CANCEL",
+                          "message": "يمكن إلغاء الطلب فقط بعد قبول عرض من مهندس"
+                        }
+                      }
+                    },
+                    "limitReached": {
+                      "value": {
+                        "data": {
+                          "error": "CANCELLATION_LIMIT_REACHED",
+                          "message": "لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات (3)"
+                        }
+                      }
                     }
                   }
                 }
@@ -24679,9 +25276,7 @@
             "required": true,
             "in": "path",
             "description": "معرف طلب الخدمة",
-            "schema": {
-              "type": "string"
-            }
+            "schema": {}
           }
         ],
         "responses": {
@@ -31570,6 +32165,68 @@
           "meta"
         ]
       },
+      "UpdateEngineerProfileDto": {
+        "type": "object",
+        "properties": {
+          "bio": {
+            "type": "string",
+            "description": "النبذة عن المهندس",
+            "example": "مهندس ميكانيكي محترف مع أكثر من 10 سنوات من الخبرة في صيانة السيارات",
+            "maxLength": 1000
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "رابط الأفاتار (من Bunny.net)",
+            "example": "https://cdn.example.com/avatars/engineer123.jpg"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "description": "رقم الواتساب",
+            "example": "967711234567"
+          },
+          "specialties": {
+            "description": "التخصصات",
+            "example": [
+              "ميكانيك",
+              "كهرباء",
+              "سباكة"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "yearsOfExperience": {
+            "type": "number",
+            "description": "سنوات الخبرة",
+            "example": 10,
+            "minimum": 0,
+            "maximum": 50
+          },
+          "certifications": {
+            "description": "الشهادات",
+            "example": [
+              "شهادة معتمدة في الميكانيك",
+              "شهادة السلامة المهنية"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "languages": {
+            "description": "اللغات المتحدث بها",
+            "example": [
+              "العربية",
+              "الإنجليزية"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "CheckoutPreviewDto": {
         "type": "object",
         "properties": {
@@ -33905,6 +34562,118 @@
         "type": "object",
         "properties": {}
       },
+      "UpdateEngineerProfileAdminDto": {
+        "type": "object",
+        "properties": {
+          "bio": {
+            "type": "string",
+            "description": "النبذة عن المهندس",
+            "example": "مهندس ميكانيكي محترف مع أكثر من 10 سنوات من الخبرة",
+            "maxLength": 1000
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "رابط الأفاتار (من Bunny.net)",
+            "example": "https://cdn.example.com/avatars/engineer123.jpg"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "description": "رقم الواتساب",
+            "example": "967711234567"
+          },
+          "jobTitle": {
+            "type": "string",
+            "description": "المسمى الوظيفي",
+            "example": "مهندس ميكانيكي"
+          },
+          "specialties": {
+            "description": "التخصصات",
+            "example": [
+              "ميكانيك",
+              "كهرباء",
+              "سباكة"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "yearsOfExperience": {
+            "type": "number",
+            "description": "سنوات الخبرة",
+            "example": 10,
+            "minimum": 0,
+            "maximum": 50
+          },
+          "certifications": {
+            "description": "الشهادات",
+            "example": [
+              "شهادة معتمدة في الميكانيك"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "languages": {
+            "description": "اللغات المتحدث بها",
+            "example": [
+              "العربية",
+              "الإنجليزية"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ManageWalletDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "نوع العملية",
+            "enum": [
+              "add",
+              "deduct",
+              "withdraw"
+            ],
+            "example": "add"
+          },
+          "amount": {
+            "type": "number",
+            "description": "المبلغ",
+            "example": 100,
+            "minimum": 0.01
+          },
+          "reason": {
+            "type": "string",
+            "description": "سبب العملية",
+            "example": "إضافة رصيد مكافأة"
+          }
+        },
+        "required": [
+          "type",
+          "amount",
+          "reason"
+        ]
+      },
+      "SyncStatsDto": {
+        "type": "object",
+        "properties": {
+          "syncRatings": {
+            "type": "boolean",
+            "description": "مزامنة التقييمات من ServiceRequest و Order",
+            "default": true
+          },
+          "syncStatistics": {
+            "type": "boolean",
+            "description": "مزامنة الإحصائيات (الخدمات المكتملة والأرباح)",
+            "default": true
+          }
+        }
+      },
       "PerformanceMetricsDto": {
         "type": "object",
         "properties": {
@@ -34794,6 +35563,10 @@
           "trend",
           "changePercentage"
         ]
+      },
+      "CancelServiceRequestDto": {
+        "type": "object",
+        "properties": {}
       },
       "AcceptOfferDto": {
         "type": "object",

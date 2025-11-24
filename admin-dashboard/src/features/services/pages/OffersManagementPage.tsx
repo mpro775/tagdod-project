@@ -51,6 +51,8 @@ const statusColors = {
   ACCEPTED: 'success',
   REJECTED: 'error',
   CANCELLED: 'default',
+  OUTBID: 'info',
+  EXPIRED: 'warning',
 } as const;
 
 export const OffersManagementPage: React.FC = () => {
@@ -93,6 +95,8 @@ export const OffersManagementPage: React.FC = () => {
       ACCEPTED: t('services:offers.status.accepted'),
       REJECTED: t('services:offers.status.rejected'),
       CANCELLED: t('services:offers.status.cancelled'),
+      OUTBID: t('services:offers.status.outbid', 'تم قبول عرض آخر'),
+      EXPIRED: t('services:offers.status.expired', 'منتهي الصلاحية'),
     };
     return statusMap[status] || status;
   };

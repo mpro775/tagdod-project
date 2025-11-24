@@ -43,3 +43,7 @@ export class NearbyQueryDto {
   @Type(() => Number) @IsNumber() lng!: number;
   @Type(() => Number) @IsNumber() @Min(1) @Max(200) radiusKm: number = 10;
 }
+
+export class CancelServiceRequestDto {
+  @IsString() @MaxLength(500) reason!: string;
+}
