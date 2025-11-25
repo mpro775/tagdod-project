@@ -1755,6 +1755,34 @@
             },
             "description": ""
           }
+        },
+        {
+          "name": "مسح كاش المنتجات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/products/cache/clear",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "products",
+                "cache",
+                "clear"
+              ]
+            },
+            "description": ""
+          }
         }
       ],
       "description": "Endpoints for إدارة-المنتجات functionality"
@@ -2988,6 +3016,33 @@
               ]
             },
             "description": "التحقق من وجود Device Tokens نشطة للمستخدم قبل إرسال Push Notifications (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: التحقق من حالة FCM",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/fcm-status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "fcm-status"
+              ]
+            },
+            "description": "التحقق من أن Firebase Cloud Messaging مُعد بشكل صحيح (للإداريين فقط)"
           }
         },
         {

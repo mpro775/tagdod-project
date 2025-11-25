@@ -3999,6 +3999,14 @@ export class OrderService {
     this.logger.log(
       `Payment verification for order ${order.orderNumber}: ${isAmountSufficient ? 'APPROVED' : 'REJECTED'}`,
     );
+
+    // إرسال الفاتورة عند تأكيد الطلب بعد مطابقة الدفع
+    if (isAmountSufficient && order.status === OrderStatus.CONFIRMED) {
+      this.sendOrderInvoiceForStatus(order._id.toString()).catch((err: any) => {
+        this.logger.error(`Failed to send invoice for order ${order.orderNumber}:`, err);
+      });
+    }
+
     return order;
   }
 

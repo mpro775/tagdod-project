@@ -119,6 +119,17 @@ export const useRestoreProduct = () => {
   });
 };
 
+// Clear products cache
+export const useClearCache = () => {
+  return useMutation({
+    mutationFn: () => productsApi.clearCache(),
+    onSuccess: (data) => {
+      toast.success(`تم مسح الكاش بنجاح - ${new Date(data.timestamp).toLocaleString('ar')}`);
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 // Get product stats
 export const useProductStats = () => {
   return useQuery({

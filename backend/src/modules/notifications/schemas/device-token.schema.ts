@@ -4,7 +4,7 @@ import { DevicePlatform } from '../enums/notification.enums';
 
 export type DeviceTokenDocument = HydratedDocument<DeviceToken>;
 
-@Schema({ 
+@Schema({
   timestamps: true,
   collection: 'device_tokens',
   versionKey: false
@@ -16,11 +16,11 @@ export class DeviceToken {
   @Prop({ required: true, maxlength: 500, index: true })
   token!: string;
 
-  @Prop({ 
-    type: String, 
-    enum: Object.values(DevicePlatform), 
+  @Prop({
+    type: String,
+    enum: Object.values(DevicePlatform),
     required: true,
-    index: true 
+    index: true
   })
   platform!: DevicePlatform;
 
@@ -45,7 +45,10 @@ export const DeviceTokenSchema = SchemaFactory.createForClass(DeviceToken);
 
 // Indexes
 DeviceTokenSchema.index({ userId: 1, platform: 1 });
-DeviceTokenSchema.index({ token: 1 }, { unique: true });
+// تغيير: Unique index على (userId + token) بدلاً من token فقط
+// هذا يسمح لنفس الـ token أن يُستخدم من مستخدمين مختلفين (عند تغيير الجهاز)
+// لكن يمنع نفس المستخدم من تسجيل نفس الـ token أكثر من مرة
+DeviceTokenSchema.index({ userId: 1, token: 1 }, { unique: true });
 DeviceTokenSchema.index({ isActive: 1, lastUsedAt: -1 });
 DeviceTokenSchema.index({ createdAt: -1 });
 

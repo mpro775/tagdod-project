@@ -20,6 +20,7 @@ import { ProductService } from '../services/product.service';
 import { VariantService } from '../services/variant.service';
 import { PricingService } from '../services/pricing.service';
 import { InventoryService } from '../services/inventory.service';
+import { CacheService } from '../../../shared/cache/cache.service';
 import { CreateProductDto, UpdateProductDto, ListProductsDto, CreateVariantDto, UpdateVariantDto, GenerateVariantsDto } from '../dto/product.dto';
 import { Product } from '../schemas/product.schema';
 
@@ -34,6 +35,7 @@ export class ProductsController {
     private variantService: VariantService,
     private pricingService: PricingService,
     private inventoryService: InventoryService,
+    private cacheService: CacheService,
   ) {}
 
   // ==================== Products CRUD ====================
@@ -320,5 +322,15 @@ export class ProductsController {
   ) {
     const product = await this.productService.removeRelatedProduct(productId, relatedProductId);
     return { product };
+  }
+
+  // ==================== Cache Management ====================
+
+  @Post('cache/clear')
+  @ApiOperation({ summary: 'مسح كاش المنتجات' })
+  @ApiResponse({ status: 200, description: 'Cache cleared successfully' })
+  async clearCache() {
+    await this.productService.clearCache();
+    return { message: 'Cache cleared successfully', timestamp: new Date().toISOString() };
   }
 }

@@ -64,7 +64,7 @@ export class UnifiedNotificationController {
   constructor(
     private readonly notificationService: NotificationService,
     private readonly templateService: NotificationTemplateService,
-  ) {}
+  ) { }
 
   // ===== User Endpoints =====
 
@@ -379,15 +379,15 @@ export class UnifiedNotificationController {
       message: result.message,
       data: result.deviceToken
         ? {
-            deviceToken: {
-              _id: result.deviceToken._id,
-              userId: result.deviceToken.userId,
-              token: result.deviceToken.token.substring(0, 20) + '...', // إخفاء جزء من Token للأمان
-              platform: result.deviceToken.platform,
-              isActive: result.deviceToken.isActive,
-              lastUsedAt: result.deviceToken.lastUsedAt,
-            },
-          }
+          deviceToken: {
+            _id: result.deviceToken._id,
+            userId: result.deviceToken.userId,
+            token: result.deviceToken.token.substring(0, 20) + '...', // إخفاء جزء من Token للأمان
+            platform: result.deviceToken.platform,
+            isActive: result.deviceToken.isActive,
+            lastUsedAt: result.deviceToken.lastUsedAt,
+          },
+        }
         : undefined,
     };
   }
@@ -870,6 +870,67 @@ export class UnifiedNotificationController {
       data: {
         userId,
         ...devicesInfo,
+      },
+    };
+  }
+
+  @Get('admin/fcm-status')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: التحقق من حالة FCM',
+    description: 'التحقق من أن Firebase Cloud Messaging مُعد بشكل صحيح (للإداريين فقط)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم التحقق من حالة FCM',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            isConfigured: {
+              type: 'boolean',
+              example: true,
+              description: 'هل FCM مُعد بشكل صحيح'
+            },
+            status: {
+              type: 'string',
+              example: 'configured',
+              enum: ['configured', 'not_configured'],
+              description: 'حالة FCM'
+            },
+            message: {
+              type: 'string',
+              example: 'FCM is configured and ready to send push notifications',
+              description: 'رسالة توضيحية'
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'غير مصرح لك بالوصول',
+  })
+  async getFCMStatus() {
+    // التحقق من أن FCM Adapter مُعد بشكل صحيح
+    // يمكن الوصول إلى FCM Adapter عبر PushNotificationAdapter إذا لزم الأمر
+    const isConfigured = process.env.FCM_PROJECT_ID &&
+      process.env.FCM_PRIVATE_KEY &&
+      process.env.FCM_CLIENT_EMAIL;
+
+    return {
+      success: true,
+      data: {
+        isConfigured: !!isConfigured,
+        status: isConfigured ? 'configured' : 'not_configured',
+        message: isConfigured
+          ? 'FCM is configured and ready to send push notifications'
+          : 'FCM is not configured. Please set FCM_PROJECT_ID, FCM_PRIVATE_KEY, and FCM_CLIENT_EMAIL environment variables.',
       },
     };
   }

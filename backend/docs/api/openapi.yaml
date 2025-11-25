@@ -2203,6 +2203,18 @@ paths:
         - إدارة-المنتجات
       security:
         - bearer: []
+  /api/v1/admin/products/cache/clear:
+    post:
+      operationId: clearCache
+      summary: مسح كاش المنتجات
+      parameters: []
+      responses:
+        '200':
+          description: Cache cleared successfully
+      tags:
+        - إدارة-المنتجات
+      security:
+        - bearer: []
   /api/v1/products:
     get:
       operationId: listProducts
@@ -4368,6 +4380,47 @@ paths:
           description: غير مصرح لك بالوصول
         '404':
           description: المستخدم غير موجود
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/fcm-status:
+    get:
+      operationId: getFCMStatus
+      summary: 'الإدارة: التحقق من حالة FCM'
+      description: التحقق من أن Firebase Cloud Messaging مُعد بشكل صحيح (للإداريين فقط)
+      parameters: []
+      responses:
+        '200':
+          description: تم التحقق من حالة FCM
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      isConfigured:
+                        type: boolean
+                        example: true
+                        description: هل FCM مُعد بشكل صحيح
+                      status:
+                        type: string
+                        example: configured
+                        enum:
+                          - configured
+                          - not_configured
+                        description: حالة FCM
+                      message:
+                        type: string
+                        example: FCM is configured and ready to send push notifications
+                        description: رسالة توضيحية
+        '403':
+          description: غير مصرح لك بالوصول
       tags:
         - الإشعارات
       security:
