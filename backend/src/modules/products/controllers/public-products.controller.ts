@@ -513,15 +513,35 @@ export class PublicProductsController {
   })
   @ApiNotFoundResponse({ description: 'Product not found' })
   @CacheResponse({ ttl: 600 }) // 10 minutes
-  async getRelatedProducts(@Param('id') productId: string, @Query('limit') limit?: string) {
+  async getRelatedProducts(
+    @Param('id') productId: string,
+    @Query('limit') limit?: string,
+    @Query('currency') currency?: string,
+    @Req() req?: RequestWithUser,
+  ) {
     const products = await this.productService.getRelatedProducts(
       productId,
       limit ? Number(limit) : 10,
     );
 
+    // استخدام presenter لإضافة pricingByCurrency
+    const userId = req?.user?.sub;
+    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
+
+    const rawData = Array.isArray(products)
+      ? (products as unknown as Array<Record<string, unknown>>)
+      : [];
+
+    const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
+      rawData,
+      discountPercent,
+      selectedCurrency,
+    );
+
     return {
-      data: products,
-      count: products.length,
+      data: productsWithPricing,
+      count: productsWithPricing.length,
     };
   }
 }
