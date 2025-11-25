@@ -1,7 +1,10 @@
 # 🔍 خدمة البحث (Search Service)
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
-> 📅 **آخر تحديث**: أكتوبر 2025
+> 📅 **آخر تحديث**: يناير 2025  
+> 🔄 **تحديثات حديثة**: 
+>   - الصورة الرئيسية تُرجع من `mainImageId` المملوء
+>   - الأسعار تُرجع بالشكل الجديد `priceRangeByCurrency` لكل عملة (USD, YER, SAR)
 
 خدمة البحث توفر endpoints للبحث الشامل والمتقدم مع دعم الفلترة والترتيب.
 
@@ -57,9 +60,25 @@
           "type": "product",
           "category": "ألواح شمسية",
           "brand": "Longi",
-          "priceRange": {
-            "min": 150000,
-            "max": 180000
+          "priceRangeByCurrency": {
+            "USD": {
+              "minPrice": 200,
+              "maxPrice": 240,
+              "currency": "USD",
+              "hasDiscountedVariant": false
+            },
+            "YER": {
+              "minPrice": 150000,
+              "maxPrice": 180000,
+              "currency": "YER",
+              "hasDiscountedVariant": false
+            },
+            "SAR": {
+              "minPrice": 750,
+              "maxPrice": 900,
+              "currency": "SAR",
+              "hasDiscountedVariant": false
+            }
           },
           "rating": 4.5,
           "reviewsCount": 120,
@@ -187,11 +206,33 @@ Future<SearchResult> universalSearch({
         "descriptionEn": "High efficiency solar panel",
         "thumbnail": "https://cdn.example.com/products/solar-panel.jpg",
         "metadata": {
-          "price": 150000,
           "category": "ألواح شمسية",
           "brand": "Longi",
+          "priceRangeByCurrency": {
+            "USD": {
+              "minPrice": 200,
+              "maxPrice": 240,
+              "currency": "USD",
+              "hasDiscountedVariant": false
+            },
+            "YER": {
+              "minPrice": 150000,
+              "maxPrice": 180000,
+              "currency": "YER",
+              "hasDiscountedVariant": false
+            },
+            "SAR": {
+              "minPrice": 750,
+              "maxPrice": 900,
+              "currency": "SAR",
+              "hasDiscountedVariant": false
+            }
+          },
           "rating": 4.5,
-          "reviewsCount": 120
+          "reviewsCount": 120,
+          "isFeatured": true,
+          "isNew": false,
+          "tags": ["solar", "renewable"]
         },
         "relevanceScore": 0.95,
         "createdAt": "2025-01-01T00:00:00.000Z"
@@ -508,7 +549,15 @@ class SearchResultItem {
   bool get hasMetadata => metadata.isNotEmpty;
   
   // Product metadata
-  Map<String, dynamic>? get priceRange => metadata['priceRange'];
+  Map<String, dynamic>? get priceRangeByCurrency => metadata['priceRangeByCurrency'];
+  Map<String, dynamic>? get priceRangeUSD => priceRangeByCurrency?['USD'];
+  Map<String, dynamic>? get priceRangeYER => priceRangeByCurrency?['YER'];
+  Map<String, dynamic>? get priceRangeSAR => priceRangeByCurrency?['SAR'];
+  // Legacy support - get first available currency or USD
+  Map<String, dynamic>? get priceRange => priceRangeByCurrency?['USD'] ?? 
+      (priceRangeByCurrency?.isNotEmpty == true 
+          ? priceRangeByCurrency?.values.first 
+          : null);
   String? get category => metadata['category']?.toString();
   String? get brand => metadata['brand']?.toString();
   double? get rating => metadata['rating']?.toDouble();
@@ -634,6 +683,47 @@ class SearchPriceRange {
   bool get hasRange => min < max;
   double get midPoint => (min + max) / 2;
 }
+
+class PriceRangeByCurrency {
+  final double minPrice;
+  final double maxPrice;
+  final String currency;
+  final bool hasDiscountedVariant;
+
+  PriceRangeByCurrency({
+    required this.minPrice,
+    required this.maxPrice,
+    required this.currency,
+    required this.hasDiscountedVariant,
+  });
+
+  factory PriceRangeByCurrency.fromJson(Map<String, dynamic> json) {
+    return PriceRangeByCurrency(
+      minPrice: (json['minPrice'] ?? 0).toDouble(),
+      maxPrice: (json['maxPrice'] ?? 0).toDouble(),
+      currency: json['currency'] ?? 'USD',
+      hasDiscountedVariant: json['hasDiscountedVariant'] ?? false,
+    );
+  }
+
+  double get range => maxPrice - minPrice;
+  bool get hasRange => minPrice < maxPrice;
+  double get midPoint => (minPrice + maxPrice) / 2;
+  bool get isSinglePrice => minPrice == maxPrice;
+}
+
+// Helper extension for SearchResultItem
+extension SearchResultItemPriceExtension on SearchResultItem {
+  PriceRangeByCurrency? getPriceRangeForCurrency(String currency) {
+    final priceRangeData = priceRangeByCurrency?[currency.toUpperCase()];
+    if (priceRangeData == null) return null;
+    return PriceRangeByCurrency.fromJson(priceRangeData);
+  }
+
+  PriceRangeByCurrency? get usdPriceRange => getPriceRangeForCurrency('USD');
+  PriceRangeByCurrency? get yerPriceRange => getPriceRangeForCurrency('YER');
+  PriceRangeByCurrency? get sarPriceRange => getPriceRangeForCurrency('SAR');
+}
 ```
 
 ---
@@ -702,8 +792,11 @@ class SearchPriceRange {
     - اعرض النتائج مع `SearchResultItem`
     - استخدم `getTitle(locale)` و `getDescription(locale)` للغات
     - استخدم `isProduct`, `isCategory`, `isBrand` للتمييز
-    - استخدم `hasThumbnail` للصور
+    - استخدم `hasThumbnail` للصور (الآن تُرجع من `mainImageId` المملوء)
     - استخدم `metadata` للمعلومات الإضافية
+    - **للأسعار**: استخدم `priceRangeByCurrency` للحصول على نطاق الأسعار لكل عملة
+    - استخدم `usdPriceRange`, `yerPriceRange`, `sarPriceRange` للوصول المباشر
+    - أو استخدم `getPriceRangeForCurrency('USD')` للحصول على نطاق سعر عملة محددة
 
 11. **التحسين:**
     - استخدم `relevanceScore` للترتيب
@@ -757,12 +850,17 @@ class SearchPriceRange {
 4. ✅ تحديث `SearchResultItem` - إزالة `descriptionEn` المكررة وإضافة metadata helpers
 5. ✅ تحديث `SearchFacet` - `isTag` للـ tags field
 6. ✅ إزالة `SearchSuggestion` model - لم يعد مطلوباً
+7. ✅ **تحديث الأسعار**: استبدال `priceRange` بـ `priceRangeByCurrency` الذي يحتوي على نطاق الأسعار لكل عملة (USD, YER, SAR)
+8. ✅ **تحديث الصور**: الصورة الرئيسية الآن تُرجع من `mainImageId` المملوء بدلاً من `mainImage` المباشر
 
 **ملاحظات مهمة:**
 - `relevanceScore` هو number (ليس 0-1، بل score فعلي قد يكون 0-100+)
 - `metadata` مختلف حسب النوع (product, category, brand)
 - Suggestions/Autocomplete يعيدون strings فقط (أسماء المنتجات والفئات)
 - `includeFacets` يجب تمريره كـ `true` للحصول على facets و priceRange
+- **الأسعار الجديدة**: `priceRangeByCurrency` يحتوي على نطاق الأسعار لكل عملة مع `hasDiscountedVariant`
+- **الصور**: `thumbnail` الآن يُرجع من `mainImageId` المملوء (URL من Media collection)
+- الأسعار تُحسب من الـ variants الفعلية وليس من `priceRange` المخزن في المنتج
 
 **ملفات Backend المرجعية:**
 - `backend/src/modules/search/search.controller.ts` - جميع endpoints

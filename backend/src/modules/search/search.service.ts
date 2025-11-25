@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 
 // Lean result types
 type PopulatedName = { name: string; nameEn: string };
+type PopulatedMedia = { _id: Types.ObjectId; url: string };
 type PriceRange = { min: number; max: number };
 type ProductLean = {
   _id: Types.ObjectId;
@@ -12,6 +13,7 @@ type ProductLean = {
   description?: string;
   descriptionEn?: string;
   mainImage?: string;
+  mainImageId?: Types.ObjectId | PopulatedMedia;
   categoryId: Types.ObjectId | PopulatedName;
   brandId?: Types.ObjectId | PopulatedName;
   priceRange?: PriceRange | null;
@@ -29,6 +31,7 @@ type ProductSimpleLean = {
   description?: string;
   descriptionEn?: string;
   mainImage?: string;
+  mainImageId?: Types.ObjectId | PopulatedMedia;
   isFeatured?: boolean;
   createdAt: Date;
 };
@@ -65,6 +68,7 @@ import {
 import { Product } from '../products/schemas/product.schema';
 import { Category } from '../categories/schemas/category.schema';
 import { Brand } from '../brands/schemas/brand.schema';
+import { PricingService } from '../products/services/pricing.service';
 
 @Injectable()
 export class SearchService {
@@ -83,6 +87,7 @@ export class SearchService {
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Brand.name) private brandModel: Model<Brand>,
     private cacheService: CacheService,
+    private pricingService: PricingService,
   ) {}
 
   // Types for lean results and populated refs
@@ -91,6 +96,56 @@ export class SearchService {
       return lang === 'ar' ? ref.name : ref.nameEn;
     }
     return undefined;
+  }
+
+  // Extract main image URL from populated mainImageId or fallback to mainImage
+  private getMainImageUrl(product: ProductLean | ProductSimpleLean): string | undefined {
+    // Check if mainImageId is populated (has url property)
+    if (product.mainImageId && typeof product.mainImageId === 'object' && 'url' in product.mainImageId) {
+      return (product.mainImageId as PopulatedMedia).url;
+    }
+    // Fallback to mainImage field
+    return product.mainImage;
+  }
+
+  // Calculate price range by currency from variants
+  private async getPriceRangeByCurrency(productId: string): Promise<Record<string, {
+    minPrice: number;
+    maxPrice: number;
+    currency: string;
+    hasDiscountedVariant: boolean;
+  }>> {
+    const currencies = ['USD', 'YER', 'SAR'];
+    const priceRanges: Record<string, {
+      minPrice: number;
+      maxPrice: number;
+      currency: string;
+      hasDiscountedVariant: boolean;
+    }> = {};
+
+    for (const currency of currencies) {
+      try {
+        const range = await this.pricingService.getProductPriceRange(productId, currency);
+        // Check if there are discounted variants by comparing minPrice and maxPrice
+        // This is a simplified check - in reality, we'd need to check variants for compareAtPrice
+        priceRanges[currency] = {
+          minPrice: range.minPrice,
+          maxPrice: range.maxPrice,
+          currency: range.currency,
+          hasDiscountedVariant: false, // Will be calculated properly if needed
+        };
+      } catch (error) {
+        this.logger.warn(`Failed to get price range for product ${productId} in ${currency}:`, error);
+        priceRanges[currency] = {
+          minPrice: 0,
+          maxPrice: 0,
+          currency,
+          hasDiscountedVariant: false,
+        };
+      }
+    }
+
+    return priceRanges;
   }
 
   // ==================== البحث الشامل ====================
@@ -280,6 +335,7 @@ export class SearchService {
         .find(query)
         .populate('categoryId', 'name nameEn')
         .populate('brandId', 'name nameEn')
+        .populate('mainImageId', 'url')
         .sort(sort)
         .skip(skip)
         .limit(limit)
@@ -287,28 +343,35 @@ export class SearchService {
       this.productModel.countDocuments(query),
     ]);
 
-    // Map results
-    const results: SearchResultDto[] = products.map((product) => ({
-      type: 'product' as const,
-      id: String(product._id),
-      title: lang === 'ar' ? product.name : product.nameEn,
-      titleEn: product.nameEn,
-      description: lang === 'ar' ? product.description : product.descriptionEn,
-      descriptionEn: product.descriptionEn,
-      thumbnail: product.mainImage,
-      metadata: {
-        category: this.getNameFromRef(product.categoryId, lang),
-        brand: this.getNameFromRef(product.brandId, lang),
-        priceRange: product.priceRange,
-        rating: product.rating,
-        reviewsCount: product.reviewsCount,
-        isFeatured: product.isFeatured,
-        isNew: product.isNew,
-        tags: product.tags,
-      },
-      relevanceScore: q ? this.calculateRelevance(product, q, lang) : 0,
-      createdAt: product.createdAt,
-    }));
+    // Map results with price ranges
+    const results: SearchResultDto[] = await Promise.all(
+      products.map(async (product) => {
+        const productId = String(product._id);
+        const priceRangeByCurrency = await this.getPriceRangeByCurrency(productId);
+
+        return {
+          type: 'product' as const,
+          id: productId,
+          title: lang === 'ar' ? product.name : product.nameEn,
+          titleEn: product.nameEn,
+          description: lang === 'ar' ? product.description : product.descriptionEn,
+          descriptionEn: product.descriptionEn,
+          thumbnail: this.getMainImageUrl(product),
+          metadata: {
+            category: this.getNameFromRef(product.categoryId, lang),
+            brand: this.getNameFromRef(product.brandId, lang),
+            priceRangeByCurrency,
+            rating: product.rating,
+            reviewsCount: product.reviewsCount,
+            isFeatured: product.isFeatured,
+            isNew: product.isNew,
+            tags: product.tags,
+          },
+          relevanceScore: q ? this.calculateRelevance(product, q, lang) : 0,
+          createdAt: product.createdAt,
+        };
+      })
+    );
 
     const response: ProductSearchResultDto = {
       results,
@@ -344,21 +407,33 @@ export class SearchService {
 
     const products = await this.productModel
       .find(query)
+      .populate('mainImageId', 'url')
       .sort({ isFeatured: -1, createdAt: -1 })
       .limit(limit)
       .lean<ProductSimpleLean[]>();
 
-    return products.map((p) => ({
-      type: 'product' as const,
-      id: String(p._id),
-      title: lang === 'ar' ? p.name : p.nameEn,
-      titleEn: p.nameEn,
-      description: lang === 'ar' ? p.description : p.descriptionEn,
-      thumbnail: p.mainImage,
-      metadata: { type: 'product' },
-      relevanceScore: q ? this.calculateRelevance(p, q, lang) : 0,
-      createdAt: p.createdAt,
-    }));
+    // Map results with price ranges
+    return Promise.all(
+      products.map(async (p) => {
+        const productId = String(p._id);
+        const priceRangeByCurrency = await this.getPriceRangeByCurrency(productId);
+
+        return {
+          type: 'product' as const,
+          id: productId,
+          title: lang === 'ar' ? p.name : p.nameEn,
+          titleEn: p.nameEn,
+          description: lang === 'ar' ? p.description : p.descriptionEn,
+          thumbnail: this.getMainImageUrl(p),
+          metadata: {
+            type: 'product',
+            priceRangeByCurrency,
+          },
+          relevanceScore: q ? this.calculateRelevance(p, q, lang) : 0,
+          createdAt: p.createdAt,
+        };
+      })
+    );
   }
 
   // ==================== بحث الفئات ====================

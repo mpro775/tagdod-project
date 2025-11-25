@@ -100,7 +100,7 @@ export class CreateEngineerCouponDto {
   @IsNumber() @IsOptional() usageLimitPerUser?: number;
 
   @IsDateString() validFrom!: string;
-  @IsDateString() validUntil!: string;
+  @IsDateString() @IsOptional() validUntil?: string;
 
   @IsNumber() @IsOptional() minimumOrderAmount?: number;
 }

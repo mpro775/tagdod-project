@@ -58,7 +58,7 @@ export class Coupon {
 
   // Validity
   @Prop({ required: true }) validFrom!: Date;
-  @Prop({ required: true }) validUntil!: Date;
+  @Prop() validUntil?: Date; // Nullable for engineer coupons (unlimited)
 
   // Product restrictions
   @Prop({ type: String, enum: DiscountAppliesTo, default: DiscountAppliesTo.ALL_PRODUCTS })

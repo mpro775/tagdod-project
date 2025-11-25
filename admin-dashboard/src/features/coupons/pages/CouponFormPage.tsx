@@ -150,6 +150,8 @@ export const CouponFormPage: React.FC = () => {
   const couponType = watch('type');
   const isEngineerCoupon = watch('engineerId');
   const appliesTo = watch('appliesTo');
+  const discountValue = watch('discountValue');
+  const currentType = watch('type');
 
   useEffect(() => {
     if (coupon && isEditing) {
@@ -185,7 +187,35 @@ export const CouponFormPage: React.FC = () => {
       // Set engineerId from query params when creating a new coupon
       setValue('engineerId', engineerIdFromQuery);
     }
-  }, [coupon, isEditing, reset, engineerIdFromQuery]);
+  }, [coupon, isEditing, reset, engineerIdFromQuery, setValue]);
+
+  // Auto-set values for engineer coupons
+  useEffect(() => {
+    if (!isEditing && isEngineerCoupon) {
+      // Set validFrom to today
+      const today = new Date().toISOString().split('T')[0];
+      setValue('validFrom', today);
+      
+      // Set validUntil to null (unlimited)
+      setValue('validUntil', '');
+      
+      // Set usage limits to null (unlimited)
+      setValue('usageLimit', undefined);
+      setValue('usageLimitPerUser', undefined);
+      
+      // Set type to percentage if not set
+      if (!currentType) {
+        setValue('type', 'percentage');
+      }
+    }
+  }, [isEngineerCoupon, isEditing, setValue, currentType]);
+
+  // Auto-sync commissionRate with discountValue for engineer coupons
+  useEffect(() => {
+    if (!isEditing && isEngineerCoupon && discountValue !== undefined) {
+      setValue('commissionRate', discountValue);
+    }
+  }, [discountValue, isEngineerCoupon, isEditing, setValue]);
 
   const handlePreviewToggle = () => {
     setShowPreview(!showPreview);
@@ -203,11 +233,11 @@ export const CouponFormPage: React.FC = () => {
           description: formData.description,
           commissionRate: formData.commissionRate!,
           type: formData.type || 'percentage',
-          discountValue: formData.discountValue,
-          usageLimit: formData.usageLimit,
-          usageLimitPerUser: formData.usageLimitPerUser,
-          validFrom: formData.validFrom!,
-          validUntil: formData.validUntil!,
+          discountValue: formData.discountValue || formData.commissionRate,
+          usageLimit: undefined, // No limits for engineer coupons
+          usageLimitPerUser: undefined, // No limits for engineer coupons
+          validFrom: formData.validFrom || new Date().toISOString(),
+          validUntil: undefined, // Unlimited for engineer coupons
           minimumOrderAmount: formData.minimumOrderAmount,
         },
         {
@@ -695,57 +725,61 @@ export const CouponFormPage: React.FC = () => {
             )}
 
             {/* Usage Limits */}
-            <Grid size={{ xs: 12 }}>
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
-              >
-                {t('form.usageLimits')}
-              </Typography>
-            </Grid>
+            {!isEngineerCoupon && (
+              <>
+                <Grid size={{ xs: 12 }}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  >
+                    {t('form.usageLimits')}
+                  </Typography>
+                </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Controller
-                name="usageLimit"
-                control={control}
-                rules={{
-                  min: { value: 0, message: t('validation.usageLimitMin') },
-                }}
-                render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    label={t('form.usageLimit')}
-                    type="number"
-                    error={!!error}
-                    helperText={error?.message}
-                    fullWidth
-                    size={isMobile ? 'small' : 'medium'}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Controller
+                    name="usageLimit"
+                    control={control}
+                    rules={{
+                      min: { value: 0, message: t('validation.usageLimitMin') },
+                    }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label={t('form.usageLimit')}
+                        type="number"
+                        error={!!error}
+                        helperText={error?.message}
+                        fullWidth
+                        size={isMobile ? 'small' : 'medium'}
+                      />
+                    )}
                   />
-                )}
-              />
-            </Grid>
+                </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Controller
-                name="usageLimitPerUser"
-                control={control}
-                rules={{
-                  min: { value: 0, message: t('validation.usageLimitPerUserMin') },
-                }}
-                render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    label={t('form.usageLimitPerUser')}
-                    type="number"
-                    error={!!error}
-                    helperText={error?.message}
-                    fullWidth
-                    size={isMobile ? 'small' : 'medium'}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Controller
+                    name="usageLimitPerUser"
+                    control={control}
+                    rules={{
+                      min: { value: 0, message: t('validation.usageLimitPerUserMin') },
+                    }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label={t('form.usageLimitPerUser')}
+                        type="number"
+                        error={!!error}
+                        helperText={error?.message}
+                        fullWidth
+                        size={isMobile ? 'small' : 'medium'}
+                      />
+                    )}
                   />
-                )}
-              />
-            </Grid>
+                </Grid>
+              </>
+            )}
 
             {/* Validity Period */}
             <Grid size={{ xs: 12 }}>
@@ -783,8 +817,9 @@ export const CouponFormPage: React.FC = () => {
                 name="validUntil"
                 control={control}
                 rules={{
-                  required: t('validation.validUntilRequired'),
+                  required: !isEngineerCoupon ? t('validation.validUntilRequired') : false,
                   validate: (value) => {
+                    if (isEngineerCoupon) return true; // No validation for engineer coupons
                     const validFrom = watch('validFrom');
                     if (validFrom && value && new Date(value) <= new Date(validFrom)) {
                       return t('validation.validUntilAfterFrom');
@@ -795,11 +830,12 @@ export const CouponFormPage: React.FC = () => {
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label={t('form.validUntil')}
+                    label={isEngineerCoupon ? t('form.validUntil', 'تاريخ الانتهاء (اختياري - إلى مالا نهاية)') : t('form.validUntil')}
                     type="date"
                     error={!!error}
-                    helperText={error?.message}
+                    helperText={isEngineerCoupon ? t('form.engineerCouponUnlimited', 'كوبونات المهندسين بدون تاريخ انتهاء') : error?.message}
                     InputLabelProps={{ shrink: true }}
+                    disabled={isEngineerCoupon}
                     fullWidth
                     size={isMobile ? 'small' : 'medium'}
                   />
@@ -808,15 +844,17 @@ export const CouponFormPage: React.FC = () => {
             </Grid>
 
             {/* Applicability */}
-            <Grid size={{ xs: 12 }}>
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
-              >
-                {t('form.applicability')}
-              </Typography>
-            </Grid>
+            {!isEngineerCoupon && (
+              <>
+                <Grid size={{ xs: 12 }}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                  >
+                    {t('form.applicability')}
+                  </Typography>
+                </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
               <Controller
@@ -1110,6 +1148,8 @@ export const CouponFormPage: React.FC = () => {
                 />
               </Grid>
             )}
+              </>
+            )}
 
             {/* Engineer Coupon Fields */}
             {!isEditing && (
@@ -1136,8 +1176,8 @@ export const CouponFormPage: React.FC = () => {
                             <em>{t('form.none', 'لا يوجد')}</em>
                           </MenuItem>
                           {engineers.map((engineer: any) => (
-                            <MenuItem key={engineer._id} value={engineer._id}>
-                              {engineer.name || engineer.email || engineer._id}
+                            <MenuItem key={engineer._id || engineer.engineerId} value={engineer._id || engineer.engineerId}>
+                              {engineer.engineerName || engineer.name || engineer.email || engineer._id || engineer.engineerId}
                             </MenuItem>
                           ))}
                         </Select>
