@@ -219,7 +219,7 @@ export interface CreateEngineerCouponDto {
   usageLimit?: number;
   usageLimitPerUser?: number;
   validFrom: string;
-  validUntil: string;
+  validUntil?: string; // Optional for unlimited engineer coupons
   minimumOrderAmount?: number;
 }
 

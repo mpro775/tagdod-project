@@ -255,12 +255,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
                 path: '/coupons',
               },
               {
-                id: 'coupons-engineers',
-                label: t('navigation.engineerCoupons', 'كوبونات المهندسين'),
-                icon: <Build />,
-                path: '/services/engineers/coupons',
-              },
-              {
                 id: 'coupons-analytics',
                 label: t('navigation.couponsAnalytics', 'تحليلات الكوبونات'),
                 icon: <Assessment />,
@@ -288,12 +282,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             path: '/services/requests',
           },
           {
-            id: 'services-engineers',
-            label: t('navigation.servicesEngineers', 'إدارة المهندسين'),
-            icon: <People />,
-            path: '/services/engineers',
-          },
-          {
             id: 'services-offers',
             label: t('navigation.servicesOffers', 'إدارة العروض'),
             icon: <LocalOffer />,
@@ -304,6 +292,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             label: t('navigation.servicesAnalytics', 'تحليلات الخدمات'),
             icon: <Analytics />,
             path: '/services/analytics',
+          },
+        ],
+      },
+      {
+        id: 'engineers',
+        label: t('navigation.engineers', 'المهندسين'),
+        icon: <People />,
+        children: [
+          {
+            id: 'engineers-management',
+            label: t('navigation.servicesEngineers', 'إدارة المهندسين'),
+            icon: <People />,
+            path: '/services/engineers',
+          },
+          {
+            id: 'engineers-coupons',
+            label: t('navigation.engineerCoupons', 'كوبونات المهندسين'),
+            icon: <LocalOffer />,
+            path: '/services/engineers/coupons',
           },
         ],
       },

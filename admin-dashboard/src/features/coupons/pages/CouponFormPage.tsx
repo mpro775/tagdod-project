@@ -150,10 +150,8 @@ export const CouponFormPage: React.FC = () => {
   });
 
   const couponType = watch('type');
-  const isEngineerCoupon = couponCategory === 'engineer' || watch('engineerId');
+  const isEngineerCoupon = couponCategory === 'engineer' || !!watch('engineerId');
   const appliesTo = watch('appliesTo');
-  const discountValue = watch('discountValue');
-  const currentType = watch('type');
 
   useEffect(() => {
     if (coupon && isEditing) {
@@ -214,20 +212,19 @@ export const CouponFormPage: React.FC = () => {
     }
   }, [couponCategory, isEditing, setValue]);
 
-  // Auto-sync commissionRate with discountValue for engineer coupons
-  useEffect(() => {
-    if (!isEditing && isEngineerCoupon && discountValue !== undefined) {
-      setValue('commissionRate', discountValue);
-    }
-  }, [discountValue, isEngineerCoupon, isEditing, setValue]);
-
   const handlePreviewToggle = () => {
     setShowPreview(!showPreview);
   };
 
   const onSubmit = (data: CouponFormData) => {
     // If it's an engineer coupon and we're creating (not editing), use createEngineerCoupon
-    if (!isEditing && couponCategory === 'engineer' && data.engineerId && data.discountValue !== undefined) {
+    if (
+      !isEditing &&
+      couponCategory === 'engineer' &&
+      data.engineerId &&
+      data.discountValue !== undefined &&
+      data.commissionRate !== undefined
+    ) {
       const formData = data as CreateCouponDto;
       createEngineerCoupon(
         {
@@ -235,7 +232,7 @@ export const CouponFormPage: React.FC = () => {
           code: formData.code!,
           name: formData.name!,
           description: formData.description,
-          commissionRate: formData.discountValue!, // commissionRate = discountValue for engineer coupons
+          commissionRate: formData.commissionRate!, // Commission rate is entered manually
           type: formData.type || 'percentage',
           discountValue: formData.discountValue!,
           usageLimit: undefined, // No limits for engineer coupons
@@ -502,118 +499,97 @@ export const CouponFormPage: React.FC = () => {
                 <Controller
                   name="visibility"
                   control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <FormControl fullWidth error={!!error} size={isMobile ? 'small' : 'medium'}>
-                    <InputLabel>{t('form.visibility')}</InputLabel>
-                    <Select {...field} label={t('form.visibility')}>
-                      {visibilityOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {error && <FormHelperText>{error.message}</FormHelperText>}
-                  </FormControl>
-                )}
-              />
+                  render={({ field, fieldState: { error } }) => (
+                    <FormControl fullWidth error={!!error} size={isMobile ? 'small' : 'medium'}>
+                      <InputLabel>{t('form.visibility')}</InputLabel>
+                      <Select {...field} label={t('form.visibility')}>
+                        {visibilityOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {error && <FormHelperText>{error.message}</FormHelperText>}
+                    </FormControl>
+                  )}
+                />
               </Grid>
             )}
 
             {/* Discount Configuration - Only for general coupons */}
-            {couponCategory === 'general' && (couponType === 'percentage' || couponType === 'fixed_amount') && (
-              <>
-                <Grid size={{ xs: 12 }}>
-                  <Typography
-                    variant="h6"
-                    gutterBottom
-                    sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                  >
-                    {t('form.discountSettings')}
-                  </Typography>
-                </Grid>
-
-                {couponType === 'percentage' && (
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Controller
-                      name="discountValue"
-                      control={control}
-                      rules={{
-                        required: t('validation.discountValueRequired'),
-                        min: { value: 0, message: t('validation.discountValueMin') },
-                        max: { value: 100, message: t('validation.discountValueMax') },
-                      }}
-                      render={({ field, fieldState: { error } }) => (
-                        <TextField
-                          {...field}
-                          label={t('form.discountValue')}
-                          type="number"
-                          error={!!error}
-                          helperText={error?.message}
-                          fullWidth
-                          size={isMobile ? 'small' : 'medium'}
-                        />
-                      )}
-                    />
+            {couponCategory === 'general' &&
+              (couponType === 'percentage' || couponType === 'fixed_amount') && (
+                <>
+                  <Grid size={{ xs: 12 }}>
+                    <Typography
+                      variant="h6"
+                      gutterBottom
+                      sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                    >
+                      {t('form.discountSettings')}
+                    </Typography>
                   </Grid>
-                )}
 
-                {couponType === 'fixed_amount' && (
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Controller
-                      name="discountValue"
-                      control={control}
-                      rules={{
-                        required: t('validation.discountValueRequired'),
-                        min: { value: 0, message: t('validation.discountValueMin') },
-                      }}
-                      render={({ field, fieldState: { error } }) => (
-                        <TextField
-                          {...field}
-                          label={t('form.discountValue')}
-                          type="number"
-                          error={!!error}
-                          helperText={error?.message}
-                          fullWidth
-                          size={isMobile ? 'small' : 'medium'}
-                        />
-                      )}
-                    />
-                  </Grid>
-                )}
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Controller
-                    name="minimumOrderAmount"
-                    control={control}
-                    rules={{
-                      min: { value: 0, message: t('validation.minimumOrderAmountMin') },
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        label={t('form.minimumOrderAmount')}
-                        type="number"
-                        error={!!error}
-                        helperText={error?.message}
-                        fullWidth
-                        size={isMobile ? 'small' : 'medium'}
+                  {couponType === 'percentage' && (
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Controller
+                        name="discountValue"
+                        control={control}
+                        rules={{
+                          required: t('validation.discountValueRequired'),
+                          min: { value: 0, message: t('validation.discountValueMin') },
+                          max: { value: 100, message: t('validation.discountValueMax') },
+                        }}
+                        render={({ field, fieldState: { error } }) => (
+                          <TextField
+                            {...field}
+                            label={t('form.discountValue')}
+                            type="number"
+                            error={!!error}
+                            helperText={error?.message}
+                            fullWidth
+                            size={isMobile ? 'small' : 'medium'}
+                          />
+                        )}
                       />
-                    )}
-                  />
-                </Grid>
+                    </Grid>
+                  )}
 
-                {couponType === 'percentage' && (
+                  {couponType === 'fixed_amount' && (
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Controller
+                        name="discountValue"
+                        control={control}
+                        rules={{
+                          required: t('validation.discountValueRequired'),
+                          min: { value: 0, message: t('validation.discountValueMin') },
+                        }}
+                        render={({ field, fieldState: { error } }) => (
+                          <TextField
+                            {...field}
+                            label={t('form.discountValue')}
+                            type="number"
+                            error={!!error}
+                            helperText={error?.message}
+                            fullWidth
+                            size={isMobile ? 'small' : 'medium'}
+                          />
+                        )}
+                      />
+                    </Grid>
+                  )}
+
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Controller
-                      name="maximumDiscountAmount"
+                      name="minimumOrderAmount"
                       control={control}
                       rules={{
-                        min: { value: 0, message: t('validation.maximumDiscountAmountMin') },
+                        min: { value: 0, message: t('validation.minimumOrderAmountMin') },
                       }}
                       render={({ field, fieldState: { error } }) => (
                         <TextField
                           {...field}
-                          label={t('form.maximumDiscountAmount')}
+                          label={t('form.minimumOrderAmount')}
                           type="number"
                           error={!!error}
                           helperText={error?.message}
@@ -623,9 +599,31 @@ export const CouponFormPage: React.FC = () => {
                       )}
                     />
                   </Grid>
-                )}
-              </>
-            )}
+
+                  {couponType === 'percentage' && (
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Controller
+                        name="maximumDiscountAmount"
+                        control={control}
+                        rules={{
+                          min: { value: 0, message: t('validation.maximumDiscountAmountMin') },
+                        }}
+                        render={({ field, fieldState: { error } }) => (
+                          <TextField
+                            {...field}
+                            label={t('form.maximumDiscountAmount')}
+                            type="number"
+                            error={!!error}
+                            helperText={error?.message}
+                            fullWidth
+                            size={isMobile ? 'small' : 'medium'}
+                          />
+                        )}
+                      />
+                    </Grid>
+                  )}
+                </>
+              )}
 
             {/* Buy X Get Y Configuration */}
             {couponType === 'buy_x_get_y' && (
@@ -862,10 +860,18 @@ export const CouponFormPage: React.FC = () => {
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
-                    label={isEngineerCoupon ? t('form.validUntil', 'تاريخ الانتهاء (اختياري - إلى مالا نهاية)') : t('form.validUntil')}
+                    label={
+                      isEngineerCoupon
+                        ? t('form.validUntil', 'تاريخ الانتهاء (اختياري - إلى مالا نهاية)')
+                        : t('form.validUntil')
+                    }
                     type="date"
                     error={!!error}
-                    helperText={isEngineerCoupon ? t('form.engineerCouponUnlimited', 'كوبونات المهندسين بدون تاريخ انتهاء') : error?.message}
+                    helperText={
+                      isEngineerCoupon
+                        ? t('form.engineerCouponUnlimited', 'كوبونات المهندسين بدون تاريخ انتهاء')
+                        : error?.message
+                    }
                     InputLabelProps={{ shrink: true }}
                     disabled={isEngineerCoupon}
                     fullWidth
@@ -888,298 +894,301 @@ export const CouponFormPage: React.FC = () => {
                   </Typography>
                 </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Controller
-                name="appliesTo"
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <FormControl fullWidth error={!!error} size={isMobile ? 'small' : 'medium'}>
-                    <InputLabel>{t('form.appliesTo')}</InputLabel>
-                    <Select {...field} label={t('form.appliesTo')}>
-                      {appliesToOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {error && <FormHelperText>{error.message}</FormHelperText>}
-                  </FormControl>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Controller
+                    name="appliesTo"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <FormControl fullWidth error={!!error} size={isMobile ? 'small' : 'medium'}>
+                        <InputLabel>{t('form.appliesTo')}</InputLabel>
+                        <Select {...field} label={t('form.appliesTo')}>
+                          {appliesToOptions.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {error && <FormHelperText>{error.message}</FormHelperText>}
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                {/* Specific Products Selection */}
+                {appliesTo === 'specific_products' && (
+                  <Grid size={{ xs: 12 }}>
+                    <Controller
+                      name="applicableProductIds"
+                      control={control}
+                      rules={{
+                        validate: (value) => {
+                          if (!value || value.length === 0) {
+                            return t('validation.applicableProductIdsRequired');
+                          }
+                          return true;
+                        },
+                      }}
+                      render={({ field, fieldState: { error } }) => {
+                        const selectedProducts = (field.value || [])
+                          .map((id: string) => products.find((p: Product) => p._id === id))
+                          .filter(Boolean) as Product[];
+
+                        return (
+                          <Autocomplete
+                            multiple
+                            options={products}
+                            value={selectedProducts}
+                            onChange={(_event, newValue) => {
+                              field.onChange(newValue.map((p: Product) => p._id));
+                            }}
+                            loading={productsLoading}
+                            onInputChange={(_event, newInputValue) => {
+                              setProductSearch(newInputValue);
+                            }}
+                            getOptionLabel={(option: Product) =>
+                              `${option.name}${option.nameEn ? ` (${option.nameEn})` : ''}`
+                            }
+                            isOptionEqualToValue={(option: Product, value: Product) =>
+                              option._id === value._id
+                            }
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label={t('form.applicableProductIds', 'المنتجات المحددة')}
+                                placeholder={t('form.searchProducts', 'ابحث واختر المنتجات...')}
+                                error={!!error}
+                                helperText={error?.message}
+                                size={isMobile ? 'small' : 'medium'}
+                                InputProps={{
+                                  ...params.InputProps,
+                                  endAdornment: (
+                                    <>
+                                      {productsLoading ? (
+                                        <CircularProgress color="inherit" size={20} />
+                                      ) : null}
+                                      {params.InputProps.endAdornment}
+                                    </>
+                                  ),
+                                }}
+                              />
+                            )}
+                            renderTags={(value: Product[], getTagProps) =>
+                              value.map((option: Product, index: number) => (
+                                <Chip
+                                  {...getTagProps({ index })}
+                                  key={option._id}
+                                  label={option.name}
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              ))
+                            }
+                            renderOption={(props, option: Product) => (
+                              <li {...props} key={option._id}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                  <Typography variant="body2" fontWeight="medium">
+                                    {option.name}
+                                  </Typography>
+                                  {option.nameEn && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      {option.nameEn}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </li>
+                            )}
+                            noOptionsText={t('form.noProductsFound', 'لا توجد منتجات')}
+                            loadingText={t('form.loading', 'جاري التحميل...')}
+                          />
+                        );
+                      }}
+                    />
+                  </Grid>
                 )}
-              />
-            </Grid>
 
-            {/* Specific Products Selection */}
-            {appliesTo === 'specific_products' && (
-              <Grid size={{ xs: 12 }}>
-                <Controller
-                  name="applicableProductIds"
-                  control={control}
-                  rules={{
-                    validate: (value) => {
-                      if (!value || value.length === 0) {
-                        return t('validation.applicableProductIdsRequired');
-                      }
-                      return true;
-                    },
-                  }}
-                  render={({ field, fieldState: { error } }) => {
-                    const selectedProducts = (field.value || [])
-                      .map((id: string) => products.find((p: Product) => p._id === id))
-                      .filter(Boolean) as Product[];
+                {/* Specific Categories Selection */}
+                {appliesTo === 'specific_categories' && (
+                  <Grid size={{ xs: 12 }}>
+                    <Controller
+                      name="applicableCategoryIds"
+                      control={control}
+                      rules={{
+                        validate: (value) => {
+                          if (!value || value.length === 0) {
+                            return t('validation.applicableCategoryIdsRequired');
+                          }
+                          return true;
+                        },
+                      }}
+                      render={({ field, fieldState: { error } }) => {
+                        const selectedCategories = (field.value || [])
+                          .map((id: string) => categories.find((c: Category) => c._id === id))
+                          .filter(Boolean) as Category[];
 
-                    return (
-                      <Autocomplete
-                        multiple
-                        options={products}
-                        value={selectedProducts}
-                        onChange={(_event, newValue) => {
-                          field.onChange(newValue.map((p: Product) => p._id));
-                        }}
-                        loading={productsLoading}
-                        onInputChange={(_event, newInputValue) => {
-                          setProductSearch(newInputValue);
-                        }}
-                        getOptionLabel={(option: Product) =>
-                          `${option.name}${option.nameEn ? ` (${option.nameEn})` : ''}`
-                        }
-                        isOptionEqualToValue={(option: Product, value: Product) =>
-                          option._id === value._id
-                        }
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label={t('form.applicableProductIds', 'المنتجات المحددة')}
-                            placeholder={t('form.searchProducts', 'ابحث واختر المنتجات...')}
-                            error={!!error}
-                            helperText={error?.message}
-                            size={isMobile ? 'small' : 'medium'}
-                            InputProps={{
-                              ...params.InputProps,
-                              endAdornment: (
-                                <>
-                                  {productsLoading ? (
-                                    <CircularProgress color="inherit" size={20} />
-                                  ) : null}
-                                  {params.InputProps.endAdornment}
-                                </>
-                              ),
+                        return (
+                          <Autocomplete
+                            multiple
+                            options={categories}
+                            value={selectedCategories}
+                            onChange={(_event, newValue) => {
+                              field.onChange(newValue.map((c: Category) => c._id));
                             }}
+                            loading={categoriesLoading}
+                            getOptionLabel={(option: Category) =>
+                              `${option.name}${option.nameEn ? ` (${option.nameEn})` : ''}`
+                            }
+                            isOptionEqualToValue={(option: Category, value: Category) =>
+                              option._id === value._id
+                            }
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label={t('form.applicableCategoryIds', 'الفئات المحددة')}
+                                placeholder={t('form.searchCategories', 'ابحث واختر الفئات...')}
+                                error={!!error}
+                                helperText={error?.message}
+                                size={isMobile ? 'small' : 'medium'}
+                                InputProps={{
+                                  ...params.InputProps,
+                                  endAdornment: (
+                                    <>
+                                      {categoriesLoading ? (
+                                        <CircularProgress color="inherit" size={20} />
+                                      ) : null}
+                                      {params.InputProps.endAdornment}
+                                    </>
+                                  ),
+                                }}
+                              />
+                            )}
+                            renderTags={(value: Category[], getTagProps) =>
+                              value.map((option: Category, index: number) => (
+                                <Chip
+                                  {...getTagProps({ index })}
+                                  key={option._id}
+                                  label={option.name}
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              ))
+                            }
+                            renderOption={(props, option: Category) => (
+                              <li {...props} key={option._id}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                  <Typography variant="body2" fontWeight="medium">
+                                    {option.name}
+                                  </Typography>
+                                  {option.nameEn && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      {option.nameEn}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </li>
+                            )}
+                            noOptionsText={t('form.noCategoriesFound', 'لا توجد فئات')}
+                            loadingText={t('form.loading', 'جاري التحميل...')}
                           />
-                        )}
-                        renderTags={(value: Product[], getTagProps) =>
-                          value.map((option: Product, index: number) => (
-                            <Chip
-                              {...getTagProps({ index })}
-                              key={option._id}
-                              label={option.name}
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                            />
-                          ))
-                        }
-                        renderOption={(props, option: Product) => (
-                          <li {...props} key={option._id}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                              <Typography variant="body2" fontWeight="medium">
-                                {option.name}
-                              </Typography>
-                              {option.nameEn && (
-                                <Typography variant="caption" color="text.secondary">
-                                  {option.nameEn}
-                                </Typography>
-                              )}
-                            </Box>
-                          </li>
-                        )}
-                        noOptionsText={t('form.noProductsFound', 'لا توجد منتجات')}
-                        loadingText={t('form.loading', 'جاري التحميل...')}
-                      />
-                    );
-                  }}
-                />
-              </Grid>
-            )}
+                        );
+                      }}
+                    />
+                  </Grid>
+                )}
 
-            {/* Specific Categories Selection */}
-            {appliesTo === 'specific_categories' && (
-              <Grid size={{ xs: 12 }}>
-                <Controller
-                  name="applicableCategoryIds"
-                  control={control}
-                  rules={{
-                    validate: (value) => {
-                      if (!value || value.length === 0) {
-                        return t('validation.applicableCategoryIdsRequired');
-                      }
-                      return true;
-                    },
-                  }}
-                  render={({ field, fieldState: { error } }) => {
-                    const selectedCategories = (field.value || [])
-                      .map((id: string) => categories.find((c: Category) => c._id === id))
-                      .filter(Boolean) as Category[];
+                {/* Specific Brands Selection */}
+                {appliesTo === 'specific_brands' && (
+                  <Grid size={{ xs: 12 }}>
+                    <Controller
+                      name="applicableBrandIds"
+                      control={control}
+                      rules={{
+                        validate: (value) => {
+                          if (!value || value.length === 0) {
+                            return t('validation.applicableBrandIdsRequired');
+                          }
+                          return true;
+                        },
+                      }}
+                      render={({ field, fieldState: { error } }) => {
+                        const selectedBrands = (field.value || [])
+                          .map((id: string) => brands.find((b: Brand) => b._id === id))
+                          .filter(Boolean) as Brand[];
 
-                    return (
-                      <Autocomplete
-                        multiple
-                        options={categories}
-                        value={selectedCategories}
-                        onChange={(_event, newValue) => {
-                          field.onChange(newValue.map((c: Category) => c._id));
-                        }}
-                        loading={categoriesLoading}
-                        getOptionLabel={(option: Category) =>
-                          `${option.name}${option.nameEn ? ` (${option.nameEn})` : ''}`
-                        }
-                        isOptionEqualToValue={(option: Category, value: Category) =>
-                          option._id === value._id
-                        }
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label={t('form.applicableCategoryIds', 'الفئات المحددة')}
-                            placeholder={t('form.searchCategories', 'ابحث واختر الفئات...')}
-                            error={!!error}
-                            helperText={error?.message}
-                            size={isMobile ? 'small' : 'medium'}
-                            InputProps={{
-                              ...params.InputProps,
-                              endAdornment: (
-                                <>
-                                  {categoriesLoading ? (
-                                    <CircularProgress color="inherit" size={20} />
-                                  ) : null}
-                                  {params.InputProps.endAdornment}
-                                </>
-                              ),
+                        return (
+                          <Autocomplete
+                            multiple
+                            options={brands}
+                            value={selectedBrands}
+                            onChange={(_event, newValue) => {
+                              field.onChange(newValue.map((b: Brand) => b._id));
                             }}
+                            loading={brandsLoading}
+                            getOptionLabel={(option: Brand) =>
+                              `${option.name}${option.nameEn ? ` (${option.nameEn})` : ''}`
+                            }
+                            isOptionEqualToValue={(option: Brand, value: Brand) =>
+                              option._id === value._id
+                            }
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label={t('form.applicableBrandIds', 'العلامات التجارية المحددة')}
+                                placeholder={t(
+                                  'form.searchBrands',
+                                  'ابحث واختر العلامات التجارية...'
+                                )}
+                                error={!!error}
+                                helperText={error?.message}
+                                size={isMobile ? 'small' : 'medium'}
+                                InputProps={{
+                                  ...params.InputProps,
+                                  endAdornment: (
+                                    <>
+                                      {brandsLoading ? (
+                                        <CircularProgress color="inherit" size={20} />
+                                      ) : null}
+                                      {params.InputProps.endAdornment}
+                                    </>
+                                  ),
+                                }}
+                              />
+                            )}
+                            renderTags={(value: Brand[], getTagProps) =>
+                              value.map((option: Brand, index: number) => (
+                                <Chip
+                                  {...getTagProps({ index })}
+                                  key={option._id}
+                                  label={option.name}
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              ))
+                            }
+                            renderOption={(props, option: Brand) => (
+                              <li {...props} key={option._id}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                  <Typography variant="body2" fontWeight="medium">
+                                    {option.name}
+                                  </Typography>
+                                  {option.nameEn && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      {option.nameEn}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </li>
+                            )}
+                            noOptionsText={t('form.noBrandsFound', 'لا توجد علامات تجارية')}
+                            loadingText={t('form.loading', 'جاري التحميل...')}
                           />
-                        )}
-                        renderTags={(value: Category[], getTagProps) =>
-                          value.map((option: Category, index: number) => (
-                            <Chip
-                              {...getTagProps({ index })}
-                              key={option._id}
-                              label={option.name}
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                            />
-                          ))
-                        }
-                        renderOption={(props, option: Category) => (
-                          <li {...props} key={option._id}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                              <Typography variant="body2" fontWeight="medium">
-                                {option.name}
-                              </Typography>
-                              {option.nameEn && (
-                                <Typography variant="caption" color="text.secondary">
-                                  {option.nameEn}
-                                </Typography>
-                              )}
-                            </Box>
-                          </li>
-                        )}
-                        noOptionsText={t('form.noCategoriesFound', 'لا توجد فئات')}
-                        loadingText={t('form.loading', 'جاري التحميل...')}
-                      />
-                    );
-                  }}
-                />
-              </Grid>
-            )}
-
-            {/* Specific Brands Selection */}
-            {appliesTo === 'specific_brands' && (
-              <Grid size={{ xs: 12 }}>
-                <Controller
-                  name="applicableBrandIds"
-                  control={control}
-                  rules={{
-                    validate: (value) => {
-                      if (!value || value.length === 0) {
-                        return t('validation.applicableBrandIdsRequired');
-                      }
-                      return true;
-                    },
-                  }}
-                  render={({ field, fieldState: { error } }) => {
-                    const selectedBrands = (field.value || [])
-                      .map((id: string) => brands.find((b: Brand) => b._id === id))
-                      .filter(Boolean) as Brand[];
-
-                    return (
-                      <Autocomplete
-                        multiple
-                        options={brands}
-                        value={selectedBrands}
-                        onChange={(_event, newValue) => {
-                          field.onChange(newValue.map((b: Brand) => b._id));
-                        }}
-                        loading={brandsLoading}
-                        getOptionLabel={(option: Brand) =>
-                          `${option.name}${option.nameEn ? ` (${option.nameEn})` : ''}`
-                        }
-                        isOptionEqualToValue={(option: Brand, value: Brand) =>
-                          option._id === value._id
-                        }
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label={t('form.applicableBrandIds', 'العلامات التجارية المحددة')}
-                            placeholder={t('form.searchBrands', 'ابحث واختر العلامات التجارية...')}
-                            error={!!error}
-                            helperText={error?.message}
-                            size={isMobile ? 'small' : 'medium'}
-                            InputProps={{
-                              ...params.InputProps,
-                              endAdornment: (
-                                <>
-                                  {brandsLoading ? (
-                                    <CircularProgress color="inherit" size={20} />
-                                  ) : null}
-                                  {params.InputProps.endAdornment}
-                                </>
-                              ),
-                            }}
-                          />
-                        )}
-                        renderTags={(value: Brand[], getTagProps) =>
-                          value.map((option: Brand, index: number) => (
-                            <Chip
-                              {...getTagProps({ index })}
-                              key={option._id}
-                              label={option.name}
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                            />
-                          ))
-                        }
-                        renderOption={(props, option: Brand) => (
-                          <li {...props} key={option._id}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                              <Typography variant="body2" fontWeight="medium">
-                                {option.name}
-                              </Typography>
-                              {option.nameEn && (
-                                <Typography variant="caption" color="text.secondary">
-                                  {option.nameEn}
-                                </Typography>
-                              )}
-                            </Box>
-                          </li>
-                        )}
-                        noOptionsText={t('form.noBrandsFound', 'لا توجد علامات تجارية')}
-                        loadingText={t('form.loading', 'جاري التحميل...')}
-                      />
-                    );
-                  }}
-                />
-              </Grid>
-            )}
+                        );
+                      }}
+                    />
+                  </Grid>
+                )}
               </>
             )}
 
@@ -1206,8 +1215,15 @@ export const CouponFormPage: React.FC = () => {
                         <InputLabel>{t('form.engineerId')}</InputLabel>
                         <Select {...field} label={t('form.engineerId')}>
                           {engineers.map((engineer: any) => (
-                            <MenuItem key={engineer._id || engineer.engineerId} value={engineer._id || engineer.engineerId}>
-                              {engineer.engineerName || engineer.name || engineer.email || engineer._id || engineer.engineerId}
+                            <MenuItem
+                              key={engineer._id || engineer.engineerId}
+                              value={engineer._id || engineer.engineerId}
+                            >
+                              {engineer.engineerName ||
+                                engineer.name ||
+                                engineer.email ||
+                                engineer._id ||
+                                engineer.engineerId}
                             </MenuItem>
                           ))}
                         </Select>
@@ -1238,9 +1254,45 @@ export const CouponFormPage: React.FC = () => {
                         label={t('form.discountValue', 'نسبة الخصم (%)')}
                         type="number"
                         error={!!error}
-                        helperText={t('form.engineerDiscountNote', 'نسبة الخصم = نسبة العمولة للمهندس') || error?.message}
+                        helperText={error?.message}
                         fullWidth
                         size={isMobile ? 'small' : 'medium'}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Controller
+                    name="commissionRate"
+                    control={control}
+                    rules={{
+                      required: t('validation.commissionRateRequired', 'يجب إدخال نسبة العمولة'),
+                      min: {
+                        value: 0,
+                        message: t(
+                          'validation.commissionRateMin',
+                          'نسبة العمولة يجب أن تكون أكبر من أو تساوي 0'
+                        ),
+                      },
+                      max: {
+                        value: 100,
+                        message: t(
+                          'validation.commissionRateMax',
+                          'نسبة العمولة يجب أن تكون أقل من أو تساوي 100'
+                        ),
+                      },
+                    }}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
+                        {...field}
+                        label={t('form.commissionRate', 'نسبة العمولة (%)')}
+                        type="number"
+                        error={!!error}
+                        helperText={error?.message}
+                        fullWidth
+                        size={isMobile ? 'small' : 'medium'}
+                        inputProps={{ min: 0, max: 100, step: 0.01 }}
                       />
                     )}
                   />

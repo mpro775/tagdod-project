@@ -88,10 +88,10 @@ export class AlawaelSMSAdapter {
     }
     
     // Validate prefix
-    const validPrefixes = ['+96773', '+96771', '+96770', '+96777'];
+    const validPrefixes = ['+96773', '+96771', '+96770', '+96777', '+96778'];
     const prefix = normalized.substring(0, 6);
     if (!validPrefixes.includes(prefix)) {
-      throw new Error(`Invalid phone prefix. Allowed: +96773 (MTN), +96771 (Sabafon), +96770 (Y Telecom), +96777 (Yemen Mobile)`);
+      throw new Error(`Invalid phone prefix. Allowed: +96773 (MTN), +96771 (Sabafon), +96770 (Y Telecom), +96777 (Yemen Mobile), +96778`);
     }
     
     return normalized;
