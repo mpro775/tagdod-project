@@ -181,43 +181,6 @@ export class SMSAdapter {
   }
 
   /**
-   * Send WhatsApp message (if enabled)
-   */
-  async sendWhatsApp(to: string, message: string, mediaUrl?: string): Promise<SMSResult> {
-    try {
-      if (!this.twilioClient) {
-        return {
-          success: false,
-          error: 'Twilio client not initialized',
-        };
-      }
-
-      const whatsappFrom = `whatsapp:${this.configService.get('TWILIO_WHATSAPP_NUMBER')}`;
-      const whatsappTo = `whatsapp:${to}`;
-
-      const messageData = await this.twilioClient.messages.create({
-        body: message,
-        from: whatsappFrom,
-        to: whatsappTo,
-        mediaUrl: mediaUrl ? [mediaUrl] : undefined,
-      });
-
-      this.logger.log(`WhatsApp message sent successfully to ${to}: ${messageData.sid}`);
-
-      return {
-        success: true,
-        messageId: messageData.sid,
-      };
-    } catch (error) {
-      this.logger.error(`Failed to send WhatsApp message to ${to}:`, error);
-      return {
-        success: false,
-        error: (error as Error).message,
-      };
-    }
-  }
-
-  /**
    * Get SMS delivery status
    */
   async getDeliveryStatus(messageId: string): Promise<unknown> {

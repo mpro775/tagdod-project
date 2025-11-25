@@ -50,7 +50,7 @@ import { AuditService } from '../../../shared/services/audit.service';
 import { EmailAdapter } from '../../notifications/adapters/email.adapter';
 import { ConfigService } from '@nestjs/config';
 import { UploadService } from '../../upload/upload.service';
-import { SMSAdapter } from '../../notifications/adapters/sms.adapter';
+import { WhatsAppAdapter } from '../../notifications/adapters/whatsapp.adapter';
 import * as crypto from 'crypto';
 import {
   CreateOrderDto,
@@ -156,8 +156,8 @@ export class OrderService {
     private configService?: ConfigService,
     @Inject(forwardRef(() => UploadService))
     private uploadService?: UploadService,
-    @Inject(forwardRef(() => SMSAdapter))
-    private smsAdapter?: SMSAdapter,
+    @Inject(forwardRef(() => WhatsAppAdapter))
+    private whatsappAdapter?: WhatsAppAdapter,
   ) {}
 
   // ===== Helper Methods =====
@@ -5081,9 +5081,9 @@ export class OrderService {
    */
   private async sendOrderInvoiceWhatsApp(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
     try {
-      // التحقق من توفر SMSAdapter
-      if (!this.smsAdapter) {
-        this.logger.warn('SMS adapter not available. Skipping WhatsApp notification.');
+      // التحقق من توفر WhatsAppAdapter
+      if (!this.whatsappAdapter) {
+        this.logger.warn('WhatsApp adapter not available. Skipping WhatsApp notification.');
         return;
       }
 
@@ -5167,8 +5167,8 @@ Please review the attached invoice.`;
         whatsappNumber = `+${whatsappNumber}`;
       }
 
-      // إرسال الرسالة عبر Twilio
-      const result = await this.smsAdapter.sendWhatsApp(
+      // إرسال الرسالة عبر WhatsAppAdapter
+      const result = await this.whatsappAdapter.sendMessage(
         whatsappNumber,
         message,
         invoiceUrl, // إرسال رابط PDF كـ mediaUrl إذا كان متاحاً

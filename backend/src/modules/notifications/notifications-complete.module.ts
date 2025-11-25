@@ -38,6 +38,7 @@ import { FCMAdapter } from './adapters/fcm.adapter';
 import { EmailAdapter } from './adapters/email.adapter';
 import { SMSAdapter } from './adapters/sms.adapter';
 import { AlawaelSMSAdapter } from './adapters/alawael-sms.adapter';
+import { WhatsAppAdapter } from './adapters/whatsapp.adapter';
 
 // Ports
 import {} from './ports/notification.ports';
@@ -75,6 +76,7 @@ import { WebSocketService } from '../../shared/websocket/websocket.service';
     EmailAdapter, // Email Adapter for email notifications
     AlawaelSMSAdapter, // Alawael SMS Adapter for SMS notifications
     SMSAdapter, // SMS Adapter for SMS notifications (supports multiple providers)
+    WhatsAppAdapter, // WhatsApp Adapter for WhatsApp messages (Twilio)
     {
       provide: InAppNotificationAdapter,
       useFactory: (webSocketService: WebSocketService) => {
@@ -125,6 +127,7 @@ import { WebSocketService } from '../../shared/websocket/websocket.service';
     EmailAdapter, // Export EmailAdapter for direct use if needed
     AlawaelSMSAdapter, // Export AlawaelSMSAdapter for direct use if needed
     SMSAdapter, // Export SMSAdapter for direct use if needed
+    WhatsAppAdapter, // Export WhatsAppAdapter for direct use if needed
     InAppNotificationAdapter,
     PushNotificationAdapter,
     EmailNotificationAdapter,
