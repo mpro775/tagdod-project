@@ -50,6 +50,8 @@ import { AuditService } from '../../../shared/services/audit.service';
 import { EmailAdapter } from '../../notifications/adapters/email.adapter';
 import { ConfigService } from '@nestjs/config';
 import { UploadService } from '../../upload/upload.service';
+import { WhatsAppAdapter } from '../../notifications/adapters/whatsapp.adapter';
+import { SMSAdapter } from '../../notifications/adapters/sms.adapter';
 import * as crypto from 'crypto';
 import {
   CreateOrderDto,
@@ -155,6 +157,10 @@ export class OrderService {
     private configService?: ConfigService,
     @Inject(forwardRef(() => UploadService))
     private uploadService?: UploadService,
+    @Inject(forwardRef(() => WhatsAppAdapter))
+    private whatsappAdapter?: WhatsAppAdapter,
+    @Inject(forwardRef(() => SMSAdapter))
+    private smsAdapter?: SMSAdapter,
   ) {}
 
   // ===== Helper Methods =====
@@ -3993,6 +3999,14 @@ export class OrderService {
     this.logger.log(
       `Payment verification for order ${order.orderNumber}: ${isAmountSufficient ? 'APPROVED' : 'REJECTED'}`,
     );
+
+    // إرسال الفاتورة عند تأكيد الطلب بعد مطابقة الدفع
+    if (isAmountSufficient && order.status === OrderStatus.CONFIRMED) {
+      this.sendOrderInvoiceForStatus(order._id.toString()).catch((err: any) => {
+        this.logger.error(`Failed to send invoice for order ${order.orderNumber}:`, err);
+      });
+    }
+
     return order;
   }
 
@@ -4916,13 +4930,13 @@ export class OrderService {
         // لا نوقف العملية إذا فشل الحفظ المؤقت
       }
 
-      // إرسال الفاتورة عبر البريد الإلكتروني والواتساب (معاً)
+      // إرسال الفاتورة عبر البريد الإلكتروني والـ SMS (معاً)
       await Promise.all([
         this.sendOrderInvoiceEmail(order, pdfBuffer).catch((err) => {
           this.logger.warn(`Email sending failed for order ${order.orderNumber}:`, err);
         }),
-        this.sendOrderInvoiceWhatsApp(order, pdfBuffer).catch((err) => {
-          this.logger.warn(`WhatsApp sending failed for order ${order.orderNumber}:`, err);
+        this.sendOrderInvoiceSMS(order, pdfBuffer).catch((err) => {
+          this.logger.warn(`SMS sending failed for order ${order.orderNumber}:`, err);
         }),
       ]);
 
@@ -5074,20 +5088,24 @@ export class OrderService {
   }
 
   /**
-   * إرسال فاتورة الطلب عبر واتساب (رفع PDF إلى Bunny وإرسال رابط)
+   * إرسال فاتورة الطلب عبر SMS (رفع PDF إلى Bunny وإرسال رابط عبر مزود SMS الأوائل)
    */
-  private async sendOrderInvoiceWhatsApp(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
+  private async sendOrderInvoiceSMS(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
     try {
-      if (!this.uploadService) {
-        this.logger.warn('Upload service not available. Skipping WhatsApp notification.');
+      // التحقق من توفر SMSAdapter
+      if (!this.smsAdapter) {
+        this.logger.warn('SMS adapter not available. Skipping SMS notification.');
         return;
       }
 
-      // جلب رقم واتساب المبيعات من متغيرات البيئة
-      const salesManagerWhatsApp = this.configService?.get('SALES_MANAGER_WHATSAPP') || null;
+      // جلب رقم SMS المبيعات من متغيرات البيئة
+      const salesManagerSMS =
+        this.configService?.get('SALES_MANAGER_SMS') ||
+        this.configService?.get('SALES_MANAGER_WHATSAPP') ||
+        null;
 
-      if (!salesManagerWhatsApp) {
-        this.logger.warn('SALES_MANAGER_WHATSAPP not configured. Skipping WhatsApp notification.');
+      if (!salesManagerSMS) {
+        this.logger.warn('SALES_MANAGER_SMS not configured. Skipping SMS notification.');
         return;
       }
 
@@ -5115,62 +5133,68 @@ export class OrderService {
       const invoiceNumber = order.invoiceNumber || order.orderNumber;
       const fileName = `invoice-${invoiceNumber}-${Date.now()}.pdf`;
 
-      // رفع PDF إلى Bunny CDN
-      try {
-        const uploadResult = await this.uploadService.uploadFile(
-          {
-            buffer: pdfBuffer,
-            originalname: fileName,
-            mimetype: 'application/pdf',
-            size: pdfBuffer.length,
-          },
-          'invoices', // مجلد في Bunny
-          fileName, // اسم الملف المخصص
+      let invoiceUrl: string | undefined;
+
+      // رفع PDF إلى Bunny CDN (إذا كان uploadService متاحاً)
+      if (this.uploadService) {
+        try {
+          const uploadResult = await this.uploadService.uploadFile(
+            {
+              buffer: pdfBuffer,
+              originalname: fileName,
+              mimetype: 'application/pdf',
+              size: pdfBuffer.length,
+            },
+            'invoices', // مجلد في Bunny
+            fileName, // اسم الملف المخصص
+          );
+
+          invoiceUrl = uploadResult.url;
+          this.logger.log(`Invoice PDF uploaded to Bunny: ${invoiceUrl}`);
+        } catch (uploadError) {
+          this.logger.warn(
+            `Failed to upload invoice PDF to Bunny for order ${order.orderNumber}:`,
+            uploadError,
+          );
+          // نكمل العملية حتى لو فشل الرفع
+        }
+      }
+
+      // إنشاء رسالة SMS
+      const message = `فاتورة جديدة - New Invoice
+رقم الطلب: ${order.orderNumber}
+رقم الفاتورة: ${invoiceNumber}
+اسم العميل: ${customerName}
+الهاتف: ${customerPhone}
+المجموع: ${order.total.toLocaleString()} ${order.currency}
+تاريخ الإكمال: ${formatDate(order.completedAt)}
+${invoiceUrl ? `رابط الفاتورة: ${invoiceUrl}` : ''}`;
+
+      // تنظيف رقم SMS (إزالة أي رموز غير رقمية وإضافة + إذا لم يكن موجوداً)
+      let smsNumber = salesManagerSMS.replace(/[^0-9+]/g, '');
+      if (!smsNumber.startsWith('+')) {
+        // إذا لم يبدأ بـ +، نضيفه (افتراض أن الرقم دولي)
+        smsNumber = `+${smsNumber}`;
+      }
+
+      // إرسال الرسالة عبر SMSAdapter (مزود الأوائل)
+      const result = await this.smsAdapter.sendSMS({
+        to: smsNumber,
+        message: message,
+        mediaUrl: invoiceUrl, // إرسال رابط PDF كـ mediaUrl إذا كان متاحاً (للمزودات التي تدعمها)
+      });
+
+      if (result.success) {
+        this.logger.log(
+          `SMS message sent successfully for order ${order.orderNumber} to ${smsNumber}. Message ID: ${result.messageId}`,
         );
-
-        const invoiceUrl = uploadResult.url;
-        this.logger.log(`Invoice PDF uploaded to Bunny: ${invoiceUrl}`);
-
-        // إنشاء رسالة واتساب
-        const message = `📄 *فاتورة جديدة - New Invoice*
-
-*رقم الطلب / Order Number:* ${order.orderNumber}
-*رقم الفاتورة / Invoice Number:* ${invoiceNumber}
-*اسم العميل / Customer Name:* ${customerName}
-*الهاتف / Phone:* ${customerPhone}
-*المجموع / Total:* ${order.total.toLocaleString()} ${order.currency}
-*تاريخ الإكمال / Completed Date:* ${formatDate(order.completedAt)}
-
-*رابط الفاتورة / Invoice Link:*
-${invoiceUrl}
-
-يرجى الاطلاع على الفاتورة المرفقة.
-Please review the attached invoice.`;
-
-        // إنشاء رابط واتساب مباشر (wa.me)
-        const whatsappNumber = salesManagerWhatsApp.replace(/[^0-9]/g, ''); // إزالة أي رموز غير رقمية
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-
-        // تسجيل الرابط في السجل
-        this.logger.log(`WhatsApp link generated for order ${order.orderNumber}:`);
-        this.logger.log(`WhatsApp URL: ${whatsappUrl}`);
-        this.logger.log(`Invoice URL: ${invoiceUrl}`);
-
-        // ملاحظة: يمكن استخدام مكتبة 'open' لفتح الرابط تلقائياً في المتصفح
-        // أو إرسال الرابط عبر webhook أو أي طريقة أخرى
-      } catch (uploadError) {
+      } else {
         this.logger.error(
-          `Failed to upload invoice PDF to Bunny for order ${order.orderNumber}:`,
-          uploadError,
+          `Failed to send SMS message for order ${order.orderNumber}: ${result.error}`,
         );
-        // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
       }
     } catch (error) {
-      this.logger.error(
-        `Error sending WhatsApp notification for order ${order.orderNumber}:`,
-        error,
-      );
+      this.logger.error(`Error sending SMS notification for order ${order.orderNumber}:`, error);
       // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
     }
   }

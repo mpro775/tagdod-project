@@ -1069,7 +1069,7 @@ export class ProductService {
 
   // ==================== Cache Management ====================
 
-  private async clearCache(): Promise<void> {
+  async clearCache(): Promise<void> {
     try {
       await this.cacheService.clear('product:');
       await this.cacheService.clear('products:');

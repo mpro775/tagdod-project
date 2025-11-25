@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 
 // Lean result types
 type PopulatedName = { name: string; nameEn: string };
+type PopulatedMedia = { _id: Types.ObjectId; url: string };
 type PriceRange = { min: number; max: number };
 type ProductLean = {
   _id: Types.ObjectId;
@@ -12,6 +13,7 @@ type ProductLean = {
   description?: string;
   descriptionEn?: string;
   mainImage?: string;
+  mainImageId?: Types.ObjectId | PopulatedMedia;
   categoryId: Types.ObjectId | PopulatedName;
   brandId?: Types.ObjectId | PopulatedName;
   priceRange?: PriceRange | null;
@@ -29,6 +31,7 @@ type ProductSimpleLean = {
   description?: string;
   descriptionEn?: string;
   mainImage?: string;
+  mainImageId?: Types.ObjectId | PopulatedMedia;
   isFeatured?: boolean;
   createdAt: Date;
 };
@@ -65,6 +68,8 @@ import {
 import { Product } from '../products/schemas/product.schema';
 import { Category } from '../categories/schemas/category.schema';
 import { Brand } from '../brands/schemas/brand.schema';
+import { PricingService } from '../products/services/pricing.service';
+import { VariantService } from '../products/services/variant.service';
 
 @Injectable()
 export class SearchService {
@@ -83,6 +88,8 @@ export class SearchService {
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Brand.name) private brandModel: Model<Brand>,
     private cacheService: CacheService,
+    private pricingService: PricingService,
+    private variantService: VariantService,
   ) {}
 
   // Types for lean results and populated refs
@@ -91,6 +98,140 @@ export class SearchService {
       return lang === 'ar' ? ref.name : ref.nameEn;
     }
     return undefined;
+  }
+
+  // Extract main image URL from populated mainImageId or fallback to mainImage
+  private getMainImageUrl(product: ProductLean | ProductSimpleLean): string | undefined {
+    // Check if mainImageId is populated (has url property)
+    if (
+      product.mainImageId &&
+      typeof product.mainImageId === 'object' &&
+      'url' in product.mainImageId
+    ) {
+      return (product.mainImageId as PopulatedMedia).url;
+    }
+    // Fallback to mainImage field
+    return product.mainImage;
+  }
+
+  // Calculate price range by currency from variants or product base prices
+  // الأسعار مخزنة بالفعل في قاعدة البيانات - لا حاجة للتحويل
+  private async getPriceRangeByCurrency(productId: string): Promise<
+    Record<
+      string,
+      {
+        minPrice: number;
+        maxPrice: number;
+        currency: string;
+        hasDiscountedVariant: boolean;
+      }
+    >
+  > {
+    const currencies = ['USD', 'YER', 'SAR'];
+    const priceRanges: Record<
+      string,
+      {
+        minPrice: number;
+        maxPrice: number;
+        currency: string;
+        hasDiscountedVariant: boolean;
+      }
+    > = {};
+
+    try {
+      // جلب جميع variants غير المحذوفة (بغض النظر عن isActive)
+      const variants = await this.variantService.findByProductId(productId, false);
+
+      // جلب المنتج للحصول على أسعاره الأساسية
+      const product = await this.productModel.findById(productId).lean();
+
+      // إذا لم توجد variants، استخدم أسعار المنتج
+      const hasVariants = variants && variants.length > 0;
+
+      for (const currency of currencies) {
+        let minPrice = 0;
+        let maxPrice = 0;
+        let hasDiscountedVariant = false;
+
+        if (hasVariants) {
+          // حساب min/max من variants - استخدام الأسعار المخزنة مباشرة
+          const prices: number[] = [];
+
+          for (const variant of variants) {
+            let price: number | undefined;
+
+            // استخدام الأسعار المخزنة مباشرة بدون تحويل
+            switch (currency) {
+              case 'USD':
+                price = variant.basePriceUSD;
+                break;
+              case 'SAR':
+                price = variant.basePriceSAR;
+                break;
+              case 'YER':
+                price = variant.basePriceYER;
+                break;
+            }
+
+            // إذا كان السعر موجوداً و أكبر من صفر، أضفه
+            if (price !== undefined && price !== null && price > 0) {
+              prices.push(price);
+
+              // التحقق من وجود خصم
+              if (variant.compareAtPriceUSD && variant.compareAtPriceUSD > variant.basePriceUSD) {
+                hasDiscountedVariant = true;
+              }
+            }
+          }
+
+          if (prices.length > 0) {
+            minPrice = Math.min(...prices);
+            maxPrice = Math.max(...prices);
+          }
+        } else if (product) {
+          // استخدام أسعار المنتج نفسه - المخزنة مباشرة
+          let price: number | undefined;
+
+          switch (currency) {
+            case 'USD':
+              price = (product as any).basePriceUSD;
+              break;
+            case 'SAR':
+              price = (product as any).basePriceSAR;
+              break;
+            case 'YER':
+              price = (product as any).basePriceYER;
+              break;
+          }
+
+          // استخدام السعر المخزن مباشرة
+          if (price !== undefined && price !== null && price > 0) {
+            minPrice = price;
+            maxPrice = price;
+          }
+        }
+
+        priceRanges[currency] = {
+          minPrice,
+          maxPrice,
+          currency,
+          hasDiscountedVariant,
+        };
+      }
+    } catch (error) {
+      this.logger.error(`Failed to get price range for product ${productId}:`, error);
+      // إرجاع قيم افتراضية
+      for (const currency of currencies) {
+        priceRanges[currency] = {
+          minPrice: 0,
+          maxPrice: 0,
+          currency,
+          hasDiscountedVariant: false,
+        };
+      }
+    }
+
+    return priceRanges;
   }
 
   // ==================== البحث الشامل ====================
@@ -203,29 +344,27 @@ export class SearchService {
             localField: '_id',
             foreignField: 'productId',
             as: 'variants',
-            pipeline: [
-              { $match: { deletedAt: null, isActive: true } }
-            ]
-          }
+            pipeline: [{ $match: { deletedAt: null, isActive: true } }],
+          },
         },
         {
           $match: {
             'variants.basePriceUSD': {
               ...(minPrice !== undefined && { $gte: minPrice }),
-              ...(maxPrice !== undefined && { $lte: maxPrice })
-            }
-          }
+              ...(maxPrice !== undefined && { $lte: maxPrice }),
+            },
+          },
         },
         {
           $project: {
-            variants: 0 // إزالة variants من النتيجة النهائية
-          }
-        }
+            variants: 0, // إزالة variants من النتيجة النهائية
+          },
+        },
       ]);
 
       // إضافة IDs للمنتجات المطابقة للفلتر
       if (productsWithPriceRange.length > 0) {
-        query._id = { $in: productsWithPriceRange.map(p => p._id) };
+        query._id = { $in: productsWithPriceRange.map((p) => p._id) };
       } else {
         // إذا لم توجد منتجات في نطاق السعر، إرجاع قائمة فارغة
         query._id = { $in: [] };
@@ -280,6 +419,7 @@ export class SearchService {
         .find(query)
         .populate('categoryId', 'name nameEn')
         .populate('brandId', 'name nameEn')
+        .populate('mainImageId', 'url')
         .sort(sort)
         .skip(skip)
         .limit(limit)
@@ -287,28 +427,35 @@ export class SearchService {
       this.productModel.countDocuments(query),
     ]);
 
-    // Map results
-    const results: SearchResultDto[] = products.map((product) => ({
-      type: 'product' as const,
-      id: String(product._id),
-      title: lang === 'ar' ? product.name : product.nameEn,
-      titleEn: product.nameEn,
-      description: lang === 'ar' ? product.description : product.descriptionEn,
-      descriptionEn: product.descriptionEn,
-      thumbnail: product.mainImage,
-      metadata: {
-        category: this.getNameFromRef(product.categoryId, lang),
-        brand: this.getNameFromRef(product.brandId, lang),
-        priceRange: product.priceRange,
-        rating: product.rating,
-        reviewsCount: product.reviewsCount,
-        isFeatured: product.isFeatured,
-        isNew: product.isNew,
-        tags: product.tags,
-      },
-      relevanceScore: q ? this.calculateRelevance(product, q, lang) : 0,
-      createdAt: product.createdAt,
-    }));
+    // Map results with price ranges
+    const results: SearchResultDto[] = await Promise.all(
+      products.map(async (product) => {
+        const productId = String(product._id);
+        const priceRangeByCurrency = await this.getPriceRangeByCurrency(productId);
+
+        return {
+          type: 'product' as const,
+          id: productId,
+          title: lang === 'ar' ? product.name : product.nameEn,
+          titleEn: product.nameEn,
+          description: lang === 'ar' ? product.description : product.descriptionEn,
+          descriptionEn: product.descriptionEn,
+          thumbnail: this.getMainImageUrl(product),
+          metadata: {
+            category: this.getNameFromRef(product.categoryId, lang),
+            brand: this.getNameFromRef(product.brandId, lang),
+            priceRangeByCurrency,
+            rating: product.rating,
+            reviewsCount: product.reviewsCount,
+            isFeatured: product.isFeatured,
+            isNew: product.isNew,
+            tags: product.tags,
+          },
+          relevanceScore: q ? this.calculateRelevance(product, q, lang) : 0,
+          createdAt: product.createdAt,
+        };
+      }),
+    );
 
     const response: ProductSearchResultDto = {
       results,
@@ -344,21 +491,33 @@ export class SearchService {
 
     const products = await this.productModel
       .find(query)
+      .populate('mainImageId', 'url')
       .sort({ isFeatured: -1, createdAt: -1 })
       .limit(limit)
       .lean<ProductSimpleLean[]>();
 
-    return products.map((p) => ({
-      type: 'product' as const,
-      id: String(p._id),
-      title: lang === 'ar' ? p.name : p.nameEn,
-      titleEn: p.nameEn,
-      description: lang === 'ar' ? p.description : p.descriptionEn,
-      thumbnail: p.mainImage,
-      metadata: { type: 'product' },
-      relevanceScore: q ? this.calculateRelevance(p, q, lang) : 0,
-      createdAt: p.createdAt,
-    }));
+    // Map results with price ranges
+    return Promise.all(
+      products.map(async (p) => {
+        const productId = String(p._id);
+        const priceRangeByCurrency = await this.getPriceRangeByCurrency(productId);
+
+        return {
+          type: 'product' as const,
+          id: productId,
+          title: lang === 'ar' ? p.name : p.nameEn,
+          titleEn: p.nameEn,
+          description: lang === 'ar' ? p.description : p.descriptionEn,
+          thumbnail: this.getMainImageUrl(p),
+          metadata: {
+            type: 'product',
+            priceRangeByCurrency,
+          },
+          relevanceScore: q ? this.calculateRelevance(p, q, lang) : 0,
+          createdAt: p.createdAt,
+        };
+      }),
+    );
   }
 
   // ==================== بحث الفئات ====================
@@ -756,7 +915,7 @@ export class SearchService {
     // حالياً نرجع اتجاهات بناءً على نشاط المنتجات
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    
+
     const productActivity = await this.productModel.aggregate([
       {
         $match: {
@@ -788,11 +947,7 @@ export class SearchService {
   /**
    * Get products most found in searches (Admin)
    */
-  async getMostSearchedProducts(filters?: {
-    limit?: number;
-    startDate?: Date;
-    endDate?: Date;
-  }) {
+  async getMostSearchedProducts(filters?: { limit?: number; startDate?: Date; endDate?: Date }) {
     const limit = filters?.limit || 20;
 
     // نحلل المنتجات الأكثر ظهوراً في نتائج البحث بناءً على:
@@ -828,11 +983,7 @@ export class SearchService {
   /**
    * Get categories most searched (Admin)
    */
-  async getMostSearchedCategories(filters?: {
-    limit?: number;
-    startDate?: Date;
-    endDate?: Date;
-  }) {
+  async getMostSearchedCategories(filters?: { limit?: number; startDate?: Date; endDate?: Date }) {
     const limit = filters?.limit || 10;
 
     const categories = await this.categoryModel
@@ -857,11 +1008,7 @@ export class SearchService {
   /**
    * Get brands most searched (Admin)
    */
-  async getMostSearchedBrands(filters?: {
-    limit?: number;
-    startDate?: Date;
-    endDate?: Date;
-  }) {
+  async getMostSearchedBrands(filters?: { limit?: number; startDate?: Date; endDate?: Date }) {
     const limit = filters?.limit || 10;
 
     // نحصل على البراندات الأكثر شيوعاً بناءً على عدد المنتجات

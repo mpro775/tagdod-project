@@ -578,7 +578,7 @@ export class MarketingService {
 
     // Check expiry
     const now = new Date();
-    if (now < coupon.validFrom || now > coupon.validUntil) {
+    if (now < coupon.validFrom || (coupon.validUntil && now > coupon.validUntil)) {
       return { valid: false, message: 'Coupon has expired' };
     }
 
@@ -685,18 +685,28 @@ export class MarketingService {
       throw new BadRequestException('كود الكوبون موجود بالفعل');
     }
 
+    // For engineer coupons: set defaults
+    // - validUntil: null (unlimited)
+    // - usageLimit: null (unlimited)
+    // - commissionRate = discountValue
+    const validUntil = dto.validUntil ? new Date(dto.validUntil) : null;
+    const usageLimit = dto.usageLimit ?? null;
+    const usageLimitPerUser = dto.usageLimitPerUser ?? null;
+    const discountVal = dto.discountValue ?? dto.commissionRate;
+    const commissionRate = dto.commissionRate ?? discountVal;
+
     const coupon = new this.couponModel({
       code: dto.code.toUpperCase(),
       name: dto.name,
       description: dto.description,
       type: dto.type || CouponType.PERCENTAGE,
-      discountValue: dto.discountValue || dto.commissionRate, // إذا لم يُحدد، استخدم نسبة العمولة
+      discountValue: discountVal,
       engineerId: new Types.ObjectId(dto.engineerId),
-      commissionRate: dto.commissionRate,
-      usageLimit: dto.usageLimit,
-      usageLimitPerUser: dto.usageLimitPerUser,
-      validFrom: new Date(dto.validFrom),
-      validUntil: new Date(dto.validUntil),
+      commissionRate: commissionRate,
+      usageLimit: usageLimit,
+      usageLimitPerUser: usageLimitPerUser,
+      validFrom: dto.validFrom ? new Date(dto.validFrom) : new Date(),
+      validUntil: validUntil,
       minimumOrderAmount: dto.minimumOrderAmount,
       status: CouponStatus.ACTIVE,
       visibility: CouponVisibility.PUBLIC,
@@ -794,12 +804,16 @@ export class MarketingService {
       this.couponModel.countDocuments({ 
         deletedAt: null, 
         status: CouponStatus.ACTIVE,
-        validUntil: { $gte: new Date() }
+        $or: [
+          { validUntil: { $gte: new Date() } },
+          { validUntil: null },
+          { validUntil: { $exists: false } }
+        ]
       }),
       this.couponModel.countDocuments({ 
         deletedAt: null, 
         status: CouponStatus.ACTIVE,
-        validUntil: { $lt: new Date() }
+        validUntil: { $exists: true, $ne: null, $lt: new Date() }
       }),
       this.couponModel.find({ deletedAt: null }).lean()
     ]);
@@ -905,7 +919,7 @@ export class MarketingService {
       if (coupon.status === CouponStatus.ACTIVE) {
         if (now < coupon.validFrom) {
           statusBreakdown.scheduled++;
-        } else if (now > coupon.validUntil) {
+        } else if (coupon.validUntil && now > coupon.validUntil) {
           statusBreakdown.expired++;
         } else {
           statusBreakdown.active++;

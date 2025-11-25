@@ -235,7 +235,7 @@ export class PublicProductsController {
   })
   @ApiNotFoundResponse({ description: 'Product not found' })
   @ApiBearerAuth()
-  @CacheResponse({ ttl: 600 }) // 10 minutes
+  @CacheResponse({ ttl: 120 }) // 2 minutes
   async getProduct(
     @Param('id') id: string,
     @Query('currency') currency?: string,
@@ -268,7 +268,7 @@ export class PublicProductsController {
   })
   @ApiParam({ name: 'slug', description: 'Product slug', example: 'solar-panel-300w' })
   @ApiBearerAuth()
-  @CacheResponse({ ttl: 600 }) // 10 minutes
+  @CacheResponse({ ttl: 120 }) // 2 minutes
   async getProductBySlug(
     @Param('slug') slug: string,
     @Query('currency') currency?: string,
@@ -301,7 +301,7 @@ export class PublicProductsController {
   @Get('featured/list')
   @ApiOperation({ summary: 'الحصول على المنتجات المميزة' })
   @ApiResponse({ status: 200, description: 'Featured products retrieved successfully' })
-  @CacheResponse({ ttl: 600 }) // 10 minutes
+  @CacheResponse({ ttl: 120 }) // 2 minutes
   async getFeatured(
     @Query('currency') currency?: string,
     @Req() req?: RequestWithUser,
@@ -336,7 +336,7 @@ export class PublicProductsController {
   @Get('new/list')
   @ApiOperation({ summary: 'الحصول على المنتجات الجديدة' })
   @ApiResponse({ status: 200, description: 'New products retrieved successfully' })
-  @CacheResponse({ ttl: 600 }) // 10 minutes
+  @CacheResponse({ ttl: 120 }) // 2 minutes
   async getNew(
     @Query('currency') currency?: string,
     @Req() req?: RequestWithUser,
@@ -512,7 +512,7 @@ export class PublicProductsController {
     },
   })
   @ApiNotFoundResponse({ description: 'Product not found' })
-  @CacheResponse({ ttl: 600 }) // 10 minutes
+  @CacheResponse({ ttl: 120 }) // 2 minutes
   async getRelatedProducts(
     @Param('id') productId: string,
     @Query('limit') limit?: string,

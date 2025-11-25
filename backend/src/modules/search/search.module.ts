@@ -10,6 +10,7 @@ import { SearchLog, SearchLogSchema } from './schemas/search-log.schema';
 import { CacheModule } from '../../shared/cache/cache.module';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
+import { ProductsModule } from '../products/products.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SharedModule } from '../../shared/shared.module';
     CacheModule,
     AuthModule,
     SharedModule,
+    ProductsModule,
   ],
   controllers: [
     SearchController,

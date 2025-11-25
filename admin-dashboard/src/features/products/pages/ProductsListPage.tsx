@@ -44,6 +44,7 @@ import {
   Sort,
   ArrowUpward,
   ArrowDownward,
+  Cached,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -51,7 +52,7 @@ import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { ProductCard } from '@/shared/components/Cards/ProductCard';
-import { useProducts, useDeleteProduct, useRestoreProduct } from '../hooks/useProducts';
+import { useProducts, useDeleteProduct, useRestoreProduct, useClearCache } from '../hooks/useProducts';
 import { formatDate } from '@/shared/utils/formatters';
 import { CurrencySelector } from '@/shared/components/CurrencySelector';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
@@ -131,6 +132,7 @@ export const ProductsListPage: React.FC = () => {
 
   const { mutate: deleteProduct } = useDeleteProduct();
   const { mutate: restoreProduct } = useRestoreProduct();
+  const { mutate: clearCache, isPending: isClearingCache } = useClearCache();
 
   // Bulk Actions
   const handleBulkDelete = async () => {
@@ -619,6 +621,16 @@ export const ProductsListPage: React.FC = () => {
             size={isMobile ? 'small' : 'medium'}
           >
             {t('list.inventoryManagement', 'إدارة المخزون')}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Cached />}
+            onClick={() => clearCache()}
+            disabled={isClearingCache}
+            size={isMobile ? 'small' : 'medium'}
+            color="secondary"
+          >
+            {isClearingCache ? t('list.clearingCache', 'جاري المسح...') : t('list.clearCache', 'مسح الكاش')}
           </Button>
         </Box>
         <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">

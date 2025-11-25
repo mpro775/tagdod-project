@@ -309,4 +309,12 @@ export const productsApi = {
     );
     return response.data.data.product;
   },
+
+  /**
+   * Clear products cache
+   */
+  clearCache: async (): Promise<{ message: string; timestamp: string }> => {
+    const response = await apiClient.post('/admin/products/cache/clear');
+    return response.data.data;
+  },
 };

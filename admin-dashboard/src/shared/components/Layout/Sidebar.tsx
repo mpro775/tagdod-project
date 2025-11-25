@@ -255,6 +255,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
                 path: '/coupons',
               },
               {
+                id: 'coupons-engineers',
+                label: t('navigation.engineerCoupons', 'كوبونات المهندسين'),
+                icon: <Build />,
+                path: '/services/engineers/coupons',
+              },
+              {
                 id: 'coupons-analytics',
                 label: t('navigation.couponsAnalytics', 'تحليلات الكوبونات'),
                 icon: <Assessment />,

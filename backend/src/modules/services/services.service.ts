@@ -17,6 +17,8 @@ import { CreateServiceRequestDto, UpdateServiceRequestDto } from './dto/requests
 import { CreateOfferDto, UpdateOfferDto } from './dto/offers.dto';
 import { DistanceService } from './services/distance.service';
 import { UploadService } from '../upload/upload.service';
+import { SMSAdapter } from '../notifications/adapters/sms.adapter';
+import { normalizeYemeniPhone } from '../../shared/utils/phone.util';
 
 type ServiceRequestLean = ServiceRequest & {
   _id: Types.ObjectId;
@@ -114,6 +116,9 @@ export class ServicesService {
     @Inject(forwardRef(() => EngineerProfileService))
     @Optional()
     private engineerProfileService?: EngineerProfileService,
+    @Inject(forwardRef(() => SMSAdapter))
+    @Optional()
+    private smsAdapter?: SMSAdapter,
   ) {}
 
   // Helper method for safe notification sending
@@ -140,6 +145,105 @@ export class ServicesService {
     } catch (error) {
       console.warn(`Notification failed for user ${userId}:`, error);
       // Don't throw error - notifications are not critical for core functionality
+    }
+  }
+
+  /**
+   * تطبيع رقم الهاتف بإضافة +967 للأرقام اليمنية
+   */
+  private normalizePhoneNumber(phone: string): string | null {
+    try {
+      if (!phone || typeof phone !== 'string' || phone.trim() === '') {
+        return null;
+      }
+      return normalizeYemeniPhone(phone.trim());
+    } catch (error) {
+      this.logger.warn(`Failed to normalize phone number ${phone}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * جلب جميع أرقام المهندسين من قاعدة البيانات
+   */
+  private async getAllEngineersPhones(): Promise<Array<{ phone: string; normalizedPhone: string }>> {
+    try {
+      const engineers = await this.userModel
+        .find({
+          $or: [{ roles: { $in: ['engineer'] } }, { engineer_capable: true }],
+          status: { $ne: 'deleted' },
+          phone: { $exists: true, $nin: [null, ''] },
+        })
+        .select('_id phone firstName lastName')
+        .lean();
+
+      const validPhones: Array<{ phone: string; normalizedPhone: string }> = [];
+
+      for (const engineer of engineers) {
+        if (engineer.phone) {
+          const normalized = this.normalizePhoneNumber(engineer.phone);
+          if (normalized) {
+            validPhones.push({
+              phone: engineer.phone,
+              normalizedPhone: normalized,
+            });
+          } else {
+            this.logger.warn(
+              `Skipping invalid phone number for engineer ${engineer._id}: ${engineer.phone}`,
+            );
+          }
+        }
+      }
+
+      return validPhones;
+    } catch (error) {
+      this.logger.error('Failed to get engineers phones:', error);
+      return [];
+    }
+  }
+
+  /**
+   * إرسال SMS لجميع المهندسين عند إنشاء طلب خدمة جديد
+   */
+  private async sendSMSToAllEngineers(requestId: string, requestTitle: string): Promise<void> {
+    try {
+      if (!this.smsAdapter) {
+        this.logger.warn('SMS adapter not available. Skipping SMS notification to engineers.');
+        return;
+      }
+
+      const engineersPhones = await this.getAllEngineersPhones();
+
+      if (engineersPhones.length === 0) {
+        this.logger.warn('No valid engineer phone numbers found. Skipping SMS notification.');
+        return;
+      }
+
+      const message = `تم إنشاء طلب خدمة جديد: ${requestTitle}. يمكنك عرض التفاصيل والتقدم بعرض في التطبيق.`;
+
+      const smsNotifications = engineersPhones.map(({ normalizedPhone }) => ({
+        to: normalizedPhone,
+        message,
+      }));
+
+      this.logger.log(`Sending SMS to ${smsNotifications.length} engineers for request ${requestId}`);
+
+      const result = await this.smsAdapter.sendBulkSMS(smsNotifications);
+
+      if (result.successCount > 0) {
+        this.logger.log(
+          `Successfully sent SMS to ${result.successCount} engineers for request ${requestId}`,
+        );
+      }
+
+      if (result.failureCount > 0) {
+        this.logger.warn(
+          `Failed to send SMS to ${result.failureCount} engineers for request ${requestId}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send SMS to engineers for request ${requestId}:`, error);
+      // Don't throw error - SMS sending should not fail the request creation
     }
   }
 
@@ -225,6 +329,9 @@ export class ServicesService {
       `تم إنشاء طلب خدمة جديد: ${String(doc._id)}`,
       { requestId: String(doc._id) },
     );
+
+    // إرسال SMS لجميع المهندسين
+    await this.sendSMSToAllEngineers(String(doc._id), dto.title);
 
     // تحديث استخدام العنوان
     await this.addressesService.markAsUsed(dto.addressId, userId);
