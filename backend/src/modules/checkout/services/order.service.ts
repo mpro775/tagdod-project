@@ -51,6 +51,7 @@ import { EmailAdapter } from '../../notifications/adapters/email.adapter';
 import { ConfigService } from '@nestjs/config';
 import { UploadService } from '../../upload/upload.service';
 import { WhatsAppAdapter } from '../../notifications/adapters/whatsapp.adapter';
+import { SMSAdapter } from '../../notifications/adapters/sms.adapter';
 import * as crypto from 'crypto';
 import {
   CreateOrderDto,
@@ -158,6 +159,8 @@ export class OrderService {
     private uploadService?: UploadService,
     @Inject(forwardRef(() => WhatsAppAdapter))
     private whatsappAdapter?: WhatsAppAdapter,
+    @Inject(forwardRef(() => SMSAdapter))
+    private smsAdapter?: SMSAdapter,
   ) {}
 
   // ===== Helper Methods =====
@@ -4919,13 +4922,13 @@ export class OrderService {
         // لا نوقف العملية إذا فشل الحفظ المؤقت
       }
 
-      // إرسال الفاتورة عبر البريد الإلكتروني والواتساب (معاً)
+      // إرسال الفاتورة عبر البريد الإلكتروني والـ SMS (معاً)
       await Promise.all([
         this.sendOrderInvoiceEmail(order, pdfBuffer).catch((err) => {
           this.logger.warn(`Email sending failed for order ${order.orderNumber}:`, err);
         }),
-        this.sendOrderInvoiceWhatsApp(order, pdfBuffer).catch((err) => {
-          this.logger.warn(`WhatsApp sending failed for order ${order.orderNumber}:`, err);
+        this.sendOrderInvoiceSMS(order, pdfBuffer).catch((err) => {
+          this.logger.warn(`SMS sending failed for order ${order.orderNumber}:`, err);
         }),
       ]);
 
@@ -5077,21 +5080,24 @@ export class OrderService {
   }
 
   /**
-   * إرسال فاتورة الطلب عبر واتساب (رفع PDF إلى Bunny وإرسال عبر Twilio)
+   * إرسال فاتورة الطلب عبر SMS (رفع PDF إلى Bunny وإرسال رابط عبر مزود SMS الأوائل)
    */
-  private async sendOrderInvoiceWhatsApp(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
+  private async sendOrderInvoiceSMS(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
     try {
-      // التحقق من توفر WhatsAppAdapter
-      if (!this.whatsappAdapter) {
-        this.logger.warn('WhatsApp adapter not available. Skipping WhatsApp notification.');
+      // التحقق من توفر SMSAdapter
+      if (!this.smsAdapter) {
+        this.logger.warn('SMS adapter not available. Skipping SMS notification.');
         return;
       }
 
-      // جلب رقم واتساب المبيعات من متغيرات البيئة
-      const salesManagerWhatsApp = this.configService?.get('SALES_MANAGER_WHATSAPP') || null;
+      // جلب رقم SMS المبيعات من متغيرات البيئة
+      const salesManagerSMS =
+        this.configService?.get('SALES_MANAGER_SMS') ||
+        this.configService?.get('SALES_MANAGER_WHATSAPP') ||
+        null;
 
-      if (!salesManagerWhatsApp) {
-        this.logger.warn('SALES_MANAGER_WHATSAPP not configured. Skipping WhatsApp notification.');
+      if (!salesManagerSMS) {
+        this.logger.warn('SALES_MANAGER_SMS not configured. Skipping SMS notification.');
         return;
       }
 
@@ -5146,48 +5152,41 @@ export class OrderService {
         }
       }
 
-      // إنشاء رسالة واتساب
-      const message = `📄 *فاتورة جديدة - New Invoice*
+      // إنشاء رسالة SMS
+      const message = `فاتورة جديدة - New Invoice
+رقم الطلب: ${order.orderNumber}
+رقم الفاتورة: ${invoiceNumber}
+اسم العميل: ${customerName}
+الهاتف: ${customerPhone}
+المجموع: ${order.total.toLocaleString()} ${order.currency}
+تاريخ الإكمال: ${formatDate(order.completedAt)}
+${invoiceUrl ? `رابط الفاتورة: ${invoiceUrl}` : ''}`;
 
-*رقم الطلب / Order Number:* ${order.orderNumber}
-*رقم الفاتورة / Invoice Number:* ${invoiceNumber}
-*اسم العميل / Customer Name:* ${customerName}
-*الهاتف / Phone:* ${customerPhone}
-*المجموع / Total:* ${order.total.toLocaleString()} ${order.currency}
-*تاريخ الإكمال / Completed Date:* ${formatDate(order.completedAt)}
-${invoiceUrl ? `\n*رابط الفاتورة / Invoice Link:*\n${invoiceUrl}` : ''}
-
-يرجى الاطلاع على الفاتورة المرفقة.
-Please review the attached invoice.`;
-
-      // تنظيف رقم الواتساب (إزالة أي رموز غير رقمية وإضافة + إذا لم يكن موجوداً)
-      let whatsappNumber = salesManagerWhatsApp.replace(/[^0-9+]/g, '');
-      if (!whatsappNumber.startsWith('+')) {
+      // تنظيف رقم SMS (إزالة أي رموز غير رقمية وإضافة + إذا لم يكن موجوداً)
+      let smsNumber = salesManagerSMS.replace(/[^0-9+]/g, '');
+      if (!smsNumber.startsWith('+')) {
         // إذا لم يبدأ بـ +، نضيفه (افتراض أن الرقم دولي)
-        whatsappNumber = `+${whatsappNumber}`;
+        smsNumber = `+${smsNumber}`;
       }
 
-      // إرسال الرسالة عبر WhatsAppAdapter
-      const result = await this.whatsappAdapter.sendMessage(
-        whatsappNumber,
-        message,
-        invoiceUrl, // إرسال رابط PDF كـ mediaUrl إذا كان متاحاً
-      );
+      // إرسال الرسالة عبر SMSAdapter (مزود الأوائل)
+      const result = await this.smsAdapter.sendSMS({
+        to: smsNumber,
+        message: message,
+        mediaUrl: invoiceUrl, // إرسال رابط PDF كـ mediaUrl إذا كان متاحاً (للمزودات التي تدعمها)
+      });
 
       if (result.success) {
         this.logger.log(
-          `WhatsApp message sent successfully for order ${order.orderNumber} to ${whatsappNumber}. Message ID: ${result.messageId}`,
+          `SMS message sent successfully for order ${order.orderNumber} to ${smsNumber}. Message ID: ${result.messageId}`,
         );
       } else {
         this.logger.error(
-          `Failed to send WhatsApp message for order ${order.orderNumber}: ${result.error}`,
+          `Failed to send SMS message for order ${order.orderNumber}: ${result.error}`,
         );
       }
     } catch (error) {
-      this.logger.error(
-        `Error sending WhatsApp notification for order ${order.orderNumber}:`,
-        error,
-      );
+      this.logger.error(`Error sending SMS notification for order ${order.orderNumber}:`, error);
       // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
     }
   }
