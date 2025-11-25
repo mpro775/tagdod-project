@@ -1,7 +1,7 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as twilio from 'twilio';
-import { AlawaelSMSAdapter, AlawaelSMSNotification, AlawaelSMSResult } from './alawael-sms.adapter';
+import { AlawaelSMSAdapter, AlawaelSMSNotification } from './alawael-sms.adapter';
 
 export interface SMSNotification {
   to: string;
@@ -31,7 +31,7 @@ export class SMSAdapter {
   ) {
     // Determine which provider to use
     const smsProvider = this.configService.get('SMS_PROVIDER')?.toLowerCase() || 'alawael';
-    
+
     if (smsProvider === 'twilio') {
       this.provider = 'twilio';
       this.initializeTwilio();
@@ -86,7 +86,7 @@ export class SMSAdapter {
     };
 
     const result = await this.alawaelAdapter!.sendSMS(alawaelNotification);
-    
+
     return {
       success: result.success,
       messageId: result.messageId,
@@ -138,17 +138,17 @@ export class SMSAdapter {
     results: SMSResult[];
   }> {
     if (this.provider === 'alawael' && this.alawaelAdapter?.isInitialized()) {
-      const alawaelNotifications: AlawaelSMSNotification[] = notifications.map(n => ({
+      const alawaelNotifications: AlawaelSMSNotification[] = notifications.map((n) => ({
         to: n.to,
         message: n.message,
       }));
-      
+
       const bulkResult = await this.alawaelAdapter.sendBulkSMS(alawaelNotifications);
-      
+
       return {
         successCount: bulkResult.successCount,
         failureCount: bulkResult.failureCount,
-        results: bulkResult.results.map(r => ({
+        results: bulkResult.results.map((r) => ({
           success: r.success,
           messageId: r.messageId,
           error: r.error,
