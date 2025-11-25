@@ -69,6 +69,7 @@ import { Product } from '../products/schemas/product.schema';
 import { Category } from '../categories/schemas/category.schema';
 import { Brand } from '../brands/schemas/brand.schema';
 import { PricingService } from '../products/services/pricing.service';
+import { VariantService } from '../products/services/variant.service';
 
 @Injectable()
 export class SearchService {
@@ -88,6 +89,7 @@ export class SearchService {
     @InjectModel(Brand.name) private brandModel: Model<Brand>,
     private cacheService: CacheService,
     private pricingService: PricingService,
+    private variantService: VariantService,
   ) {}
 
   // Types for lean results and populated refs
@@ -101,41 +103,125 @@ export class SearchService {
   // Extract main image URL from populated mainImageId or fallback to mainImage
   private getMainImageUrl(product: ProductLean | ProductSimpleLean): string | undefined {
     // Check if mainImageId is populated (has url property)
-    if (product.mainImageId && typeof product.mainImageId === 'object' && 'url' in product.mainImageId) {
+    if (
+      product.mainImageId &&
+      typeof product.mainImageId === 'object' &&
+      'url' in product.mainImageId
+    ) {
       return (product.mainImageId as PopulatedMedia).url;
     }
     // Fallback to mainImage field
     return product.mainImage;
   }
 
-  // Calculate price range by currency from variants
-  private async getPriceRangeByCurrency(productId: string): Promise<Record<string, {
-    minPrice: number;
-    maxPrice: number;
-    currency: string;
-    hasDiscountedVariant: boolean;
-  }>> {
+  // Calculate price range by currency from variants or product base prices
+  // الأسعار مخزنة بالفعل في قاعدة البيانات - لا حاجة للتحويل
+  private async getPriceRangeByCurrency(productId: string): Promise<
+    Record<
+      string,
+      {
+        minPrice: number;
+        maxPrice: number;
+        currency: string;
+        hasDiscountedVariant: boolean;
+      }
+    >
+  > {
     const currencies = ['USD', 'YER', 'SAR'];
-    const priceRanges: Record<string, {
-      minPrice: number;
-      maxPrice: number;
-      currency: string;
-      hasDiscountedVariant: boolean;
-    }> = {};
+    const priceRanges: Record<
+      string,
+      {
+        minPrice: number;
+        maxPrice: number;
+        currency: string;
+        hasDiscountedVariant: boolean;
+      }
+    > = {};
 
-    for (const currency of currencies) {
-      try {
-        const range = await this.pricingService.getProductPriceRange(productId, currency);
-        // Check if there are discounted variants by comparing minPrice and maxPrice
-        // This is a simplified check - in reality, we'd need to check variants for compareAtPrice
+    try {
+      // جلب جميع variants غير المحذوفة (بغض النظر عن isActive)
+      const variants = await this.variantService.findByProductId(productId, false);
+
+      // جلب المنتج للحصول على أسعاره الأساسية
+      const product = await this.productModel.findById(productId).lean();
+
+      // إذا لم توجد variants، استخدم أسعار المنتج
+      const hasVariants = variants && variants.length > 0;
+
+      for (const currency of currencies) {
+        let minPrice = 0;
+        let maxPrice = 0;
+        let hasDiscountedVariant = false;
+
+        if (hasVariants) {
+          // حساب min/max من variants - استخدام الأسعار المخزنة مباشرة
+          const prices: number[] = [];
+
+          for (const variant of variants) {
+            let price: number | undefined;
+
+            // استخدام الأسعار المخزنة مباشرة بدون تحويل
+            switch (currency) {
+              case 'USD':
+                price = variant.basePriceUSD;
+                break;
+              case 'SAR':
+                price = variant.basePriceSAR;
+                break;
+              case 'YER':
+                price = variant.basePriceYER;
+                break;
+            }
+
+            // إذا كان السعر موجوداً و أكبر من صفر، أضفه
+            if (price !== undefined && price !== null && price > 0) {
+              prices.push(price);
+
+              // التحقق من وجود خصم
+              if (variant.compareAtPriceUSD && variant.compareAtPriceUSD > variant.basePriceUSD) {
+                hasDiscountedVariant = true;
+              }
+            }
+          }
+
+          if (prices.length > 0) {
+            minPrice = Math.min(...prices);
+            maxPrice = Math.max(...prices);
+          }
+        } else if (product) {
+          // استخدام أسعار المنتج نفسه - المخزنة مباشرة
+          let price: number | undefined;
+
+          switch (currency) {
+            case 'USD':
+              price = (product as any).basePriceUSD;
+              break;
+            case 'SAR':
+              price = (product as any).basePriceSAR;
+              break;
+            case 'YER':
+              price = (product as any).basePriceYER;
+              break;
+          }
+
+          // استخدام السعر المخزن مباشرة
+          if (price !== undefined && price !== null && price > 0) {
+            minPrice = price;
+            maxPrice = price;
+          }
+        }
+
         priceRanges[currency] = {
-          minPrice: range.minPrice,
-          maxPrice: range.maxPrice,
-          currency: range.currency,
-          hasDiscountedVariant: false, // Will be calculated properly if needed
+          minPrice,
+          maxPrice,
+          currency,
+          hasDiscountedVariant,
         };
-      } catch (error) {
-        this.logger.warn(`Failed to get price range for product ${productId} in ${currency}:`, error);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to get price range for product ${productId}:`, error);
+      // إرجاع قيم افتراضية
+      for (const currency of currencies) {
         priceRanges[currency] = {
           minPrice: 0,
           maxPrice: 0,
@@ -258,29 +344,27 @@ export class SearchService {
             localField: '_id',
             foreignField: 'productId',
             as: 'variants',
-            pipeline: [
-              { $match: { deletedAt: null, isActive: true } }
-            ]
-          }
+            pipeline: [{ $match: { deletedAt: null, isActive: true } }],
+          },
         },
         {
           $match: {
             'variants.basePriceUSD': {
               ...(minPrice !== undefined && { $gte: minPrice }),
-              ...(maxPrice !== undefined && { $lte: maxPrice })
-            }
-          }
+              ...(maxPrice !== undefined && { $lte: maxPrice }),
+            },
+          },
         },
         {
           $project: {
-            variants: 0 // إزالة variants من النتيجة النهائية
-          }
-        }
+            variants: 0, // إزالة variants من النتيجة النهائية
+          },
+        },
       ]);
 
       // إضافة IDs للمنتجات المطابقة للفلتر
       if (productsWithPriceRange.length > 0) {
-        query._id = { $in: productsWithPriceRange.map(p => p._id) };
+        query._id = { $in: productsWithPriceRange.map((p) => p._id) };
       } else {
         // إذا لم توجد منتجات في نطاق السعر، إرجاع قائمة فارغة
         query._id = { $in: [] };
@@ -370,7 +454,7 @@ export class SearchService {
           relevanceScore: q ? this.calculateRelevance(product, q, lang) : 0,
           createdAt: product.createdAt,
         };
-      })
+      }),
     );
 
     const response: ProductSearchResultDto = {
@@ -432,7 +516,7 @@ export class SearchService {
           relevanceScore: q ? this.calculateRelevance(p, q, lang) : 0,
           createdAt: p.createdAt,
         };
-      })
+      }),
     );
   }
 
@@ -831,7 +915,7 @@ export class SearchService {
     // حالياً نرجع اتجاهات بناءً على نشاط المنتجات
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    
+
     const productActivity = await this.productModel.aggregate([
       {
         $match: {
@@ -863,11 +947,7 @@ export class SearchService {
   /**
    * Get products most found in searches (Admin)
    */
-  async getMostSearchedProducts(filters?: {
-    limit?: number;
-    startDate?: Date;
-    endDate?: Date;
-  }) {
+  async getMostSearchedProducts(filters?: { limit?: number; startDate?: Date; endDate?: Date }) {
     const limit = filters?.limit || 20;
 
     // نحلل المنتجات الأكثر ظهوراً في نتائج البحث بناءً على:
@@ -903,11 +983,7 @@ export class SearchService {
   /**
    * Get categories most searched (Admin)
    */
-  async getMostSearchedCategories(filters?: {
-    limit?: number;
-    startDate?: Date;
-    endDate?: Date;
-  }) {
+  async getMostSearchedCategories(filters?: { limit?: number; startDate?: Date; endDate?: Date }) {
     const limit = filters?.limit || 10;
 
     const categories = await this.categoryModel
@@ -932,11 +1008,7 @@ export class SearchService {
   /**
    * Get brands most searched (Admin)
    */
-  async getMostSearchedBrands(filters?: {
-    limit?: number;
-    startDate?: Date;
-    endDate?: Date;
-  }) {
+  async getMostSearchedBrands(filters?: { limit?: number; startDate?: Date; endDate?: Date }) {
     const limit = filters?.limit || 10;
 
     // نحصل على البراندات الأكثر شيوعاً بناءً على عدد المنتجات

@@ -612,6 +612,10 @@ export const routes: RouteObject[] = [
         element: <ServicesAnalyticsPage />,
       },
       {
+        path: 'services/engineers/coupons',
+        element: <CouponsListPage />,
+      },
+      {
         path: 'services/engineers/:engineerId/coupons',
         element: <EngineerCouponsPage />,
       },

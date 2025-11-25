@@ -32,7 +32,7 @@ import {
   Add,
   Engineering,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { GridColDef } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -81,6 +81,7 @@ const couponStatusColors: Record<
 
 export const CouponsListPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation('coupons');
   const theme = useTheme();
   const { isMobile, isXs } = useBreakpoint();
@@ -90,7 +91,10 @@ export const CouponsListPage: React.FC = () => {
   const [couponToDelete, setCouponToDelete] = useState<Coupon | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [engineerFilter, setEngineerFilter] = useState<boolean | null>(null);
+  // Auto-filter engineer coupons if accessed from /services/engineers/coupons
+  const [engineerFilter, setEngineerFilter] = useState<boolean | null>(
+    location.pathname === '/services/engineers/coupons' ? true : null
+  );
 
   const couponTypeLabels = createCouponTypeLabels(t);
   const couponVisibilityLabels = createCouponVisibilityLabels(t);
