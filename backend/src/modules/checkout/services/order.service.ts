@@ -50,6 +50,7 @@ import { AuditService } from '../../../shared/services/audit.service';
 import { EmailAdapter } from '../../notifications/adapters/email.adapter';
 import { ConfigService } from '@nestjs/config';
 import { UploadService } from '../../upload/upload.service';
+import { SMSAdapter } from '../../notifications/adapters/sms.adapter';
 import * as crypto from 'crypto';
 import {
   CreateOrderDto,
@@ -155,6 +156,8 @@ export class OrderService {
     private configService?: ConfigService,
     @Inject(forwardRef(() => UploadService))
     private uploadService?: UploadService,
+    @Inject(forwardRef(() => SMSAdapter))
+    private smsAdapter?: SMSAdapter,
   ) {}
 
   // ===== Helper Methods =====
@@ -5074,12 +5077,13 @@ export class OrderService {
   }
 
   /**
-   * إرسال فاتورة الطلب عبر واتساب (رفع PDF إلى Bunny وإرسال رابط)
+   * إرسال فاتورة الطلب عبر واتساب (رفع PDF إلى Bunny وإرسال عبر Twilio)
    */
   private async sendOrderInvoiceWhatsApp(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
     try {
-      if (!this.uploadService) {
-        this.logger.warn('Upload service not available. Skipping WhatsApp notification.');
+      // التحقق من توفر SMSAdapter
+      if (!this.smsAdapter) {
+        this.logger.warn('SMS adapter not available. Skipping WhatsApp notification.');
         return;
       }
 
@@ -5115,24 +5119,35 @@ export class OrderService {
       const invoiceNumber = order.invoiceNumber || order.orderNumber;
       const fileName = `invoice-${invoiceNumber}-${Date.now()}.pdf`;
 
-      // رفع PDF إلى Bunny CDN
-      try {
-        const uploadResult = await this.uploadService.uploadFile(
-          {
-            buffer: pdfBuffer,
-            originalname: fileName,
-            mimetype: 'application/pdf',
-            size: pdfBuffer.length,
-          },
-          'invoices', // مجلد في Bunny
-          fileName, // اسم الملف المخصص
-        );
+      let invoiceUrl: string | undefined;
 
-        const invoiceUrl = uploadResult.url;
-        this.logger.log(`Invoice PDF uploaded to Bunny: ${invoiceUrl}`);
+      // رفع PDF إلى Bunny CDN (إذا كان uploadService متاحاً)
+      if (this.uploadService) {
+        try {
+          const uploadResult = await this.uploadService.uploadFile(
+            {
+              buffer: pdfBuffer,
+              originalname: fileName,
+              mimetype: 'application/pdf',
+              size: pdfBuffer.length,
+            },
+            'invoices', // مجلد في Bunny
+            fileName, // اسم الملف المخصص
+          );
 
-        // إنشاء رسالة واتساب
-        const message = `📄 *فاتورة جديدة - New Invoice*
+          invoiceUrl = uploadResult.url;
+          this.logger.log(`Invoice PDF uploaded to Bunny: ${invoiceUrl}`);
+        } catch (uploadError) {
+          this.logger.warn(
+            `Failed to upload invoice PDF to Bunny for order ${order.orderNumber}:`,
+            uploadError,
+          );
+          // نكمل العملية حتى لو فشل الرفع
+        }
+      }
+
+      // إنشاء رسالة واتساب
+      const message = `📄 *فاتورة جديدة - New Invoice*
 
 *رقم الطلب / Order Number:* ${order.orderNumber}
 *رقم الفاتورة / Invoice Number:* ${invoiceNumber}
@@ -5140,31 +5155,33 @@ export class OrderService {
 *الهاتف / Phone:* ${customerPhone}
 *المجموع / Total:* ${order.total.toLocaleString()} ${order.currency}
 *تاريخ الإكمال / Completed Date:* ${formatDate(order.completedAt)}
-
-*رابط الفاتورة / Invoice Link:*
-${invoiceUrl}
+${invoiceUrl ? `\n*رابط الفاتورة / Invoice Link:*\n${invoiceUrl}` : ''}
 
 يرجى الاطلاع على الفاتورة المرفقة.
 Please review the attached invoice.`;
 
-        // إنشاء رابط واتساب مباشر (wa.me)
-        const whatsappNumber = salesManagerWhatsApp.replace(/[^0-9]/g, ''); // إزالة أي رموز غير رقمية
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+      // تنظيف رقم الواتساب (إزالة أي رموز غير رقمية وإضافة + إذا لم يكن موجوداً)
+      let whatsappNumber = salesManagerWhatsApp.replace(/[^0-9+]/g, '');
+      if (!whatsappNumber.startsWith('+')) {
+        // إذا لم يبدأ بـ +، نضيفه (افتراض أن الرقم دولي)
+        whatsappNumber = `+${whatsappNumber}`;
+      }
 
-        // تسجيل الرابط في السجل
-        this.logger.log(`WhatsApp link generated for order ${order.orderNumber}:`);
-        this.logger.log(`WhatsApp URL: ${whatsappUrl}`);
-        this.logger.log(`Invoice URL: ${invoiceUrl}`);
+      // إرسال الرسالة عبر Twilio
+      const result = await this.smsAdapter.sendWhatsApp(
+        whatsappNumber,
+        message,
+        invoiceUrl, // إرسال رابط PDF كـ mediaUrl إذا كان متاحاً
+      );
 
-        // ملاحظة: يمكن استخدام مكتبة 'open' لفتح الرابط تلقائياً في المتصفح
-        // أو إرسال الرابط عبر webhook أو أي طريقة أخرى
-      } catch (uploadError) {
-        this.logger.error(
-          `Failed to upload invoice PDF to Bunny for order ${order.orderNumber}:`,
-          uploadError,
+      if (result.success) {
+        this.logger.log(
+          `WhatsApp message sent successfully for order ${order.orderNumber} to ${whatsappNumber}. Message ID: ${result.messageId}`,
         );
-        // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
+      } else {
+        this.logger.error(
+          `Failed to send WhatsApp message for order ${order.orderNumber}: ${result.error}`,
+        );
       }
     } catch (error) {
       this.logger.error(
