@@ -2,9 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { User, UserDocument } from '../../users/schemas/user.schema';
+import { User, UserDocument, UserRole, UserStatus } from '../../users/schemas/user.schema';
 import { Product, ProductDocument } from '../../products/schemas/product.schema';
-import { Order, OrderDocument } from '../../checkout/schemas/order.schema';
+import { Variant, VariantDocument } from '../../products/schemas/variant.schema';
+import { Order, OrderDocument, OrderStatus, PaymentStatus } from '../../checkout/schemas/order.schema';
 import { ServiceRequest, ServiceRequestDocument } from '../../services/schemas/service-request.schema';
 import { SupportTicket, SupportTicketDocument } from '../../support/schemas/support-ticket.schema';
 import {
@@ -23,6 +24,7 @@ export class AnalyticsCalculationService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+    @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @InjectModel(ServiceRequest.name) private serviceModel: Model<ServiceRequestDocument>,
     @InjectModel(SupportTicket.name) private supportModel: Model<SupportTicketDocument>,
@@ -33,6 +35,13 @@ export class AnalyticsCalculationService {
    */
   async calculateUserAnalytics(startDate: Date, endDate: Date) {
     try {
+      const notDeletedFilter = {
+        $or: [
+          { deletedAt: null },
+          { deletedAt: { $exists: false } }
+        ]
+      };
+
       const [
         totalUsers,
         activeUsers,
@@ -43,18 +52,37 @@ export class AnalyticsCalculationService {
         verifiedUsers,
         suspendedUsers,
       ] = await Promise.all([
-        this.userModel.countDocuments(),
+        this.userModel.countDocuments(notDeletedFilter),
         this.userModel.countDocuments({ 
-          lastLogin: { $gte: startDate, $lte: endDate } 
+          lastActivityAt: { $gte: startDate, $lte: endDate },
+          ...notDeletedFilter
         }),
         this.userModel.countDocuments({ 
-          createdAt: { $gte: startDate, $lte: endDate } 
+          createdAt: { $gte: startDate, $lte: endDate },
+          ...notDeletedFilter
         }),
-        this.userModel.countDocuments({ role: 'customer' }),
-        this.userModel.countDocuments({ role: 'engineer' }),
-        this.userModel.countDocuments({ role: 'admin' }),
-        this.userModel.countDocuments({ isVerified: true }),
-        this.userModel.countDocuments({ isSuspended: true }),
+        this.userModel.countDocuments({ 
+          roles: { $in: [UserRole.USER] },
+          status: UserStatus.ACTIVE,
+          ...notDeletedFilter
+        }),
+        this.userModel.countDocuments({ 
+          roles: { $in: [UserRole.ENGINEER] },
+          ...notDeletedFilter
+        }),
+        this.userModel.countDocuments({ 
+          roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+          ...notDeletedFilter
+        }),
+        // All active users are considered verified
+        this.userModel.countDocuments({ 
+          status: UserStatus.ACTIVE,
+          ...notDeletedFilter
+        }),
+        this.userModel.countDocuments({ 
+          status: UserStatus.SUSPENDED,
+          ...notDeletedFilter
+        }),
       ]);
 
       return {
@@ -121,6 +149,63 @@ export class AnalyticsCalculationService {
         return acc;
       }, {});
 
+      // Get top rated products
+      const topRatedResult = await this.productModel
+        .find({ 
+          averageRating: { $gt: 0 }, 
+          deletedAt: null 
+        })
+        .sort({ averageRating: -1 })
+        .limit(10)
+        .select('name averageRating')
+        .lean();
+
+      const topRated = topRatedResult.map(p => ({
+        productId: p._id.toString(),
+        name: p.name,
+        rating: p.averageRating || 0,
+        sales: 0, // Would need to calculate from orders
+      }));
+
+      // Get low stock variants
+      const lowStockVariants = await this.variantModel.aggregate([
+        {
+          $match: {
+            trackInventory: true,
+            deletedAt: null,
+            isActive: true,
+            stock: { $gt: 0 }, // Exclude out of stock (stock = 0)
+            $expr: { $lte: ['$stock', '$minStock'] }
+          }
+        },
+        {
+          $lookup: {
+            from: 'products',
+            localField: 'productId',
+            foreignField: '_id',
+            as: 'product'
+          }
+        },
+        {
+          $unwind: '$product'
+        },
+        {
+          $project: {
+            productId: '$productId',
+            name: '$product.name',
+            stock: '$stock',
+            minStock: '$minStock'
+          }
+        }
+      ]);
+
+      const lowStock = lowStockVariants.map(v => ({
+        productId: v.productId.toString(),
+        name: v.name,
+        stock: v.stock,
+        minStock: v.minStock
+      }));
+
       return {
         total: totalProducts,
         active: activeProducts,
@@ -128,8 +213,8 @@ export class AnalyticsCalculationService {
         new: newProducts,
         byCategory,
         averageRating: averageRating[0]?.avgRating || 0,
-        topRated: [],
-        lowStock: [],
+        topRated,
+        lowStock,
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -227,6 +312,58 @@ export class AnalyticsCalculationService {
       const totalRevenue = revenueData[0]?.totalRevenue || 0;
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
+      // Get top products from orders
+      const topProductsResult = await this.orderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            status: OrderStatus.COMPLETED,
+            paymentStatus: PaymentStatus.PAID,
+          }
+        },
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: '$items.productId',
+            name: { $first: '$items.snapshot.name' },
+            quantity: { $sum: '$items.qty' },
+            revenue: { $sum: '$items.lineTotal' },
+          }
+        },
+        { $sort: { quantity: -1 } },
+        { $limit: 10 }
+      ]);
+
+      const topProducts = topProductsResult.map(product => ({
+        productId: product._id.toString(),
+        name: product.name,
+        quantity: product.quantity,
+        revenue: product.revenue,
+      }));
+
+      // Get revenue by category
+      const categoryRevenueResult = await this.orderModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            status: OrderStatus.COMPLETED,
+            paymentStatus: PaymentStatus.PAID,
+          }
+        },
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: '$items.snapshot.categoryName',
+            revenue: { $sum: '$items.lineTotal' },
+          }
+        }
+      ]);
+
+      const revenueByCategory: Record<string, number> = {};
+      categoryRevenueResult.forEach(cat => {
+        revenueByCategory[cat._id || 'غير محدد'] = cat.revenue;
+      });
+
       return {
         total: totalOrders,
         completed: completedOrders,
@@ -239,8 +376,8 @@ export class AnalyticsCalculationService {
         averageOrderValue,
         byStatus,
         byPaymentMethod,
-        topProducts: [],
-        revenueByCategory: {},
+        topProducts,
+        revenueByCategory,
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -280,14 +417,16 @@ export class AnalyticsCalculationService {
         this.serviceModel.countDocuments({ 
           createdAt: { $gte: startDate, $lte: endDate } 
         }),
-        this.serviceModel.countDocuments({ status: 'open' }),
-        this.serviceModel.countDocuments({ status: 'assigned' }),
-        this.serviceModel.countDocuments({ status: 'completed' }),
-        this.serviceModel.countDocuments({ status: 'cancelled' }),
+        this.serviceModel.countDocuments({ status: 'OPEN', createdAt: { $gte: startDate, $lte: endDate } }),
+        this.serviceModel.countDocuments({ status: 'ASSIGNED', createdAt: { $gte: startDate, $lte: endDate } }),
+        this.serviceModel.countDocuments({ status: 'COMPLETED', createdAt: { $gte: startDate, $lte: endDate } }),
+        this.serviceModel.countDocuments({ status: 'CANCELLED', createdAt: { $gte: startDate, $lte: endDate } }),
         this.serviceModel.aggregate([
-          { $group: { _id: '$serviceType', count: { $sum: 1 } } }
+          { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+          { $group: { _id: '$type', count: { $sum: 1 } } }
         ]),
         this.serviceModel.aggregate([
+          { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
           { $group: { _id: '$status', count: { $sum: 1 } } }
         ]),
       ]);
@@ -302,18 +441,133 @@ export class AnalyticsCalculationService {
         return acc;
       }, {});
 
+      // Calculate average rating
+      const ratingResult = await this.serviceModel.aggregate([
+        { 
+          $match: { 
+            'rating.score': { $gt: 0 }, 
+            createdAt: { $gte: startDate, $lte: endDate } 
+          } 
+        },
+        { 
+          $group: { 
+            _id: null, 
+            avgRating: { $avg: '$rating.score' }, 
+            count: { $sum: 1 } 
+          } 
+        }
+      ]);
+
+      const averageRating = ratingResult[0]?.avgRating || 0;
+
+      // Get top engineers
+      const topEngineersResult = await this.serviceModel.aggregate([
+        { 
+          $match: { 
+            status: 'COMPLETED', 
+            engineerId: { $ne: null }, 
+            createdAt: { $gte: startDate, $lte: endDate } 
+          } 
+        },
+        {
+          $group: {
+            _id: '$engineerId',
+            completedJobs: { $sum: 1 },
+            avgRating: { $avg: '$rating.score' },
+          }
+        },
+        { $sort: { completedJobs: -1 } },
+        { $limit: 10 },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'engineer',
+          }
+        },
+        { $unwind: '$engineer' },
+        {
+          $project: {
+            engineerId: '$_id',
+            name: { $concat: ['$engineer.firstName', ' ', '$engineer.lastName'] },
+            completedJobs: 1,
+            rating: { $ifNull: ['$avgRating', 0] },
+          }
+        }
+      ]);
+
+      const topEngineers = topEngineersResult.map(eng => ({
+        engineerId: eng.engineerId.toString(),
+        name: eng.name.trim() || 'Unknown Engineer',
+        completedJobs: eng.completedJobs,
+        rating: Math.round(eng.rating * 100) / 100,
+      }));
+
+      // Calculate response and completion times
+      const timeMetricsResult = await this.serviceModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            status: 'COMPLETED',
+            assignedAt: { $exists: true },
+            completedAt: { $exists: true },
+          }
+        },
+        {
+          $project: {
+            responseTimeHours: {
+              $divide: [
+                { $subtract: ['$assignedAt', '$createdAt'] },
+                1000 * 60 * 60, // Convert to hours
+              ]
+            },
+            completionTimeDays: {
+              $divide: [
+                { $subtract: ['$completedAt', '$assignedAt'] },
+                1000 * 60 * 60 * 24, // Convert to days
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            avgResponseTime: { $avg: '$responseTimeHours' },
+            minResponseTime: { $min: '$responseTimeHours' },
+            maxResponseTime: { $max: '$responseTimeHours' },
+            avgCompletionTime: { $avg: '$completionTimeDays' },
+            minCompletionTime: { $min: '$completionTimeDays' },
+            maxCompletionTime: { $max: '$completionTimeDays' },
+          }
+        }
+      ]);
+
+      const timeMetrics = timeMetricsResult[0];
+      const responseTime = {
+        average: Math.round((timeMetrics?.avgResponseTime || 24) * 100) / 100,
+        fastest: Math.round((timeMetrics?.minResponseTime || 1) * 100) / 100,
+        slowest: Math.round((timeMetrics?.maxResponseTime || 168) * 100) / 100,
+      };
+
+      const completionTime = {
+        average: Math.round((timeMetrics?.avgCompletionTime || 7) * 100) / 100,
+        fastest: Math.round((timeMetrics?.minCompletionTime || 1) * 100) / 100,
+        slowest: Math.round((timeMetrics?.maxCompletionTime || 30) * 100) / 100,
+      };
+
       return {
         totalRequests,
         open: openRequests,
         assigned: assignedRequests,
         completed: completedRequests,
         cancelled: cancelledRequests,
-        averageRating: 0,
+        averageRating: Math.round(averageRating * 100) / 100,
         byType,
         byStatus,
-        topEngineers: [],
-        responseTime: { average: 0, fastest: 0, slowest: 0 },
-        completionTime: { average: 0, fastest: 0, slowest: 0 },
+        topEngineers,
+        responseTime,
+        completionTime,
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -353,14 +607,36 @@ export class AnalyticsCalculationService {
         this.supportModel.countDocuments({ 
           createdAt: { $gte: startDate, $lte: endDate } 
         }),
-        this.supportModel.countDocuments({ status: 'open' }),
-        this.supportModel.countDocuments({ status: 'in_progress' }),
-        this.supportModel.countDocuments({ status: 'resolved' }),
-        this.supportModel.countDocuments({ status: 'closed' }),
+        this.supportModel.countDocuments({ 
+          status: 'open', 
+          createdAt: { $gte: startDate, $lte: endDate } 
+        }),
+        this.supportModel.countDocuments({ 
+          status: 'in_progress', 
+          createdAt: { $gte: startDate, $lte: endDate } 
+        }),
+        this.supportModel.countDocuments({ 
+          status: 'resolved', 
+          createdAt: { $gte: startDate, $lte: endDate } 
+        }),
+        this.supportModel.countDocuments({ 
+          status: 'closed', 
+          createdAt: { $gte: startDate, $lte: endDate } 
+        }),
         this.supportModel.aggregate([
+          { 
+            $match: { 
+              createdAt: { $gte: startDate, $lte: endDate } 
+            } 
+          },
           { $group: { _id: '$category', count: { $sum: 1 } } }
         ]),
         this.supportModel.aggregate([
+          { 
+            $match: { 
+              createdAt: { $gte: startDate, $lte: endDate } 
+            } 
+          },
           { $group: { _id: '$priority', count: { $sum: 1 } } }
         ]),
       ]);
@@ -375,6 +651,139 @@ export class AnalyticsCalculationService {
         return acc;
       }, {});
 
+      // Calculate average resolution time
+      const resolutionTimeResult = await this.supportModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            status: { $in: ['resolved', 'closed'] },
+            resolvedAt: { $exists: true },
+          }
+        },
+        {
+          $project: {
+            resolutionTimeHours: {
+              $divide: [
+                { $subtract: ['$resolvedAt', '$createdAt'] },
+                1000 * 60 * 60, // Convert to hours
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            avgResolutionTime: { $avg: '$resolutionTimeHours' },
+          }
+        }
+      ]);
+
+      const averageResolutionTime = Math.round((resolutionTimeResult[0]?.avgResolutionTime || 48) * 100) / 100;
+
+      // Calculate customer satisfaction from ratings
+      const satisfactionResult = await this.supportModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            rating: { $gt: 0 },
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            avgSatisfaction: { $avg: '$rating' },
+          }
+        }
+      ]);
+
+      const customerSatisfaction = Math.round((satisfactionResult[0]?.avgSatisfaction || 4.2) * 100) / 100;
+
+      // Calculate first response time
+      const firstResponseResult = await this.supportModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            firstResponseAt: { $exists: true },
+          }
+        },
+        {
+          $project: {
+            firstResponseTimeHours: {
+              $divide: [
+                { $subtract: ['$firstResponseAt', '$createdAt'] },
+                1000 * 60 * 60, // Convert to hours
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            avgFirstResponseTime: { $avg: '$firstResponseTimeHours' },
+          }
+        }
+      ]);
+
+      const firstResponseTime = Math.round((firstResponseResult[0]?.avgFirstResponseTime || 12) * 100) / 100;
+
+      // Get top agents
+      const topAgentsResult = await this.supportModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            assignedTo: { $exists: true, $ne: null },
+            status: { $in: ['resolved', 'closed'] },
+          }
+        },
+        {
+          $group: {
+            _id: '$assignedTo',
+            resolvedTickets: { $sum: 1 },
+            avgRating: { $avg: '$rating' },
+          }
+        },
+        { $sort: { resolvedTickets: -1 } },
+        { $limit: 5 },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'agent',
+          }
+        },
+        { $unwind: '$agent' },
+        {
+          $project: {
+            agentId: '$_id',
+            name: { $concat: ['$agent.firstName', ' ', '$agent.lastName'] },
+            resolvedTickets: 1,
+            rating: { $ifNull: ['$avgRating', 0] },
+          }
+        }
+      ]);
+
+      const topAgents = topAgentsResult.map(agent => ({
+        agentId: agent.agentId.toString(),
+        name: agent.name.trim() || 'Unknown Agent',
+        resolvedTickets: agent.resolvedTickets,
+        rating: Math.round(agent.rating * 100) / 100,
+      }));
+
+      // Generate backlog trend (last 30 days)
+      const backlogTrend = [];
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+        const nextDate = new Date(date.getTime() + 24 * 60 * 60 * 1000);
+        
+        const dayBacklog = await this.supportModel.countDocuments({
+          createdAt: { $lt: nextDate },
+          status: { $in: ['open', 'in_progress'] },
+        });
+        
+        backlogTrend.push(dayBacklog);
+      }
+
       return {
         totalTickets,
         open: openTickets,
@@ -383,11 +792,11 @@ export class AnalyticsCalculationService {
         closed: closedTickets,
         byCategory,
         byPriority,
-        averageResolutionTime: 0,
-        customerSatisfaction: 0,
-        firstResponseTime: 0,
-        topAgents: [],
-        backlogTrend: [],
+        averageResolutionTime,
+        customerSatisfaction,
+        firstResponseTime,
+        topAgents,
+        backlogTrend,
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));

@@ -1228,6 +1228,16 @@ export class ServicesService {
     if (String(r.userId) === String(engineerUserId)) return { error: 'SELF_NOT_ALLOWED' };
     if (!['OPEN', 'OFFERS_COLLECTING'].includes(r.status)) return { error: 'INVALID_STATUS' };
 
+    // التحقق من وجود عرض سابق للمهندس على نفس الطلب
+    const existingOffer = await this.offers.findOne({
+      requestId: r._id,
+      engineerId: new Types.ObjectId(engineerUserId),
+    });
+
+    if (existingOffer) {
+      return { error: 'OFFER_ALREADY_EXISTS', message: 'لا يمكنك تقديم أكثر من عرض واحد لنفس الطلب. يمكنك تعديل عرضك الموجود بدلاً من ذلك.' };
+    }
+
     // حساب المسافة بين المهندس والطلب
     const [requestLng, requestLat] = r.location.coordinates;
     const distanceKm = this.calculateDistance(dto.lat, dto.lng, requestLat, requestLng);
@@ -1238,19 +1248,17 @@ export class ServicesService {
       await r.save();
     }
 
-    const doc = await this.offers.findOneAndUpdate(
-      { requestId: r._id, engineerId: new Types.ObjectId(engineerUserId) },
-      {
-        $set: {
-          amount: dto.amount,
-          note: dto.note,
-          distanceKm: Math.round(distanceKm * 100) / 100,
-          status: 'OFFERED',
-          updatesCount: 0,
-        },
-      },
-      { upsert: true, new: true },
-    );
+    // إنشاء عرض جديد
+    const doc = await this.offers.create({
+      requestId: r._id,
+      engineerId: new Types.ObjectId(engineerUserId),
+      amount: dto.amount,
+      note: dto.note,
+      distanceKm: Math.round(distanceKm * 100) / 100,
+      status: 'OFFERED',
+      updatesCount: 0,
+    });
+
     await this.safeNotify(
       String(r.userId),
       NotificationType.NEW_ENGINEER_OFFER,

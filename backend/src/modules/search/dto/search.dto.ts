@@ -40,6 +40,11 @@ export class SearchQueryDto {
   @IsEnum(SearchEntity)
   entity?: SearchEntity = SearchEntity.ALL;
 
+  @ApiProperty({ description: 'العملة', enum: ['USD', 'YER', 'SAR'], required: false })
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
   @ApiProperty({ description: 'رقم الصفحة', minimum: 1, required: false })
   @IsOptional()
   @Type(() => Number)
@@ -67,6 +72,11 @@ export class AdvancedProductSearchDto {
   @IsOptional()
   @IsEnum(['ar', 'en'])
   lang?: 'ar' | 'en' = 'ar';
+
+  @ApiProperty({ description: 'العملة', enum: ['USD', 'YER', 'SAR'], required: false })
+  @IsOptional()
+  @IsString()
+  currency?: string;
 
   // Filters
   @ApiProperty({ description: 'معرف الفئة', required: false })
@@ -195,7 +205,7 @@ export class FacetDto {
 }
 
 export class ProductSearchResultDto {
-  results!: SearchResultDto[];
+  results!: Array<Record<string, unknown>>; // نفس تنسيق قائمة المنتجات المميزة
   total!: number;
   page!: number;
   totalPages!: number;

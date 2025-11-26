@@ -1274,9 +1274,8 @@ export class AnalyticsService {
   /**
    * Get performance metrics
    */
-  async getPerformanceMetrics() {
-    const snapshot = await this.generateAnalyticsSnapshot();
-    return snapshot.performance;
+  async getPerformanceMetrics(): Promise<PerformanceMetricsDto> {
+    return this.calculatePerformanceMetrics();
   }
 
   /**

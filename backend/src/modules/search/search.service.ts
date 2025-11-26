@@ -70,6 +70,7 @@ import { Category } from '../categories/schemas/category.schema';
 import { Brand } from '../brands/schemas/brand.schema';
 import { PricingService } from '../products/services/pricing.service';
 import { VariantService } from '../products/services/variant.service';
+import { PublicProductsPresenter } from '../products/services/public-products.presenter';
 
 @Injectable()
 export class SearchService {
@@ -90,6 +91,7 @@ export class SearchService {
     private cacheService: CacheService,
     private pricingService: PricingService,
     private variantService: VariantService,
+    private publicProductsPresenter: PublicProductsPresenter,
   ) {}
 
   // Types for lean results and populated refs
@@ -235,10 +237,11 @@ export class SearchService {
   }
 
   // ==================== البحث الشامل ====================
-  async universalSearch(dto: SearchQueryDto) {
-    const { q, lang = 'ar', entity = SearchEntity.ALL, page = 1, limit = 20 } = dto;
+  async universalSearch(dto: SearchQueryDto, userId?: string, currency?: string) {
+    const { q, lang = 'ar', entity = SearchEntity.ALL, currency: dtoCurrency, page = 1, limit = 20 } = dto;
 
-    const cacheKey = `search:universal:${JSON.stringify(dto)}`;
+    const selectedCurrency = dtoCurrency || currency || 'USD';
+    const cacheKey = `search:universal:${JSON.stringify({ ...dto, currency: selectedCurrency, userId })}`;
     const cached = await this.cacheService.get<{
       results: SearchResultDto[];
       total: number;
@@ -251,7 +254,7 @@ export class SearchService {
 
     // بحث في المنتجات
     if (!entity || entity === SearchEntity.ALL || entity === SearchEntity.PRODUCTS) {
-      const products = await this.searchProductsSimple(q, lang, limit);
+      const products = await this.searchProductsSimple(q, lang, limit, userId, selectedCurrency);
       results.push(...products);
     }
 
@@ -286,10 +289,15 @@ export class SearchService {
   }
 
   // ==================== بحث المنتجات المتقدم ====================
-  async advancedProductSearch(dto: AdvancedProductSearchDto): Promise<ProductSearchResultDto> {
+  async advancedProductSearch(
+    dto: AdvancedProductSearchDto,
+    userId?: string,
+    currency?: string,
+  ): Promise<ProductSearchResultDto> {
     const {
       q,
       lang = 'ar',
+      currency: dtoCurrency,
       categoryId,
       brandId,
       status = 'active',
@@ -306,6 +314,9 @@ export class SearchService {
       limit = 20,
       includeFacets = false,
     } = dto;
+
+    const selectedCurrency = dtoCurrency || currency || 'USD';
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
 
     const skip = (page - 1) * limit;
 
@@ -423,42 +434,23 @@ export class SearchService {
         .sort(sort)
         .skip(skip)
         .limit(limit)
-        .lean<ProductLean[]>(),
+        .lean(),
       this.productModel.countDocuments(query),
     ]);
 
-    // Map results with price ranges
-    const results: SearchResultDto[] = await Promise.all(
-      products.map(async (product) => {
-        const productId = String(product._id);
-        const priceRangeByCurrency = await this.getPriceRangeByCurrency(productId);
+    // استخدام buildProductsCollectionResponse للحصول على نفس تنسيق قائمة المنتجات المميزة
+    const rawData = Array.isArray(products)
+      ? (products as unknown as Array<Record<string, unknown>>)
+      : [];
 
-        return {
-          type: 'product' as const,
-          id: productId,
-          title: lang === 'ar' ? product.name : product.nameEn,
-          titleEn: product.nameEn,
-          description: lang === 'ar' ? product.description : product.descriptionEn,
-          descriptionEn: product.descriptionEn,
-          thumbnail: this.getMainImageUrl(product),
-          metadata: {
-            category: this.getNameFromRef(product.categoryId, lang),
-            brand: this.getNameFromRef(product.brandId, lang),
-            priceRangeByCurrency,
-            rating: product.rating,
-            reviewsCount: product.reviewsCount,
-            isFeatured: product.isFeatured,
-            isNew: product.isNew,
-            tags: product.tags,
-          },
-          relevanceScore: q ? this.calculateRelevance(product, q, lang) : 0,
-          createdAt: product.createdAt,
-        };
-      }),
+    const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
+      rawData,
+      discountPercent,
+      selectedCurrency,
     );
 
     const response: ProductSearchResultDto = {
-      results,
+      results: productsWithPricing as Array<Record<string, unknown>>,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -478,6 +470,8 @@ export class SearchService {
     q: string | undefined,
     lang: 'ar' | 'en',
     limit: number,
+    userId?: string,
+    currency?: string,
   ): Promise<SearchResultDto[]> {
     const query: Record<string, unknown> = { status: 'active', deletedAt: null };
 
@@ -491,33 +485,28 @@ export class SearchService {
 
     const products = await this.productModel
       .find(query)
+      .populate('categoryId', 'name nameEn')
+      .populate('brandId', 'name nameEn')
       .populate('mainImageId', 'url')
       .sort({ isFeatured: -1, createdAt: -1 })
       .limit(limit)
-      .lean<ProductSimpleLean[]>();
+      .lean();
 
-    // Map results with price ranges
-    return Promise.all(
-      products.map(async (p) => {
-        const productId = String(p._id);
-        const priceRangeByCurrency = await this.getPriceRangeByCurrency(productId);
+    const selectedCurrency = currency || 'USD';
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
 
-        return {
-          type: 'product' as const,
-          id: productId,
-          title: lang === 'ar' ? p.name : p.nameEn,
-          titleEn: p.nameEn,
-          description: lang === 'ar' ? p.description : p.descriptionEn,
-          thumbnail: this.getMainImageUrl(p),
-          metadata: {
-            type: 'product',
-            priceRangeByCurrency,
-          },
-          relevanceScore: q ? this.calculateRelevance(p, q, lang) : 0,
-          createdAt: p.createdAt,
-        };
-      }),
+    // استخدام buildProductsCollectionResponse للحصول على نفس تنسيق قائمة المنتجات المميزة
+    const rawData = Array.isArray(products)
+      ? (products as unknown as Array<Record<string, unknown>>)
+      : [];
+
+    const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
+      rawData,
+      discountPercent,
+      selectedCurrency,
     );
+
+    return productsWithPricing as unknown as SearchResultDto[];
   }
 
   // ==================== بحث الفئات ====================

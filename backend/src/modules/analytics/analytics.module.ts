@@ -8,6 +8,8 @@ import { AdvancedReportsService } from './services/advanced-reports.service';
 import { AnalyticsCronService } from './services/analytics-cron.service';
 import { AnalyticsCalculationService } from './services/analytics-calculation.service';
 import { AnalyticsCacheService } from './services/analytics-cache.service';
+import { FileStorageService } from './services/file-storage.service';
+import { ExportService } from './services/export.service';
 import { StockAlertService } from '../products/services/stock-alert.service';
 import { ActivityTrackingMiddleware } from '../../shared/middleware/activity-tracking.middleware';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
@@ -54,10 +56,7 @@ import { CacheService } from '../../shared/cache/cache.service';
     ]),
     SharedModule,
   ],
-  controllers: [
-    AnalyticsController,
-    AdvancedAnalyticsController,
-  ],
+  controllers: [AnalyticsController, AdvancedAnalyticsController],
   providers: [
     AnalyticsService,
     AdvancedAnalyticsService,
@@ -65,6 +64,8 @@ import { CacheService } from '../../shared/cache/cache.service';
     AnalyticsCronService,
     AnalyticsCalculationService,
     AnalyticsCacheService,
+    FileStorageService,
+    ExportService,
     StockAlertService,
     ActivityTrackingMiddleware,
     CacheService,
@@ -76,6 +77,8 @@ import { CacheService } from '../../shared/cache/cache.service';
     AnalyticsCronService,
     AnalyticsCalculationService,
     AnalyticsCacheService,
+    FileStorageService,
+    ExportService,
     StockAlertService,
     ActivityTrackingMiddleware,
   ],

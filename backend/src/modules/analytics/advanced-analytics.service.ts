@@ -6,20 +6,25 @@ import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { Cart, CartDocument } from '../cart/schemas/cart.schema';
-import { AdvancedReport, AdvancedReportDocument, ReportCategory, ReportPriority } from './schemas/advanced-report.schema';
+import {
+  AdvancedReport,
+  AdvancedReportDocument,
+  ReportCategory,
+  ReportPriority,
+} from './schemas/advanced-report.schema';
 import { SystemMonitoringService } from '../system-monitoring/system-monitoring.service';
+import { ExportService } from './services/export.service';
 import {
   AnalyticsReportNotFoundException,
   AnalyticsReportGenerationFailedException,
   AnalyticsException,
-  ErrorCode
 } from '../../shared/exceptions';
 
 const COMPLETED_STATUSES = ['completed'] as const;
 
 /**
  * Advanced Analytics Service
- * 
+ *
  * NOTE: All monetary values are in USD (US Dollars)
  * All revenue, pricing, and financial calculations use USD as the base currency
  */
@@ -135,6 +140,7 @@ export class AdvancedAnalyticsService {
     @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
     @InjectModel(AdvancedReport.name) private advancedReportModel: Model<AdvancedReportDocument>,
     private systemMonitoring: SystemMonitoringService,
+    private exportService: ExportService,
   ) {}
 
   // ==================== Helper Methods ====================
@@ -304,19 +310,25 @@ export class AdvancedAnalyticsService {
       const results = await this.orderModel.aggregate(pipeline);
       const totalRevenue = results.reduce((sum, item) => sum + (item.revenue || 0), 0);
 
-      this.logger.debug(`getSalesByCategory found ${results.length} categories with total revenue: ${totalRevenue}`);
-      
+      this.logger.debug(
+        `getSalesByCategory found ${results.length} categories with total revenue: ${totalRevenue}`,
+      );
+
       if (results.length === 0) {
         // Debug: تحقق من البيانات الخام
-        const sampleOrder = await this.orderModel.findOne({
-          createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: COMPLETED_STATUSES },
-          paymentStatus: 'paid',
-        }).lean();
-        
+        const sampleOrder = await this.orderModel
+          .findOne({
+            createdAt: { $gte: startDate, $lte: endDate },
+            status: { $in: COMPLETED_STATUSES },
+            paymentStatus: 'paid',
+          })
+          .lean();
+
         if (sampleOrder && sampleOrder.items && sampleOrder.items.length > 0) {
           const firstItem = sampleOrder.items[0];
-          this.logger.debug(`Sample order item snapshot.categoryId: ${firstItem.snapshot?.categoryId}`);
+          this.logger.debug(
+            `Sample order item snapshot.categoryId: ${firstItem.snapshot?.categoryId}`,
+          );
           this.logger.debug(`Sample order item productId: ${firstItem.productId}`);
         }
       }
@@ -450,7 +462,7 @@ export class AdvancedAnalyticsService {
       0,
     );
     const previousOrders = previousPeriodOrders.length;
-    
+
     // Calculate growth metrics
     const salesGrowth =
       previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
@@ -532,9 +544,7 @@ export class AdvancedAnalyticsService {
         : 0;
 
     const totalSalesGrowth =
-      previousTotalSales > 0
-        ? ((totalSales - previousTotalSales) / previousTotalSales) * 100
-        : 0;
+      previousTotalSales > 0 ? ((totalSales - previousTotalSales) / previousTotalSales) * 100 : 0;
 
     // Calculate average rating from all products
     const avgRatingData = await this.productModel.aggregate([
@@ -589,9 +599,7 @@ export class AdvancedAnalyticsService {
 
     const lowStockGrowth =
       previousLowStockCount > 0
-        ? ((lowStockProducts.length - previousLowStockCount) /
-            previousLowStockCount) *
-          100
+        ? ((lowStockProducts.length - previousLowStockCount) / previousLowStockCount) * 100
         : 0;
 
     return {
@@ -732,19 +740,32 @@ export class AdvancedAnalyticsService {
     ]);
 
     // Calculate customer lifetime value (average spending per customer)
-    const customerLifetimeValue = totalCustomers > 0 ? await this.calculateCustomerLifetimeValue() : 0;
-    const previousCustomerLifetimeValue = previousTotalCustomers > 0 ? 
-      await this.calculateCustomerLifetimeValueForPeriod(previousStartDate, previousEndDate) : 0;
+    const customerLifetimeValue =
+      totalCustomers > 0 ? await this.calculateCustomerLifetimeValue() : 0;
+    const previousCustomerLifetimeValue =
+      previousTotalCustomers > 0
+        ? await this.calculateCustomerLifetimeValueForPeriod(previousStartDate, previousEndDate)
+        : 0;
 
     // Calculate growth metrics
-    const totalCustomersGrowth = previousTotalCustomers > 0 
-      ? ((totalCustomers - previousTotalCustomers) / previousTotalCustomers) * 100 : 0;
-    const newCustomersGrowth = previousNewCustomers > 0 
-      ? ((newCustomers - previousNewCustomers) / previousNewCustomers) * 100 : 0;
-    const activeCustomersGrowth = previousActiveCustomers > 0 
-      ? ((activeCustomers - previousActiveCustomers) / previousActiveCustomers) * 100 : 0;
-    const customerLifetimeValueGrowth = previousCustomerLifetimeValue > 0 
-      ? ((customerLifetimeValue - previousCustomerLifetimeValue) / previousCustomerLifetimeValue) * 100 : 0;
+    const totalCustomersGrowth =
+      previousTotalCustomers > 0
+        ? ((totalCustomers - previousTotalCustomers) / previousTotalCustomers) * 100
+        : 0;
+    const newCustomersGrowth =
+      previousNewCustomers > 0
+        ? ((newCustomers - previousNewCustomers) / previousNewCustomers) * 100
+        : 0;
+    const activeCustomersGrowth =
+      previousActiveCustomers > 0
+        ? ((activeCustomers - previousActiveCustomers) / previousActiveCustomers) * 100
+        : 0;
+    const customerLifetimeValueGrowth =
+      previousCustomerLifetimeValue > 0
+        ? ((customerLifetimeValue - previousCustomerLifetimeValue) /
+            previousCustomerLifetimeValue) *
+          100
+        : 0;
 
     return {
       totalCustomers,
@@ -826,14 +847,20 @@ export class AdvancedAnalyticsService {
     const previousTotalValue = await this.calculateInventoryValueForDate(previousStartDate);
 
     // Calculate growth metrics
-    const totalProductsGrowth = previousTotalProducts > 0 
-      ? ((totalProducts - previousTotalProducts) / previousTotalProducts) * 100 : 0;
-    const inStockGrowth = previousActiveProducts > 0 
-      ? ((activeProducts - previousActiveProducts) / previousActiveProducts) * 100 : 0;
-    const outOfStockGrowth = previousOutOfStockProducts > 0 
-      ? ((outOfStockProducts - previousOutOfStockProducts) / previousOutOfStockProducts) * 100 : 0;
-    const totalValueGrowth = previousTotalValue > 0 
-      ? ((totalValue - previousTotalValue) / previousTotalValue) * 100 : 0;
+    const totalProductsGrowth =
+      previousTotalProducts > 0
+        ? ((totalProducts - previousTotalProducts) / previousTotalProducts) * 100
+        : 0;
+    const inStockGrowth =
+      previousActiveProducts > 0
+        ? ((activeProducts - previousActiveProducts) / previousActiveProducts) * 100
+        : 0;
+    const outOfStockGrowth =
+      previousOutOfStockProducts > 0
+        ? ((outOfStockProducts - previousOutOfStockProducts) / previousOutOfStockProducts) * 100
+        : 0;
+    const totalValueGrowth =
+      previousTotalValue > 0 ? ((totalValue - previousTotalValue) / previousTotalValue) * 100 : 0;
 
     // Get inventory by category
     const inventoryByCategory = await this.productModel.aggregate([
@@ -965,7 +992,8 @@ export class AdvancedAnalyticsService {
     const previousRevenue = previousRevenueData[0]?.totalRevenue || 0;
 
     // Calculate revenue growth
-    const revenueGrowth = previousRevenue > 0 ? ((revenue - previousRevenue) / previousRevenue) * 100 : 0;
+    const revenueGrowth =
+      previousRevenue > 0 ? ((revenue - previousRevenue) / previousRevenue) * 100 : 0;
 
     // Generate cash flow data (daily revenue)
     const cashFlow = await this.generateCashFlowData(startDate, endDate);
@@ -1374,23 +1402,26 @@ export class AdvancedAnalyticsService {
       priority?: string;
       createdBy: string;
       creatorName?: string;
-    }
+    },
   ) {
     this.logger.log('Generating advanced report:', data);
 
-    const startDate = data.startDate ? new Date(data.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const startDate = data.startDate
+      ? new Date(data.startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const endDate = data.endDate ? new Date(data.endDate) : new Date();
     const reportId = this.generateReportId();
     const startTime = Date.now(); // Track processing time
 
     try {
       // Get comprehensive analytics data
-      const [salesAnalytics, productAnalytics, customerAnalytics, cartAnalytics] = await Promise.all([
-        this.getSalesAnalytics(data),
-        this.getProductPerformance(data),
-        this.getCustomerAnalytics(data),
-        this.getCartAnalytics(data),
-      ]);
+      const [salesAnalytics, productAnalytics, customerAnalytics, cartAnalytics] =
+        await Promise.all([
+          this.getSalesAnalytics(data),
+          this.getProductPerformance(data),
+          this.getCustomerAnalytics(data),
+          this.getCartAnalytics(data),
+        ]);
 
       // Calculate summary metrics
       const totalRevenue = salesAnalytics.totalRevenue;
@@ -1399,7 +1430,7 @@ export class AdvancedAnalyticsService {
       // Create report data
       const reportData: Partial<AdvancedReport> = {
         reportId,
-      title: data.title || 'Advanced Analytics Report',
+        title: data.title || 'Advanced Analytics Report',
         titleEn: data.title || 'Advanced Analytics Report',
         category: data.category || ReportCategory.CUSTOM,
         priority: data.priority ? (data.priority as ReportPriority) : ReportPriority.MEDIUM,
@@ -1445,7 +1476,10 @@ export class AdvancedAnalyticsService {
             percentage: item.percentage,
           })),
           salesByRegion: await this.getSalesByRegion(startDate, endDate),
-          paymentMethods: await this.getPaymentMethodsWithPercentage(salesAnalytics.salesByPaymentMethod, salesAnalytics.totalRevenue),
+          paymentMethods: await this.getPaymentMethodsWithPercentage(
+            salesAnalytics.salesByPaymentMethod,
+            salesAnalytics.totalRevenue,
+          ),
         },
 
         // Product Analytics
@@ -1481,25 +1515,38 @@ export class AdvancedAnalyticsService {
           newCustomers: customerAnalytics.newCustomers,
           activeCustomers: customerAnalytics.activeCustomers,
           returningCustomers: await this.getReturningCustomersCount(startDate, endDate), // Calculate
-          customerRetentionRate: (await this.calculateRetentionRates(startDate, endDate)).retentionRate,
+          customerRetentionRate: (await this.calculateRetentionRates(startDate, endDate))
+            .retentionRate,
           averageLifetimeValue: customerAnalytics.customerLifetimeValue,
-          topCustomers: await Promise.all(customerAnalytics.topCustomers.map(async (c: TopCustomerResult) => ({
-            userId: c.id,
-            name: c.name,
-            totalOrders: c.orders,
-            totalSpent: c.totalSpent,
-            lastOrderDate: await this.getLastOrderDate(c.id), // Get actual last order date
-          }))),
+          topCustomers: await Promise.all(
+            customerAnalytics.topCustomers.map(async (c: TopCustomerResult) => ({
+              userId: c.id,
+              name: c.name,
+              totalOrders: c.orders,
+              totalSpent: c.totalSpent,
+              lastOrderDate: await this.getLastOrderDate(c.id), // Get actual last order date
+            })),
+          ),
           customersByRegion: await this.getCustomersByRegion(),
-          customerSegmentation: await this.getCustomerSegmentationWithMetrics(customerAnalytics.customerSegments, startDate, endDate),
+          customerSegmentation: await this.getCustomerSegmentationWithMetrics(
+            customerAnalytics.customerSegments,
+            startDate,
+            endDate,
+          ),
           churnRate: (await this.calculateRetentionRates(startDate, endDate)).churnRate,
           newVsReturning: {
             new: customerAnalytics.newCustomers,
             returning: customerAnalytics.totalCustomers - customerAnalytics.newCustomers,
-            newPercentage: customerAnalytics.totalCustomers > 0 ?
-              (customerAnalytics.newCustomers / customerAnalytics.totalCustomers) * 100 : 0,
-            returningPercentage: customerAnalytics.totalCustomers > 0 ?
-              ((customerAnalytics.totalCustomers - customerAnalytics.newCustomers) / customerAnalytics.totalCustomers) * 100 : 0,
+            newPercentage:
+              customerAnalytics.totalCustomers > 0
+                ? (customerAnalytics.newCustomers / customerAnalytics.totalCustomers) * 100
+                : 0,
+            returningPercentage:
+              customerAnalytics.totalCustomers > 0
+                ? ((customerAnalytics.totalCustomers - customerAnalytics.newCustomers) /
+                    customerAnalytics.totalCustomers) *
+                  100
+                : 0,
           },
         },
 
@@ -1520,7 +1567,7 @@ export class AdvancedAnalyticsService {
         },
 
         // Status
-      status: 'completed',
+        status: 'completed',
         metadata: {
           processingTime: Date.now() - startTime, // Calculate actual processing time
           dataSourceVersion: '1.0',
@@ -1539,14 +1586,13 @@ export class AdvancedAnalyticsService {
         status: savedReport.status,
         generatedAt: savedReport.generatedAt.toISOString(),
         summary: savedReport.summary,
-      data: {
+        data: {
           salesAnalytics: savedReport.salesAnalytics,
           productAnalytics: savedReport.productAnalytics,
           customerAnalytics: savedReport.customerAnalytics,
           cartAnalytics: savedReport.cartAnalytics,
         },
       };
-
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       this.logger.error('Error generating advanced report:', {
@@ -1603,7 +1649,9 @@ export class AdvancedAnalyticsService {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('reportId title titleEn category priority status generatedAt summary createdBy creatorName')
+        .select(
+          'reportId title titleEn category priority status generatedAt summary createdBy creatorName',
+        )
         .lean(),
       this.advancedReportModel.countDocuments(filter),
     ]);
@@ -1683,7 +1731,7 @@ export class AdvancedAnalyticsService {
           status: 'archived' as const,
           updatedAt: new Date(),
         },
-        { new: true }
+        { new: true },
       )
       .select('reportId title status updatedAt')
       .lean();
@@ -1715,21 +1763,57 @@ export class AdvancedAnalyticsService {
   async exportReport(reportId: string, data: { format?: string }) {
     this.logger.log('Exporting report:', reportId, data);
 
-    // In a real implementation, this would generate and store the actual file
-    // For now, return mock data
-    const format = data.format || 'pdf';
+    const format = (data.format || 'json') as 'pdf' | 'xlsx' | 'csv' | 'json';
+
+    // Get the report data
+    const report = await this.getAdvancedReport(reportId);
+
+    // Prepare export data structure from report
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const salesAnalytics: any = report.data?.salesAnalytics || {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const customerAnalytics: any = report.data?.customerAnalytics || {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const productAnalytics: any = report.data?.productAnalytics || {};
+
+    const exportData = {
+      summary: report.summary,
+      topProducts: productAnalytics?.topProducts || salesAnalytics?.topSellingProducts || [],
+      salesByDate: salesAnalytics?.salesByDate || [],
+      topCustomers: customerAnalytics?.topCustomers || [],
+      insights: report.insights || [],
+      generatedAt: report.generatedAt,
+      period: `${report.startDate} to ${report.endDate}`,
+      totalRevenue: salesAnalytics?.totalRevenue || 0,
+      totalOrders: salesAnalytics?.totalOrders || 0,
+      totalUsers: customerAnalytics?.totalCustomers || 0,
+    };
+
+    // Generate file using export service
     const fileName = `${reportId}_${Date.now()}.${format}`;
+    const exportResult = await this.exportService.exportData({
+      format,
+      filename: fileName,
+      folder: 'analytics/reports',
+      title: report.title || report.titleEn || 'Analytics Report',
+      data: exportData,
+    });
+
+    this.logger.log(
+      `Report exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
+    );
 
     return {
-      fileUrl: `https://api.example.com/reports/exports/${fileName}`,
-      format,
+      fileUrl: exportResult.url,
+      format: exportResult.format,
       exportedAt: new Date().toISOString(),
-      fileName,
+      fileName: exportResult.filename,
+      path: exportResult.path,
     };
   }
 
   // ==================== Data Export ====================
-  async exportSalesData(format: string, startDate: string, endDate: string) {
+  async exportSalesData(format: string, startDate: string, endDate: string): Promise<string> {
     this.logger.log('Exporting sales data:', { format, startDate, endDate });
 
     // Get real sales data
@@ -1739,21 +1823,25 @@ export class AdvancedAnalyticsService {
       period: 'custom',
     });
 
-    // In a real implementation, this would generate and store the actual file
     const fileName = `sales_data_${startDate}_${endDate}_${Date.now()}.${format}`;
 
-    return {
-      fileUrl: `https://api.example.com/exports/${fileName}`,
-      format,
-      exportedAt: new Date().toISOString(),
-      fileName,
-      recordCount: salesData.totalOrders,
-      totalValue: salesData.totalRevenue,
-      currency: 'USD',
-    };
+    // Generate export using export service
+    const exportResult = await this.exportService.exportData({
+      format: format as 'pdf' | 'xlsx' | 'csv' | 'json',
+      filename: fileName,
+      folder: 'analytics/exports/sales',
+      title: `Sales Report - ${startDate} to ${endDate}`,
+      data: salesData,
+    });
+
+    this.logger.log(
+      `Sales data exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
+    );
+
+    return exportResult.url;
   }
 
-  async exportProductsData(format: string, startDate?: string, endDate?: string) {
+  async exportProductsData(format: string, startDate?: string, endDate?: string): Promise<string> {
     this.logger.log('Exporting products data:', { format, startDate, endDate });
 
     // Get real products data
@@ -1764,19 +1852,25 @@ export class AdvancedAnalyticsService {
     });
 
     const fileName = `products_data_${startDate || 'all'}_${endDate || 'all'}_${Date.now()}.${format}`;
+    const periodLabel = startDate && endDate ? `${startDate} to ${endDate}` : 'All Time';
 
-    return {
-      fileUrl: `https://api.example.com/exports/${fileName}`,
-      format,
-      exportedAt: new Date().toISOString(),
-      fileName,
-      recordCount: productsData.totalProducts,
-      totalValue: productsData.totalSales,
-      currency: 'USD',
-    };
+    // Generate export using export service
+    const exportResult = await this.exportService.exportData({
+      format: format as 'pdf' | 'xlsx' | 'csv' | 'json',
+      filename: fileName,
+      folder: 'analytics/exports/products',
+      title: `Products Performance Report - ${periodLabel}`,
+      data: productsData,
+    });
+
+    this.logger.log(
+      `Products data exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
+    );
+
+    return exportResult.url;
   }
 
-  async exportCustomersData(format: string, startDate?: string, endDate?: string) {
+  async exportCustomersData(format: string, startDate?: string, endDate?: string): Promise<string> {
     this.logger.log('Exporting customers data:', { format, startDate, endDate });
 
     // Get real customers data
@@ -1787,16 +1881,22 @@ export class AdvancedAnalyticsService {
     });
 
     const fileName = `customers_data_${startDate || 'all'}_${endDate || 'all'}_${Date.now()}.${format}`;
+    const periodLabel = startDate && endDate ? `${startDate} to ${endDate}` : 'All Time';
 
-    return {
-      fileUrl: `https://api.example.com/exports/${fileName}`,
-      format,
-      exportedAt: new Date().toISOString(),
-      fileName,
-      recordCount: customersData.totalCustomers,
-      totalValue: customersData.topCustomers.reduce((sum: number, c: TopCustomerResult) => sum + c.totalSpent, 0),
-      currency: 'USD',
-    };
+    // Generate export using export service
+    const exportResult = await this.exportService.exportData({
+      format: format as 'pdf' | 'xlsx' | 'csv' | 'json',
+      filename: fileName,
+      folder: 'analytics/exports/customers',
+      title: `Customers Analytics Report - ${periodLabel}`,
+      data: customersData,
+    });
+
+    this.logger.log(
+      `Customers data exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
+    );
+
+    return exportResult.url;
   }
 
   // ==================== Comparison & Trends ====================
@@ -1823,13 +1923,15 @@ export class AdvancedAnalyticsService {
     });
 
     // Calculate changes
-    const revenueChange = previousData.totalRevenue > 0
-      ? ((currentData.totalRevenue - previousData.totalRevenue) / previousData.totalRevenue) * 100
-      : 0;
+    const revenueChange =
+      previousData.totalRevenue > 0
+        ? ((currentData.totalRevenue - previousData.totalRevenue) / previousData.totalRevenue) * 100
+        : 0;
 
-    const ordersChange = previousData.totalOrders > 0
-      ? ((currentData.totalOrders - previousData.totalOrders) / previousData.totalOrders) * 100
-      : 0;
+    const ordersChange =
+      previousData.totalOrders > 0
+        ? ((currentData.totalOrders - previousData.totalOrders) / previousData.totalOrders) * 100
+        : 0;
 
     // Get customer data for both periods
     const currentCustomers = await this.getCustomerAnalytics({
@@ -1844,9 +1946,12 @@ export class AdvancedAnalyticsService {
       period: 'custom',
     });
 
-    const customersChange = previousCustomers.totalCustomers > 0
-      ? ((currentCustomers.totalCustomers - previousCustomers.totalCustomers) / previousCustomers.totalCustomers) * 100
-      : 0;
+    const customersChange =
+      previousCustomers.totalCustomers > 0
+        ? ((currentCustomers.totalCustomers - previousCustomers.totalCustomers) /
+            previousCustomers.totalCustomers) *
+          100
+        : 0;
 
     return {
       current: {
@@ -1865,9 +1970,15 @@ export class AdvancedAnalyticsService {
         revenue: Math.round(revenueChange * 100) / 100,
         orders: Math.round(ordersChange * 100) / 100,
         customers: Math.round(customersChange * 100) / 100,
-        averageOrderValue: previousData.averageOrderValue > 0
-          ? Math.round(((currentData.averageOrderValue - previousData.averageOrderValue) / previousData.averageOrderValue) * 100 * 100) / 100
-          : 0,
+        averageOrderValue:
+          previousData.averageOrderValue > 0
+            ? Math.round(
+                ((currentData.averageOrderValue - previousData.averageOrderValue) /
+                  previousData.averageOrderValue) *
+                  100 *
+                  100,
+              ) / 100
+            : 0,
       },
       currency: 'USD',
     };
@@ -1906,7 +2017,8 @@ export class AdvancedAnalyticsService {
           data.push({
             date: date.toISOString().split('T')[0],
             value: Math.round(value * 100) / 100,
-            change: i > 0 ? ((value - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100 : 0,
+            change:
+              i > 0 ? ((value - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100 : 0,
           });
         }
         break;
@@ -1925,7 +2037,10 @@ export class AdvancedAnalyticsService {
           data.push({
             date: date.toISOString().split('T')[0],
             value: orderCount,
-            change: i > 0 ? ((orderCount - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100 : 0,
+            change:
+              i > 0
+                ? ((orderCount - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100
+                : 0,
           });
         }
         break;
@@ -1946,7 +2061,10 @@ export class AdvancedAnalyticsService {
           data.push({
             date: date.toISOString().split('T')[0],
             value: customerCount,
-            change: i > 0 ? ((customerCount - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100 : 0,
+            change:
+              i > 0
+                ? ((customerCount - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100
+                : 0,
           });
         }
         break;
@@ -1972,7 +2090,10 @@ export class AdvancedAnalyticsService {
           data.push({
             date: date.toISOString().split('T')[0],
             value: Math.round(conversionRate * 100) / 100,
-            change: i > 0 ? ((conversionRate - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100 : 0,
+            change:
+              i > 0
+                ? ((conversionRate - data[i - 1]?.value || 0) / (data[i - 1]?.value || 1)) * 100
+                : 0,
           });
         }
         break;
@@ -2203,16 +2324,16 @@ export class AdvancedAnalyticsService {
     // Segment customers based on actual behavior
     const vipCustomers = customersWithSpending.slice(0, Math.floor(totalCustomers * 0.1));
     const regularCustomers = customersWithSpending.filter(
-      (c) => c.orderCount >= 2 && !vipCustomers.find((v) => v._id.equals(c._id))
+      (c) => c.orderCount >= 2 && !vipCustomers.find((v) => v._id.equals(c._id)),
     );
     const newCustomers = customersWithSpending.filter(
-      (c) => new Date(c.createdAt) >= thirtyDaysAgo
+      (c) => new Date(c.createdAt) >= thirtyDaysAgo,
     );
     const inactiveCustomers = customersWithSpending.filter(
       (c) =>
         c.lastActivityAt &&
         new Date(c.lastActivityAt) < thirtyDaysAgo &&
-        !newCustomers.find((n) => n._id.equals(c._id))
+        !newCustomers.find((n) => n._id.equals(c._id)),
     );
 
     return [
@@ -2504,7 +2625,9 @@ export class AdvancedAnalyticsService {
       }),
     ]);
 
-    return totalCarts > 0 ? Math.round(((totalCarts - convertedCarts) / totalCarts) * 100 * 100) / 100 : 0;
+    return totalCarts > 0
+      ? Math.round(((totalCarts - convertedCarts) / totalCarts) * 100 * 100) / 100
+      : 0;
   }
 
   /**
@@ -2534,7 +2657,9 @@ export class AdvancedAnalyticsService {
   /**
    * Get top abandoned products
    */
-  private async getTopAbandonedProducts(): Promise<Array<{ productId: string; name: string; abandonedCount: number; lostRevenue: number }>> {
+  private async getTopAbandonedProducts(): Promise<
+    Array<{ productId: string; name: string; abandonedCount: number; lostRevenue: number }>
+  > {
     const result = await this.cartModel.aggregate([
       {
         $match: {
@@ -2926,7 +3051,7 @@ export class AdvancedAnalyticsService {
           totalSales: salesData[0]?.totalSales || 0,
           revenue: Math.round((salesData[0]?.totalRevenue || 0) * 100) / 100,
         };
-      })
+      }),
     );
 
     return brandMetrics;
@@ -2967,7 +3092,8 @@ export class AdvancedAnalyticsService {
     return results.map((item) => ({
       region: item._id,
       count: item.count,
-      percentage: totalCustomers > 0 ? Math.round((item.count / totalCustomers) * 100 * 100) / 100 : 0,
+      percentage:
+        totalCustomers > 0 ? Math.round((item.count / totalCustomers) * 100 * 100) / 100 : 0,
     }));
   }
 
@@ -3020,7 +3146,7 @@ export class AdvancedAnalyticsService {
           revenue: Math.round(totalRevenue * 100) / 100,
           averageOrderValue: Math.round(averageOrderValue * 100) / 100,
         };
-      })
+      }),
     );
 
     return segmentMetrics;

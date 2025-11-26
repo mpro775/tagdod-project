@@ -1,7 +1,14 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiQuery, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SearchService } from './search.service';
 import { SearchQueryDto, AdvancedProductSearchDto } from './dto/search.dto';
+
+interface RequestWithUser {
+  user?: {
+    sub: string;
+    preferredCurrency?: string;
+  };
+}
 
 @ApiTags('البحث')
 @Controller('search')
@@ -74,10 +81,13 @@ export class SearchController {
   @ApiQuery({ name: 'q', required: false, description: 'نص البحث' })
   @ApiQuery({ name: 'lang', required: false, enum: ['ar', 'en'], description: 'اللغة' })
   @ApiQuery({ name: 'entity', required: false, enum: ['products', 'categories', 'brands', 'all'], description: 'نوع الكيانات' })
+  @ApiQuery({ name: 'currency', required: false, enum: ['USD', 'YER', 'SAR'], description: 'العملة' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  async universalSearch(@Query() dto: SearchQueryDto) {
-    const data = await this.searchService.universalSearch(dto);
+  async universalSearch(@Query() dto: SearchQueryDto, @Req() req?: RequestWithUser) {
+    const userId = req?.user?.sub;
+    const currency = dto.currency || req?.user?.preferredCurrency || 'USD';
+    const data = await this.searchService.universalSearch(dto, userId, currency);
     return { data };
   }
 
@@ -166,6 +176,7 @@ export class SearchController {
   })
   @ApiQuery({ name: 'q', required: false, description: 'نص البحث' })
   @ApiQuery({ name: 'lang', required: false, enum: ['ar', 'en'] })
+  @ApiQuery({ name: 'currency', required: false, enum: ['USD', 'YER', 'SAR'], description: 'العملة' })
   @ApiQuery({ name: 'categoryId', required: false })
   @ApiQuery({ name: 'brandId', required: false })
   @ApiQuery({ name: 'status', required: false })
@@ -181,8 +192,10 @@ export class SearchController {
   @ApiQuery({ name: 'includeFacets', required: false, type: Boolean })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  async advancedProductSearch(@Query() dto: AdvancedProductSearchDto) {
-    const data = await this.searchService.advancedProductSearch(dto);
+  async advancedProductSearch(@Query() dto: AdvancedProductSearchDto, @Req() req?: RequestWithUser) {
+    const userId = req?.user?.sub;
+    const currency = dto.currency || req?.user?.preferredCurrency || 'USD';
+    const data = await this.searchService.advancedProductSearch(dto, userId, currency);
     return { data };
   }
 

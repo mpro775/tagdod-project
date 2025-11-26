@@ -22248,7 +22248,7 @@
             "name": "type",
             "required": true,
             "in": "query",
-            "description": "نوع البيانات المراد تصديرها (المستخدمين، الطلبات، الإيرادات، إلخ)",
+            "description": "نوع البيانات المراد تصديرها (sales, products, customers)",
             "schema": {
               "type": "string"
             }
@@ -22265,6 +22265,24 @@
                 "quarterly",
                 "yearly"
               ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية",
+            "schema": {
               "type": "string"
             }
           }
@@ -27338,6 +27356,20 @@
             }
           },
           {
+            "name": "currency",
+            "required": false,
+            "in": "query",
+            "description": "العملة",
+            "schema": {
+              "enum": [
+                "USD",
+                "YER",
+                "SAR"
+              ],
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "required": false,
             "in": "query",
@@ -27506,6 +27538,20 @@
               "enum": [
                 "ar",
                 "en"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "currency",
+            "required": false,
+            "in": "query",
+            "description": "العملة",
+            "schema": {
+              "enum": [
+                "USD",
+                "YER",
+                "SAR"
               ],
               "type": "string"
             }

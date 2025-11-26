@@ -141,6 +141,8 @@ Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
 **Endpoint:** `/services/engineer/offers`  
 **Auth Required:** ✅ نعم (Engineer)
 
+> ⚠️ **مهم:** لا يمكن للمهندس تقديم أكثر من عرض واحد لنفس الطلب. إذا كان لديه عرض موجود بالفعل، يجب استخدام [تحديث عرض](#4-تحديث-عرض) بدلاً من إنشاء عرض جديد.
+
 #### Request Body
 
 ```json
@@ -176,6 +178,22 @@ Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
 
 > ℹ️ عند تقديم أول عرض على طلب، يتم تحديث حالة الطلب تلقائياً من `OPEN` إلى `OFFERS_COLLECTING`.
 
+#### Response - خطأ (400) - عرض موجود بالفعل
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "OFFER_ALREADY_EXISTS",
+      "message": "لا يمكنك تقديم أكثر من عرض واحد لنفس الطلب. يمكنك تعديل عرضك الموجود بدلاً من ذلك."
+    }
+  }
+}
+```
+
+> ⚠️ **مهم:** إذا حاول المهندس تقديم عرض جديد لنفس الطلب الذي قدم عليه عرضاً سابقاً، سيتم إرجاع هذا الخطأ. يجب استخدام endpoint [تحديث عرض](#4-تحديث-عرض) لتعديل العرض الموجود.
+
 #### كود Flutter
 
 ```dart
@@ -200,7 +218,29 @@ Future<EngineerOffer> createOffer({
   );
 
   if (apiResponse.isSuccess) {
-    return EngineerOffer.fromJson(apiResponse.data!['data']);
+    final result = apiResponse.data!['data'] as Map<String, dynamic>?;
+    
+    // التحقق من وجود خطأ
+    if (result != null && result.containsKey('error')) {
+      final error = result['error'] as String;
+      switch (error) {
+        case 'OFFER_ALREADY_EXISTS':
+          throw ApiException(
+            result['message'] as String? ?? 
+            'لا يمكنك تقديم أكثر من عرض واحد لنفس الطلب. يمكنك تعديل عرضك الموجود بدلاً من ذلك.'
+          );
+        case 'REQUEST_NOT_FOUND':
+          throw ApiException('لم يتم العثور على طلب الخدمة');
+        case 'SELF_NOT_ALLOWED':
+          throw ApiException('لا يمكنك تقديم عرض على طلبك الخاص');
+        case 'INVALID_STATUS':
+          throw ApiException('لا يمكن تقديم عرض على هذا الطلب في حالته الحالية');
+        default:
+          throw ApiException('حدث خطأ أثناء تقديم العرض');
+      }
+    }
+    
+    return EngineerOffer.fromJson(result!);
   } else {
     throw ApiException(apiResponse.error!);
   }
@@ -592,6 +632,9 @@ class UpdateOfferDto {
 ## ملاحظات مهمة
 
 1. **تقديم العروض:**
+   - ⚠️ **قيد مهم:** لا يمكن للمهندس تقديم أكثر من عرض واحد لنفس الطلب
+   - إذا كان المهندس قد قدم عرضاً سابقاً على نفس الطلب، سيتم إرجاع خطأ `OFFER_ALREADY_EXISTS`
+   - يجب استخدام endpoint [تحديث عرض](#4-تحديث-عرض) لتعديل العرض الموجود بدلاً من إنشاء عرض جديد
    - عند تقديم أول عرض، يتم تحديث حالة الطلب من `OPEN` إلى `OFFERS_COLLECTING`
    - يتم حساب المسافة تلقائياً بناءً على موقع المهندس
 
@@ -605,6 +648,7 @@ class UpdateOfferDto {
 
 4. **تحديث العرض:**
    - يمكن تحديث العرض فقط إذا كانت حالته `OFFERED`
+   - يمكن تحديث العرض مرة واحدة فقط (`updatesCount` محدود بـ 1)
    - يمكن حذف العرض فقط إذا كانت حالته `OFFERED`
 
 ---

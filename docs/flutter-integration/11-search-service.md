@@ -3,8 +3,11 @@
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
 > 📅 **آخر تحديث**: يناير 2025  
 > 🔄 **تحديثات حديثة**: 
+>   - **تغيير جذري**: البحث المتقدم في المنتجات (`/search/products`) الآن يرجع نفس تنسيق قائمة المنتجات المميزة (`/products/featured/list`)
+>   - المنتجات تحتوي على `hasVariants` لتحديد ما إذا كان المنتج يحتوي على متغيرات
+>   - المنتجات تحتوي على `pricingByCurrency` و `defaultPricing` و `priceRangeByCurrency`
+>   - تم إضافة `currency` parameter للبحث
 >   - الصورة الرئيسية تُرجع من `mainImageId` المملوء
->   - الأسعار تُرجع بالشكل الجديد `priceRangeByCurrency` لكل عملة (USD, YER, SAR)
 
 خدمة البحث توفر endpoints للبحث الشامل والمتقدم مع دعم الفلترة والترتيب.
 
@@ -38,6 +41,7 @@
 | `q` | `string` | ❌ | نص البحث |
 | `lang` | `string` | ❌ | اللغة (ar, en) |
 | `entity` | `string` | ❌ | نوع الكيانات (products, categories, brands, all) |
+| `currency` | `string` | ❌ | العملة (USD, YER, SAR) - افتراضي: USD أو من المستخدم |
 | `page` | `number` | ❌ | رقم الصفحة (افتراضي: 1) |
 | `limit` | `number` | ❌ | عدد النتائج (افتراضي: 20) |
 
@@ -131,6 +135,7 @@ Future<SearchResult> universalSearch({
   String? query,
   String lang = 'ar',
   String entity = 'all',
+  String? currency,
   int page = 1,
   int limit = 20,
 }) async {
@@ -138,6 +143,7 @@ Future<SearchResult> universalSearch({
     if (query != null) 'q': query,
     'lang': lang,
     'entity': entity,
+    if (currency != null) 'currency': currency,
     'page': page,
     'limit': limit,
   });
@@ -174,6 +180,7 @@ Future<SearchResult> universalSearch({
 |---------|------|-------|-------|
 | `q` | `string` | ❌ | نص البحث |
 | `lang` | `string` | ❌ | اللغة (ar, en) |
+| `currency` | `string` | ❌ | العملة (USD, YER, SAR) - افتراضي: USD أو من المستخدم |
 | `categoryId` | `string` | ❌ | معرف الفئة |
 | `brandId` | `string` | ❌ | معرف البراند |
 | `status` | `string` | ❌ | الحالة (draft, active, out_of_stock, discontinued) |
@@ -192,50 +199,95 @@ Future<SearchResult> universalSearch({
 
 ### Response - نجاح
 
+> **⚠️ مهم**: البحث المتقدم في المنتجات الآن يرجع نفس تنسيق قائمة المنتجات المميزة (`/products/featured/list`)
+
 ```json
 {
   "success": true,
   "data": {
     "results": [
       {
-        "type": "product",
-        "id": "64product123",
-        "title": "لوح شمسي 550W",
-        "titleEn": "Solar Panel 550W",
-        "description": "لوح شمسي عالي الكفاءة",
-        "descriptionEn": "High efficiency solar panel",
-        "thumbnail": "https://cdn.example.com/products/solar-panel.jpg",
-        "metadata": {
-          "category": "ألواح شمسية",
-          "brand": "Longi",
-          "priceRangeByCurrency": {
-            "USD": {
-              "minPrice": 200,
-              "maxPrice": 240,
-              "currency": "USD",
-              "hasDiscountedVariant": false
-            },
-            "YER": {
-              "minPrice": 150000,
-              "maxPrice": 180000,
-              "currency": "YER",
-              "hasDiscountedVariant": false
-            },
-            "SAR": {
-              "minPrice": 750,
-              "maxPrice": 900,
-              "currency": "SAR",
-              "hasDiscountedVariant": false
-            }
-          },
-          "rating": 4.5,
-          "reviewsCount": 120,
-          "isFeatured": true,
-          "isNew": false,
-          "tags": ["solar", "renewable"]
+        "_id": "64product123",
+        "name": "لوح شمسي 550W",
+        "nameEn": "Solar Panel 550W",
+        "status": "active",
+        "category": {
+          "_id": "64cat123",
+          "name": "ألواح شمسية",
+          "nameEn": "Solar Panels"
         },
-        "relevanceScore": 0.95,
-        "createdAt": "2025-01-01T00:00:00.000Z"
+        "brand": {
+          "_id": "64brand123",
+          "name": "Longi",
+          "nameEn": "Longi"
+        },
+        "mainImage": {
+          "_id": "64img123",
+          "url": "https://cdn.example.com/products/solar-panel.jpg"
+        },
+        "isFeatured": true,
+        "isNew": false,
+        "hasVariants": true,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 200,
+            "compareAtPrice": 240,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 200,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 150000,
+            "compareAtPrice": 180000,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 150000,
+            "currency": "YER"
+          },
+          "SAR": {
+            "basePrice": 750,
+            "compareAtPrice": 900,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 750,
+            "currency": "SAR"
+          }
+        },
+        "defaultPricing": {
+          "basePrice": 200,
+          "compareAtPrice": 240,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "finalPrice": 200,
+          "currency": "USD"
+        },
+        "priceRangeByCurrency": {
+          "USD": {
+            "minPrice": 200,
+            "maxPrice": 240,
+            "currency": "USD",
+            "hasDiscountedVariant": false
+          },
+          "YER": {
+            "minPrice": 150000,
+            "maxPrice": 180000,
+            "currency": "YER",
+            "hasDiscountedVariant": false
+          },
+          "SAR": {
+            "minPrice": 750,
+            "maxPrice": 900,
+            "currency": "SAR",
+            "hasDiscountedVariant": false
+          }
+        },
+        "isAvailable": true,
+        "salesCount": 45,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "averageRating": 4.5,
+        "reviewsCount": 120
       }
     ],
     "total": 45,
@@ -266,12 +318,27 @@ Future<SearchResult> universalSearch({
 }
 ```
 
+> **ملاحظة:** المنتجات الآن بنفس تنسيق قائمة المنتجات المميزة. الحقول المتاحة:
+> - `_id`: معرف المنتج
+> - `name`, `nameEn`: الاسم بالعربي والإنجليزي
+> - `category`: كائن مبسط يحتوي على `_id`, `name`, `nameEn`
+> - `brand`: كائن مبسط يحتوي على `_id`, `name`, `nameEn` (أو `null`)
+> - `mainImage`: كائن مبسط يحتوي على `_id`, `url` (أو `null`)
+> - `hasVariants`: boolean - يحدد ما إذا كان المنتج يحتوي على متغيرات
+> - `pricingByCurrency`: أسعار المنتج بجميع العملات (USD, YER, SAR)
+> - `defaultPricing`: السعر الافتراضي (بالعملة المطلوبة)
+> - `priceRangeByCurrency`: نطاق الأسعار لكل عملة (للمنتجات ذات variants متعددة)
+> - `isAvailable`: متاح للبيع أم لا
+> - `salesCount`: عدد المبيعات
+> - `minOrderQuantity`, `maxOrderQuantity`: حدود الطلب
+
 ### كود Flutter
 
 ```dart
 Future<ProductSearchResult> advancedProductSearch({
   String? query,
   String lang = 'ar',
+  String? currency,
   String? categoryId,
   String? brandId,
   String? status,
@@ -291,6 +358,7 @@ Future<ProductSearchResult> advancedProductSearch({
   final response = await _dio.get('/search/products', queryParameters: {
     if (query != null) 'q': query,
     'lang': lang,
+    if (currency != null) 'currency': currency,
     if (categoryId != null) 'categoryId': categoryId,
     if (brandId != null) 'brandId': brandId,
     if (status != null) 'status': status,
@@ -574,7 +642,7 @@ class SearchResultItem {
 }
 
 class ProductSearchResult {
-  final List<SearchResultItem> results;
+  final List<Product> results; // الآن Product بدلاً من SearchResultItem
   final int total;
   final int page;
   final int totalPages;
@@ -593,7 +661,7 @@ class ProductSearchResult {
   factory ProductSearchResult.fromJson(Map<String, dynamic> json) {
     return ProductSearchResult(
       results: (json['results'] as List)
-          .map((item) => SearchResultItem.fromJson(item))
+          .map((item) => Product.fromJson(item)) // استخدام Product model
           .toList(),
       total: json['total'] ?? 0,
       page: json['page'] ?? 1,
@@ -789,14 +857,15 @@ extension SearchResultItemPriceExtension on SearchResultItem {
    - استخدم `autocomplete()` للاقتراحات المختصرة
 
 10. **الاستخدام:**
-    - اعرض النتائج مع `SearchResultItem`
-    - استخدم `getTitle(locale)` و `getDescription(locale)` للغات
-    - استخدم `isProduct`, `isCategory`, `isBrand` للتمييز
-    - استخدم `hasThumbnail` للصور (الآن تُرجع من `mainImageId` المملوء)
-    - استخدم `metadata` للمعلومات الإضافية
-    - **للأسعار**: استخدم `priceRangeByCurrency` للحصول على نطاق الأسعار لكل عملة
-    - استخدم `usdPriceRange`, `yerPriceRange`, `sarPriceRange` للوصول المباشر
-    - أو استخدم `getPriceRangeForCurrency('USD')` للحصول على نطاق سعر عملة محددة
+    - **البحث المتقدم في المنتجات**: استخدم `Product` model (نفس تنسيق قائمة المنتجات المميزة)
+    - **البحث الشامل**: استخدم `SearchResultItem` للتمييز بين المنتجات والفئات والبراندات
+    - استخدم `getTitle(locale)` و `getDescription(locale)` للغات (فقط في Universal Search)
+    - استخدم `isProduct`, `isCategory`, `isBrand` للتمييز (فقط في Universal Search)
+    - استخدم `hasThumbnail` للصور (فقط في Universal Search)
+    - استخدم `metadata` للمعلومات الإضافية (فقط في Universal Search)
+    - **للأسعار في البحث المتقدم**: استخدم `pricingByCurrency` و `defaultPricing` و `priceRangeByCurrency` (نفس تنسيق قائمة المنتجات المميزة)
+    - **للأسعار في البحث الشامل**: استخدم `priceRangeByCurrency` من `metadata`
+    - استخدم `hasVariants` لتحديد ما إذا كان المنتج يحتوي على متغيرات
 
 11. **التحسين:**
     - استخدم `relevanceScore` للترتيب
@@ -845,21 +914,30 @@ extension SearchResultItemPriceExtension on SearchResultItem {
 
 **التغييرات الرئيسية:**
 1. ✅ تصحيح Universal Search response - `{ data: { results: [...], total, page, totalPages } }`
-2. ✅ تصحيح Advanced Product Search response - `{ data: { results, total, page, totalPages, facets?, priceRange? } }`
-3. ✅ **تغيير جذري**: Suggestions و Autocomplete يعيدون `{ data: [strings] }` وليس objects
-4. ✅ تحديث `SearchResultItem` - إزالة `descriptionEn` المكررة وإضافة metadata helpers
-5. ✅ تحديث `SearchFacet` - `isTag` للـ tags field
-6. ✅ إزالة `SearchSuggestion` model - لم يعد مطلوباً
-7. ✅ **تحديث الأسعار**: استبدال `priceRange` بـ `priceRangeByCurrency` الذي يحتوي على نطاق الأسعار لكل عملة (USD, YER, SAR)
+2. ✅ **تغيير جذري**: Advanced Product Search (`/search/products`) الآن يرجع نفس تنسيق قائمة المنتجات المميزة (`/products/featured/list`)
+3. ✅ **تغيير جذري**: `ProductSearchResult.results` الآن من نوع `List<Product>` بدلاً من `List<SearchResultItem>`
+4. ✅ **إضافة**: `hasVariants` في المنتجات لتحديد ما إذا كان المنتج يحتوي على متغيرات
+5. ✅ **إضافة**: `pricingByCurrency` و `defaultPricing` في المنتجات
+6. ✅ **إضافة**: `currency` parameter للبحث (Universal و Advanced)
+7. ✅ **تحديث الأسعار**: `priceRangeByCurrency` يحتوي على نطاق الأسعار لكل عملة (USD, YER, SAR)
 8. ✅ **تحديث الصور**: الصورة الرئيسية الآن تُرجع من `mainImageId` المملوء بدلاً من `mainImage` المباشر
+9. ✅ Suggestions و Autocomplete يعيدون `{ data: [strings] }` وليس objects
+10. ✅ تحديث `SearchResultItem` - إزالة `descriptionEn` المكررة وإضافة metadata helpers
+11. ✅ تحديث `SearchFacet` - `isTag` للـ tags field
+12. ✅ إزالة `SearchSuggestion` model - لم يعد مطلوباً
 
 **ملاحظات مهمة:**
-- `relevanceScore` هو number (ليس 0-1، بل score فعلي قد يكون 0-100+)
-- `metadata` مختلف حسب النوع (product, category, brand)
+- **البحث المتقدم في المنتجات**: الآن يرجع نفس تنسيق قائمة المنتجات المميزة - استخدم `Product` model من `03-products-service.md`
+- **`hasVariants`**: boolean يحدد ما إذا كان المنتج يحتوي على متغيرات (variants)
+- **`pricingByCurrency`**: أسعار المنتج بجميع العملات (USD, YER, SAR) - نفس تنسيق قائمة المنتجات المميزة
+- **`defaultPricing`**: السعر الافتراضي بالعملة المطلوبة (من `currency` parameter أو `preferredCurrency` للمستخدم)
+- **`priceRangeByCurrency`**: نطاق الأسعار لكل عملة (للمنتجات ذات variants متعددة)
+- **`currency` parameter**: تم إضافته للبحث الشامل والمتقدم - يستخدم `preferredCurrency` للمستخدم إذا كان مسجل دخول
+- `relevanceScore` هو number (ليس 0-1، بل score فعلي قد يكون 0-100+) - فقط في Universal Search
+- `metadata` مختلف حسب النوع (product, category, brand) - فقط في Universal Search
 - Suggestions/Autocomplete يعيدون strings فقط (أسماء المنتجات والفئات)
 - `includeFacets` يجب تمريره كـ `true` للحصول على facets و priceRange
-- **الأسعار الجديدة**: `priceRangeByCurrency` يحتوي على نطاق الأسعار لكل عملة مع `hasDiscountedVariant`
-- **الصور**: `thumbnail` الآن يُرجع من `mainImageId` المملوء (URL من Media collection)
+- **الصور**: `mainImage` الآن يُرجع من `mainImageId` المملوء (URL من Media collection)
 - الأسعار تُحسب من الـ variants الفعلية وليس من `priceRange` المخزن في المنتج
 
 **ملفات Backend المرجعية:**
