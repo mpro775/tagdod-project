@@ -597,19 +597,29 @@ export class MarketingService {
 
     // Check user restrictions
     if (userId) {
-      // Check if user is excluded
-      if (coupon.excludedUserIds && coupon.excludedUserIds.includes(userId)) {
-        return { valid: false, message: 'This coupon is not available for your account' };
-      }
-
-      // Check if coupon is restricted to specific users
-      if (coupon.applicableUserIds && coupon.applicableUserIds.length > 0) {
-        if (!coupon.applicableUserIds.includes(userId)) {
+      // السماح للمهندس باستخدام كوبونه الخاص بغض النظر عن القيود الأخرى
+      // إذا كان الكوبون خاص بالمهندس والمستخدم الحالي هو نفس المهندس المالك
+      if (coupon.engineerId && String(coupon.engineerId) === userId) {
+        // المهندس يمكنه استخدام كوبونه الخاص - تخطي فحص القيود على المستخدمين
+        // لكن نحتاج للتحقق من باقي القيود (تاريخ الصلاحية، حد الاستخدام الكلي، إلخ)
+        // لذلك سنتابع باقي التحققات أدناه
+      } else {
+        // للمستخدمين العاديين - تطبيق القيود العادية
+        // Check if user is excluded
+        if (coupon.excludedUserIds && coupon.excludedUserIds.includes(userId)) {
           return { valid: false, message: 'This coupon is not available for your account' };
+        }
+
+        // Check if coupon is restricted to specific users
+        if (coupon.applicableUserIds && coupon.applicableUserIds.length > 0) {
+          if (!coupon.applicableUserIds.includes(userId)) {
+            return { valid: false, message: 'This coupon is not available for your account' };
+          }
         }
       }
 
       // Check usage limit per user (for engineer coupons)
+      // ملاحظة: هذا ينطبق على جميع المستخدمين بما في ذلك المهندس المالك
       if (coupon.usageLimitPerUser && coupon.engineerId) {
         const userUsageCount = coupon.usageHistory?.filter(
           usage => String(usage.userId) === userId

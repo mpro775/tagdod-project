@@ -191,6 +191,7 @@ export interface CreateNotificationDto {
   scheduledFor?: Date;
   createdBy?: string;
   isSystemGenerated?: boolean;
+  actionUrl?: string;
 }
 
 export interface UpdateNotificationDto {

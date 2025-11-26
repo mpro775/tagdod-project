@@ -12029,6 +12029,34 @@
             },
             "description": "استرداد جميع العروض المقدمة لطلب خدمة محدد"
           }
+        },
+        {
+          "name": "إكمال طلب خدمة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/services/customer/{id}/complete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "services",
+                "customer",
+                "{id}",
+                "complete"
+              ]
+            },
+            "description": "تأكيد إكمال طلب خدمة من قبل العميل"
+          }
         }
       ],
       "description": "Endpoints for خدمات-العملاء functionality"
@@ -12230,35 +12258,6 @@
               ]
             },
             "description": "بدء العمل في طلب خدمة مكلف به الفني"
-          }
-        },
-        {
-          "name": "إكمال طلب خدمة",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/services/engineer/requests/{id}/complete",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "services",
-                "engineer",
-                "requests",
-                "{id}",
-                "complete"
-              ]
-            },
-            "description": "إكمال طلب خدمة منجز من قبل الفني"
           }
         },
         {

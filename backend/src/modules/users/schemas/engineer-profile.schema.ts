@@ -103,11 +103,8 @@ export class EngineerProfile {
   @Prop({ type: [String], default: [] })
   certifications?: string[]; // الشهادات
 
-  @Prop({ type: [String], default: [] })
-  languages?: string[]; // اللغات المتحدث بها
-
   // === Helper Methods ===
-  
+
   /**
    * حساب التقييمات المجمعة من التقييمات الفردية
    */
@@ -120,7 +117,7 @@ export class EngineerProfile {
     }
 
     this.totalRatings = this.ratings.length;
-    
+
     // حساب المتوسط
     const sum = this.ratings.reduce((acc, rating) => acc + rating.score, 0);
     this.averageRating = Math.round((sum / this.totalRatings) * 10) / 10; // تقريب لرقم عشري واحد
@@ -146,9 +143,7 @@ export class EngineerProfile {
    * الحصول على التقييمات المرتبة حسب التاريخ (الأحدث أولاً)
    */
   getRecentRatings(limit?: number): EngineerRating[] {
-    const sorted = [...this.ratings].sort((a, b) => 
-      b.ratedAt.getTime() - a.ratedAt.getTime()
-    );
+    const sorted = [...this.ratings].sort((a, b) => b.ratedAt.getTime() - a.ratedAt.getTime());
     return limit ? sorted.slice(0, limit) : sorted;
   }
 
@@ -171,6 +166,40 @@ EngineerProfileSchema.index({ 'ratings.ratedAt': -1 }); // للبحث في ال�
 EngineerProfileSchema.index({ walletBalance: 1 }); // Index for wallet balance queries
 EngineerProfileSchema.index({ jobTitle: 1 }); // Index for job title queries
 
+// === Instance Methods ===
+// إضافة calculateRatings كـ instance method في الـ schema
+EngineerProfileSchema.methods.calculateRatings = function () {
+  if (!this.ratings || this.ratings.length === 0) {
+    this.totalRatings = 0;
+    this.averageRating = 0;
+    this.ratingDistribution = [0, 0, 0, 0, 0];
+    return;
+  }
+
+  this.totalRatings = this.ratings.length;
+
+  // حساب المتوسط
+  const sum = this.ratings.reduce((acc: number, rating: EngineerRating) => acc + rating.score, 0);
+  this.averageRating = Math.round((sum / this.totalRatings) * 10) / 10; // تقريب لرقم عشري واحد
+
+  // حساب التوزيع [5, 4, 3, 2, 1]
+  this.ratingDistribution = [0, 0, 0, 0, 0];
+  this.ratings.forEach((rating: EngineerRating) => {
+    if (rating.score >= 1 && rating.score <= 5) {
+      this.ratingDistribution[5 - rating.score] += 1;
+    }
+  });
+};
+
+// إضافة addRating كـ instance method في الـ schema
+EngineerProfileSchema.methods.addRating = function (rating: EngineerRating) {
+  if (!this.ratings) {
+    this.ratings = [];
+  }
+  this.ratings.push(rating);
+  this.calculateRatings();
+};
+
 // === Pre-save hook لحساب التقييمات تلقائياً ===
 EngineerProfileSchema.pre('save', function (next) {
   if (this.isModified('ratings')) {
@@ -178,4 +207,3 @@ EngineerProfileSchema.pre('save', function (next) {
   }
   next();
 });
-

@@ -95,7 +95,6 @@ export class EngineerProfileAdminController {
       specialties: profile.specialties,
       yearsOfExperience: profile.yearsOfExperience,
       certifications: profile.certifications,
-      languages: profile.languages,
     };
 
     const updatedProfile = await this.engineerProfileService.updateProfile(userId, dto);

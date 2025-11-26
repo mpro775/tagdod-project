@@ -7,6 +7,7 @@ import { EngineerProfile, EngineerProfileSchema } from '../schemas/engineer-prof
 import { Capabilities, CapabilitiesSchema } from '../../capabilities/schemas/capabilities.schema';
 import { ServiceRequest, ServiceRequestSchema } from '../../services/schemas/service-request.schema';
 import { Order, OrderSchema } from '../../checkout/schemas/order.schema';
+import { Coupon, CouponSchema } from '../../marketing/schemas/coupon.schema';
 import { EngineerProfileService } from '../services/engineer-profile.service';
 import { AuthModule } from '../../auth/auth.module';
 import { SharedModule } from '../../../shared/shared.module';
@@ -19,6 +20,7 @@ import { SharedModule } from '../../../shared/shared.module';
       { name: Capabilities.name, schema: CapabilitiesSchema },
       { name: ServiceRequest.name, schema: ServiceRequestSchema },
       { name: Order.name, schema: OrderSchema },
+      { name: Coupon.name, schema: CouponSchema },
     ]),
     AuthModule,
     SharedModule,

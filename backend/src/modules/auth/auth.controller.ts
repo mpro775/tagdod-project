@@ -60,6 +60,7 @@ import { FavoritesService } from '../favorites/favorites.service';
 import { BiometricService } from './biometric.service';
 import { normalizeYemeniPhone } from '../../shared/utils/phone.util';
 import { AuditService } from '../../shared/services/audit.service';
+import { EngineerProfileService } from '../users/services/engineer-profile.service';
 
 @ApiTags('المصادقة')
 @Controller('auth')
@@ -75,6 +76,7 @@ export class AuthController {
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
     private favoritesService: FavoritesService,
     private auditService: AuditService,
+    private engineerProfileService: EngineerProfileService,
   ) {}
 
   private async buildAuthResponse(user: UserDocument) {
@@ -834,6 +836,20 @@ export class AuthController {
       caps.engineer_capable = body.approve;
       newValues.engineer_status = caps.engineer_status;
       newValues.engineer_capable = caps.engineer_capable;
+
+      // إنشاء بروفايل المهندس تلقائياً عند الموافقة
+      if (body.approve) {
+        const existingProfile = await this.engineerProfileModel.findOne({ userId: body.userId });
+        if (!existingProfile) {
+          try {
+            await this.engineerProfileService.createProfile(body.userId);
+            this.logger.log(`Created engineer profile for approved user ${body.userId}`);
+          } catch (error) {
+            this.logger.error(`Failed to create engineer profile for user ${body.userId}:`, error);
+            // لا نرمي خطأ هنا لأن الموافقة تمت بنجاح، فقط نسجل الخطأ
+          }
+        }
+      }
     }
 
     if (body.capability === 'merchant') {

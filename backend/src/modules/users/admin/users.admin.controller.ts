@@ -12,14 +12,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiQuery,
-  
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, FilterQuery, SortOrder } from 'mongoose';
 import { hash } from 'bcrypt';
@@ -30,11 +23,11 @@ import { RequirePermissions } from '../../../shared/decorators/permissions.decor
 import { User, UserRole, UserStatus, CapabilityStatus } from '../schemas/user.schema';
 import { EngineerProfile } from '../schemas/engineer-profile.schema';
 import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
-import { 
+import {
   UserNotFoundException,
   AuthException,
   ForbiddenException,
-  ErrorCode 
+  ErrorCode,
 } from '../../../shared/exceptions';
 import { AdminPermission, PERMISSION_GROUPS } from '../../../shared/constants/permissions';
 import { CreateUserAdminDto } from './dto/create-user-admin.dto';
@@ -46,6 +39,7 @@ import { UpdateCapabilityStatusDto } from './dto/update-capability-status.dto';
 import { AdminResetPasswordDto } from './dto/reset-password.dto';
 import { ApproveVerificationDto } from '../dto/approve-verification.dto';
 import { AuditService } from '../../../shared/services/audit.service';
+import { EngineerProfileService } from '../services/engineer-profile.service';
 
 @ApiTags('إدارة-المستخدمين')
 @ApiBearerAuth()
@@ -59,7 +53,7 @@ export class UsersAdminController {
     @InjectModel(EngineerProfile.name) private engineerProfileModel: Model<EngineerProfile>,
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
     private auditService: AuditService,
-
+    private engineerProfileService: EngineerProfileService,
   ) {}
 
   // ==================== قائمة المستخدمين مع Pagination ====================
@@ -67,7 +61,7 @@ export class UsersAdminController {
   @Get()
   @ApiOperation({
     summary: 'قائمة المستخدمين',
-    description: 'استرداد قائمة بجميع المستخدمين مع إمكانية التصفية والترقيم'
+    description: 'استرداد قائمة بجميع المستخدمين مع إمكانية التصفية والترقيم',
   })
   @ApiQuery({ type: ListUsersDto })
   @ApiResponse({
@@ -83,14 +77,18 @@ export class UsersAdminController {
             properties: {
               id: { type: 'string', example: 'user123', description: 'معرف المستخدم' },
               phone: { type: 'string', example: '+967771234567', description: 'رقم الهاتف' },
-              email: { type: 'string', example: 'user@example.com', description: 'البريد الإلكتروني' },
+              email: {
+                type: 'string',
+                example: 'user@example.com',
+                description: 'البريد الإلكتروني',
+              },
               fullName: { type: 'string', example: 'أحمد محمد علي', description: 'الاسم الكامل' },
               status: { type: 'string', example: 'active', description: 'حالة المستخدم' },
               role: { type: 'string', example: 'customer', description: 'دور المستخدم' },
               createdAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z' },
-              lastLogin: { type: 'string', format: 'date-time', example: '2024-01-20T15:45:00Z' }
-            }
-          }
+              lastLogin: { type: 'string', format: 'date-time', example: '2024-01-20T15:45:00Z' },
+            },
+          },
         },
         meta: {
           type: 'object',
@@ -98,15 +96,15 @@ export class UsersAdminController {
             total: { type: 'number', example: 1500, description: 'إجمالي المستخدمين' },
             page: { type: 'number', example: 1, description: 'الصفحة الحالية' },
             limit: { type: 'number', example: 20, description: 'عدد المستخدمين في الصفحة' },
-            totalPages: { type: 'number', example: 75, description: 'إجمالي الصفحات' }
-          }
-        }
-      }
-    }
+            totalPages: { type: 'number', example: 75, description: 'إجمالي الصفحات' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 403,
-    description: 'غير مصرح لك بالوصول إلى قائمة المستخدمين'
+    description: 'غير مصرح لك بالوصول إلى قائمة المستخدمين',
   })
   async listUsers(@Query() dto: ListUsersDto) {
     const {
@@ -120,7 +118,6 @@ export class UsersAdminController {
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = dto;
-    
 
     const skip = (page - 1) * limit;
     const query: FilterQuery<User> = {};
@@ -138,12 +135,12 @@ export class UsersAdminController {
         { firstName: { $regex: search, $options: 'i' } },
         { lastName: { $regex: search, $options: 'i' } },
       ];
-      
+
       // إضافة البحث في سبب الحذف إذا كان البحث عن المحذوفين
       if (includeDeleted) {
         searchConditions.push({ deletionReason: { $regex: search, $options: 'i' } });
       }
-      
+
       query.$or = searchConditions;
     }
 
@@ -219,10 +216,28 @@ export class UsersAdminController {
               phone: { type: 'string', example: '+967771234567', description: 'رقم الهاتف' },
               firstName: { type: 'string', example: 'أحمد', description: 'الاسم الأول' },
               lastName: { type: 'string', example: 'محمد', description: 'الاسم الأخير' },
-              deletionReason: { type: 'string', example: 'لا أستخدم التطبيق بعد الآن', description: 'سبب الحذف' },
-              deletedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z', description: 'تاريخ الحذف' },
-              deletedBy: { type: 'string', example: 'user456', description: 'معرف من قام بالحذف (null إذا حذف المستخدم حسابه بنفسه)' },
-              createdAt: { type: 'string', format: 'date-time', example: '2023-01-01T10:00:00Z', description: 'تاريخ الإنشاء' },
+              deletionReason: {
+                type: 'string',
+                example: 'لا أستخدم التطبيق بعد الآن',
+                description: 'سبب الحذف',
+              },
+              deletedAt: {
+                type: 'string',
+                format: 'date-time',
+                example: '2024-01-15T10:30:00Z',
+                description: 'تاريخ الحذف',
+              },
+              deletedBy: {
+                type: 'string',
+                example: 'user456',
+                description: 'معرف من قام بالحذف (null إذا حذف المستخدم حسابه بنفسه)',
+              },
+              createdAt: {
+                type: 'string',
+                format: 'date-time',
+                example: '2023-01-01T10:00:00Z',
+                description: 'تاريخ الإنشاء',
+              },
             },
           },
         },
@@ -243,16 +258,10 @@ export class UsersAdminController {
     description: 'غير مصرح لك بالوصول إلى الحسابات المحذوفة',
   })
   async getDeletedUsers(@Query() dto: ListUsersDto) {
-    const {
-      page = 1,
-      limit = 20,
-      search,
-      sortBy = 'deletedAt',
-      sortOrder = 'desc',
-    } = dto;
+    const { page = 1, limit = 20, search, sortBy = 'deletedAt', sortOrder = 'desc' } = dto;
 
     const skip = (page - 1) * limit;
-    
+
     // بناء query للحسابات المحذوفة
     const baseQuery: FilterQuery<User>[] = [
       { deletedAt: { $ne: null } },
@@ -273,10 +282,7 @@ export class UsersAdminController {
       ];
 
       // دمج شروط البحث مع شروط الحذف
-      query.$and = [
-        { $or: baseQuery },
-        { $or: searchConditions },
-      ];
+      query.$and = [{ $or: baseQuery }, { $or: searchConditions }];
       delete query.$or; // إزالة $or لأننا استخدمنا $and
     }
 
@@ -286,13 +292,7 @@ export class UsersAdminController {
 
     // جلب الحسابات المحذوفة مع الحقول المهمة
     const [deletedUsers, total] = await Promise.all([
-      this.userModel
-        .find(query)
-        .select('-passwordHash')
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      this.userModel.find(query).select('-passwordHash').sort(sort).skip(skip).limit(limit).lean(),
       this.userModel.countDocuments(query),
     ]);
 
@@ -385,19 +385,21 @@ export class UsersAdminController {
     await this.capsModel.create(capsData);
 
     // تسجيل حدث إنشاء الأدمن
-    this.auditService.logUserEvent({
-      userId: String(user._id),
-      action: 'created',
-      performedBy: req.user.sub,
-      newValues: {
-        phone: user.phone,
-        roles: user.roles,
-        permissions: user.permissions,
-        status: user.status,
-      },
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger?.error('Failed to log user event', err));
+    this.auditService
+      .logUserEvent({
+        userId: String(user._id),
+        action: 'created',
+        performedBy: req.user.sub,
+        newValues: {
+          phone: user.phone,
+          roles: user.roles,
+          permissions: user.permissions,
+          status: user.status,
+        },
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log user event', err));
 
     return {
       id: user._id,
@@ -416,7 +418,10 @@ export class UsersAdminController {
   // ==================== إنشاء أدمن بناءً على الدور ====================
   @RequirePermissions('users.create', 'super_admin.access')
   @Post('create-role-admin')
-  async createRoleBasedAdmin(@Body() dto: CreateRoleBasedAdminDto, @Req() req: { user: { sub: string } } & Request) {
+  async createRoleBasedAdmin(
+    @Body() dto: CreateRoleBasedAdminDto,
+    @Req() req: { user: { sub: string } } & Request,
+  ) {
     // تحديد الأدوار والصلاحيات بناءً على النوع
     let roles: UserRole[] = [UserRole.ADMIN];
     let permissions: AdminPermission[] = [];
@@ -474,7 +479,10 @@ export class UsersAdminController {
   // ==================== إنشاء مستخدم عادي ====================
   @RequirePermissions('users.create', 'admin.access')
   @Post()
-  async createUser(@Body() dto: CreateUserAdminDto, @Req() req: { user: { sub: string } } & Request) {
+  async createUser(
+    @Body() dto: CreateUserAdminDto,
+    @Req() req: { user: { sub: string } } & Request,
+  ) {
     // التحقق من عدم وجود المستخدم
     const existingUser = await this.userModel.findOne({ phone: dto.phone });
     if (existingUser) {
@@ -560,18 +568,20 @@ export class UsersAdminController {
     }
 
     // تسجيل حدث إنشاء المستخدم
-    this.auditService.logUserEvent({
-      userId: String(user._id),
-      action: 'created',
-      performedBy: req.user.sub,
-      newValues: {
-        phone: user.phone,
-        roles: user.roles,
-        status: user.status,
-      },
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger?.error('Failed to log user event', err));
+    this.auditService
+      .logUserEvent({
+        userId: String(user._id),
+        action: 'created',
+        performedBy: req.user.sub,
+        newValues: {
+          phone: user.phone,
+          roles: user.roles,
+          status: user.status,
+        },
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log user event', err));
 
     return {
       id: user._id,
@@ -655,15 +665,15 @@ export class UsersAdminController {
       const mainRole = dto.roles[0];
 
       // حفظ الحالات الخاصة (unverified/pending) قبل إعادة التعيين
-      const preserveEngineerStatus = 
-        user.engineer_capable && 
-        (user.engineer_status === CapabilityStatus.UNVERIFIED || 
-         user.engineer_status === CapabilityStatus.PENDING);
+      const preserveEngineerStatus =
+        user.engineer_capable &&
+        (user.engineer_status === CapabilityStatus.UNVERIFIED ||
+          user.engineer_status === CapabilityStatus.PENDING);
 
-      const preserveMerchantStatus = 
-        user.merchant_capable && 
-        (user.merchant_status === CapabilityStatus.UNVERIFIED || 
-         user.merchant_status === CapabilityStatus.PENDING);
+      const preserveMerchantStatus =
+        user.merchant_capable &&
+        (user.merchant_status === CapabilityStatus.UNVERIFIED ||
+          user.merchant_status === CapabilityStatus.PENDING);
 
       // تنظيف القدرات القديمة أولاً (ما عدا الحالات المحفوظة)
       if (!preserveEngineerStatus) {
@@ -735,41 +745,50 @@ export class UsersAdminController {
       status: user.status,
     };
 
-    this.auditService.logUserEvent({
-      userId: id,
-      action: 'updated',
-      performedBy: req.user.sub,
-      oldValues,
-      newValues,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger?.error('Failed to log user event', err));
+    this.auditService
+      .logUserEvent({
+        userId: id,
+        action: 'updated',
+        performedBy: req.user.sub,
+        oldValues,
+        newValues,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log user event', err));
 
     // تسجيل تغييرات الأدوار إذا تغيرت
-    if (dto.roles !== undefined && JSON.stringify(oldValues.roles) !== JSON.stringify(newValues.roles)) {
-      const addedRoles = newValues.roles.filter(r => !oldValues.roles.includes(r));
-      const removedRoles = oldValues.roles.filter(r => !newValues.roles.includes(r));
+    if (
+      dto.roles !== undefined &&
+      JSON.stringify(oldValues.roles) !== JSON.stringify(newValues.roles)
+    ) {
+      const addedRoles = newValues.roles.filter((r) => !oldValues.roles.includes(r));
+      const removedRoles = oldValues.roles.filter((r) => !newValues.roles.includes(r));
 
       for (const role of addedRoles) {
-        this.auditService.logRoleChange({
-          userId: id,
-          role,
-          action: 'assign',
-          changedBy: req.user.sub,
-          ipAddress: req.ip,
-          userAgent: req.headers['user-agent'],
-        }).catch(err => this.logger?.error('Failed to log role change', err));
+        this.auditService
+          .logRoleChange({
+            userId: id,
+            role,
+            action: 'assign',
+            changedBy: req.user.sub,
+            ipAddress: req.ip,
+            userAgent: req.headers['user-agent'],
+          })
+          .catch((err) => this.logger?.error('Failed to log role change', err));
       }
 
       for (const role of removedRoles) {
-        this.auditService.logRoleChange({
-          userId: id,
-          role,
-          action: 'remove',
-          changedBy: req.user.sub,
-          ipAddress: req.ip,
-          userAgent: req.headers['user-agent'],
-        }).catch(err => this.logger?.error('Failed to log role change', err));
+        this.auditService
+          .logRoleChange({
+            userId: id,
+            role,
+            action: 'remove',
+            changedBy: req.user.sub,
+            ipAddress: req.ip,
+            userAgent: req.headers['user-agent'],
+          })
+          .catch((err) => this.logger?.error('Failed to log role change', err));
       }
     }
 
@@ -810,16 +829,18 @@ export class UsersAdminController {
     await user.save();
 
     // تسجيل حدث تعليق المستخدم
-    this.auditService.logUserEvent({
-      userId: id,
-      action: 'suspended',
-      performedBy: req.user.sub,
-      oldValues: { status: oldStatus },
-      newValues: { status: user.status },
-      reason: dto.reason,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger?.error('Failed to log user event', err));
+    this.auditService
+      .logUserEvent({
+        userId: id,
+        action: 'suspended',
+        performedBy: req.user.sub,
+        oldValues: { status: oldStatus },
+        newValues: { status: user.status },
+        reason: dto.reason,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log user event', err));
 
     return {
       id: user._id,
@@ -846,15 +867,17 @@ export class UsersAdminController {
     await user.save();
 
     // تسجيل حدث تفعيل المستخدم
-    this.auditService.logUserEvent({
-      userId: id,
-      action: 'activated',
-      performedBy: req.user.sub,
-      oldValues: { status: oldStatus },
-      newValues: { status: user.status },
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger?.error('Failed to log user event', err));
+    this.auditService
+      .logUserEvent({
+        userId: id,
+        action: 'activated',
+        performedBy: req.user.sub,
+        oldValues: { status: oldStatus },
+        newValues: { status: user.status },
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log user event', err));
 
     return {
       id: user._id,
@@ -890,15 +913,17 @@ export class UsersAdminController {
     await user.save();
 
     // تسجيل حدث حذف المستخدم
-    this.auditService.logUserEvent({
-      userId: id,
-      action: 'deleted',
-      performedBy: req.user.sub,
-      oldValues: { status: oldStatus },
-      newValues: { status: user.status },
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger?.error('Failed to log user event', err));
+    this.auditService
+      .logUserEvent({
+        userId: id,
+        action: 'deleted',
+        performedBy: req.user.sub,
+        oldValues: { status: oldStatus },
+        newValues: { status: user.status },
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log user event', err));
 
     return {
       id: user._id,
@@ -960,59 +985,61 @@ export class UsersAdminController {
   @RequirePermissions('analytics.read', 'admin.access')
   @Get('stats/summary')
   async getUserStats() {
-    const [total, active, suspended, deleted, admins, engineers, merchants, regularUsers] = await Promise.all([
-      this.userModel.countDocuments({ 
-        deletedAt: null,
-        status: { $ne: UserStatus.DELETED }
-      }),
-      this.userModel.countDocuments({ 
-        status: UserStatus.ACTIVE, 
-        deletedAt: null 
-      }),
-      this.userModel.countDocuments({ 
-        status: UserStatus.SUSPENDED, 
-        deletedAt: null 
-      }),
-      this.userModel.countDocuments({ 
-        $or: [
-          { deletedAt: { $ne: null } },
-          { status: UserStatus.DELETED }
-        ]
-      }),
-      // Admins: من لديه admin أو super_admin فقط
-      this.userModel.countDocuments({ 
-        roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] }, 
-        deletedAt: null,
-        status: { $ne: UserStatus.DELETED }
-      }),
-      // Engineers: من لديه engineer ولكن ليس admin أو super_admin
-      this.userModel.countDocuments({ 
-        $and: [
-          { roles: UserRole.ENGINEER },
-          { roles: { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] } }
-        ],
-        deletedAt: null,
-        status: { $ne: UserStatus.DELETED }
-      }),
-      // Merchants: من لديه merchant ولكن ليس admin أو super_admin
-      this.userModel.countDocuments({ 
-        $and: [
-          { roles: UserRole.MERCHANT },
-          { roles: { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] } }
-        ],
-        deletedAt: null,
-        status: { $ne: UserStatus.DELETED }
-      }),
-      // Regular Users: من لديه user فقط (ليس admin/super_admin/engineer/merchant)
-      this.userModel.countDocuments({ 
-        $and: [
-          { roles: UserRole.USER },
-          { roles: { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.ENGINEER, UserRole.MERCHANT] } }
-        ],
-        deletedAt: null,
-        status: { $ne: UserStatus.DELETED }
-      }),
-    ]);
+    const [total, active, suspended, deleted, admins, engineers, merchants, regularUsers] =
+      await Promise.all([
+        this.userModel.countDocuments({
+          deletedAt: null,
+          status: { $ne: UserStatus.DELETED },
+        }),
+        this.userModel.countDocuments({
+          status: UserStatus.ACTIVE,
+          deletedAt: null,
+        }),
+        this.userModel.countDocuments({
+          status: UserStatus.SUSPENDED,
+          deletedAt: null,
+        }),
+        this.userModel.countDocuments({
+          $or: [{ deletedAt: { $ne: null } }, { status: UserStatus.DELETED }],
+        }),
+        // Admins: من لديه admin أو super_admin فقط
+        this.userModel.countDocuments({
+          roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+          deletedAt: null,
+          status: { $ne: UserStatus.DELETED },
+        }),
+        // Engineers: من لديه engineer ولكن ليس admin أو super_admin
+        this.userModel.countDocuments({
+          $and: [
+            { roles: UserRole.ENGINEER },
+            { roles: { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] } },
+          ],
+          deletedAt: null,
+          status: { $ne: UserStatus.DELETED },
+        }),
+        // Merchants: من لديه merchant ولكن ليس admin أو super_admin
+        this.userModel.countDocuments({
+          $and: [
+            { roles: UserRole.MERCHANT },
+            { roles: { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] } },
+          ],
+          deletedAt: null,
+          status: { $ne: UserStatus.DELETED },
+        }),
+        // Regular Users: من لديه user فقط (ليس admin/super_admin/engineer/merchant)
+        this.userModel.countDocuments({
+          $and: [
+            { roles: UserRole.USER },
+            {
+              roles: {
+                $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.ENGINEER, UserRole.MERCHANT],
+              },
+            },
+          ],
+          deletedAt: null,
+          status: { $ne: UserStatus.DELETED },
+        }),
+      ]);
 
     return {
       total,
@@ -1031,7 +1058,7 @@ export class UsersAdminController {
   @Get('verification/pending')
   @ApiOperation({
     summary: 'قائمة طلبات التحقق قيد المراجعة',
-    description: 'عرض جميع طلبات التحقق للمهندسين والتجار التي في حالة PENDING'
+    description: 'عرض جميع طلبات التحقق للمهندسين والتجار التي في حالة PENDING',
   })
   @ApiResponse({
     status: 200,
@@ -1046,23 +1073,25 @@ export class UsersAdminController {
         ],
         deletedAt: null,
       })
-      .select('phone firstName lastName engineer_status merchant_status storePhotoUrl storeName verificationNote createdAt')
+      .select(
+        'phone firstName lastName engineer_status merchant_status storePhotoUrl storeName verificationNote createdAt',
+      )
       .sort({ createdAt: -1 })
       .lean();
 
     // جلب بروفايلات المهندسين
     const engineerIds = pendingUsers
-      .filter(u => u.engineer_status === CapabilityStatus.PENDING)
-      .map(u => u._id);
-    
+      .filter((u) => u.engineer_status === CapabilityStatus.PENDING)
+      .map((u) => u._id);
+
     const profiles = await this.engineerProfileModel
       .find({ userId: { $in: engineerIds } })
       .select('userId cvFileUrl')
       .lean();
-    
-    const profilesMap = new Map(profiles.map(p => [p.userId.toString(), p]));
 
-    const formatted = pendingUsers.map(user => {
+    const profilesMap = new Map(profiles.map((p) => [p.userId.toString(), p]));
+
+    const formatted = pendingUsers.map((user) => {
       const userWithTimestamps = user as typeof user & { createdAt: Date };
       const profile = profilesMap.get(user._id.toString());
       return {
@@ -1070,7 +1099,8 @@ export class UsersAdminController {
         phone: user.phone,
         firstName: user.firstName,
         lastName: user.lastName,
-        verificationType: user.engineer_status === CapabilityStatus.PENDING ? 'engineer' : 'merchant',
+        verificationType:
+          user.engineer_status === CapabilityStatus.PENDING ? 'engineer' : 'merchant',
         cvFileUrl: profile?.cvFileUrl,
         storePhotoUrl: user.storePhotoUrl,
         storeName: user.storeName,
@@ -1090,7 +1120,7 @@ export class UsersAdminController {
   @Get('verification/:userId')
   @ApiOperation({
     summary: 'تفاصيل طلب التحقق',
-    description: 'عرض تفاصيل كاملة لطلب التحقق لمستخدم محدد'
+    description: 'عرض تفاصيل كاملة لطلب التحقق لمستخدم محدد',
   })
   @ApiResponse({
     status: 200,
@@ -1107,7 +1137,7 @@ export class UsersAdminController {
     }
 
     // التحقق من وجود طلب تحقق قيد المراجعة
-    const hasPendingVerification = 
+    const hasPendingVerification =
       user.engineer_status === CapabilityStatus.PENDING ||
       user.merchant_status === CapabilityStatus.PENDING;
 
@@ -1135,7 +1165,8 @@ export class UsersAdminController {
         firstName: user.firstName,
         lastName: user.lastName,
         jobTitle: profile?.jobTitle,
-        verificationType: user.engineer_status === CapabilityStatus.PENDING ? 'engineer' : 'merchant',
+        verificationType:
+          user.engineer_status === CapabilityStatus.PENDING ? 'engineer' : 'merchant',
         cvFileUrl: profile?.cvFileUrl,
         storePhotoUrl: user.storePhotoUrl,
         storeName: user.storeName,
@@ -1153,7 +1184,7 @@ export class UsersAdminController {
   @Post('verification/:userId/approve')
   @ApiOperation({
     summary: 'الموافقة على التحقق',
-    description: 'الموافقة على طلب التحقق للمهندس أو التاجر وتحديث الحالة إلى APPROVED'
+    description: 'الموافقة على طلب التحقق للمهندس أو التاجر وتحديث الحالة إلى APPROVED',
   })
   @ApiResponse({
     status: 200,
@@ -1213,26 +1244,41 @@ export class UsersAdminController {
       if (isEngineerPending) {
         caps.engineer_status = CapabilityStatus.APPROVED;
         caps.engineer_capable = true;
+        await caps.save();
+
+        // إنشاء بروفايل المهندس تلقائياً عند الموافقة
+        const existingProfile = await this.engineerProfileModel.findOne({ userId });
+        if (!existingProfile) {
+          try {
+            await this.engineerProfileService.createProfile(userId);
+            this.logger.log(`Created engineer profile for approved user ${userId}`);
+          } catch (error) {
+            this.logger.error(`Failed to create engineer profile for user ${userId}:`, error);
+            // لا نرمي خطأ هنا لأن الموافقة تمت بنجاح، فقط نسجل الخطأ
+          }
+        }
       }
       if (isMerchantPending) {
         caps.merchant_status = CapabilityStatus.APPROVED;
         caps.merchant_capable = true;
+        await caps.save();
       }
-      await caps.save();
     }
 
     // تسجيل حدث الموافقة على capability
     const capabilityType = isEngineerPending ? 'engineer' : 'merchant';
-    this.auditService.logCapabilityDecision({
-      userId,
-      capability: capabilityType,
-      action: 'approve',
-      decidedBy: req.user.sub,
-      oldValues,
-      newValues,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger?.error('Failed to log capability decision', err));
+    this.auditService
+      .logCapabilityDecision({
+        userId,
+        capability: capabilityType,
+        action: 'approve',
+        decidedBy: req.user.sub,
+        oldValues,
+        newValues,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log capability decision', err));
 
     return {
       success: true,
@@ -1250,7 +1296,7 @@ export class UsersAdminController {
   @Post('verification/:userId/reject')
   @ApiOperation({
     summary: 'رفض التحقق',
-    description: 'رفض طلب التحقق للمهندس أو التاجر وتحديث الحالة إلى REJECTED'
+    description: 'رفض طلب التحقق للمهندس أو التاجر وتحديث الحالة إلى REJECTED',
   })
   @ApiResponse({
     status: 200,
@@ -1289,7 +1335,7 @@ export class UsersAdminController {
       oldValues.engineer_status = user.engineer_status;
       user.engineer_status = CapabilityStatus.REJECTED;
       newValues.engineer_status = user.engineer_status;
-      user.roles = user.roles.filter(role => role !== UserRole.ENGINEER);
+      user.roles = user.roles.filter((role) => role !== UserRole.ENGINEER);
       // مسح ملف السيرة الذاتية من بروفايل المهندس
       const profile = await this.engineerProfileModel.findOne({ userId: user._id });
       if (profile) {
@@ -1302,7 +1348,7 @@ export class UsersAdminController {
       oldValues.merchant_status = user.merchant_status;
       user.merchant_status = CapabilityStatus.REJECTED;
       newValues.merchant_status = user.merchant_status;
-      user.roles = user.roles.filter(role => role !== UserRole.MERCHANT);
+      user.roles = user.roles.filter((role) => role !== UserRole.MERCHANT);
       // مسح صورة المحل واسم المحل
       user.storePhotoUrl = undefined;
       user.storeName = undefined;
@@ -1331,17 +1377,19 @@ export class UsersAdminController {
 
     // تسجيل حدث رفض capability
     const capabilityType = isEngineerPending ? 'engineer' : 'merchant';
-    this.auditService.logCapabilityDecision({
-      userId,
-      capability: capabilityType,
-      action: 'reject',
-      decidedBy: req.user.sub,
-      oldValues,
-      newValues,
-      reason: dto.reason,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger?.error('Failed to log capability decision', err));
+    this.auditService
+      .logCapabilityDecision({
+        userId,
+        capability: capabilityType,
+        action: 'reject',
+        decidedBy: req.user.sub,
+        oldValues,
+        newValues,
+        reason: dto.reason,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log capability decision', err));
 
     return {
       success: true,
@@ -1360,12 +1408,10 @@ export class UsersAdminController {
   @Patch(':id/engineer-status')
   @ApiOperation({
     summary: 'تغيير حالة توثيق المهندس',
-    description: 'يسمح للأدمن بتغيير حالة توثيق المهندس (none/unverified/pending/approved/rejected)',
+    description:
+      'يسمح للأدمن بتغيير حالة توثيق المهندس (none/unverified/pending/approved/rejected)',
   })
-  async updateEngineerStatus(
-    @Param('id') userId: string,
-    @Body() dto: UpdateCapabilityStatusDto,
-  ) {
+  async updateEngineerStatus(@Param('id') userId: string, @Body() dto: UpdateCapabilityStatusDto) {
     const user = await this.userModel.findById(userId);
     if (!user) {
       throw new UserNotFoundException({ userId });
@@ -1383,7 +1429,7 @@ export class UsersAdminController {
       }
     } else if (dto.status === CapabilityStatus.REJECTED || dto.status === CapabilityStatus.NONE) {
       user.engineer_capable = false;
-      user.roles = user.roles.filter(role => role !== UserRole.ENGINEER);
+      user.roles = user.roles.filter((role) => role !== UserRole.ENGINEER);
       // مسح الملفات عند الرفض من بروفايل المهندس
       if (dto.status === CapabilityStatus.REJECTED) {
         const profile = await this.engineerProfileModel.findOne({ userId: user._id });
@@ -1392,7 +1438,10 @@ export class UsersAdminController {
           await profile.save();
         }
       }
-    } else if (dto.status === CapabilityStatus.UNVERIFIED || dto.status === CapabilityStatus.PENDING) {
+    } else if (
+      dto.status === CapabilityStatus.UNVERIFIED ||
+      dto.status === CapabilityStatus.PENDING
+    ) {
       // في حالة UNVERIFIED أو PENDING، يبقى المستخدم مهندساً (دور ENGINEER موجود)
       // فقط حالة التوثيق تتغير، ولا يتم حذف الدور
       user.engineer_capable = true;
@@ -1429,12 +1478,10 @@ export class UsersAdminController {
   @Patch(':id/merchant-status')
   @ApiOperation({
     summary: 'تغيير حالة توثيق التاجر',
-    description: 'يسمح للأدمن بتغيير حالة توثيق التاجر ونسبة الخصم (none/unverified/pending/approved/rejected)',
+    description:
+      'يسمح للأدمن بتغيير حالة توثيق التاجر ونسبة الخصم (none/unverified/pending/approved/rejected)',
   })
-  async updateMerchantStatus(
-    @Param('id') userId: string,
-    @Body() dto: UpdateCapabilityStatusDto,
-  ) {
+  async updateMerchantStatus(@Param('id') userId: string, @Body() dto: UpdateCapabilityStatusDto) {
     const user = await this.userModel.findById(userId);
     if (!user) {
       throw new UserNotFoundException({ userId });
@@ -1457,14 +1504,17 @@ export class UsersAdminController {
       }
     } else if (dto.status === CapabilityStatus.REJECTED || dto.status === CapabilityStatus.NONE) {
       user.merchant_capable = false;
-      user.roles = user.roles.filter(role => role !== UserRole.MERCHANT);
+      user.roles = user.roles.filter((role) => role !== UserRole.MERCHANT);
       // مسح الملفات عند الرفض
       if (dto.status === CapabilityStatus.REJECTED) {
         user.storePhotoUrl = undefined;
         user.storeName = undefined;
       }
       user.merchant_discount_percent = 0;
-    } else if (dto.status === CapabilityStatus.UNVERIFIED || dto.status === CapabilityStatus.PENDING) {
+    } else if (
+      dto.status === CapabilityStatus.UNVERIFIED ||
+      dto.status === CapabilityStatus.PENDING
+    ) {
       // في حالة UNVERIFIED أو PENDING، يبقى المستخدم تاجراً (دور MERCHANT موجود)
       // فقط حالة التوثيق تتغير، ولا يتم حذف الدور
       user.merchant_capable = true;

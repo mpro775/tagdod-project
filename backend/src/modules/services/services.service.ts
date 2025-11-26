@@ -1310,20 +1310,24 @@ export class ServicesService {
     };
   }
 
-  async complete(engineerUserId: string, requestId: string) {
+  async complete(customerUserId: string, requestId: string) {
     const r = await this.requests.findById(requestId);
     if (!r) return { error: 'NOT_FOUND' };
-    if (String(r.engineerId) !== String(engineerUserId)) return { error: 'NOT_ASSIGNED' };
+    // التحقق من أن المستخدم هو العميل (صاحب الطلب)
+    if (String(r.userId) !== String(customerUserId)) return { error: 'NOT_OWNER' };
     if (r.status !== 'ASSIGNED') return { error: 'INVALID_STATUS' };
     r.status = 'COMPLETED';
     await r.save();
-    await this.safeNotify(
-      String(r.userId),
-      NotificationType.SERVICE_COMPLETED,
-      'تم إنجاز الخدمة',
-      `تم إنجاز الخدمة للطلب ${String(r._id)}`,
-      { requestId: String(r._id) },
-    );
+    // إرسال إشعار للمهندس بأن العميل أكد إكمال الخدمة
+    if (r.engineerId) {
+      await this.safeNotify(
+        String(r.engineerId),
+        NotificationType.SERVICE_COMPLETED,
+        'تم تأكيد إنجاز الخدمة',
+        `تم تأكيد إنجاز الخدمة للطلب ${String(r._id)} من قبل العميل`,
+        { requestId: String(r._id) },
+      );
+    }
     return { ok: true };
   }
 

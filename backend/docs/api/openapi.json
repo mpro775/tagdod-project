@@ -3972,6 +3972,14 @@
             "schema": {
               "type": "number"
             }
+          },
+          {
+            "name": "currency",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -24910,6 +24918,90 @@
         ]
       }
     },
+    "/api/v1/services/customer/{id}/complete": {
+      "post": {
+        "operationId": "complete",
+        "summary": "إكمال طلب خدمة",
+        "description": "تأكيد إكمال طلب خدمة من قبل العميل",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف طلب الخدمة",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم تأكيد إكمال الطلب بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "ok": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "لا يمكن إكمال هذا الطلب في حالته الحالية",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "examples": {
+                    "invalidStatus": {
+                      "value": {
+                        "data": {
+                          "error": "INVALID_STATUS"
+                        }
+                      }
+                    },
+                    "notOwner": {
+                      "value": {
+                        "data": {
+                          "error": "NOT_OWNER"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مصرح لك بإكمال هذا الطلب"
+          },
+          "404": {
+            "description": "لم يتم العثور على الطلب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "data": {
+                      "error": "NOT_FOUND"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "خدمات-العملاء"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/services/engineer/requests/nearby": {
       "get": {
         "operationId": "nearby",
@@ -25396,78 +25488,6 @@
           },
           "403": {
             "description": "غير مصرح لك بالعمل على هذا الطلب"
-          },
-          "404": {
-            "description": "لم يتم العثور على الطلب"
-          }
-        },
-        "tags": [
-          "خدمات-الفنيين"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/services/engineer/requests/{id}/complete": {
-      "post": {
-        "operationId": "complete",
-        "summary": "إكمال طلب خدمة",
-        "description": "إكمال طلب خدمة منجز من قبل الفني",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف طلب الخدمة",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم إكمال الطلب بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "req123"
-                        },
-                        "status": {
-                          "type": "string",
-                          "example": "completed"
-                        },
-                        "completedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T17:00:00Z"
-                        },
-                        "totalTime": {
-                          "type": "number",
-                          "example": 3,
-                          "description": "إجمالي وقت العمل بالساعات"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "لا يمكن إكمال هذا الطلب في حالته الحالية"
-          },
-          "403": {
-            "description": "غير مصرح لك بإكمال هذا الطلب"
           },
           "404": {
             "description": "لم يتم العثور على الطلب"
@@ -32265,6 +32285,12 @@
             "description": "رقم الواتساب",
             "example": "967711234567"
           },
+          "jobTitle": {
+            "type": "string",
+            "description": "المسمى الوظيفي",
+            "example": "مهندس ميكانيكي",
+            "maxLength": 100
+          },
           "specialties": {
             "description": "التخصصات",
             "example": [
@@ -32294,17 +32320,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "languages": {
-            "description": "اللغات المتحدث بها",
-            "example": [
-              "العربية",
-              "الإنجليزية"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           }
         }
       },
@@ -32322,13 +32337,13 @@
           },
           "couponCode": {
             "type": "string",
-            "description": "كوبون واحد (للسهولة والتوافق مع الإصدارات القديمة)"
+            "description": "كوبون واحد - مؤقت: النظام يقبل كوبون واحد فقط حالياً. إذا تم إرسال couponCode وcouponCodes معاً، سيتم استخدام couponCode فقط.",
+            "example": "WELCOME10"
           },
           "couponCodes": {
-            "description": "مصفوفة كوبونات متعددة (يتم تطبيقها تراكمياً)",
+            "description": "مصفوفة كوبونات - مؤقت: النظام يقبل كوبون واحد فقط حالياً. سيتم استخدام أول كوبون صالح من المصفوفة وتجاهل الباقي. يفضل استخدام couponCode بدلاً منها.",
             "example": [
-              "COUPON10",
-              "COUPON5"
+              "COUPON10"
             ],
             "type": "array",
             "items": {
@@ -32899,13 +32914,13 @@
           },
           "couponCode": {
             "type": "string",
-            "description": "كوبون واحد (للسهولة والتوافق مع الإصدارات القديمة)"
+            "description": "كوبون واحد - مؤقت: النظام يقبل كوبون واحد فقط حالياً. إذا تم إرسال couponCode وcouponCodes معاً، سيتم استخدام couponCode فقط.",
+            "example": "WELCOME10"
           },
           "couponCodes": {
-            "description": "مصفوفة كوبونات متعددة (يتم تطبيقها تراكمياً)",
+            "description": "مصفوفة كوبونات - مؤقت: النظام يقبل كوبون واحد فقط حالياً. سيتم استخدام أول كوبون صالح من المصفوفة وتجاهل الباقي. يفضل استخدام couponCode بدلاً منها.",
             "example": [
-              "COUPON10",
-              "COUPON5"
+              "COUPON10"
             ],
             "type": "array",
             "items": {

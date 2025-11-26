@@ -24,6 +24,7 @@ import { SharedModule } from '../../shared/shared.module';
 import { UsersAdminModule } from './admin/users.admin.module';
 import { CapabilitiesModule } from '../capabilities/capabilities.module';
 import { UploadModule } from '../upload/upload.module';
+import { Coupon, CouponSchema } from '../marketing/schemas/coupon.schema';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UploadModule } from '../upload/upload.module';
       { name: ServiceRequest.name, schema: ServiceRequestSchema },
       { name: Favorite.name, schema: FavoriteSchema },
       { name: SupportTicket.name, schema: SupportTicketSchema },
+      { name: Coupon.name, schema: CouponSchema },
     ]),
     // استيراد الوحدات المطلوبة
     forwardRef(() => AuthModule),

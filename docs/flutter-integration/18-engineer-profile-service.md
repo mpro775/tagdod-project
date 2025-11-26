@@ -1,7 +1,12 @@
 # 👷 خدمة بروفايل المهندس (Engineer Profile Service)
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
-> 📅 **آخر تحديث**: نوفمبر 2025
+> 📅 **آخر تحديث**: نوفمبر 2025  
+> 🔄 **التحديثات الأخيرة**: 
+> - إزالة حقل `languages` (لم يعد متاحاً)
+> - إضافة `jobTitle` في endpoint التحديث
+> - إضافة معلومات `user` (gender, status, engineer_status) في الاستجابة
+> - إضافة معلومات `coupon` المرتبط بالمهندس في الاستجابة
 
 خدمة بروفايل المهندس توفر endpoints لإدارة بروفايل المهندس، التقييمات، الرصيد، والعمولات.
 
@@ -65,7 +70,19 @@
     "specialties": ["ميكانيك", "كهرباء", "سباكة"],
     "yearsOfExperience": 10,
     "certifications": ["شهادة معتمدة في الميكانيك"],
-    "languages": ["العربية", "الإنجليزية"],
+    "user": {
+      "gender": "male",
+      "status": "active",
+      "engineer_status": "approved"
+    },
+    "coupon": {
+      "code": "ENG2024",
+      "name": "كوبون المهندس 2024",
+      "description": "خصم خاص للمهندسين",
+      "discountValue": 10,
+      "type": "percentage",
+      "commissionRate": 5
+    },
     "ratings": [
       {
         "score": 5,
@@ -154,10 +171,10 @@ Future<EngineerProfile?> getMyProfile() async {
   "bio": "مهندس ميكانيكي محترف مع أكثر من 10 سنوات من الخبرة",
   "avatarUrl": "https://cdn.example.com/avatars/engineer123.jpg",
   "whatsappNumber": "967711234567",
+  "jobTitle": "مهندس ميكانيكي",
   "specialties": ["ميكانيك", "كهرباء", "سباكة"],
   "yearsOfExperience": 10,
-  "certifications": ["شهادة معتمدة في الميكانيك"],
-  "languages": ["العربية", "الإنجليزية"]
+  "certifications": ["شهادة معتمدة في الميكانيك"]
 }
 ```
 
@@ -166,12 +183,12 @@ Future<EngineerProfile?> getMyProfile() async {
 | `bio` | `string` | ❌ | النبذة عن المهندس (حد أقصى 1000 حرف) |
 | `avatarUrl` | `string` (URL) | ❌ | رابط الأفاتار (من Bunny.net) |
 | `whatsappNumber` | `string` | ❌ | رقم الواتساب |
+| `jobTitle` | `string` | ❌ | المسمى الوظيفي (حد أقصى 100 حرف) |
 | `specialties` | `string[]` | ❌ | التخصصات (مثل: ["ميكانيك", "كهرباء"]) |
 | `yearsOfExperience` | `number` | ❌ | سنوات الخبرة (0-50) |
 | `certifications` | `string[]` | ❌ | الشهادات |
-| `languages` | `string[]` | ❌ | اللغات المتحدث بها |
 
-> ⚠️ **ملاحظة**: `cvFileUrl` و `jobTitle` يتم تحديثهما عبر endpoint التوثيق (`/users/verification/submit`)
+> ⚠️ **ملاحظة**: `cvFileUrl` يتم تحديثه عبر endpoint التوثيق (`/users/verification/submit`)
 
 ### Response - نجاح
 
@@ -184,10 +201,10 @@ Future<EngineerProfile?> getMyProfile() async {
     "bio": "مهندس ميكانيكي محترف مع أكثر من 10 سنوات من الخبرة",
     "avatarUrl": "https://cdn.example.com/avatars/engineer123.jpg",
     "whatsappNumber": "967711234567",
+    "jobTitle": "مهندس ميكانيكي",
     "specialties": ["ميكانيك", "كهرباء", "سباكة"],
     "yearsOfExperience": 10,
     "certifications": ["شهادة معتمدة في الميكانيك"],
-    "languages": ["العربية", "الإنجليزية"],
     "updatedAt": "2025-10-15T11:00:00.000Z"
   },
   "requestId": "req_123"
@@ -201,20 +218,20 @@ Future<EngineerProfile> updateMyProfile({
   String? bio,
   String? avatarUrl,
   String? whatsappNumber,
+  String? jobTitle,
   List<String>? specialties,
   int? yearsOfExperience,
   List<String>? certifications,
-  List<String>? languages,
 }) async {
   final data = <String, dynamic>{};
   
   if (bio != null) data['bio'] = bio;
   if (avatarUrl != null) data['avatarUrl'] = avatarUrl;
   if (whatsappNumber != null) data['whatsappNumber'] = whatsappNumber;
+  if (jobTitle != null) data['jobTitle'] = jobTitle;
   if (specialties != null) data['specialties'] = specialties;
   if (yearsOfExperience != null) data['yearsOfExperience'] = yearsOfExperience;
   if (certifications != null) data['certifications'] = certifications;
-  if (languages != null) data['languages'] = languages;
   
   try {
     final response = await _dio.put('/engineers/profile/me', data: data);
@@ -488,7 +505,8 @@ class EngineerProfile {
   final List<String>? specialties;
   final int? yearsOfExperience;
   final List<String>? certifications;
-  final List<String>? languages;
+  final UserProfileInfo? user; // معلومات إضافية من User
+  final CouponInfo? coupon; // الكوبون المرتبط
   final List<EngineerRating> ratings;
   final int totalRatings;
   final double averageRating;
@@ -511,7 +529,8 @@ class EngineerProfile {
     this.specialties,
     this.yearsOfExperience,
     this.certifications,
-    this.languages,
+    this.user,
+    this.coupon,
     required this.ratings,
     required this.totalRatings,
     required this.averageRating,
@@ -542,8 +561,11 @@ class EngineerProfile {
       certifications: json['certifications'] != null
           ? List<String>.from(json['certifications'])
           : null,
-      languages: json['languages'] != null
-          ? List<String>.from(json['languages'])
+      user: json['user'] != null
+          ? UserProfileInfo.fromJson(json['user'])
+          : null,
+      coupon: json['coupon'] != null
+          ? CouponInfo.fromJson(json['coupon'])
           : null,
       ratings: json['ratings'] != null
           ? (json['ratings'] as List)
@@ -580,7 +602,8 @@ class EngineerProfile {
       'specialties': specialties,
       'yearsOfExperience': yearsOfExperience,
       'certifications': certifications,
-      'languages': languages,
+      'user': user?.toJson(),
+      'coupon': coupon?.toJson(),
       'ratings': ratings.map((r) => r.toJson()).toList(),
       'totalRatings': totalRatings,
       'averageRating': averageRating,
@@ -633,6 +656,78 @@ class UserInfo {
 
   String get fullName {
     return '${firstName ?? ''} ${lastName ?? ''}'.trim();
+  }
+}
+
+class UserProfileInfo {
+  final String? gender;
+  final String? status;
+  final String? engineer_status;
+
+  UserProfileInfo({
+    this.gender,
+    this.status,
+    this.engineer_status,
+  });
+
+  factory UserProfileInfo.fromJson(Map<String, dynamic> json) {
+    return UserProfileInfo(
+      gender: json['gender'],
+      status: json['status'],
+      engineer_status: json['engineer_status'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'gender': gender,
+      'status': status,
+      'engineer_status': engineer_status,
+    };
+  }
+}
+
+class CouponInfo {
+  final String code;
+  final String name;
+  final String? description;
+  final double? discountValue;
+  final String? type;
+  final double? commissionRate;
+
+  CouponInfo({
+    required this.code,
+    required this.name,
+    this.description,
+    this.discountValue,
+    this.type,
+    this.commissionRate,
+  });
+
+  factory CouponInfo.fromJson(Map<String, dynamic> json) {
+    return CouponInfo(
+      code: json['code'] ?? '',
+      name: json['name'] ?? '',
+      description: json['description'],
+      discountValue: json['discountValue'] != null
+          ? (json['discountValue'] as num).toDouble()
+          : null,
+      type: json['type'],
+      commissionRate: json['commissionRate'] != null
+          ? (json['commissionRate'] as num).toDouble()
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'code': code,
+      'name': name,
+      'description': description,
+      'discountValue': discountValue,
+      'type': type,
+      'commissionRate': commissionRate,
+    };
   }
 }
 ```
@@ -814,9 +909,10 @@ class RatingsResponse {
 
 عند رفع السيرة الذاتية (عبر `/users/verification/submit`):
 - يتم حفظ `cvFileUrl` في `EngineerProfile`
-- يتم حفظ `jobTitle` في `EngineerProfile`
 
 > 📖 **للمزيد**: راجع [خدمة المصادقة](./02-auth-service.md)
+
+> ℹ️ **ملاحظة**: يمكن تحديث `jobTitle` عبر endpoint تحديث البروفايل (`/engineers/profile/me`)
 
 ---
 
@@ -1028,6 +1124,7 @@ Future<void> updateProfile() async {
     final updatedProfile = await engineerProfileService.updateMyProfile(
       bio: 'مهندس محترف مع خبرة واسعة',
       whatsappNumber: '967711234567',
+      jobTitle: 'مهندس ميكانيكي',
       specialties: ['ميكانيك', 'كهرباء'],
       yearsOfExperience: 10,
     );

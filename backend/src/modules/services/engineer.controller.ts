@@ -339,46 +339,6 @@ export class EngineerServicesController {
     return { data };
   }
 
-  @Post('requests/:id/complete')
-  @ApiOperation({
-    summary: 'إكمال طلب خدمة',
-    description: 'إكمال طلب خدمة منجز من قبل الفني',
-  })
-  @ApiParam({ name: 'id', description: 'معرف طلب الخدمة' })
-  @ApiResponse({
-    status: 200,
-    description: 'تم إكمال الطلب بنجاح',
-    schema: {
-      type: 'object',
-      properties: {
-        data: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', example: 'req123' },
-            status: { type: 'string', example: 'completed' },
-            completedAt: { type: 'string', format: 'date-time', example: '2024-01-15T17:00:00Z' },
-            totalTime: { type: 'number', example: 3, description: 'إجمالي وقت العمل بالساعات' },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'لا يمكن إكمال هذا الطلب في حالته الحالية',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'لم يتم العثور على الطلب',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'غير مصرح لك بإكمال هذا الطلب',
-  })
-  async complete(@Req() req: RequestWithUser, @Param('id') id: string) {
-    const data = await this.svc.complete(req.user!.sub, id);
-    return { data };
-  }
 
   @Get('offers/my')
   @ApiOperation({

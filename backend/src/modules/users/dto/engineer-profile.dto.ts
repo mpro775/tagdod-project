@@ -1,4 +1,13 @@
-import { IsString, IsOptional, IsNumber, IsArray, Min, Max, MaxLength, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsArray,
+  Min,
+  Max,
+  MaxLength,
+  IsUrl,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
@@ -33,6 +42,16 @@ export class UpdateEngineerProfileDto {
   whatsappNumber?: string;
 
   @ApiPropertyOptional({
+    description: 'المسمى الوظيفي',
+    example: 'مهندس ميكانيكي',
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  jobTitle?: string;
+
+  @ApiPropertyOptional({
     description: 'التخصصات',
     example: ['ميكانيك', 'كهرباء', 'سباكة'],
     type: [String],
@@ -63,16 +82,6 @@ export class UpdateEngineerProfileDto {
   @IsArray()
   @IsString({ each: true })
   certifications?: string[];
-
-  @ApiPropertyOptional({
-    description: 'اللغات المتحدث بها',
-    example: ['العربية', 'الإنجليزية'],
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  languages?: string[];
 }
 
 /**
@@ -149,4 +158,3 @@ export class GetRatingsQueryDto {
   @Max(5)
   minScore?: number;
 }
-

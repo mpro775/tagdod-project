@@ -12,6 +12,7 @@ import {
   ServiceRequestDocument,
 } from '../../services/schemas/service-request.schema';
 import { Order, OrderDocument } from '../../checkout/schemas/order.schema';
+import { Coupon, CouponDocument } from '../../marketing/schemas/coupon.schema';
 
 @Injectable()
 export class EngineerProfileService {
@@ -26,6 +27,8 @@ export class EngineerProfileService {
     private readonly serviceRequestModel: Model<ServiceRequestDocument>,
     @InjectModel(Order.name)
     private readonly orderModel: Model<OrderDocument>,
+    @InjectModel(Coupon.name)
+    private readonly couponModel: Model<CouponDocument>,
   ) {}
 
   /**
@@ -60,15 +63,143 @@ export class EngineerProfileService {
 
   /**
    * جلب بروفايل المهندس
+   * يقبل إما userId أو _id للبروفايل
    */
-  async getProfile(userId: string, populateUser = true): Promise<EngineerProfileDocument | null> {
-    const query = this.engineerProfileModel.findOne({ userId: new Types.ObjectId(userId) });
+  async getProfile(
+    userIdOrProfileId: string,
+    populateUser = true,
+  ): Promise<
+    | (EngineerProfileDocument & {
+        jobTitle?: string;
+        coupon?: {
+          code: string;
+          name: string;
+          description?: string;
+          discountValue?: number;
+          type?: string;
+          commissionRate?: number;
+        };
+      })
+    | null
+  > {
+    let profile: EngineerProfileDocument | null = null;
+    let actualUserId: Types.ObjectId | null = null;
 
-    if (populateUser) {
-      query.populate('userId', 'firstName lastName phone jobTitle city');
+    // محاولة البحث بـ _id أولاً (إذا كان معرف البروفايل)
+    try {
+      const profileById = await this.engineerProfileModel.findById(userIdOrProfileId).lean();
+      if (profileById) {
+        profile = profileById;
+        actualUserId = profileById.userId as Types.ObjectId;
+      }
+    } catch (e) {
+      // ليس ObjectId صالح، تجاهل
     }
 
-    return await query.lean();
+    // إذا لم يُوجد، حاول البحث بـ userId
+    if (!profile) {
+      try {
+        const query = this.engineerProfileModel.findOne({
+          userId: new Types.ObjectId(userIdOrProfileId),
+        });
+
+        if (populateUser) {
+          query.populate(
+            'userId',
+            'firstName lastName phone jobTitle city gender status engineer_status',
+          );
+        }
+
+        profile = await query.lean();
+        if (profile) {
+          actualUserId = new Types.ObjectId(userIdOrProfileId);
+        }
+      } catch (e) {
+        // ليس ObjectId صالح، تجاهل
+      }
+    } else {
+      // إذا وُجد البروفايل بـ _id، نحتاج populate
+      if (populateUser && actualUserId) {
+        const populatedProfile = await this.engineerProfileModel
+          .findOne({ _id: new Types.ObjectId(userIdOrProfileId) })
+          .populate(
+            'userId',
+            'firstName lastName phone jobTitle city gender status engineer_status',
+          )
+          .lean();
+        if (populatedProfile) {
+          profile = populatedProfile;
+        }
+      }
+    }
+
+    if (!profile) {
+      return null;
+    }
+
+    // تحديد userId الفعلي
+    if (!actualUserId) {
+      const userIdValue = profile.userId;
+      if (userIdValue instanceof Types.ObjectId) {
+        actualUserId = userIdValue;
+      } else if (userIdValue && typeof userIdValue === 'object' && '_id' in userIdValue) {
+        const userIdObj = userIdValue as { _id: Types.ObjectId | string };
+        actualUserId = new Types.ObjectId(userIdObj._id);
+      } else if (userIdValue) {
+        actualUserId = new Types.ObjectId(String(userIdValue));
+      }
+    }
+
+    // جلب الكوبون المرتبط بالمهندس
+    const coupon = await this.couponModel
+      .findOne({ engineerId: actualUserId, status: 'active' })
+      .select('code name description discountValue type commissionRate')
+      .lean();
+
+    // إضافة المعلومات الإضافية
+    const populatedUserId = profile.userId;
+    const isPopulatedUser =
+      populatedUserId &&
+      typeof populatedUserId === 'object' &&
+      !(populatedUserId instanceof Types.ObjectId) &&
+      'firstName' in populatedUserId;
+
+    interface PopulatedUser {
+      jobTitle?: string;
+    }
+
+    const userData: PopulatedUser | null = isPopulatedUser
+      ? (populatedUserId as PopulatedUser)
+      : null;
+
+    const result = {
+      ...profile,
+      jobTitle: profile.jobTitle || (userData?.jobTitle ?? undefined),
+    } as EngineerProfileDocument & {
+      jobTitle?: string;
+      coupon?: {
+        code: string;
+        name: string;
+        description?: string;
+        discountValue?: number;
+        type?: string;
+        commissionRate?: number;
+      };
+    };
+
+    // إضافة الكوبون
+    if (coupon) {
+      result.coupon = {
+        code: coupon.code,
+        name: coupon.name,
+        description: coupon.description,
+        discountValue: coupon.discountValue,
+        type: coupon.type,
+        commissionRate: coupon.commissionRate,
+      };
+    }
+
+    return result;
   }
 
   /**
@@ -80,10 +211,10 @@ export class EngineerProfileService {
       bio?: string;
       avatarUrl?: string;
       whatsappNumber?: string;
+      jobTitle?: string;
       specialties?: string[];
       yearsOfExperience?: number;
       certifications?: string[];
-      languages?: string[];
     },
   ): Promise<EngineerProfileDocument> {
     let profile = await this.engineerProfileModel.findOne({ userId: new Types.ObjectId(userId) });
@@ -97,11 +228,11 @@ export class EngineerProfileService {
     if (updates.bio !== undefined) profile.bio = updates.bio;
     if (updates.avatarUrl !== undefined) profile.avatarUrl = updates.avatarUrl;
     if (updates.whatsappNumber !== undefined) profile.whatsappNumber = updates.whatsappNumber;
+    if (updates.jobTitle !== undefined) profile.jobTitle = updates.jobTitle;
     if (updates.specialties !== undefined) profile.specialties = updates.specialties;
     if (updates.yearsOfExperience !== undefined)
       profile.yearsOfExperience = updates.yearsOfExperience;
     if (updates.certifications !== undefined) profile.certifications = updates.certifications;
-    if (updates.languages !== undefined) profile.languages = updates.languages;
 
     return await profile.save();
   }

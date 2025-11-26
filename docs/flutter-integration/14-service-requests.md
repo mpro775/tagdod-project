@@ -23,13 +23,13 @@
 6. [حذف طلب خدمة](#6-حذف-طلب-خدمة)
 7. [قبول عرض](#7-قبول-عرض)
 8. [تقييم الخدمة](#8-تقييم-الخدمة)
+9. [إكمال الطلب](#9-إكمال-الطلب)
 
 ### للمهندسين (Engineers)
-9. [الطلبات القريبة](#9-الطلبات-القريبة)
+10. [الطلبات القريبة](#10-الطلبات-القريبة)
    - [الطلبات في مدينتي](#الطلبات-في-مدينتي)
    - [جميع الطلبات المتاحة](#جميع-الطلبات-المتاحة)
-10. [تفاصيل طلب خدمة](#10-تفاصيل-طلب-خدمة)
-11. [إكمال الطلب](#11-إكمال-الطلب)
+11. [تفاصيل طلب خدمة](#11-تفاصيل-طلب-خدمة)
 
 ---
 
@@ -416,9 +416,97 @@ Future<bool> cancelServiceRequest(String requestId, String reason) async {
 
 ---
 
+### 9. إكمال الطلب
+
+يؤكد العميل إكمال طلب الخدمة.
+
+**Method:** `POST`  
+**Endpoint:** `/services/customer/:id/complete`  
+**Auth Required:** ✅ نعم
+
+> ⚠️ **مهم:** العميل هو من يؤكد إكمال الخدمة بعد أن ينفذ المهندس العمل.
+
+#### Response - نجاح
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "ok": true
+    }
+  }
+}
+```
+
+> ℹ️ القيم المحتملة عند الفشل تشمل `{ "error": "NOT_OWNER" }` أو `{ "error": "INVALID_STATUS" }`.
+
+#### Response - خطأ (400) - ليس صاحب الطلب
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "NOT_OWNER"
+    }
+  }
+}
+```
+
+#### Response - خطأ (400) - حالة غير صالحة
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "INVALID_STATUS"
+    }
+  }
+}
+```
+
+> ⚠️ **مهم:** يمكن تأكيد الإكمال فقط إذا كانت حالة الطلب `ASSIGNED`.
+
+#### كود Flutter
+
+```dart
+Future<bool> completeServiceRequest(String requestId) async {
+  final response = await _dio.post('/services/customer/$requestId/complete');
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    final result = apiResponse.data!['data'] as Map<String, dynamic>?;
+    
+    if (result != null && result.containsKey('error')) {
+      final error = result['error'] as String;
+      switch (error) {
+        case 'NOT_OWNER':
+          throw ApiException('أنت لست صاحب هذا الطلب');
+        case 'INVALID_STATUS':
+          throw ApiException('لا يمكن إكمال هذا الطلب في حالته الحالية');
+        default:
+          throw ApiException('حدث خطأ أثناء إكمال الطلب');
+      }
+    }
+    
+    return result?['ok'] == true;
+  } else {
+    throw ApiException(apiResponse.error!);
+  }
+}
+```
+
+---
+
 ## للمهندسين (Engineers)
 
-### 9. الطلبات القريبة
+### 10. الطلبات القريبة
 
 يسترجع الطلبات القريبة من موقع المهندس.
 
@@ -450,7 +538,7 @@ Future<bool> cancelServiceRequest(String requestId, String reason) async {
 
 ---
 
-### 10. تفاصيل طلب خدمة
+### 11. تفاصيل طلب خدمة
 
 يسترجع المهندس تفاصيل طلب خدمة محدد بما في ذلك معلومات العميل والعنوان وعرضه إن وجد.
 
@@ -495,33 +583,6 @@ Future<bool> cancelServiceRequest(String requestId, String reason) async {
 
 ---
 
-### 11. إكمال الطلب
-
-يكمل المهندس تنفيذ الطلب.
-
-**Method:** `POST`  
-**Endpoint:** `/services/engineer/requests/:id/complete`  
-**Auth Required:** ✅ نعم (Engineer)
-
-> ⚠️ **مهم:** تم إزالة حالة `IN_PROGRESS`. يمكن للمهندس الانتقال مباشرة من `ASSIGNED` إلى `COMPLETED`.
-
-#### Response - نجاح
-
-```json
-{
-  "success": true,
-  "data": {
-    "data": {
-      "ok": true
-    }
-  }
-}
-```
-
-> ℹ️ القيم المحتملة عند الفشل تشمل `{ "error": "NOT_ASSIGNED" }` أو `{ "error": "INVALID_STATUS" }`.
-
----
-
 ## حالات الطلب (Status)
 
 ### الحالات المتاحة
@@ -531,7 +592,7 @@ Future<bool> cancelServiceRequest(String requestId, String reason) async {
 | `OPEN` | مفتوح للعروض | عند إنشاء الطلب |
 | `OFFERS_COLLECTING` | تجميع العروض | عند تقديم أول عرض |
 | `ASSIGNED` | تم قبول العرض | عند قبول عرض من مهندس |
-| `COMPLETED` | اكتملت الخدمة | عند إكمال المهندس للخدمة |
+| `COMPLETED` | اكتملت الخدمة | عند تأكيد العميل لإكمال الخدمة |
 | `RATED` | تم التقييم | بعد تقييم العميل للخدمة |
 | `CANCELLED` | ملغى | عند إلغاء الطلب |
 
@@ -617,6 +678,7 @@ class ServiceRequest {
   bool get canBeCancelled => status == ServiceRequestStatus.ASSIGNED; // ✅ محدث
   bool get canAcceptOffers => status == ServiceRequestStatus.OPEN || 
                               status == ServiceRequestStatus.OFFERS_COLLECTING;
+  bool get canBeCompleted => status == ServiceRequestStatus.ASSIGNED; // ✅ جديد - العميل يمكنه تأكيد الإكمال
   bool get canBeRated => status == ServiceRequestStatus.COMPLETED;
   bool get isCancelled => status == ServiceRequestStatus.CANCELLED;
   bool get hasCancellationReason => cancellationReason != null && cancellationReason!.isNotEmpty;
@@ -635,6 +697,7 @@ class ServiceRequest {
 2. **حالات الطلب:**
    - تم إزالة `IN_PROGRESS`
    - التدفق: `OPEN` → `OFFERS_COLLECTING` → `ASSIGNED` → `COMPLETED` → `RATED`
+   - **إكمال الطلب:** العميل هو من يؤكد إكمال الخدمة بعد تنفيذ المهندس للعمل
 
 3. **انتهاء الصلاحية:**
    - الطلبات: 5 أيام بدون قبول عرض → `CANCELLED`

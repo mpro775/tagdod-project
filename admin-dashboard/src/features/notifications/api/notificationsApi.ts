@@ -21,7 +21,7 @@ export const notificationsApi = {
     params: ListNotificationsParams = {}
   ): Promise<{ data: Notification[]; meta: any }> => {
     const response = await apiClient.get<
-      ApiResponse<{ notifications: Notification[]; total: number }>
+      ApiResponse<{ notifications: Notification[]; total: number; meta: any }>
     >('/notifications/admin/list', {
       params: {
         page: Math.max(1, params.page || 1),
@@ -30,30 +30,39 @@ export const notificationsApi = {
       },
     });
 
+    // Backend returns: { notifications, total, meta }
+    const responseData = response.data.data || response.data;
+    const notifications = responseData.notifications || [];
+    const total = responseData.total || 0;
+    const meta = responseData.meta || {};
+
     return {
-      data: response.data.data.notifications,
+      data: notifications,
       meta: {
-        page: params.page || 1,
-        limit: params.limit || 20,
-        total: response.data.data.total,
-        totalPages: Math.ceil(response.data.data.total / (params.limit || 20)),
-        hasNextPage: (params.page || 1) * (params.limit || 20) < response.data.data.total,
-        hasPrevPage: (params.page || 1) > 1,
+        page: meta.page || params.page || 1,
+        limit: meta.limit || params.limit || 20,
+        total,
+        totalPages: meta.totalPages || Math.ceil(total / (params.limit || 20)),
+        hasNextPage: meta.hasNextPage ?? (params.page || 1) * (params.limit || 20) < total,
+        hasPrevPage: meta.hasPrevPage ?? (params.page || 1) > 1,
       },
     };
   },
 
   getById: async (id: string): Promise<Notification> => {
     const response = await apiClient.get<ApiResponse<Notification>>(`/notifications/admin/${id}`);
-    return response.data.data;
+    // Backend returns: { success: true, data: notification }
+    return response.data.data || response.data;
   },
 
   create: async (data: CreateNotificationDto): Promise<Notification> => {
-    const response = await apiClient.post<ApiResponse<Notification>>(
+    const response = await apiClient.post<ApiResponse<{ notification: Notification; message: string }>>(
       '/notifications/admin/create',
       data
     );
-    return response.data.data;
+    // Backend returns: { notification, message }
+    const responseData = response.data.data || response.data;
+    return responseData.notification || responseData;
   },
 
   update: async (id: string, data: UpdateNotificationDto): Promise<Notification> => {
@@ -61,7 +70,8 @@ export const notificationsApi = {
       `/notifications/admin/${id}`,
       data
     );
-    return response.data.data;
+    // Backend returns: { success: true, data: notification }
+    return response.data.data || response.data;
   },
 
   delete: async (id: string): Promise<void> => {
@@ -73,7 +83,8 @@ export const notificationsApi = {
       `/notifications/admin/${id}/send`,
       data
     );
-    return response.data.data;
+    // Backend returns notification in data field
+    return response.data.data || response.data;
   },
 
   bulkSend: async (data: BulkSendNotificationDto): Promise<Notification[]> => {
@@ -139,14 +150,8 @@ export const notificationsApi = {
         params,
       }
     );
-    // Handle nested data structure: response.data.data.data or response.data.data
-    const responseData = response.data.data as any;
-    // Check if data is nested (response.data.data.data)
-    if (responseData && typeof responseData === 'object' && 'data' in responseData && 'success' in responseData) {
-      return responseData.data;
-    }
-    // Otherwise return response.data.data directly
-    return response.data.data;
+    // Backend returns: { success: true, data: stats }
+    return response.data.data || response.data;
   },
 
   getStatsOverview: async (): Promise<any> => {
@@ -158,7 +163,7 @@ export const notificationsApi = {
     params: ListNotificationsParams = {}
   ): Promise<{ data: Notification[]; meta: any }> => {
     const response = await apiClient.get<
-      ApiResponse<{ notifications: Notification[]; total: number }>
+      ApiResponse<{ notifications: Notification[]; total: number; meta: any }>
     >('/notifications/admin/logs', {
       params: {
         page: Math.max(1, params.page || 1),
@@ -167,15 +172,21 @@ export const notificationsApi = {
       },
     });
 
+    // Backend returns: { notifications, total, meta }
+    const responseData = response.data.data || response.data;
+    const notifications = responseData.notifications || [];
+    const total = responseData.total || 0;
+    const meta = responseData.meta || {};
+
     return {
-      data: response.data.data.notifications,
+      data: notifications,
       meta: {
-        page: params.page || 1,
-        limit: params.limit || 20,
-        total: response.data.data.total,
-        totalPages: Math.ceil(response.data.data.total / (params.limit || 20)),
-        hasNextPage: (params.page || 1) * (params.limit || 20) < response.data.data.total,
-        hasPrevPage: (params.page || 1) > 1,
+        page: meta.page || params.page || 1,
+        limit: meta.limit || params.limit || 20,
+        total,
+        totalPages: meta.totalPages || Math.ceil(total / (params.limit || 20)),
+        hasNextPage: meta.hasNextPage ?? (params.page || 1) * (params.limit || 20) < total,
+        hasPrevPage: meta.hasPrevPage ?? (params.page || 1) > 1,
       },
     };
   },
@@ -214,11 +225,11 @@ export const notificationsApi = {
   },
 
   markAsRead: async (data: MarkAsReadDto): Promise<void> => {
-    await apiClient.post('/notifications/read', data);
+    await apiClient.post('/notifications/mark-read', data);
   },
 
   markAllAsRead: async (): Promise<void> => {
-    await apiClient.post('/notifications/read-all');
+    await apiClient.post('/notifications/mark-all-read');
   },
 
   getUserStats: async (): Promise<any> => {

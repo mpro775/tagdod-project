@@ -698,4 +698,45 @@ export class CustomerServicesController {
     const data = await this.svc.getOffersForRequest(req.user!.sub, id);
     return { data };
   }
+
+  @Post(':id/complete')
+  @ApiOperation({
+    summary: 'إكمال طلب خدمة',
+    description: 'تأكيد إكمال طلب خدمة من قبل العميل',
+  })
+  @ApiParam({ name: 'id', description: 'معرف طلب الخدمة' })
+  @ApiOkResponse({
+    description: 'تم تأكيد إكمال الطلب بنجاح',
+    schema: {
+      example: {
+        data: { ok: true },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'لا يمكن إكمال هذا الطلب في حالته الحالية',
+    schema: {
+      examples: {
+        invalidStatus: {
+          value: { data: { error: 'INVALID_STATUS' } },
+        },
+        notOwner: {
+          value: { data: { error: 'NOT_OWNER' } },
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'لم يتم العثور على الطلب',
+    schema: {
+      example: {
+        data: { error: 'NOT_FOUND' },
+      },
+    },
+  })
+  @ApiForbiddenResponse({ description: 'غير مصرح لك بإكمال هذا الطلب' })
+  async complete(@Req() req: RequestWithUser, @Param('id') id: string) {
+    const data = await this.svc.complete(req.user!.sub, id);
+    return { data };
+  }
 }

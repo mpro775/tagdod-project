@@ -29,12 +29,19 @@ export class CheckoutPreviewDto {
   @IsString()
   currency!: string;
 
-  @ApiPropertyOptional({ description: 'كوبون واحد (للسهولة والتوافق مع الإصدارات القديمة)' })
+  @ApiPropertyOptional({ 
+    description: 'كوبون واحد - مؤقت: النظام يقبل كوبون واحد فقط حالياً. إذا تم إرسال couponCode وcouponCodes معاً، سيتم استخدام couponCode فقط.',
+    example: 'WELCOME10'
+  })
   @IsOptional()
   @IsString()
   couponCode?: string;
 
-  @ApiPropertyOptional({ description: 'مصفوفة كوبونات متعددة (يتم تطبيقها تراكمياً)', type: [String], example: ['COUPON10', 'COUPON5'] })
+  @ApiPropertyOptional({ 
+    description: 'مصفوفة كوبونات - مؤقت: النظام يقبل كوبون واحد فقط حالياً. سيتم استخدام أول كوبون صالح من المصفوفة وتجاهل الباقي. يفضل استخدام couponCode بدلاً منها.',
+    type: [String], 
+    example: ['COUPON10']
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -178,12 +185,19 @@ export class CheckoutConfirmDto {
   @IsString()
   customerNotes?: string;
 
-  @ApiPropertyOptional({ description: 'كوبون واحد (للسهولة والتوافق مع الإصدارات القديمة)' })
+  @ApiPropertyOptional({ 
+    description: 'كوبون واحد - مؤقت: النظام يقبل كوبون واحد فقط حالياً. إذا تم إرسال couponCode وcouponCodes معاً، سيتم استخدام couponCode فقط.',
+    example: 'WELCOME10'
+  })
   @IsOptional()
   @IsString()
   couponCode?: string;
 
-  @ApiPropertyOptional({ description: 'مصفوفة كوبونات متعددة (يتم تطبيقها تراكمياً)', type: [String], example: ['COUPON10', 'COUPON5'] })
+  @ApiPropertyOptional({ 
+    description: 'مصفوفة كوبونات - مؤقت: النظام يقبل كوبون واحد فقط حالياً. سيتم استخدام أول كوبون صالح من المصفوفة وتجاهل الباقي. يفضل استخدام couponCode بدلاً منها.',
+    type: [String], 
+    example: ['COUPON10']
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -437,12 +451,19 @@ export class CreateOrderDto {
   @IsString()
   customerNotes?: string;
 
-  @ApiPropertyOptional({ description: 'كوبون واحد (للسهولة والتوافق مع الإصدارات القديمة)' })
+  @ApiPropertyOptional({ 
+    description: 'كوبون واحد - مؤقت: النظام يقبل كوبون واحد فقط حالياً. إذا تم إرسال couponCode وcouponCodes معاً، سيتم استخدام couponCode فقط.',
+    example: 'WELCOME10'
+  })
   @IsOptional()
   @IsString()
   couponCode?: string;
 
-  @ApiPropertyOptional({ description: 'مصفوفة كوبونات متعددة (يتم تطبيقها تراكمياً)', type: [String], example: ['COUPON10', 'COUPON5'] })
+  @ApiPropertyOptional({ 
+    description: 'مصفوفة كوبونات - مؤقت: النظام يقبل كوبون واحد فقط حالياً. سيتم استخدام أول كوبون صالح من المصفوفة وتجاهل الباقي. يفضل استخدام couponCode بدلاً منها.',
+    type: [String], 
+    example: ['COUPON10']
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

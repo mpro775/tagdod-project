@@ -129,6 +129,11 @@ export class OrderService {
     { expiresAt: number; data: CouponValidationResult }
   >();
   private readonly couponValidationTtlMs = 60_000;
+  
+  // مؤقت: تفعيل/تعطيل دعم الكوبونات المتعددة
+  // حالياً معطل - النظام يقبل كوبون واحد فقط
+  // لتغييره لاحقاً: ضع القيمة true
+  private readonly ENABLE_MULTIPLE_COUPONS = false;
 
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
@@ -324,21 +329,43 @@ export class OrderService {
     return result;
   }
 
+  /**
+   * دمج أكواد الكوبونات
+   * مؤقت: النظام يقبل كوبون واحد فقط
+   * سيتم تطبيق أول كوبون صالح فقط، والباقي سيتم تجاهله
+   */
   private combineCouponCodes(
     preview: CartPreviewResult,
     couponCode?: string,
     couponCodes?: string[],
   ): string[] {
     const combined = new Set<string>();
+    
+    // إضافة couponCode إذا كان موجوداً
     if (couponCode && couponCode.trim()) {
-      combined.add(couponCode.trim());
+      combined.add(couponCode.trim().toUpperCase());
     }
+    
+    // إضافة couponCodes إذا كانت موجودة
     if (Array.isArray(couponCodes)) {
       couponCodes
         .filter((code): code is string => typeof code === 'string' && code.trim().length > 0)
-        .forEach((code) => combined.add(code.trim()));
+        .forEach((code) => combined.add(code.trim().toUpperCase()));
     }
-    return Array.from(combined);
+    
+    const allCodes = Array.from(combined);
+    
+    // مؤقت: إذا كان دعم الكوبونات المتعددة معطلاً، نرجع أول كوبون فقط
+    if (!this.ENABLE_MULTIPLE_COUPONS) {
+      if (allCodes.length > 1) {
+        this.logger.warn(
+          `Multiple coupons provided (${allCodes.length}), but system only accepts one coupon. Using first coupon: ${allCodes[0]}. Ignoring: ${allCodes.slice(1).join(', ')}`
+        );
+      }
+      return allCodes.length > 0 ? [allCodes[0]] : [];
+    }
+    
+    return allCodes;
   }
 
   private async prioritizeCouponCodes(params: {
@@ -4930,15 +4957,10 @@ export class OrderService {
         // لا نوقف العملية إذا فشل الحفظ المؤقت
       }
 
-      // إرسال الفاتورة عبر البريد الإلكتروني والـ SMS (معاً)
-      await Promise.all([
-        this.sendOrderInvoiceEmail(order, pdfBuffer).catch((err) => {
-          this.logger.warn(`Email sending failed for order ${order.orderNumber}:`, err);
-        }),
-        this.sendOrderInvoiceSMS(order, pdfBuffer).catch((err) => {
-          this.logger.warn(`SMS sending failed for order ${order.orderNumber}:`, err);
-        }),
-      ]);
+      // إرسال الفاتورة عبر البريد الإلكتروني فقط
+      await this.sendOrderInvoiceEmail(order, pdfBuffer).catch((err) => {
+        this.logger.warn(`Email sending failed for order ${order.orderNumber}:`, err);
+      });
 
       this.logger.log(`Invoice sent successfully for order ${order.orderNumber}`);
     } catch (error) {
@@ -5087,117 +5109,6 @@ export class OrderService {
     }
   }
 
-  /**
-   * إرسال فاتورة الطلب عبر SMS (رفع PDF إلى Bunny وإرسال رابط عبر مزود SMS الأوائل)
-   */
-  private async sendOrderInvoiceSMS(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
-    try {
-      // التحقق من توفر SMSAdapter
-      if (!this.smsAdapter) {
-        this.logger.warn('SMS adapter not available. Skipping SMS notification.');
-        return;
-      }
-
-      // جلب رقم SMS المبيعات من متغيرات البيئة
-      const salesManagerSMS =
-        this.configService?.get('SALES_MANAGER_SMS') ||
-        this.configService?.get('SALES_MANAGER_WHATSAPP') ||
-        null;
-
-      if (!salesManagerSMS) {
-        this.logger.warn('SALES_MANAGER_SMS not configured. Skipping SMS notification.');
-        return;
-      }
-
-      // جلب بيانات المستخدم
-      const user = await this.userModel.findById(order.userId);
-      const customerName = user
-        ? user.firstName && user.lastName
-          ? `${user.firstName} ${user.lastName}`
-          : user.firstName || user.lastName || order.customerName || 'N/A'
-        : order.customerName || 'N/A';
-
-      const customerPhone =
-        user?.phone || order.customerPhone || order.deliveryAddress?.recipientPhone || 'N/A';
-
-      // تنسيق التاريخ
-      const formatDate = (date?: Date) => {
-        if (!date) return 'N/A';
-        return new Date(date).toLocaleDateString('ar-SA', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-      };
-
-      const invoiceNumber = order.invoiceNumber || order.orderNumber;
-      const fileName = `invoice-${invoiceNumber}-${Date.now()}.pdf`;
-
-      let invoiceUrl: string | undefined;
-
-      // رفع PDF إلى Bunny CDN (إذا كان uploadService متاحاً)
-      if (this.uploadService) {
-        try {
-          const uploadResult = await this.uploadService.uploadFile(
-            {
-              buffer: pdfBuffer,
-              originalname: fileName,
-              mimetype: 'application/pdf',
-              size: pdfBuffer.length,
-            },
-            'invoices', // مجلد في Bunny
-            fileName, // اسم الملف المخصص
-          );
-
-          invoiceUrl = uploadResult.url;
-          this.logger.log(`Invoice PDF uploaded to Bunny: ${invoiceUrl}`);
-        } catch (uploadError) {
-          this.logger.warn(
-            `Failed to upload invoice PDF to Bunny for order ${order.orderNumber}:`,
-            uploadError,
-          );
-          // نكمل العملية حتى لو فشل الرفع
-        }
-      }
-
-      // إنشاء رسالة SMS
-      const message = `فاتورة جديدة - New Invoice
-رقم الطلب: ${order.orderNumber}
-رقم الفاتورة: ${invoiceNumber}
-اسم العميل: ${customerName}
-الهاتف: ${customerPhone}
-المجموع: ${order.total.toLocaleString()} ${order.currency}
-تاريخ الإكمال: ${formatDate(order.completedAt)}
-${invoiceUrl ? `رابط الفاتورة: ${invoiceUrl}` : ''}`;
-
-      // تنظيف رقم SMS (إزالة أي رموز غير رقمية وإضافة + إذا لم يكن موجوداً)
-      let smsNumber = salesManagerSMS.replace(/[^0-9+]/g, '');
-      if (!smsNumber.startsWith('+')) {
-        // إذا لم يبدأ بـ +، نضيفه (افتراض أن الرقم دولي)
-        smsNumber = `+${smsNumber}`;
-      }
-
-      // إرسال الرسالة عبر SMSAdapter (مزود الأوائل)
-      const result = await this.smsAdapter.sendSMS({
-        to: smsNumber,
-        message: message,
-        mediaUrl: invoiceUrl, // إرسال رابط PDF كـ mediaUrl إذا كان متاحاً (للمزودات التي تدعمها)
-      });
-
-      if (result.success) {
-        this.logger.log(
-          `SMS message sent successfully for order ${order.orderNumber} to ${smsNumber}. Message ID: ${result.messageId}`,
-        );
-      } else {
-        this.logger.error(
-          `Failed to send SMS message for order ${order.orderNumber}: ${result.error}`,
-        );
-      }
-    } catch (error) {
-      this.logger.error(`Error sending SMS notification for order ${order.orderNumber}:`, error);
-      // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
-    }
-  }
 
   /**
    * توليد وإرسال الفاتورة يدوياً إلى إيميل المبيعات

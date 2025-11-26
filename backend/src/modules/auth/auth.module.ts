@@ -12,6 +12,10 @@ import { FavoritesModule } from '../favorites/favorites.module';
 import { SharedModule } from '../../shared/shared.module';
 import { BiometricService } from './biometric.service';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
+import { EngineerProfileService } from '../users/services/engineer-profile.service';
+import { ServiceRequest, ServiceRequestSchema } from '../services/schemas/service-request.schema';
+import { Order, OrderSchema } from '../checkout/schemas/order.schema';
+import { Coupon, CouponSchema } from '../marketing/schemas/coupon.schema';
 
 @Module({
   imports: [
@@ -20,12 +24,15 @@ import { NotificationsCompleteModule } from '../notifications/notifications-comp
       { name: User.name, schema: UserSchema },
       { name: EngineerProfile.name, schema: EngineerProfileSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
+      { name: ServiceRequest.name, schema: ServiceRequestSchema },
+      { name: Order.name, schema: OrderSchema },
+      { name: Coupon.name, schema: CouponSchema },
     ]),
     SharedModule,
     NotificationsCompleteModule, // Import notifications module to access SMSAdapter
   ],
   controllers: [AuthController],
-  providers: [OtpService, TokensService, JwtAuthGuard, OptionalJwtAuthGuard, BiometricService],
+  providers: [OtpService, TokensService, JwtAuthGuard, OptionalJwtAuthGuard, BiometricService, EngineerProfileService],
   exports: [TokensService, JwtAuthGuard, OptionalJwtAuthGuard, MongooseModule],
 })
 export class AuthModule {}
