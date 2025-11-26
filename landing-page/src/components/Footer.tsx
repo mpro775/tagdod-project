@@ -31,8 +31,11 @@ const Footer: React.FC = () => {
               <Link component={RouterLink} to="/terms" color="text.secondary" underline="hover">
                 الأحكام والشروط
               </Link>
-              <Link href="#" color="text.secondary" underline="hover">
+              <Link component={RouterLink} to="/privacy" color="text.secondary" underline="hover">
                 سياسة الخصوصية
+              </Link>
+              <Link component={RouterLink} to="/deleted-account" color="text.secondary" underline="hover">
+                كيفية حذف الحساب
               </Link>
             </Box>
           </Grid>

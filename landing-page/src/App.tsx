@@ -5,6 +5,8 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import DeletedAccountPage from './pages/DeletedAccountPage';
 
 const App: React.FC = () => {
   return (
@@ -14,6 +16,8 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/deleted-account" element={<DeletedAccountPage />} />
         </Routes>
       </Box>
       <Footer />

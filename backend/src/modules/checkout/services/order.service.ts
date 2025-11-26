@@ -129,7 +129,7 @@ export class OrderService {
     { expiresAt: number; data: CouponValidationResult }
   >();
   private readonly couponValidationTtlMs = 60_000;
-  
+
   // مؤقت: تفعيل/تعطيل دعم الكوبونات المتعددة
   // حالياً معطل - النظام يقبل كوبون واحد فقط
   // لتغييره لاحقاً: ضع القيمة true
@@ -340,31 +340,31 @@ export class OrderService {
     couponCodes?: string[],
   ): string[] {
     const combined = new Set<string>();
-    
+
     // إضافة couponCode إذا كان موجوداً
     if (couponCode && couponCode.trim()) {
       combined.add(couponCode.trim().toUpperCase());
     }
-    
+
     // إضافة couponCodes إذا كانت موجودة
     if (Array.isArray(couponCodes)) {
       couponCodes
         .filter((code): code is string => typeof code === 'string' && code.trim().length > 0)
         .forEach((code) => combined.add(code.trim().toUpperCase()));
     }
-    
+
     const allCodes = Array.from(combined);
-    
+
     // مؤقت: إذا كان دعم الكوبونات المتعددة معطلاً، نرجع أول كوبون فقط
     if (!this.ENABLE_MULTIPLE_COUPONS) {
       if (allCodes.length > 1) {
         this.logger.warn(
-          `Multiple coupons provided (${allCodes.length}), but system only accepts one coupon. Using first coupon: ${allCodes[0]}. Ignoring: ${allCodes.slice(1).join(', ')}`
+          `Multiple coupons provided (${allCodes.length}), but system only accepts one coupon. Using first coupon: ${allCodes[0]}. Ignoring: ${allCodes.slice(1).join(', ')}`,
         );
       }
       return allCodes.length > 0 ? [allCodes[0]] : [];
     }
-    
+
     return allCodes;
   }
 
@@ -522,6 +522,14 @@ export class OrderService {
             clonedItem['pricing'] = pricingRecord;
           }
 
+          // Remove appliedRule from unit (always null in checkout, only used in cart)
+          if (clonedItem.unit && typeof clonedItem.unit === 'object') {
+            const unitRecord = clonedItem.unit as Record<string, unknown>;
+            if ('appliedRule' in unitRecord && unitRecord.appliedRule === null) {
+              delete unitRecord.appliedRule;
+            }
+          }
+
           return clonedItem;
         })
       : params.preview.items;
@@ -644,8 +652,15 @@ export class OrderService {
       return sum + Math.max(0, unitBase - unitFinal) * qty;
     }, 0);
 
+    // Get merchant discount from preview summary
+    // subtotalFromSummary already has merchant discount applied, so we need to extract it
+    const merchantDiscountFromPreview =
+      typeof summary?.merchantDiscountAmount === 'number' ? summary.merchantDiscountAmount : 0;
+
     const shipping = 0;
+    // subtotalFromSummary already has merchant discount applied, so we only subtract coupon discount
     const total = Math.max(0, subtotalFromSummary - totalCouponDiscount) + shipping;
+    // totalDiscount includes merchant discount (for display purposes)
     const totalDiscount = itemsDiscount + totalCouponDiscount;
 
     const codEligibility = params.codEligibility ?? (await this.checkCODEligibility(params.userId));
@@ -684,14 +699,7 @@ export class OrderService {
       );
     }
 
-    const previewTotalsMap = (params.preview as Record<string, unknown>).totalsInAllCurrencies as
-      | Record<string, unknown>
-      | undefined;
-    if (previewTotalsMap) {
-      Object.keys(previewTotalsMap).forEach((code) =>
-        currenciesSet.add(this.normalizeCurrency(code)),
-      );
-    }
+    // Removed: previewTotalsMap (totalsInAllCurrencies is no longer used)
 
     const baseTotals = {
       subtotal: roundForCurrency(subtotalFromSummary, normalizedCurrency),
@@ -722,8 +730,13 @@ export class OrderService {
       const subtotalConverted = await convertAmount(baseTotals.subtotal, normalizedCode);
       const totalDiscountConverted =
         totalDiscount > 0 ? await convertAmount(totalDiscount, normalizedCode) : 0;
+      // FIX: subtotalConverted already has merchant discount applied
+      // totalDiscountConverted includes merchant discount, so we should NOT subtract it again
+      // Instead, we should only subtract non-merchant discounts (coupon discount)
+      const couponDiscountConverted =
+        totalCouponDiscount > 0 ? await convertAmount(totalCouponDiscount, normalizedCode) : 0;
       const totalConverted = roundForCurrency(
-        Math.max(0, subtotalConverted - totalDiscountConverted),
+        Math.max(0, subtotalConverted - couponDiscountConverted),
         normalizedCode,
       );
       return {
@@ -764,6 +777,25 @@ export class OrderService {
                 currencyCode,
               )
             : 0;
+
+        // Get merchant discount for this currency from preview
+        const previewSummaryForCurrency = params.preview.pricingSummaryByCurrency?.[currencyCode];
+        let merchantDiscountConverted = 0;
+        if (typeof previewSummaryForCurrency?.merchantDiscountAmount === 'number') {
+          merchantDiscountConverted = roundForCurrency(
+            previewSummaryForCurrency.merchantDiscountAmount,
+            currencyCode,
+          );
+        } else if (merchantDiscountFromPreview > 0) {
+          // Convert merchant discount to target currency if needed
+          if (currencyCode === normalizedCurrency) {
+            merchantDiscountConverted = roundForCurrency(merchantDiscountFromPreview, currencyCode);
+          } else if (this.exchangeRatesService) {
+            const converted = await convertAmount(merchantDiscountFromPreview, currencyCode);
+            merchantDiscountConverted = roundForCurrency(converted, currencyCode);
+          }
+        }
+
         const subtotalBeforeDiscountConverted = roundForCurrency(
           subtotalConverted + totalDiscountConverted,
           currencyCode,
@@ -774,10 +806,9 @@ export class OrderService {
           itemsCount,
           subtotalBeforeDiscount: subtotalBeforeDiscountConverted,
           subtotal: subtotalConverted,
-          merchantDiscountAmount: 0,
+          merchantDiscountAmount: merchantDiscountConverted, // FIX: Use actual value from preview
           couponDiscount: couponDiscountConverted,
-          promotionDiscount: 0,
-          autoDiscount: 0,
+          // Removed: promotionDiscount and autoDiscount (always 0 in checkout, only used in cart)
           totalDiscount: totalDiscountConverted,
           total: totalConverted,
         } as PricingSummaryView;
@@ -798,18 +829,7 @@ export class OrderService {
       total: normalizedBaseTotals.total,
       currency: normalizedCurrency,
     };
-    previewRecord.totalsInAllCurrencies = Object.fromEntries(
-      Object.entries(totalsByCurrency).map(([currencyCode, totalsForCurrency]) => [
-        currencyCode,
-        {
-          subtotal: totalsForCurrency.subtotal,
-          shippingCost: 0,
-          tax: 0,
-          totalDiscount: totalsForCurrency.totalDiscount,
-          total: totalsForCurrency.total,
-        },
-      ]),
-    );
+    // Removed: totalsInAllCurrencies (duplicate of pricingSummaryByCurrency data)
 
     return {
       preview: previewWithSanitizedItems,
@@ -1789,7 +1809,6 @@ export class OrderService {
       this.getPaymentOptions(userId, normalizedCurrency, codEligibility),
     ]);
 
-    let totalsInAllCurrencies: Record<string, unknown> | undefined;
     let exchangeRates:
       | {
           usdToYer: number;
@@ -1799,62 +1818,8 @@ export class OrderService {
       | undefined;
 
     if (exchangeRatesDoc) {
-      const toUSD = (amount: number, currencyCode: string): number => {
-        if (!amount) return 0;
-        switch (currencyCode) {
-          case 'USD':
-            return amount;
-          case 'YER':
-            return amount / exchangeRatesDoc.usdToYer;
-          case 'SAR':
-            return amount / exchangeRatesDoc.usdToSar;
-          default:
-            return amount;
-        }
-      };
-
-      const fromUSD = (amountUSD: number, currencyCode: string): number => {
-        switch (currencyCode) {
-          case 'USD':
-            return amountUSD;
-          case 'YER':
-            return amountUSD * exchangeRatesDoc.usdToYer;
-          case 'SAR':
-            return amountUSD * exchangeRatesDoc.usdToSar;
-          default:
-            return amountUSD;
-        }
-      };
-
-      const subtotalUSD = toUSD(computation.subtotal, normalizedCurrency);
-      const shippingUSD = toUSD(computation.shipping, normalizedCurrency);
-      const taxUSD = 0;
-      const discountUSD = toUSD(computation.discounts.totalDiscount, normalizedCurrency);
-      const totalUSD = Math.max(0, subtotalUSD + shippingUSD + taxUSD - discountUSD);
-
-      totalsInAllCurrencies = {
-        USD: {
-          subtotal: Math.round(subtotalUSD * 100) / 100,
-          shippingCost: Math.round(shippingUSD * 100) / 100,
-          tax: Math.round(taxUSD * 100) / 100,
-          totalDiscount: Math.round(discountUSD * 100) / 100,
-          total: Math.round(totalUSD * 100) / 100,
-        },
-        YER: {
-          subtotal: Math.round(fromUSD(subtotalUSD, 'YER')),
-          shippingCost: Math.round(fromUSD(shippingUSD, 'YER')),
-          tax: Math.round(fromUSD(taxUSD, 'YER')),
-          totalDiscount: Math.round(fromUSD(discountUSD, 'YER')),
-          total: Math.round(fromUSD(totalUSD, 'YER')),
-        },
-        SAR: {
-          subtotal: Math.round(fromUSD(subtotalUSD, 'SAR') * 100) / 100,
-          shippingCost: Math.round(fromUSD(shippingUSD, 'SAR') * 100) / 100,
-          tax: Math.round(fromUSD(taxUSD, 'SAR') * 100) / 100,
-          totalDiscount: Math.round(fromUSD(discountUSD, 'SAR') * 100) / 100,
-          total: Math.round(fromUSD(totalUSD, 'SAR') * 100) / 100,
-        },
-      };
+      // Removed: totalsInAllCurrencies calculation (duplicate of pricingSummaryByCurrency)
+      // All totals are available in pricingSummaryByCurrency
 
       exchangeRates = {
         usdToYer: exchangeRatesDoc.usdToYer,
@@ -1865,14 +1830,13 @@ export class OrderService {
 
     const computationPreviewRecord = computation.preview as Record<string, unknown>;
     const previewMeta = computationPreviewRecord.meta as Record<string, unknown> | undefined;
-    const previewTotalsInAllCurrencies = computationPreviewRecord.totalsInAllCurrencies as
-      | Record<string, unknown>
-      | undefined;
+
+    // Removed: totalsInAllCurrencies (duplicate of pricingSummaryByCurrency)
+    // If needed, it can be derived from pricingSummaryByCurrency
 
     return {
       cart: {
         pricingSummaryByCurrency: computation.preview.pricingSummaryByCurrency,
-        totalsInAllCurrencies: totalsInAllCurrencies ?? previewTotalsInAllCurrencies,
         meta: previewMeta,
         items: computation.preview.items,
       },
@@ -5108,7 +5072,6 @@ export class OrderService {
       // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
     }
   }
-
 
   /**
    * توليد وإرسال الفاتورة يدوياً إلى إيميل المبيعات
