@@ -15790,8 +15790,20 @@ paths:
     get:
       operationId: my
       summary: طلباتي
-      description: استرداد قائمة بجميع طلبات الخدمات الخاصة بالعميل
-      parameters: []
+      description: استرداد قائمة بجميع طلبات الخدمات الخاصة بالعميل مع إمكانية الفلترة حسب الحالة. الطلبات الملغاة مدرجة افتراضياً.
+      parameters:
+        - name: status
+          required: false
+          in: query
+          description: >-
+            فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة
+            أو مصفوفة. الطلبات الملغاة مدرجة دائماً.
+          schema:
+            example:
+              - ASSIGNED
+              - COMPLETED
+            type: array
+            items: {}
       responses:
         '200':
           description: تم استرداد طلباتك بنجاح
@@ -15809,6 +15821,7 @@ paths:
                       city: صنعاء
                       addressId: 662fa2ab5d97b30a4f8c1234
                       status: ASSIGNED
+                      statusLabel: تم قبول العرض
                       scheduledAt: '2024-06-05T09:00:00.000Z'
                       engineerId: 6637d50690fbb31de8d9c445
                       acceptedOffer:
@@ -15826,6 +15839,7 @@ paths:
                       city: عدن
                       addressId: 6640b11c57b44bb2d1f5ed97
                       status: COMPLETED
+                      statusLabel: اكتملت الخدمة
                       scheduledAt: '2024-05-27T13:30:00.000Z'
                       engineerId: 6637d50690fbb31de8d9c445
                       acceptedOffer:
@@ -22002,21 +22016,47 @@ components:
       required:
         - shippingCompany
         - trackingNumber
+    RefundItemDto:
+      type: object
+      properties:
+        variantId:
+          type: string
+          example: 507f1f77bcf86cd799439011
+          description: معرف الـ variant المراد إرجاعه
+        qty:
+          type: number
+          example: 2
+          minimum: 1
+          description: الكمية المراد إرجاعها
+      required:
+        - variantId
+        - qty
     RefundOrderDto:
       type: object
       properties:
         amount:
           type: number
           example: 50000
+          description: >-
+            المبلغ المراد استرداده. إذا لم يتم تحديده وتم تحديد items، سيتم حسابه تلقائياً. إذا كان isFullRefund=true،
+            سيتم استخدام total الطلب.
         reason:
           type: string
           example: عطل في المنتج
+          description: سبب الإرجاع
         items:
+          description: قائمة الأصناف المراد إرجاعها (للإرجاع التفصيلي). إذا لم يتم تحديدها، سيتم إرجاع الفاتورة كاملة.
+          example:
+            - variantId: 507f1f77bcf86cd799439011
+              qty: 2
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/RefundItemDto'
+        isFullRefund:
+          type: boolean
+          example: false
+          description: إذا كان true، سيتم إرجاع الفاتورة كاملة بغض النظر عن items أو amount
       required:
-        - amount
         - reason
     VerifyPaymentDto:
       type: object

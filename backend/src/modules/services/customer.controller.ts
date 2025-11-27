@@ -137,7 +137,15 @@ export class CustomerServicesController {
   @Get('my')
   @ApiOperation({
     summary: 'طلباتي',
-    description: 'استرداد قائمة بجميع طلبات الخدمات الخاصة بالعميل',
+    description: 'استرداد قائمة بجميع طلبات الخدمات الخاصة بالعميل مع إمكانية الفلترة حسب الحالة. الطلبات الملغاة مدرجة افتراضياً.',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. الطلبات الملغاة مدرجة دائماً.',
+    type: [String],
+    isArray: true,
+    example: ['ASSIGNED', 'COMPLETED'],
   })
   @ApiOkResponse({
     description: 'تم استرداد طلباتك بنجاح',
@@ -153,6 +161,7 @@ export class CustomerServicesController {
             city: 'صنعاء',
             addressId: '662fa2ab5d97b30a4f8c1234',
             status: 'ASSIGNED',
+            statusLabel: 'تم قبول العرض',
             scheduledAt: '2024-06-05T09:00:00.000Z',
             engineerId: '6637d50690fbb31de8d9c445',
             acceptedOffer: { offerId: '6645f731dc490a317ad91884', amount: 180, currency: 'YER' },
@@ -169,6 +178,7 @@ export class CustomerServicesController {
             city: 'عدن',
             addressId: '6640b11c57b44bb2d1f5ed97',
             status: 'COMPLETED',
+            statusLabel: 'اكتملت الخدمة',
             scheduledAt: '2024-05-27T13:30:00.000Z',
             engineerId: '6637d50690fbb31de8d9c445',
             acceptedOffer: { offerId: '6640b1d057b44bb2d1f5eda0', amount: 220 },
@@ -181,8 +191,8 @@ export class CustomerServicesController {
     },
   })
   @ApiUnauthorizedResponse({ description: 'غير مصرح لك بالوصول' })
-  async my(@Req() req: RequestWithUser) {
-    const data = await this.svc.myRequests(req.user!.sub);
+  async my(@Req() req: RequestWithUser, @Query('status') status?: string | string[]) {
+    const data = await this.svc.myRequests(req.user!.sub, status);
     return { data };
   }
 

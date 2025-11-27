@@ -1,7 +1,7 @@
 import { Injectable, Logger, Optional, Inject, forwardRef } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
-import { ServiceRequest } from './schemas/service-request.schema';
+import { ServiceRequest, ServiceRating } from './schemas/service-request.schema';
 import { EngineerOffer } from './schemas/engineer-offer.schema';
 import { User } from '../users/schemas/user.schema';
 import { EngineerProfile } from '../users/schemas/engineer-profile.schema';
@@ -442,9 +442,125 @@ export class ServicesService {
     return r;
   }
 
-  async myRequests(userId: string) {
+  async myRequests(
+    userId: string,
+    status?: string | string[],
+  ): Promise<
+    Array<{
+      _id: Types.ObjectId;
+      userId: Types.ObjectId | string;
+      title: string;
+      type?: string;
+      description?: string;
+      images?: string[];
+      city: string;
+      status: string;
+      statusLabel: string;
+      scheduledAt?: Date;
+      createdAt: Date;
+      updatedAt: Date;
+      address: {
+        label: string | null;
+        line1: string | null;
+        city: string | null;
+      } | null;
+      engineer: {
+        id: string | null;
+        name: string | null;
+        phone: string | null;
+        whatsapp: string | null;
+      } | null;
+      acceptedOffer: {
+        offerId: string;
+        amount: number;
+        currency: string;
+        note?: string;
+      } | null;
+      rating?: ServiceRating;
+    }>
+  > {
     const userObjectId = new Types.ObjectId(userId);
-    return this.requests.find({ userId: userObjectId }).sort({ createdAt: -1 }).lean();
+    
+    // بناء query للفلترة حسب الحالة
+    // إذا تم تمرير status، نفلتر حسب الحالات المحددة + CANCELLED دائماً
+    // إذا لم يتم تمرير status، نرجع جميع الطلبات (بما فيها CANCELLED)
+    let statusFilter: string[] | undefined;
+    
+    if (status) {
+      const statuses = Array.isArray(status) ? status : [status];
+      // إضافة CANCELLED دائماً إذا لم تكن موجودة
+      if (!statuses.includes('CANCELLED')) {
+        statusFilter = [...statuses, 'CANCELLED'];
+      } else {
+        statusFilter = statuses;
+      }
+    }
+    
+    const query: any = { userId: userObjectId };
+    if (statusFilter) {
+      query.status = { $in: statusFilter };
+    }
+    
+    const docs = (await this.requests
+      .find(query)
+      .populate('engineerId', 'firstName lastName phone')
+      .populate('addressId', 'label line1 city')
+      .sort({ createdAt: -1 })
+      .lean()) as ServiceRequestPopulated[];
+
+    return docs.map((doc) => {
+      const engineerData = this.extractEngineer(doc.engineerId);
+      const engineerPhone: string | null = engineerData?.phone ?? null;
+      const engineerName = engineerData
+        ? `${engineerData.firstName ?? ''} ${engineerData.lastName ?? ''}`.trim()
+        : null;
+      const whatsapp = engineerPhone ? this.makeWhatsappLink(engineerPhone) : null;
+
+      const addressData = this.extractAddress(doc.addressId);
+
+      const engineerId: string | null = engineerData
+        ? String(engineerData._id)
+        : doc.engineerId
+          ? String(doc.engineerId)
+          : null;
+
+      return {
+        _id: doc._id,
+        userId: doc.userId,
+        title: doc.title,
+        type: doc.type,
+        description: doc.description,
+        images: doc.images,
+        city: doc.city,
+        status: doc.status,
+        statusLabel: this.requestStatusLabel(doc.status),
+        scheduledAt: doc.scheduledAt,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+        address: addressData
+          ? {
+              label: addressData.label ?? null,
+              line1: addressData.line1 ?? null,
+              city: addressData.city ?? null,
+            }
+          : null,
+        engineer: engineerData
+          ? {
+              id: engineerId ?? String(engineerData._id),
+              name: engineerName,
+              phone: engineerPhone,
+              whatsapp,
+            }
+          : null,
+        acceptedOffer: doc.acceptedOffer
+          ? {
+              ...doc.acceptedOffer,
+              currency: doc.acceptedOffer.currency || 'YER',
+            }
+          : null,
+        rating: doc.rating,
+      };
+    });
   }
 
   async myRequestsWithoutOffers(userId: string) {
