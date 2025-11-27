@@ -25,9 +25,8 @@ import {
 // ===== Checkout DTOs =====
 
 export class CheckoutPreviewDto {
-  @ApiProperty({ example: 'YER', enum: ['YER', 'SAR', 'USD'] })
-  @IsString()
-  currency!: string;
+  // تم إزالة currency - النظام يستخدم USD كعملة افتراضية
+  // جميع القيم متاحة في pricingSummaryByCurrency
 
   @ApiPropertyOptional({ 
     description: 'كوبون واحد - مؤقت: النظام يقبل كوبون واحد فقط حالياً. إذا تم إرسال couponCode وcouponCodes معاً، سيتم استخدام couponCode فقط.',

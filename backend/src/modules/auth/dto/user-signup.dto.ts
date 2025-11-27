@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MinLength, MaxLength, IsIn, IsOptional, Matches } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsIn,
+  IsOptional,
+  Matches,
+  IsArray,
+} from 'class-validator';
 
 export class UserSignupDto {
   @ApiProperty({
@@ -93,6 +102,19 @@ export class UserSignupDto {
   @IsString({ message: 'المسمى الوظيفي يجب أن يكون نصاً' })
   @MaxLength(100, { message: 'المسمى الوظيفي يجب أن يكون أقل من 100 حرف' })
   jobTitle?: string;
+
+  @ApiPropertyOptional({
+    description: 'أدوار المستخدم (اختياري - سيتم تعيينها تلقائياً بناءً على capabilityRequest)',
+    example: ['user', 'engineer'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray({ message: 'الأدوار يجب أن تكون مصفوفة' })
+  @IsIn(['user', 'engineer', 'merchant', 'admin', 'super_admin'], {
+    each: true,
+    message: 'دور غير صحيح',
+  })
+  roles?: string[];
 
   @ApiPropertyOptional({
     description: 'معرف الجهاز للمزامنة التلقائية للمفضلات',

@@ -238,7 +238,14 @@ export class SearchService {
 
   // ==================== البحث الشامل ====================
   async universalSearch(dto: SearchQueryDto, userId?: string, currency?: string) {
-    const { q, lang = 'ar', entity = SearchEntity.ALL, currency: dtoCurrency, page = 1, limit = 20 } = dto;
+    const {
+      q,
+      lang = 'ar',
+      entity = SearchEntity.ALL,
+      currency: dtoCurrency,
+      page = 1,
+      limit = 20,
+    } = dto;
 
     const selectedCurrency = dtoCurrency || currency || 'USD';
     const cacheKey = `search:universal:${JSON.stringify({ ...dto, currency: selectedCurrency, userId })}`;
@@ -397,6 +404,7 @@ export class SearchService {
     // Sorting
     const sort: Record<string, 1 | -1> = {};
     const direction = sortOrder === SortOrder.ASC ? 1 : -1;
+    const shouldCalculateRelevance = sortBy === ProductSortBy.RELEVANCE && q && q.trim().length > 0;
 
     switch (sortBy) {
       case ProductSortBy.NAME:
@@ -416,15 +424,22 @@ export class SearchService {
         break;
       case ProductSortBy.RELEVANCE:
       default:
-        if (q) {
-          // للبحث النصي، نرتب حسب التطابق
+        // إذا كان هناك نص بحث، سنحسب الصلة لاحقاً
+        // وإلا نرتب حسب التاريخ
+        if (!shouldCalculateRelevance) {
           sort.createdAt = -1;
         } else {
+          // ترتيب مؤقت قبل حساب الصلة (لتحسين الأداء)
           sort.createdAt = -1;
         }
     }
 
     // Execute query
+    // إذا كنا نحسب الصلة، نحتاج جلب جميع النتائج أولاً للترتيب
+    const shouldFetchAllForRelevance = shouldCalculateRelevance;
+    const fetchLimit = shouldFetchAllForRelevance ? 10000 : limit; // حد أقصى 10000 للترتيب حسب الصلة
+    const fetchSkip = shouldFetchAllForRelevance ? 0 : skip;
+
     const [products, total] = await Promise.all([
       this.productModel
         .find(query)
@@ -432,15 +447,76 @@ export class SearchService {
         .populate('brandId', 'name nameEn')
         .populate('mainImageId', 'url')
         .sort(sort)
-        .skip(skip)
-        .limit(limit)
+        .skip(fetchSkip)
+        .limit(fetchLimit)
         .lean(),
       this.productModel.countDocuments(query),
     ]);
 
+    // حساب درجة الصلة وترتيب النتائج إذا لزم الأمر
+    let finalProducts: typeof products = products;
+    let finalTotal = total;
+    if (shouldCalculateRelevance) {
+      // حساب درجة الصلة لكل منتج
+      const productsWithRelevance = (products as unknown as ProductLean[]).map((product) => {
+        const relevanceScore = this.calculateRelevance(
+          {
+            name: product.name,
+            nameEn: product.nameEn,
+            description: product.description,
+            descriptionEn: product.descriptionEn,
+            tags: product.tags,
+            isFeatured: product.isFeatured,
+            rating: product.rating,
+          },
+          q!,
+          lang,
+        );
+        return {
+          ...product,
+          relevanceScore,
+        } as ProductLean & { relevanceScore: number };
+      });
+
+      // ترتيب حسب درجة الصلة (تنازلي) ثم isFeatured ثم createdAt
+      productsWithRelevance.sort((a, b) => {
+        // أولاً حسب درجة الصلة
+        if (b.relevanceScore !== a.relevanceScore) {
+          return (b.relevanceScore || 0) - (a.relevanceScore || 0);
+        }
+        // ثانياً حسب isFeatured
+        if (b.isFeatured !== a.isFeatured) {
+          return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
+        }
+        // ثالثاً حسب createdAt
+        const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bDate - aDate;
+      });
+
+      // إزالة المنتجات التي لا تطابق في الاسم (score < 200) إذا كان هناك منتجات تطابق في الاسم
+      const hasNameMatches = productsWithRelevance.some((p) => (p.relevanceScore || 0) >= 200);
+      if (hasNameMatches) {
+        // إزالة المنتجات التي تطابق فقط في الوصف/الوسوم (score < 200)
+        const filteredProducts = productsWithRelevance.filter(
+          (p) => (p.relevanceScore || 0) >= 200,
+        );
+        finalTotal = filteredProducts.length;
+        finalProducts = filteredProducts.slice(skip, skip + limit) as unknown as typeof products;
+      } else {
+        // إذا لم توجد مطابقات في الاسم، نعرض جميع النتائج
+        finalProducts = productsWithRelevance.slice(
+          skip,
+          skip + limit,
+        ) as unknown as typeof products;
+      }
+    } else {
+      finalProducts = products;
+    }
+
     // استخدام buildProductsCollectionResponse للحصول على نفس تنسيق قائمة المنتجات المميزة
-    const rawData = Array.isArray(products)
-      ? (products as unknown as Array<Record<string, unknown>>)
+    const rawData = Array.isArray(finalProducts)
+      ? (finalProducts as unknown as Array<Record<string, unknown>>)
       : [];
 
     const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
@@ -451,9 +527,9 @@ export class SearchService {
 
     const response: ProductSearchResultDto = {
       results: productsWithPricing as Array<Record<string, unknown>>,
-      total,
+      total: finalTotal,
       page,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(finalTotal / limit),
     };
 
     // Facets (فلاتر ديناميكية)
@@ -741,30 +817,77 @@ export class SearchService {
     lang: 'ar' | 'en',
   ): number {
     let score = 0;
-    const q = query.toLowerCase();
-    const name = (lang === 'ar' ? product.name : product.nameEn).toLowerCase();
-    const desc = (lang === 'ar' ? product.description : product.descriptionEn)?.toLowerCase();
+    const q = query.toLowerCase().trim();
+    const name = (lang === 'ar' ? product.name : product.nameEn)?.toLowerCase() || '';
+    const nameOther = (lang === 'ar' ? product.nameEn : product.name)?.toLowerCase() || '';
+    const desc = (lang === 'ar' ? product.description : product.descriptionEn)?.toLowerCase() || '';
+    const descOther =
+      (lang === 'ar' ? product.descriptionEn : product.description)?.toLowerCase() || '';
 
-    // اسم المنتج يطابق تماماً
-    if (name === q) score += 100;
+    // التحقق من المطابقة في الاسم (أولوية عالية جداً)
+    let nameMatch = false;
+
+    // اسم المنتج يطابق تماماً (أعلى أولوية)
+    if (name === q) {
+      score += 1000;
+      nameMatch = true;
+    }
     // اسم المنتج يبدأ بنص البحث
-    else if (name.startsWith(q)) score += 50;
+    else if (name.startsWith(q)) {
+      score += 500;
+      nameMatch = true;
+    }
     // اسم المنتج يحتوي على نص البحث
-    else if (name.includes(q)) score += 25;
-
-    // الوصف يحتوي على نص البحث
-    if (desc && desc.includes(q)) score += 10;
-
-    // Tags
-    if (product.tags?.some((tag: string) => tag.toLowerCase().includes(q))) {
-      score += 15;
+    else if (name.includes(q)) {
+      score += 250;
+      nameMatch = true;
+    }
+    // التحقق من الاسم باللغة الأخرى (أولوية أقل قليلاً)
+    else if (nameOther === q) {
+      score += 800;
+      nameMatch = true;
+    } else if (nameOther.startsWith(q)) {
+      score += 400;
+      nameMatch = true;
+    } else if (nameOther.includes(q)) {
+      score += 200;
+      nameMatch = true;
     }
 
-    // Boost for featured
-    if (product.isFeatured) score += 10;
+    // إذا لم يكن هناك تطابق في الاسم، نعطي نقاط قليلة جداً للمطابقة في الوصف/الوسوم
+    if (!nameMatch) {
+      // الوصف يحتوي على نص البحث (نقاط قليلة جداً)
+      if (desc && desc.includes(q)) {
+        score += 5;
+      }
+      // الوصف باللغة الأخرى
+      if (descOther && descOther.includes(q)) {
+        score += 3;
+      }
 
-    // Boost for rating
-    if (product.rating) score += product.rating * 2;
+      // Tags (نقاط قليلة جداً)
+      if (product.tags?.some((tag: string) => tag.toLowerCase().includes(q))) {
+        score += 8;
+      }
+    } else {
+      // إذا كان هناك تطابق في الاسم، نعطي نقاط إضافية قليلة للوصف/الوسوم
+      if (desc && desc.includes(q)) {
+        score += 2;
+      }
+      if (product.tags?.some((tag: string) => tag.toLowerCase().includes(q))) {
+        score += 3;
+      }
+    }
+
+    // Boost for featured (فقط للمنتجات المطابقة في الاسم)
+    if (nameMatch && product.isFeatured) {
+      score += 20;
+    }
+
+    // Boost for rating (فقط للمنتجات المطابقة في الاسم)
+    if (nameMatch && product.rating) {
+      score += product.rating * 5;
+    }
 
     return score;
   }

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, IsNumberString, Length } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsNumberString, Length, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class VerifyOtpDto {
@@ -65,6 +65,16 @@ export class VerifyOtpDto {
     maxLength: 100
   })
   @IsOptional() @IsString() jobTitle?: string; // المسمى الوظيفي للمهندس (اختياري)
+
+  @ApiPropertyOptional({
+    description: 'أدوار المستخدم (اختياري - سيتم تعيينها تلقائياً بناءً على capabilityRequest)',
+    example: ['user', 'engineer'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray({ message: 'الأدوار يجب أن تكون مصفوفة' })
+  @IsIn(['user', 'engineer', 'merchant', 'admin', 'super_admin'], { each: true, message: 'دور غير صحيح' })
+  roles?: string[];
 
   @ApiPropertyOptional({
     description: 'معرف الجهاز للمزامنة التلقائية للمفضلات',

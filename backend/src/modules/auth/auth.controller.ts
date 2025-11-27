@@ -79,6 +79,42 @@ export class AuthController {
     private engineerProfileService: EngineerProfileService,
   ) {}
 
+  /**
+   * تحديد الأدوار بناءً على capabilityRequest أو roles المرسلة
+   * @param capabilityRequest نوع القدرة المطلوبة (engineer, merchant)
+   * @param roles الأدوار المرسلة من المستخدم (اختياري)
+   * @returns مصفوفة الأدوار المحددة
+   */
+  private determineUserRoles(
+    capabilityRequest?: 'engineer' | 'merchant',
+    roles?: string[],
+  ): UserRole[] {
+    // إذا كانت هناك أدوار مرسلة، نستخدمها كأساس
+    let finalRoles: UserRole[] = roles ? (roles as UserRole[]) : [UserRole.USER];
+
+    // إذا كان capabilityRequest موجوداً، نضيف الدور المناسب
+    if (capabilityRequest === 'engineer') {
+      if (!finalRoles.includes(UserRole.ENGINEER)) {
+        finalRoles.push(UserRole.ENGINEER);
+      }
+      // التأكد من وجود دور user أيضاً
+      if (!finalRoles.includes(UserRole.USER)) {
+        finalRoles = [UserRole.USER, ...finalRoles];
+      }
+    } else if (capabilityRequest === 'merchant') {
+      if (!finalRoles.includes(UserRole.MERCHANT)) {
+        finalRoles.push(UserRole.MERCHANT);
+      }
+      // التأكد من وجود دور user أيضاً
+      if (!finalRoles.includes(UserRole.USER)) {
+        finalRoles = [UserRole.USER, ...finalRoles];
+      }
+    }
+
+    // إزالة التكرارات
+    return Array.from(new Set(finalRoles));
+  }
+
   private async buildAuthResponse(user: UserDocument) {
     const isAdminUser =
       Array.isArray(user.roles) &&
@@ -326,6 +362,11 @@ export class AuthController {
 
       // المستخدم موجود - تفعيل الحساب إذا كان PENDING فقط
       if (user.status === UserStatus.PENDING) {
+        // تحديث الأدوار إذا كانت موجودة في الطلب
+        if (dto.roles || dto.capabilityRequest) {
+          const roles = this.determineUserRoles(dto.capabilityRequest, dto.roles);
+          user.roles = roles;
+        }
         user.status = UserStatus.ACTIVE;
         await user.save();
         this.logger.log(`Account activated via OTP verification: ${normalizedPhone}`);
@@ -360,12 +401,16 @@ export class AuthController {
       }
     } else {
       // المستخدم غير موجود - إنشاء حساب جديد
+      // تحديد الأدوار بناءً على capabilityRequest أو roles المرسلة
+      const roles = this.determineUserRoles(dto.capabilityRequest, dto.roles);
+
       const userData: {
         phone: string;
         firstName?: string;
         lastName?: string;
         gender?: 'male' | 'female' | 'other';
         city?: string;
+        roles: UserRole[];
         engineer_capable?: boolean;
         engineer_status?: string;
         merchant_capable?: boolean;
@@ -376,6 +421,7 @@ export class AuthController {
         lastName: dto.lastName,
         gender: dto.gender,
         city: dto.city || 'صنعاء',
+        roles: roles, // إضافة الأدوار المحددة
       };
 
       // تحديث User model مباشرة إذا طلب المستخدم أن يكون مهندساً أو تاجراً
@@ -1201,6 +1247,9 @@ export class AuthController {
     // تشفير كلمة المرور
     const hashedPassword = await hash(dto.password, 10);
 
+    // تحديد الأدوار بناءً على capabilityRequest أو roles المرسلة
+    const roles = this.determineUserRoles(dto.capabilityRequest, dto.roles);
+
     // إنشاء المستخدم الجديد بحالة PENDING (يحتاج التحقق من OTP)
     // حفظ الرقم كما هو (بدون +967) في قاعدة البيانات
     const user = await this.userModel.create({
@@ -1210,6 +1259,7 @@ export class AuthController {
       gender: dto.gender,
       city: dto.city || 'صنعاء',
       passwordHash: hashedPassword,
+      roles: roles, // إضافة الأدوار المحددة
       status: UserStatus.PENDING, // الحساب بحالة PENDING حتى يتم التحقق من OTP
     });
 

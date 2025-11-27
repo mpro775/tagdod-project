@@ -53,7 +53,7 @@ export class ServiceRequest {
   engineerId!: string | null;
 
   @Prop({ type: Object, default: null })
-  acceptedOffer?: { offerId: string; amount: number; note?: string };
+  acceptedOffer?: { offerId: string; amount: number; currency?: string; note?: string };
 
   @Prop({ type: ServiceRatingSchema, default: {} })
   rating?: ServiceRating;

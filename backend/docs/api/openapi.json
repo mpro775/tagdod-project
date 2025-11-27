@@ -10165,6 +10165,70 @@
         ]
       }
     },
+    "/api/v1/orders/by-status": {
+      "get": {
+        "operationId": "getOrdersByStatus",
+        "summary": "الطلبات المفلترة حسب الحالة",
+        "description": "الحصول على طلبات المستخدم المفلترة حسب الحالة مع إرجاع الطلبات الملغية",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "description": "حالة الطلب المطلوبة",
+            "schema": {
+              "enum": [
+                "pending_payment",
+                "confirmed",
+                "processing",
+                "completed",
+                "on_hold",
+                "cancelled",
+                "returned",
+                "refunded"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد الطلبات في الصفحة",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم الحصول على الطلبات بنجاح"
+          },
+          "400": {
+            "description": "حالة الطلب غير صحيحة"
+          }
+        },
+        "tags": [
+          "الطلبات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/orders/recent": {
       "get": {
         "operationId": "getRecentOrders",
@@ -24025,7 +24089,8 @@
                         "engineerId": "6637d50690fbb31de8d9c445",
                         "acceptedOffer": {
                           "offerId": "6645f731dc490a317ad91884",
-                          "amount": 180
+                          "amount": 180,
+                          "currency": "YER"
                         },
                         "rating": {},
                         "createdAt": "2024-06-01T12:30:15.512Z",
@@ -24185,7 +24250,8 @@
                     "data": {
                       "offer": {
                         "_id": "6645f731dc490a317ad91884",
-                        "amountYER": 9000,
+                        "amount": 9000,
+                        "currency": "YER",
                         "note": "يشمل التركيب الكامل مع قطع الغيار",
                         "status": "OFFERED",
                         "statusLabel": "عرض مقدم",
@@ -24273,7 +24339,8 @@
                         "status": "ASSIGNED",
                         "acceptedOffer": {
                           "offerId": "6645f731dc490a317ad91884",
-                          "amount": 180
+                          "amount": 180,
+                          "currency": "YER"
                         },
                         "createdAt": "2024-06-01T12:30:15.512Z",
                         "updatedAt": "2024-06-02T08:10:45.004Z"
@@ -24334,6 +24401,7 @@
                       "acceptedOffer": {
                         "offerId": "6645f731dc490a317ad91884",
                         "amount": 180,
+                        "currency": "YER",
                         "note": "يشمل قطع الغيار"
                       },
                       "rating": {},
@@ -25790,6 +25858,15 @@
                             "amount": {
                               "type": "number",
                               "example": 150
+                            },
+                            "currency": {
+                              "type": "string",
+                              "example": "YER",
+                              "enum": [
+                                "YER",
+                                "SAR",
+                                "USD"
+                              ]
                             },
                             "note": {
                               "type": "string",
@@ -31131,6 +31208,17 @@
             "minLength": 3,
             "maxLength": 100
           },
+          "roles": {
+            "description": "أدوار المستخدم (اختياري - سيتم تعيينها تلقائياً بناءً على capabilityRequest)",
+            "example": [
+              "user",
+              "engineer"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "deviceId": {
             "type": "string",
             "description": "معرف الجهاز للمزامنة التلقائية للمفضلات",
@@ -31366,6 +31454,17 @@
             "example": "مهندس كهرباء",
             "minLength": 3,
             "maxLength": 100
+          },
+          "roles": {
+            "description": "أدوار المستخدم (اختياري - سيتم تعيينها تلقائياً بناءً على capabilityRequest)",
+            "example": [
+              "user",
+              "engineer"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "deviceId": {
             "type": "string",
@@ -32372,15 +32471,6 @@
       "CheckoutPreviewDto": {
         "type": "object",
         "properties": {
-          "currency": {
-            "type": "string",
-            "example": "YER",
-            "enum": [
-              "YER",
-              "SAR",
-              "USD"
-            ]
-          },
           "couponCode": {
             "type": "string",
             "description": "كوبون واحد - مؤقت: النظام يقبل كوبون واحد فقط حالياً. إذا تم إرسال couponCode وcouponCodes معاً، سيتم استخدام couponCode فقط.",
@@ -32396,10 +32486,7 @@
               "type": "string"
             }
           }
-        },
-        "required": [
-          "currency"
-        ]
+        }
       },
       "CheckoutSessionCartPreviewDto": {
         "type": "object",

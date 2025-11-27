@@ -23,6 +23,8 @@ import {
   CheckoutPaymentOptionsResponseDto,
   CheckoutSessionResponseDto,
 } from '../dto/order.dto';
+import { OrderStatus } from '../schemas/order.schema';
+import { DomainException, ErrorCode } from '../../../shared/exceptions';
 
 /**
  * Controller للطلبات - للعملاء
@@ -78,9 +80,10 @@ export class OrderController {
     @Req() req: ExpressRequest,
     @Body() dto: CheckoutPreviewDto,
   ) {
+    // استخدام USD كعملة افتراضية - جميع القيم متاحة في pricingSummaryByCurrency
     const result = await this.orderService.previewCheckout(
       this.getUserId(req),
-      dto.currency,
+      'USD',
       dto.couponCode,
       dto.couponCodes,
     );
@@ -185,6 +188,47 @@ export class OrderController {
       codEligibility,
       customerOrderStats,
       message: 'تم الحصول على الطلبات بنجاح'
+    };
+  }
+
+  @Get('by-status')
+  @ApiOperation({
+    summary: 'الطلبات المفلترة حسب الحالة',
+    description: 'الحصول على طلبات المستخدم المفلترة حسب الحالة مع إرجاع الطلبات الملغية',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: true,
+    enum: OrderStatus,
+    description: 'حالة الطلب المطلوبة',
+    example: OrderStatus.CONFIRMED,
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'رقم الصفحة', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'عدد الطلبات في الصفحة', example: 20 })
+  @ApiResponse({ status: 200, description: 'تم الحصول على الطلبات بنجاح' })
+  @ApiResponse({ status: 400, description: 'حالة الطلب غير صحيحة' })
+  async getOrdersByStatus(
+    @Req() req: ExpressRequest,
+    @Query('status') status: OrderStatus,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    // التحقق من صحة الحالة
+    if (!Object.values(OrderStatus).includes(status)) {
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+        reason: 'invalid_status',
+        message: `حالة الطلب غير صحيحة: ${status}`,
+      });
+    }
+    const userId = this.getUserId(req);
+    const result = await this.orderService.getUserOrdersByStatus(userId, status, { page, limit });
+
+    return {
+      filteredOrders: result.filteredOrders,
+      filteredPagination: result.filteredPagination,
+      cancelledOrders: result.cancelledOrders,
+      cancelledPagination: result.cancelledPagination,
+      message: 'تم الحصول على الطلبات بنجاح',
     };
   }
 

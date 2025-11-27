@@ -1785,7 +1785,8 @@ export class OrderService {
     userId: string,
     dto: CheckoutPreviewDto,
   ): Promise<CheckoutSessionResponseDto> {
-    const normalizedCurrency = this.normalizeCurrency(dto.currency);
+    // استخدام USD كعملة افتراضية - جميع القيم متاحة في pricingSummaryByCurrency
+    const normalizedCurrency = this.normalizeCurrency('USD');
 
     const [preview, addresses, codEligibility, exchangeRatesDoc] = await Promise.all([
       this.getCartPreviewWithCache(userId, normalizedCurrency),
@@ -2319,6 +2320,94 @@ export class OrderService {
   }
 
   // ===== Order Management =====
+
+  /**
+   * الحصول على طلبات المستخدم المفلترة حسب الحالة مع إرجاع الطلبات الملغية
+   */
+  async getUserOrdersByStatus(
+    userId: string,
+    status: OrderStatus,
+    query?: { page?: number; limit?: number },
+  ) {
+    const page = query?.page || 1;
+    const limit = query?.limit || 20;
+    const skip = (page - 1) * limit;
+
+    // فلترة الطلبات حسب الحالة المطلوبة
+    const statusFilter: Record<string, unknown> = {
+      userId: new Types.ObjectId(userId),
+      status,
+    };
+
+    // جلب الطلبات المفلترة حسب الحالة
+    const [filteredOrders, filteredTotal] = await Promise.all([
+      this.orderModel.find(statusFilter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      this.orderModel.countDocuments(statusFilter),
+    ]);
+
+    // جلب الطلبات الملغية للمستخدم (دائماً)
+    const cancelledFilter: Record<string, unknown> = {
+      userId: new Types.ObjectId(userId),
+      status: OrderStatus.CANCELLED,
+    };
+
+    const [cancelledOrders, cancelledTotal] = await Promise.all([
+      this.orderModel.find(cancelledFilter).sort({ createdAt: -1 }).limit(limit).lean(),
+      this.orderModel.countDocuments(cancelledFilter),
+    ]);
+
+    // دمج معرفات المستخدمين
+    const allOrderUserIds = [
+      ...filteredOrders.map((o) => o.userId),
+      ...cancelledOrders.map((o) => o.userId),
+    ]
+      .filter((id): id is Types.ObjectId => !!id)
+      .map((id) => new Types.ObjectId(id));
+
+    const usersMap =
+      allOrderUserIds.length > 0 ? await this.getUsersMap(allOrderUserIds) : new Map();
+
+    // معالجة الطلبات المفلترة
+    const processedFilteredOrders = filteredOrders.map((order) => {
+      const user = order.userId ? usersMap.get(order.userId.toString()) : undefined;
+      return {
+        ...order,
+        _id: order._id?.toString(),
+        userId: order.userId?.toString(),
+        customerName: user?.name || order.customerName || '',
+        customerFullName: user?.fullName || order.customerName || '',
+      };
+    });
+
+    // معالجة الطلبات الملغية
+    const processedCancelledOrders = cancelledOrders.map((order) => {
+      const user = order.userId ? usersMap.get(order.userId.toString()) : undefined;
+      return {
+        ...order,
+        _id: order._id?.toString(),
+        userId: order.userId?.toString(),
+        customerName: user?.name || order.customerName || '',
+        customerFullName: user?.fullName || order.customerName || '',
+      };
+    });
+
+    return {
+      filteredOrders: processedFilteredOrders,
+      filteredPagination: {
+        page,
+        limit,
+        total: filteredTotal,
+        totalPages: Math.ceil(filteredTotal / limit),
+      },
+      cancelledOrders: processedCancelledOrders,
+      cancelledPagination: {
+        page: 1,
+        limit,
+        total: cancelledTotal,
+        totalPages: Math.ceil(cancelledTotal / limit),
+      },
+    };
+  }
 
   /**
    * الحصول على طلبات المستخدم

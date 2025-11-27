@@ -44,10 +44,10 @@
 }
 ```
 
-| الحقل | النوع | مطلوب | الوصف |
-|------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (يُحفظ كما هو في قاعدة البيانات، يُحوّل إلى +967 فقط عند إرسال OTP عبر SMS) |
-| `context` | `string` | ❌ لا | `register` أو `reset` (افتراضي: `register`) |
+| الحقل     | النوع    | مطلوب  | الوصف                                                                                  |
+| --------- | -------- | ------ | -------------------------------------------------------------------------------------- |
+| `phone`   | `string` | ✅ نعم | رقم الهاتف (يُحفظ كما هو في قاعدة البيانات، يُحوّل إلى +967 فقط عند إرسال OTP عبر SMS) |
+| `context` | `string` | ❌ لا  | `register` أو `reset` (افتراضي: `register`)                                            |
 
 ### Response - نجاح
 
@@ -122,7 +122,8 @@ Future<Map<String, dynamic>> sendOtp({
 
 يتحقق من وجود رقم الهاتف في النظام بغض النظر عن نوع المستخدم (عميل، مهندس، تاجر، أو أدمن).
 
-> 📱 **تطبيع الأرقام:** 
+> 📱 **تطبيع الأرقام:**
+>
 > - يتم البحث في قاعدة البيانات بالرقم كما هو (بدون +967) أولاً
 > - إذا لم يُوجد، يتم البحث بالرقم المحول إلى +967
 > - يعمل مع جميع أنواع المستخدمين (customer, engineer, merchant, admin)
@@ -141,8 +142,8 @@ Future<Map<String, dynamic>> sendOtp({
 }
 ```
 
-| الحقل | النوع | مطلوب | الوصف |
-|------|------|-------|-------|
+| الحقل   | النوع    | مطلوب  | الوصف                                                                          |
+| ------- | -------- | ------ | ------------------------------------------------------------------------------ |
 | `phone` | `string` | ✅ نعم | رقم الهاتف للتحقق من وجوده (يُبحث عنه كما هو أولاً، ثم بالرقم المحول إلى +967) |
 
 ### Response - نجاح (الرقم موجود)
@@ -173,10 +174,10 @@ Future<Map<String, dynamic>> sendOtp({
 }
 ```
 
-| الحقل | النوع | الوصف |
-|------|------|-------|
-| `exists` | `boolean` | `true` إذا كان الرقم مسجلاً مسبقاً، `false` إذا لم يكن موجوداً |
-| `phone` | `string` | رقم الهاتف المدخل (كما هو) |
+| الحقل    | النوع            | الوصف                                                                                                  |
+| -------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
+| `exists` | `boolean`        | `true` إذا كان الرقم مسجلاً مسبقاً، `false` إذا لم يكن موجوداً                                         |
+| `phone`  | `string`         | رقم الهاتف المدخل (كما هو)                                                                             |
 | `status` | `string \| null` | حالة الحساب إذا كان موجوداً: `ACTIVE`, `PENDING`, `SUSPENDED`, `DELETED`، أو `null` إذا لم يكن موجوداً |
 
 ### Response - فشل (رقم هاتف غير صحيح)
@@ -208,6 +209,7 @@ Future<Map<String, dynamic>> sendOtp({
 ### حالات الاستخدام:
 
 #### 1. التحقق قبل التسجيل:
+
 ```dart
 // قبل إرسال OTP للتسجيل
 final checkResult = await checkPhone(phone: '777123456');
@@ -228,6 +230,7 @@ if (checkResult.exists) {
 ```
 
 #### 2. التحقق قبل إرسال OTP:
+
 ```dart
 // قبل إرسال OTP
 final checkResult = await checkPhone(phone: phone);
@@ -295,17 +298,23 @@ Future<CheckPhoneResponse> checkPhone({
 
 > ⚠️ **مهم:** إذا كان الحساب بحالة `PENDING` (من `/auth/user-signup`)، سيتم تفعيله إلى `ACTIVE` تلقائياً!
 >
-> 📱 **تطبيع الأرقام:** 
+> 📱 **تطبيع الأرقام:**
+>
 > - الرقم يُحفظ في قاعدة البيانات **كما هو** (بدون +967)
 > - التحويل إلى +967 يحدث **فقط عند إرسال OTP عبر SMS**
 > - عند البحث في قاعدة البيانات، يتم البحث بالرقم كما هو أولاً
 
 > 💡 **أنواع الحسابات التي يمكن إنشاؤها:**
-> - **Customer (زبون عادي)** - الافتراضي - لا تحتاج `capabilityRequest`
-> - **Engineer (مهندس)** - تحتاج `capabilityRequest: "engineer"` + `jobTitle`
-> - **Merchant (تاجر)** - تحتاج `capabilityRequest: "merchant"`
-> 
-> ⚠️ **ملاحظة مهمة:** النوع في `capabilityRequest` هو `"merchant"` (وليس `"wholesale"`)، والحقول في API Response هي `merchantStatus` و `merchant_capable`.
+>
+> - **Customer (زبون عادي)** - الافتراضي - لا تحتاج `capabilityRequest` → `roles: ["user"]`
+> - **Engineer (مهندس)** - تحتاج `capabilityRequest: "engineer"` + `jobTitle` → `roles: ["user", "engineer"]`
+> - **Merchant (تاجر)** - تحتاج `capabilityRequest: "merchant"` → `roles: ["user", "merchant"]`
+>
+> ⚠️ **ملاحظة مهمة:**
+>
+> - النوع في `capabilityRequest` هو `"merchant"` (وليس `"wholesale"`)، والحقول في API Response هي `merchantStatus` و `merchant_capable`
+> - **الأدوار (`roles`) تُحدد تلقائياً** بناءً على `capabilityRequest` - إذا كان `capabilityRequest: "engineer"` سيتم إضافة `"engineer"` إلى `roles` تلقائياً
+> - يمكن إرسال `roles` مباشرة لتحديد الأدوار يدوياً، لكن `capabilityRequest` سيضيف الدور المناسب تلقائياً
 
 ### معلومات الطلب
 
@@ -325,21 +334,23 @@ Future<CheckPhoneResponse> checkPhone({
   "city": "صنعاء",
   "capabilityRequest": "engineer",
   "jobTitle": "مهندس كهرباء",
+  "roles": ["user", "engineer"],
   "deviceId": "device_abc123"
 }
 ```
 
-| الحقل | النوع | مطلوب | الوصف |
-|------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (يُحفظ كما هو في قاعدة البيانات، يُحوّل إلى +967 فقط للتحقق من OTP) |
-| `code` | `string` | ✅ نعم | رمز OTP (6 أرقام) |
-| `firstName` | `string` | ❌ لا | الاسم الأول (مطلوب للمستخدمين الجدد) |
-| `lastName` | `string` | ❌ لا | اسم العائلة |
-| `gender` | `string` | ❌ لا | `male`, `female`, `other` |
-| `city` | `string` | ❌ لا | المدينة (افتراضي: صنعاء) |
-| `capabilityRequest` | `string` | ❌ لا | `engineer` أو `merchant` |
-| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`) |
-| `deviceId` | `string` | ❌ لا | معرف الجهاز (لمزامنة المفضلات تلقائياً) |
+| الحقل               | النوع      | مطلوب  | الوصف                                                                                                                                           |
+| ------------------- | ---------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `phone`             | `string`   | ✅ نعم | رقم الهاتف (يُحفظ كما هو في قاعدة البيانات، يُحوّل إلى +967 فقط للتحقق من OTP)                                                                  |
+| `code`              | `string`   | ✅ نعم | رمز OTP (6 أرقام)                                                                                                                               |
+| `firstName`         | `string`   | ❌ لا  | الاسم الأول (مطلوب للمستخدمين الجدد)                                                                                                            |
+| `lastName`          | `string`   | ❌ لا  | اسم العائلة                                                                                                                                     |
+| `gender`            | `string`   | ❌ لا  | `male`, `female`, `other`                                                                                                                       |
+| `city`              | `string`   | ❌ لا  | المدينة (افتراضي: صنعاء)                                                                                                                        |
+| `capabilityRequest` | `string`   | ❌ لا  | `engineer` أو `merchant` (سيتم إضافة الدور تلقائياً إلى `roles`)                                                                                |
+| `jobTitle`          | `string`   | ❌ لا  | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`)                                                                                       |
+| `roles`             | `string[]` | ❌ لا  | الأدوار (اختياري - سيتم تعيينها تلقائياً بناءً على `capabilityRequest`). القيم المدعومة: `user`, `engineer`, `merchant`, `admin`, `super_admin` |
+| `deviceId`          | `string`   | ❌ لا  | معرف الجهاز (لمزامنة المفضلات تلقائياً)                                                                                                         |
 
 ### Response - نجاح
 
@@ -378,7 +389,8 @@ Future<CheckPhoneResponse> checkPhone({
 }
 ```
 
-> **ملاحظة:** 
+> **ملاحظة:**
+>
 > - الرقم يتم إرجاعه **كما هو محفوظ في قاعدة البيانات** (قد يكون بدون +967)
 > - إذا كان الحساب كان `PENDING` من `/auth/user-signup`، يتم تفعيله إلى `ACTIVE` تلقائياً
 > - التحويل إلى +967 يحدث فقط عند إرسال/التحقق من OTP عبر SMS
@@ -423,23 +435,25 @@ Future<CheckPhoneResponse> checkPhone({
 
 ### أكواد الأخطاء
 
-| الكود | الوصف | HTTP Status |
-|------|-------|-------------|
-| `AUTH_100` | رمز OTP غير صحيح | 401 |
-| `AUTH_106` | تم حظر المستخدم (الحساب محظور أو محذوف) | 403 |
-| `AUTH_122` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
-| `GENERAL_004` | خطأ في البيانات المدخلة (Validation) | 400 |
+| الكود         | الوصف                                     | HTTP Status |
+| ------------- | ----------------------------------------- | ----------- |
+| `AUTH_100`    | رمز OTP غير صحيح                          | 401         |
+| `AUTH_106`    | تم حظر المستخدم (الحساب محظور أو محذوف)   | 403         |
+| `AUTH_122`    | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400         |
+| `GENERAL_004` | خطأ في البيانات المدخلة (Validation)      | 400         |
 
 ### ⚠️ ملاحظة مهمة عن أنواع الحسابات وحالاتها
 
 #### **أنواع الحسابات الثلاثة:**
 
 1. **Customer (زبون عادي)** - الافتراضي
+
    - لا تحتاج إرسال `capabilityRequest`
    - الحالة: `engineerStatus: "none"`, `merchantStatus: "none"`
    - يمكنه: تصفح المنتجات، الشراء، إضافة العناوين
 
 2. **Engineer (مهندس)**
+
    - تحتاج: `capabilityRequest: "engineer"` + `jobTitle`
    - الحالة الأولية: `engineerStatus: "unverified"`
    - يجب رفع السيرة الذاتية → `pending` → موافقة الأدمن → `approved`
@@ -451,13 +465,13 @@ Future<CheckPhoneResponse> checkPhone({
 
 #### **جدول حالات المهندس/التاجر:**
 
-| الحالة | المعنى | ماذا يجب فعله |
-|--------|--------|---------------|
-| `none` | مستخدم عادي (customer) | لا شيء - يمكنه الشراء مباشرة |
+| الحالة       | المعنى                           | ماذا يجب فعله                         |
+| ------------ | -------------------------------- | ------------------------------------- |
+| `none`       | مستخدم عادي (customer)           | لا شيء - يمكنه الشراء مباشرة          |
 | `unverified` | طلب الصلاحية لكن لم يرفع الوثائق | **يجب رفع السيرة الذاتية/صورة المحل** |
-| `pending` | رفع الوثائق وفي انتظار الموافقة | انتظار موافقة الأدمن |
-| `approved` | تمت الموافقة | يمكن استخدام الصلاحية |
-| `rejected` | تم الرفض | لا يمكن استخدام الصلاحية |
+| `pending`    | رفع الوثائق وفي انتظار الموافقة  | انتظار موافقة الأدمن                  |
+| `approved`   | تمت الموافقة                     | يمكن استخدام الصلاحية                 |
+| `rejected`   | تم الرفض                         | لا يمكن استخدام الصلاحية              |
 
 ### أمثلة Flutter
 
@@ -564,7 +578,7 @@ class AuthUser {
   final String adminStatus;
 
   AuthUser({
-    required this.id, 
+    required this.id,
     required this.phone,
     this.firstName,
     this.lastName,
@@ -595,11 +609,11 @@ class AuthUser {
       gender: json['gender'],
       city: json['city'],
       jobTitle: json['jobTitle'],
-      roles: json['roles'] != null 
-          ? List<String>.from(json['roles']) 
+      roles: json['roles'] != null
+          ? List<String>.from(json['roles'])
           : [],
-      permissions: json['permissions'] != null 
-          ? List<String>.from(json['permissions']) 
+      permissions: json['permissions'] != null
+          ? List<String>.from(json['permissions'])
           : [],
       isAdmin: json['isAdmin'] ?? false,
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
@@ -614,21 +628,21 @@ class AuthUser {
       adminStatus: json['adminStatus'] ?? 'none',
     );
   }
-  
+
   String get fullName => '${firstName ?? ''} ${lastName ?? ''}'.trim();
-  
+
   bool get isEngineerPending => engineerStatus == 'pending';
   bool get isEngineerApproved => engineerStatus == 'approved';
   bool get isEngineerUnverified => engineerStatus == 'unverified';
-  
+
   bool get isMerchantPending => merchantStatus == 'pending';
   bool get isMerchantApproved => merchantStatus == 'approved';
   bool get isMerchantUnverified => merchantStatus == 'unverified';
-  
+
   bool get isActive => status == 'active';
   bool get isSuspended => status == 'suspended';
   bool get isDeleted => status == 'deleted';
-  
+
   bool hasRole(String role) => roles.contains(role);
   bool hasPermission(String permission) => permissions.contains(permission);
 }
@@ -750,7 +764,8 @@ Future<bool> setPassword(String password) async {
 
 يرسل OTP لإعادة تعيين كلمة المرور عبر SMS.
 
-> 📱 **تطبيع الأرقام:** 
+> 📱 **تطبيع الأرقام:**
+>
 > - الرقم يُحفظ في قاعدة البيانات **كما هو** (بدون +967)
 > - التحويل إلى +967 يحدث **فقط عند إرسال OTP عبر SMS**
 
@@ -768,7 +783,8 @@ Future<bool> setPassword(String password) async {
 }
 ```
 
-> **ملاحظة:** 
+> **ملاحظة:**
+>
 > - الرقم يُحفظ في قاعدة البيانات **كما هو** (بدون +967)
 > - التحويل إلى +967 يحدث **فقط عند إرسال OTP عبر SMS**
 
@@ -859,7 +875,8 @@ Future<Map<String, dynamic>> forgotPassword(String phone) async {
 
 يعيد تعيين كلمة المرور باستخدام OTP المرسل عبر SMS.
 
-> 📱 **تطبيع الأرقام:** 
+> 📱 **تطبيع الأرقام:**
+>
 > - الرقم يُحفظ في قاعدة البيانات **كما هو** (بدون +967)
 > - التحويل إلى +967 يحدث **فقط عند التحقق من OTP** (لأن OTP يُحفظ بالرقم المحول)
 >
@@ -881,15 +898,16 @@ Future<Map<String, dynamic>> forgotPassword(String phone) async {
 }
 ```
 
-> **ملاحظة:** 
+> **ملاحظة:**
+>
 > - الرقم يُحوّل إلى +967 فقط للتحقق من OTP (لأن OTP يُحفظ بالرقم المحول)
 > - البحث في قاعدة البيانات يتم بالرقم كما هو أولاً
 
-| الحقل | النوع | مطلوب | الوصف |
-|------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (يُحوّل إلى +967 فقط للتحقق من OTP) |
-| `code` | `string` | ✅ نعم | رمز OTP المرسل عبر SMS (6 أرقام) |
-| `newPassword` | `string` | ✅ نعم | كلمة المرور الجديدة (8 أحرف على الأقل) |
+| الحقل         | النوع    | مطلوب  | الوصف                                          |
+| ------------- | -------- | ------ | ---------------------------------------------- |
+| `phone`       | `string` | ✅ نعم | رقم الهاتف (يُحوّل إلى +967 فقط للتحقق من OTP) |
+| `code`        | `string` | ✅ نعم | رمز OTP المرسل عبر SMS (6 أرقام)               |
+| `newPassword` | `string` | ✅ نعم | كلمة المرور الجديدة (8 أحرف على الأقل)         |
 
 ### Response - نجاح
 
@@ -972,7 +990,7 @@ Future<Map<String, dynamic>> forgotPassword(String phone) async {
 ```
 1. POST /auth/forgot-password
    → إرسال OTP عبر SMS
-   
+
 2. POST /auth/reset-password
    → التحقق من OTP + تحديث كلمة المرور
 ```
@@ -1007,14 +1025,14 @@ Future<void> resetPasswordFlow(String phone) async {
   // 1. طلب OTP
   final forgotResult = await forgotPassword(phone);
   // Response: { sent: true, devCode: "123456" }
-  
+
   // 2. إعادة تعيين كلمة المرور باستخدام OTP
   final resetSuccess = await resetPassword(
     phone: phone,
     code: '123456',  // OTP المرسل عبر SMS
     newPassword: 'MyNewPassword123!',
   );
-  
+
   if (resetSuccess) {
     print('تم تحديث كلمة المرور بنجاح');
   }
@@ -1133,11 +1151,11 @@ class User {
       gender: json['gender'],
       city: json['city'],
       jobTitle: json['jobTitle'],
-      roles: json['roles'] != null 
-          ? List<String>.from(json['roles']) 
+      roles: json['roles'] != null
+          ? List<String>.from(json['roles'])
           : [],
-      permissions: json['permissions'] != null 
-          ? List<String>.from(json['permissions']) 
+      permissions: json['permissions'] != null
+          ? List<String>.from(json['permissions'])
           : [],
       isAdmin: json['isAdmin'] ?? false,
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
@@ -1152,14 +1170,14 @@ class User {
       adminStatus: json['adminStatus'] ?? 'none',
     );
   }
-  
+
   bool get isActive => status == 'active';
   bool get isSuspended => status == 'suspended';
-  
+
   bool get isEngineerPending => engineerStatus == 'pending';
   bool get isEngineerApproved => engineerStatus == 'approved';
   bool get isEngineerUnverified => engineerStatus == 'unverified';
-  
+
   bool get isMerchantPending => merchantStatus == 'pending';
   bool get isMerchantApproved => merchantStatus == 'approved';
   bool get isMerchantUnverified => merchantStatus == 'unverified';
@@ -1195,7 +1213,7 @@ class Capabilities {
       engineerStatus: json['engineer_status'],
       merchantCapable: json['merchant_capable'] ?? false,
       merchantStatus: json['merchant_status'],
-      merchantDiscountPercent: 
+      merchantDiscountPercent:
           (json['merchant_discount_percent'] ?? 0).toDouble(),
     );
   }
@@ -1317,8 +1335,8 @@ Future<bool> updateMe({
 }
 ```
 
-| الحقل | النوع | مطلوب | الوصف |
-|------|------|-------|-------|
+| الحقل      | النوع    | مطلوب  | الوصف                          |
+| ---------- | -------- | ------ | ------------------------------ |
 | `currency` | `string` | ✅ نعم | رمز العملة (مثل USD, EUR, SAR) |
 
 ### Response - نجاح
@@ -1373,6 +1391,7 @@ Future<bool> updatePreferredCurrency(String currency) async {
 ```
 
 **الحقول:**
+
 - `reason` (required, string): سبب حذف الحساب (5-500 حرف)
 
 ### Response - نجاح
@@ -1471,10 +1490,10 @@ Future<void> _clearLocalData() async {
 }
 ```
 
-| الحقل | النوع | مطلوب | الوصف |
-|------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (يُبحث عنه في قاعدة البيانات كما هو، بدون تحويل إلى +967) |
-| `password` | `string` | ✅ نعم | كلمة المرور |
+| الحقل      | النوع    | مطلوب  | الوصف                                                                |
+| ---------- | -------- | ------ | -------------------------------------------------------------------- |
+| `phone`    | `string` | ✅ نعم | رقم الهاتف (يُبحث عنه في قاعدة البيانات كما هو، بدون تحويل إلى +967) |
+| `password` | `string` | ✅ نعم | كلمة المرور                                                          |
 
 ### Response - نجاح
 
@@ -1594,11 +1613,11 @@ Future<void> _clearLocalData() async {
 
 ### أكواد الأخطاء
 
-| الكود | الوصف | HTTP Status |
-|------|-------|-------------|
-| `AUTH_104` | كلمة المرور غير صحيحة | 401 |
-| `AUTH_125` | كلمة المرور غير محددة | 400 |
-| `AUTH_126` | الحساب غير نشط (PENDING/SUSPENDED/DELETED) | 400 |
+| الكود      | الوصف                                      | HTTP Status |
+| ---------- | ------------------------------------------ | ----------- |
+| `AUTH_104` | كلمة المرور غير صحيحة                      | 401         |
+| `AUTH_125` | كلمة المرور غير محددة                      | 400         |
+| `AUTH_126` | الحساب غير نشط (PENDING/SUSPENDED/DELETED) | 400         |
 
 ### كود Flutter
 
@@ -1637,13 +1656,15 @@ Future<LoginResponse> userLogin({
 يسمح بإنشاء حساب جديد باستخدام كلمة مرور مع إرسال OTP تلقائياً للتحقق من رقم الهاتف.
 
 > ⚠️ **مهم:** الحساب يُنشأ بحالة `PENDING` ويحتاج التحقق من OTP قبل تسجيل الدخول!
-> 
+>
 > 💡 **أنواع الحسابات:**
+>
 > - **Customer (زبون عادي)** - لا تحتاج `capabilityRequest`
 > - **Engineer (مهندس)** - تحتاج `capabilityRequest: "engineer"` + `jobTitle`
 > - **Merchant (تاجر)** - تحتاج `capabilityRequest: "merchant"`
 >
-> 📱 **تطبيع الأرقام:** 
+> 📱 **تطبيع الأرقام:**
+>
 > - الرقم يُحفظ في قاعدة البيانات **كما هو** (بدون +967)
 > - التحويل إلى +967 يحدث **فقط عند إرسال OTP عبر SMS**
 
@@ -1665,21 +1686,23 @@ Future<LoginResponse> userLogin({
   "city": "صنعاء",
   "capabilityRequest": "engineer",
   "jobTitle": "مهندس كهرباء",
+  "roles": ["user", "engineer"],
   "deviceId": "device_abc123"
 }
 ```
 
-| الحقل | النوع | مطلوب | الوصف |
-|------|------|-------|-------|
-| `phone` | `string` | ✅ نعم | رقم الهاتف (يُحفظ كما هو في قاعدة البيانات، يُحوّل إلى +967 فقط عند إرسال OTP) |
-| `password` | `string` | ✅ نعم | كلمة المرور |
-| `firstName` | `string` | ✅ نعم | الاسم الأول |
-| `lastName` | `string` | ✅ نعم | اسم العائلة |
-| `gender` | `string` | ✅ نعم | `male`, `female`, `other` |
-| `city` | `string` | ❌ لا | المدينة (افتراضي: صنعاء) |
-| `capabilityRequest` | `string` | ❌ لا | `engineer` أو `merchant` (⚠️ إذا لم ترسل = **customer عادي**) |
-| `jobTitle` | `string` | ❌ لا | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`) |
-| `deviceId` | `string` | ❌ لا | معرف الجهاز (لمزامنة المفضلات تلقائياً) |
+| الحقل               | النوع      | مطلوب  | الوصف                                                                                                                                           |
+| ------------------- | ---------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `phone`             | `string`   | ✅ نعم | رقم الهاتف (يُحفظ كما هو في قاعدة البيانات، يُحوّل إلى +967 فقط عند إرسال OTP)                                                                  |
+| `password`          | `string`   | ✅ نعم | كلمة المرور                                                                                                                                     |
+| `firstName`         | `string`   | ✅ نعم | الاسم الأول                                                                                                                                     |
+| `lastName`          | `string`   | ✅ نعم | اسم العائلة                                                                                                                                     |
+| `gender`            | `string`   | ✅ نعم | `male`, `female`, `other`                                                                                                                       |
+| `city`              | `string`   | ❌ لا  | المدينة (افتراضي: صنعاء)                                                                                                                        |
+| `capabilityRequest` | `string`   | ❌ لا  | `engineer` أو `merchant` (⚠️ إذا لم ترسل = **customer عادي** - سيتم إضافة الدور تلقائياً إلى `roles`)                                           |
+| `jobTitle`          | `string`   | ❌ لا  | المسمى الوظيفي (مطلوب إذا `capabilityRequest = engineer`)                                                                                       |
+| `roles`             | `string[]` | ❌ لا  | الأدوار (اختياري - سيتم تعيينها تلقائياً بناءً على `capabilityRequest`). القيم المدعومة: `user`, `engineer`, `merchant`, `admin`, `super_admin` |
+| `deviceId`          | `string`   | ❌ لا  | معرف الجهاز (لمزامنة المفضلات تلقائياً)                                                                                                         |
 
 ### Response - نجاح
 
@@ -1699,10 +1722,16 @@ Future<LoginResponse> userLogin({
 ```
 
 **ما يحدث:**
+
 1. ✅ يتم التحقق من وجود الرقم في قاعدة البيانات (البحث بالرقم كما هو أولاً، ثم بالرقم المحول إذا لم يُوجد)
-2. ✅ يتم إنشاء الحساب بحالة `PENDING` (غير مفعّل) - الرقم يُحفظ كما هو (بدون +967)
-3. ✅ يتم تحويل الرقم إلى `+967775815074` فقط عند إرسال OTP عبر SMS
-4. ⚠️ **لا يتم إرجاع Tokens** - يجب التحقق من OTP أولاً عبر `/auth/verify-otp`
+2. ✅ يتم تحديد الأدوار (`roles`) بناءً على `capabilityRequest` أو `roles` المرسلة:
+   - إذا كان `capabilityRequest: "engineer"` → `roles: ["user", "engineer"]`
+   - إذا كان `capabilityRequest: "merchant"` → `roles: ["user", "merchant"]`
+   - إذا تم إرسال `roles` مباشرة → يتم استخدامها مع إضافة `user` إذا لم يكن موجوداً
+   - إذا لم يكن هناك شيء → `roles: ["user"]` (الافتراضي)
+3. ✅ يتم إنشاء الحساب بحالة `PENDING` (غير مفعّل) - الرقم يُحفظ كما هو (بدون +967)
+4. ✅ يتم تحويل الرقم إلى `+967775815074` فقط عند إرسال OTP عبر SMS
+5. ⚠️ **لا يتم إرجاع Tokens** - يجب التحقق من OTP أولاً عبر `/auth/verify-otp`
 
 **الخطوة التالية:** استخدم `/auth/verify-otp` للتحقق من OTP وتفعيل الحساب
 
@@ -1725,22 +1754,31 @@ Future<LoginResponse> userLogin({
 
 ### أكواد الأخطاء
 
-| الكود | الوصف | HTTP Status |
-|------|-------|-------------|
-| `AUTH_128` | رقم الهاتف موجود مسبقاً | 409 |
-| `AUTH_122` | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400 |
-| `GENERAL_004` | خطأ في البيانات المدخلة (Validation) | 400 |
+| الكود         | الوصف                                     | HTTP Status |
+| ------------- | ----------------------------------------- | ----------- |
+| `AUTH_128`    | رقم الهاتف موجود مسبقاً                   | 409         |
+| `AUTH_122`    | المسمى الوظيفي مطلوب عند طلب صلاحية مهندس | 400         |
+| `GENERAL_004` | خطأ في البيانات المدخلة (Validation)      | 400         |
 
 ### ⚠️ ملاحظة مهمة عن التدفق
 
 **الخطوات المطلوبة:**
+
 1. **إنشاء الحساب** → `/auth/user-signup` → الحساب `PENDING` + إرسال OTP
 2. **التحقق من OTP** → `/auth/verify-otp` → تفعيل الحساب إلى `ACTIVE` + إرجاع Tokens
 3. **تسجيل الدخول** → `/auth/user-login` → الآن ممكن لأن الحساب `ACTIVE`
 
-### ⚠️ ملاحظة مهمة عن أنواع الحسابات
+### ⚠️ ملاحظة مهمة عن أنواع الحسابات والأدوار
+
+> 💡 **الأدوار (`roles`) تُحدد تلقائياً** بناءً على `capabilityRequest`:
+>
+> - `capabilityRequest: "engineer"` → `roles: ["user", "engineer"]`
+> - `capabilityRequest: "merchant"` → `roles: ["user", "merchant"]`
+> - بدون `capabilityRequest` → `roles: ["user"]`
+> - يمكن إرسال `roles` مباشرة لتحديد الأدوار يدوياً
 
 #### **1. Customer (زبون عادي) - الافتراضي:**
+
 ```dart
 // لا تحتاج إرسال capabilityRequest
 final signupResponse = await userSignup(
@@ -1754,6 +1792,7 @@ final signupResponse = await userSignup(
 
 // Response: { success: true, requiresVerification: true, phone: "775815074" }
 // الحساب PENDING - يجب التحقق من OTP
+// الأدوار: roles: ["user"] (افتراضي)
 
 // الخطوة التالية: التحقق من OTP
 final verifyResponse = await verifyOtp(
@@ -1761,9 +1800,11 @@ final verifyResponse = await verifyOtp(
   code: '123456',  // OTP المرسل عبر SMS
 );
 // الآن الحساب ACTIVE + Tokens متاحة
+// verifyResponse.me.roles = ["user"]
 ```
 
 #### **2. Engineer (مهندس):**
+
 ```dart
 final signupResponse = await userSignup(
   phone: '775815074',
@@ -1777,6 +1818,7 @@ final signupResponse = await userSignup(
 
 // Response: { success: true, requiresVerification: true }
 // الحساب PENDING - يجب التحقق من OTP
+// الأدوار: roles: ["user", "engineer"] (تلقائياً)
 
 // التحقق من OTP
 final verifyResponse = await verifyOtp(
@@ -1786,13 +1828,16 @@ final verifyResponse = await verifyOtp(
   jobTitle: 'مهندس كهرباء',
 );
 
-// النتيجة: engineerStatus = "unverified" - يجب رفع CV
+// النتيجة:
+// - roles: ["user", "engineer"] ✅
+// - engineerStatus = "unverified" - يجب رفع CV
 if (verifyResponse.me.isEngineerUnverified) {
   navigateToUploadCV();
 }
 ```
 
 #### **3. Merchant (تاجر):**
+
 ```dart
 final signupResponse = await userSignup(
   phone: '775815074',
@@ -1805,6 +1850,7 @@ final signupResponse = await userSignup(
 
 // Response: { success: true, requiresVerification: true }
 // الحساب PENDING - يجب التحقق من OTP
+// الأدوار: roles: ["user", "merchant"] (تلقائياً)
 
 // التحقق من OTP
 final verifyResponse = await verifyOtp(
@@ -1813,10 +1859,30 @@ final verifyResponse = await verifyOtp(
   capabilityRequest: 'merchant',
 );
 
-// النتيجة: merchantStatus = "unverified" - يجب رفع معلومات المحل
+// النتيجة:
+// - roles: ["user", "merchant"] ✅
+// - merchantStatus = "unverified" - يجب رفع معلومات المحل
 if (verifyResponse.me.isMerchantUnverified) {
   navigateToUploadStoreInfo();
 }
+```
+
+#### **4. تحديد الأدوار يدوياً:**
+
+```dart
+// يمكن إرسال roles مباشرة لتحديد الأدوار يدوياً
+final signupResponse = await userSignup(
+  phone: '775815074',
+  password: 'MyPassword123!',
+  firstName: 'أحمد',
+  lastName: 'محمد',
+  gender: 'male',
+  roles: ['user', 'engineer'],  // ✨ تحديد الأدوار يدوياً
+  capabilityRequest: 'engineer',  // سيضيف "engineer" تلقائياً أيضاً
+  jobTitle: 'مهندس كهرباء',
+);
+
+// النتيجة: roles: ["user", "engineer"] (من roles + capabilityRequest)
 ```
 
 ### كود Flutter
@@ -1854,6 +1920,7 @@ Future<SignupResponse> userSignup({
   String? city,
   String? capabilityRequest,
   String? jobTitle,
+  List<String>? roles,
   String? deviceId,
 }) async {
   final response = await _dio.post(
@@ -1867,6 +1934,7 @@ Future<SignupResponse> userSignup({
       if (city != null) 'city': city,
       if (capabilityRequest != null) 'capabilityRequest': capabilityRequest,
       if (jobTitle != null) 'jobTitle': jobTitle,
+      if (roles != null) 'roles': roles,
       if (deviceId != null) 'deviceId': deviceId,
     },
   );
@@ -1895,13 +1963,13 @@ Future<void> completeSignup() async {
     lastName: 'محمد',
     gender: 'male',
   );
-  
+
   // 2. التحقق من OTP (استخدم OTP المرسل عبر SMS)
   final loginResponse = await verifyOtp(
     phone: signupResult.phone,  // أو '775815074'
     code: '123456',  // OTP المرسل
   );
-  
+
   // 3. الآن الحساب مفعّل و Tokens متاحة
   await _saveTokens(loginResponse.tokens);
 }
@@ -1989,11 +2057,11 @@ class User {
       gender: json['gender'],
       city: json['city'],
       jobTitle: json['jobTitle'],
-      roles: json['roles'] != null 
-          ? List<String>.from(json['roles']) 
+      roles: json['roles'] != null
+          ? List<String>.from(json['roles'])
           : [],
-      permissions: json['permissions'] != null 
-          ? List<String>.from(json['permissions']) 
+      permissions: json['permissions'] != null
+          ? List<String>.from(json['permissions'])
           : [],
       isAdmin: json['isAdmin'] ?? false,
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
@@ -2010,19 +2078,19 @@ class User {
   }
 
   String get fullName => '${firstName ?? ''} ${lastName ?? ''}'.trim();
-  
+
   bool get isActive => status == 'active';
   bool get isSuspended => status == 'suspended';
   bool get isDeleted => status == 'deleted';
-  
+
   bool get isEngineerPending => engineerStatus == 'pending';
   bool get isEngineerApproved => engineerStatus == 'approved';
   bool get isEngineerUnverified => engineerStatus == 'unverified';
-  
+
   bool get isMerchantPending => merchantStatus == 'pending';
   bool get isMerchantApproved => merchantStatus == 'approved';
   bool get isMerchantUnverified => merchantStatus == 'unverified';
-  
+
   bool hasRole(String role) => roles.contains(role);
   bool hasPermission(String permission) => permissions.contains(permission);
 }
@@ -2062,10 +2130,10 @@ class Capabilities {
     );
   }
 
-  bool get isEngineerApproved => 
+  bool get isEngineerApproved =>
       engineerCapable && engineerStatus == 'approved';
   bool get isEngineerPending => engineerStatus == 'pending';
-  bool get isMerchantApproved => 
+  bool get isMerchantApproved =>
       merchantCapable && merchantStatus == 'approved';
 }
 
@@ -2120,7 +2188,7 @@ class AuthUser {
   final String adminStatus;
 
   AuthUser({
-    required this.id, 
+    required this.id,
     required this.phone,
     this.firstName,
     this.lastName,
@@ -2151,11 +2219,11 @@ class AuthUser {
       gender: json['gender'],
       city: json['city'],
       jobTitle: json['jobTitle'],
-      roles: json['roles'] != null 
-          ? List<String>.from(json['roles']) 
+      roles: json['roles'] != null
+          ? List<String>.from(json['roles'])
           : [],
-      permissions: json['permissions'] != null 
-          ? List<String>.from(json['permissions']) 
+      permissions: json['permissions'] != null
+          ? List<String>.from(json['permissions'])
           : [],
       isAdmin: json['isAdmin'] ?? false,
       preferredCurrency: json['preferredCurrency'] ?? 'USD',
@@ -2170,21 +2238,21 @@ class AuthUser {
       adminStatus: json['adminStatus'] ?? 'none',
     );
   }
-  
+
   String get fullName => '${firstName ?? ''} ${lastName ?? ''}'.trim();
-  
+
   bool get isActive => status == 'active';
   bool get isSuspended => status == 'suspended';
   bool get isDeleted => status == 'deleted';
-  
+
   bool get isEngineerPending => engineerStatus == 'pending';
   bool get isEngineerApproved => engineerStatus == 'approved';
   bool get isEngineerUnverified => engineerStatus == 'unverified';
-  
+
   bool get isMerchantPending => merchantStatus == 'pending';
   bool get isMerchantApproved => merchantStatus == 'approved';
   bool get isMerchantUnverified => merchantStatus == 'unverified';
-  
+
   bool hasRole(String role) => roles.contains(role);
   bool hasPermission(String permission) => permissions.contains(permission);
 }
@@ -2195,55 +2263,64 @@ class AuthUser {
 ## 📝 ملاحظات مهمة
 
 1. **التوكنات:**
+
    - Access Token صالح لمدة 8 ساعات
    - Refresh Token صالح لمدة 30 يوم
    - احفظهما في `SharedPreferences` أو `FlutterSecureStorage`
 
 2. **OTP في التطوير:**
+
    - في بيئة التطوير، يتم إرجاع `devCode` للاختبار
    - في Production، لن يكون موجوداً
 
 3. **المدينة (City):**
+
    - حقل المدينة مهم للمهندسين وطلبات الخدمات
    - القيمة الافتراضية: "صنعاء"
    - يمكن تحديثها عبر endpoint `/auth/me`
 
 4. **مزامنة المفضلات:**
+
    - عند تسجيل الدخول، أرسل `deviceId` لمزامنة المفضلات تلقائياً
    - استخدم `device_info_plus` للحصول على Device ID
 
 5. **أنواع الحسابات:**
+
    - **Customer (زبون عادي):** النوع الافتراضي - لا يحتاج `capabilityRequest`
    - **Engineer (مهندس):** يحتاج `capabilityRequest: "engineer"` + `jobTitle`
    - **Merchant (تاجر):** يحتاج `capabilityRequest: "merchant"`
 
 6. **حالة الحساب (status):**
+
    - `active`: حساب نشط ويمكن استخدامه ✅
    - `suspended`: حساب موقوف مؤقتاً من قبل الأدمن ⚠️
    - `pending`: في انتظار التحقق من OTP ⏳ (يتم إنشاؤه عند `/auth/user-signup`)
    - `deleted`: تم حذف الحساب ❌
 
 7. **التدفق الكامل لإنشاء الحساب:**
+
    ```
    1. POST /auth/user-signup
       → الحساب PENDING + إرسال OTP عبر SMS
       → Response: { requiresVerification: true } (لا Tokens)
-   
+
    2. POST /auth/verify-otp
       → التحقق من OTP + تفعيل الحساب إلى ACTIVE
       → Response: Tokens + بيانات المستخدم
-   
+
    3. POST /auth/user-login
       → تسجيل الدخول بكلمة المرور (الآن ممكن لأن الحساب ACTIVE)
    ```
 
-7. **حقول الصلاحيات (Capability Fields):**
+8. **حقول الصلاحيات (Capability Fields):**
+
    - **`customerCapable`**: هل المستخدم قادر على الشراء كزبون (افتراضي: true)
    - **`engineerCapable`** + **`engineerStatus`**: صلاحية المهندس وحالة التوثيق
    - **`merchantCapable`** + **`merchantStatus`** + **`merchantDiscountPercent`**: صلاحية التاجر وحالة التوثيق ونسبة الخصم
    - **`adminCapable`** + **`adminStatus`**: صلاحية الأدمن وحالة التوثيق
 
 9. **حالات المهندس/التاجر (engineerStatus / merchantStatus):**
+
    - `none`: مستخدم عادي (customer)
    - `unverified`: طلب الصلاحية عند التسجيل لكن لم يرفع الوثائق ⚠️
    - `pending`: رفع الوثائق وفي انتظار موافقة الأدمن ⏳
@@ -2251,50 +2328,53 @@ class AuthUser {
    - `rejected`: تم الرفض ❌
 
 10. **العملة المفضلة:**
-   - كل مستخدم لديه عملة مفضلة (افتراضي: USD)
-   - يمكن تحديثها عبر endpoint `/auth/preferred-currency`
-   - يتم إرجاعها في استجابة تسجيل الدخول
+
+- كل مستخدم لديه عملة مفضلة (افتراضي: USD)
+- يمكن تحديثها عبر endpoint `/auth/preferred-currency`
+- يتم إرجاعها في استجابة تسجيل الدخول
 
 11. **تطبيع أرقام الهواتف:**
-   - **الأرقام تُحفظ في قاعدة البيانات كما هي** (بدون +967)
-   - **التحويل إلى +967 يحدث فقط عند إرسال OTP عبر SMS**
-   - عند البحث في قاعدة البيانات، يتم البحث بالرقم كما هو أولاً، ثم بالرقم المحول إذا لم يُوجد
-   - عند تسجيل الدخول بكلمة المرور، البحث يتم بالرقم كما هو (بدون تحويل)
-   - الصيغ المدعومة عند إرسال OTP: `05XXXXXXXX`, `5XXXXXXXX`, `7XXXXXXXX`, `+967XXXXXXXXX`
-   - المشغلون المدعومون: `+96773` (MTN), `+96771` (Sabafon), `+96770` (Y Telecom), `+96777` (Yemen Mobile)
+
+- **الأرقام تُحفظ في قاعدة البيانات كما هي** (بدون +967)
+- **التحويل إلى +967 يحدث فقط عند إرسال OTP عبر SMS**
+- عند البحث في قاعدة البيانات، يتم البحث بالرقم كما هو أولاً، ثم بالرقم المحول إذا لم يُوجد
+- عند تسجيل الدخول بكلمة المرور، البحث يتم بالرقم كما هو (بدون تحويل)
+- الصيغ المدعومة عند إرسال OTP: `05XXXXXXXX`, `5XXXXXXXX`, `7XXXXXXXX`, `+967XXXXXXXXX`
+- المشغلون المدعومون: `+96773` (MTN), `+96771` (Sabafon), `+96770` (Y Telecom), `+96777` (Yemen Mobile)
 
 12. **كيفية استخدام حالات المهندس/التاجر في Flutter:**
-   ```dart
-   // بعد تسجيل الدخول
-   final loginResponse = await verifyOtp(...);
-   
-   // 1. Customer عادي
-   if (loginResponse.me.engineerStatus == 'none' && 
-       loginResponse.me.merchantStatus == 'none') {
-     // مستخدم عادي - يمكنه الشراء مباشرة
-     navigateToHome();
-   }
-   
-   // 2. مهندس
-   if (loginResponse.me.isEngineerUnverified) {
-     // يجب رفع السيرة الذاتية
-     showDialog('يرجى رفع السيرة الذاتية لإكمال التسجيل كمهندس');
-     navigateToUploadCV();
-   } else if (loginResponse.me.isEngineerPending) {
-     // في انتظار الموافقة
-     showDialog('طلبك قيد المراجعة من قبل الإدارة');
-   } else if (loginResponse.me.isEngineerApproved) {
-     // تمت الموافقة
-     navigateToEngineerDashboard();
-   }
-   
-   // 3. تاجر
-   if (loginResponse.me.isMerchantUnverified) {
-     navigateToUploadStoreInfo();
-   } else if (loginResponse.me.isMerchantApproved) {
-     navigateToMerchantDashboard();
-   }
-   ```
+
+```dart
+// بعد تسجيل الدخول
+final loginResponse = await verifyOtp(...);
+
+// 1. Customer عادي
+if (loginResponse.me.engineerStatus == 'none' &&
+    loginResponse.me.merchantStatus == 'none') {
+  // مستخدم عادي - يمكنه الشراء مباشرة
+  navigateToHome();
+}
+
+// 2. مهندس
+if (loginResponse.me.isEngineerUnverified) {
+  // يجب رفع السيرة الذاتية
+  showDialog('يرجى رفع السيرة الذاتية لإكمال التسجيل كمهندس');
+  navigateToUploadCV();
+} else if (loginResponse.me.isEngineerPending) {
+  // في انتظار الموافقة
+  showDialog('طلبك قيد المراجعة من قبل الإدارة');
+} else if (loginResponse.me.isEngineerApproved) {
+  // تمت الموافقة
+  navigateToEngineerDashboard();
+}
+
+// 3. تاجر
+if (loginResponse.me.isMerchantUnverified) {
+  navigateToUploadStoreInfo();
+} else if (loginResponse.me.isMerchantApproved) {
+  navigateToMerchantDashboard();
+}
+```
 
 ---
 
@@ -2303,6 +2383,7 @@ class AuthUser {
 > ✅ **تم تحديث هذه الوثيقة بالكامل** لتطابق الكود الفعلي
 
 ### التحديثات المضافة في هذه النسخة:
+
 1. ✅ **تحديث أكواد الأخطاء** - استخدام النظام الجديد (AUTH_100، AUTH_103، إلخ)
 2. ✅ **إضافة endpoints جديدة:**
    - `/auth/user-login` - تسجيل دخول المستخدمين بكلمة المرور
@@ -2326,39 +2407,62 @@ class AuthUser {
    - مثال Engineer (engineerStatus: "unverified/approved")
    - مثال Merchant (merchantStatus: "unverified/approved")
 10. ✅ **إضافة أخطاء جديدة:**
-   - `AUTH_125` - كلمة المرور غير محددة
-   - `AUTH_126` - الحساب غير نشط
-   - `AUTH_128` - رقم الهاتف موجود مسبقاً
+
+- `AUTH_125` - كلمة المرور غير محددة
+- `AUTH_126` - الحساب غير نشط
+- `AUTH_128` - رقم الهاتف موجود مسبقاً
+
 11. ✅ تحديث `VALIDATION_ERROR` إلى `GENERAL_004`
 12. ✅ **حذف endpoints الأدمن** - هذا الملف للمستخدمين والتجار والمهندسين فقط
 13. ✅ **تحديث نوع capabilityRequest والتسميات** - تم تغيير `"wholesale"` إلى `"merchant"` في جميع endpoints والحقول (`merchantStatus`, `merchant_capable`, `merchant_discount_percent`)
 14. ✅ **إضافة حقول الحالة والصلاحيات الكاملة في جميع responses:**
-   - `status` - حالة الحساب (active/suspended/pending/deleted)
-   - `customerCapable` - قدرة المستخدم كزبون
-   - `engineerCapable` - قدرة المستخدم كمهندس
-   - `merchantCapable` - قدرة المستخدم كتاجر
-   - `merchantDiscountPercent` - نسبة خصم التاجر
-   - `adminCapable` - قدرة المستخدم كأدمن
-   - `adminStatus` - حالة توثيق الأدمن
+
+- `status` - حالة الحساب (active/suspended/pending/deleted)
+- `customerCapable` - قدرة المستخدم كزبون
+- `engineerCapable` - قدرة المستخدم كمهندس
+- `merchantCapable` - قدرة المستخدم كتاجر
+- `merchantDiscountPercent` - نسبة خصم التاجر
+- `adminCapable` - قدرة المستخدم كأدمن
+- `adminStatus` - حالة توثيق الأدمن
+
 15. ✅ **تحديث Flutter Models** لتشمل جميع الحقول الجديدة مع getter methods لسهولة الاستخدام:
-   - `isActive`, `isSuspended`, `isDeleted` - للتحقق من حالة الحساب
-   - `isEngineerPending`, `isEngineerApproved`, `isEngineerUnverified` - للتحقق من حالة المهندس
-   - `isMerchantPending`, `isMerchantApproved`, `isMerchantUnverified` - للتحقق من حالة التاجر
+
+- `isActive`, `isSuspended`, `isDeleted` - للتحقق من حالة الحساب
+- `isEngineerPending`, `isEngineerApproved`, `isEngineerUnverified` - للتحقق من حالة المهندس
+- `isMerchantPending`, `isMerchantApproved`, `isMerchantUnverified` - للتحقق من حالة التاجر
+
 16. ✅ **تحديث `/auth/user-signup` Response:**
-   - لا يتم إرجاع Tokens عند إنشاء الحساب
-   - Response يحتوي على `requiresVerification: true` و `phone` (كما هو، بدون +967)
-   - الحساب يُنشأ بحالة `PENDING` ويحتاج التحقق من OTP
+
+- لا يتم إرجاع Tokens عند إنشاء الحساب
+- Response يحتوي على `requiresVerification: true` و `phone` (كما هو، بدون +967)
+- الحساب يُنشأ بحالة `PENDING` ويحتاج التحقق من OTP
+
 17. ✅ **تحديث `/auth/verify-otp` لتفعيل الحساب:**
-   - إذا كان الحساب `PENDING`، يتم تفعيله إلى `ACTIVE` تلقائياً
-   - البحث في قاعدة البيانات يتم بالرقم كما هو أولاً
+
+- إذا كان الحساب `PENDING`، يتم تفعيله إلى `ACTIVE` تلقائياً
+- البحث في قاعدة البيانات يتم بالرقم كما هو أولاً
+
 18. ✅ **تحديث تطبيع أرقام الهواتف:**
-   - الأرقام تُحفظ في قاعدة البيانات **كما هي** (بدون +967)
-   - التحويل إلى +967 يحدث **فقط عند إرسال OTP عبر SMS**
-   - عند البحث في قاعدة البيانات، يتم البحث بالرقم كما هو أولاً
-   - عند تسجيل الدخول بكلمة المرور، البحث يتم بالرقم كما هو (بدون تحويل)
-   - الصيغ المدعومة عند إرسال OTP: `05XXXXXXXX`, `5XXXXXXXX`, `7XXXXXXXX`, `+967XXXXXXXXX`
+
+- الأرقام تُحفظ في قاعدة البيانات **كما هي** (بدون +967)
+- التحويل إلى +967 يحدث **فقط عند إرسال OTP عبر SMS**
+- عند البحث في قاعدة البيانات، يتم البحث بالرقم كما هو أولاً
+- عند تسجيل الدخول بكلمة المرور، البحث يتم بالرقم كما هو (بدون تحويل)
+- الصيغ المدعومة عند إرسال OTP: `05XXXXXXXX`, `5XXXXXXXX`, `7XXXXXXXX`, `+967XXXXXXXXX`
+
+19. ✅ **إضافة حقل `roles` (الأدوار):**
+
+- أضيف في `VerifyOtpDto` و `UserSignupDto` كحقل اختياري
+- **الأدوار تُحدد تلقائياً** بناءً على `capabilityRequest`:
+  - `capabilityRequest: "engineer"` → `roles: ["user", "engineer"]`
+  - `capabilityRequest: "merchant"` → `roles: ["user", "merchant"]`
+  - بدون `capabilityRequest` → `roles: ["user"]`
+- يمكن إرسال `roles` مباشرة لتحديد الأدوار يدوياً
+- القيم المدعومة: `user`, `engineer`, `merchant`, `admin`, `super_admin`
+- الأدوار مهمة جداً للتوثيق والصلاحيات من البداية
 
 ### الملفات المرجعية:
+
 - **Controller:** `backend/src/modules/auth/auth.controller.ts`
 - **DTOs:** `backend/src/modules/auth/dto/*.dto.ts`
 - **Models:** `backend/src/modules/users/schemas/user.schema.ts`
@@ -2366,4 +2470,3 @@ class AuthUser {
 ---
 
 **التالي:** [خدمة المنتجات (Products)](./03-products-service.md)
-

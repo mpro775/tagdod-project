@@ -172,11 +172,16 @@ export class EngineerProfileService {
       ? (populatedUserId as PopulatedUser)
       : null;
 
+    // استخراج createdAt من البروفايل (موجود تلقائياً بسبب timestamps: true)
+    const profileWithTimestamps = profile as EngineerProfileDocument & { createdAt?: Date; updatedAt?: Date };
+    
     const result = {
       ...profile,
       jobTitle: profile.jobTitle || (userData?.jobTitle ?? undefined),
+      joinedAt: profileWithTimestamps.createdAt, // تاريخ الانضمام (تاريخ إنشاء البروفايل)
     } as EngineerProfileDocument & {
       jobTitle?: string;
+      joinedAt?: Date;
       coupon?: {
         code: string;
         name: string;
@@ -618,9 +623,14 @@ export class EngineerProfileService {
     const engineers = profiles.map((profile) => {
       const populatedProfile = profile as unknown as EngineerProfileDocument & {
         userId: Partial<UserDocument>;
+        createdAt?: Date;
+        updatedAt?: Date;
       };
       return {
-        profile: populatedProfile as unknown as EngineerProfileDocument,
+        profile: {
+          ...populatedProfile,
+          joinedAt: populatedProfile.createdAt, // تاريخ الانضمام (تاريخ إنشاء البروفايل)
+        } as unknown as EngineerProfileDocument & { joinedAt?: Date },
         user: populatedProfile.userId,
       };
     });

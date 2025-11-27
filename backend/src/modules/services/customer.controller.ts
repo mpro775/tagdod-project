@@ -155,7 +155,7 @@ export class CustomerServicesController {
             status: 'ASSIGNED',
             scheduledAt: '2024-06-05T09:00:00.000Z',
             engineerId: '6637d50690fbb31de8d9c445',
-            acceptedOffer: { offerId: '6645f731dc490a317ad91884', amount: 180 },
+            acceptedOffer: { offerId: '6645f731dc490a317ad91884', amount: 180, currency: 'YER' },
             rating: {},
             createdAt: '2024-06-01T12:30:15.512Z',
             updatedAt: '2024-06-02T08:10:45.004Z',
@@ -252,7 +252,8 @@ export class CustomerServicesController {
         data: {
           offer: {
             _id: '6645f731dc490a317ad91884',
-            amountYER: 9000,
+            amount: 9000,
+            currency: 'YER',
             note: 'يشمل التركيب الكامل مع قطع الغيار',
             status: 'OFFERED',
             statusLabel: 'عرض مقدم',
@@ -319,7 +320,7 @@ export class CustomerServicesController {
             _id: '6645e1a5f2f0a02eab4d9c10',
             title: 'إصلاح جهاز تكييف',
             status: 'ASSIGNED',
-            acceptedOffer: { offerId: '6645f731dc490a317ad91884', amount: 180 },
+            acceptedOffer: { offerId: '6645f731dc490a317ad91884', amount: 180, currency: 'YER' },
             createdAt: '2024-06-01T12:30:15.512Z',
             updatedAt: '2024-06-02T08:10:45.004Z',
           },
@@ -359,6 +360,7 @@ export class CustomerServicesController {
           acceptedOffer: {
             offerId: '6645f731dc490a317ad91884',
             amount: 180,
+            currency: 'YER',
             note: 'يشمل قطع الغيار',
           },
           rating: {},

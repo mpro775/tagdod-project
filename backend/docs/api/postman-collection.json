@@ -4699,6 +4699,32 @@
           }
         },
         {
+          "name": "الطلبات المفلترة حسب الحالة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/by-status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "by-status"
+              ]
+            },
+            "description": "الحصول على طلبات المستخدم المفلترة حسب الحالة مع إرجاع الطلبات الملغية"
+          }
+        },
+        {
           "name": "الطلبات الأخيرة",
           "request": {
             "method": "GET",

@@ -86,7 +86,8 @@ type EngineerOfferPopulated = EngineerOfferLean & {
 export interface OfferListItem {
   _id: Types.ObjectId;
   requestId: string;
-  amountYER: number;
+  amount: number;
+  currency: string;
   note: string | null;
   status: EngineerOffer['status'];
   statusLabel: string;
@@ -542,7 +543,8 @@ export class ServicesService {
       const formattedOffer: OfferListItem = {
         _id: offer._id,
         requestId: String(offer.requestId),
-        amountYER: offer.amount,
+        amount: offer.amount,
+        currency: offer.currency || 'YER',
         note: offer.note ?? null,
         status: offer.status,
         statusLabel: this.offerStatusLabel(offer.status),
@@ -625,8 +627,8 @@ export class ServicesService {
       acceptedOffer: {
         offerId: string;
         amount: number;
+        currency: string;
         note?: string;
-        amountYER: number;
       } | null;
     }>
   > {
@@ -695,7 +697,7 @@ export class ServicesService {
         acceptedOffer: doc.acceptedOffer
           ? {
               ...doc.acceptedOffer,
-              amountYER: doc.acceptedOffer.amount,
+              currency: doc.acceptedOffer.currency || 'YER',
             }
           : null,
       };
@@ -866,7 +868,12 @@ export class ServicesService {
 
     r.status = 'ASSIGNED';
     r.engineerId = offer.engineerId;
-    r.acceptedOffer = { offerId: String(offer._id), amount: offer.amount, note: offer.note };
+    r.acceptedOffer = {
+      offerId: String(offer._id),
+      amount: offer.amount,
+      currency: offer.currency || 'YER',
+      note: offer.note,
+    };
     await r.save();
 
     offer.status = 'ACCEPTED';
@@ -959,6 +966,7 @@ export class ServicesService {
         _id: Types.ObjectId;
         requestId: string | Types.ObjectId;
         amount: number;
+        currency: string;
         note?: string | null;
         distanceKm?: number;
         status: string;
@@ -1048,7 +1056,8 @@ export class ServicesService {
     const formattedOffer: OfferListItem = {
       _id: offer._id,
       requestId: String(offer.requestId),
-      amountYER: offer.amount,
+      amount: offer.amount,
+      currency: offer.currency || 'YER',
       note: offer.note ?? null,
       status: offer.status,
       statusLabel: this.offerStatusLabel(offer.status),
@@ -1253,6 +1262,7 @@ export class ServicesService {
       requestId: r._id,
       engineerId: new Types.ObjectId(engineerUserId),
       amount: dto.amount,
+      currency: dto.currency,
       note: dto.note,
       distanceKm: Math.round(distanceKm * 100) / 100,
       status: 'OFFERED',
@@ -1278,6 +1288,7 @@ export class ServicesService {
     if (off.status !== 'OFFERED') return { error: 'CANNOT_UPDATE' };
     if ((off.updatesCount || 0) >= 1) return { error: 'UPDATE_LIMIT_REACHED' };
     if (patch.amount !== undefined) off.amount = patch.amount;
+    if (patch.currency !== undefined) off.currency = patch.currency;
     if (patch.note !== undefined) off.note = patch.note;
     off.updatesCount = (off.updatesCount || 0) + 1;
     await off.save();
@@ -1411,6 +1422,7 @@ export class ServicesService {
         ? {
             _id: engineerOffer._id,
             amount: engineerOffer.amount,
+            currency: engineerOffer.currency || 'YER',
             note: engineerOffer.note ?? null,
             status: engineerOffer.status,
             statusLabel: this.offerStatusLabel(engineerOffer.status),
@@ -1539,7 +1551,7 @@ export class ServicesService {
     createdAt: Date;
     updatedAt: Date;
     location?: { type: string; coordinates: [number, number] };
-    acceptedOffer?: { offerId: string; amount: number; note?: string };
+    acceptedOffer?: { offerId: string; amount: number; currency?: string; note?: string };
     rating?: { score?: number; comment?: string; at?: Date };
     cancellationReason?: string;
     cancelledAt?: Date;
@@ -2577,6 +2589,7 @@ export class ServicesService {
     r.acceptedOffer = {
       offerId: String(offer._id),
       amount: offer.amount,
+      currency: offer.currency || 'YER',
       note: offer.note,
     };
     await r.save();

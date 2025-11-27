@@ -489,6 +489,7 @@ export class EngineerServicesController {
               properties: {
                 offerId: { type: 'string', example: 'offer123' },
                 amount: { type: 'number', example: 150.0 },
+                currency: { type: 'string', example: 'YER', enum: ['YER', 'SAR', 'USD'] },
                 note: { type: 'string', example: 'ملاحظات', nullable: true },
               },
             },

@@ -2,9 +2,14 @@
 
 خدمة الدفع توفر endpoints لإتمام الطلبات وإدارتها.
 
-> ✅ **تم التحقق وتحديث هذه الوثيقة (v2.0.0)** - مطابقة للكود الفعلي في `backend/src/modules/checkout`
+> ✅ **تم التحقق وتحديث هذه الوثيقة (v2.2.0)** - مطابقة للكود الفعلي في `backend/src/modules/checkout`
 >
-> 🆕 **التحديثات الجديدة:**
+> 🆕 **التحديثات الجديدة (v2.2.0):**
+>
+> - إزالة `currency` من Request Body - النظام يستخدم **USD** كعملة افتراضية لجميع الحسابات
+> - إضافة endpoint جديد `GET /orders/by-status` لفلترة الطلبات حسب الحالة مع إرجاع الطلبات الملغية
+>
+> 🆕 **التحديثات السابقة (v2.0.0 - v2.1.0):**
 >
 > - إضافة Endpoint موحد `POST /orders/checkout/session` لتجميع كل بيانات شاشة الدفع في استجابة واحدة.
 > - تبسيط حالات الطلب من 15 إلى 10 حالات.
@@ -13,6 +18,7 @@
 > - تحديث قواعد الإلغاء.
 > - تحسين Endpoint `GET /orders/checkout/payment-options` لتجميع خيارات الدفع وحالة أهلية COD.
 > - تحديث رد `POST /orders/checkout/confirm` ليعيد `paymentOptions` بعد إنشاء الطلب.
+> - تبسيط checkout response - إزالة `totalsInAllCurrencies` المكرر، إزالة `promotionDiscount` و `autoDiscount` من `pricingSummaryByCurrency`، إزالة `appliedRule` من unit
 
 ---
 
@@ -51,16 +57,16 @@ Endpoint جديد يجمع كل ما تحتاجه شاشة الدفع في اس�
 
 ```json
 {
-  "currency": "YER",
   "couponCodes": ["SUMMER20", "VIP5"]
 }
 ```
 
 | الحقل         | النوع      | مطلوب  | الوصف                                                   |
 | ------------- | ---------- | ------ | ------------------------------------------------------- |
-| `currency`    | `string`   | ✅ نعم | العملة المفضلة لعرض الأسعار (`YER`, `SAR`, `USD`).      |
 | `couponCode`  | `string`   | ❌ لا  | كوبون واحد (للتوافق مع الإصدارات القديمة).              |
 | `couponCodes` | `string[]` | ❌ لا  | قائمة كوبونات تُطبّق بالتسلسل مع كوبونات السلة الحالية. |
+
+> **ملاحظة:** تم إزالة `currency` من الـ body. النظام يستخدم **USD** كعملة افتراضية لجميع الحسابات. جميع القيم بالعملات المختلفة متاحة في `pricingSummaryByCurrency`.
 
 ### Response - نجاح
 
@@ -241,8 +247,8 @@ Endpoint جديد يجمع كل ما تحتاجه شاشة الدفع في اس�
 }
 ```
 
-- **`cart.pricingSummaryByCurrency`:** يشمل **دائمًا** العملات الثلاث (USD/YER/SAR) مع خصومات القسائم موزّعة بشكل متسق. إذا تم إرسال العملة `SAR` فسيبقى عنصر `items` بالـ `SAR` فقط بينما تبقى الإجماليات بالعملات الثلاث.
-- **`cart.items[].pricing`:** تم تبسيطها لتعرض العملة المطلوبة فقط. لم تعد الحقول تحتوي على خريطة `currencies` متعددة.
+- **`cart.pricingSummaryByCurrency`:** يشمل **دائمًا** العملات الثلاث (USD/YER/SAR) مع خصومات القسائم موزّعة بشكل متسق. النظام يستخدم USD كعملة افتراضية، وعناصر `items` تُعرض بالـ USD بينما تبقى الإجماليات بالعملات الثلاث.
+- **`cart.items[].pricing`:** تم تبسيطها لتعرض العملة الافتراضية (USD) فقط. لم تعد الحقول تحتوي على خريطة `currencies` متعددة.
 - **`cart.items[].unit`:** لا يحتوي على `appliedRule` في checkout (يُستخدم فقط في cart service).
 - **`pricingSummaryByCurrency`:** لا يحتوي على `promotionDiscount` و `autoDiscount` في checkout (يُستخدمان فقط في cart service).
 - **`discounts.appliedCoupons`:** القسائم تطبق حسب الأولوية (مبالغ ثابتة ثم نسبة مئوية) وتُعاد بالترتيب الفعلي للتطبيق.
@@ -256,14 +262,12 @@ Endpoint جديد يجمع كل ما تحتاجه شاشة الدفع في اس�
 
 ```dart
 Future<CheckoutSession> buildCheckoutSession({
-  required String currency,
   List<String>? couponCodes,
   String? couponCode,
 }) async {
   final response = await _dio.post(
     '/orders/checkout/session',
     data: {
-      'currency': currency,
       if (couponCode != null) 'couponCode': couponCode,
       if (couponCodes != null && couponCodes.isNotEmpty) 'couponCodes': couponCodes,
     },
@@ -296,16 +300,16 @@ Future<CheckoutSession> buildCheckoutSession({
 
 ```json
 {
-  "currency": "YER",
   "couponCodes": ["SUMMER20"]
 }
 ```
 
 | الحقل         | النوع      | مطلوب  | الوصف                                  |
 | ------------- | ---------- | ------ | -------------------------------------- |
-| `currency`    | `string`   | ✅ نعم | العملة الأساسية للحساب.                |
 | `couponCode`  | `string`   | ❌ لا  | كوبون واحد للتوافق الخلفي.             |
 | `couponCodes` | `string[]` | ❌ لا  | كوبونات إضافية تطبق بعد كوبونات السلة. |
+
+> **ملاحظة:** تم إزالة `currency` من الـ body. النظام يستخدم **USD** كعملة افتراضية لجميع الحسابات. جميع القيم بالعملات المختلفة متاحة في `pricingSummaryByCurrency`.
 
 ### Response - نجاح
 
@@ -369,14 +373,12 @@ Future<CheckoutSession> buildCheckoutSession({
 
 ```dart
 Future<CheckoutPreview> previewCheckout({
-  required String currency,
   String? couponCode,
   List<String>? couponCodes,
 }) async {
   final response = await _dio.post(
     '/orders/checkout/preview',
     data: {
-      'currency': currency,
       if (couponCode != null) 'couponCode': couponCode,
       if (couponCodes != null && couponCodes.isNotEmpty) 'couponCodes': couponCodes,
     },
@@ -1038,6 +1040,10 @@ class LocalPaymentAccount {
 
 يسترجع جميع طلبات المستخدم مع دعم الفلترة والترقيم.
 
+### 5.1. جميع الطلبات
+
+يسترجع جميع طلبات المستخدم مع دعم الفلترة والترقيم.
+
 ### معلومات الطلب
 
 - **Method:** `GET`
@@ -1165,6 +1171,153 @@ BlocBuilder<OrdersCubit, OrdersState>(
 
 - يتم ربط تبويبات الفلترة بالقيم المعتمدة في الـ API (`pending_payment`, `processing`, `completed`, `cancelled`) مع إبقاء الخيار الأول لعرض كل الطلبات.
 - البحث يعتمد على نفس الكيوبت (`OrdersCubit.applySearch`) ويستخدم نفس المعايير (`page=1`, `sortOrder=desc`) لضمان تطابق النتائج مع واجهة الويب.
+
+### 5.2. الطلبات المفلترة حسب الحالة
+
+يسترجع طلبات المستخدم المفلترة حسب الحالة مع إرجاع الطلبات الملغية دائماً.
+
+- **Method:** `GET`
+- **Endpoint:** `/orders/by-status`
+- **Auth Required:** ✅ نعم (Bearer Token)
+
+| الاستعلام | النوع    | مطلوب  | الوصف                                                      |
+| --------- | -------- | ------ | ---------------------------------------------------------- |
+| `status`  | `string` | ✅ نعم | حالة الطلب المطلوبة (`pending_payment`, `confirmed`, `processing`, `completed`, `on_hold`, `cancelled`, `returned`, `refunded`) |
+| `page`    | `number` | ❌ لا  | رقم الصفحة (افتراضي 1)                                    |
+| `limit`   | `number` | ❌ لا  | عدد العناصر في الصفحة (افتراضي 20)                        |
+
+### Response - نجاح
+
+```json
+{
+  "filteredOrders": [
+    {
+      "_id": "order_123",
+      "orderNumber": "ORD-2025-001234",
+      "status": "confirmed",
+      "paymentStatus": "paid",
+      "subtotal": 520000,
+      "total": 468000,
+      "currency": "USD",
+      "createdAt": "2025-10-15T12:00:00.000Z"
+    }
+  ],
+  "filteredPagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 5,
+    "totalPages": 1
+  },
+  "cancelledOrders": [
+    {
+      "_id": "order_456",
+      "orderNumber": "ORD-2025-001235",
+      "status": "cancelled",
+      "paymentStatus": "pending",
+      "subtotal": 300000,
+      "total": 300000,
+      "currency": "USD",
+      "createdAt": "2025-10-10T09:00:00.000Z"
+    }
+  ],
+  "cancelledPagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 2,
+    "totalPages": 1
+  },
+  "message": "تم الحصول على الطلبات بنجاح"
+}
+```
+
+> **ملاحظة:** هذا الـ endpoint يرجع دائماً الطلبات الملغية (`cancelled`) للمستخدم بغض النظر عن الحالة المطلوبة في `status`. يتم إرجاع pagination منفصل للطلبات المفلترة والملغية.
+
+### كود Flutter
+
+```dart
+Future<OrdersByStatusResponse> getOrdersByStatus({
+  required String status,
+  int? page,
+  int? limit,
+}) async {
+  final response = await _dio.get(
+    '/orders/by-status',
+    queryParameters: {
+      'status': status,
+      if (page != null) 'page': page,
+      if (limit != null) 'limit': limit,
+    },
+  );
+
+  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+    response.data,
+    (json) => json as Map<String, dynamic>,
+  );
+
+  if (apiResponse.isSuccess) {
+    return OrdersByStatusResponse.fromJson(apiResponse.data!);
+  }
+
+  throw ApiException(apiResponse.error!);
+}
+
+class OrdersByStatusResponse {
+  final List<OrderDetails> filteredOrders;
+  final PaginationInfo filteredPagination;
+  final List<OrderDetails> cancelledOrders;
+  final PaginationInfo cancelledPagination;
+  final String message;
+
+  OrdersByStatusResponse({
+    required this.filteredOrders,
+    required this.filteredPagination,
+    required this.cancelledOrders,
+    required this.cancelledPagination,
+    required this.message,
+  });
+
+  factory OrdersByStatusResponse.fromJson(Map<String, dynamic> json) {
+    return OrdersByStatusResponse(
+      filteredOrders: (json['filteredOrders'] as List<dynamic>)
+          .map((item) => OrderDetails.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      filteredPagination: PaginationInfo.fromJson(
+        json['filteredPagination'] as Map<String, dynamic>,
+      ),
+      cancelledOrders: (json['cancelledOrders'] as List<dynamic>)
+          .map((item) => OrderDetails.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      cancelledPagination: PaginationInfo.fromJson(
+        json['cancelledPagination'] as Map<String, dynamic>,
+      ),
+      message: json['message'] as String? ?? '',
+    );
+  }
+}
+
+class PaginationInfo {
+  final int page;
+  final int limit;
+  final int total;
+  final int totalPages;
+
+  PaginationInfo({
+    required this.page,
+    required this.limit,
+    required this.total,
+    required this.totalPages,
+  });
+
+  factory PaginationInfo.fromJson(Map<String, dynamic> json) {
+    return PaginationInfo(
+      page: (json['page'] ?? 1) as int,
+      limit: (json['limit'] ?? 20) as int,
+      total: (json['total'] ?? 0) as int,
+      totalPages: (json['totalPages'] ?? 0) as int,
+    );
+  }
+}
+```
 
 ---
 
@@ -2127,6 +2280,8 @@ class OrderStatusHistory {
 8. ✅ **v2.0.0:** تبسيط طرق الدفع (COD و BANK_TRANSFER فقط)
 9. ✅ **v2.0.0:** إضافة دعم التحويل البنكي المحلي
 10. ✅ **v2.1.0:** تبسيط checkout response - إزالة `totalsInAllCurrencies` المكرر، إزالة `promotionDiscount` و `autoDiscount` من `pricingSummaryByCurrency`، إزالة `appliedRule` من unit
+11. ✅ **v2.2.0:** إزالة `currency` من Request Body - النظام يستخدم USD كعملة افتراضية لجميع الحسابات
+12. ✅ **v2.2.0:** إضافة endpoint جديد `GET /orders/by-status` لفلترة الطلبات حسب الحالة مع إرجاع الطلبات الملغية
 
 ### الملفات المرجعية:
 

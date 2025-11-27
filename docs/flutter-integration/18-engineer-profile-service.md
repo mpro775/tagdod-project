@@ -7,6 +7,7 @@
 > - إضافة `jobTitle` في endpoint التحديث
 > - إضافة معلومات `user` (gender, status, engineer_status) في الاستجابة
 > - إضافة معلومات `coupon` المرتبط بالمهندس في الاستجابة
+> - إضافة حقل `joinedAt` (تاريخ الانضمام) في الاستجابة
 
 خدمة بروفايل المهندس توفر endpoints لإدارة بروفايل المهندس، التقييمات، الرصيد، والعمولات.
 
@@ -111,7 +112,8 @@
       }
     ],
     "createdAt": "2025-01-01T00:00:00.000Z",
-    "updatedAt": "2025-10-15T10:30:00.000Z"
+    "updatedAt": "2025-10-15T10:30:00.000Z",
+    "joinedAt": "2025-01-01T00:00:00.000Z"
   },
   "requestId": "req_123"
 }
@@ -291,7 +293,8 @@ Future<EngineerProfile> updateMyProfile({
     "totalRatings": 25,
     "averageRating": 4.8,
     "ratingDistribution": [15, 5, 3, 1, 1],
-    "totalCompletedServices": 50
+    "totalCompletedServices": 50,
+    "joinedAt": "2025-01-01T00:00:00.000Z"
   },
   "requestId": "req_123"
 }
@@ -517,6 +520,7 @@ class EngineerProfile {
   final List<CommissionTransaction> commissionTransactions; // فقط في /me
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? joinedAt; // تاريخ الانضمام (تاريخ إنشاء البروفايل)
 
   EngineerProfile({
     required this.id,
@@ -541,6 +545,7 @@ class EngineerProfile {
     this.commissionTransactions = const [],
     required this.createdAt,
     required this.updatedAt,
+    this.joinedAt,
   });
 
   factory EngineerProfile.fromJson(Map<String, dynamic> json) {
@@ -587,6 +592,7 @@ class EngineerProfile {
           : [],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
+      joinedAt: json['joinedAt'] != null ? DateTime.parse(json['joinedAt']) : null,
     );
   }
 
@@ -615,6 +621,7 @@ class EngineerProfile {
           commissionTransactions.map((t) => t.toJson()).toList(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'joinedAt': joinedAt?.toIso8601String(),
     };
   }
 }

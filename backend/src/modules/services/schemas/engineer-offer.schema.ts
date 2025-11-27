@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { Currency } from '../../users/schemas/user.schema';
 
 export type EngineerOfferDocument = HydratedDocument<EngineerOffer>;
 
@@ -13,6 +14,15 @@ export class EngineerOffer {
 
   @Prop({ required: true }) amount!: number;
   @Prop() note?: string;
+
+  // نوع العملة (YER, SAR, USD)
+  @Prop({
+    type: String,
+    enum: Currency,
+    default: Currency.YER,
+    required: true,
+  })
+  currency!: Currency;
 
   // المسافة بين المهندس والطلب (بالكيلومتر)
   @Prop() distanceKm?: number;
