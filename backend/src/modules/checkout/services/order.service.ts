@@ -2798,6 +2798,324 @@ export class OrderService {
   }
 
   /**
+   * التحقق من صحة الأصناف المراد إرجاعها
+   */
+  private validateReturnItems(
+    order: OrderDocument,
+    returnItems: Array<{ variantId: string; qty: number }>,
+  ): void {
+    if (!returnItems || returnItems.length === 0) {
+      return; // إرجاع كامل - لا حاجة للتحقق
+    }
+
+    // التحقق من عدم وجود أصناف مكررة
+    const variantIds = new Set<string>();
+    for (const returnItem of returnItems) {
+      if (variantIds.has(returnItem.variantId)) {
+        throw new OrderException(ErrorCode.ORDER_REFUND_AMOUNT_INVALID, {
+          message: `الصنف ${returnItem.variantId} موجود أكثر من مرة في قائمة الإرجاع`,
+        });
+      }
+      variantIds.add(returnItem.variantId);
+    }
+
+    // التحقق من وجود الأصناف في الطلب والكميات
+    for (const returnItem of returnItems) {
+      const orderItem = order.items.find(
+        (item) => item.variantId?.toString() === returnItem.variantId,
+      );
+
+      if (!orderItem) {
+        throw new OrderException(ErrorCode.ORDER_REFUND_AMOUNT_INVALID, {
+          message: `الصنف ${returnItem.variantId} غير موجود في الطلب`,
+        });
+      }
+
+      // حساب الكمية القابلة للإرجاع (الكمية المباعة - الكمية المرجعة مسبقاً)
+      const availableQty = orderItem.qty - (orderItem.returnQty || 0);
+
+      if (returnItem.qty <= 0) {
+        throw new OrderException(ErrorCode.ORDER_REFUND_AMOUNT_INVALID, {
+          message: `الكمية المراد إرجاعها للصنف ${returnItem.variantId} يجب أن تكون أكبر من صفر`,
+        });
+      }
+
+      if (returnItem.qty > availableQty) {
+        throw new OrderException(ErrorCode.ORDER_REFUND_AMOUNT_INVALID, {
+          message: `الكمية المراد إرجاعها للصنف ${returnItem.variantId} (${returnItem.qty}) تتجاوز الكمية القابلة للإرجاع (${availableQty})`,
+        });
+      }
+    }
+  }
+
+  /**
+   * حساب المبلغ المراد استرداده بناءً على الأصناف المرتجعة
+   */
+  private calculateReturnAmount(
+    order: OrderDocument,
+    returnItems?: Array<{ variantId: string; qty: number }>,
+  ): number {
+    // إذا لم يتم تحديد أصناف، فهذا إرجاع كامل
+    if (!returnItems || returnItems.length === 0) {
+      return order.total;
+    }
+
+    // حساب المبلغ بناءً على الأصناف المرتجعة
+    let returnAmount = 0;
+
+    for (const returnItem of returnItems) {
+      const orderItem = order.items.find(
+        (item) => item.variantId?.toString() === returnItem.variantId,
+      );
+
+      if (!orderItem) {
+        continue; // تم التحقق مسبقاً في validateReturnItems
+      }
+
+      // حساب نسبة الكمية المرجعة من الكمية الكلية
+      const returnRatio = returnItem.qty / orderItem.qty;
+
+      // حساب المبلغ المرتجع لهذا الصنف (السعر النهائي × نسبة الكمية)
+      const itemReturnAmount = orderItem.lineTotal * returnRatio;
+      returnAmount += itemReturnAmount;
+    }
+
+    // تقريب المبلغ
+    return Math.round(returnAmount * 100) / 100;
+  }
+
+  /**
+   * استعادة المخزون للأصناف المرتجعة
+   */
+  private async restoreInventoryForReturnedItems(
+    orderId: string,
+    order: OrderDocument,
+    returnItems: Array<{ variantId: string; qty: number }>,
+  ): Promise<void> {
+    if (!returnItems || returnItems.length === 0) {
+      return; // إرجاع كامل - سيتم التعامل معه بشكل مختلف
+    }
+
+    for (const returnItem of returnItems) {
+      const orderItem = order.items.find(
+        (item) => item.variantId?.toString() === returnItem.variantId,
+      );
+
+      if (!orderItem) {
+        continue; // تم التحقق مسبقاً
+      }
+
+      const target = {
+        variantId: orderItem.variantId?.toString(),
+        productId: orderItem.productId?.toString(),
+      };
+
+      const inventoryFilter = this.buildInventoryFilter(target);
+
+      try {
+        // تحديث inventory collection
+        await this.inventoryModel.updateOne(inventoryFilter, {
+          $inc: { on_hand: returnItem.qty },
+        });
+
+        // تحديث stock في المنتجات
+        if (target.variantId) {
+          await this.productsInventoryService.updateStock(target.variantId, returnItem.qty, 'add');
+        } else if (target.productId) {
+          await this.productsInventoryService.updateProductStock(
+            target.productId,
+            returnItem.qty,
+            'add',
+          );
+        }
+
+        // تسجيل في ledger
+        await this.ledgerModel.create({
+          variantId: target.variantId ? new Types.ObjectId(target.variantId) : undefined,
+          productId: target.productId ? new Types.ObjectId(target.productId) : undefined,
+          change: returnItem.qty,
+          reason: 'ORDER_RETURNED_RESTORE',
+          refId: orderId,
+        });
+
+        this.logger.log(
+          `Restored inventory for variant ${target.variantId || 'N/A'} product ${target.productId || 'N/A'}: ${returnItem.qty} units (order ${orderId})`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to restore inventory for return item ${returnItem.variantId} (order ${orderId}):`,
+          error,
+        );
+        // لا نرمي خطأ هنا حتى لا نوقف عملية الإرجاع
+      }
+    }
+  }
+
+  /**
+   * تقليل المبيعات (salesCount) للأصناف المرتجعة
+   */
+  private async decrementSalesCountForReturnedItems(
+    order: OrderDocument,
+    returnItems: Array<{ variantId: string; qty: number }>,
+  ): Promise<void> {
+    if (!returnItems || returnItems.length === 0) {
+      return; // إرجاع كامل - سيتم التعامل معه بشكل مختلف
+    }
+
+    try {
+      const productSalesMap = new Map<string, number>();
+      const variantSalesMap = new Map<string, number>();
+
+      // تجميع الكميات المرتجعة لكل منتج و variant
+      for (const returnItem of returnItems) {
+        const orderItem = order.items.find(
+          (item) => item.variantId?.toString() === returnItem.variantId,
+        );
+
+        if (!orderItem) {
+          continue;
+        }
+
+        const productId = orderItem.productId.toString();
+        const currentProductReturns = productSalesMap.get(productId) || 0;
+        productSalesMap.set(productId, currentProductReturns + returnItem.qty);
+
+        if (orderItem.variantId) {
+          const variantId = orderItem.variantId.toString();
+          const currentVariantReturns = variantSalesMap.get(variantId) || 0;
+          variantSalesMap.set(variantId, currentVariantReturns + returnItem.qty);
+        }
+      }
+
+      // تقليل salesCount للمنتجات (باستخدام كمية سالبة)
+      for (const [productId, qty] of productSalesMap.entries()) {
+        await this.productService.incrementSalesCount(productId, -qty);
+      }
+
+      // تقليل salesCount للـ variants (باستخدام كمية سالبة)
+      for (const [variantId, qty] of variantSalesMap.entries()) {
+        await this.variantService.incrementSalesCount(variantId, -qty);
+      }
+
+      this.logger.log(`Decremented salesCount for returned items in order ${order.orderNumber}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to decrement salesCount for returned items in order ${order.orderNumber}:`,
+        error,
+      );
+      // لا نرمي خطأ هنا حتى لا نوقف عملية الإرجاع
+    }
+  }
+
+  /**
+   * استعادة المخزون للفاتورة كاملة
+   */
+  private async restoreInventoryForFullRefund(
+    orderId: string,
+    order: OrderDocument,
+  ): Promise<void> {
+    for (const orderItem of order.items) {
+      // تخطي الأصناف التي تم إرجاعها مسبقاً
+      if (orderItem.isReturned && orderItem.returnQty >= orderItem.qty) {
+        continue;
+      }
+
+      const qtyToRestore = orderItem.qty - (orderItem.returnQty || 0);
+      if (qtyToRestore <= 0) {
+        continue;
+      }
+
+      const target = {
+        variantId: orderItem.variantId?.toString(),
+        productId: orderItem.productId?.toString(),
+      };
+
+      const inventoryFilter = this.buildInventoryFilter(target);
+
+      try {
+        // تحديث inventory collection
+        await this.inventoryModel.updateOne(inventoryFilter, {
+          $inc: { on_hand: qtyToRestore },
+        });
+
+        // تحديث stock في المنتجات
+        if (target.variantId) {
+          await this.productsInventoryService.updateStock(target.variantId, qtyToRestore, 'add');
+        } else if (target.productId) {
+          await this.productsInventoryService.updateProductStock(
+            target.productId,
+            qtyToRestore,
+            'add',
+          );
+        }
+
+        // تسجيل في ledger
+        await this.ledgerModel.create({
+          variantId: target.variantId ? new Types.ObjectId(target.variantId) : undefined,
+          productId: target.productId ? new Types.ObjectId(target.productId) : undefined,
+          change: qtyToRestore,
+          reason: 'ORDER_FULL_REFUND_RESTORE',
+          refId: orderId,
+        });
+
+        this.logger.log(
+          `Restored inventory for full refund: variant ${target.variantId || 'N/A'} product ${target.productId || 'N/A'}: ${qtyToRestore} units (order ${orderId})`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to restore inventory for full refund item (order ${orderId}):`,
+          error,
+        );
+      }
+    }
+  }
+
+  /**
+   * تقليل المبيعات للفاتورة كاملة
+   */
+  private async decrementSalesCountForFullRefund(order: OrderDocument): Promise<void> {
+    try {
+      const productSalesMap = new Map<string, number>();
+      const variantSalesMap = new Map<string, number>();
+
+      // تجميع الكميات المرتجعة لكل منتج و variant (فقط الأصناف التي لم يتم إرجاعها بالكامل)
+      for (const orderItem of order.items) {
+        const qtyToReturn = orderItem.qty - (orderItem.returnQty || 0);
+        if (qtyToReturn <= 0) {
+          continue; // تم إرجاعه بالكامل مسبقاً
+        }
+
+        const productId = orderItem.productId.toString();
+        const currentProductReturns = productSalesMap.get(productId) || 0;
+        productSalesMap.set(productId, currentProductReturns + qtyToReturn);
+
+        if (orderItem.variantId) {
+          const variantId = orderItem.variantId.toString();
+          const currentVariantReturns = variantSalesMap.get(variantId) || 0;
+          variantSalesMap.set(variantId, currentVariantReturns + qtyToReturn);
+        }
+      }
+
+      // تقليل salesCount للمنتجات (باستخدام كمية سالبة)
+      for (const [productId, qty] of productSalesMap.entries()) {
+        await this.productService.incrementSalesCount(productId, -qty);
+      }
+
+      // تقليل salesCount للـ variants (باستخدام كمية سالبة)
+      for (const [variantId, qty] of variantSalesMap.entries()) {
+        await this.variantService.incrementSalesCount(variantId, -qty);
+      }
+
+      this.logger.log(`Decremented salesCount for full refund in order ${order.orderNumber}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to decrement salesCount for full refund in order ${order.orderNumber}:`,
+        error,
+      );
+    }
+  }
+
+  /**
    * معالجة الاسترداد
    */
   async processRefund(
@@ -2807,30 +3125,169 @@ export class OrderService {
   ): Promise<OrderDocument> {
     const order = await this.getOrderDetails(orderId);
 
+    // التحقق من حالة الطلب
     if (order.paymentStatus !== PaymentStatus.PAID) {
       throw new OrderException(ErrorCode.ORDER_ALREADY_PAID);
     }
 
-    if (dto.amount > order.total) {
-      throw new OrderException(ErrorCode.ORDER_REFUND_AMOUNT_INVALID, {
-        amount: dto.amount,
-        total: order.total,
+    if (order.status !== OrderStatus.COMPLETED && order.status !== OrderStatus.RETURNED) {
+      throw new OrderException(ErrorCode.ORDER_INVALID_STATUS, {
+        message: `لا يمكن إرجاع الطلب في الحالة ${order.status}. يجب أن يكون الطلب في حالة COMPLETED أو RETURNED`,
       });
     }
 
+    // تحديد نوع الإرجاع
+    const isFullRefund = dto.isFullRefund || !dto.items || dto.items.length === 0;
+    const returnItems = isFullRefund ? undefined : dto.items;
+
+    // التحقق من صحة الأصناف المراد إرجاعها
+    if (!isFullRefund && returnItems) {
+      this.validateReturnItems(order, returnItems);
+    }
+
+    // حساب المبلغ المراد استرداده
+    let returnAmount: number;
+    if (isFullRefund) {
+      returnAmount = order.total;
+    } else if (dto.amount !== undefined) {
+      returnAmount = dto.amount;
+      // التحقق من أن المبلغ لا يتجاوز إجمالي الطلب
+      if (returnAmount > order.total) {
+        throw new OrderException(ErrorCode.ORDER_REFUND_AMOUNT_INVALID, {
+          amount: returnAmount,
+          total: order.total,
+        });
+      }
+    } else {
+      // حساب المبلغ تلقائياً من الأصناف المرتجعة
+      returnAmount = this.calculateReturnAmount(order, returnItems);
+    }
+
+    // تحديث حالة الأصناف المرتجعة في order.items
+    if (isFullRefund) {
+      // إرجاع كامل - تحديث جميع الأصناف
+      for (const item of order.items) {
+        const qtyToReturn = item.qty - (item.returnQty || 0);
+        if (qtyToReturn > 0) {
+          item.isReturned = true;
+          item.returnQty = (item.returnQty || 0) + qtyToReturn;
+          item.itemStatus = item.returnQty >= item.qty ? 'returned' : 'fulfilled';
+          item.returnedAt = new Date();
+          if (!item.returnReason) {
+            item.returnReason = dto.reason;
+          }
+        }
+      }
+    } else if (returnItems) {
+      // إرجاع تفصيلي - تحديث الأصناف المحددة فقط
+      for (const returnItem of returnItems) {
+        const orderItem = order.items.find(
+          (item) => item.variantId?.toString() === returnItem.variantId,
+        );
+
+        if (orderItem) {
+          orderItem.isReturned = true;
+          orderItem.returnQty = (orderItem.returnQty || 0) + returnItem.qty;
+          orderItem.itemStatus = orderItem.returnQty >= orderItem.qty ? 'returned' : 'fulfilled';
+          orderItem.returnedAt = new Date();
+          if (!orderItem.returnReason) {
+            orderItem.returnReason = dto.reason;
+          }
+        }
+      }
+    }
+
+    // استعادة المخزون
+    if (isFullRefund) {
+      await this.restoreInventoryForFullRefund(orderId, order);
+    } else if (returnItems) {
+      await this.restoreInventoryForReturnedItems(orderId, order, returnItems);
+    }
+
+    // تقليل المبيعات (salesCount)
+    if (isFullRefund) {
+      await this.decrementSalesCountForFullRefund(order);
+    } else if (returnItems) {
+      await this.decrementSalesCountForReturnedItems(order, returnItems);
+    }
+
+    // تحديث returnInfo
     order.returnInfo.isReturned = true;
-    order.returnInfo.returnAmount = dto.amount;
+    order.returnInfo.returnAmount = (order.returnInfo.returnAmount || 0) + returnAmount;
     order.returnInfo.returnReason = dto.reason;
     order.returnInfo.returnedAt = new Date();
     order.returnInfo.returnedBy = new Types.ObjectId(adminId);
 
+    // تحديث returnItems في returnInfo
+    if (!order.returnInfo.returnItems) {
+      order.returnInfo.returnItems = [];
+    }
+
+    if (isFullRefund) {
+      // إضافة جميع الأصناف إلى returnItems
+      for (const item of order.items) {
+        const qtyToReturn = item.qty - (item.returnQty || 0);
+        if (qtyToReturn > 0 && item.variantId) {
+          const existingReturnItem = order.returnInfo.returnItems.find(
+            (ri) => ri.variantId.toString() === item.variantId?.toString(),
+          );
+          if (existingReturnItem) {
+            existingReturnItem.qty += qtyToReturn;
+          } else {
+            order.returnInfo.returnItems.push({
+              variantId: item.variantId,
+              qty: qtyToReturn,
+              reason: dto.reason,
+              requestedAt: new Date(),
+              approvedAt: new Date(),
+              approvedBy: new Types.ObjectId(adminId),
+            });
+          }
+        }
+      }
+    } else if (returnItems) {
+      // إضافة الأصناف المحددة إلى returnItems
+      for (const returnItem of returnItems) {
+        const orderItem = order.items.find(
+          (item) => item.variantId?.toString() === returnItem.variantId,
+        );
+        if (orderItem && orderItem.variantId) {
+          const existingReturnItem = order.returnInfo.returnItems.find(
+            (ri) => ri.variantId.toString() === returnItem.variantId,
+          );
+          if (existingReturnItem) {
+            existingReturnItem.qty += returnItem.qty;
+          } else {
+            order.returnInfo.returnItems.push({
+              variantId: orderItem.variantId,
+              qty: returnItem.qty,
+              reason: dto.reason,
+              requestedAt: new Date(),
+              approvedAt: new Date(),
+              approvedBy: new Types.ObjectId(adminId),
+            });
+          }
+        }
+      }
+    }
+
     // تحديث حالة الدفع
     const oldPaymentStatus = order.paymentStatus;
+    const totalReturnedAmount = order.returnInfo.returnAmount || 0;
     const newPaymentStatus =
-      dto.amount === order.total ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED;
+      totalReturnedAmount >= order.total
+        ? PaymentStatus.REFUNDED
+        : PaymentStatus.PARTIALLY_REFUNDED;
     order.paymentStatus = newPaymentStatus;
-    // ملاحظة: نستخدم REFUNDED فقط في OrderStatus (تم تبسيط الحالات)
-    order.status = OrderStatus.REFUNDED;
+
+    // تحديث حالة الطلب
+    const oldStatus = order.status;
+    if (totalReturnedAmount >= order.total) {
+      order.status = OrderStatus.REFUNDED;
+    } else {
+      // إذا كان الإرجاع جزئياً، نستخدم RETURNED
+      order.status = OrderStatus.RETURNED;
+    }
 
     // تسجيل حدث الاسترداد في audit
     if (this.auditService) {
@@ -2840,7 +3297,7 @@ export class OrderService {
           orderId: String(order._id),
           action: 'refunded',
           paymentMethod: order.paymentMethod || 'UNKNOWN',
-          amount: dto.amount,
+          amount: returnAmount,
           currency: order.currency,
           transactionId: order.paymentTransactionId,
           failureReason:
@@ -2856,9 +3313,9 @@ export class OrderService {
           orderId: String(order._id),
           action: 'refunded',
           orderNumber: order.orderNumber,
-          oldStatus: order.statusHistory[order.statusHistory.length - 1]?.status,
-          newStatus: OrderStatus.REFUNDED,
-          totalAmount: dto.amount,
+          oldStatus,
+          newStatus: order.status,
+          totalAmount: returnAmount,
           currency: order.currency,
           performedBy: adminId,
           reason: dto.reason,
@@ -2871,10 +3328,94 @@ export class OrderService {
       order.status,
       new Types.ObjectId(adminId),
       'admin',
-      `استرداد ${dto.amount} - ${dto.reason}`,
+      `استرداد ${returnAmount} ${order.currency} - ${isFullRefund ? 'إرجاع كامل' : 'إرجاع تفصيلي'} - ${dto.reason}`,
     );
 
     await order.save();
+
+    // إنشاء وإرسال فاتورة الإرجاع
+    try {
+      // إنشاء رقم فاتورة الإرجاع إذا لم يكن موجوداً
+      if (!order.returnInvoiceNumber) {
+        const year = new Date().getFullYear();
+        const count = await this.orderModel.countDocuments({
+          returnInvoiceNumber: { $exists: true },
+          'returnInfo.returnedAt': {
+            $gte: new Date(`${year}-01-01`),
+            $lt: new Date(`${year + 1}-01-01`),
+          },
+        });
+        order.returnInvoiceNumber = `RET-${year}-${String(count + 1).padStart(5, '0')}`;
+        await order.save();
+      }
+
+      // إنشاء PDF فاتورة الإرجاع
+      const returnPdfBuffer = await this.generateReturnInvoicePDF(order);
+      this.logger.log(
+        `Return invoice PDF generated successfully for order ${order.orderNumber}, size: ${returnPdfBuffer.length} bytes`,
+      );
+
+      // حفظ PDF مؤقت
+      try {
+        const tempInvoicesDir = this.configService?.get('TEMP_INVOICES_DIR') || 'temp-invoices';
+        const tempPdfPath = path.join(
+          process.cwd(),
+          tempInvoicesDir,
+          `return-invoice-${order.returnInvoiceNumber}-${Date.now()}.pdf`,
+        );
+        const tempDir = path.dirname(tempPdfPath);
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
+        }
+        fs.writeFileSync(tempPdfPath, returnPdfBuffer);
+        this.logger.log(`Return invoice PDF saved temporarily at: ${tempPdfPath}`);
+
+        // حفظ رابط الفاتورة في الطلب
+        if (this.uploadService) {
+          try {
+            const fileName = `return-invoice-${order.returnInvoiceNumber}.pdf`;
+            const uploadedResult = await this.uploadService.uploadFile(
+              {
+                buffer: returnPdfBuffer,
+                originalname: fileName,
+                mimetype: 'application/pdf',
+                size: returnPdfBuffer.length,
+              },
+              'return-invoices',
+              fileName,
+            );
+            order.returnInvoiceUrl = uploadedResult.url;
+            await order.save();
+            this.logger.log(`Return invoice URL saved: ${uploadedResult.url}`);
+          } catch (uploadError) {
+            this.logger.warn(
+              `Failed to upload return invoice PDF for order ${order.orderNumber}:`,
+              uploadError,
+            );
+          }
+        }
+      } catch (saveError) {
+        this.logger.warn(
+          `Failed to save temporary return invoice PDF for order ${order.orderNumber}:`,
+          saveError,
+        );
+      }
+
+      // إرسال فاتورة الإرجاع بالبريد الإلكتروني
+      await this.sendReturnInvoiceEmail(order, returnPdfBuffer).catch((err) => {
+        this.logger.error(
+          `Failed to send return invoice email for order ${order.orderNumber}:`,
+          err,
+        );
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate or send return invoice for order ${order.orderNumber}:`,
+        error,
+      );
+      // لا نرمي خطأ هنا حتى لا نوقف عملية الإرجاع
+    }
+
     return order;
   }
 
@@ -4656,12 +5197,20 @@ export class OrderService {
             }
           </div>
 
+          ${(() => {
+            // التحقق من وجود أصناف مرتجعة
+            const hasReturnedItems = order.items.some(
+              (item) => item.isReturned && (item.returnQty || 0) > 0,
+            );
+
+            return `
           <table class="items-table">
             <thead>
               <tr>
                 <th>#</th>
                 <th>المنتج</th>
                 <th>الكمية</th>
+                ${hasReturnedItems ? '<th>الحالة</th>' : ''}
                 <th>السعر الوحدة</th>
                 <th>الخصم</th>
                 <th>المجموع</th>
@@ -4696,11 +5245,33 @@ export class OrderService {
                   // تحديد إذا كان هناك عرض مطبق
                   const hasPromotion = item.appliedPromotionId ? ' (عرض مطبق)' : '';
 
+                  // تحديد إذا كان الصنف مرتجع
+                  const isReturned = item.isReturned && (item.returnQty || 0) > 0;
+                  const returnQty = item.returnQty || 0;
+                  const isFullyReturned = returnQty >= item.qty;
+                  const isPartiallyReturned = returnQty > 0 && returnQty < item.qty;
+
+                  // تلوين الصف للأصناف المرتجعة
+                  const rowStyle = isReturned ? 'style="background-color: #fff3cd;"' : '';
+
+                  // نص الكمية مع إشارة للإرجاع
+                  let qtyDisplay = item.qty.toString();
+                  if (isPartiallyReturned) {
+                    qtyDisplay = `${item.qty} (مرتجع: ${returnQty})`;
+                  } else if (isFullyReturned) {
+                    qtyDisplay = `${item.qty} (مرتجع بالكامل)`;
+                  }
+
+                  // علامة الإرجاع
+                  const returnBadge = isReturned
+                    ? `<span style="color: #dc3545; font-weight: bold;">↩️ ${isFullyReturned ? 'مرتجع بالكامل' : 'مرتجع جزئياً'}</span>`
+                    : '<span style="color: #28a745;">✓ سليم</span>';
+
                   return `
-                <tr>
+                <tr ${rowStyle}>
                   <td>${index + 1}</td>
                   <td>
-                    <strong>${item.snapshot?.name || 'منتج'}${hasPromotion}</strong><br/>
+                    <strong>${item.snapshot?.name || 'منتج'}${hasPromotion}${isReturned ? ' ↩️' : ''}</strong><br/>
                     ${item.snapshot?.sku ? `<small>SKU: ${item.snapshot.sku}</small><br/>` : ''}
                     ${item.snapshot?.brandName ? `<small>العلامة: ${item.snapshot.brandName}</small><br/>` : ''}
                     ${
@@ -4713,7 +5284,8 @@ export class OrderService {
                         : ''
                     }
                   </td>
-                  <td>${item.qty}</td>
+                  <td>${qtyDisplay}</td>
+                  ${hasReturnedItems ? `<td>${returnBadge}</td>` : ''}
                   <td>${formatCurrency(item.finalPrice, order.currency)}</td>
                   <td>${item.discount > 0 ? formatCurrency(item.discount, order.currency) : '-'}</td>
                   <td><strong>${formatCurrency(item.lineTotal, order.currency)}</strong></td>
@@ -4723,6 +5295,43 @@ export class OrderService {
                 .join('')}
             </tbody>
           </table>
+          `;
+          })()}
+
+          ${(() => {
+            // قسم ملخص الإرجاع
+            const hasReturnedItems =
+              order.returnInfo?.isReturned && (order.returnInfo.returnAmount || 0) > 0;
+            if (!hasReturnedItems) {
+              return '';
+            }
+
+            const returnedItemsCount = order.items.filter(
+              (item) => item.isReturned && (item.returnQty || 0) > 0,
+            ).length;
+            const returnAmount = order.returnInfo.returnAmount || 0;
+            const returnReason = order.returnInfo.returnReason || 'غير محدد';
+            const returnedAt = order.returnInfo.returnedAt
+              ? formatDate(order.returnInfo.returnedAt)
+              : 'غير محدد';
+
+            return `
+          <div style="margin-top: 30px; padding: 15px; background: #f8d7da; border-radius: 5px; border-right: 4px solid #dc3545;">
+            <h3 style="color: #721c24; margin-bottom: 15px;">↩️ ملخص الإرجاع / Return Summary</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div>
+                <p><strong>المبلغ المرتجع:</strong> <span style="color: #dc3545; font-size: 18px; font-weight: bold;">${formatCurrency(returnAmount, order.currency)}</span></p>
+                <p><strong>عدد الأصناف المرتجعة:</strong> ${returnedItemsCount}</p>
+              </div>
+              <div>
+                <p><strong>تاريخ الإرجاع:</strong> ${returnedAt}</p>
+                <p><strong>سبب الإرجاع:</strong> ${returnReason}</p>
+              </div>
+            </div>
+            ${order.returnInvoiceNumber ? `<p style="margin-top: 10px;"><strong>رقم فاتورة الإرجاع:</strong> ${order.returnInvoiceNumber}</p>` : ''}
+          </div>
+          `;
+          })()}
 
           ${
             itemsWithPromotions.length > 0 ||
@@ -4957,6 +5566,426 @@ export class OrderService {
    * يتم استدعاء هذه الدالة تلقائياً عند تحديث حالة الطلب إلى CONFIRMED أو COMPLETED
    * سواء كان التحديث من لوحة التحكم أو من النظام أو من العميل
    */
+  /**
+   * إنشاء فاتورة إرجاع منفصلة (Credit Note)
+   */
+  private async generateReturnInvoicePDF(order: OrderDocument): Promise<Buffer> {
+    try {
+      // التحقق من وجود إرجاع
+      if (!order.returnInfo?.isReturned || (order.returnInfo.returnAmount || 0) <= 0) {
+        throw new Error('لا يوجد إرجاع لهذا الطلب');
+      }
+
+      // جلب بيانات المستخدم
+      const user = await this.userModel.findById(order.userId);
+
+      // تحديد نوع الحساب
+      const getAccountType = (): string => {
+        if (order.accountType) {
+          const accountTypeMap: Record<string, string> = {
+            retail: 'عميل',
+            merchant: 'تاجر',
+            engineer: 'مهندس',
+            user: 'عميل',
+            admin: 'مدير',
+            super_admin: 'مدير عام',
+          };
+          return accountTypeMap[order.accountType] || order.accountType;
+        }
+
+        if (user) {
+          if (user.roles?.includes(UserRole.MERCHANT) || user.merchant_capable) {
+            return 'تاجر';
+          }
+          if (user.roles?.includes(UserRole.ENGINEER) || user.engineer_capable) {
+            return 'مهندس';
+          }
+          if (user.roles?.includes(UserRole.ADMIN) || user.roles?.includes(UserRole.SUPER_ADMIN)) {
+            return user.roles.includes(UserRole.SUPER_ADMIN) ? 'مدير عام' : 'مدير';
+          }
+          return 'عميل';
+        }
+
+        return 'غير محدد';
+      };
+
+      const userInfo = user
+        ? {
+            name:
+              (user.firstName && user.lastName
+                ? `${user.firstName} ${user.lastName}`
+                : user.firstName || user.lastName) ||
+              order.customerName ||
+              'غير محدد',
+            phone: user.phone || order.customerPhone || 'غير محدد',
+            accountType: getAccountType(),
+          }
+        : {
+            name: order.customerName || 'غير محدد',
+            phone: order.customerPhone || 'غير محدد',
+            accountType: getAccountType(),
+          };
+
+      // مسار ترويسة الشركة
+      const assetsDir = this.configService?.get('ASSETS_DIR') || 'assets';
+      const letterheadPath = path.join(process.cwd(), assetsDir, 'letterhead.png');
+      let letterheadBase64 = '';
+
+      if (fs.existsSync(letterheadPath)) {
+        const letterheadBuffer = fs.readFileSync(letterheadPath);
+        letterheadBase64 = `data:image/png;base64,${letterheadBuffer.toString('base64')}`;
+      }
+
+      // تحميل الخطوط
+      const cairoRegularBase64 = fs
+        .readFileSync(path.join(process.cwd(), assetsDir, 'fonts', 'Cairo-Regular.ttf'))
+        .toString('base64');
+
+      const cairoBoldBase64 = fs
+        .readFileSync(path.join(process.cwd(), assetsDir, 'fonts', 'Cairo-Bold.ttf'))
+        .toString('base64');
+
+      // تنسيق التاريخ
+      const formatDate = (date?: Date) => {
+        if (!date) return 'غير محدد';
+        return new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+      };
+
+      // تنسيق المبلغ
+      const formatCurrency = (amount: number, currency: string) => {
+        return `${amount.toLocaleString('en-US')} ${currency}`;
+      };
+
+      // جمع الأصناف المرتجعة فقط
+      const returnedItems = order.items.filter(
+        (item) => item.isReturned && (item.returnQty || 0) > 0,
+      );
+
+      if (returnedItems.length === 0) {
+        throw new Error('لا توجد أصناف مرتجعة');
+      }
+
+      // حساب المبلغ المرتجع الإجمالي
+      let totalReturnAmount = 0;
+      returnedItems.forEach((item) => {
+        const returnQty = item.returnQty || 0;
+        const returnRatio = returnQty / item.qty;
+        const itemReturnAmount = item.lineTotal * returnRatio;
+        totalReturnAmount += itemReturnAmount;
+      });
+      totalReturnAmount = Math.round(totalReturnAmount * 100) / 100;
+
+      // رقم فاتورة الإرجاع
+      const returnInvoiceNumber =
+        order.returnInvoiceNumber ||
+        `RET-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 100000)).padStart(5, '0')}`;
+
+      // إنشاء محتوى HTML لفاتورة الإرجاع
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <title>فاتورة إرجاع ${returnInvoiceNumber}</title>
+          <style>
+            @font-face {
+              font-family: 'Cairo';
+              src: url('data:font/ttf;base64,${cairoRegularBase64}') format('truetype');
+              font-weight: 400;
+            }
+            @font-face {
+              font-family: 'Cairo';
+              src: url('data:font/ttf;base64,${cairoBoldBase64}') format('truetype');
+              font-weight: 700;
+            }
+            @page {
+              size: A4;
+              margin-top: 30mm;
+              margin-bottom: 30mm;
+              margin-left: 0;
+              margin-right: 0;
+            }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: 'Cairo', sans-serif !important;
+              direction: rtl;
+              padding: 30mm 0;
+              margin: 0;
+              ${letterheadBase64 ? `background-image: url('${letterheadBase64}');` : 'background: #fff;'}
+              background-size: cover;
+              background-repeat: no-repeat;
+              background-position: center;
+              background-attachment: fixed;
+              color: #333;
+              font-size: 12px;
+              line-height: 1.6;
+              position: relative;
+              min-height: 100vh;
+            }
+            body::before {
+              content: '';
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              ${letterheadBase64 ? `background-image: url('${letterheadBase64}');` : ''}
+              background-size: cover;
+              background-repeat: no-repeat;
+              background-position: center;
+              z-index: 0;
+              pointer-events: none;
+            }
+            body > * {
+              position: relative;
+              z-index: 1;
+            }
+            .invoice-info, .delivery-info, .items-table, .totals-section, .footer {
+              background: rgba(255, 255, 255, 0.95);
+            }
+            .info-box {
+              background: rgba(245, 245, 245, 0.95);
+            }
+            .invoice-info {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+              margin-bottom: 30px;
+              padding: 20px;
+            }
+            .info-box {
+              padding: 15px;
+              border-radius: 5px;
+            }
+            .info-box h3 {
+              margin-bottom: 10px;
+              color: #1976d2;
+              border-bottom: 2px solid #1976d2;
+              padding-bottom: 5px;
+            }
+            .items-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 20px 0;
+              background: white;
+            }
+            .items-table th,
+            .items-table td {
+              padding: 12px;
+              text-align: right;
+              border: 1px solid #ddd;
+            }
+            .items-table th {
+              background: #f8d7da;
+              color: #721c24;
+              font-weight: bold;
+            }
+            .items-table tr:nth-child(even) {
+              background: #f9f9f9;
+            }
+            .totals-section {
+              margin-top: 30px;
+              padding: 20px;
+            }
+            .totals-box {
+              background: #f8d7da;
+              padding: 20px;
+              border-radius: 5px;
+              border-right: 4px solid #dc3545;
+            }
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 10px 0;
+              border-bottom: 1px solid #ddd;
+            }
+            .total-row:last-child {
+              border-bottom: none;
+              font-size: 18px;
+              font-weight: bold;
+              color: #dc3545;
+            }
+            .footer {
+              margin-top: 30px;
+              padding: 20px;
+              text-align: center;
+              color: #666;
+            }
+            .return-header {
+              text-align: center;
+              padding: 20px;
+              background: #f8d7da;
+              border-radius: 5px;
+              margin-bottom: 30px;
+              border-right: 4px solid #dc3545;
+            }
+            .return-header h1 {
+              color: #dc3545;
+              font-size: 24px;
+              margin-bottom: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="return-header">
+            <h1>↩️ فاتورة إرجاع / Return Invoice</h1>
+            <p style="font-size: 16px; color: #721c24;"><strong>Credit Note</strong></p>
+          </div>
+
+          <div class="invoice-info">
+            <div class="info-box">
+              <h3>معلومات فاتورة الإرجاع</h3>
+              <p><strong>رقم فاتورة الإرجاع:</strong> ${returnInvoiceNumber}</p>
+              <p><strong>رقم الطلب الأصلي:</strong> ${order.orderNumber}</p>
+              <p><strong>رقم الفاتورة الأصلية:</strong> ${order.invoiceNumber || order.orderNumber}</p>
+              <p><strong>تاريخ الإرجاع:</strong> ${formatDate(order.returnInfo.returnedAt)}</p>
+              <p><strong>سبب الإرجاع:</strong> ${order.returnInfo.returnReason || 'غير محدد'}</p>
+            </div>
+            
+            <div class="info-box">
+              <h3>معلومات العميل</h3>
+              <p><strong>الاسم:</strong> ${userInfo.name}</p>
+              <p><strong>الهاتف:</strong> ${userInfo.phone}</p>
+              <p><strong>نوع الحساب:</strong> ${userInfo.accountType}</p>
+            </div>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>المنتج</th>
+                <th>الكمية المرتجعة</th>
+                <th>السعر الوحدة</th>
+                <th>المبلغ المرتجع</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${returnedItems
+                .map((item, index) => {
+                  const returnQty = item.returnQty || 0;
+                  const returnRatio = returnQty / item.qty;
+                  const itemReturnAmount = Math.round(item.lineTotal * returnRatio * 100) / 100;
+
+                  // تجميع السمات
+                  const attributes: string[] = [];
+                  if (item.snapshot?.attributes) {
+                    Object.entries(item.snapshot.attributes).forEach(([key, value]) => {
+                      attributes.push(`${key}: ${value}`);
+                    });
+                  }
+
+                  const snapshotAny = item.snapshot as any;
+                  if (
+                    snapshotAny?.variantAttributes &&
+                    Array.isArray(snapshotAny.variantAttributes)
+                  ) {
+                    snapshotAny.variantAttributes.forEach((attr: any) => {
+                      const attrName = attr.attributeName || attr.attributeNameEn || 'Attribute';
+                      const attrValue = attr.value || attr.valueEn || 'N/A';
+                      attributes.push(`${attrName}: ${attrValue}`);
+                    });
+                  }
+
+                  return `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>
+                    <strong>${item.snapshot?.name || 'منتج'}</strong><br/>
+                    ${item.snapshot?.sku ? `<small>SKU: ${item.snapshot.sku}</small><br/>` : ''}
+                    ${item.snapshot?.brandName ? `<small>العلامة: ${item.snapshot.brandName}</small><br/>` : ''}
+                    ${
+                      attributes.length > 0
+                        ? `
+                    <div style="margin-top: 5px; font-size: 10px; color: #666;">
+                      ${attributes.map((attr) => `<span>${attr}</span>`).join(' • ')}
+                    </div>
+                    `
+                        : ''
+                    }
+                  </td>
+                  <td>${returnQty} من ${item.qty}</td>
+                  <td>${formatCurrency(item.finalPrice, order.currency)}</td>
+                  <td><strong style="color: #dc3545;">${formatCurrency(itemReturnAmount, order.currency)}</strong></td>
+                </tr>
+              `;
+                })
+                .join('')}
+            </tbody>
+          </table>
+
+          <div class="totals-section">
+            <div class="totals-box">
+              <div class="total-row">
+                <span>المبلغ المرتجع الإجمالي:</span>
+                <span style="color: #dc3545; font-size: 20px; font-weight: bold;">${formatCurrency(totalReturnAmount, order.currency)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 5px; border-right: 4px solid #ffc107;">
+            <h3 style="color: #856404; margin-bottom: 10px;">معلومات الطلب الأصلي</h3>
+            <p><strong>رقم الطلب:</strong> ${order.orderNumber}</p>
+            <p><strong>تاريخ الطلب:</strong> ${formatDate(order.createdAt)}</p>
+            <p><strong>المبلغ الأصلي:</strong> ${formatCurrency(order.total, order.currency)}</p>
+            <p><strong>طريقة الدفع:</strong> ${order.paymentMethod === PaymentMethod.COD ? 'الدفع عند الاستلام' : order.paymentMethod === PaymentMethod.BANK_TRANSFER ? 'تحويل بنكي' : order.paymentMethod}</p>
+          </div>
+
+          <div class="footer">
+            <p>شكراً لاختياركم خدماتنا</p>
+            <p>Thank you for choosing our services</p>
+            <p style="margin-top: 10px; color: #999;">تم إنشاء هذه الفاتورة تلقائياً من نظام إدارة الطلبات</p>
+            <p style="color: #999;">This return invoice was automatically generated by the order management system</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // إنشاء PDF باستخدام puppeteer
+      const puppeteerExecPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        ...(puppeteerExecPath && puppeteerExecPath !== 'temp-invoices'
+          ? { executablePath: puppeteerExecPath }
+          : {}),
+      });
+
+      try {
+        const page = await browser.newPage();
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        const pdfData = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: {
+            top: '30mm',
+            bottom: '30mm',
+            left: '0',
+            right: '0',
+          },
+        });
+
+        return Buffer.from(pdfData);
+      } finally {
+        await browser.close();
+      }
+    } catch (error) {
+      this.logger.error('Error generating return invoice PDF', {
+        error: error instanceof Error ? error.message : String(error),
+        orderId: order._id.toString(),
+      });
+      throw new OrderPdfGenerationFailedException({ orderId: order._id.toString() });
+    }
+  }
+
   private async sendOrderInvoiceForStatus(orderId: string): Promise<void> {
     let orderNumber = orderId; // للاستخدام في catch block
     try {
@@ -5159,6 +6188,123 @@ export class OrderService {
     } catch (error) {
       this.logger.error(`Error sending invoice email for order ${order.orderNumber}:`, error);
       // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
+    }
+  }
+
+  /**
+   * إرسال فاتورة الإرجاع بالبريد الإلكتروني
+   */
+  private async sendReturnInvoiceEmail(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
+    try {
+      if (!this.emailAdapter || !this.emailAdapter.isInitialized()) {
+        this.logger.warn('Email adapter not initialized. Cannot send return invoice email.');
+        return;
+      }
+
+      // جلب بيانات المستخدم
+      const user = await this.userModel.findById(order.userId);
+      const customerName = user
+        ? user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user.firstName || user.lastName || order.customerName || 'N/A'
+        : order.customerName || 'N/A';
+
+      const customerPhone =
+        user?.phone || order.customerPhone || order.deliveryAddress?.recipientPhone || 'N/A';
+
+      // تنسيق التاريخ والأرقام
+      const formatDate = (date?: Date) => {
+        if (!date) return 'N/A';
+        return new Date(date).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+      };
+
+      const formatNumber = (num: number) => {
+        return num.toLocaleString('en-US');
+      };
+
+      const returnInvoiceNumber = order.returnInvoiceNumber || 'N/A';
+      const fileName = `return-invoice-${returnInvoiceNumber}-${Date.now()}.pdf`;
+
+      // استخدام متغير البيئة للبريد الإلكتروني
+      const salesManagerEmail =
+        this.configService?.get('SALES_MANAGER_EMAIL') || 'Mohammedsalehallawzi14@gmail.com';
+
+      const returnAmount = order.returnInfo?.returnAmount || 0;
+      const returnReason = order.returnInfo?.returnReason || 'غير محدد';
+
+      const result = await this.emailAdapter.sendEmail({
+        to: salesManagerEmail,
+        subject: `فاتورة إرجاع - ${returnInvoiceNumber} | Return Invoice - ${returnInvoiceNumber}`,
+        html: `
+          <!DOCTYPE html>
+          <html lang="ar" dir="rtl">
+          <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+          </head>
+          <body>
+          <div dir="rtl" style="font-family: Arial, Tahoma, sans-serif; padding: 20px;">
+            <h2 style="color: #dc3545;">↩️ فاتورة إرجاع جديدة</h2>
+            <p>تم إرجاع طلب وتم إنشاء فاتورة الإرجاع المرفقة.</p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+            <h3 style="color: #333;">تفاصيل الإرجاع:</h3>
+            <ul style="line-height: 1.8;">
+              <li><strong>رقم الطلب الأصلي:</strong> ${order.orderNumber}</li>
+              <li><strong>رقم فاتورة الإرجاع:</strong> ${returnInvoiceNumber}</li>
+              <li><strong>اسم العميل:</strong> ${customerName}</li>
+              <li><strong>الهاتف:</strong> ${customerPhone}</li>
+              <li><strong>المبلغ المرتجع:</strong> ${formatNumber(returnAmount)} ${order.currency}</li>
+              <li><strong>تاريخ الإرجاع:</strong> ${formatDate(order.returnInfo?.returnedAt)}</li>
+              <li><strong>سبب الإرجاع:</strong> ${returnReason}</li>
+            </ul>
+            <p style="margin-top: 20px; color: #666;">يرجى الاطلاع على فاتورة الإرجاع المرفقة للتفاصيل الكاملة.</p>
+          </div>
+          <div dir="ltr" style="font-family: Arial, sans-serif; padding: 20px; border-top: 1px solid #ddd; margin-top: 20px;">
+            <h2 style="color: #dc3545;">↩️ New Return Invoice</h2>
+            <p>A return has been processed and the attached return invoice has been generated.</p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+            <h3 style="color: #333;">Return Details:</h3>
+            <ul style="line-height: 1.8;">
+              <li><strong>Original Order Number:</strong> ${order.orderNumber}</li>
+              <li><strong>Return Invoice Number:</strong> ${returnInvoiceNumber}</li>
+              <li><strong>Customer Name:</strong> ${customerName}</li>
+              <li><strong>Phone:</strong> ${customerPhone}</li>
+              <li><strong>Return Amount:</strong> ${formatNumber(returnAmount)} ${order.currency}</li>
+              <li><strong>Return Date:</strong> ${formatDate(order.returnInfo?.returnedAt)}</li>
+              <li><strong>Return Reason:</strong> ${returnReason}</li>
+            </ul>
+            <p style="margin-top: 20px; color: #666;">Please review the attached return invoice for complete details.</p>
+          </div>
+          </body>
+          </html>
+        `,
+        attachments: [
+          {
+            filename: fileName,
+            content: pdfBuffer,
+            contentType: 'application/pdf',
+          },
+        ],
+      });
+
+      if (result.success) {
+        this.logger.log(
+          `Return invoice email sent successfully for order ${order.orderNumber} to sales manager`,
+        );
+      } else {
+        this.logger.error(
+          `Failed to send return invoice email for order ${order.orderNumber}: ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error sending return invoice email for order ${order.orderNumber}:`,
+        error,
+      );
     }
   }
 

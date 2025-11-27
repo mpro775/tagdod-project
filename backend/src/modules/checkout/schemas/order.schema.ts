@@ -499,6 +499,13 @@ export class Order {
   @Prop()
   receiptUrl?: string;
 
+  // ===== فاتورة الإرجاع =====
+  @Prop()
+  returnInvoiceNumber?: string; // RET-2024-00001
+
+  @Prop()
+  returnInvoiceUrl?: string;
+
   // ===== التقييم =====
   @Prop({ type: RatingInfoSchema, default: {} })
   ratingInfo!: RatingInfo;

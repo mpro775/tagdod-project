@@ -9,6 +9,7 @@ import {
   Min,
   Max,
   IsDateString,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -512,23 +513,49 @@ export class ShipOrderDto {
   notes?: string;
 }
 
+export class RefundItemDto {
+  @ApiProperty({ example: '507f1f77bcf86cd799439011', description: 'معرف الـ variant المراد إرجاعه' })
+  @IsString()
+  variantId!: string;
+
+  @ApiProperty({ example: 2, minimum: 1, description: 'الكمية المراد إرجاعها' })
+  @IsNumber()
+  @Min(1)
+  qty!: number;
+}
+
 export class RefundOrderDto {
-  @ApiProperty({ example: 50000 })
+  @ApiPropertyOptional({ 
+    example: 50000, 
+    description: 'المبلغ المراد استرداده. إذا لم يتم تحديده وتم تحديد items، سيتم حسابه تلقائياً. إذا كان isFullRefund=true، سيتم استخدام total الطلب.' 
+  })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  amount!: number;
+  amount?: number;
 
-  @ApiProperty({ example: 'عطل في المنتج' })
+  @ApiProperty({ example: 'عطل في المنتج', description: 'سبب الإرجاع' })
   @IsString()
+  @MinLength(3)
   reason!: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    type: [RefundItemDto],
+    description: 'قائمة الأصناف المراد إرجاعها (للإرجاع التفصيلي). إذا لم يتم تحديدها، سيتم إرجاع الفاتورة كاملة.',
+    example: [{ variantId: '507f1f77bcf86cd799439011', qty: 2 }]
+  })
   @IsOptional()
   @IsArray()
-  items?: Array<{
-    variantId: string;
-    qty: number;
-  }>;
+  @ValidateNested({ each: true })
+  @Type(() => RefundItemDto)
+  items?: RefundItemDto[];
+
+  @ApiPropertyOptional({ 
+    example: false, 
+    description: 'إذا كان true، سيتم إرجاع الفاتورة كاملة بغض النظر عن items أو amount' 
+  })
+  @IsOptional()
+  isFullRefund?: boolean;
 }
 
 export class RateOrderDto {

@@ -1,7 +1,8 @@
 # 💼 عروض المهندسين (Engineer Offers)
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
-> 📅 **آخر تحديث**: يناير 2025
+> 📅 **آخر تحديث**: يناير 2025  
+> ✅ **تحديث:** إضافة دعم أنواع العملات (YER, SAR, USD) للعروض
 
 خدمة عروض المهندسين توفر endpoints لإدارة العروض المقدمة على طلبات الخدمات.
 
@@ -12,10 +13,12 @@
 ## 📋 جدول المحتويات
 
 ### للعملاء (Customers)
+
 1. [العروض المقدمة على طلب](#1-العروض-المقدمة-على-طلب)
 2. [تفاصيل عرض محدد](#2-تفاصيل-عرض-محدد)
 
 ### للمهندسين (Engineers)
+
 3. [تقديم عرض](#3-تقديم-عرض)
 4. [تحديث عرض](#4-تحديث-عرض)
 5. [حذف عرض](#5-حذف-عرض)
@@ -51,6 +54,7 @@
           "jobTitle": "مهندس كهرباء"
         },
         "amount": 750000,
+        "currency": "YER",
         "note": "سأقوم بتركيب النظام بأعلى جودة",
         "distanceKm": 2.5,
         "status": "OFFERED",
@@ -103,7 +107,8 @@ Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
     "data": {
       "offer": {
         "_id": "64offer123",
-        "amountYER": 9000,
+        "amount": 9000,
+        "currency": "YER",
         "note": "يشمل التركيب الكامل",
         "status": "OFFERED",
         "statusLabel": "عرض مقدم",
@@ -149,11 +154,14 @@ Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
 {
   "requestId": "64service123",
   "amount": 750000,
+  "currency": "YER",
   "note": "سأقوم بتركيب النظام بأعلى جودة",
-  "lat": 44.2060,
+  "lat": 44.206,
   "lng": 15.3694
 }
 ```
+
+> ℹ️ **نوع العملة:** يجب تحديد نوع العملة (`currency`) عند تقديم العرض. القيم المتاحة: `YER` (الريال اليمني)، `SAR` (الريال السعودي)، `USD` (الدولار الأمريكي).
 
 #### Response - نجاح
 
@@ -166,6 +174,7 @@ Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
       "requestId": "64service123",
       "engineerId": "64engineer123",
       "amount": 750000,
+      "currency": "YER",
       "note": "سأقوم بتركيب النظام بأعلى جودة",
       "distanceKm": 2.5,
       "status": "OFFERED",
@@ -200,6 +209,7 @@ Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
 Future<EngineerOffer> createOffer({
   required String requestId,
   required double amount,
+  required String currency, // YER, SAR, USD
   String? note,
   required double lat,
   required double lng,
@@ -207,6 +217,7 @@ Future<EngineerOffer> createOffer({
   final response = await _dio.post('/services/engineer/offers', data: {
     'requestId': requestId,
     'amount': amount,
+    'currency': currency,
     if (note != null) 'note': note,
     'lat': lat,
     'lng': lng,
@@ -219,14 +230,14 @@ Future<EngineerOffer> createOffer({
 
   if (apiResponse.isSuccess) {
     final result = apiResponse.data!['data'] as Map<String, dynamic>?;
-    
+
     // التحقق من وجود خطأ
     if (result != null && result.containsKey('error')) {
       final error = result['error'] as String;
       switch (error) {
         case 'OFFER_ALREADY_EXISTS':
           throw ApiException(
-            result['message'] as String? ?? 
+            result['message'] as String? ??
             'لا يمكنك تقديم أكثر من عرض واحد لنفس الطلب. يمكنك تعديل عرضك الموجود بدلاً من ذلك.'
           );
         case 'REQUEST_NOT_FOUND':
@@ -239,7 +250,7 @@ Future<EngineerOffer> createOffer({
           throw ApiException('حدث خطأ أثناء تقديم العرض');
       }
     }
-    
+
     return EngineerOffer.fromJson(result!);
   } else {
     throw ApiException(apiResponse.error!);
@@ -262,9 +273,12 @@ Future<EngineerOffer> createOffer({
 ```json
 {
   "amount": 700000,
+  "currency": "SAR",
   "note": "سأقوم بتركيب النظام بأعلى جودة مع خصم"
 }
 ```
+
+> ℹ️ **تحديث العملة:** يمكن تحديث نوع العملة (`currency`) عند تحديث العرض. جميع الحقول اختيارية.
 
 #### Response - نجاح
 
@@ -277,6 +291,7 @@ Future<EngineerOffer> createOffer({
       "requestId": "64service123",
       "engineerId": "64engineer123",
       "amount": 700000,
+      "currency": "SAR",
       "note": "سأقوم بتركيب النظام بأعلى جودة مع خصم",
       "distanceKm": 2.5,
       "status": "OFFERED",
@@ -295,10 +310,12 @@ Future<EngineerOffer> createOffer({
 Future<EngineerOffer> updateOffer({
   required String offerId,
   double? amount,
+  String? currency, // YER, SAR, USD
   String? note,
 }) async {
   final response = await _dio.patch('/services/engineer/offers/$offerId', data: {
     if (amount != null) 'amount': amount,
+    if (currency != null) 'currency': currency,
     if (note != null) 'note': note,
   });
 
@@ -386,6 +403,7 @@ Future<bool> deleteOffer(String offerId) async {
         },
         "engineerId": "64engineer123",
         "amount": 750000,
+        "currency": "YER",
         "note": "سأقوم بتركيب النظام بأعلى جودة",
         "distanceKm": 2.5,
         "status": "ACCEPTED",
@@ -421,20 +439,37 @@ Future<List<EngineerOffer>> getMyOffers() async {
 
 ---
 
+## أنواع العملات (Currency)
+
+عند تقديم عرض، يجب على المهندس تحديد نوع العملة والقيمة. العميل سيرى نوع العملة والقيمة التي حددها المهندس.
+
+### العملات المتاحة
+
+| الرمز | الاسم            | الوصف                                      |
+| ----- | ---------------- | ------------------------------------------ |
+| `YER` | الريال اليمني    | العملة الافتراضية                          |
+| `SAR` | الريال السعودي   | للعملاء الذين يفضلون الدفع بالريال السعودي |
+| `USD` | الدولار الأمريكي | للعملاء الذين يفضلون الدفع بالدولار        |
+
+> ℹ️ **ملاحظة:** القيمة الافتراضية للعملة هي `YER` للتوافق مع البيانات القديمة. جميع العروض الجديدة يجب أن تحتوي على نوع العملة.
+
+---
+
 ## حالات العرض (Status)
 
 ### الحالات المتاحة
 
-| الحالة | الوصف | متى تحدث |
-|--------|-------|----------|
-| `OFFERED` | عرض مقدم | عند تقديم العرض |
-| `ACCEPTED` | عرض مقبول | عند قبول العرض من العميل |
-| `REJECTED` | عرض مرفوض | عند رفض العرض من العميل أو الإدارة |
-| `CANCELLED` | عرض ملغى | عند إلغاء العرض من المهندس أو الإدارة |
-| `OUTBID` | تم قبول عرض آخر | ✅ **جديد** - عند قبول عرض آخر على نفس الطلب |
-| `EXPIRED` | عرض منتهي الصلاحية | ✅ **جديد** - بعد 5 أيام بدون قبول |
+| الحالة      | الوصف              | متى تحدث                                     |
+| ----------- | ------------------ | -------------------------------------------- |
+| `OFFERED`   | عرض مقدم           | عند تقديم العرض                              |
+| `ACCEPTED`  | عرض مقبول          | عند قبول العرض من العميل                     |
+| `REJECTED`  | عرض مرفوض          | عند رفض العرض من العميل أو الإدارة           |
+| `CANCELLED` | عرض ملغى           | عند إلغاء العرض من المهندس أو الإدارة        |
+| `OUTBID`    | تم قبول عرض آخر    | ✅ **جديد** - عند قبول عرض آخر على نفس الطلب |
+| `EXPIRED`   | عرض منتهي الصلاحية | ✅ **جديد** - بعد 5 أيام بدون قبول           |
 
 > ✅ **حالات جديدة:**
+>
 > - `OUTBID`: عندما يتم قبول عرض آخر على نفس الطلب
 > - `EXPIRED`: عندما ينتهي العرض بعد 5 أيام بدون قبول
 
@@ -470,6 +505,7 @@ OFFERED → ACCEPTED (عند قبول العرض)
 عندما يقبل العميل عرضاً:
 
 1. **العرض المقبول:**
+
    - يتم تحديث حالته إلى `ACCEPTED`
    - يتم تحديث حالة الطلب إلى `ASSIGNED`
    - يتم إرسال إشعار للمهندس صاحب العرض المقبول
@@ -506,6 +542,7 @@ class EngineerOffer {
   final dynamic requestId; // قد يكون String أو Object (populated)
   final dynamic engineerId; // قد يكون String أو Object (populated)
   final double amount;
+  final String currency; // YER, SAR, USD
   final String? note;
   final double? distanceKm;
   final EngineerOfferStatus status;
@@ -517,6 +554,7 @@ class EngineerOffer {
     required this.requestId,
     required this.engineerId,
     required this.amount,
+    required this.currency,
     this.note,
     this.distanceKm,
     required this.status,
@@ -530,6 +568,7 @@ class EngineerOffer {
       requestId: json['requestId'],
       engineerId: json['engineerId'],
       amount: (json['amount'] ?? 0).toDouble(),
+      currency: json['currency'] ?? 'YER', // افتراضي YER للتوافق مع البيانات القديمة
       note: json['note'],
       distanceKm: json['distanceKm']?.toDouble(),
       status: EngineerOfferStatus.values.firstWhere(
@@ -548,12 +587,12 @@ class EngineerOffer {
   bool get isCancelled => status == EngineerOfferStatus.CANCELLED;
   bool get isOutbid => status == EngineerOfferStatus.OUTBID; // ✅ جديد
   bool get isExpired => status == EngineerOfferStatus.EXPIRED; // ✅ جديد
-  
+
   bool get hasNote => note != null && note!.isNotEmpty;
   bool get hasDistance => distanceKm != null;
   bool get isActive => isOffered || isAccepted;
   bool get isFinal => isAccepted || isRejected || isCancelled || isOutbid || isExpired; // ✅ محدث
-  
+
   String get statusLabel {
     switch (status) {
       case EngineerOfferStatus.OFFERED:
@@ -570,8 +609,25 @@ class EngineerOffer {
         return 'عرض منتهي الصلاحية'; // ✅ جديد
     }
   }
-  
-  String get formattedAmount => '${amount.toStringAsFixed(0)} ريال';
+
+  String get formattedAmount {
+    final currencySymbol = _getCurrencySymbol(currency);
+    return '${amount.toStringAsFixed(0)} $currencySymbol';
+  }
+
+  String _getCurrencySymbol(String currency) {
+    switch (currency) {
+      case 'YER':
+        return 'ريال يمني';
+      case 'SAR':
+        return 'ريال سعودي';
+      case 'USD':
+        return 'دولار';
+      default:
+        return 'ريال';
+    }
+  }
+
   String get formattedDistance => hasDistance ? '${distanceKm!.toStringAsFixed(1)} كم' : 'غير محدد';
 }
 ```
@@ -582,6 +638,7 @@ class EngineerOffer {
 class CreateOfferDto {
   final String requestId;
   final double amount;
+  final String currency; // YER, SAR, USD
   final String? note;
   final double lat;
   final double lng;
@@ -589,6 +646,7 @@ class CreateOfferDto {
   CreateOfferDto({
     required this.requestId,
     required this.amount,
+    required this.currency,
     this.note,
     required this.lat,
     required this.lng,
@@ -598,6 +656,7 @@ class CreateOfferDto {
     return {
       'requestId': requestId,
       'amount': amount,
+      'currency': currency,
       if (note != null) 'note': note,
       'lat': lat,
       'lng': lng,
@@ -611,16 +670,19 @@ class CreateOfferDto {
 ```dart
 class UpdateOfferDto {
   final double? amount;
+  final String? currency; // YER, SAR, USD
   final String? note;
 
   UpdateOfferDto({
     this.amount,
+    this.currency,
     this.note,
   });
 
   Map<String, dynamic> toJson() {
     return {
       if (amount != null) 'amount': amount,
+      if (currency != null) 'currency': currency,
       if (note != null) 'note': note,
     };
   }
@@ -632,17 +694,22 @@ class UpdateOfferDto {
 ## ملاحظات مهمة
 
 1. **تقديم العروض:**
+
    - ⚠️ **قيد مهم:** لا يمكن للمهندس تقديم أكثر من عرض واحد لنفس الطلب
    - إذا كان المهندس قد قدم عرضاً سابقاً على نفس الطلب، سيتم إرجاع خطأ `OFFER_ALREADY_EXISTS`
    - يجب استخدام endpoint [تحديث عرض](#4-تحديث-عرض) لتعديل العرض الموجود بدلاً من إنشاء عرض جديد
    - عند تقديم أول عرض، يتم تحديث حالة الطلب من `OPEN` إلى `OFFERS_COLLECTING`
    - يتم حساب المسافة تلقائياً بناءً على موقع المهندس
+   - ✅ **جديد:** يجب تحديد نوع العملة (`currency`) عند تقديم العرض: `YER`، `SAR`، أو `USD`
+   - العميل سيرى نوع العملة والقيمة التي حددها المهندس في عرضه
 
 2. **قبول العرض:**
+
    - عند قبول عرض، يتم تحديث العروض الأخرى إلى `OUTBID`
    - يتم إرسال إشعارات للمهندسين
 
 3. **انتهاء الصلاحية:**
+
    - العروض `OFFERED` لمدة 5 أيام → `EXPIRED`
    - يتم إرسال إشعارات تلقائياً
 
@@ -650,6 +717,7 @@ class UpdateOfferDto {
    - يمكن تحديث العرض فقط إذا كانت حالته `OFFERED`
    - يمكن تحديث العرض مرة واحدة فقط (`updatesCount` محدود بـ 1)
    - يمكن حذف العرض فقط إذا كانت حالته `OFFERED`
+   - ✅ **جديد:** يمكن تحديث نوع العملة (`currency`) عند تحديث العرض
 
 ---
 
@@ -660,4 +728,3 @@ class UpdateOfferDto {
 - `backend/src/modules/services/schemas/engineer-offer.schema.ts` - EngineerOffer Schema
 - `backend/src/modules/services/services.service.ts` - Services Service
 - `backend/src/modules/services/enums/service-status.enum.ts` - OfferStatus Enum
-
