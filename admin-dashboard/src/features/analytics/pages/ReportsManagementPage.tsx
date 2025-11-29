@@ -282,7 +282,7 @@ export const ReportsManagementPage: React.FC = () => {
   ];
 
   const reports = Array.isArray(reportsData?.data) ? reportsData.data : [];
-  
+
   const filteredReports = reports.filter((report) => {
     const matchesSearch =
       report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -309,10 +309,7 @@ export const ReportsManagementPage: React.FC = () => {
 
   if (error) {
     return (
-      <Alert 
-        severity="error"
-        sx={{ m: { xs: 1, sm: 2 } }}
-      >
+      <Alert severity="error" sx={{ m: { xs: 1, sm: 2 } }}>
         {t('reportsManagement.loadError')}
       </Alert>
     );
@@ -326,9 +323,10 @@ export const ReportsManagementPage: React.FC = () => {
         sx={{
           p: { xs: 2, sm: 3 },
           mb: { xs: 2, sm: 3 },
-          background: theme.palette.mode === 'dark'
-            ? `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`
-            : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          background:
+            theme.palette.mode === 'dark'
+              ? `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`
+              : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           color: 'white',
         }}
       >
@@ -343,20 +341,20 @@ export const ReportsManagementPage: React.FC = () => {
           }}
         >
           <Box>
-            <Typography 
-              variant={breakpoint.isXs ? 'h5' : 'h4'} 
-              component="h1" 
+            <Typography
+              variant={breakpoint.isXs ? 'h5' : 'h4'}
+              component="h1"
               gutterBottom
-              sx={{ 
+              sx={{
                 fontSize: breakpoint.isXs ? '1.5rem' : undefined,
                 fontWeight: 'bold',
               }}
             >
               {t('reportsManagement.title')}
             </Typography>
-            <Typography 
-              variant={breakpoint.isXs ? 'body2' : 'body1'} 
-              sx={{ 
+            <Typography
+              variant={breakpoint.isXs ? 'body2' : 'body1'}
+              sx={{
                 opacity: 0.9,
                 fontSize: breakpoint.isXs ? '0.875rem' : undefined,
               }}
@@ -424,9 +422,9 @@ export const ReportsManagementPage: React.FC = () => {
             </Button>
 
             <Tooltip title={t('reportsManagement.refresh')}>
-              <IconButton 
-                onClick={() => refetch()} 
-                sx={{ 
+              <IconButton
+                onClick={() => refetch()}
+                sx={{
                   color: 'white',
                   alignSelf: breakpoint.isXs ? 'flex-start' : 'center',
                 }}
@@ -449,7 +447,15 @@ export const ReportsManagementPage: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               size={breakpoint.isXs ? 'medium' : 'medium'}
               InputProps={{
-                startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary', fontSize: breakpoint.isXs ? 20 : undefined }} />,
+                startAdornment: (
+                  <SearchIcon
+                    sx={{
+                      mr: 1,
+                      color: 'text.secondary',
+                      fontSize: breakpoint.isXs ? 20 : undefined,
+                    }}
+                  />
+                ),
               }}
             />
           </Grid>
@@ -491,18 +497,21 @@ export const ReportsManagementPage: React.FC = () => {
               size={breakpoint.isXs ? 'medium' : 'medium'}
               sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
             >
-              {sortOrder === 'asc' ? t('reportsManagement.sortAscending') : t('reportsManagement.sortDescending')}
+              {sortOrder === 'asc'
+                ? t('reportsManagement.sortAscending')
+                : t('reportsManagement.sortDescending')}
             </Button>
           </Grid>
         </Grid>
       </Paper>
 
       {/* Tabs */}
-      <Paper 
-        elevation={1} 
-        sx={{ 
+      <Paper
+        elevation={1}
+        sx={{
           mb: { xs: 2, sm: 3 },
-          backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
+          backgroundColor:
+            theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
         }}
       >
         <Tabs
@@ -548,7 +557,7 @@ export const ReportsManagementPage: React.FC = () => {
                     gap: 1.5,
                   }}
                 >
-                  <Typography 
+                  <Typography
                     variant={breakpoint.isXs ? 'h6' : 'h6'}
                     sx={{ fontSize: breakpoint.isXs ? '1.125rem' : undefined }}
                   >
@@ -565,7 +574,9 @@ export const ReportsManagementPage: React.FC = () => {
                     />
                     <Chip
                       icon={<ArchiveIcon sx={{ fontSize: breakpoint.isXs ? 16 : undefined }} />}
-                      label={`${t('reportsManagement.archived')}: ${sortedReports.filter((r) => r.isArchived).length}`}
+                      label={`${t('reportsManagement.archived')}: ${
+                        sortedReports.filter((r) => r.isArchived).length
+                      }`}
                       color="secondary"
                       variant="outlined"
                       size={breakpoint.isXs ? 'small' : 'medium'}
@@ -577,11 +588,11 @@ export const ReportsManagementPage: React.FC = () => {
                 {isLoading ? (
                   <Box>
                     {[...Array(5)].map((_, index) => (
-                      <Skeleton 
-                        key={index} 
-                        variant="rectangular" 
-                        height={breakpoint.isXs ? 80 : 100} 
-                        sx={{ mb: 1 }} 
+                      <Skeleton
+                        key={index}
+                        variant="rectangular"
+                        height={breakpoint.isXs ? 80 : 100}
+                        sx={{ mb: 1 }}
                       />
                     ))}
                   </Box>
@@ -589,9 +600,9 @@ export const ReportsManagementPage: React.FC = () => {
                   <List>
                     {sortedReports.map((report) => (
                       <ListItem key={report.reportId} divider>
-                        <Avatar 
-                          sx={{ 
-                            mr: { xs: 1, sm: 2 }, 
+                        <Avatar
+                          sx={{
+                            mr: { xs: 1, sm: 2 },
                             bgcolor: theme.palette.primary.main,
                             width: { xs: 36, sm: 40 },
                             height: { xs: 36, sm: 40 },
@@ -601,17 +612,24 @@ export const ReportsManagementPage: React.FC = () => {
                         </Avatar>
                         <ListItemText
                           primary={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                              <Typography 
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <Typography
                                 variant={breakpoint.isXs ? 'subtitle1' : 'h6'}
                                 sx={{ fontSize: breakpoint.isXs ? '0.9375rem' : undefined }}
                               >
                                 {report.title}
                               </Typography>
                               {report.isArchived && (
-                                <Chip 
-                                  label={t('reportsManagement.archivedLabel')} 
-                                  size="small" 
+                                <Chip
+                                  label={t('reportsManagement.archivedLabel')}
+                                  size="small"
                                   color="secondary"
                                   sx={{ fontSize: '0.7rem' }}
                                 />
@@ -620,10 +638,10 @@ export const ReportsManagementPage: React.FC = () => {
                           }
                           secondary={
                             <Box>
-                              <Typography 
-                                variant="body2" 
-                                color="text.secondary" 
-                                sx={{ 
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
                                   mb: 1,
                                   fontSize: breakpoint.isXs ? '0.8125rem' : undefined,
                                 }}
@@ -676,7 +694,13 @@ export const ReportsManagementPage: React.FC = () => {
                                 <DownloadIcon sx={{ fontSize: breakpoint.isXs ? 18 : 20 }} />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title={report.isArchived ? t('reportsManagement.unarchive') : t('reportsManagement.actions.archive')}>
+                            <Tooltip
+                              title={
+                                report.isArchived
+                                  ? t('reportsManagement.unarchive')
+                                  : t('reportsManagement.actions.archive')
+                              }
+                            >
                               <IconButton
                                 size={breakpoint.isXs ? 'small' : 'medium'}
                                 onClick={() => handleArchiveReport(report.reportId)}
@@ -716,8 +740,8 @@ export const ReportsManagementPage: React.FC = () => {
             <Grid size={{ xs: 12 }}>
               <Card>
                 <CardContent sx={{ p: cardPadding }}>
-                  <Typography 
-                    variant={breakpoint.isXs ? 'h6' : 'h6'} 
+                  <Typography
+                    variant={breakpoint.isXs ? 'h6' : 'h6'}
                     gutterBottom
                     sx={{ fontSize: breakpoint.isXs ? '1.125rem' : undefined }}
                   >
@@ -728,8 +752,8 @@ export const ReportsManagementPage: React.FC = () => {
                       .filter((report) => report.category === tab.category)
                       .map((report) => (
                         <ListItem key={report.reportId} divider>
-                          <ListItemText 
-                            primary={report.title} 
+                          <ListItemText
+                            primary={report.title}
                             secondary={report.description}
                             primaryTypographyProps={{
                               sx: { fontSize: breakpoint.isXs ? '0.9375rem' : undefined },
@@ -903,8 +927,18 @@ export const ReportsManagementPage: React.FC = () => {
                       setReportForm({
                         ...reportForm,
                         exportSettings: {
-                          ...reportForm.exportSettings,
                           formats: e.target.value as ReportFormat[],
+                          includeCharts:
+                            reportForm.exportSettings?.includeCharts !== undefined
+                              ? reportForm.exportSettings.includeCharts
+                              : true,
+                          includeRawData:
+                            reportForm.exportSettings?.includeRawData !== undefined
+                              ? reportForm.exportSettings.includeRawData
+                              : false,
+                          ...(reportForm.exportSettings?.customBranding && {
+                            customBranding: reportForm.exportSettings.customBranding,
+                          }),
                         },
                       })
                     }
@@ -939,8 +973,15 @@ export const ReportsManagementPage: React.FC = () => {
                         setReportForm({
                           ...reportForm,
                           exportSettings: {
-                            ...reportForm.exportSettings,
+                            formats: reportForm.exportSettings?.formats || [ReportFormat.PDF],
                             includeCharts: e.target.checked,
+                            includeRawData:
+                              reportForm.exportSettings?.includeRawData !== undefined
+                                ? reportForm.exportSettings.includeRawData
+                                : false,
+                            ...(reportForm.exportSettings?.customBranding && {
+                              customBranding: reportForm.exportSettings.customBranding,
+                            }),
                           },
                         })
                       }
@@ -964,8 +1005,15 @@ export const ReportsManagementPage: React.FC = () => {
                         setReportForm({
                           ...reportForm,
                           exportSettings: {
-                            ...reportForm.exportSettings,
+                            formats: reportForm.exportSettings?.formats || [ReportFormat.PDF],
+                            includeCharts:
+                              reportForm.exportSettings?.includeCharts !== undefined
+                                ? reportForm.exportSettings.includeCharts
+                                : true,
                             includeRawData: e.target.checked,
+                            ...(reportForm.exportSettings?.customBranding && {
+                              customBranding: reportForm.exportSettings.customBranding,
+                            }),
                           },
                         })
                       }
@@ -1040,7 +1088,7 @@ export const ReportsManagementPage: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
-          <Button 
+          <Button
             onClick={() => setShowCreateDialog(false)}
             size={breakpoint.isXs ? 'medium' : 'medium'}
             sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}

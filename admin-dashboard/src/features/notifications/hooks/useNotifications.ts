@@ -2,9 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationsApi } from '../api/notificationsApi';
 import { ErrorHandler } from '@/core/error/ErrorHandler';
 import toast from 'react-hot-toast';
-import type { 
-  ListNotificationsParams, 
-  CreateNotificationDto, 
+import type {
+  ListNotificationsParams,
+  CreateNotificationDto,
   UpdateNotificationDto,
   SendNotificationDto,
   BulkSendNotificationDto,
@@ -12,7 +12,6 @@ import type {
   CreateTemplateDto,
   UpdateTemplateDto,
   MarkAsReadDto,
-  NotificationChannelConfig,
   CreateChannelConfigDto,
   UpdateChannelConfigDto,
   NotificationType,
@@ -65,7 +64,7 @@ export const useCreateNotification = () => {
 export const useUpdateNotification = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateNotificationDto }) => 
+    mutationFn: ({ id, data }: { id: string; data: UpdateNotificationDto }) =>
       notificationsApi.update(id, data),
     onSuccess: () => {
       toast.success('تم تحديث التنبيه بنجاح');
@@ -78,7 +77,7 @@ export const useUpdateNotification = () => {
 export const useSendNotification = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data?: SendNotificationDto }) => 
+    mutationFn: ({ id, data }: { id: string; data?: SendNotificationDto }) =>
       notificationsApi.send(id, data),
     onSuccess: () => {
       toast.success('تم إرسال التنبيه بنجاح');
@@ -105,8 +104,7 @@ export const useDeleteNotification = () => {
 export const useBulkSendNotification = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: BulkSendNotificationDto) => 
-      notificationsApi.bulkSend(data),
+    mutationFn: (data: BulkSendNotificationDto) => notificationsApi.bulkSend(data),
     onSuccess: () => {
       toast.success('تم إرسال التنبيهات بنجاح');
       queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] });
@@ -118,10 +116,14 @@ export const useBulkSendNotification = () => {
 
 export const useTestNotification = () => {
   return useMutation({
-    mutationFn: ({ userId, templateKey, payload }: { 
-      userId: string; 
-      templateKey: string; 
-      payload?: Record<string, unknown> 
+    mutationFn: ({
+      userId,
+      templateKey,
+      payload,
+    }: {
+      userId: string;
+      templateKey: string;
+      payload?: Record<string, unknown>;
     }) => notificationsApi.test(userId, templateKey, payload),
     onSuccess: () => {
       toast.success('تم إرسال تنبيه الاختبار بنجاح');
@@ -153,7 +155,7 @@ export const useCreateTemplate = () => {
 export const useUpdateTemplate = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ key, data }: { key: string; data: UpdateTemplateDto }) => 
+    mutationFn: ({ key, data }: { key: string; data: UpdateTemplateDto }) =>
       notificationsApi.updateTemplate(key, data),
     onSuccess: () => {
       toast.success('تم تحديث القالب بنجاح');
@@ -353,9 +355,7 @@ export const useInitializeChannelConfigs = () => {
     mutationFn: () => notificationsApi.initializeChannelConfigs(),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [CHANNEL_CONFIGS_KEY] });
-      toast.success(
-        `تم تهيئة ${data.created} إعدادات جديدة وتحديث ${data.updated} إعدادات موجودة`
-      );
+      toast.success(`تم تهيئة ${data.created} إعدادات جديدة وتحديث ${data.updated} إعدادات موجودة`);
     },
     onError: ErrorHandler.showError,
   });

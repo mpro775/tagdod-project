@@ -1,20 +1,12 @@
 import React from 'react';
-import { 
-  Box, 
-  Grid, 
-  Typography, 
-  Button,
-  Paper,
-  alpha,
-  useTheme
-} from '@mui/material';
-import { 
-  People, 
-  ShoppingCart, 
-  AttachMoney, 
-  Inventory, 
-  Refresh, 
-  TrendingUp
+import { Box, Grid, Typography, Button, Paper, alpha, useTheme } from '@mui/material';
+import {
+  People,
+  ShoppingCart,
+  AttachMoney,
+  Inventory,
+  Refresh,
+  TrendingUp,
 } from '@mui/icons-material';
 import { usePerformanceMetrics } from '../../analytics/hooks/useAnalytics';
 import {
@@ -23,7 +15,7 @@ import {
   RevenueChart,
   TopProductsWidget,
   RecentOrders,
-  QuickActions
+  QuickActions,
 } from '../components';
 import {
   useDashboardOverview,
@@ -41,7 +33,6 @@ export const DashboardPage: React.FC = () => {
   // Always use English numbers, regardless of language
   const numberFormatter = React.useMemo(() => new Intl.NumberFormat('en-US'), []);
 
-  
   // Fetch real dashboard data from analytics API
   const { data: dashboardResponse, isLoading, error, refetch } = useDashboardOverview();
   const { data: recentOrdersData, isLoading: ordersLoading } = useRecentOrders(5);
@@ -75,22 +66,22 @@ export const DashboardPage: React.FC = () => {
     [numberFormatter]
   );
 
-
   // Calculate real revenue growth from sales data
   const calculateRevenueGrowth = (): number | undefined => {
     // Try to get growth from sales analytics first (if available)
     if (salesAnalyticsData?.growthRate !== undefined && salesAnalyticsData.growthRate !== null) {
       return salesAnalyticsData.growthRate;
     }
-    
+
     // Try to calculate from monthly data
     if (dashboardData?.revenueCharts?.monthly && dashboardData.revenueCharts.monthly.length >= 2) {
-      const latest = dashboardData.revenueCharts.monthly[dashboardData.revenueCharts.monthly.length - 1];
+      const latest =
+        dashboardData.revenueCharts.monthly[dashboardData.revenueCharts.monthly.length - 1];
       if (latest?.growth !== undefined && latest.growth !== null) {
         return latest.growth;
       }
     }
-    
+
     // If no real data available, return undefined to hide the indicator
     return undefined;
   };
@@ -103,11 +94,7 @@ export const DashboardPage: React.FC = () => {
         <Typography variant="h6" color="error" gutterBottom>
           {t('dashboard:error.title', 'خطأ في تحميل البيانات')}
         </Typography>
-        <Button 
-          variant="contained" 
-          onClick={() => refetch()}
-          sx={{ mt: 2 }}
-        >
+        <Button variant="contained" onClick={() => refetch()} sx={{ mt: 2 }}>
           {t('dashboard:error.retry', 'إعادة المحاولة')}
         </Button>
       </Box>
@@ -123,11 +110,22 @@ export const DashboardPage: React.FC = () => {
           mb: 4,
           p: 3,
           borderRadius: 3,
-          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.primary.main, 0.05)})`,
+          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(
+            theme.palette.primary.main,
+            0.05
+          )})`,
           border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
           <Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               {t('dashboard:header.title', 'لوحة التحكم الرئيسية')}
@@ -211,10 +209,7 @@ export const DashboardPage: React.FC = () => {
       {/* Revenue Chart & Performance Stats */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, lg: 8 }}>
-          <RevenueChart
-            revenueCharts={dashboardData?.revenueCharts}
-            isLoading={isLoading}
-          />
+          <RevenueChart revenueCharts={dashboardData?.revenueCharts} isLoading={isLoading} />
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
           <QuickStatsWidget
@@ -223,7 +218,7 @@ export const DashboardPage: React.FC = () => {
               activeUsers: dashboardData?.overview?.totalUsers,
               systemHealth: performanceData?.uptime,
               errorRate: performanceData?.errorRate,
-              responseTime: performanceData?.averageApiResponseTime,
+              responseTime: performanceData?.apiResponseTime,
             }}
             isLoading={performanceLoading}
           />
@@ -233,20 +228,14 @@ export const DashboardPage: React.FC = () => {
       {/* Top Products */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12 }}>
-          <TopProductsWidget
-            products={topProductsData}
-            isLoading={topProductsLoading}
-          />
+          <TopProductsWidget products={topProductsData} isLoading={topProductsLoading} />
         </Grid>
       </Grid>
 
       {/* Recent Orders */}
       <Grid container spacing={3}>
         <Grid size={{ xs: 12 }}>
-          <RecentOrders
-            orders={recentOrdersData}
-            isLoading={ordersLoading}
-          />
+          <RecentOrders orders={recentOrdersData} isLoading={ordersLoading} />
         </Grid>
       </Grid>
 

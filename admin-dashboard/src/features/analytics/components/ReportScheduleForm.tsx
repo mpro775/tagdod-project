@@ -18,17 +18,10 @@ import {
   Chip,
   Stack,
   Alert,
-  Autocomplete,
-  useTheme,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
-import {
-  Schedule as ScheduleIcon,
-  Email as EmailIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import { Schedule as ScheduleIcon, Email as EmailIcon, Add as AddIcon } from '@mui/icons-material';
 import { useScheduleReport } from '../hooks/useAnalytics';
 import {
   ReportType,
@@ -48,7 +41,6 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const theme = useTheme();
   const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
   const scheduleReport = useScheduleReport();
@@ -142,13 +134,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
   const isValid = formData.name.trim() && formData.description.trim();
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="md"
-      fullWidth
-      fullScreen={breakpoint.isXs}
-    >
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth fullScreen={breakpoint.isXs}>
       <DialogTitle sx={{ fontSize: breakpoint.isXs ? '1.125rem' : undefined }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <ScheduleIcon />
@@ -259,9 +245,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
               <Select
                 multiple
                 value={formData.formats || []}
-                onChange={(e) =>
-                  handleInputChange('formats', e.target.value as ReportFormat[])
-                }
+                onChange={(e) => handleInputChange('formats', e.target.value as ReportFormat[])}
                 label={t('reportSchedule.formats')}
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -366,7 +350,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
             <FormControlLabel
               control={
                 <Switch
-                  checked={formData.config?.includeCharts || false}
+                  checked={(formData.config?.includeCharts as boolean) || false}
                   onChange={(e) =>
                     handleInputChange('config', {
                       ...formData.config,
@@ -389,7 +373,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
             <FormControlLabel
               control={
                 <Switch
-                  checked={formData.config?.includeRawData || false}
+                  checked={(formData.config?.includeRawData as boolean) || false}
                   onChange={(e) =>
                     handleInputChange('config', {
                       ...formData.config,
@@ -453,12 +437,9 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
           size={breakpoint.isXs ? 'medium' : 'medium'}
           sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
         >
-          {scheduleReport.isPending
-            ? t('reportSchedule.scheduling')
-            : t('reportSchedule.schedule')}
+          {scheduleReport.isPending ? t('reportSchedule.scheduling') : t('reportSchedule.schedule')}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
-

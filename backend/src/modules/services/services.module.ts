@@ -12,6 +12,7 @@ import { EngineerOffer, EngineerOfferSchema } from './schemas/engineer-offer.sch
 import { Address, AddressSchema } from '../addresses/schemas/address.schema';
 import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabilities.schema';
 import { EngineerProfile, EngineerProfileSchema } from '../users/schemas/engineer-profile.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
 import { EngineerGuard } from '../../shared/guards/engineer.guard';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
@@ -27,6 +28,7 @@ import { UploadModule } from '../upload/upload.module';
       { name: Address.name, schema: AddressSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
       { name: EngineerProfile.name, schema: EngineerProfileSchema },
+      { name: User.name, schema: UserSchema }, // Required for EngineerGuard
     ]),
     AuthModule,
     NotificationsCompleteModule,

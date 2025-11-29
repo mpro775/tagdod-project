@@ -12,7 +12,6 @@ import {
   Box,
   Typography,
   Stack,
-  useTheme,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
@@ -29,7 +28,6 @@ interface CacheManagementProps {
 }
 
 export const CacheManagement: React.FC<CacheManagementProps> = ({ onCacheCleared }) => {
-  const theme = useTheme();
   const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
   const cardPadding = getCardPadding(breakpoint);
@@ -111,11 +109,7 @@ export const CacheManagement: React.FC<CacheManagementProps> = ({ onCacheCleared
           )}
 
           {clearCache.isError && (
-            <Alert
-              severity="error"
-              sx={{ mt: 2 }}
-              onClose={() => clearCache.reset()}
-            >
+            <Alert severity="error" sx={{ mt: 2 }} onClose={() => clearCache.reset()}>
               <Typography
                 variant="body2"
                 sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
@@ -175,13 +169,10 @@ export const CacheManagement: React.FC<CacheManagementProps> = ({ onCacheCleared
             size={breakpoint.isXs ? 'medium' : 'medium'}
             sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
           >
-            {clearCache.isPending
-              ? t('cacheManagement.clearing')
-              : t('cacheManagement.confirm')}
+            {clearCache.isPending ? t('cacheManagement.clearing') : t('cacheManagement.confirm')}
           </Button>
         </DialogActions>
       </Dialog>
     </>
   );
 };
-

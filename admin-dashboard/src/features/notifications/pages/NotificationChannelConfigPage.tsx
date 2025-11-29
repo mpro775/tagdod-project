@@ -17,7 +17,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   TextField,
   InputAdornment,
   Alert,
@@ -25,15 +24,7 @@ import {
   Stack,
   Tooltip,
 } from '@mui/material';
-import {
-  Edit,
-  Refresh,
-  Settings,
-  CheckCircle,
-  Cancel,
-  Search,
-} from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { Edit, Refresh, Settings, CheckCircle, Cancel, Search } from '@mui/icons-material';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   useChannelConfigs,
@@ -47,11 +38,9 @@ import type {
   NotificationChannelConfig,
   CreateChannelConfigDto,
   UpdateChannelConfigDto,
-  NotificationType,
-  NotificationChannel,
 } from '../types/notification.types';
-import { NotificationType as NotificationTypeEnum } from '../types/notification.types';
-import { UserRole } from '../components/ChannelConfigForm';
+import { NotificationChannel, NotificationType } from '../types/notification.types';
+import { UserRole } from '@/features/users/types/user.types';
 
 // Helper function to get role label
 const getRoleLabel = (role: string): string => {
@@ -66,7 +55,6 @@ const getRoleLabel = (role: string): string => {
 };
 
 export const NotificationChannelConfigPage: React.FC = () => {
-  const { t } = useTranslation('notifications');
   const { isMobile } = useBreakpoint();
   const [searchTerm, setSearchTerm] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -76,25 +64,28 @@ export const NotificationChannelConfigPage: React.FC = () => {
   const { data: configs = [], isLoading, refetch } = useChannelConfigs();
   const { mutate: createConfig, isPending: isCreating } = useCreateChannelConfig();
   const { mutate: updateConfig, isPending: isUpdating } = useUpdateChannelConfig();
-  const { mutate: deleteConfig, isPending: isDeleting } = useDeleteChannelConfig();
+  const { isPending: isDeleting } = useDeleteChannelConfig();
   const { mutate: initializeConfigs, isPending: isInitializing } = useInitializeChannelConfigs();
 
   // جلب جميع أنواع الإشعارات المتاحة
-  const allNotificationTypes = Object.values(NotificationTypeEnum);
+  const allNotificationTypes = Object.values(NotificationType);
 
   // دمج الإعدادات الموجودة مع الأنواع غير المكونة
   const allConfigs = allNotificationTypes.map((type) => {
     const existingConfig = configs.find((c) => c.notificationType === type);
-    return existingConfig || {
-      notificationType: type,
-      allowedChannels: [],
-      defaultChannel: NotificationChannel.IN_APP,
-      targetRoles: [],
-      isActive: false,
-      _id: '',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    return (
+      existingConfig ||
+      ({
+        notificationType: type,
+        allowedChannels: [],
+        defaultChannel: NotificationChannel.IN_APP,
+        targetRoles: [],
+        isActive: false,
+        _id: '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as NotificationChannelConfig)
+    );
   });
 
   // فلترة حسب البحث
@@ -162,7 +153,6 @@ export const NotificationChannelConfigPage: React.FC = () => {
     return labels[channel] || channel;
   };
 
-
   if (isLoading) {
     return (
       <Box sx={{ p: isMobile ? 1.5 : 3 }}>
@@ -186,9 +176,7 @@ export const NotificationChannelConfigPage: React.FC = () => {
           gap: isMobile ? 2 : 0,
         }}
       >
-        <Typography variant={isMobile ? 'h5' : 'h4'}>
-          إعدادات قنوات الإشعارات
-        </Typography>
+        <Typography variant={isMobile ? 'h5' : 'h4'}>إعدادات قنوات الإشعارات</Typography>
         <Stack direction="row" spacing={2}>
           <Button
             variant="outlined"
@@ -211,8 +199,8 @@ export const NotificationChannelConfigPage: React.FC = () => {
       </Box>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        يمكنك تعديل القنوات المسموحة والقناة الافتراضية والأدوار المستهدفة لكل نوع إشعار.
-        الإعدادات في قاعدة البيانات لها أولوية على القيم الثابتة.
+        يمكنك تعديل القنوات المسموحة والقناة الافتراضية والأدوار المستهدفة لكل نوع إشعار. الإعدادات
+        في قاعدة البيانات لها أولوية على القيم الثابتة.
       </Alert>
 
       <Card>
@@ -309,19 +297,9 @@ export const NotificationChannelConfigPage: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         {config.isActive ? (
-                          <Chip
-                            icon={<CheckCircle />}
-                            label="نشط"
-                            size="small"
-                            color="success"
-                          />
+                          <Chip icon={<CheckCircle />} label="نشط" size="small" color="success" />
                         ) : (
-                          <Chip
-                            icon={<Cancel />}
-                            label="غير نشط"
-                            size="small"
-                            color="default"
-                          />
+                          <Chip icon={<Cancel />} label="غير نشط" size="small" color="default" />
                         )}
                       </TableCell>
                       <TableCell>
@@ -361,7 +339,9 @@ export const NotificationChannelConfigPage: React.FC = () => {
         <DialogContent>
           <ChannelConfigForm
             config={selectedConfig || undefined}
-            notificationType={selectedType || selectedConfig?.notificationType || NotificationTypeEnum.ORDER_CREATED}
+            notificationType={
+              selectedType || selectedConfig?.notificationType || NotificationType.ORDER_CREATED
+            }
             onSave={handleSave}
             onCancel={() => {
               setEditDialogOpen(false);
@@ -375,4 +355,3 @@ export const NotificationChannelConfigPage: React.FC = () => {
     </Box>
   );
 };
-

@@ -20,10 +20,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { getCardPadding, getCardSpacing } from '../utils/responsive';
-import {
-  TrendingUp as TrendingUpIcon,
-  ShowChart as ShowChartIcon,
-} from '@mui/icons-material';
+import { TrendingUp as TrendingUpIcon } from '@mui/icons-material';
 import { useMetricTrends, useMetricTrendsAdvanced } from '../hooks/useAnalytics';
 import { PeriodType } from '../types/analytics.types';
 import { LineChartComponent } from './LineChartComponent';
@@ -89,21 +86,9 @@ export const TrendsVisualization: React.FC<TrendsVisualizationProps> = ({
     setSelectedMetric(metric);
   };
 
-  const handleUseAdvancedToggle = () => {
-    setUseAdvanced(!useAdvanced);
-    if (!useAdvanced) {
-      // Set default dates when switching to advanced
-      const end = new Date();
-      const start = new Date();
-      start.setDate(start.getDate() - days);
-      setEndDate(end.toISOString().split('T')[0]);
-      setStartDate(start.toISOString().split('T')[0]);
-    }
-  };
-
   const chartData =
     data?.data?.map((item: any) => ({
-      date: item.date || item.time || item.period,
+      name: item.date || item.time || item.period || '',
       value: item.value || item.count || item.revenue || 0,
       change: item.change || 0,
     })) || [];
@@ -319,10 +304,15 @@ export const TrendsVisualization: React.FC<TrendsVisualizationProps> = ({
             </Box>
             <LineChartComponent
               data={chartData}
-              xKey="date"
-              yKey="value"
               height={breakpoint.isXs ? 300 : 400}
-              color={theme.palette.primary.main}
+              xAxisKey="name"
+              lines={[
+                {
+                  dataKey: 'value',
+                  stroke: theme.palette.primary.main,
+                  name: t('trends.metrics.' + selectedMetric),
+                },
+              ]}
             />
           </Box>
         )}
@@ -342,4 +332,3 @@ export const TrendsVisualization: React.FC<TrendsVisualizationProps> = ({
     </Card>
   );
 };
-

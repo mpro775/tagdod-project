@@ -23,6 +23,7 @@ import { AuthModule } from '../modules/auth/auth.module';
     WebSocketAuthGuard,
   ],
   exports: [
+    MongooseModule, // تصدير MongooseModule لاستخدام User model في Guards
     AuditService,
     PermissionService,
     WebSocketService,

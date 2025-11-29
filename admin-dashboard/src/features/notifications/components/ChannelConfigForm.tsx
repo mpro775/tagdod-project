@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  TextField,
   MenuItem,
   FormControl,
   InputLabel,
@@ -14,7 +13,6 @@ import {
   Typography,
   Alert,
 } from '@mui/material';
-import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   NotificationChannelConfig,
@@ -23,14 +21,7 @@ import {
   NotificationType,
   NotificationChannel,
 } from '../types/notification.types';
-
-export enum UserRole {
-  USER = 'user',
-  ADMIN = 'admin',
-  SUPER_ADMIN = 'super_admin',
-  MERCHANT = 'merchant',
-  ENGINEER = 'engineer',
-}
+import { UserRole } from '@/features/users/types/user.types';
 
 interface ChannelConfigFormProps {
   config?: NotificationChannelConfig | null;
@@ -47,33 +38,44 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
   onCancel,
   isLoading,
 }) => {
-  const { t } = useTranslation('notifications');
   const { isMobile } = useBreakpoint();
-  const [formData, setFormData] = useState<CreateChannelConfigDto | UpdateChannelConfigDto>({
-    notificationType: config?.notificationType || notificationType,
-    allowedChannels: config?.allowedChannels || [NotificationChannel.IN_APP],
-    defaultChannel: config?.defaultChannel || NotificationChannel.IN_APP,
-    targetRoles: config?.targetRoles || [UserRole.USER],
-    isActive: config?.isActive ?? true,
+  const [formData, setFormData] = useState<CreateChannelConfigDto | UpdateChannelConfigDto>(() => {
+    if (config) {
+      return {
+        allowedChannels: config.allowedChannels,
+        defaultChannel: config.defaultChannel,
+        targetRoles: config.targetRoles,
+        isActive: config.isActive,
+      } as UpdateChannelConfigDto;
+    }
+    return {
+      notificationType: notificationType,
+      allowedChannels: [NotificationChannel.IN_APP],
+      defaultChannel: NotificationChannel.IN_APP,
+      targetRoles: [UserRole.USER],
+      isActive: true,
+    } as CreateChannelConfigDto;
   });
 
   useEffect(() => {
     if (config) {
       setFormData({
-        notificationType: config.notificationType,
         allowedChannels: config.allowedChannels,
         defaultChannel: config.defaultChannel,
         targetRoles: config.targetRoles as UserRole[],
         isActive: config.isActive,
-      });
+      } as UpdateChannelConfigDto);
     }
   }, [config]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const allowedChannels = formData.allowedChannels || [];
+    const defaultChannel = formData.defaultChannel;
+
     // التحقق من أن القناة الافتراضية موجودة في القنوات المسموحة
-    if (!formData.allowedChannels.includes(formData.defaultChannel)) {
+    if (!defaultChannel || !allowedChannels.includes(defaultChannel)) {
       return;
     }
 
@@ -82,9 +84,10 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
 
   const handleAllowedChannelsChange = (channels: NotificationChannel[]) => {
     setFormData((prev) => {
+      const currentDefaultChannel = prev.defaultChannel;
       const newData = { ...prev, allowedChannels: channels };
       // إذا كانت القناة الافتراضية غير موجودة في القنوات المسموحة، تغييرها
-      if (!channels.includes(prev.defaultChannel)) {
+      if (!currentDefaultChannel || !channels.includes(currentDefaultChannel)) {
         newData.defaultChannel = channels[0] || NotificationChannel.IN_APP;
       }
       return newData;
@@ -107,21 +110,21 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
     { value: UserRole.SUPER_ADMIN, label: 'مدير عام' },
   ];
 
-  const isDefaultChannelValid = formData.allowedChannels.includes(formData.defaultChannel);
+  const allowedChannels = formData.allowedChannels || [];
+  const defaultChannel = formData.defaultChannel;
+  const isDefaultChannelValid = defaultChannel ? allowedChannels.includes(defaultChannel) : false;
 
   return (
     <Box component="form" onSubmit={handleSubmit}>
       <Stack spacing={3}>
         {!isDefaultChannelValid && (
-          <Alert severity="warning">
-            القناة الافتراضية يجب أن تكون موجودة في القنوات المسموحة
-          </Alert>
+          <Alert severity="warning">القناة الافتراضية يجب أن تكون موجودة في القنوات المسموحة</Alert>
         )}
 
         <FormControl fullWidth>
           <InputLabel>نوع الإشعار</InputLabel>
           <Select
-            value={formData.notificationType}
+            value={config?.notificationType || notificationType}
             label="نوع الإشعار"
             disabled={!!config || isLoading}
             size={isMobile ? 'small' : 'medium'}
@@ -138,10 +141,8 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
           <InputLabel>القنوات المسموحة</InputLabel>
           <Select
             multiple
-            value={formData.allowedChannels}
-            onChange={(e) =>
-              handleAllowedChannelsChange(e.target.value as NotificationChannel[])
-            }
+            value={allowedChannels}
+            onChange={(e) => handleAllowedChannelsChange(e.target.value as NotificationChannel[])}
             label="القنوات المسموحة"
             disabled={isLoading}
             size={isMobile ? 'small' : 'medium'}
@@ -150,12 +151,7 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
                 {(selected as NotificationChannel[]).map((value) => {
                   const option = channelOptions.find((opt) => opt.value === value);
                   return (
-                    <Chip
-                      key={value}
-                      label={option?.label || value}
-                      size="small"
-                      color="primary"
-                    />
+                    <Chip key={value} label={option?.label || value} size="small" color="primary" />
                   );
                 })}
               </Box>
@@ -172,16 +168,19 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
         <FormControl fullWidth>
           <InputLabel>القناة الافتراضية</InputLabel>
           <Select
-            value={formData.defaultChannel}
+            value={defaultChannel || NotificationChannel.IN_APP}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, defaultChannel: e.target.value as NotificationChannel }))
+              setFormData((prev) => ({
+                ...prev,
+                defaultChannel: e.target.value as NotificationChannel,
+              }))
             }
             label="القناة الافتراضية"
             disabled={isLoading}
             size={isMobile ? 'small' : 'medium'}
             error={!isDefaultChannelValid}
           >
-            {formData.allowedChannels.map((channel) => {
+            {allowedChannels.map((channel) => {
               const option = channelOptions.find((opt) => opt.value === channel);
               return (
                 <MenuItem key={channel} value={channel}>
@@ -201,7 +200,7 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
           <InputLabel>الأدوار المستهدفة</InputLabel>
           <Select
             multiple
-            value={formData.targetRoles}
+            value={formData.targetRoles || []}
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, targetRoles: e.target.value as UserRole[] }))
             }
@@ -236,9 +235,7 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
           control={
             <Switch
               checked={formData.isActive ?? true}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, isActive: e.target.checked }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, isActive: e.target.checked }))}
               disabled={isLoading}
             />
           }
@@ -262,4 +259,3 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
     </Box>
   );
 };
-
