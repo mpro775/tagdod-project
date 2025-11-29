@@ -33,7 +33,6 @@ import { ErrorLogsService } from '../error-logs/error-logs.service';
 import {
   AnalyticsSnapshotGenerationFailedException,
   AnalyticsException,
-  ErrorCode
 } from '../../shared/exceptions';
 
 const COMPLETED_STATUSES = ['completed'] as const;
@@ -252,6 +251,34 @@ export class AnalyticsService {
     const freshKpis = await this.calculateKPIs();
     this.logger.debug(`calculateKPIs took ${Date.now() - t0}ms`);
 
+    // Calculate system health from actual performance metrics
+    let systemHealth: number | null = null;
+    try {
+      const performanceMetrics = await this.calculatePerformanceMetrics();
+      // Calculate health based on performance metrics
+      let health = 100;
+      
+      // Deduct points for high error rate
+      health -= performanceMetrics.errorRate * 500; // 2% error rate = 10 points deduction
+      
+      // Deduct points for slow response time
+      if (performanceMetrics.apiResponseTime > 1000) health -= 20;
+      else if (performanceMetrics.apiResponseTime > 500) health -= 10;
+      
+      // Deduct points for low uptime
+      health -= (100 - performanceMetrics.uptime) * 2;
+      
+      // Deduct points for high resource usage
+      if (performanceMetrics.memoryUsage > 90) health -= 10;
+      if (performanceMetrics.cpuUsage > 90) health -= 10;
+      if (performanceMetrics.diskUsage > 90) health -= 10;
+      
+      systemHealth = Math.max(0, Math.min(100, health));
+    } catch (error) {
+      this.logger.warn('Failed to calculate system health from performance metrics', error);
+      systemHealth = null;
+    }
+
     const dashboardData: DashboardDataDto = {
       overview: {
         totalUsers,
@@ -259,7 +286,7 @@ export class AnalyticsService {
         totalOrders,
         activeServices,
         openSupportTickets,
-        systemHealth: 100, // Default to 100 if no snapshot available
+        systemHealth: systemHealth ?? 100, // Fallback to 100 if calculation fails
       },
       revenueCharts: await this.buildRevenueCharts(),
       userCharts: await this.buildUserCharts(),
@@ -365,12 +392,52 @@ export class AnalyticsService {
     const averageRating = ratingResult[0]?.avgRating || 0;
 
     // Top rated products
-    const topRated = await this.productModel
+    const topRatedResult = await this.productModel
       .find({ averageRating: { $gt: 0 }, deletedAt: null })
       .sort({ averageRating: -1 })
       .limit(10)
-      .select('name averageRating')
+      .select('_id name averageRating')
       .lean();
+
+    // Calculate actual sales from completed orders
+    const productIds = topRatedResult.map(p => p._id);
+    const productSalesResult = await this.orderModel.aggregate([
+      {
+        $match: {
+          status: { $in: COMPLETED_STATUSES },
+          paymentStatus: 'paid',
+        }
+      },
+      { $unwind: '$items' },
+      {
+        $match: {
+          'items.productId': { $in: productIds }
+        }
+      },
+      {
+        $group: {
+          _id: '$items.productId',
+          totalSales: { $sum: '$items.qty' },
+          totalRevenue: { $sum: '$items.lineTotal' }
+        }
+      }
+    ]);
+
+    // Create a map for quick lookup
+    const salesMap = new Map(
+      productSalesResult.map(item => [item._id.toString(), item])
+    );
+
+    const topRated = topRatedResult.map(p => {
+      const salesData = salesMap.get(p._id.toString());
+      return {
+        productId: p._id.toString(),
+        name: p.name,
+        rating: p.averageRating || 0,
+        sales: salesData?.totalSales || 0,
+        revenue: salesData?.totalRevenue || 0,
+      };
+    });
 
     // Low stock alerts - البحث في Variants
     const lowStockVariants = await this.variantModel.aggregate([
@@ -439,7 +506,7 @@ export class AnalyticsService {
       new: newProducts,
       byCategory: categoryMap,
       averageRating,
-      topRated: topRated.map(p => ({ productId: p._id, name: p.name, rating: p.averageRating, sales: 0 })),
+      topRated,
       lowStock,
       inventoryValue,
     };
@@ -641,30 +708,59 @@ export class AnalyticsService {
     ]);
 
     // Calculate response and completion times from actual data
+    // Use EngineerOffer with status ACCEPTED to determine assignment time
+    // Use ServiceRequest.updatedAt when status is COMPLETED or RATED to determine completion time
     const timeMetricsResult = await this.serviceModel.aggregate([
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          status: 'completed',
-          assignedAt: { $exists: true },
-          completedAt: { $exists: true },
+          status: { $in: ['COMPLETED', 'RATED'] },
+          engineerId: { $ne: null },
         },
+      },
+      {
+        $lookup: {
+          from: 'engineeroffers',
+          let: { requestId: '$_id', engineerId: '$engineerId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$requestId', '$$requestId'] },
+                    { $eq: ['$engineerId', '$$engineerId'] },
+                    { $eq: ['$status', 'ACCEPTED'] }
+                  ]
+                }
+              }
+            },
+            { $sort: { updatedAt: 1 } },
+            { $limit: 1 }
+          ],
+          as: 'acceptedOffer'
+        }
+      },
+      {
+        $unwind: {
+          path: '$acceptedOffer',
+          preserveNullAndEmptyArrays: false
+        }
       },
       {
         $project: {
           responseTimeHours: {
             $divide: [
-              { $subtract: ['$assignedAt', '$createdAt'] },
+              { $subtract: ['$acceptedOffer.updatedAt', '$createdAt'] },
               1000 * 60 * 60, // Convert to hours
-            ],
+            ]
           },
           completionTimeDays: {
             $divide: [
-              { $subtract: ['$completedAt', '$assignedAt'] },
+              { $subtract: ['$updatedAt', '$acceptedOffer.updatedAt'] },
               1000 * 60 * 60 * 24, // Convert to days
-            ],
-          },
-        },
+            ]
+          }
+        }
       },
       {
         $group: {
@@ -680,17 +776,22 @@ export class AnalyticsService {
     ]);
 
     const timeMetrics = timeMetricsResult[0];
-    const responseTime = {
-      average: Math.round((timeMetrics?.avgResponseTime || 24) * 100) / 100,
-      fastest: Math.round((timeMetrics?.minResponseTime || 1) * 100) / 100,
-      slowest: Math.round((timeMetrics?.maxResponseTime || 168) * 100) / 100,
-    };
+    
+    if (!timeMetrics) {
+      this.logger.warn('No service time metrics found for the specified date range');
+    }
 
-    const completionTime = {
-      average: Math.round((timeMetrics?.avgCompletionTime || 7) * 100) / 100,
-      fastest: Math.round((timeMetrics?.minCompletionTime || 1) * 100) / 100,
-      slowest: Math.round((timeMetrics?.maxCompletionTime || 30) * 100) / 100,
-    };
+    const responseTime = timeMetrics ? {
+      average: Math.round(timeMetrics.avgResponseTime * 100) / 100,
+      fastest: Math.round(timeMetrics.minResponseTime * 100) / 100,
+      slowest: Math.round(timeMetrics.maxResponseTime * 100) / 100,
+    } : null;
+
+    const completionTime = timeMetrics ? {
+      average: Math.round(timeMetrics.avgCompletionTime * 100) / 100,
+      fastest: Math.round(timeMetrics.minCompletionTime * 100) / 100,
+      slowest: Math.round(timeMetrics.maxCompletionTime * 100) / 100,
+    } : null;
 
     return {
       totalRequests,
@@ -774,39 +875,52 @@ export class AnalyticsService {
       },
     ]);
 
-    const averageResolutionTime = Math.round((resolutionTimeResult[0]?.avgResolutionTime || 48) * 100) / 100;
+    const averageResolutionTime = resolutionTimeResult[0]?.avgResolutionTime 
+      ? Math.round(resolutionTimeResult[0].avgResolutionTime * 100) / 100 
+      : null;
+
+    if (!averageResolutionTime) {
+      this.logger.debug('No resolution time data found for support tickets in the specified date range');
+    }
 
     // Calculate customer satisfaction from ratings
+    // Note: SupportTicket schema uses 'rating' (number) not 'rating.score'
     const satisfactionResult = await this.supportModel.aggregate([
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          'rating.score': { $gt: 0 },
+          rating: { $gt: 0, $lte: 5 },
         },
       },
       {
         $group: {
           _id: null,
-          avgSatisfaction: { $avg: '$rating.score' },
+          avgSatisfaction: { $avg: '$rating' },
         },
       },
     ]);
 
-    const customerSatisfaction = Math.round((satisfactionResult[0]?.avgSatisfaction || 4.2) * 100) / 100;
+    const customerSatisfaction = satisfactionResult[0]?.avgSatisfaction 
+      ? Math.round(satisfactionResult[0].avgSatisfaction * 100) / 100 
+      : null;
 
-    // Calculate first response time
+    if (!customerSatisfaction) {
+      this.logger.debug('No customer satisfaction ratings found for support tickets in the specified date range');
+    }
+
+    // Calculate first response time using firstResponseAt field
     const firstResponseResult = await this.supportModel.aggregate([
       {
         $match: {
           createdAt: { $gte: startDate, $lte: endDate },
-          'messages.createdAt': { $exists: true },
+          firstResponseAt: { $exists: true },
         },
       },
       {
         $project: {
           firstResponseTimeHours: {
             $divide: [
-              { $subtract: ['$messages.createdAt', '$createdAt'] },
+              { $subtract: ['$firstResponseAt', '$createdAt'] },
               1000 * 60 * 60, // Convert to hours
             ],
           },
@@ -820,7 +934,13 @@ export class AnalyticsService {
       },
     ]);
 
-    const firstResponseTime = Math.round((firstResponseResult[0]?.avgFirstResponseTime || 12) * 100) / 100;
+    const firstResponseTime = firstResponseResult[0]?.avgFirstResponseTime 
+      ? Math.round(firstResponseResult[0].avgFirstResponseTime * 100) / 100 
+      : null;
+
+    if (!firstResponseTime) {
+      this.logger.debug('No first response time data found for support tickets in the specified date range');
+    }
 
     // Get top agents (if agent assignment is implemented)
     const topAgentsResult = await this.supportModel.aggregate([
@@ -1137,18 +1257,32 @@ export class AnalyticsService {
       byCity[item._id] = item.count;
     });
 
-    // Get service areas from service requests
+    // Get service areas from service requests with revenue calculation
     const serviceAreasResult = await this.serviceModel.aggregate([
       {
         $match: {
           deletedAt: null,
-          'address.city': { $exists: true, $ne: null },
+          city: { $exists: true, $ne: null },
         },
       },
       {
         $group: {
-          _id: '$address.city',
+          _id: '$city',
           requests: { $sum: 1 },
+          revenue: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$status', 'COMPLETED'] },
+                    { $gt: ['$acceptedOffer.amount', 0] }
+                  ]
+                },
+                '$acceptedOffer.amount',
+                0
+              ]
+            }
+          },
         },
       },
       { $sort: { requests: -1 } },
@@ -1158,7 +1292,7 @@ export class AnalyticsService {
     const serviceAreas = serviceAreasResult.map(area => ({
       name: area._id,
       requests: area.requests,
-      revenue: 0, // Would need to calculate from completed services
+      revenue: area.revenue || 0,
     }));
 
     // Get top locations by orders and revenue
@@ -2151,40 +2285,89 @@ export class AnalyticsService {
       rating: Math.round(engineer.rating * 100) / 100,
     }));
 
-    // Calculate response times trend from actual data
-    const responseTimesResult = await this.serviceModel.aggregate([
+    // Calculate response times trend from actual data - daily aggregation
+    // Use EngineerOffer with status ACCEPTED to determine assignment time
+    const responseTimesAgg = await this.serviceModel.aggregate([
       {
         $match: {
-          status: 'completed',
-          assignedAt: { $exists: true },
+          createdAt: { $gte: startOfDay(thirtyDaysAgo), $lte: endOfDay(today) },
+          status: { $in: ['COMPLETED', 'RATED'] },
+          engineerId: { $ne: null },
         },
+      },
+      {
+        $lookup: {
+          from: 'engineeroffers',
+          let: { requestId: '$_id', engineerId: '$engineerId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$requestId', '$$requestId'] },
+                    { $eq: ['$engineerId', '$$engineerId'] },
+                    { $eq: ['$status', 'ACCEPTED'] }
+                  ]
+                }
+              }
+            },
+            { $sort: { updatedAt: 1 } },
+            { $limit: 1 }
+          ],
+          as: 'acceptedOffer'
+        }
+      },
+      {
+        $unwind: {
+          path: '$acceptedOffer',
+          preserveNullAndEmptyArrays: false
+        }
       },
       {
         $project: {
+          date: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+          },
           responseTimeHours: {
             $divide: [
-              { $subtract: ['$assignedAt', '$createdAt'] },
+              { $subtract: ['$acceptedOffer.updatedAt', '$createdAt'] },
               1000 * 60 * 60, // Convert to hours
-            ],
-          },
-        },
+            ]
+          }
+        }
       },
       {
         $group: {
-          _id: null,
+          _id: '$date',
           avgResponseTime: { $avg: '$responseTimeHours' },
         },
       },
+      { $sort: { _id: 1 } },
     ]);
 
-    const averageResponseTime = Math.round((responseTimesResult[0]?.avgResponseTime || 12) * 100) / 100;
+    // Create a map for daily response times
+    const responseTimesMap = new Map<string, number>();
+    responseTimesAgg.forEach(item => {
+      responseTimesMap.set(item._id, Math.round(item.avgResponseTime * 100) / 100);
+    });
 
-    // Use average response time for all days (performance optimization)
-    // In production, you might want to calculate daily response times with a more efficient aggregation
-    const dailyResponseTimes = Array.from({ length: 30 }, () => averageResponseTime);
+    // Calculate overall average
+    const overallAvg = responseTimesAgg.length > 0
+      ? responseTimesAgg.reduce((sum, item) => sum + item.avgResponseTime, 0) / responseTimesAgg.length
+      : null;
+
+    const averageResponseTime = overallAvg ? Math.round(overallAvg * 100) / 100 : null;
+
+    // Build daily trend array for last 30 days
+    // Use average if no data for a specific day
+    const dailyResponseTimes = Array.from({ length: 30 }, (_, i) => {
+      const date = subDays(today, 29 - i);
+      const key = format(date, 'yyyy-MM-dd');
+      return responseTimesMap.get(key) ?? averageResponseTime ?? 0;
+    });
 
     const responseTimes = {
-      average: averageResponseTime,
+      average: averageResponseTime ?? 0,
       target: 24,
       trend: dailyResponseTimes,
     };

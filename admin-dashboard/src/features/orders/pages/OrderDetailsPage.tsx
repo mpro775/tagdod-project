@@ -37,6 +37,18 @@ import {
   Tooltip,
   Paper,
   Divider,
+  Tabs,
+  Tab,
+  Checkbox,
+  FormControlLabel,
+  RadioGroup,
+  Radio,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -59,6 +71,7 @@ import {
   KeyboardArrowDown,
   CreditCard,
   Email,
+  AssignmentReturn,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -123,9 +136,12 @@ export const OrderDetailsPage: React.FC = () => {
     estimatedDeliveryDate: '',
   });
   const [refundForm, setRefundForm] = useState<RefundOrderDto>({
-    amount: 0,
     reason: '',
+    isFullRefund: false,
+    items: [],
   });
+  const [refundDialogTab, setRefundDialogTab] = useState<'full' | 'partial'>('full');
+  const [selectedReturnItems, setSelectedReturnItems] = useState<Record<string, number>>({});
   const [cancelForm, setCancelForm] = useState<CancelOrderDto>({ reason: '' });
   const [notesForm, setNotesForm] = useState<AddOrderNotesDto>({
     notes: '',
@@ -515,15 +531,83 @@ export const OrderDetailsPage: React.FC = () => {
     }
   };
 
+  // Calculate refund amount from selected items
+  const calculateRefundAmount = useMemo(() => {
+    if (!order) return 0;
+    if (refundForm.isFullRefund) {
+      return order.total;
+    }
+    if (selectedReturnItems && Object.keys(selectedReturnItems).length > 0) {
+      return order.items.reduce((total, item) => {
+        const returnQty = selectedReturnItems[item.variantId] || 0;
+        if (returnQty > 0) {
+          // Calculate proportional refund based on item's share of total
+          const itemShare = item.lineTotal / order.subtotal;
+          const refundAmount = (order.total * itemShare * returnQty) / item.qty;
+          return total + refundAmount;
+        }
+        return total;
+      }, 0);
+    }
+    return refundForm.amount || 0;
+  }, [order, selectedReturnItems, refundForm.isFullRefund, refundForm.amount]);
+
+  // Get available return quantity for an item
+  const getAvailableReturnQty = (item: any) => {
+    return item.qty - (item.returnQty || 0);
+  };
+
   const handleRefundOrder = async () => {
-    if (!id) return;
+    if (!id || !order) return;
+    
+    // Validate form
+    if (!refundForm.reason || refundForm.reason.trim().length < 3) {
+      toast.error(t('dialogs.refundOrder.reasonRequired', { defaultValue: 'يجب إدخال سبب الإرجاع' }));
+      return;
+    }
+
     try {
-      await refundMutation.mutateAsync({ id, data: refundForm });
+      const refundData: RefundOrderDto = {
+        reason: refundForm.reason,
+      };
+
+      if (refundForm.isFullRefund) {
+        refundData.isFullRefund = true;
+        refundData.amount = order.total;
+      } else {
+        // Partial refund with items
+        const items = Object.entries(selectedReturnItems)
+          .filter(([_, qty]) => qty > 0)
+          .map(([variantId, qty]) => ({ variantId, qty }));
+        
+        if (items.length === 0) {
+          toast.error(t('dialogs.refundOrder.itemsRequired', { defaultValue: 'يجب اختيار أصناف للإرجاع' }));
+          return;
+        }
+
+        refundData.items = items;
+        refundData.amount = calculateRefundAmount;
+      }
+
+      await refundMutation.mutateAsync({ id, data: refundData });
       setRefundDialog(false);
+      setSelectedReturnItems({});
+      setRefundForm({ reason: '', isFullRefund: false, items: [] });
+      toast.success(t('dialogs.refundOrder.success', { defaultValue: 'تم إرجاع الطلب بنجاح' }));
     } catch (error) {
       console.error('Refund order failed:', error);
+      toast.error(t('dialogs.refundOrder.error', { defaultValue: 'فشل إرجاع الطلب' }));
     }
   };
+
+  // Reset refund dialog when opened/closed
+  useEffect(() => {
+    if (refundDialog && order) {
+      setRefundForm({ reason: '', isFullRefund: false, items: [] });
+      setSelectedReturnItems({});
+      setRefundDialogTab('full');
+    }
+  }, [refundDialog, order]);
 
   const handleCancelOrder = async () => {
     if (!id) return;
@@ -1094,54 +1178,108 @@ export const OrderDetailsPage: React.FC = () => {
                   {t('details.orderItems')}
                 </Typography>
                 <List sx={{ p: 0 }}>
-                  {orderItems.map((item, index) => (
-                    <ListItem
-                      key={index}
-                      divider
-                      sx={{
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        alignItems: { xs: 'flex-start', sm: 'center' },
-                        py: { xs: 1.5, sm: 2 },
-                      }}
-                    >
-                      <Avatar
-                        src={item.snapshot.image}
+                  {orderItems.map((item, index) => {
+                    const isReturned = item.isReturned || item.returnQty > 0;
+                    const isFullyReturned = item.returnQty >= item.qty;
+                    const isPartiallyReturned = item.returnQty > 0 && item.returnQty < item.qty;
+
+                    return (
+                      <ListItem
+                        key={index}
+                        divider
                         sx={{
-                          mr: { xs: 0, sm: 2 },
-                          mb: { xs: 1, sm: 0 },
-                          width: { xs: 48, sm: 56 },
-                          height: { xs: 48, sm: 56 },
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          alignItems: { xs: 'flex-start', sm: 'center' },
+                          py: { xs: 1.5, sm: 2 },
+                          bgcolor: isReturned
+                            ? theme.palette.mode === 'dark'
+                              ? 'rgba(255, 152, 0, 0.08)'
+                              : 'rgba(255, 152, 0, 0.05)',
+                          borderLeft: isReturned ? `4px solid ${theme.palette.warning.main}` : 'none',
+                          pl: isReturned ? { xs: 1.5, sm: 2 } : { xs: 2, sm: 3 },
                         }}
                       >
-                        {item.snapshot.name.charAt(0)}
-                      </Avatar>
-                      <ListItemText
-                        primary={
-                          <Typography
-                            variant={isMobile ? 'body2' : 'body1'}
-                            sx={{ fontWeight: 'medium', mb: 0.5 }}
-                          >
-                            {item.snapshot.name}
-                          </Typography>
-                        }
-                        secondary={
-                          <Box>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ display: 'block', mb: 0.5 }}
-                            >
-                              {t('details.quantity')}: {item.qty} | {t('details.price')}:{' '}
-                              {formatCurrency(item.finalPrice, order.currency)}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ display: 'block' }}
-                            >
-                              {t('details.lineTotal')}:{' '}
-                              {formatCurrency(item.lineTotal, order.currency)}
-                            </Typography>
+                        <Avatar
+                          src={item.snapshot.image}
+                          sx={{
+                            mr: { xs: 0, sm: 2 },
+                            mb: { xs: 1, sm: 0 },
+                            width: { xs: 48, sm: 56 },
+                            height: { xs: 48, sm: 56 },
+                            opacity: isFullyReturned ? 0.6 : 1,
+                          }}
+                        >
+                          {item.snapshot.name.charAt(0)}
+                        </Avatar>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                              <Typography
+                                variant={isMobile ? 'body2' : 'body1'}
+                                sx={{
+                                  fontWeight: 'medium',
+                                  mb: 0.5,
+                                  textDecoration: isFullyReturned ? 'line-through' : 'none',
+                                  opacity: isFullyReturned ? 0.7 : 1,
+                                }}
+                              >
+                                {item.snapshot.name}
+                              </Typography>
+                              {isReturned && (
+                                <Chip
+                                  icon={<Refresh />}
+                                  label={
+                                    isFullyReturned
+                                      ? t('details.fullyReturned', { defaultValue: '↩️ مرتجع بالكامل' })
+                                      : t('details.partiallyReturned', { defaultValue: '↩️ مرتجع جزئياً' })
+                                  }
+                                  size="small"
+                                  color="warning"
+                                  sx={{ fontWeight: 'bold' }}
+                                />
+                              )}
+                            </Box>
+                          }
+                          secondary={
+                            <Box>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: 'block', mb: 0.5 }}
+                              >
+                                {t('details.quantity', { defaultValue: 'الكمية' })}:{' '}
+                                {isPartiallyReturned ? (
+                                  <span>
+                                    {item.qty} ({t('details.returned', { defaultValue: 'مرتجع' })}:{' '}
+                                    <strong style={{ color: theme.palette.warning.main }}>
+                                      {item.returnQty}
+                                    </strong>
+                                    )
+                                  </span>
+                                ) : (
+                                  item.qty
+                                )}{' '}
+                                | {t('details.price', { defaultValue: 'السعر' })}:{' '}
+                                {formatCurrency(item.finalPrice, order.currency)}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: 'block' }}
+                              >
+                                {t('details.lineTotal', { defaultValue: 'المجموع' })}:{' '}
+                                {formatCurrency(item.lineTotal, order.currency)}
+                              </Typography>
+                              {isReturned && item.returnReason && (
+                                <Typography
+                                  variant="caption"
+                                  color="warning.main"
+                                  sx={{ display: 'block', mt: 0.5, fontStyle: 'italic' }}
+                                >
+                                  {t('details.returnReason', { defaultValue: 'سبب الإرجاع' })}:{' '}
+                                  {item.returnReason}
+                                </Typography>
+                              )}
                             {/* Variant Attributes - Professional Display */}
                             {item.snapshot.variantAttributes &&
                               item.snapshot.variantAttributes.length > 0 && (
@@ -1243,6 +1381,122 @@ export const OrderDetailsPage: React.FC = () => {
                 </List>
               </CardContent>
             </Card>
+
+            {/* Return Summary */}
+            {order.returnInfo?.isReturned && (
+              <Card
+                sx={{
+                  mb: { xs: 2, md: 3 },
+                  bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
+                  border: `2px solid ${theme.palette.warning.main}40`,
+                }}
+              >
+                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+                  >
+                    <AssignmentReturn />
+                    {t('details.returnSummary', { defaultValue: 'ملخص الإرجاع' })}
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Box
+                        sx={{
+                          p: 2,
+                          bgcolor:
+                            theme.palette.mode === 'dark'
+                              ? 'rgba(255, 152, 0, 0.1)'
+                              : 'rgba(255, 152, 0, 0.05)',
+                          borderRadius: 1,
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                          {t('details.returnAmount', { defaultValue: 'المبلغ المرتجع' })}
+                        </Typography>
+                        <Typography variant="h5" color="warning.main" sx={{ fontWeight: 'bold' }}>
+                          {formatCurrency(
+                            order.returnInfo.returnAmount || order.returnInfo.refundAmount || 0,
+                            order.currency
+                          )}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Box
+                        sx={{
+                          p: 2,
+                          bgcolor:
+                            theme.palette.mode === 'dark'
+                              ? 'rgba(255, 152, 0, 0.1)'
+                              : 'rgba(255, 152, 0, 0.05)',
+                          borderRadius: 1,
+                        }}
+                      >
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                          {t('details.returnedItemsCount', { defaultValue: 'عدد الأصناف المرتجعة' })}
+                        </Typography>
+                        <Typography variant="h5" color="warning.main" sx={{ fontWeight: 'bold' }}>
+                          {order.items.filter((item) => item.isReturned || item.returnQty > 0).length} /{' '}
+                          {order.items.length}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    {order.returnInfo.returnReason && (
+                      <Grid size={{ xs: 12 }}>
+                        <Box
+                          sx={{
+                            p: 2,
+                            bgcolor:
+                              theme.palette.mode === 'dark'
+                                ? 'rgba(255, 255, 255, 0.05)'
+                                : 'grey.50',
+                            borderRadius: 1,
+                          }}
+                        >
+                          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                            {t('details.returnReason', { defaultValue: 'سبب الإرجاع' })}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {order.returnInfo.returnReason}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    {order.returnInfo.returnedAt && (
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('details.returnedAt', { defaultValue: 'تاريخ الإرجاع' })}:{' '}
+                          {formatDate(order.returnInfo.returnedAt)}
+                        </Typography>
+                      </Grid>
+                    )}
+                    {order.returnInfo.returnedBy && (
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('details.returnedBy', { defaultValue: 'تم الإرجاع بواسطة' })}:{' '}
+                          {order.returnInfo.returnedBy}
+                        </Typography>
+                      </Grid>
+                    )}
+                    {order.returnInvoiceUrl && (
+                      <Grid size={{ xs: 12 }}>
+                        <Button
+                          variant="outlined"
+                          color="warning"
+                          startIcon={<Visibility />}
+                          onClick={() => window.open(order.returnInvoiceUrl, '_blank')}
+                          fullWidth
+                        >
+                          {t('details.viewReturnInvoice', { defaultValue: 'عرض فاتورة الإرجاع' })}
+                          {order.returnInvoiceNumber && ` (${order.returnInvoiceNumber})`}
+                        </Button>
+                      </Grid>
+                    )}
+                  </Grid>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Discounts & Coupons Breakdown */}
             {(order.itemsDiscount > 0 ||
@@ -1989,40 +2243,250 @@ export const OrderDetailsPage: React.FC = () => {
         <Dialog
           open={refundDialog}
           onClose={() => setRefundDialog(false)}
-          maxWidth="sm"
+          maxWidth="md"
           fullWidth
           fullScreen={isMobile}
         >
-          <DialogTitle>{t('dialogs.refundOrder.title')}</DialogTitle>
+          <DialogTitle>{t('dialogs.refundOrder.title', { defaultValue: 'إرجاع الطلب' })}</DialogTitle>
           <DialogContent>
+            {/* Tabs for Full vs Partial Refund */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+              <Tabs
+                value={refundDialogTab}
+                onChange={(_, newValue) => {
+                  setRefundDialogTab(newValue);
+                  setRefundForm((prev) => ({ ...prev, isFullRefund: newValue === 'full' }));
+                  if (newValue === 'full') {
+                    setSelectedReturnItems({});
+                  }
+                }}
+              >
+                <Tab
+                  label={t('dialogs.refundOrder.fullRefund', { defaultValue: 'إرجاع كامل' })}
+                  value="full"
+                />
+                <Tab
+                  label={t('dialogs.refundOrder.partialRefund', { defaultValue: 'إرجاع تفصيلي' })}
+                  value="partial"
+                />
+              </Tabs>
+            </Box>
+
+            {/* Full Refund Tab */}
+            {refundDialogTab === 'full' && (
+              <Box>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={refundForm.isFullRefund}
+                      onChange={(e) =>
+                        setRefundForm((prev) => ({ ...prev, isFullRefund: e.target.checked }))
+                      }
+                    />
+                  }
+                  label={t('dialogs.refundOrder.refundFullOrder', {
+                    defaultValue: 'إرجاع الفاتورة كاملة',
+                  })}
+                  sx={{ mb: 2 }}
+                />
+                {refundForm.isFullRefund && order && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    {t('dialogs.refundOrder.fullRefundAmount', {
+                      defaultValue: 'المبلغ المراد استرداده',
+                    })}
+                    : <strong>{formatCurrency(order.total, order.currency)}</strong>
+                  </Alert>
+                )}
+              </Box>
+            )}
+
+            {/* Partial Refund Tab */}
+            {refundDialogTab === 'partial' && order && (
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>
+                  {t('dialogs.refundOrder.selectItems', {
+                    defaultValue: 'اختر الأصناف المراد إرجاعها',
+                  })}
+                </Typography>
+                <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400 }}>
+                  <Table stickyHeader size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell padding="checkbox">
+                          {t('dialogs.refundOrder.select', { defaultValue: 'اختيار' })}
+                        </TableCell>
+                        <TableCell>
+                          {t('dialogs.refundOrder.product', { defaultValue: 'المنتج' })}
+                        </TableCell>
+                        <TableCell align="center">
+                          {t('dialogs.refundOrder.originalQty', { defaultValue: 'الكمية الأصلية' })}
+                        </TableCell>
+                        <TableCell align="center">
+                          {t('dialogs.refundOrder.returnedQty', { defaultValue: 'مرتجع' })}
+                        </TableCell>
+                        <TableCell align="center">
+                          {t('dialogs.refundOrder.availableQty', { defaultValue: 'متاح للإرجاع' })}
+                        </TableCell>
+                        <TableCell align="center">
+                          {t('dialogs.refundOrder.returnQty', { defaultValue: 'كمية الإرجاع' })}
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {order.items.map((item) => {
+                        const availableQty = getAvailableReturnQty(item);
+                        const isSelected = selectedReturnItems[item.variantId] > 0;
+                        const returnQty = selectedReturnItems[item.variantId] || 0;
+
+                        return (
+                          <TableRow
+                            key={item.variantId}
+                            sx={{
+                              bgcolor: isSelected
+                                ? theme.palette.mode === 'dark'
+                                  ? 'rgba(25, 118, 210, 0.1)'
+                                  : 'rgba(25, 118, 210, 0.05)'
+                                : 'transparent',
+                            }}
+                          >
+                            <TableCell padding="checkbox">
+                              <Checkbox
+                                checked={isSelected}
+                                disabled={availableQty <= 0}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedReturnItems((prev) => ({
+                                      ...prev,
+                                      [item.variantId]: 1,
+                                    }));
+                                  } else {
+                                    setSelectedReturnItems((prev) => {
+                                      const newItems = { ...prev };
+                                      delete newItems[item.variantId];
+                                      return newItems;
+                                    });
+                                  }
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Avatar
+                                  src={item.snapshot.image}
+                                  sx={{ width: 32, height: 32 }}
+                                >
+                                  {item.snapshot.name.charAt(0)}
+                                </Avatar>
+                                <Typography variant="body2">{item.snapshot.name}</Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center">{item.qty}</TableCell>
+                            <TableCell align="center">
+                              {item.returnQty > 0 ? (
+                                <Chip
+                                  label={item.returnQty}
+                                  size="small"
+                                  color="warning"
+                                  variant="outlined"
+                                />
+                              ) : (
+                                '-'
+                              )}
+                            </TableCell>
+                            <TableCell align="center">
+                              {availableQty > 0 ? (
+                                <Chip
+                                  label={availableQty}
+                                  size="small"
+                                  color="success"
+                                  variant="outlined"
+                                />
+                              ) : (
+                                <Chip label="0" size="small" color="default" disabled />
+                              )}
+                            </TableCell>
+                            <TableCell align="center">
+                              {isSelected && (
+                                <TextField
+                                  type="number"
+                                  size="small"
+                                  value={returnQty}
+                                  onChange={(e) => {
+                                    const qty = Math.max(
+                                      0,
+                                      Math.min(parseInt(e.target.value) || 0, availableQty)
+                                    );
+                                    if (qty > 0) {
+                                      setSelectedReturnItems((prev) => ({
+                                        ...prev,
+                                        [item.variantId]: qty,
+                                      }));
+                                    } else {
+                                      setSelectedReturnItems((prev) => {
+                                        const newItems = { ...prev };
+                                        delete newItems[item.variantId];
+                                        return newItems;
+                                      });
+                                    }
+                                  }}
+                                  inputProps={{ min: 0, max: availableQty }}
+                                  sx={{ width: 80 }}
+                                />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                {Object.keys(selectedReturnItems).length > 0 && (
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    {t('dialogs.refundOrder.calculatedAmount', {
+                      defaultValue: 'المبلغ المحسوب',
+                    })}
+                    : <strong>{formatCurrency(calculateRefundAmount, order.currency)}</strong>
+                  </Alert>
+                )}
+              </Box>
+            )}
+
+            {/* Reason Field */}
             <TextField
               fullWidth
-              label={t('dialogs.refundOrder.amount')}
-              type="number"
-              sx={{ mt: { xs: 1, sm: 2 } }}
-              value={refundForm.amount}
-              onChange={(e) =>
-                setRefundForm((prev) => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))
-              }
-            />
-            <TextField
-              fullWidth
-              label={t('dialogs.refundOrder.reason')}
+              label={t('dialogs.refundOrder.reason', { defaultValue: 'سبب الإرجاع' })}
               multiline
               rows={3}
-              sx={{ mt: 2 }}
+              required
+              sx={{ mt: 3 }}
               value={refundForm.reason}
               onChange={(e) => setRefundForm((prev) => ({ ...prev, reason: e.target.value }))}
+              error={refundForm.reason.length > 0 && refundForm.reason.length < 3}
+              helperText={
+                refundForm.reason.length > 0 && refundForm.reason.length < 3
+                  ? t('dialogs.refundOrder.reasonMinLength', {
+                      defaultValue: 'يجب أن يكون السبب 3 أحرف على الأقل',
+                    })
+                  : ''
+              }
             />
           </DialogContent>
           <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
-            <Button onClick={() => setRefundDialog(false)}>{t('actions.cancel')}</Button>
+            <Button onClick={() => setRefundDialog(false)}>
+              {t('actions.cancel', { defaultValue: 'إلغاء' })}
+            </Button>
             <Button
               onClick={handleRefundOrder}
               variant="contained"
-              disabled={refundMutation.isPending}
+              disabled={
+                refundMutation.isPending ||
+                !refundForm.reason ||
+                refundForm.reason.trim().length < 3 ||
+                (refundDialogTab === 'full' && !refundForm.isFullRefund) ||
+                (refundDialogTab === 'partial' && Object.keys(selectedReturnItems).length === 0)
+              }
             >
-              {t('dialogs.refundOrder.confirm')}
+              {t('dialogs.refundOrder.confirm', { defaultValue: 'تأكيد الإرجاع' })}
             </Button>
           </DialogActions>
         </Dialog>

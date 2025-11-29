@@ -797,7 +797,7 @@ export class OrderService {
         }
 
         const subtotalBeforeDiscountConverted = roundForCurrency(
-          subtotalConverted + totalDiscountConverted,
+          subtotalConverted + merchantDiscountConverted,
           currencyCode,
         );
 

@@ -137,8 +137,18 @@ export interface ReturnInfo {
   refundedAt?: Date;
   refundedBy?: string;
   isReturned: boolean;
+  returnAmount: number;
   returnReason?: string;
   returnedAt?: Date;
+  returnedBy?: string;
+  returnItems?: Array<{
+    variantId: string;
+    qty: number;
+    reason?: string;
+    requestedAt?: Date;
+    approvedAt?: Date;
+    approvedBy?: string;
+  }>;
 }
 
 // Rating Info
@@ -235,6 +245,8 @@ export interface Order extends BaseEntity {
   invoiceNumber?: string;
   invoiceUrl?: string;
   receiptUrl?: string;
+  returnInvoiceNumber?: string;
+  returnInvoiceUrl?: string;
 
   // Rating
   ratingInfo: RatingInfo;
@@ -283,13 +295,16 @@ export interface ShipOrderDto {
   notes?: string;
 }
 
+export interface RefundItemDto {
+  variantId: string;
+  qty: number;
+}
+
 export interface RefundOrderDto {
-  amount: number;
+  amount?: number;
   reason: string;
-  items?: Array<{
-    variantId: string;
-    qty: number;
-  }>;
+  items?: RefundItemDto[];
+  isFullRefund?: boolean;
 }
 
 export interface CancelOrderDto {

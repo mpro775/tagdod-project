@@ -31,6 +31,7 @@ import { ServiceRequest, ServiceRequestSchema } from '../services/schemas/servic
 import { SupportTicket, SupportTicketSchema } from '../support/schemas/support-ticket.schema';
 import { Cart, CartSchema } from '../cart/schemas/cart.schema';
 import { Coupon, CouponSchema } from '../marketing/schemas/coupon.schema';
+import { Banner, BannerSchema } from '../marketing/schemas/banner.schema';
 
 // Shared services
 import { CacheService } from '../../shared/cache/cache.service';
@@ -53,6 +54,7 @@ import { CacheService } from '../../shared/cache/cache.service';
       { name: SupportTicket.name, schema: SupportTicketSchema },
       { name: Cart.name, schema: CartSchema },
       { name: Coupon.name, schema: CouponSchema },
+      { name: Banner.name, schema: BannerSchema },
     ]),
     SharedModule,
   ],

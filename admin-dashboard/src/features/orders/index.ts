@@ -45,6 +45,7 @@ export type {
   UpdateOrderStatusDto,
   ShipOrderDto,
   RefundOrderDto,
+  RefundItemDto,
   CancelOrderDto,
   AddOrderNotesDto,
   BulkOrderUpdateDto,

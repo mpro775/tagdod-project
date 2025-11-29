@@ -51,6 +51,9 @@ import { SharedModule } from '../../shared/shared.module';
 import { NotificationsGateway } from './gateways/notifications.gateway';
 import { WebSocketService } from '../../shared/websocket/websocket.service';
 
+// Cron Services
+import { NotificationsCronService } from './notifications.cron';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -92,6 +95,9 @@ import { WebSocketService } from '../../shared/websocket/websocket.service';
 
     // WebSocket Gateway
     NotificationsGateway,
+
+    // Cron Services
+    NotificationsCronService,
 
     // Port Providers
     {

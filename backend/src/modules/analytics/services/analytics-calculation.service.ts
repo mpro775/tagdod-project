@@ -157,15 +157,48 @@ export class AnalyticsCalculationService {
         })
         .sort({ averageRating: -1 })
         .limit(10)
-        .select('name averageRating')
+        .select('_id name averageRating')
         .lean();
 
-      const topRated = topRatedResult.map(p => ({
-        productId: p._id.toString(),
-        name: p.name,
-        rating: p.averageRating || 0,
-        sales: 0, // Would need to calculate from orders
-      }));
+      // Calculate actual sales from completed orders
+      const productIds = topRatedResult.map(p => p._id);
+      const productSalesResult = await this.orderModel.aggregate([
+        {
+          $match: {
+            status: OrderStatus.COMPLETED,
+            paymentStatus: PaymentStatus.PAID,
+          }
+        },
+        { $unwind: '$items' },
+        {
+          $match: {
+            'items.productId': { $in: productIds }
+          }
+        },
+        {
+          $group: {
+            _id: '$items.productId',
+            totalSales: { $sum: '$items.qty' },
+            totalRevenue: { $sum: '$items.lineTotal' }
+          }
+        }
+      ]);
+
+      // Create a map for quick lookup
+      const salesMap = new Map(
+        productSalesResult.map(item => [item._id.toString(), item])
+      );
+
+      const topRated = topRatedResult.map(p => {
+        const salesData = salesMap.get(p._id.toString());
+        return {
+          productId: p._id.toString(),
+          name: p.name,
+          rating: p.averageRating || 0,
+          sales: salesData?.totalSales || 0,
+          revenue: salesData?.totalRevenue || 0,
+        };
+      });
 
       // Get low stock variants
       const lowStockVariants = await this.variantModel.aggregate([
@@ -505,26 +538,55 @@ export class AnalyticsCalculationService {
       }));
 
       // Calculate response and completion times
+      // Use EngineerOffer with status ACCEPTED to determine assignment time
+      // Use ServiceRequest.updatedAt when status is COMPLETED or RATED to determine completion time
       const timeMetricsResult = await this.serviceModel.aggregate([
         {
           $match: {
             createdAt: { $gte: startDate, $lte: endDate },
-            status: 'COMPLETED',
-            assignedAt: { $exists: true },
-            completedAt: { $exists: true },
+            status: { $in: ['COMPLETED', 'RATED'] },
+            engineerId: { $ne: null },
+          }
+        },
+        {
+          $lookup: {
+            from: 'engineeroffers',
+            let: { requestId: '$_id', engineerId: '$engineerId' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$requestId', '$$requestId'] },
+                      { $eq: ['$engineerId', '$$engineerId'] },
+                      { $eq: ['$status', 'ACCEPTED'] }
+                    ]
+                  }
+                }
+              },
+              { $sort: { updatedAt: 1 } },
+              { $limit: 1 }
+            ],
+            as: 'acceptedOffer'
+          }
+        },
+        {
+          $unwind: {
+            path: '$acceptedOffer',
+            preserveNullAndEmptyArrays: false
           }
         },
         {
           $project: {
             responseTimeHours: {
               $divide: [
-                { $subtract: ['$assignedAt', '$createdAt'] },
+                { $subtract: ['$acceptedOffer.updatedAt', '$createdAt'] },
                 1000 * 60 * 60, // Convert to hours
               ]
             },
             completionTimeDays: {
               $divide: [
-                { $subtract: ['$completedAt', '$assignedAt'] },
+                { $subtract: ['$updatedAt', '$acceptedOffer.updatedAt'] },
                 1000 * 60 * 60 * 24, // Convert to days
               ]
             }
@@ -544,17 +606,17 @@ export class AnalyticsCalculationService {
       ]);
 
       const timeMetrics = timeMetricsResult[0];
-      const responseTime = {
-        average: Math.round((timeMetrics?.avgResponseTime || 24) * 100) / 100,
-        fastest: Math.round((timeMetrics?.minResponseTime || 1) * 100) / 100,
-        slowest: Math.round((timeMetrics?.maxResponseTime || 168) * 100) / 100,
-      };
+      const responseTime = timeMetrics ? {
+        average: Math.round(timeMetrics.avgResponseTime * 100) / 100,
+        fastest: Math.round(timeMetrics.minResponseTime * 100) / 100,
+        slowest: Math.round(timeMetrics.maxResponseTime * 100) / 100,
+      } : null;
 
-      const completionTime = {
-        average: Math.round((timeMetrics?.avgCompletionTime || 7) * 100) / 100,
-        fastest: Math.round((timeMetrics?.minCompletionTime || 1) * 100) / 100,
-        slowest: Math.round((timeMetrics?.maxCompletionTime || 30) * 100) / 100,
-      };
+      const completionTime = timeMetrics ? {
+        average: Math.round(timeMetrics.avgCompletionTime * 100) / 100,
+        fastest: Math.round(timeMetrics.minCompletionTime * 100) / 100,
+        slowest: Math.round(timeMetrics.maxCompletionTime * 100) / 100,
+      } : null;
 
       return {
         totalRequests,
@@ -678,7 +740,9 @@ export class AnalyticsCalculationService {
         }
       ]);
 
-      const averageResolutionTime = Math.round((resolutionTimeResult[0]?.avgResolutionTime || 48) * 100) / 100;
+      const averageResolutionTime = resolutionTimeResult[0]?.avgResolutionTime
+        ? Math.round(resolutionTimeResult[0].avgResolutionTime * 100) / 100
+        : null;
 
       // Calculate customer satisfaction from ratings
       const satisfactionResult = await this.supportModel.aggregate([
@@ -696,7 +760,9 @@ export class AnalyticsCalculationService {
         }
       ]);
 
-      const customerSatisfaction = Math.round((satisfactionResult[0]?.avgSatisfaction || 4.2) * 100) / 100;
+      const customerSatisfaction = satisfactionResult[0]?.avgSatisfaction
+        ? Math.round(satisfactionResult[0].avgSatisfaction * 100) / 100
+        : null;
 
       // Calculate first response time
       const firstResponseResult = await this.supportModel.aggregate([
@@ -724,7 +790,9 @@ export class AnalyticsCalculationService {
         }
       ]);
 
-      const firstResponseTime = Math.round((firstResponseResult[0]?.avgFirstResponseTime || 12) * 100) / 100;
+      const firstResponseTime = firstResponseResult[0]?.avgFirstResponseTime
+        ? Math.round(firstResponseResult[0].avgFirstResponseTime * 100) / 100
+        : null;
 
       // Get top agents
       const topAgentsResult = await this.supportModel.aggregate([

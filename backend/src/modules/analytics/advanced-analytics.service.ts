@@ -6,6 +6,7 @@ import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { Cart, CartDocument } from '../cart/schemas/cart.schema';
+import { Banner, BannerDocument } from '../marketing/schemas/banner.schema';
 import {
   AdvancedReport,
   AdvancedReportDocument,
@@ -73,6 +74,7 @@ interface TopProductDetailResult {
   revenue: number;
   stock: number;
   rating: number;
+  viewsCount: number;
 }
 
 interface CategoryPerformanceResult {
@@ -139,6 +141,7 @@ export class AdvancedAnalyticsService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
     @InjectModel(AdvancedReport.name) private advancedReportModel: Model<AdvancedReportDocument>,
+    @InjectModel(Banner.name) private bannerModel: Model<BannerDocument>,
     private systemMonitoring: SystemMonitoringService,
     private exportService: ExportService,
   ) {}
@@ -914,6 +917,18 @@ export class AdvancedAnalyticsService {
       { $limit: 20 },
     ]);
 
+    // Calculate inventory value for each category
+    const categoryValues = await Promise.all(
+      inventoryByCategory.map(async (item: InventoryAggregateResult) => {
+        const categoryValue = await this.calculateCategoryInventoryValue(item._id);
+        return {
+          category: item.categoryName,
+          count: item.count,
+          value: categoryValue,
+        };
+      }),
+    );
+
     return {
       totalProducts,
       inStock: activeProducts,
@@ -924,11 +939,7 @@ export class AdvancedAnalyticsService {
       inStockGrowth,
       outOfStockGrowth,
       totalValueGrowth,
-      byCategory: inventoryByCategory.map((item: InventoryAggregateResult) => ({
-        category: item.categoryName,
-        count: item.count,
-        value: item.totalStock * 100, // Assuming average price of $100 USD per unit
-      })),
+      byCategory: categoryValues,
       movements: recentMovements.map((movement) => ({
         date: movement.date,
         type: movement.type,
@@ -1246,9 +1257,36 @@ export class AdvancedAnalyticsService {
         ? ((conversionRate - previousConversionRate) / previousConversionRate) * 100
         : 0;
 
+    // Get campaign data from Banner collection
+    const now = new Date();
+    const totalCampaigns = await this.bannerModel.countDocuments({
+      deletedAt: null,
+    });
+
+    const activeCampaigns = await this.bannerModel.countDocuments({
+      deletedAt: null,
+      isActive: true,
+      $or: [
+        {
+          startDate: { $lte: now },
+          endDate: { $gte: now },
+        },
+        {
+          startDate: null,
+          endDate: null,
+        },
+        {
+          startDate: { $lte: now },
+          endDate: null,
+        },
+      ],
+    });
+
+    const campaignPerformance = await this.getCampaignPerformance(startDate, endDate);
+
     return {
-      totalCampaigns: 0, // Would need campaign tracking system
-      activeCampaigns: 0,
+      totalCampaigns,
+      activeCampaigns,
       totalCoupons,
       activeCoupons,
       roi: Math.round(roi * 10) / 10,
@@ -1258,7 +1296,7 @@ export class AdvancedAnalyticsService {
       totalDiscountGrowth: Math.round(totalDiscountGrowth * 10) / 10,
       roiGrowth: Math.round(roiGrowth * 10) / 10,
       conversionRateGrowth: Math.round(conversionRateGrowth * 10) / 10,
-      campaignPerformance: [], // Would need campaign tracking system
+      campaignPerformance,
       topCoupons: couponData.slice(0, 10).map((coupon) => ({
         code: coupon._id,
         uses: coupon.uses,
@@ -1491,7 +1529,7 @@ export class AdvancedAnalyticsService {
           topPerformers: productAnalytics.topProducts.map((p) => ({
             productId: p.id || '',
             name: p.name || '',
-            views: 0, // View tracking would need to be implemented in product service
+            views: p.views || 0,
             sales: p.sales || 0,
             revenue: p.revenue || 0,
             rating: p.rating || 0,
@@ -2365,6 +2403,44 @@ export class AdvancedAnalyticsService {
   }
 
   /**
+   * Calculate inventory value for a specific category
+   */
+  private async calculateCategoryInventoryValue(categoryId: Types.ObjectId): Promise<number> {
+    const result = await this.variantModel.aggregate([
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'productId',
+          foreignField: '_id',
+          as: 'product',
+        },
+      },
+      { $unwind: '$product' },
+      {
+        $match: {
+          'product.categoryId': categoryId,
+          'product.deletedAt': null,
+          trackInventory: true,
+          deletedAt: null,
+          isActive: true,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalValue: {
+            $sum: {
+              $multiply: ['$stock', '$basePriceUSD'],
+            },
+          },
+        },
+      },
+    ]);
+
+    return result[0]?.totalValue || 0;
+  }
+
+  /**
    * Calculate total inventory value
    */
   private async calculateInventoryValue() {
@@ -2769,6 +2845,7 @@ export class AdvancedAnalyticsService {
           revenue: { $sum: { $multiply: ['$items.qty', '$items.finalPrice'] } },
           stock: { $first: '$product.stock' },
           rating: { $first: '$product.averageRating' },
+          viewsCount: { $first: '$product.viewsCount' },
         },
       },
       { $sort: { sales: -1 as 1 | -1 } },
@@ -2784,6 +2861,7 @@ export class AdvancedAnalyticsService {
       revenue: item.revenue,
       rating: item.rating || 0,
       stock: item.stock || 0,
+      views: item.viewsCount || 0,
     }));
   }
 
@@ -2979,6 +3057,7 @@ export class AdvancedAnalyticsService {
           sales: { $sum: '$items.qty' },
           revenue: { $sum: { $multiply: ['$items.qty', '$items.finalPrice'] } },
           lastSold: { $max: '$createdAt' },
+          viewsCount: { $first: '$product.viewsCount' },
         },
       },
       { $sort: { sales: 1 as 1 | -1 } }, // Ascending to get lowest
@@ -2990,10 +3069,73 @@ export class AdvancedAnalyticsService {
     return results.map((item) => ({
       productId: item._id.toString(),
       name: item.name,
-      views: 0, // View tracking not implemented yet - would need separate tracking system
+      views: item.viewsCount || 0,
       sales: item.sales,
       lastSold: item.lastSold || undefined,
     }));
+  }
+
+  /**
+   * Get campaign performance from Banner collection
+   */
+  private async getCampaignPerformance(startDate: Date, endDate: Date) {
+    const banners = await this.bannerModel
+      .find({
+        deletedAt: null,
+        $or: [
+          {
+            startDate: { $lte: endDate },
+            endDate: { $gte: startDate },
+          },
+          {
+            startDate: null,
+            endDate: null,
+          },
+        ],
+      })
+      .select('_id title viewCount clickCount conversionCount startDate endDate')
+      .lean();
+
+    // Calculate revenue from orders that might be related to banners
+    // For simplicity, we'll use a basic calculation
+    // In a real system, you'd track which orders came from which banner clicks
+    const totalRevenue = await this.orderModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate, $lte: endDate },
+          status: { $in: COMPLETED_STATUSES },
+          paymentStatus: 'paid',
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$total' },
+        },
+      },
+    ]);
+
+    const revenue = totalRevenue[0]?.totalRevenue || 0;
+    const averageOrderValue = revenue > 0 ? revenue / (banners.length || 1) : 0;
+
+    return banners.map((banner) => {
+      // Estimate revenue from conversions (simplified calculation)
+      // In a real system, you'd track actual conversions per banner
+      const estimatedRevenue = banner.conversionCount * averageOrderValue;
+      const cost = 0; // Banner cost tracking would need to be implemented
+      const roi = cost > 0 ? ((estimatedRevenue - cost) / cost) * 100 : 0;
+
+      return {
+        campaignId: banner._id.toString(),
+        name: banner.title,
+        impressions: banner.viewCount || 0,
+        clicks: banner.clickCount || 0,
+        conversions: banner.conversionCount || 0,
+        cost: cost,
+        revenue: Math.round(estimatedRevenue * 100) / 100,
+        roi: Math.round(roi * 100) / 100,
+      };
+    });
   }
 
   /**

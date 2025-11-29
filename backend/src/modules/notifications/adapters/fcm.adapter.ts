@@ -82,11 +82,23 @@ export class FCMAdapter {
 
   /**
    * Send notification to single device
+   * Returns detailed result with error information
    */
-  async sendToDevice(token: string, notification: FCMNotification): Promise<boolean> {
+  async sendToDevice(
+    token: string,
+    notification: FCMNotification,
+  ): Promise<{
+    success: boolean;
+    errorCode?: string;
+    errorMessage?: string;
+  }> {
     if (!this.isInitialized()) {
       this.logger.warn('FCM is not initialized. Cannot send notification.');
-      return false;
+      return {
+        success: false,
+        errorCode: 'fcm_not_initialized',
+        errorMessage: 'FCM is not initialized. Cannot send notification.',
+      };
     }
 
     try {
@@ -130,17 +142,33 @@ export class FCMAdapter {
 
       const response = await this.firebaseApp!.messaging().send(message);
       this.logger.log(`FCM notification sent successfully: ${response}`);
-      return true;
+      return {
+        success: true,
+      };
     } catch (error: unknown) {
       // Handle invalid token errors
       const firebaseError = error as { code?: string; message?: string };
-      if (firebaseError?.code === 'messaging/invalid-registration-token' || 
-          firebaseError?.code === 'messaging/registration-token-not-registered') {
+      const errorCode = firebaseError?.code || 'unknown_error';
+      const errorMessage = firebaseError?.message || 'Unknown FCM error';
+
+      if (
+        errorCode === 'messaging/invalid-registration-token' ||
+        errorCode === 'messaging/registration-token-not-registered'
+      ) {
         this.logger.warn(`Invalid or unregistered FCM token: ${token.substring(0, 20)}...`);
+        return {
+          success: false,
+          errorCode,
+          errorMessage,
+        };
       } else {
         this.logger.error(`Failed to send FCM notification:`, error);
+        return {
+          success: false,
+          errorCode,
+          errorMessage,
+        };
       }
-      return false;
     }
   }
 
@@ -159,8 +187,8 @@ export class FCMAdapter {
     };
 
     for (const token of tokens) {
-      const success = await this.sendToDevice(token, notification);
-      if (success) {
+      const result = await this.sendToDevice(token, notification);
+      if (result.success) {
         results.successCount++;
       } else {
         results.failureCount++;

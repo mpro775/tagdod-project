@@ -2313,14 +2313,17 @@ export class AdvancedReportsService {
    * Get average inventory value
    */
   private async getAverageInventoryValue(): Promise<number> {
-    // This would require inventory tracking
-    // For now, return a placeholder based on product count
-    const productCount = await this.productModel.countDocuments({
-      deletedAt: null,
-      status: 'active'
-    });
+    // Calculate average inventory value from actual variant data
+    const [totalInventoryValue, variantCount] = await Promise.all([
+      this.getInventoryValue(),
+      this.variantModel.countDocuments({
+        trackInventory: true,
+        deletedAt: null,
+        isActive: true
+      })
+    ]);
 
-    return productCount * 1000; // Assume average value of 1000 SAR per product
+    return variantCount > 0 ? totalInventoryValue / variantCount : 0;
   }
 
   /**
@@ -2353,14 +2356,36 @@ export class AdvancedReportsService {
   }
 
   /**
-   * Get inventory accuracy
+   * Get inventory accuracy percentage
+   * 
+   * Inventory accuracy is calculated by comparing recorded stock levels with actual physical counts.
+   * Formula: (1 - (Discrepancies / Total Items Counted)) × 100
+   * 
+   * @returns Inventory accuracy as a percentage (0-100)
+   * 
+   * @todo Implement inventory audit tracking system to calculate real accuracy.
+   *       This requires:
+   *       - Physical inventory count tracking
+   *       - Discrepancy recording (differences between recorded vs actual)
+   *       - Periodic audit scheduling
+   *       - Audit history and reporting
+   * 
+   * @see For more details, refer to inventory audit requirements documentation
    */
   private async getInventoryAccuracy(): Promise<number> {
-    // NOTE: This requires a physical inventory tracking system.
-    // Accuracy is calculated by comparing recorded stock levels with actual physical counts.
-    // Without a dedicated inventory audit system, this is a placeholder value.
+    // NOTE: This is a placeholder value until inventory audit system is implemented.
+    // The actual accuracy should be calculated by comparing:
+    // - Recorded stock levels (from variant.stock)
+    // - Physical counts from audits
+    // - Discrepancies and variances
+    // 
     // TODO: Implement inventory audit tracking to calculate real accuracy
-    this.logger.debug('getInventoryAccuracy: Using placeholder value. Physical inventory tracking not implemented.');
+    //       Consider using InventoryLedger schema or create new InventoryAudit schema
+    this.logger.debug(
+      'getInventoryAccuracy: Using placeholder value (95%). ' +
+      'Physical inventory tracking and audit system not yet implemented. ' +
+      'Real accuracy calculation requires comparing recorded vs physical stock counts.'
+    );
     return 95.0;
   }
 
@@ -2582,26 +2607,6 @@ export class AdvancedReportsService {
     };
   }
 
-  /**
-   * Get average resolution time in hours
-   */
-  private async getAverageResolutionTime(_startDate: Date, _endDate: Date): Promise<number> {
-    // Since support model is not available, return placeholder data
-    void _startDate;
-    void _endDate;
-    return 0;
-  }
-
-  /**
-   * Get customer satisfaction score
-   */
-  private async getCustomerSatisfaction(_startDate: Date, _endDate: Date): Promise<number> {
-    // Since support model is not available, return placeholder data
-    void _startDate;
-    void _endDate;
-    return 0;
-  }
-
   // ========== Customer Analytics Helper Methods ==========
 
   /**
@@ -2788,33 +2793,54 @@ export class AdvancedReportsService {
   }
 
   /**
-   * Get system error rate
+   * Get system error rate as a percentage (0-100)
+   * 
+   * @returns Error rate percentage from SystemMonitoringService, or fallback value if service is unavailable
    */
   private async getSystemErrorRate(): Promise<number> {
     try {
       const systemHealth = await this.systemMonitoring.getSystemHealth();
       return systemHealth.errorRate;
     } catch (error) {
-      this.logger.warn('Failed to get system error rate from SystemMonitoringService, using fallback', error);
-      return 0.01; // 1% error rate fallback
+      // Fallback to conservative estimate when SystemMonitoringService is unavailable
+      // This value represents a healthy error rate (1%) for production systems
+      this.logger.warn(
+        'Failed to get system error rate from SystemMonitoringService. ' +
+        'Using fallback value (1%). The actual error rate may differ.',
+        { error: error instanceof Error ? error.message : String(error) }
+      );
+      return 0.01; // 1% error rate fallback - conservative estimate for healthy systems
     }
   }
 
   /**
-   * Get average response time
+   * Get average API response time in milliseconds
+   * 
+   * @returns Average response time from SystemMonitoringService, or fallback value if service is unavailable
    */
   private async getAverageResponseTime(): Promise<number> {
     try {
       const systemHealth = await this.systemMonitoring.getSystemHealth();
       return systemHealth.avgApiResponseTime;
     } catch (error) {
-      this.logger.warn('Failed to get average response time from SystemMonitoringService, using fallback', error);
-      return 500; // 500ms average response time fallback
+      // Fallback to reasonable estimate when SystemMonitoringService is unavailable
+      // 500ms is a typical average response time for well-optimized APIs
+      this.logger.warn(
+        'Failed to get average response time from SystemMonitoringService. ' +
+        'Using fallback value (500ms). The actual response time may differ.',
+        { error: error instanceof Error ? error.message : String(error) }
+      );
+      return 500; // 500ms average response time fallback - typical for optimized APIs
     }
   }
 
   /**
-   * Get system uptime percentage
+   * Get system uptime percentage (0-100)
+   * 
+   * @returns System uptime percentage from SystemMonitoringService, or fallback value if service is unavailable
+   * 
+   * @note For a more accurate uptime percentage, we'd need to track downtime events and calculate
+   *       based on total possible uptime vs actual uptime over a specific period.
    */
   private async getSystemUptime(): Promise<number> {
     try {
@@ -2828,8 +2854,14 @@ export class AdvancedReportsService {
       const uptimePercentage = Math.min(100, (uptimeDays / totalPossibleUptimeDays) * 100);
       return Math.round(uptimePercentage * 100) / 100;
     } catch (error) {
-      this.logger.warn('Failed to get system uptime from SystemMonitoringService, using fallback', error);
-      return 99.9; // 99.9% uptime fallback
+      // Fallback to high uptime estimate when SystemMonitoringService is unavailable
+      // 99.9% represents excellent uptime for production systems
+      this.logger.warn(
+        'Failed to get system uptime from SystemMonitoringService. ' +
+        'Using fallback value (99.9%). The actual uptime percentage may differ.',
+        { error: error instanceof Error ? error.message : String(error) }
+      );
+      return 99.9; // 99.9% uptime fallback - high availability standard for production systems
     }
   }
 }

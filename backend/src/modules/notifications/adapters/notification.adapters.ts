@@ -199,12 +199,12 @@ export class PushNotificationAdapter extends BaseNotificationAdapter implements 
     if (this.fcmEnabled && notification.deviceToken) {
       try {
         const fcmNotification = this.toFCMNotification(notification);
-        const success = await this.fcmAdapter!.sendToDevice(
+        const result = await this.fcmAdapter!.sendToDevice(
           notification.deviceToken,
           fcmNotification
         );
 
-        if (success) {
+        if (result.success) {
           return {
             success: true,
             notificationId: notification.id,
@@ -219,7 +219,19 @@ export class PushNotificationAdapter extends BaseNotificationAdapter implements 
             }
           };
         } else {
-          throw new Error('FCM send failed');
+          // Return detailed error information
+          return {
+            success: false,
+            notificationId: notification.id,
+            error: result.errorMessage || 'FCM send failed',
+            metadata: { 
+              adapter: 'PushNotificationAdapter',
+              provider: 'FCM',
+              channel: 'push',
+              errorCode: result.errorCode,
+              deviceToken: notification.deviceToken.substring(0, 20) + '...'
+            }
+          };
         }
       } catch (error) {
         this.logger.error(`Failed to send FCM notification: ${error instanceof Error ? error.message : String(error)}`);
