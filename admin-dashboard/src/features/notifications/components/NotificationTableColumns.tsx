@@ -1,6 +1,5 @@
 import { GridColDef } from '@mui/x-data-grid';
 import { Box, Avatar, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
 import { Notification } from '../types/notification.types';
 import { formatDate } from '@/shared/utils/formatters';
 import { getChannelIcon } from './notificationHelpers';
@@ -31,7 +30,6 @@ export const createNotificationColumns = ({
   isMobile,
   t,
 }: CreateColumnsParams): GridColDef[] => {
-
   const baseColumns: GridColDef[] = [
     {
       field: 'title',
@@ -39,58 +37,58 @@ export const createNotificationColumns = ({
       minWidth: isMobile ? 200 : 250,
       flex: 2,
       renderCell: (params: any) => (
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'flex-start', 
-            gap: 1.5, 
-            width: '100%', 
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 1.5,
+            width: '100%',
             height: '100%',
             py: 1,
-            overflow: 'hidden' 
+            overflow: 'hidden',
           }}
         >
-          <Avatar 
-            sx={{ 
-              width: 32, 
-              height: 32, 
-              bgcolor: 'primary.main', 
+          <Avatar
+            sx={{
+              width: 32,
+              height: 32,
+              bgcolor: 'primary.main',
               flexShrink: 0,
-              mt: 0.5
+              mt: 0.5,
             }}
           >
             {getChannelIcon(params.row.channel)}
           </Avatar>
-          <Box 
-            sx={{ 
-              minWidth: 0, 
-              flex: 1, 
+          <Box
+            sx={{
+              minWidth: 0,
+              flex: 1,
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
               gap: 0.5,
-              justifyContent: 'center'
+              justifyContent: 'center',
             }}
           >
-            <Typography 
-              variant="body2" 
-              noWrap 
-              title={params.value} 
-              sx={{ 
+            <Typography
+              variant="body2"
+              noWrap
+              title={params.value}
+              sx={{
                 fontWeight: 'medium',
                 lineHeight: 1.4,
-                fontSize: '0.875rem'
+                fontSize: '0.875rem',
               }}
             >
               {params.value || t('placeholders.noTitle')}
             </Typography>
-            <Typography 
-              variant="caption" 
-              color="text.secondary" 
+            <Typography
+              variant="caption"
+              color="text.secondary"
               noWrap
               sx={{
                 lineHeight: 1.3,
-                fontSize: '0.75rem'
+                fontSize: '0.75rem',
               }}
             >
               {params.row.message?.substring(0, 50)}...
@@ -135,57 +133,57 @@ export const createNotificationColumns = ({
       renderCell: (params: any) => {
         const user = params.row.user;
         return user ? (
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'flex-start', 
-              gap: 1, 
-              width: '100%', 
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 1,
+              width: '100%',
               height: '100%',
               py: 1,
-              overflow: 'hidden' 
+              overflow: 'hidden',
             }}
           >
-            <Avatar 
-              sx={{ 
-                width: 24, 
-                height: 24, 
-                bgcolor: 'secondary.main', 
+            <Avatar
+              sx={{
+                width: 24,
+                height: 24,
+                bgcolor: 'secondary.main',
                 flexShrink: 0,
-                mt: 0.5
+                mt: 0.5,
               }}
             >
               {user.name?.charAt(0) || user.email?.charAt(0)}
             </Avatar>
-            <Box 
-              sx={{ 
-                minWidth: 0, 
-                flex: 1, 
+            <Box
+              sx={{
+                minWidth: 0,
+                flex: 1,
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 0.25,
-                justifyContent: 'center'
+                justifyContent: 'center',
               }}
             >
-              <Typography 
-                variant="body2" 
+              <Typography
+                variant="body2"
                 noWrap
                 sx={{
                   lineHeight: 1.4,
-                  fontSize: '0.875rem'
+                  fontSize: '0.875rem',
                 }}
               >
                 {user.name || user.email}
               </Typography>
               {user.email && user.name && (
-                <Typography 
-                  variant="caption" 
-                  color="text.secondary" 
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
                   noWrap
                   sx={{
                     lineHeight: 1.3,
-                    fontSize: '0.75rem'
+                    fontSize: '0.75rem',
                   }}
                 >
                   {user.email}

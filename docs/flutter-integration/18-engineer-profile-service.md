@@ -6,8 +6,10 @@
 > - إزالة حقل `languages` (لم يعد متاحاً)
 > - إضافة `jobTitle` في endpoint التحديث
 > - إضافة معلومات `user` (gender, status, engineer_status) في الاستجابة
-> - إضافة معلومات `coupon` المرتبط بالمهندس في الاستجابة
+> - إضافة معلومات `coupon` المرتبط بالمهندس في الاستجابة مع إحصائياته (`stats`)
 > - إضافة حقل `joinedAt` (تاريخ الانضمام) في الاستجابة
+> - إضافة حقل `totalCommissionEarnings` (إجمالي الدخل من العمولات) في الاستجابة
+> - تحديث `totalCompletedServices` ليعرض العدد الصحيح من قاعدة البيانات
 
 خدمة بروفايل المهندس توفر endpoints لإدارة بروفايل المهندس، التقييمات، الرصيد، والعمولات.
 
@@ -82,8 +84,15 @@
       "description": "خصم خاص للمهندسين",
       "discountValue": 10,
       "type": "percentage",
-      "commissionRate": 5
+      "commissionRate": 5,
+      "stats": {
+        "usedCount": 15,
+        "totalCommissionEarned": 750,
+        "totalDiscountGiven": 1500,
+        "totalRevenue": 30000
+      }
     },
+    "totalCommissionEarnings": 750,
     "ratings": [
       {
         "score": 5,
@@ -517,6 +526,7 @@ class EngineerProfile {
   final int totalCompletedServices;
   final double totalEarnings;
   final double walletBalance; // فقط في /me
+  final double totalCommissionEarnings; // إجمالي الدخل من العمولات (فقط في /me)
   final List<CommissionTransaction> commissionTransactions; // فقط في /me
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -539,10 +549,11 @@ class EngineerProfile {
     required this.totalRatings,
     required this.averageRating,
     required this.ratingDistribution,
-    required this.totalCompletedServices,
-    required this.totalEarnings,
-    this.walletBalance = 0,
-    this.commissionTransactions = const [],
+      required this.totalCompletedServices,
+      required this.totalEarnings,
+      this.walletBalance = 0,
+      this.totalCommissionEarnings = 0,
+      this.commissionTransactions = const [],
     required this.createdAt,
     required this.updatedAt,
     this.joinedAt,
@@ -585,6 +596,7 @@ class EngineerProfile {
       totalCompletedServices: json['totalCompletedServices'] ?? 0,
       totalEarnings: (json['totalEarnings'] ?? 0).toDouble(),
       walletBalance: (json['walletBalance'] ?? 0).toDouble(),
+      totalCommissionEarnings: (json['totalCommissionEarnings'] ?? 0).toDouble(),
       commissionTransactions: json['commissionTransactions'] != null
           ? (json['commissionTransactions'] as List)
               .map((t) => CommissionTransaction.fromJson(t))
@@ -617,6 +629,7 @@ class EngineerProfile {
       'totalCompletedServices': totalCompletedServices,
       'totalEarnings': totalEarnings,
       'walletBalance': walletBalance,
+      'totalCommissionEarnings': totalCommissionEarnings,
       'commissionTransactions':
           commissionTransactions.map((t) => t.toJson()).toList(),
       'createdAt': createdAt.toIso8601String(),
@@ -701,6 +714,7 @@ class CouponInfo {
   final double? discountValue;
   final String? type;
   final double? commissionRate;
+  final CouponStats? stats; // إحصائيات الكوبون
 
   CouponInfo({
     required this.code,
@@ -709,6 +723,7 @@ class CouponInfo {
     this.discountValue,
     this.type,
     this.commissionRate,
+    this.stats,
   });
 
   factory CouponInfo.fromJson(Map<String, dynamic> json) {
@@ -723,6 +738,9 @@ class CouponInfo {
       commissionRate: json['commissionRate'] != null
           ? (json['commissionRate'] as num).toDouble()
           : null,
+      stats: json['stats'] != null
+          ? CouponStats.fromJson(json['stats'])
+          : null,
     );
   }
 
@@ -734,6 +752,39 @@ class CouponInfo {
       'discountValue': discountValue,
       'type': type,
       'commissionRate': commissionRate,
+      'stats': stats?.toJson(),
+    };
+  }
+}
+
+class CouponStats {
+  final int usedCount; // عدد مرات استخدام الكوبون
+  final double totalCommissionEarned; // إجمالي العمولات المكتسبة
+  final double totalDiscountGiven; // إجمالي الخصومات الممنوحة
+  final double totalRevenue; // إجمالي الإيرادات من استخدامات الكوبون
+
+  CouponStats({
+    required this.usedCount,
+    required this.totalCommissionEarned,
+    required this.totalDiscountGiven,
+    required this.totalRevenue,
+  });
+
+  factory CouponStats.fromJson(Map<String, dynamic> json) {
+    return CouponStats(
+      usedCount: json['usedCount'] ?? 0,
+      totalCommissionEarned: (json['totalCommissionEarned'] ?? 0).toDouble(),
+      totalDiscountGiven: (json['totalDiscountGiven'] ?? 0).toDouble(),
+      totalRevenue: (json['totalRevenue'] ?? 0).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'usedCount': usedCount,
+      'totalCommissionEarned': totalCommissionEarned,
+      'totalDiscountGiven': totalDiscountGiven,
+      'totalRevenue': totalRevenue,
     };
   }
 }
@@ -935,10 +986,12 @@ class RatingsResponse {
 
 ### ⚠️ تحذيرات
 
-1. **`walletBalance` و `commissionTransactions`** متاحة فقط في `/me` endpoint
-2. **التقييمات تتزامن تلقائياً** - لا حاجة لمزامنة يدوية
-3. **التعليق مطلوب** عند إضافة تقييم (لا يمكن إضافة تقييم بدون نص)
-4. **النجوم من 1-5** فقط
+1. **`walletBalance` و `commissionTransactions` و `totalCommissionEarnings`** متاحة فقط في `/me` endpoint
+2. **`coupon.stats`** متاحة فقط عند وجود كوبون نشط للمهندس
+3. **التقييمات تتزامن تلقائياً** - لا حاجة لمزامنة يدوية
+4. **التعليق مطلوب** عند إضافة تقييم (لا يمكن إضافة تقييم بدون نص)
+5. **النجوم من 1-5** فقط
+6. **`totalCompletedServices`** يتم تحديثه تلقائياً من قاعدة البيانات عند جلب البروفايل
 
 ---
 
@@ -1171,7 +1224,9 @@ Future<void> updateProfile() async {
 
 - **الرصيد**: `walletBalance` يحتوي على الرصيد الحالي للمهندس
 - **العمولات**: `commissionTransactions` يحتوي على سجل جميع المعاملات
+- **إجمالي الدخل من العمولات**: `totalCommissionEarnings` يحتوي على إجمالي الدخل من جميع العمولات (محسوب من `commissionTransactions` من نوع `commission`)
 - **المصدر**: العمولات تأتي من استخدام كوبونات المهندس
+- **إحصائيات الكوبون**: `coupon.stats` يحتوي على إحصائيات الكوبون (عدد الاستخدامات، إجمالي العمولات المكتسبة، إجمالي الخصومات، إجمالي الإيرادات)
 
 ### الفصل بين Schemas
 

@@ -150,11 +150,44 @@ export class EngineerProfileService {
       }
     }
 
-    // جلب الكوبون المرتبط بالمهندس
+    // تحديث الإحصائيات من قاعدة البيانات الفعلية (عدد الخدمات المكتملة والأرباح)
+    if (actualUserId) {
+      await this.updateStatistics(actualUserId.toString());
+      // إعادة جلب البروفايل المحدث بعد تحديث الإحصائيات
+      const updatedProfileQuery = this.engineerProfileModel.findOne({
+        userId: actualUserId,
+      });
+      if (populateUser) {
+        updatedProfileQuery.populate(
+          'userId',
+          'firstName lastName phone jobTitle city gender status engineer_status',
+        );
+      }
+      const updatedProfile = await updatedProfileQuery.lean();
+      if (updatedProfile) {
+        profile = updatedProfile;
+      }
+    }
+
+    // جلب الكوبون المرتبط بالمهندس مع إحصائياته
     const coupon = await this.couponModel
       .findOne({ engineerId: actualUserId, status: 'active' })
-      .select('code name description discountValue type commissionRate')
+      .select(
+        'code name description discountValue type commissionRate usedCount totalCommissionEarned totalDiscountGiven totalRevenue',
+      )
       .lean();
+
+    // حساب إجمالي الدخل من العمولات من commissionTransactions
+    const totalCommissionEarnings = (profile.commissionTransactions || []).reduce(
+      (sum, transaction) => {
+        // فقط العمولات (ليس السحوبات أو الاستردادات)
+        if (transaction.type === 'commission' && transaction.amount > 0) {
+          return sum + transaction.amount;
+        }
+        return sum;
+      },
+      0,
+    );
 
     // إضافة المعلومات الإضافية
     const populatedUserId = profile.userId;
@@ -173,15 +206,20 @@ export class EngineerProfileService {
       : null;
 
     // استخراج createdAt من البروفايل (موجود تلقائياً بسبب timestamps: true)
-    const profileWithTimestamps = profile as EngineerProfileDocument & { createdAt?: Date; updatedAt?: Date };
-    
+    const profileWithTimestamps = profile as EngineerProfileDocument & {
+      createdAt?: Date;
+      updatedAt?: Date;
+    };
+
     const result = {
       ...profile,
       jobTitle: profile.jobTitle || (userData?.jobTitle ?? undefined),
       joinedAt: profileWithTimestamps.createdAt, // تاريخ الانضمام (تاريخ إنشاء البروفايل)
+      totalCommissionEarnings, // إجمالي الدخل من العمولات
     } as EngineerProfileDocument & {
       jobTitle?: string;
       joinedAt?: Date;
+      totalCommissionEarnings?: number;
       coupon?: {
         code: string;
         name: string;
@@ -189,10 +227,16 @@ export class EngineerProfileService {
         discountValue?: number;
         type?: string;
         commissionRate?: number;
+        stats?: {
+          usedCount: number;
+          totalCommissionEarned: number;
+          totalDiscountGiven: number;
+          totalRevenue: number;
+        };
       };
     };
 
-    // إضافة الكوبون
+    // إضافة الكوبون مع إحصائياته
     if (coupon) {
       result.coupon = {
         code: coupon.code,
@@ -201,6 +245,12 @@ export class EngineerProfileService {
         discountValue: coupon.discountValue,
         type: coupon.type,
         commissionRate: coupon.commissionRate,
+        stats: {
+          usedCount: coupon.usedCount || 0,
+          totalCommissionEarned: coupon.totalCommissionEarned || 0,
+          totalDiscountGiven: coupon.totalDiscountGiven || 0,
+          totalRevenue: coupon.totalRevenue || 0,
+        },
       };
     }
 
