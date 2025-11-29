@@ -29,11 +29,12 @@ export const useCategoryTree = () => {
 };
 
 // Get single category with full details
-export const useCategory = (id: string) => {
+export const useCategory = (id: string, options?: { refetchOnWindowFocus?: boolean }) => {
   return useQuery({
     queryKey: [CATEGORIES_KEY, 'single', id],
     queryFn: () => categoriesApi.getById(id),
     enabled: !!id,
+    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
   });
 };
 

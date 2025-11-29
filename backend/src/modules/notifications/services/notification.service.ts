@@ -204,6 +204,47 @@ export class NotificationService {
           if (targetUsers.length > 0) {
             const userIds = targetUsers.map((user) => user._id.toString());
 
+            // إنشاء نسخة من الإشعار لكل مستخدم
+            const userNotifications = targetUsers.map((user) => {
+              // التأكد من تحويل _id إلى string أولاً (لأن .lean() قد يعيد ObjectId)
+              const userId =
+                user._id instanceof Types.ObjectId ? user._id.toString() : String(user._id);
+
+              return {
+                type: savedNotification.type,
+                title: savedNotification.title,
+                message: savedNotification.message,
+                messageEn: savedNotification.messageEn,
+                data: savedNotification.data,
+                actionUrl: savedNotification.actionUrl,
+                channel: savedNotification.channel,
+                status: NotificationStatus.SENT,
+                priority: savedNotification.priority,
+                category: savedNotification.category,
+                targetRoles: savedNotification.targetRoles,
+                recipientId: new Types.ObjectId(userId),
+                templateId: savedNotification.templateId,
+                templateKey: savedNotification.templateKey,
+                scheduledFor: savedNotification.scheduledFor,
+                sentAt: new Date(),
+                isSystemGenerated: savedNotification.isSystemGenerated,
+                createdBy: savedNotification.createdBy,
+              };
+            });
+
+            // حفظ جميع الإشعارات في قاعدة البيانات
+            const createdNotifications = await this.notificationModel.insertMany(userNotifications);
+            this.logger.log(
+              `Created ${createdNotifications.length} notification copies for users with roles [${rolesToSend.join(', ')}]`,
+            );
+
+            // Log للتحقق من recipientId في النسخ
+            createdNotifications.forEach((notif) => {
+              this.logger.debug(
+                `Created notification copy ${notif._id} for recipient ${notif.recipientId?.toString() || 'undefined'}`,
+              );
+            });
+
             // إرسال الإشعار لجميع المستخدمين عبر WebSocket
             const sentCount = this.webSocketService.sendToMultipleUsers(
               userIds,
@@ -222,25 +263,20 @@ export class NotificationService {
               },
             );
 
-            // تحديث حالة الإشعار إلى "sent" إذا تم إرساله لعدد من المستخدمين
-            if (sentCount > 0) {
-              await this.notificationModel.updateOne(
-                { _id: savedNotification._id },
-                {
-                  $set: {
-                    status: NotificationStatus.SENT,
-                    sentAt: new Date(),
-                  },
+            // تحديث حالة الإشعار الأصلي إلى "sent"
+            await this.notificationModel.updateOne(
+              { _id: savedNotification._id },
+              {
+                $set: {
+                  status: NotificationStatus.SENT,
+                  sentAt: new Date(),
                 },
-              );
-              this.logger.log(
-                `Notification ${dto.type} sent to ${sentCount}/${userIds.length} users with roles [${rolesToSend.join(', ')}]`,
-              );
-            } else {
-              this.logger.warn(
-                `No active connections found for users with roles [${rolesToSend.join(', ')}] for notification ${dto.type}`,
-              );
-            }
+              },
+            );
+
+            this.logger.log(
+              `Notification ${dto.type} sent to ${sentCount}/${userIds.length} users with roles [${rolesToSend.join(', ')}] (${createdNotifications.length} copies created)`,
+            );
           } else {
             this.logger.warn(
               `No users found with roles [${rolesToSend.join(', ')}] for notification type ${dto.type}`,
@@ -314,16 +350,28 @@ export class NotificationService {
 
     // بناء filter للبحث عن الإشعارات
     // الإشعارات التي:
-    // 1. موجهة للمستخدم (recipientId)
-    // 2. و (targetRoles فارغ أو يحتوي على أحد أدوار المستخدم)
+    // 1. موجهة للمستخدم مباشرة (recipientId) - هذه لها الأولوية
+    // 2. أو موجهة للأدوار التي يمتلكها المستخدم (targetRoles) بدون recipientId محدد
+    const userIdObj = new Types.ObjectId(userId);
     const filter: Record<string, unknown> = {
-      recipientId: new Types.ObjectId(userId),
       $or: [
-        // إشعارات بدون targetRoles (للتوافق مع الإشعارات القديمة)
-        { targetRoles: { $exists: false } },
-        { targetRoles: { $size: 0 } },
-        // إشعارات تحتوي على أحد أدوار المستخدم
-        { targetRoles: { $in: userRoles } },
+        // إشعارات موجهة للمستخدم مباشرة (النسخ التي تم إنشاؤها)
+        { recipientId: userIdObj },
+        // إشعارات موجهة للأدوار بدون recipientId محدد (للتوافق مع الإشعارات القديمة)
+        {
+          $and: [
+            {
+              $or: [{ recipientId: { $exists: false } }, { recipientId: null }],
+            },
+            {
+              $or: [
+                { targetRoles: { $exists: false } },
+                { targetRoles: { $size: 0 } },
+                { targetRoles: { $in: userRoles } },
+              ],
+            },
+          ],
+        },
       ],
     };
 
@@ -331,6 +379,10 @@ export class NotificationService {
       this.notificationModel.find(filter).sort({ createdAt: -1 }).limit(limit).skip(offset).lean(),
       this.notificationModel.countDocuments(filter),
     ]);
+
+    this.logger.debug(
+      `User notifications query: userId=${userId}, userRoles=[${userRoles.join(', ')}], found=${notifications.length}, total=${total}`,
+    );
 
     return { notifications, total };
   }
@@ -395,10 +447,18 @@ export class NotificationService {
    * الحصول على عدد الإشعارات غير المقروءة
    */
   async getUnreadCount(userId: string): Promise<number> {
-    return this.notificationModel.countDocuments({
-      recipientId: new Types.ObjectId(userId),
+    const userIdObj = new Types.ObjectId(userId);
+    const count = await this.notificationModel.countDocuments({
+      recipientId: userIdObj,
       status: { $ne: NotificationStatus.READ },
     });
+
+    // Log للتحقق من الاستعلام
+    this.logger.debug(
+      `Unread count query: userId=${userId}, userIdObj=${userIdObj.toString()}, count=${count}`,
+    );
+
+    return count;
   }
 
   // ===== List & Search Operations =====
@@ -1147,5 +1207,143 @@ export class NotificationService {
    */
   getDefaultChannelForNotification(type: NotificationType): NotificationChannel {
     return getDefaultChannelForType(type);
+  }
+
+  /**
+   * إنشاء نسخ من الإشعار للمستخدمين الذين لديهم الأدوار المستهدفة
+   * تستخدم عند إرسال إشعار موجه للأدوار
+   */
+  async createNotificationCopiesForTargetRoles(
+    notification: UnifiedNotificationDocument,
+  ): Promise<number> {
+    try {
+      if (!notification.targetRoles || notification.targetRoles.length === 0) {
+        this.logger.warn('No target roles specified for notification');
+        return 0;
+      }
+
+      // تحديد الأدوار المستهدفة (استثناء MERCHANT من إشعارات المخزون)
+      let rolesToSend = [...notification.targetRoles];
+
+      // استثناء MERCHANT من إشعارات LOW_STOCK و OUT_OF_STOCK
+      if (
+        (notification.type === NotificationType.LOW_STOCK ||
+          notification.type === NotificationType.OUT_OF_STOCK) &&
+        rolesToSend.includes(UserRole.MERCHANT)
+      ) {
+        rolesToSend = rolesToSend.filter((role) => role !== UserRole.MERCHANT);
+        this.logger.log(
+          `Excluding MERCHANT role from stock notification ${notification.type}. Sending only to: [${rolesToSend.join(', ')}]`,
+        );
+      }
+
+      if (rolesToSend.length === 0) {
+        this.logger.warn(
+          `No roles to send notification ${notification.type} to (MERCHANT excluded)`,
+        );
+        return 0;
+      }
+
+      // البحث عن جميع المستخدمين الذين لديهم أحد الأدوار المستهدفة
+      const targetUsers = await this.userModel
+        .find({
+          roles: { $in: rolesToSend },
+          status: UserStatus.ACTIVE,
+        })
+        .select('_id')
+        .lean();
+
+      if (targetUsers.length === 0) {
+        this.logger.warn(
+          `No users found with roles [${rolesToSend.join(', ')}] for notification type ${notification.type}`,
+        );
+        return 0;
+      }
+
+      // التحقق من وجود نسخ موجودة بالفعل للمستخدمين المحددين
+      const userIds = targetUsers.map((user) => user._id.toString());
+      const existingCopies = await this.notificationModel.countDocuments({
+        _id: { $ne: notification._id },
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        recipientId: { $in: userIds.map((id) => new Types.ObjectId(id)) },
+        createdAt: {
+          $gte: new Date(Date.now() - 60000), // خلال الدقيقة الماضية
+        },
+      });
+
+      if (existingCopies >= userIds.length) {
+        this.logger.log(
+          `Notification copies already exist for all ${userIds.length} users. Skipping creation.`,
+        );
+        return existingCopies;
+      }
+
+      // إنشاء نسخة من الإشعار لكل مستخدم
+      const userNotifications = targetUsers.map((user) => {
+        // التأكد من تحويل _id إلى string أولاً (لأن .lean() قد يعيد ObjectId)
+        const userId = user._id instanceof Types.ObjectId ? user._id.toString() : String(user._id);
+
+        return {
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          messageEn: notification.messageEn,
+          data: notification.data,
+          actionUrl: notification.actionUrl,
+          channel: notification.channel,
+          status: NotificationStatus.SENT,
+          priority: notification.priority,
+          category: notification.category,
+          targetRoles: notification.targetRoles,
+          recipientId: new Types.ObjectId(userId),
+          templateId: notification.templateId,
+          templateKey: notification.templateKey,
+          scheduledFor: notification.scheduledFor || new Date(),
+          sentAt: new Date(),
+          isSystemGenerated: notification.isSystemGenerated,
+          createdBy: notification.createdBy,
+        };
+      });
+
+      // حفظ جميع الإشعارات في قاعدة البيانات
+      const createdNotifications = await this.notificationModel.insertMany(userNotifications);
+      this.logger.log(
+        `Created ${createdNotifications.length} notification copies for users with roles [${rolesToSend.join(', ')}]`,
+      );
+
+      // Log للتحقق من recipientId في النسخ
+      createdNotifications.forEach((notif) => {
+        this.logger.debug(
+          `Created notification copy ${notif._id} for recipient ${notif.recipientId?.toString() || 'undefined'}`,
+        );
+      });
+
+      // إرسال الإشعار لجميع المستخدمين عبر WebSocket
+      const sentCount = this.webSocketService.sendToMultipleUsers(userIds, 'notification:new', {
+        id: notification._id.toString(),
+        title: notification.title,
+        message: notification.message,
+        messageEn: notification.messageEn,
+        type: notification.type,
+        category: notification.category,
+        priority: notification.priority,
+        data: notification.data,
+        createdAt: notification.createdAt,
+        isRead: false,
+      });
+
+      this.logger.log(
+        `Notification ${notification.type} sent via WebSocket to ${sentCount}/${userIds.length} users with roles [${rolesToSend.join(', ')}]`,
+      );
+
+      return createdNotifications.length;
+    } catch (error) {
+      this.logger.error(
+        `Failed to create notification copies for target roles: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return 0;
+    }
   }
 }

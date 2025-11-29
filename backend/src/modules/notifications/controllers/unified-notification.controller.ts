@@ -758,7 +758,32 @@ export class UnifiedNotificationController {
   async adminSendNotification(@Param('id') id: string) {
     const notification = await this.notificationService.getNotificationById(id);
 
-    // إعادة إرسال الإشعار
+    // إذا كان الإشعار موجه للأدوار بدون recipientId، إنشاء نسخ للمستخدمين
+    if (
+      (!notification.recipientId || !notification.recipientId.toString()) &&
+      notification.targetRoles &&
+      notification.targetRoles.length > 0
+    ) {
+      const copiesCount = await this.notificationService.createNotificationCopiesForTargetRoles(
+        notification as any,
+      );
+      
+      // تحديث حالة الإشعار الأصلي
+      await this.notificationService.updateNotificationStatus(
+        id,
+        notification.status === NotificationStatus.PENDING
+          ? NotificationStatus.SENT
+          : notification.status,
+      );
+
+      return {
+        success: true,
+        message: `Notification sent successfully to ${copiesCount} user(s)`,
+        copiesCreated: copiesCount,
+      };
+    }
+
+    // إعادة إرسال الإشعار للمستخدم المحدد
     if (notification.recipientId) {
       if (notification.channel === NotificationChannel.PUSH) {
         await this.notificationService.sendPushNotification(

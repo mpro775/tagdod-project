@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
@@ -71,7 +71,12 @@ export const CategoryFormPage: React.FC = () => {
   type CategoryFormData = z.infer<typeof categorySchema>;
 
   const [selectedImage, setSelectedImage] = React.useState<any>(null);
-  const [activeStep, setActiveStep] = React.useState(0);
+  const [activeStep, setActiveStep] = React.useState(() => {
+    // استعادة الخطوة من sessionStorage إذا كانت موجودة
+    const savedStep = sessionStorage.getItem(`category-form-step-${id || 'new'}`);
+    return savedStep ? parseInt(savedStep, 10) : 0;
+  });
+  const [isDataLoaded, setIsDataLoaded] = React.useState(false);
 
   // Form
   const methods = useForm<CategoryFormData>({
@@ -93,15 +98,22 @@ export const CategoryFormPage: React.FC = () => {
   });
 
   // API
-  const { data: category, isLoading } = useCategory(id!);
+  const { data: category, isLoading } = useCategory(id!, {
+    refetchOnWindowFocus: false,
+  });
   const { data: categoriesResponse = [] } = useCategories({}); // For parent selector
   const categories = Array.isArray(categoriesResponse) ? categoriesResponse : [];
   const { mutate: createCategory, isPending: isCreating } = useCreateCategory();
   const { mutate: updateCategory, isPending: isUpdating } = useUpdateCategory();
 
-  // Load category data in edit mode
+  // حفظ الخطوة الحالية في sessionStorage
   useEffect(() => {
-    if (isEditMode && category) {
+    sessionStorage.setItem(`category-form-step-${id || 'new'}`, activeStep.toString());
+  }, [activeStep, id]);
+
+  // Load category data in edit mode (مرة واحدة فقط)
+  useEffect(() => {
+    if (isEditMode && category && !isDataLoaded && !isLoading) {
       methods.reset({
         parentId: category.parentId,
         name: category.name,
@@ -134,8 +146,17 @@ export const CategoryFormPage: React.FC = () => {
           });
         }
       }
+      
+      setIsDataLoaded(true);
     }
-  }, [category, isEditMode, methods]);
+  }, [category, isEditMode, methods, isDataLoaded, isLoading]);
+
+  // تنظيف sessionStorage عند مغادرة الصفحة
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem(`category-form-step-${id || 'new'}`);
+    };
+  }, [id]);
 
   // Submit
   const onSubmit = (data: CategoryFormData) => {
@@ -167,6 +188,7 @@ export const CategoryFormPage: React.FC = () => {
         { id: id!, data: categoryData },
         {
           onSuccess: () => {
+            sessionStorage.removeItem(`category-form-step-${id || 'new'}`);
             navigate('/categories');
           },
         }
@@ -174,6 +196,7 @@ export const CategoryFormPage: React.FC = () => {
     } else {
       createCategory(categoryData, {
         onSuccess: () => {
+          sessionStorage.removeItem(`category-form-step-${id || 'new'}`);
           navigate('/categories');
         },
       });
@@ -477,42 +500,54 @@ export const CategoryFormPage: React.FC = () => {
                 <Grid container spacing={{ xs: 2, sm: 3 }}>
                   <Grid size={{ xs: 12 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            {...methods.register('isActive')}
-                            defaultChecked={methods.getValues('isActive')}
+                      <Controller
+                        name="isActive"
+                        control={methods.control}
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={field.value ?? true}
+                                onChange={(e) => field.onChange(e.target.checked)}
+                              />
+                            }
+                            label={
+                              <Typography
+                                sx={{
+                                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                                  color: 'text.primary',
+                                }}
+                              >
+                                {t('form.isActive')}
+                              </Typography>
+                            }
                           />
-                        }
-                        label={
-                          <Typography
-                            sx={{
-                              fontSize: { xs: '0.875rem', sm: '1rem' },
-                              color: 'text.primary',
-                            }}
-                          >
-                            {t('form.isActive')}
-                          </Typography>
-                        }
+                        )}
                       />
 
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            {...methods.register('isFeatured')}
-                            defaultChecked={methods.getValues('isFeatured')}
+                      <Controller
+                        name="isFeatured"
+                        control={methods.control}
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={field.value ?? false}
+                                onChange={(e) => field.onChange(e.target.checked)}
+                              />
+                            }
+                            label={
+                              <Typography
+                                sx={{
+                                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                                  color: 'text.primary',
+                                }}
+                              >
+                                {t('form.isFeatured')}
+                              </Typography>
+                            }
                           />
-                        }
-                        label={
-                          <Typography
-                            sx={{
-                              fontSize: { xs: '0.875rem', sm: '1rem' },
-                              color: 'text.primary',
-                            }}
-                          >
-                            {t('form.isFeatured')}
-                          </Typography>
-                        }
+                        )}
                       />
                     </Box>
                   </Grid>

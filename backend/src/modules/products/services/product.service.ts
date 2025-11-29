@@ -200,10 +200,17 @@ export class ProductService {
       } else if (productWithAvailability.variantsCount > 0) {
         // للمنتجات مع variants، افتراضي true (سيتم التحقق الفعلي في service layer)
         productWithAvailability.isAvailable = true;
-      } else if (productWithAvailability.trackStock) {
-        productWithAvailability.isAvailable = (productWithAvailability.stock ?? 0) > 0;
       } else {
-        productWithAvailability.isAvailable = true;
+        // للمنتجات البسيطة (بدون variants)
+        const stock = productWithAvailability.stock ?? 0;
+        // إذا كان المخزون صفر، المنتج غير متاح بغض النظر عن trackStock
+        if (stock === 0) {
+          productWithAvailability.isAvailable = false;
+        } else if (productWithAvailability.trackStock) {
+          productWithAvailability.isAvailable = stock > 0;
+        } else {
+          productWithAvailability.isAvailable = true;
+        }
       }
     }
 
@@ -542,14 +549,16 @@ export class ProductService {
     }
 
     // تحديد الترتيب: إذا تم تحديد sortBy و sortOrder، نستخدمهما، وإلا نستخدم الترتيب الافتراضي (الأحدث أولاً)
+    // إضافة _id كحقل ترتيب ثانوي لضمان الترتيب المستقر عند وجود قيم متطابقة
     let sortCriteria: Record<string, 1 | -1> = {};
     
     if (sortBy && sortOrder) {
-      // ترتيب مخصص من المستخدم
+      // ترتيب مخصص من المستخدم مع إضافة _id كترتيب ثانوي لضمان الاستقرار
       sortCriteria[sortBy] = sortOrder === 'asc' ? 1 : -1;
+      sortCriteria._id = sortOrder === 'asc' ? 1 : -1;
     } else {
-      // الترتيب الافتراضي: الأحدث أولاً (createdAt: -1)، ثم الترتيب اليدوي (order: 1)
-      sortCriteria = { createdAt: -1, order: 1 };
+      // الترتيب الافتراضي: الأحدث أولاً (createdAt: -1)، ثم الترتيب اليدوي (order: 1)، ثم _id للاستقرار
+      sortCriteria = { createdAt: -1, order: 1, _id: -1 };
     }
 
     // تحويل filter إلى format يمكن loggingه بشكل صحيح
@@ -667,10 +676,17 @@ export class ProductService {
             product.isAvailable = false;
           } else if (product.variantsCount > 0) {
             product.isAvailable = true;
-          } else if (product.trackStock) {
-            product.isAvailable = (product.stock ?? 0) > 0;
           } else {
-            product.isAvailable = true;
+            // للمنتجات البسيطة (بدون variants)
+            const stock = product.stock ?? 0;
+            // إذا كان المخزون صفر، المنتج غير متاح بغض النظر عن trackStock
+            if (stock === 0) {
+              product.isAvailable = false;
+            } else if (product.trackStock) {
+              product.isAvailable = stock > 0;
+            } else {
+              product.isAvailable = true;
+            }
           }
           return product;
         });
@@ -752,10 +768,17 @@ export class ProductService {
       } else if (product.variantsCount > 0) {
         // للمنتجات مع variants، افتراضي true (سيتم التحقق الفعلي في service layer)
         product.isAvailable = true;
-      } else if (product.trackStock) {
-        product.isAvailable = (product.stock ?? 0) > 0;
       } else {
-        product.isAvailable = true;
+        // للمنتجات البسيطة (بدون variants)
+        const stock = product.stock ?? 0;
+        // إذا كان المخزون صفر، المنتج غير متاح بغض النظر عن trackStock
+        if (stock === 0) {
+          product.isAvailable = false;
+        } else if (product.trackStock) {
+          product.isAvailable = stock > 0;
+        } else {
+          product.isAvailable = true;
+        }
       }
       return product;
     });
@@ -838,15 +861,24 @@ export class ProductService {
     }
 
     // للمنتجات البسيطة
+    const stock = product.stock ?? 0;
+    // إذا كان المخزون صفر، المنتج غير متاح بغض النظر عن trackStock
+    if (stock === 0) {
+      return {
+        isAvailable: false,
+        availableStock: 0,
+        reason: 'OUT_OF_STOCK',
+      };
+    }
+
     if (product.trackStock) {
-      const stock = product.stock ?? 0;
       return {
         isAvailable: stock > 0,
         availableStock: stock,
       };
     }
 
-    return { isAvailable: true };
+    return { isAvailable: true, availableStock: stock };
   }
 
   async updateStats(id: string): Promise<void> {
@@ -1007,7 +1039,7 @@ export class ProductService {
       return [];
     }
 
-    // جلب المنتجات الشبيهة
+    // جلب المنتجات الشبيهة مع ترتيب مستقر
     const relatedProducts = await this.productModel
       .find({
         _id: { $in: product.relatedProducts },
@@ -1018,6 +1050,7 @@ export class ProductService {
       .populate('categoryId')
       .populate('brandId')
       .populate('mainImageId')
+      .sort({ createdAt: -1, order: 1, _id: -1 }) // ترتيب مستقر
       .limit(limit)
       .lean();
 

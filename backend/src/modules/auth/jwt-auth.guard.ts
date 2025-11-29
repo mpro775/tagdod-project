@@ -25,7 +25,7 @@ export class JwtAuthGuard implements CanActivate {
     }
     
     try {
-      req.user = this.tokens.verifyAccess(token) as {
+      const payload = this.tokens.verifyAccess(token) as {
         sub: string;
         phone: string;
         isAdmin: boolean;
@@ -33,6 +33,14 @@ export class JwtAuthGuard implements CanActivate {
         permissions?: string[];
         preferredCurrency?: string;
       };
+      
+      // إضافة id و userId للتوافق مع الـ controllers التي تتوقعها
+      req.user = {
+        ...payload,
+        id: payload.sub,
+        userId: payload.sub,
+      };
+      
       return true;
     } catch (error) {
       this.logger.warn(`Token verification failed for ${req.method} ${req.url}: ${error instanceof Error ? error.message : 'Unknown error'}`);

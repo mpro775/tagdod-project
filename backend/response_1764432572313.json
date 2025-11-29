@@ -1,0 +1,1366 @@
+{
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "_id": "6919a911a0c1c42fb3cf4d42",
+        "name": "لمبات معتم خارجي IP65 30W",
+        "nameEn": "IP65 3rd Generation Downlight(matte cover) 30-W Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "6919a83da0c1c42fb3cf4d06",
+          "url": "https://tagadod.b-cdn.net/media/product/2af3c720-f8ea-4837-9bee-15ea14956b62-68c821068c025_238.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 200,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 7.86,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 7.86,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 4166,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 4166,
+            "currency": "YER",
+            "exchangeRate": 530.0254452926208
+          },
+          "SAR": {
+            "basePrice": 29.48,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 29.48,
+            "currency": "SAR",
+            "exchangeRate": 3.7506361323155217
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "691f57bd60973a1ae5ae17a2",
+        "name": "كشافات شوارع طاقه شمسيه 60W",
+        "nameEn": "All in One B Solar Street Light Liper 600ً",
+        "status": "active",
+        "mainImage": {
+          "_id": "691f53e560973a1ae5ae145c",
+          "url": "https://tagadod.b-cdn.net/media/product/6bbfd7f2-12bc-4732-b233-39b9cf6b7f9c-68c16f0e68593_Liper-all-in-one-B-solar-street-light-3.jpg"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 29.99,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 29.99,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 15895,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 15895,
+            "currency": "YER",
+            "exchangeRate": 530.0100033344448
+          },
+          "SAR": {
+            "basePrice": 112.46,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 112.46,
+            "currency": "SAR",
+            "exchangeRate": 3.7499166388796263
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "692aaac2957c08f123c8472e",
+        "name": "لمبات نادر جلوب",
+        "nameEn": "Nader Globe bulbs",
+        "status": "active",
+        "mainImage": {
+          "_id": "692aa92c957c08f123c8466b",
+          "url": "https://tagadod.b-cdn.net/media/product/b0b86ac4-76bc-446e-afb0-566c611cc04b-WhatsApp Image 2025-11-25 at 4.54.03 PM.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 0.69,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 0.69,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 366,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 366,
+            "currency": "YER",
+            "exchangeRate": 530.4347826086957
+          },
+          "SAR": {
+            "basePrice": 2.59,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 2.59,
+            "currency": "SAR",
+            "exchangeRate": 3.7536231884057973
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "6926b4219fd15abe3303fd9b",
+        "name": "لمبات احواش IP65 لطش 20W",
+        "nameEn": "IP65 Down Light Generation 5th Liper 20W",
+        "status": "active",
+        "mainImage": {
+          "_id": "6926b2949fd15abe3303fca0",
+          "url": "https://tagadod.b-cdn.net/media/product/7c89b2c9-8836-41dd-8799-8a6936dd624f-IP65 Down Light Generation 5th Liper (1).png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 11.42,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 11.42,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 6053,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 6053,
+            "currency": "YER",
+            "exchangeRate": 530.0350262697023
+          },
+          "SAR": {
+            "basePrice": 42.83,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 42.83,
+            "currency": "SAR",
+            "exchangeRate": 3.7504378283712785
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "6926b0849fd15abe3303fc45",
+        "name": "لمبات احواش دائري IP65 لطش 20W",
+        "nameEn": "MF Wall Light Wide Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "6926afd49fd15abe3303fbe7",
+          "url": "https://tagadod.b-cdn.net/media/product/acf0a937-08e9-45f5-af19-22bb2dec42ef-MF Wall Light Wide Liper.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 17.64,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 17.64,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 9349,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 9349,
+            "currency": "YER",
+            "exchangeRate": 529.9886621315193
+          },
+          "SAR": {
+            "basePrice": 66.15,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 66.15,
+            "currency": "SAR",
+            "exchangeRate": 3.75
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "6925c303ea80a531382fbf31",
+        "name": "IP65 لمبات معتم اطار حديث لطش 25W متعددة الالوان",
+        "nameEn": "IP65 DOWNLIGHT GENERATION 6th 25-W multi color",
+        "status": "active",
+        "mainImage": {
+          "_id": "692598b2f5f1dafe1462c9fd",
+          "url": "https://tagadod.b-cdn.net/media/product/33f96147-590c-4493-a36c-c12b940cb4f8-IP65 DOWNLIGHT GENERATION 6th 35-W One Color 1.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 8.9,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 8.9,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 4717,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 4717,
+            "currency": "YER",
+            "exchangeRate": 530
+          },
+          "SAR": {
+            "basePrice": 33.38,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 33.38,
+            "currency": "SAR",
+            "exchangeRate": 3.750561797752809
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "6925a116f5f1dafe1462dc7d",
+        "name": "لمبات ديكور نواعم - 3 الوان",
+        "nameEn": "EN Recessed Adjustable Downlight Liper- multi color",
+        "status": "active",
+        "mainImage": {
+          "_id": "6925a09af5f1dafe1462dc53",
+          "url": "https://tagadod.b-cdn.net/media/product/cf74f93a-d274-49e9-84b9-3a4ba7ffe7e8-EN Recessed Adjustable Downlight Liper - multi color.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 3.29,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 3.29,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 1744,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 1744,
+            "currency": "YER",
+            "exchangeRate": 530.0911854103343
+          },
+          "SAR": {
+            "basePrice": 12.34,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 12.34,
+            "currency": "SAR",
+            "exchangeRate": 3.7507598784194527
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "69259970f5f1dafe1462cc9e",
+        "name": "لمبات معتم اطار حديث لطش IP65",
+        "nameEn": "IP65 DOWNLIGHT GENERATION 6th One Color",
+        "status": "active",
+        "mainImage": {
+          "_id": "69259888f5f1dafe1462c9f5",
+          "url": "https://tagadod.b-cdn.net/media/product/badabce8-aa26-4bcf-97d8-d75b276b2e0e-68c560c6b10d1_153.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 7.27,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 7.27,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 3853,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 3853,
+            "currency": "YER",
+            "exchangeRate": 529.9862448418157
+          },
+          "SAR": {
+            "basePrice": 27.26,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 27.26,
+            "currency": "SAR",
+            "exchangeRate": 3.7496561210453923
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "69257bd7f5f1dafe1462c151",
+        "name": "لمبات تحكم عن بعد (ريمونت) ",
+        "nameEn": "Remote Control Light",
+        "status": "active",
+        "mainImage": {
+          "_id": "6925792ff5f1dafe1462bf71",
+          "url": "https://tagadod.b-cdn.net/media/product/ee333838-823c-47ff-ab10-091c7e5e2ee9-Remote Control Light.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 17,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 17,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 9010,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 9010,
+            "currency": "YER",
+            "exchangeRate": 530
+          },
+          "SAR": {
+            "basePrice": 63.75,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 63.75,
+            "currency": "SAR",
+            "exchangeRate": 3.75
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "69256c1ff5f1dafe1462bc1f",
+        "name": "لمبات معتم خارجي IP65 20W",
+        "nameEn": "IP65 3rd Generation Downlight(matte cover) 20-W Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "6919a8aca0c1c42fb3cf4d2a",
+          "url": "https://tagadod.b-cdn.net/media/product/7aeb3762-b436-4d60-ae1f-bcc95455ac6d-68c8211e10042_Liper-led-waterproofing-light-3.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 5.18,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 5.18,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 2745,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 2745,
+            "currency": "YER",
+            "exchangeRate": 529.9227799227799
+          },
+          "SAR": {
+            "basePrice": 19.42,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 19.42,
+            "currency": "SAR",
+            "exchangeRate": 3.7490347490347498
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "69248d3a7b3d74137b5bf5f2",
+        "name": "لمبات معتم خارجي حساس IP65 20W",
+        "nameEn": "IP65 3rd Generation Downlight(matte cover) 20-W Liper remote",
+        "status": "active",
+        "mainImage": {
+          "_id": "69248c437b3d74137b5bf5cc",
+          "url": "https://tagadod.b-cdn.net/media/product/0d79827d-015f-4311-9123-3e6fe6072edf-IP65 3rd Generation Downlight(matte cover) 30-W Liper remote black.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 8.18,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 8.18,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 4335,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 4335,
+            "currency": "YER",
+            "exchangeRate": 529.9511002444988
+          },
+          "SAR": {
+            "basePrice": 30.67,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 30.67,
+            "currency": "SAR",
+            "exchangeRate": 3.749388753056235
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "6921a80b60973a1ae5ae47ab",
+        "name": "كشافات شوارع طاقه شمسيه 200W",
+        "nameEn": "B Solar Street Light 200W",
+        "status": "active",
+        "mainImage": {
+          "_id": "6921a72460973a1ae5ae4764",
+          "url": "https://tagadod.b-cdn.net/media/product/18eb72a6-f32b-462b-81a4-80a81fb05e43-68c69d8607de4_Liper-solar-led-streetlight.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 76,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 76,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 40280,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 40280,
+            "currency": "YER",
+            "exchangeRate": 530
+          },
+          "SAR": {
+            "basePrice": 285,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 285,
+            "currency": "SAR",
+            "exchangeRate": 3.75
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "6921a79560973a1ae5ae4783",
+        "name": "كشافات شوارع طاقة شمسيه 100W",
+        "nameEn": "B Solar Street Light 100-W",
+        "status": "active",
+        "mainImage": {
+          "_id": "6921a72460973a1ae5ae4764",
+          "url": "https://tagadod.b-cdn.net/media/product/18eb72a6-f32b-462b-81a4-80a81fb05e43-68c69d8607de4_Liper-solar-led-streetlight.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 67,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 67,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 35510,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 35510,
+            "currency": "YER",
+            "exchangeRate": 530
+          },
+          "SAR": {
+            "basePrice": 251.25,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 251.25,
+            "currency": "SAR",
+            "exchangeRate": 3.75
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "691f592b60973a1ae5ae188a",
+        "name": "كشافات شوارع طاقه شمسيه 90W",
+        "nameEn": " 90W All in One B Solar Street Light Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "691f58d460973a1ae5ae187b",
+          "url": "https://tagadod.b-cdn.net/media/product/99e3f2af-c697-44de-ba1e-b866fc100b76-68ce71701da88_Remove background project (54).png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 36.99,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 36.99,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 19605,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 19605,
+            "currency": "YER",
+            "exchangeRate": 530.0081103000811
+          },
+          "SAR": {
+            "basePrice": 138.71,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 138.71,
+            "currency": "SAR",
+            "exchangeRate": 3.7499324141659907
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "691f57ff60973a1ae5ae181a",
+        "name": "تجريب200",
+        "nameEn": "Test200",
+        "status": "active",
+        "mainImage": {
+          "_id": "691f52bf60973a1ae5ae13db",
+          "url": "https://tagadod.b-cdn.net/media/product/afbd11e1-d77b-46cf-ba4d-caab6ca301b9-68c16fabbc0e9_IMG-20250828-WA0048.jpg"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 220,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 220,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 116600,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 116600,
+            "currency": "YER",
+            "exchangeRate": 530
+          },
+          "SAR": {
+            "basePrice": 825,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 825,
+            "currency": "SAR",
+            "exchangeRate": 3.75
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "691f52fe60973a1ae5ae1406",
+        "name": "كشافات شوارع طاقه شمسيه 30W",
+        "nameEn": "All in One B Solar Street Light Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "691f525c60973a1ae5ae138c",
+          "url": "https://tagadod.b-cdn.net/media/product/63fd7ec2-81f5-4600-9081-de50113a2f8a-68ce719f7311d_Remove background project (56).png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 1,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 25.99,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 25.99,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 13775,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 13775,
+            "currency": "YER",
+            "exchangeRate": 530.0115429011158
+          },
+          "SAR": {
+            "basePrice": 97.46,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 97.46,
+            "currency": "SAR",
+            "exchangeRate": 3.749903809157368
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "691f1b962705bbf7fe9af2e0",
+        "name": "كشافات شوارع طاقه شمسيه 200W",
+        "nameEn": "D Series Solar Street Light Liper 200W",
+        "status": "active",
+        "mainImage": {
+          "_id": "691f108185d24d0f6be9658b",
+          "url": "https://tagadod.b-cdn.net/media/product/3da3c7e7-c913-4908-be8a-aa0d57463746-68ce82bbd3c86_Remove background project (67).png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 1,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 59.99,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 59.99,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 31795,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 31795,
+            "currency": "YER",
+            "exchangeRate": 530.0050008334722
+          },
+          "SAR": {
+            "basePrice": 224.96,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 224.96,
+            "currency": "SAR",
+            "exchangeRate": 3.7499583263877314
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "691f112985d24d0f6be965da",
+        "name": "كشافات شوارع طاقه شمسيه 100W",
+        "nameEn": "D Series Solar Street Light Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "691f108185d24d0f6be9658b",
+          "url": "https://tagadod.b-cdn.net/media/product/3da3c7e7-c913-4908-be8a-aa0d57463746-68ce82bbd3c86_Remove background project (67).png"
+        },
+        "isActive": true,
+        "isFeatured": true,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 1,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 49.99,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 49.99,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 26495,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 26495,
+            "currency": "YER",
+            "exchangeRate": 530.00600120024
+          },
+          "SAR": {
+            "basePrice": 187.46,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 187.46,
+            "currency": "SAR",
+            "exchangeRate": 3.7499499899979996
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "691e0e4e85d24d0f6be945cd",
+        "name": "لمبات احواش بيضاوي IP65 لطش 20W",
+        "nameEn": "MF Wall Light Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "691e0e0b85d24d0f6be945b0",
+          "url": "https://tagadod.b-cdn.net/media/product/e83c4956-6792-4b43-9073-c44c0b94e033-5832284336789588863_121-removebg-preview.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 0,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 11.51,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 11.51,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 6100,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 6100,
+            "currency": "YER",
+            "exchangeRate": 529.9739357080799
+          },
+          "SAR": {
+            "basePrice": 43.16,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 43.16,
+            "currency": "SAR",
+            "exchangeRate": 3.7497827975673323
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "691cbc35795a21855791496f",
+        "name": "كشافات شوارع طاقه شمسيه صغير 200W",
+        "nameEn": "C Series Solar Wall Light 200w",
+        "status": "active",
+        "mainImage": {
+          "_id": "691cba58795a2185579146ed",
+          "url": "https://tagadod.b-cdn.net/media/product/85186d65-b691-4ae4-909e-c877d844c145-5827941441953533010_121.jpg"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 200,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 15.73,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 15.73,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 8337,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 8337,
+            "currency": "YER",
+            "exchangeRate": 530.0063572790846
+          },
+          "SAR": {
+            "basePrice": 58.99,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 58.99,
+            "currency": "SAR",
+            "exchangeRate": 3.750158931977114
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "691cb2a5e49dac2f8c3d9622",
+        "name": "كشافات شوارع طاقه شمسيه صغير 100W",
+        "nameEn": "C Series Solar Wall Light 100-W",
+        "status": "active",
+        "mainImage": {
+          "_id": "691cb0f6e49dac2f8c3d95a3",
+          "url": "https://tagadod.b-cdn.net/media/product/38e68c78-ac05-437f-a4cf-6e8a5bedf75b-68ce89baa7db9_Remove background project (73).png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 199,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 11.35,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 11.35,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 6016,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 6016,
+            "currency": "YER",
+            "exchangeRate": 530.0440528634361
+          },
+          "SAR": {
+            "basePrice": 42.56,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 42.56,
+            "currency": "SAR",
+            "exchangeRate": 3.7497797356828197
+          }
+        },
+        "hasVariants": false
+      },
+      {
+        "_id": "691c8d9e8abc40299b8f0435",
+        "name": "لمبات منزليه (اطار ملكي) لطش IP65",
+        "nameEn": "IP65 Down Light Generation II Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "691c8ca78abc40299b8f03ec",
+          "url": "https://tagadod.b-cdn.net/media/product/66d85d79-6697-4176-9b44-6a8942932886-68cac17d933f7_Remove background project (35).png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 200,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 8,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 8,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 4240,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 4240,
+            "currency": "YER",
+            "exchangeRate": 530
+          },
+          "SAR": {
+            "basePrice": 30,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 30,
+            "currency": "SAR",
+            "exchangeRate": 3.75
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "691c79076dcd46f8a5850cd9",
+        "name": "لمبات احواش IP65 لطش 30W",
+        "nameEn": "IP65 Down Light Generation 5th Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "691e153385d24d0f6be94c26",
+          "url": "https://tagadod.b-cdn.net/media/product/eba16ae3-c3f9-4375-8b81-fa0db05f7b6f-68c1652dae6aa_Liper-led-waterproofing-downlight-5-removebg-preview (1).png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 200,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 17.51,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 17.51,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 9280,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 9280,
+            "currency": "YER",
+            "exchangeRate": 529.982866933181
+          },
+          "SAR": {
+            "basePrice": 65.66,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 65.66,
+            "currency": "SAR",
+            "exchangeRate": 3.7498572244431747
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "691c73946dcd46f8a5850a6c",
+        "name": "لمبات ديكور عدسه",
+        "nameEn": "BX COB Down Light Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "691c73056dcd46f8a58507bd",
+          "url": "https://tagadod.b-cdn.net/media/product/249e6b3a-68d4-4994-afb5-21acf23f74df-68cabfe025f85_Remove background project (34).png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 200,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 8.16,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 8.16,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 4325,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 4325,
+            "currency": "YER",
+            "exchangeRate": 530.0245098039215
+          },
+          "SAR": {
+            "basePrice": 30.6,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 30.6,
+            "currency": "SAR",
+            "exchangeRate": 3.75
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "691c69916dcd46f8a5850447",
+        "name": "لمبات منزليه لطش اطار حديث",
+        "nameEn": "EMS downlight Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "691c691e6dcd46f8a585041a",
+          "url": "https://tagadod.b-cdn.net/media/product/6f87491f-d71d-42ba-b023-99923a5f5797-5827941441953532869_121.jpg"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 200,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 2.2,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 2.2,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 1166,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 1166,
+            "currency": "YER",
+            "exchangeRate": 530
+          },
+          "SAR": {
+            "basePrice": 8.25,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 8.25,
+            "currency": "SAR",
+            "exchangeRate": 3.7499999999999996
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "691c5e4e6dcd46f8a584fdba",
+        "name": "لمبات طبيه 40*40 لطش 40w",
+        "nameEn": "Medical bulbs, 60*60, circular, 40-W , Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "69259476f5f1dafe1462c852",
+          "url": "https://tagadod.b-cdn.net/media/product/b764f9b5-d0bf-4548-a572-13434440de00-Medical bulbs, 6060, circular 40-W Liper.png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 200,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 6,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 6,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 3180,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 3180,
+            "currency": "YER",
+            "exchangeRate": 530
+          },
+          "SAR": {
+            "basePrice": 22.5,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 22.5,
+            "currency": "SAR",
+            "exchangeRate": 3.75
+          }
+        },
+        "hasVariants": true
+      },
+      {
+        "_id": "691b777f0606c9cb955fc15f",
+        "name": "لمبات ديكور نواعم",
+        "nameEn": "EN Recessed Adjustable Downlight Liper",
+        "status": "active",
+        "mainImage": {
+          "_id": "691b73800606c9cb955fbf70",
+          "url": "https://tagadod.b-cdn.net/media/product/45f167a4-3c8b-4dc8-8c61-67c24b9458c3-68cabfb706945_Remove background project (33).png"
+        },
+        "isActive": true,
+        "isFeatured": false,
+        "isNew": false,
+        "isBestseller": false,
+        "useManualRating": false,
+        "manualRating": 0,
+        "manualReviewsCount": 0,
+        "averageRating": 0,
+        "reviewsCount": 0,
+        "salesCount": 0,
+        "isAvailable": true,
+        "minOrderQuantity": 1,
+        "maxOrderQuantity": 0,
+        "stock": 200,
+        "pricingByCurrency": {
+          "USD": {
+            "basePrice": 2.38,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 2.38,
+            "currency": "USD"
+          },
+          "YER": {
+            "basePrice": 1261,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 1261,
+            "currency": "YER",
+            "exchangeRate": 529.8319327731093
+          },
+          "SAR": {
+            "basePrice": 8.92,
+            "discountPercent": 0,
+            "discountAmount": 0,
+            "finalPrice": 8.92,
+            "currency": "SAR",
+            "exchangeRate": 3.7478991596638656
+          }
+        },
+        "hasVariants": true
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 100,
+      "total": 27,
+      "totalPages": 1,
+      "hasNextPage": false,
+      "hasPrevPage": false
+    }
+  },
+  "requestId": "83a7b0dd-a4e5-4a41-8633-3c90d3b9117f"
+}

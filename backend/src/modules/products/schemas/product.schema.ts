@@ -204,11 +204,18 @@ ProductSchema.virtual('isAvailable').get(function() {
   }
 
   // للمنتجات البسيطة (بدون variants)
-  if (this.trackStock) {
-    return (this.stock ?? 0) > 0;
+  // إذا كان المخزون صفر، المنتج غير متاح بغض النظر عن trackStock
+  const stock = this.stock ?? 0;
+  if (stock === 0) {
+    return false;
   }
 
-  // إذا لم يكن trackStock مفعل، المنتج متاح
+  // إذا كان trackStock مفعل، نتحقق من المخزون
+  if (this.trackStock) {
+    return stock > 0;
+  }
+
+  // إذا لم يكن trackStock مفعل والمخزون أكبر من صفر، المنتج متاح
   return true;
 });
 
