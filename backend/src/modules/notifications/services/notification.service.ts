@@ -13,6 +13,7 @@ import {
   BulkSendNotificationDto,
 } from '../dto/unified-notification.dto';
 import {
+  NotificationType,
   NotificationStatus,
   NotificationChannel,
   NotificationPriority,
@@ -25,7 +26,14 @@ import {
 import { WebSocketService } from '../../../shared/websocket/websocket.service';
 import { PushNotificationAdapter } from '../adapters/notification.adapters';
 import { DeviceToken, DeviceTokenDocument } from '../schemas/device-token.schema';
-import { User, UserDocument, UserStatus } from '../../users/schemas/user.schema';
+import { User, UserDocument, UserStatus, UserRole } from '../../users/schemas/user.schema';
+import {
+  getNotificationTargetRoles,
+  getDefaultChannelForType,
+  isChannelAllowedForType,
+  isRoleAllowedForType,
+} from '../config/notification-rules';
+import { NotificationChannelConfigService } from './notification-channel-config.service';
 
 @Injectable()
 export class NotificationService {
@@ -40,6 +48,7 @@ export class NotificationService {
     private userModel: Model<UserDocument>,
     private readonly webSocketService: WebSocketService,
     private readonly pushNotificationAdapter: PushNotificationAdapter,
+    private readonly channelConfigService: NotificationChannelConfigService,
   ) {}
 
   // ===== Core CRUD Operations =====
@@ -49,6 +58,60 @@ export class NotificationService {
    */
   async createNotification(dto: CreateNotificationDto): Promise<UnifiedNotification> {
     try {
+      // تحديد targetRoles تلقائياً إذا لم يتم تحديدها
+      // استخدام الإعدادات من قاعدة البيانات أولاً، ثم القيم الافتراضية
+      const targetRoles =
+        dto.targetRoles && dto.targetRoles.length > 0
+          ? dto.targetRoles
+          : await this.channelConfigService.getTargetRoles(dto.type).catch(() => {
+              // Fallback إلى القيم الثابتة إذا فشل جلب الإعدادات
+              return getNotificationTargetRoles(dto.type);
+            });
+
+      // تحديد القناة الافتراضية إذا لم يتم تحديدها
+      // استخدام الإعدادات من قاعدة البيانات أولاً، ثم القيم الافتراضية
+      let channel =
+        dto.channel ||
+        (await this.channelConfigService.getDefaultChannel(dto.type).catch(() => {
+          // Fallback إلى القيم الثابتة إذا فشل جلب الإعدادات
+          return getDefaultChannelForType(dto.type);
+        }));
+
+      // التحقق من أن القناة مسموحة لنوع الإشعار
+      const isAllowed = await this.channelConfigService
+        .isChannelAllowed(dto.type, channel)
+        .catch(() => {
+          // Fallback إلى التحقق من القيم الثابتة
+          return isChannelAllowedForType(dto.type, channel);
+        });
+
+      if (!isAllowed) {
+        const defaultChannel = await this.channelConfigService
+          .getDefaultChannel(dto.type)
+          .catch(() => getDefaultChannelForType(dto.type));
+        this.logger.warn(
+          `Channel ${channel} is not allowed for notification type ${dto.type}. Using default channel: ${defaultChannel}`,
+        );
+        // استخدام القناة الافتراضية بدلاً من القناة المحددة
+        channel = defaultChannel;
+      }
+
+      // التحقق من أن المستلم لديه دور مناسب (إذا كان recipientId موجود)
+      if (dto.recipientId) {
+        const recipient = await this.userModel.findById(dto.recipientId).select('roles').lean();
+        if (recipient) {
+          const userRoles = recipient.roles || [UserRole.USER];
+          const hasAllowedRole = userRoles.some((role) => isRoleAllowedForType(dto.type, role));
+
+          if (!hasAllowedRole) {
+            this.logger.warn(
+              `User ${dto.recipientId} with roles [${userRoles.join(', ')}] is not in target roles [${targetRoles.join(', ')}] for notification type ${dto.type}`,
+            );
+            // لا نمنع الإرسال، فقط نسجل تحذير (للتوافق مع الإشعارات الموجودة)
+          }
+        }
+      }
+
       const notification = new this.notificationModel({
         ...dto,
         recipientId: dto.recipientId ? new Types.ObjectId(dto.recipientId) : undefined,
@@ -56,15 +119,18 @@ export class NotificationService {
         scheduledFor: dto.scheduledFor || new Date(),
         isSystemGenerated: dto.isSystemGenerated || false,
         priority: dto.priority || NotificationPriority.MEDIUM,
-        channel: dto.channel || NotificationChannel.IN_APP,
+        channel: channel,
+        targetRoles: targetRoles,
       });
 
       const savedNotification = await notification.save();
-      this.logger.log(`Notification created: ${savedNotification._id} (${dto.type})`);
+      this.logger.log(
+        `Notification created: ${savedNotification._id} (${dto.type}) for roles [${targetRoles.join(', ')}]`,
+      );
 
       // إرسال الإشعار حسب القناة
       if (dto.recipientId) {
-        if (dto.channel === NotificationChannel.IN_APP) {
+        if (channel === NotificationChannel.IN_APP) {
           // IN_APP: إرسال عبر WebSocket فقط - المستخدم موجود داخل التطبيق
           this.webSocketService.sendToUser(dto.recipientId, 'notification:new', {
             id: savedNotification._id.toString(),
@@ -78,14 +144,14 @@ export class NotificationService {
             createdAt: savedNotification.createdAt,
             isRead: false,
           });
-        } else if (dto.channel === NotificationChannel.PUSH) {
+        } else if (channel === NotificationChannel.PUSH) {
           // PUSH: إرسال Push Notification فقط - المستخدم خارج التطبيق
           this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
             this.logger.error(
               `Failed to send push notification: ${error instanceof Error ? error.message : String(error)}`,
             );
           });
-        } else if (dto.channel === NotificationChannel.DASHBOARD) {
+        } else if (channel === NotificationChannel.DASHBOARD) {
           // DASHBOARD: خاص بالإداريين - حفظ في قاعدة البيانات وإرسال عبر WebSocket
           this.webSocketService.sendToUser(dto.recipientId, 'notification:new', {
             id: savedNotification._id.toString(),
@@ -99,7 +165,87 @@ export class NotificationService {
             createdAt: savedNotification.createdAt,
             isRead: false,
           });
-          this.logger.log(`Dashboard notification created and sent via WebSocket for admin: ${dto.recipientId}`);
+          this.logger.log(
+            `Dashboard notification created and sent via WebSocket for admin: ${dto.recipientId}`,
+          );
+        }
+      } else if (targetRoles && targetRoles.length > 0) {
+        // إرسال الإشعارات الموجهة للأدوار لجميع المستخدمين الذين لديهم هذه الأدوار
+        if (channel === NotificationChannel.DASHBOARD || channel === NotificationChannel.IN_APP) {
+          // تحديد الأدوار المستهدفة (استثناء MERCHANT من إشعارات المخزون)
+          let rolesToSend = [...targetRoles];
+
+          // استثناء MERCHANT من إشعارات LOW_STOCK و OUT_OF_STOCK
+          if (
+            (dto.type === NotificationType.LOW_STOCK ||
+              dto.type === NotificationType.OUT_OF_STOCK) &&
+            rolesToSend.includes(UserRole.MERCHANT)
+          ) {
+            rolesToSend = rolesToSend.filter((role) => role !== UserRole.MERCHANT);
+            this.logger.log(
+              `Excluding MERCHANT role from stock notification ${dto.type}. Sending only to: [${rolesToSend.join(', ')}]`,
+            );
+          }
+
+          if (rolesToSend.length === 0) {
+            this.logger.warn(`No roles to send notification ${dto.type} to (MERCHANT excluded)`);
+            return savedNotification;
+          }
+
+          // البحث عن جميع المستخدمين الذين لديهم أحد الأدوار المستهدفة
+          const targetUsers = await this.userModel
+            .find({
+              roles: { $in: rolesToSend },
+              status: UserStatus.ACTIVE,
+            })
+            .select('_id')
+            .lean();
+
+          if (targetUsers.length > 0) {
+            const userIds = targetUsers.map((user) => user._id.toString());
+
+            // إرسال الإشعار لجميع المستخدمين عبر WebSocket
+            const sentCount = this.webSocketService.sendToMultipleUsers(
+              userIds,
+              'notification:new',
+              {
+                id: savedNotification._id.toString(),
+                title: savedNotification.title,
+                message: savedNotification.message,
+                messageEn: savedNotification.messageEn,
+                type: savedNotification.type,
+                category: savedNotification.category,
+                priority: savedNotification.priority,
+                data: savedNotification.data,
+                createdAt: savedNotification.createdAt,
+                isRead: false,
+              },
+            );
+
+            // تحديث حالة الإشعار إلى "sent" إذا تم إرساله لعدد من المستخدمين
+            if (sentCount > 0) {
+              await this.notificationModel.updateOne(
+                { _id: savedNotification._id },
+                {
+                  $set: {
+                    status: NotificationStatus.SENT,
+                    sentAt: new Date(),
+                  },
+                },
+              );
+              this.logger.log(
+                `Notification ${dto.type} sent to ${sentCount}/${userIds.length} users with roles [${rolesToSend.join(', ')}]`,
+              );
+            } else {
+              this.logger.warn(
+                `No active connections found for users with roles [${rolesToSend.join(', ')}] for notification ${dto.type}`,
+              );
+            }
+          } else {
+            this.logger.warn(
+              `No users found with roles [${rolesToSend.join(', ')}] for notification type ${dto.type}`,
+            );
+          }
         }
       }
 
@@ -155,20 +301,35 @@ export class NotificationService {
 
   /**
    * الحصول على إشعارات المستخدم
+   * يتم فلترة الإشعارات حسب دور المستخدم (targetRoles)
    */
   async getUserNotifications(
     userId: string,
     limit: number = 20,
     offset: number = 0,
   ): Promise<{ notifications: UnifiedNotification[]; total: number }> {
+    // جلب دور المستخدم من قاعدة البيانات
+    const user = await this.userModel.findById(userId).select('roles').lean();
+    const userRoles = user?.roles || [UserRole.USER];
+
+    // بناء filter للبحث عن الإشعارات
+    // الإشعارات التي:
+    // 1. موجهة للمستخدم (recipientId)
+    // 2. و (targetRoles فارغ أو يحتوي على أحد أدوار المستخدم)
+    const filter: Record<string, unknown> = {
+      recipientId: new Types.ObjectId(userId),
+      $or: [
+        // إشعارات بدون targetRoles (للتوافق مع الإشعارات القديمة)
+        { targetRoles: { $exists: false } },
+        { targetRoles: { $size: 0 } },
+        // إشعارات تحتوي على أحد أدوار المستخدم
+        { targetRoles: { $in: userRoles } },
+      ],
+    };
+
     const [notifications, total] = await Promise.all([
-      this.notificationModel
-        .find({ recipientId: new Types.ObjectId(userId) })
-        .sort({ createdAt: -1 })
-        .limit(limit)
-        .skip(offset)
-        .lean(),
-      this.notificationModel.countDocuments({ recipientId: new Types.ObjectId(userId) }),
+      this.notificationModel.find(filter).sort({ createdAt: -1 }).limit(limit).skip(offset).lean(),
+      this.notificationModel.countDocuments(filter),
     ]);
 
     return { notifications, total };
@@ -963,5 +1124,28 @@ export class NotificationService {
         platforms: { ios: 0, android: 0, web: 0 },
       };
     }
+  }
+
+  // ===== Helper Methods =====
+
+  /**
+   * الحصول على الأدوار المستهدفة لنوع إشعار معين
+   */
+  getNotificationTargetRoles(type: NotificationType): UserRole[] {
+    return getNotificationTargetRoles(type);
+  }
+
+  /**
+   * التحقق من أن دور المستخدم مناسب لنوع إشعار معين
+   */
+  isRoleAllowedForNotification(type: NotificationType, userRole: UserRole): boolean {
+    return isRoleAllowedForType(type, userRole);
+  }
+
+  /**
+   * الحصول على القناة الافتراضية لنوع إشعار معين
+   */
+  getDefaultChannelForNotification(type: NotificationType): NotificationChannel {
+    return getDefaultChannelForType(type);
   }
 }

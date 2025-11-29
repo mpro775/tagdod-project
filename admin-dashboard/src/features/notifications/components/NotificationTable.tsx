@@ -47,8 +47,10 @@ export const NotificationTable: React.FC<NotificationTableProps> = ({
         onDelete,
         isSending,
         isDeleting,
+        isMobile,
+        t,
       }),
-    [onView, onEdit, onSend, onDelete, isSending, isDeleting]
+    [onView, onEdit, onSend, onDelete, isSending, isDeleting, isMobile, t]
   );
 
   return (
@@ -56,10 +58,12 @@ export const NotificationTable: React.FC<NotificationTableProps> = ({
       sx={{
         display: 'flex',
         flexDirection: 'column',
+        width: '100%',
         minHeight: isMobile ? 400 : 600,
         height: isMobile ? 'auto' : 'calc(100vh - 520px)',
         maxHeight: isMobile ? 'none' : 'calc(100vh - 520px)',
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
       <DataTable
@@ -78,20 +82,39 @@ export const NotificationTable: React.FC<NotificationTableProps> = ({
         selectable={!!onSelectionChange}
         onRowSelectionModelChange={onSelectionChange}
         height={isMobile ? 'auto' : 'calc(100vh - 520px)'}
+        rowHeight={isMobile ? 80 : 72}
         sx={{
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
+          width: '100%',
           bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
           '& .MuiPaper-root': {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
+            width: '100%',
+            overflow: 'hidden',
+          },
+          '& .MuiDataGrid-root': {
+            width: '100%',
+            border: 'none',
+          },
+          '& .MuiDataGrid-main': {
+            width: '100%',
+          },
+          '& .MuiDataGrid-virtualScroller': {
+            width: '100%',
+          },
+          '& .MuiDataGrid-cell': {
+            display: 'flex',
+            alignItems: 'center',
+            paddingTop: '8px',
+            paddingBottom: '8px',
           },
         }}
       />
     </Box>
   );
 };
-

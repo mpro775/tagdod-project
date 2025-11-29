@@ -195,6 +195,9 @@ export enum ErrorCode {
   NOTIFICATION_SEND_FAILED = 'NOTIFICATION_951',
   NOTIFICATION_TEMPLATE_NOT_FOUND = 'NOTIFICATION_952',
   NOTIFICATION_PREFERENCE_UPDATE_FAILED = 'NOTIFICATION_953',
+  NOTIFICATION_CONFIG_NOT_FOUND = 'NOTIFICATION_954',
+  NOTIFICATION_CONFIG_ALREADY_EXISTS = 'NOTIFICATION_955',
+  INVALID_NOTIFICATION_CONFIG = 'NOTIFICATION_956',
 
   // ==================== الترجمة (I18N: 1000-1049) ====================
   I18N_KEY_NOT_FOUND = 'I18N_1000',
@@ -445,6 +448,9 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.NOTIFICATION_SEND_FAILED]: 'فشل إرسال الإشعار',
   [ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND]: 'قالب الإشعار غير موجود',
   [ErrorCode.NOTIFICATION_PREFERENCE_UPDATE_FAILED]: 'فشل تحديث إعدادات الإشعارات',
+  [ErrorCode.NOTIFICATION_CONFIG_NOT_FOUND]: 'إعدادات قناة الإشعار غير موجودة',
+  [ErrorCode.NOTIFICATION_CONFIG_ALREADY_EXISTS]: 'إعدادات قناة الإشعار موجودة بالفعل',
+  [ErrorCode.INVALID_NOTIFICATION_CONFIG]: 'إعدادات قناة الإشعار غير صالحة',
 
   // ==================== الترجمة ====================
   [ErrorCode.I18N_KEY_NOT_FOUND]: 'مفتاح الترجمة غير موجود',

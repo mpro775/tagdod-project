@@ -13,6 +13,11 @@ import type {
   CreateTemplateDto,
   UpdateTemplateDto,
   MarkAsReadDto,
+  NotificationChannelConfig,
+  CreateChannelConfigDto,
+  UpdateChannelConfigDto,
+  InitializeChannelConfigsResponse,
+  NotificationType,
 } from '../types/notification.types';
 
 export const notificationsApi = {
@@ -336,5 +341,50 @@ export const notificationsApi = {
       userIds,
     });
     return response.data.data;
+  },
+
+  // ===== Channel Config APIs =====
+  getChannelConfigs: async (): Promise<NotificationChannelConfig[]> => {
+    const response = await apiClient.get<ApiResponse<NotificationChannelConfig[]>>(
+      '/notifications/admin/channel-configs'
+    );
+    return response.data.data || [];
+  },
+
+  getChannelConfigByType: async (type: NotificationType): Promise<NotificationChannelConfig | null> => {
+    const response = await apiClient.get<ApiResponse<NotificationChannelConfig>>(
+      `/notifications/admin/channel-configs/${type}`
+    );
+    return response.data.data || null;
+  },
+
+  createChannelConfig: async (data: CreateChannelConfigDto): Promise<NotificationChannelConfig> => {
+    const response = await apiClient.post<ApiResponse<NotificationChannelConfig>>(
+      '/notifications/admin/channel-configs',
+      data
+    );
+    return response.data.data || response.data;
+  },
+
+  updateChannelConfig: async (
+    type: NotificationType,
+    data: UpdateChannelConfigDto
+  ): Promise<NotificationChannelConfig> => {
+    const response = await apiClient.put<ApiResponse<NotificationChannelConfig>>(
+      `/notifications/admin/channel-configs/${type}`,
+      data
+    );
+    return response.data.data || response.data;
+  },
+
+  deleteChannelConfig: async (type: NotificationType): Promise<void> => {
+    await apiClient.delete(`/notifications/admin/channel-configs/${type}`);
+  },
+
+  initializeChannelConfigs: async (): Promise<InitializeChannelConfigsResponse> => {
+    const response = await apiClient.post<ApiResponse<InitializeChannelConfigsResponse>>(
+      '/notifications/admin/channel-configs/initialize'
+    );
+    return response.data.data || response.data;
   },
 };

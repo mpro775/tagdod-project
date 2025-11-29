@@ -7,6 +7,7 @@ import {
   NotificationPriority,
   NotificationCategory,
 } from '../enums/notification.enums';
+import { UserRole } from '../../users/schemas/user.schema';
 
 export type UnifiedNotificationDocument = HydratedDocument<UnifiedNotification>;
 
@@ -64,6 +65,15 @@ export class UnifiedNotification {
     index: true,
   })
   category!: NotificationCategory;
+
+  // ===== Target Roles =====
+  @Prop({
+    type: [String],
+    enum: Object.values(UserRole),
+    default: [],
+    index: true,
+  })
+  targetRoles!: UserRole[];
 
   // ===== Recipient Information =====
   @Prop({ type: Types.ObjectId, ref: 'User', index: true })
@@ -160,6 +170,8 @@ UnifiedNotificationSchema.index({ trackingId: 1 }, { sparse: true, unique: true 
 UnifiedNotificationSchema.index({ templateKey: 1, channel: 1 });
 UnifiedNotificationSchema.index({ createdAt: -1 });
 UnifiedNotificationSchema.index({ readAt: 1 }, { sparse: true });
+UnifiedNotificationSchema.index({ targetRoles: 1, recipientId: 1 });
+UnifiedNotificationSchema.index({ targetRoles: 1, status: 1 });
 
 // ===== TTL Index: Auto-delete old notifications after 90 days =====
 UnifiedNotificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }); // 90 days

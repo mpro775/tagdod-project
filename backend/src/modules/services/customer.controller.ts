@@ -652,7 +652,15 @@ export class CustomerServicesController {
   @Get(':id/offers')
   @ApiOperation({
     summary: 'عروض طلب خدمة',
-    description: 'استرداد جميع العروض المقدمة لطلب خدمة محدد',
+    description: 'استرداد جميع العروض المقدمة لطلب خدمة محدد مع إمكانية الفلترة حسب الحالة',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'فلترة حسب حالة العرض (OFFERED, ACCEPTED, REJECTED, CANCELLED, OUTBID, EXPIRED). يمكن تمرير قيمة واحدة أو مصفوفة.',
+    type: [String],
+    isArray: true,
+    example: ['OFFERED', 'ACCEPTED'],
   })
   @ApiOkResponse({
     description: 'تم استرداد العروض بنجاح',
@@ -673,6 +681,7 @@ export class CustomerServicesController {
             note: 'يشمل قطع الغيار وضمان لمدة شهر',
             distanceKm: 4.8,
             status: 'OFFERED',
+            statusLabel: 'عرض مقدم',
             createdAt: '2024-06-01T13:05:32.144Z',
             updatedAt: '2024-06-01T13:05:32.144Z',
           },
@@ -689,7 +698,8 @@ export class CustomerServicesController {
             amount: 200,
             note: 'يتم إصلاح العطل خلال ساعتين',
             distanceKm: 7.1,
-            status: 'OFFERED',
+            status: 'CANCELLED',
+            statusLabel: 'عرض ملغى',
             createdAt: '2024-06-01T13:22:01.998Z',
             updatedAt: '2024-06-01T13:22:01.998Z',
           },
@@ -706,8 +716,12 @@ export class CustomerServicesController {
     },
   })
   @ApiForbiddenResponse({ description: 'غير مصرح لك بالوصول إلى هذا الطلب' })
-  async getOffers(@Req() req: RequestWithUser, @Param('id') id: string) {
-    const data = await this.svc.getOffersForRequest(req.user!.sub, id);
+  async getOffers(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+    @Query('status') status?: string | string[],
+  ) {
+    const data = await this.svc.getOffersForRequest(req.user!.sub, id, status);
     return { data };
   }
 

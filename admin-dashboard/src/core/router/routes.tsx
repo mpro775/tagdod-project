@@ -267,6 +267,11 @@ const NotificationTemplatesPage = lazy(() =>
     default: m.NotificationTemplatesPage,
   }))
 );
+const NotificationChannelConfigPage = lazy(() =>
+  import('@/features/notifications/pages/NotificationChannelConfigPage').then((m) => ({
+    default: m.NotificationChannelConfigPage,
+  }))
+);
 const ServicesListPage = lazy(() =>
   import('@/features/services/pages/ServicesListPage').then((m) => ({
     default: m.ServicesListPage,
@@ -654,6 +659,10 @@ export const routes: RouteObject[] = [
       {
         path: 'notifications/templates',
         element: <NotificationTemplatesPage />,
+      },
+      {
+        path: 'notifications/channel-configs',
+        element: <NotificationChannelConfigPage />,
       },
 
       // ===========================================

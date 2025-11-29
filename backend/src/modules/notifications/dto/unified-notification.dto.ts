@@ -23,6 +23,7 @@ import {
   NotificationCategory,
   DevicePlatform,
 } from '../enums/notification.enums';
+import { UserRole } from '../../users/schemas/user.schema';
 import { PaginationMetaDto } from '../../../shared/dto/api-responses.dto';
 
 // ===== Base DTOs =====
@@ -62,6 +63,11 @@ export class BaseNotificationDto {
   @IsString()
   @MaxLength(500)
   actionUrl?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(UserRole, { each: true })
+  targetRoles?: UserRole[];
 }
 
 // ===== Create Notification DTO =====
@@ -526,4 +532,45 @@ export class NotificationStatsResponseDto {
     readRate: number;
     deliveryRate: number;
   };
+}
+
+// ===== Channel Config DTOs =====
+export class CreateChannelConfigDto {
+  @IsEnum(NotificationType)
+  notificationType!: NotificationType;
+
+  @IsArray()
+  @IsEnum(NotificationChannel, { each: true })
+  allowedChannels!: NotificationChannel[];
+
+  @IsEnum(NotificationChannel)
+  defaultChannel!: NotificationChannel;
+
+  @IsArray()
+  @IsEnum(UserRole, { each: true })
+  targetRoles!: UserRole[];
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class UpdateChannelConfigDto {
+  @IsOptional()
+  @IsArray()
+  @IsEnum(NotificationChannel, { each: true })
+  allowedChannels?: NotificationChannel[];
+
+  @IsOptional()
+  @IsEnum(NotificationChannel)
+  defaultChannel?: NotificationChannel;
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(UserRole, { each: true })
+  targetRoles?: UserRole[];
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

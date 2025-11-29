@@ -559,10 +559,12 @@ export const OrderDetailsPage: React.FC = () => {
 
   const handleRefundOrder = async () => {
     if (!id || !order) return;
-    
+
     // Validate form
     if (!refundForm.reason || refundForm.reason.trim().length < 3) {
-      toast.error(t('dialogs.refundOrder.reasonRequired', { defaultValue: 'يجب إدخال سبب الإرجاع' }));
+      toast.error(
+        t('dialogs.refundOrder.reasonRequired', { defaultValue: 'يجب إدخال سبب الإرجاع' })
+      );
       return;
     }
 
@@ -579,9 +581,11 @@ export const OrderDetailsPage: React.FC = () => {
         const items = Object.entries(selectedReturnItems)
           .filter(([_, qty]) => qty > 0)
           .map(([variantId, qty]) => ({ variantId, qty }));
-        
+
         if (items.length === 0) {
-          toast.error(t('dialogs.refundOrder.itemsRequired', { defaultValue: 'يجب اختيار أصناف للإرجاع' }));
+          toast.error(
+            t('dialogs.refundOrder.itemsRequired', { defaultValue: 'يجب اختيار أصناف للإرجاع' })
+          );
           return;
         }
 
@@ -1194,8 +1198,11 @@ export const OrderDetailsPage: React.FC = () => {
                           bgcolor: isReturned
                             ? theme.palette.mode === 'dark'
                               ? 'rgba(255, 152, 0, 0.08)'
-                              : 'rgba(255, 152, 0, 0.05)',
-                          borderLeft: isReturned ? `4px solid ${theme.palette.warning.main}` : 'none',
+                              : 'rgba(255, 152, 0, 0.05)'
+                            : 'transparent',
+                          borderLeft: isReturned
+                            ? `4px solid ${theme.palette.warning.main}`
+                            : 'none',
                           pl: isReturned ? { xs: 1.5, sm: 2 } : { xs: 2, sm: 3 },
                         }}
                       >
@@ -1213,7 +1220,14 @@ export const OrderDetailsPage: React.FC = () => {
                         </Avatar>
                         <ListItemText
                           primary={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                flexWrap: 'wrap',
+                              }}
+                            >
                               <Typography
                                 variant={isMobile ? 'body2' : 'body1'}
                                 sx={{
@@ -1230,8 +1244,12 @@ export const OrderDetailsPage: React.FC = () => {
                                   icon={<Refresh />}
                                   label={
                                     isFullyReturned
-                                      ? t('details.fullyReturned', { defaultValue: '↩️ مرتجع بالكامل' })
-                                      : t('details.partiallyReturned', { defaultValue: '↩️ مرتجع جزئياً' })
+                                      ? t('details.fullyReturned', {
+                                          defaultValue: '↩️ مرتجع بالكامل',
+                                        })
+                                      : t('details.partiallyReturned', {
+                                          defaultValue: '↩️ مرتجع جزئياً',
+                                        })
                                   }
                                   size="small"
                                   color="warning"
@@ -1280,104 +1298,107 @@ export const OrderDetailsPage: React.FC = () => {
                                   {item.returnReason}
                                 </Typography>
                               )}
-                            {/* Variant Attributes - Professional Display */}
-                            {item.snapshot.variantAttributes &&
-                              item.snapshot.variantAttributes.length > 0 && (
-                                <Box sx={{ mt: 1.5 }}>
-                                  <Typography
-                                    variant="caption"
-                                    sx={{
-                                      display: 'block',
-                                      mb: 1,
-                                      fontWeight: 'medium',
-                                      color: 'text.secondary',
-                                    }}
-                                  >
-                                    {t('details.variantAttributes', {
-                                      defaultValue: 'السمات المختارة',
-                                    })}
-                                    :
-                                  </Typography>
-                                  <Box
-                                    sx={{
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: 1,
-                                      p: 1.5,
-                                      bgcolor:
-                                        theme.palette.mode === 'dark'
-                                          ? 'rgba(255, 255, 255, 0.05)'
-                                          : 'grey.50',
-                                      borderRadius: 1,
-                                      border: `1px solid ${theme.palette.divider}`,
-                                    }}
-                                  >
-                                    {item.snapshot.variantAttributes.map((attr, attrIndex) => (
-                                      <Box
-                                        key={attrIndex}
-                                        sx={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 1,
-                                          flexWrap: 'wrap',
-                                        }}
-                                      >
-                                        <Typography
-                                          variant="caption"
+                              {/* Variant Attributes - Professional Display */}
+                              {item.snapshot.variantAttributes &&
+                                item.snapshot.variantAttributes.length > 0 && (
+                                  <Box sx={{ mt: 1.5 }}>
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        display: 'block',
+                                        mb: 1,
+                                        fontWeight: 'medium',
+                                        color: 'text.secondary',
+                                      }}
+                                    >
+                                      {t('details.variantAttributes', {
+                                        defaultValue: 'السمات المختارة',
+                                      })}
+                                      :
+                                    </Typography>
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 1,
+                                        p: 1.5,
+                                        bgcolor:
+                                          theme.palette.mode === 'dark'
+                                            ? 'rgba(255, 255, 255, 0.05)'
+                                            : 'grey.50',
+                                        borderRadius: 1,
+                                        border: `1px solid ${theme.palette.divider}`,
+                                      }}
+                                    >
+                                      {item.snapshot.variantAttributes.map((attr, attrIndex) => (
+                                        <Box
+                                          key={attrIndex}
                                           sx={{
-                                            fontWeight: 'bold',
-                                            color: 'primary.main',
-                                            minWidth: 'fit-content',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1,
+                                            flexWrap: 'wrap',
                                           }}
                                         >
-                                          {attr.attributeName || attr.attributeNameEn || 'سمة'}:
-                                        </Typography>
+                                          <Typography
+                                            variant="caption"
+                                            sx={{
+                                              fontWeight: 'bold',
+                                              color: 'primary.main',
+                                              minWidth: 'fit-content',
+                                            }}
+                                          >
+                                            {attr.attributeName || attr.attributeNameEn || 'سمة'}:
+                                          </Typography>
+                                          <Chip
+                                            label={attr.value || attr.valueEn || 'غير محدد'}
+                                            size="small"
+                                            sx={{
+                                              bgcolor:
+                                                theme.palette.mode === 'dark'
+                                                  ? 'rgba(255, 255, 255, 0.12)'
+                                                  : 'background.paper',
+                                              border: `1px solid ${theme.palette.primary.main}20`,
+                                              fontWeight: 'medium',
+                                              '& .MuiChip-label': {
+                                                px: 1.5,
+                                              },
+                                            }}
+                                          />
+                                        </Box>
+                                      ))}
+                                    </Box>
+                                  </Box>
+                                )}
+                              {/* Fallback to old attributes format for backward compatibility */}
+                              {(!item.snapshot.variantAttributes ||
+                                item.snapshot.variantAttributes.length === 0) &&
+                                item.snapshot.attributes && (
+                                  <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {Object.entries(item.snapshot.attributes).map(
+                                      ([key, value]) => (
                                         <Chip
-                                          label={attr.value || attr.valueEn || 'غير محدد'}
+                                          key={key}
+                                          label={`${key}: ${value}`}
                                           size="small"
                                           sx={{
                                             bgcolor:
                                               theme.palette.mode === 'dark'
-                                                ? 'rgba(255, 255, 255, 0.12)'
-                                                : 'background.paper',
-                                            border: `1px solid ${theme.palette.primary.main}20`,
-                                            fontWeight: 'medium',
-                                            '& .MuiChip-label': {
-                                              px: 1.5,
-                                            },
+                                                ? 'rgba(255, 255, 255, 0.08)'
+                                                : 'grey.100',
                                           }}
                                         />
-                                      </Box>
-                                    ))}
+                                      )
+                                    )}
                                   </Box>
-                                </Box>
-                              )}
-                            {/* Fallback to old attributes format for backward compatibility */}
-                            {(!item.snapshot.variantAttributes ||
-                              item.snapshot.variantAttributes.length === 0) &&
-                              item.snapshot.attributes && (
-                                <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                  {Object.entries(item.snapshot.attributes).map(([key, value]) => (
-                                    <Chip
-                                      key={key}
-                                      label={`${key}: ${value}`}
-                                      size="small"
-                                      sx={{
-                                        bgcolor:
-                                          theme.palette.mode === 'dark'
-                                            ? 'rgba(255, 255, 255, 0.08)'
-                                            : 'grey.100',
-                                      }}
-                                    />
-                                  ))}
-                                </Box>
-                              )}
-                          </Box>
-                        }
-                        sx={{ flex: 1, minWidth: 0 }}
-                      />
-                    </ListItem>
-                  ))}
+                                )}
+                            </Box>
+                          }
+                          sx={{ flex: 1, minWidth: 0 }}
+                        />
+                      </ListItem>
+                    );
+                  })}
                 </List>
               </CardContent>
             </Card>
@@ -1387,7 +1408,8 @@ export const OrderDetailsPage: React.FC = () => {
               <Card
                 sx={{
                   mb: { xs: 2, md: 3 },
-                  bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
+                  bgcolor:
+                    theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
                   border: `2px solid ${theme.palette.warning.main}40`,
                 }}
               >
@@ -1411,7 +1433,11 @@ export const OrderDetailsPage: React.FC = () => {
                           borderRadius: 1,
                         }}
                       >
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: 'block', mb: 0.5 }}
+                        >
                           {t('details.returnAmount', { defaultValue: 'المبلغ المرتجع' })}
                         </Typography>
                         <Typography variant="h5" color="warning.main" sx={{ fontWeight: 'bold' }}>
@@ -1433,12 +1459,21 @@ export const OrderDetailsPage: React.FC = () => {
                           borderRadius: 1,
                         }}
                       >
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                          {t('details.returnedItemsCount', { defaultValue: 'عدد الأصناف المرتجعة' })}
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: 'block', mb: 0.5 }}
+                        >
+                          {t('details.returnedItemsCount', {
+                            defaultValue: 'عدد الأصناف المرتجعة',
+                          })}
                         </Typography>
                         <Typography variant="h5" color="warning.main" sx={{ fontWeight: 'bold' }}>
-                          {order.items.filter((item) => item.isReturned || item.returnQty > 0).length} /{' '}
-                          {order.items.length}
+                          {
+                            order.items.filter((item) => item.isReturned || item.returnQty > 0)
+                              .length
+                          }{' '}
+                          / {order.items.length}
                         </Typography>
                       </Box>
                     </Grid>
@@ -2247,7 +2282,9 @@ export const OrderDetailsPage: React.FC = () => {
           fullWidth
           fullScreen={isMobile}
         >
-          <DialogTitle>{t('dialogs.refundOrder.title', { defaultValue: 'إرجاع الطلب' })}</DialogTitle>
+          <DialogTitle>
+            {t('dialogs.refundOrder.title', { defaultValue: 'إرجاع الطلب' })}
+          </DialogTitle>
           <DialogContent>
             {/* Tabs for Full vs Partial Refund */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
@@ -2371,10 +2408,7 @@ export const OrderDetailsPage: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Avatar
-                                  src={item.snapshot.image}
-                                  sx={{ width: 32, height: 32 }}
-                                >
+                                <Avatar src={item.snapshot.image} sx={{ width: 32, height: 32 }}>
                                   {item.snapshot.name.charAt(0)}
                                 </Avatar>
                                 <Typography variant="body2">{item.snapshot.name}</Typography>

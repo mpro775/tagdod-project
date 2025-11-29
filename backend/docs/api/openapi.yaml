@@ -16348,13 +16348,25 @@ paths:
     get:
       operationId: getOffers
       summary: عروض طلب خدمة
-      description: استرداد جميع العروض المقدمة لطلب خدمة محدد
+      description: استرداد جميع العروض المقدمة لطلب خدمة محدد مع إمكانية الفلترة حسب الحالة
       parameters:
         - name: id
           required: true
           in: path
           schema:
             type: string
+        - name: status
+          required: false
+          in: query
+          description: >-
+            فلترة حسب حالة العرض (OFFERED, ACCEPTED, REJECTED, CANCELLED, OUTBID, EXPIRED). يمكن تمرير قيمة واحدة أو
+            مصفوفة.
+          schema:
+            example:
+              - OFFERED
+              - ACCEPTED
+            type: array
+            items: {}
       responses:
         '200':
           description: تم استرداد العروض بنجاح
@@ -16375,6 +16387,7 @@ paths:
                       note: يشمل قطع الغيار وضمان لمدة شهر
                       distanceKm: 4.8
                       status: OFFERED
+                      statusLabel: عرض مقدم
                       createdAt: '2024-06-01T13:05:32.144Z'
                       updatedAt: '2024-06-01T13:05:32.144Z'
                     - _id: 6645f921dc490a317ad9189b
@@ -16388,7 +16401,8 @@ paths:
                       amount: 200
                       note: يتم إصلاح العطل خلال ساعتين
                       distanceKm: 7.1
-                      status: OFFERED
+                      status: CANCELLED
+                      statusLabel: عرض ملغى
                       createdAt: '2024-06-01T13:22:01.998Z'
                       updatedAt: '2024-06-01T13:22:01.998Z'
         '403':

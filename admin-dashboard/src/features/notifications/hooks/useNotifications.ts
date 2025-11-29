@@ -12,6 +12,10 @@ import type {
   CreateTemplateDto,
   UpdateTemplateDto,
   MarkAsReadDto,
+  NotificationChannelConfig,
+  CreateChannelConfigDto,
+  UpdateChannelConfigDto,
+  NotificationType,
 } from '../types/notification.types';
 
 const NOTIFICATIONS_KEY = 'notifications';
@@ -20,6 +24,7 @@ const NOTIFICATION_STATS_KEY = 'notification-stats';
 const NOTIFICATION_LOGS_KEY = 'notification-logs';
 const USER_NOTIFICATIONS_KEY = 'user-notifications';
 const NOTIFICATION_PREFERENCES_KEY = 'notification-preferences';
+const CHANNEL_CONFIGS_KEY = 'channel-configs';
 
 // ===== Admin Notifications =====
 export const useNotifications = (params: ListNotificationsParams = {}) => {
@@ -278,6 +283,74 @@ export const useUnregisterDevice = () => {
     mutationFn: (id: string) => notificationsApi.unregisterDevice(id),
     onSuccess: () => {
       toast.success('تم إلغاء تسجيل الجهاز بنجاح');
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// ===== Channel Config Hooks =====
+export const useChannelConfigs = () => {
+  return useQuery({
+    queryKey: [CHANNEL_CONFIGS_KEY],
+    queryFn: () => notificationsApi.getChannelConfigs(),
+  });
+};
+
+export const useChannelConfig = (type: NotificationType) => {
+  return useQuery({
+    queryKey: [CHANNEL_CONFIGS_KEY, type],
+    queryFn: () => notificationsApi.getChannelConfigByType(type),
+    enabled: !!type,
+  });
+};
+
+export const useCreateChannelConfig = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateChannelConfigDto) => notificationsApi.createChannelConfig(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CHANNEL_CONFIGS_KEY] });
+      toast.success('تم إنشاء إعدادات القناة بنجاح');
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useUpdateChannelConfig = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ type, data }: { type: NotificationType; data: UpdateChannelConfigDto }) =>
+      notificationsApi.updateChannelConfig(type, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [CHANNEL_CONFIGS_KEY] });
+      queryClient.invalidateQueries({ queryKey: [CHANNEL_CONFIGS_KEY, variables.type] });
+      toast.success('تم تحديث إعدادات القناة بنجاح');
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useDeleteChannelConfig = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (type: NotificationType) => notificationsApi.deleteChannelConfig(type),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CHANNEL_CONFIGS_KEY] });
+      toast.success('تم حذف إعدادات القناة بنجاح');
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useInitializeChannelConfigs = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => notificationsApi.initializeChannelConfigs(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [CHANNEL_CONFIGS_KEY] });
+      toast.success(
+        `تم تهيئة ${data.created} إعدادات جديدة وتحديث ${data.updated} إعدادات موجودة`
+      );
     },
     onError: ErrorHandler.showError,
   });

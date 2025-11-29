@@ -286,6 +286,7 @@ export const MENU_PERMISSIONS = {
   'notifications-list': [PERMISSIONS.NOTIFICATIONS_READ, PERMISSIONS.ADMIN_ACCESS],
   'notifications-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   'notifications-templates': [PERMISSIONS.NOTIFICATIONS_MANAGE, PERMISSIONS.ADMIN_ACCESS],
+  'notifications-channel-configs': [PERMISSIONS.NOTIFICATIONS_MANAGE, PERMISSIONS.ADMIN_ACCESS],
 
   // System Management section
   'system-management': [PERMISSIONS.SETTINGS_READ, PERMISSIONS.ADMIN_ACCESS],
@@ -319,6 +320,38 @@ export const hasAllPermissions = (userPermissions: string[], requiredPermissions
   return requiredPermissions.every(permission => userPermissions.includes(permission));
 };
 
+// Helper function to check menu item access with proper permission logic
+// If item requires specific permissions + ADMIN_ACCESS, user must have the specific permission
+// ADMIN_ACCESS alone is not enough for items that require specific permissions
+export const hasMenuAccess = (userPermissions: string[], requiredPermissions: string[]): boolean => {
+  if (!userPermissions || userPermissions.length === 0) return false;
+  if (!requiredPermissions || requiredPermissions.length === 0) return true;
+
+  // Check if user has ADMIN_ACCESS
+  const hasAdminAccess = userPermissions.includes(PERMISSIONS.ADMIN_ACCESS);
+  
+  // Filter out ADMIN_ACCESS from required permissions to get specific permissions
+  const specificPermissions = requiredPermissions.filter(
+    perm => perm !== PERMISSIONS.ADMIN_ACCESS
+  );
+  
+  // If item requires only ADMIN_ACCESS (no specific permissions)
+  if (specificPermissions.length === 0) {
+    return hasAdminAccess;
+  }
+  
+  // If item requires specific permissions + ADMIN_ACCESS
+  // User must have at least one specific permission AND ADMIN_ACCESS
+  if (specificPermissions.length > 0) {
+    const hasSpecificPermission = specificPermissions.some(
+      perm => userPermissions.includes(perm)
+    );
+    return hasAdminAccess && hasSpecificPermission;
+  }
+  
+  return false;
+};
+
 // Helper function to filter menu items based on user permissions
 export const filterMenuByPermissions = (
   menuItems: any[],
@@ -330,7 +363,7 @@ export const filterMenuByPermissions = (
       const itemPermissions = MENU_PERMISSIONS[item.id as keyof typeof MENU_PERMISSIONS];
       // If item not found in MENU_PERMISSIONS, require ADMIN_ACCESS by default
       const requiredPermissions = itemPermissions ? [...itemPermissions] : [PERMISSIONS.ADMIN_ACCESS];
-      const hasAccess = hasAnyPermission(userPermissions, requiredPermissions);
+      const hasAccess = hasMenuAccess(userPermissions, requiredPermissions);
 
       if (!hasAccess) {
         return null; // Hide this menu item

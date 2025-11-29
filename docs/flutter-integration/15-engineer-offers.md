@@ -30,11 +30,24 @@
 
 ### 1. العروض المقدمة على طلب
 
-يسترجع العروض المقدمة على طلب محدد.
+يسترجع العروض المقدمة على طلب محدد مع إمكانية الفلترة حسب الحالة. **جميع العروض مدرجة افتراضياً بما فيها الملغاة.**
 
 **Method:** `GET`  
 **Endpoint:** `/services/customer/:id/offers`  
 **Auth Required:** ✅ نعم
+
+#### Query Parameters
+
+| المعامل  | النوع                  | مطلوب | الوصف                                                                                                                                     |
+| -------- | ---------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `status` | `string` أو `string[]` | ❌    | فلترة حسب حالة العرض (OFFERED, ACCEPTED, REJECTED, CANCELLED, OUTBID, EXPIRED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: جميع العروض. |
+
+#### أمثلة على الاستخدام
+
+- `GET /services/customer/:id/offers` - جميع العروض (بما فيها الملغاة)
+- `GET /services/customer/:id/offers?status=OFFERED` - العروض المقدمة فقط
+- `GET /services/customer/:id/offers?status=CANCELLED` - العروض الملغاة فقط
+- `GET /services/customer/:id/offers?status=OFFERED&status=ACCEPTED` - العروض المقدمة والمقبولة
 
 #### Response - نجاح
 
@@ -61,17 +74,53 @@
         "statusLabel": "عرض مقدم",
         "createdAt": "2025-01-15T14:00:00.000Z",
         "updatedAt": "2025-01-15T14:00:00.000Z"
+      },
+      {
+        "_id": "64offer456",
+        "requestId": "64service123",
+        "engineerId": {
+          "_id": "64engineer456",
+          "firstName": "محمد",
+          "lastName": "علي",
+          "phone": "777654321",
+          "jobTitle": "مهندس طاقة شمسية"
+        },
+        "amount": 800000,
+        "currency": "YER",
+        "note": null,
+        "distanceKm": 5.2,
+        "status": "CANCELLED",
+        "statusLabel": "عرض ملغى",
+        "createdAt": "2025-01-15T13:00:00.000Z",
+        "updatedAt": "2025-01-15T16:00:00.000Z"
       }
     ]
   }
 }
 ```
 
+> ℹ️ **ملاحظات:**
+>
+> - جميع العروض تُرجع مع حقل `statusLabel` الذي يحتوي على التسمية العربية للحالة
+> - العروض الملغاة (`CANCELLED`) مدرجة في النتائج حتى عند الفلترة حسب حالات أخرى
+> - يمكن استخدام الفلترة لعرض عروض محددة حسب الحاجة
+
 #### كود Flutter
 
 ```dart
-Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
-  final response = await _dio.get('/services/customer/$requestId/offers');
+Future<List<EngineerOffer>> getOffersForRequest(
+  String requestId, {
+  List<String>? status,
+}) async {
+  final queryParameters = <String, dynamic>{};
+  if (status != null && status.isNotEmpty) {
+    queryParameters['status'] = status;
+  }
+
+  final response = await _dio.get(
+    '/services/customer/$requestId/offers',
+    queryParameters: queryParameters,
+  );
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
@@ -87,6 +136,31 @@ Future<List<EngineerOffer>> getOffersForRequest(String requestId) async {
   }
 }
 ```
+
+> ✅ **مثال على الاستخدام:**
+>
+> ```dart
+> // جلب جميع العروض
+> final allOffers = await getOffersForRequest(requestId);
+>
+> // جلب العروض المقدمة فقط
+> final offeredOffers = await getOffersForRequest(
+>   requestId,
+>   status: ['OFFERED'],
+> );
+>
+> // جلب العروض الملغاة فقط
+> final cancelledOffers = await getOffersForRequest(
+>   requestId,
+>   status: ['CANCELLED'],
+> );
+>
+> // جلب العروض المقدمة والمقبولة
+> final activeOffers = await getOffersForRequest(
+>   requestId,
+>   status: ['OFFERED', 'ACCEPTED'],
+> );
+> ```
 
 ---
 
@@ -546,6 +620,7 @@ class EngineerOffer {
   final String? note;
   final double? distanceKm;
   final EngineerOfferStatus status;
+  final String? _statusLabelFromApi; // ✅ جديد - من الـ API (حقل خاص)
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -558,7 +633,9 @@ class EngineerOffer {
     this.note,
     this.distanceKm,
     required this.status,
+    String? statusLabelFromApi, // ✅ جديد
     required this.createdAt,
+  }) : _statusLabelFromApi = statusLabelFromApi;
     required this.updatedAt,
   });
 
@@ -575,6 +652,7 @@ class EngineerOffer {
         (e) => e.name == json['status'],
         orElse: () => EngineerOfferStatus.OFFERED,
       ),
+      statusLabelFromApi: json['statusLabel'], // ✅ جديد - من الـ API
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );
@@ -593,7 +671,12 @@ class EngineerOffer {
   bool get isActive => isOffered || isAccepted;
   bool get isFinal => isAccepted || isRejected || isCancelled || isOutbid || isExpired; // ✅ محدث
 
+  // ✅ محدث - يستخدم statusLabel من API إن وجد، وإلا يحسبه محلياً
   String get statusLabel {
+    if (_statusLabelFromApi != null && _statusLabelFromApi!.isNotEmpty) {
+      return _statusLabelFromApi!;
+    }
+    // Fallback إلى الحساب المحلي
     switch (status) {
       case EngineerOfferStatus.OFFERED:
         return 'عرض مقدم';
@@ -604,9 +687,9 @@ class EngineerOffer {
       case EngineerOfferStatus.CANCELLED:
         return 'عرض ملغى';
       case EngineerOfferStatus.OUTBID:
-        return 'تم قبول عرض آخر'; // ✅ جديد
+        return 'تم قبول عرض آخر';
       case EngineerOfferStatus.EXPIRED:
-        return 'عرض منتهي الصلاحية'; // ✅ جديد
+        return 'عرض منتهي الصلاحية';
     }
   }
 

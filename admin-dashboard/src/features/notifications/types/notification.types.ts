@@ -357,3 +357,33 @@ export interface UpdateDeviceTokenDto {
   token?: string;
   isActive?: boolean;
 }
+
+// ===== Channel Config Types =====
+export interface NotificationChannelConfig extends BaseEntity {
+  notificationType: NotificationType;
+  allowedChannels: NotificationChannel[];
+  defaultChannel: NotificationChannel;
+  targetRoles: string[];
+  isActive: boolean;
+  updatedBy?: string;
+}
+
+export interface CreateChannelConfigDto {
+  notificationType: NotificationType;
+  allowedChannels: NotificationChannel[];
+  defaultChannel: NotificationChannel;
+  targetRoles: string[];
+  isActive?: boolean;
+}
+
+export interface UpdateChannelConfigDto {
+  allowedChannels?: NotificationChannel[];
+  defaultChannel?: NotificationChannel;
+  targetRoles?: string[];
+  isActive?: boolean;
+}
+
+export interface InitializeChannelConfigsResponse {
+  created: number;
+  updated: number;
+}

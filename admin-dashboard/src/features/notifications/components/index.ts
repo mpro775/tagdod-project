@@ -16,6 +16,7 @@ export { NotificationViewDialog } from './NotificationViewDialog';
 export { BulkSendForm } from './BulkSendForm';
 export { TestNotificationForm } from './TestNotificationForm';
 export { NotificationUserSelector } from './NotificationUserSelector';
+export { ChannelConfigForm } from './ChannelConfigForm';
 
 // Chip Components
 export { NotificationStatusChip } from './NotificationStatusChip';

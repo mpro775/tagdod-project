@@ -14,6 +14,10 @@ import {
 } from './schemas/notification-preference.schema';
 import { DeviceToken, DeviceTokenSchema } from './schemas/device-token.schema';
 import { NotificationLog, NotificationLogSchema } from './schemas/notification-log.schema';
+import {
+  NotificationChannelConfig,
+  NotificationChannelConfigSchema,
+} from './schemas/notification-channel-config.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { PushNotificationAdapter } from './adapters/notification.adapters';
 
@@ -21,6 +25,7 @@ import { PushNotificationAdapter } from './adapters/notification.adapters';
 import { NotificationService } from './services/notification.service';
 import { NotificationTemplateService } from './services/notification-template.service';
 import { NotificationPreferenceService } from './services/notification-preference.service';
+import { NotificationChannelConfigService } from './services/notification-channel-config.service';
 
 // Controllers
 import { UnifiedNotificationController } from './controllers/unified-notification.controller';
@@ -62,6 +67,7 @@ import { NotificationsCronService } from './notifications.cron';
       { name: NotificationPreference.name, schema: NotificationPreferenceSchema },
       { name: DeviceToken.name, schema: DeviceTokenSchema },
       { name: NotificationLog.name, schema: NotificationLogSchema },
+      { name: NotificationChannelConfig.name, schema: NotificationChannelConfigSchema },
       { name: User.name, schema: UserSchema },
     ]),
     forwardRef(() => AuthModule),
@@ -73,6 +79,7 @@ import { NotificationsCronService } from './notifications.cron';
     NotificationService,
     NotificationTemplateService,
     NotificationPreferenceService,
+    NotificationChannelConfigService,
 
     // Adapters
     FCMAdapter, // FCM Adapter for push notifications
@@ -126,6 +133,7 @@ import { NotificationsCronService } from './notifications.cron';
     NotificationService,
     NotificationTemplateService,
     NotificationPreferenceService,
+    NotificationChannelConfigService,
 
     // Adapters
     NotificationAdapterFactory,

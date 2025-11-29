@@ -1089,6 +1089,7 @@ export class ServicesService {
   async getOffersForRequest(
     userId: string,
     requestId: string,
+    status?: string | string[],
   ): Promise<
     | { error: string }
     | Array<{
@@ -1099,6 +1100,7 @@ export class ServicesService {
         note?: string | null;
         distanceKm?: number;
         status: string;
+        statusLabel: string;
         createdAt: Date;
         updatedAt: Date;
         engineerId?:
@@ -1118,8 +1120,20 @@ export class ServicesService {
     const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
     if (!r) return { error: 'REQUEST_NOT_FOUND' };
 
+    // بناء فلتر الحالة
+    const query: { requestId: Types.ObjectId; status?: { $in: string[] } } = {
+      requestId: r._id,
+    };
+
+    if (status) {
+      const statuses = Array.isArray(status) ? status : [status];
+      if (statuses.length > 0) {
+        query.status = { $in: statuses };
+      }
+    }
+
     const offers = (await this.offers
-      .find({ requestId: r._id })
+      .find(query)
       .populate('engineerId', 'firstName lastName phone')
       .sort({ distanceKm: 1, amount: 1 }) // أقرب ثم أرخص
       .lean()) as EngineerOfferPopulated[];
@@ -1135,7 +1149,7 @@ export class ServicesService {
 
     const jobTitlesMap = await this.getEngineersJobTitles(engineerIds);
 
-    // إضافة jobTitle للعروض
+    // إضافة jobTitle و statusLabel للعروض
     return offers.map((offer) => {
       const id = extractEngineerId(offer.engineerId);
       const engineerId = id ? id.toString() : null;
@@ -1143,7 +1157,11 @@ export class ServicesService {
       if (engineerId && jobTitlesMap.has(engineerId) && isPopulatedEngineer(offer.engineerId)) {
         offer.engineerId.jobTitle = jobTitlesMap.get(engineerId) ?? null;
       }
-      return offer;
+
+      return {
+        ...offer,
+        statusLabel: this.offerStatusLabel(offer.status),
+      };
     });
   }
 

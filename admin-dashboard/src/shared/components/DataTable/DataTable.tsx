@@ -207,67 +207,86 @@ export const DataTable: React.FC<DataTableProps> = ({
             border: 'none',
             height: '100%',
             width: '100%',
+            overflow: 'hidden',
             '& .MuiDataGrid-root': {
               height: '100%',
+              width: '100%',
+              border: 'none',
             },
             '& .MuiDataGrid-main': {
               height: '100%',
+              width: '100%',
+            },
+            '& .MuiDataGrid-virtualScroller': {
+              width: '100%',
+            },
+            '& .MuiDataGrid-virtualScrollerContent': {
+              width: '100%',
             },
             '& .MuiDataGrid-cell:focus': {
               outline: 'none',
             },
-          '& .MuiDataGrid-row:hover': {
-            cursor: onRowClick ? 'pointer' : 'default',
-          },
-          '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: (theme) => 
-              theme.palette.mode === 'dark' 
-                ? theme.palette.grey[800] 
-                : theme.palette.grey[100],
-          },
-          '& .MuiDataGrid-columnHeaderTitle': {
-            fontWeight: 'bold',
-            color: 'text.primary',
-          },
-          '& .MuiDataGrid-cell': {
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            padding: { xs: '8px', sm: '12px 16px' },
-            display: 'flex',
-            alignItems: 'center',
-            overflow: 'visible',
-            '& > *': {
+            '& .MuiDataGrid-row:hover': {
+              cursor: onRowClick ? 'pointer' : 'default',
+            },
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: (theme) => 
+                theme.palette.mode === 'dark' 
+                  ? theme.palette.grey[800] 
+                  : theme.palette.grey[100],
               width: '100%',
             },
-          },
-          '& .MuiDataGrid-columnHeader': {
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            padding: { xs: '4px 8px', sm: '8px 16px' },
-          },
-          // Use :first-of-type instead of :first-child for SSR safety
-          '& .MuiDataGrid-row:first-of-type': {
-            borderTop: 'none',
-          },
-          '& .MuiDataGrid-cell:first-of-type': {
-            borderLeft: 'none',
-          },
-          '& .MuiDataGrid-columnHeader:first-of-type': {
-            borderLeft: 'none',
-          },
-          '& .MuiDataGrid-footerContainer:first-of-type': {
-            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
-          },
-          // Additional overrides for any MUI internal :first-child usage
-          '& .MuiDataGrid-main > div:first-of-type': {
-            overflow: 'auto',
-          },
-          '& .MuiDataGrid-columnHeaders:first-of-type': {
-            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-          },
-          '& .MuiDataGrid-virtualScrollerContent:first-of-type': {
-            minHeight: '100%',
-          },
-          ...sx,
-        }}
+            '& .MuiDataGrid-columnHeaderTitle': {
+              fontWeight: 'bold',
+              color: 'text.primary',
+            },
+            '& .MuiDataGrid-cell': {
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              padding: { xs: '8px', sm: '12px 16px' },
+              display: 'flex',
+              alignItems: 'center',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              lineHeight: 'normal',
+              '& > *': {
+                width: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              },
+            },
+            '& .MuiDataGrid-row': {
+              minHeight: '72px !important',
+              maxHeight: 'none !important',
+            },
+            '& .MuiDataGrid-columnHeader': {
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              padding: { xs: '4px 8px', sm: '8px 16px' },
+            },
+            // Use :first-of-type instead of :first-child for SSR safety
+            '& .MuiDataGrid-row:first-of-type': {
+              borderTop: 'none',
+            },
+            '& .MuiDataGrid-cell:first-of-type': {
+              borderLeft: 'none',
+            },
+            '& .MuiDataGrid-columnHeader:first-of-type': {
+              borderLeft: 'none',
+            },
+            '& .MuiDataGrid-footerContainer:first-of-type': {
+              borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+            },
+            // Additional overrides for any MUI internal :first-child usage
+            '& .MuiDataGrid-main > div:first-of-type': {
+              overflow: 'auto',
+            },
+            '& .MuiDataGrid-columnHeaders:first-of-type': {
+              borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+            },
+            '& .MuiDataGrid-virtualScrollerContent:first-of-type': {
+              minHeight: '100%',
+            },
+            ...sx,
+          }}
         // Responsive settings
         disableColumnMenu={false}
         disableColumnFilter={false}
