@@ -248,7 +248,7 @@ export const NotificationChannelConfigPage: React.FC = () => {
               <TableBody>
                 {filteredConfigs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6 colSpan={6} align="center">
+                    <TableCell colSpan={6} align="center">
                       <Typography variant="body2" color="text.secondary">
                         لا توجد نتائج
                       </Typography>
