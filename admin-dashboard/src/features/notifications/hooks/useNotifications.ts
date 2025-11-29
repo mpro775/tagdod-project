@@ -202,7 +202,12 @@ export const useNotificationStatsOverview = () => {
 export const useUserNotifications = (params: { limit?: number; offset?: number } = {}) => {
   return useQuery({
     queryKey: [USER_NOTIFICATIONS_KEY, params],
-    queryFn: () => notificationsApi.getUserNotifications(params),
+    queryFn: async () => {
+      const result = await notificationsApi.getUserNotifications(params);
+      console.log('useUserNotifications - API result:', result);
+      return result;
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 };
 

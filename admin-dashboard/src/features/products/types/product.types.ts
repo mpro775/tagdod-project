@@ -126,6 +126,13 @@ export interface Product extends BaseEntity {
   compareAtPriceUSD?: number;
   costPriceUSD?: number;
 
+  // المخزون للمنتجات البسيطة (بدون متغيرات)
+  stock?: number;
+  minStock?: number;
+  maxStock?: number;
+  trackStock?: boolean;
+  allowBackorder?: boolean;
+
   // SEO
   metaTitle?: string;
   metaDescription?: string;

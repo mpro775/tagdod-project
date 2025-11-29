@@ -11,6 +11,14 @@ interface NotificationTableProps {
   notifications: Notification[];
   loading: boolean;
   filters: ListNotificationsParams;
+  paginationMeta?: {
+    total?: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+  };
   onPaginationChange: (page: number, pageSize: number) => void;
   onView: (notification: Notification) => void;
   onEdit: (notification: Notification) => void;
@@ -25,6 +33,7 @@ export const NotificationTable: React.FC<NotificationTableProps> = ({
   notifications,
   loading,
   filters,
+  paginationMeta,
   onPaginationChange,
   onView,
   onEdit,
@@ -71,6 +80,8 @@ export const NotificationTable: React.FC<NotificationTableProps> = ({
         columns={columns}
         rows={notifications}
         loading={loading}
+        paginationMode="server"
+        rowCount={paginationMeta?.total ?? notifications.length}
         paginationModel={{
           page: (filters.page || 1) - 1,
           pageSize: filters.limit || 20,

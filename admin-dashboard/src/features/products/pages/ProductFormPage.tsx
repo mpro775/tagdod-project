@@ -307,6 +307,7 @@ export const ProductFormPage: React.FC = () => {
         const basePriceValue = defaultPrice > 0 ? defaultPrice : undefined;
         const compareAtValue = parseOptionalNumber(simpleCompareAtPrice);
         const costValue = parseOptionalNumber(simpleCostPrice);
+        const stockValue = defaultStock >= 0 ? defaultStock : undefined;
         const productData: CreateProductDto = {
           name: formData.name,
           nameEn: formData.nameEn,
@@ -332,6 +333,8 @@ export const ProductFormPage: React.FC = () => {
           basePriceUSD: basePriceValue,
           compareAtPriceUSD: compareAtValue,
           costPriceUSD: costValue,
+          // المخزون
+          stock: stockValue,
         };
 
         // التحقق من صحة البيانات قبل الإرسال
@@ -540,6 +543,15 @@ export const ProductFormPage: React.FC = () => {
       setSimpleCostPrice(
         productCost !== undefined && !Number.isNaN(productCost) ? productCost.toString() : ''
       );
+
+      // Load stock value
+      const productStock =
+        typeof (product as any).stock === 'number'
+          ? (product as any).stock
+          : undefined;
+      if (typeof productStock === 'number' && !Number.isNaN(productStock)) {
+        setDefaultStock(productStock);
+      }
     }
   }, [product, isEditMode, methods]);
 
@@ -548,6 +560,7 @@ export const ProductFormPage: React.FC = () => {
     const basePriceValue = defaultPrice > 0 ? defaultPrice : undefined;
     const compareAtValue = parseOptionalNumber(simpleCompareAtPrice);
     const costValue = parseOptionalNumber(simpleCostPrice);
+    const stockValue = defaultStock >= 0 ? defaultStock : undefined;
     const productData: CreateProductDto = {
       name: data.name,
       nameEn: data.nameEn,
@@ -574,6 +587,8 @@ export const ProductFormPage: React.FC = () => {
       basePriceUSD: basePriceValue,
       compareAtPriceUSD: compareAtValue,
       costPriceUSD: costValue,
+      // المخزون
+      stock: stockValue,
     };
 
     if (isEditMode) {

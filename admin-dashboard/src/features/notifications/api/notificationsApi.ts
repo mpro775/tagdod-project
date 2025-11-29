@@ -209,14 +209,25 @@ export const notificationsApi = {
       },
     });
 
+    console.log('getUserNotifications - Full response:', response);
+    console.log('getUserNotifications - response.data:', response.data);
+    console.log('getUserNotifications - response.data.data:', response.data.data);
+    console.log('getUserNotifications - response.data.data.notifications:', response.data.data?.notifications);
+
+    const notifications = response.data.data?.notifications || [];
+    const total = response.data.data?.total || 0;
+
+    console.log('getUserNotifications - Final notifications:', notifications);
+    console.log('getUserNotifications - Final total:', total);
+
     return {
-      data: response.data.data.notifications,
+      data: notifications,
       meta: {
         page: Math.floor((params.offset || 0) / (params.limit || 20)) + 1,
         limit: params.limit || 20,
-        total: response.data.data.total,
-        totalPages: Math.ceil(response.data.data.total / (params.limit || 20)),
-        hasNextPage: (params.offset || 0) + (params.limit || 20) < response.data.data.total,
+        total: total,
+        totalPages: Math.ceil(total / (params.limit || 20)),
+        hasNextPage: (params.offset || 0) + (params.limit || 20) < total,
         hasPrevPage: (params.offset || 0) > 0,
       },
     };

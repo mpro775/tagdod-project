@@ -88,6 +88,7 @@ export const NotificationsListPage: React.FC = () => {
   const { mutate: testNotification, isPending: isTesting } = useTestNotification();
 
   const notifications = notificationsResponse?.data || [];
+  const paginationMeta = notificationsResponse?.meta;
 
   const showSnackbar = (
     message: string,
@@ -271,6 +272,7 @@ export const NotificationsListPage: React.FC = () => {
         notifications={notifications}
         loading={isLoading}
         filters={filters}
+        paginationMeta={paginationMeta}
         onPaginationChange={handlePaginationChange}
         onView={handleView}
         onEdit={handleEdit}

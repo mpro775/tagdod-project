@@ -43,7 +43,13 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
   );
 
   useEffect(() => {
+    console.log('NotificationBell - notificationsData:', notificationsData);
+    console.log('NotificationBell - isLoading:', isLoading);
+    
     if (notificationsData?.data) {
+      console.log('NotificationBell - notificationsData.data:', notificationsData.data);
+      console.log('NotificationBell - notificationsData.data length:', notificationsData.data.length);
+      
       const formattedNotifications = notificationsData.data.map((n) => ({
         id: n._id,
         title: n.title,
@@ -56,9 +62,13 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         createdAt: n.createdAt ? new Date(n.createdAt).toISOString() : new Date().toISOString(),
         isRead: n.status === 'read' || n.readAt !== undefined,
       }));
+      
+      console.log('NotificationBell - formattedNotifications:', formattedNotifications);
       setNotifications(formattedNotifications);
+    } else {
+      console.log('NotificationBell - No notifications data or data is empty');
     }
-  }, [notificationsData]);
+  }, [notificationsData, isLoading]);
 
   useEffect(() => {
     if (latestNotification) {
