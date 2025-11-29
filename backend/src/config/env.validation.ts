@@ -61,6 +61,9 @@ export const envSchema = z.object({
   ALAWAEL_SMS_PASSWORD: z.string().optional(),
   ALAWAEL_SMS_BASE_URL: z.string().url().optional(),
   
+  // SMS Feature Flags
+  ENABLE_SMS_TO_ENGINEERS: z.coerce.boolean().default(false),
+  
   // Sales Manager Contact Information
   SALES_MANAGER_EMAIL: z.string().email().optional(),
   SALES_MANAGER_WHATSAPP: z.string().optional(),

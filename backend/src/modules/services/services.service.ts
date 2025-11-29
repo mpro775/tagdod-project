@@ -1,4 +1,5 @@
 import { Injectable, Logger, Optional, Inject, forwardRef } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
 import { ServiceRequest, ServiceRating } from './schemas/service-request.schema';
@@ -104,6 +105,8 @@ export interface OfferListItem {
 @Injectable()
 export class ServicesService {
   private readonly logger = new Logger(ServicesService.name);
+  private readonly enableSMSToEngineers: boolean;
+
   constructor(
     @InjectModel(ServiceRequest.name) private requests: Model<ServiceRequest>,
     @InjectModel(EngineerOffer.name) private offers: Model<EngineerOffer>,
@@ -113,6 +116,7 @@ export class ServicesService {
     private distanceService: DistanceService,
     private addressesService: AddressesService,
     private uploadService: UploadService,
+    private configService: ConfigService,
     @Optional() private notificationService?: NotificationService,
     @Inject(forwardRef(() => EngineerProfileService))
     @Optional()
@@ -120,7 +124,10 @@ export class ServicesService {
     @Inject(forwardRef(() => SMSAdapter))
     @Optional()
     private smsAdapter?: SMSAdapter,
-  ) {}
+  ) {
+    // قراءة متغير البيئة للتحكم في إرسال SMS للمهندسين
+    this.enableSMSToEngineers = this.configService.get<boolean>('ENABLE_SMS_TO_ENGINEERS', false);
+  }
 
   // Helper method for safe notification sending
   private async safeNotify(
@@ -208,6 +215,12 @@ export class ServicesService {
    */
   private async sendSMSToAllEngineers(requestId: string, requestTitle: string): Promise<void> {
     try {
+      // التحقق من تفعيل إرسال SMS للمهندسين من متغير البيئة
+      if (!this.enableSMSToEngineers) {
+        this.logger.debug('SMS to engineers is disabled via ENABLE_SMS_TO_ENGINEERS environment variable. Skipping SMS notification.');
+        return;
+      }
+
       if (!this.smsAdapter) {
         this.logger.warn('SMS adapter not available. Skipping SMS notification to engineers.');
         return;
