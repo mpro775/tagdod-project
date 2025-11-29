@@ -115,6 +115,28 @@ export const UserFormPage: React.FC = () => {
     // Clear permissions for non-admin roles
     if (role !== UserRole.ADMIN && role !== UserRole.SUPER_ADMIN) {
       methods.setValue('permissions', []);
+    } else {
+      // Add admin.access automatically for admin roles
+      const currentPermissions = methods.getValues('permissions') || [];
+      const adminAccess = 'admin.access';
+      const superAdminAccess = 'super_admin.access';
+      
+      let newPermissions = [...currentPermissions];
+      
+      // Ensure admin.access is present
+      if (!newPermissions.includes(adminAccess)) {
+        newPermissions.push(adminAccess);
+      }
+      
+      // Add super_admin.access for SUPER_ADMIN role
+      if (role === UserRole.SUPER_ADMIN && !newPermissions.includes(superAdminAccess)) {
+        newPermissions.push(superAdminAccess);
+      } else if (role === UserRole.ADMIN && newPermissions.includes(superAdminAccess)) {
+        // Remove super_admin.access if role changed from SUPER_ADMIN to ADMIN
+        newPermissions = newPermissions.filter(p => p !== superAdminAccess);
+      }
+      
+      methods.setValue('permissions', newPermissions);
     }
   };
 
@@ -152,6 +174,25 @@ export const UserFormPage: React.FC = () => {
 
   // Submit
   const onSubmit = (data: UserFormData) => {
+    // Ensure admin.access is present for admin roles
+    let permissions = data.permissions || [];
+    const currentPrimaryRole = data.roles[0];
+    
+    if (currentPrimaryRole === UserRole.ADMIN || currentPrimaryRole === UserRole.SUPER_ADMIN) {
+      const adminAccess = 'admin.access';
+      const superAdminAccess = 'super_admin.access';
+      
+      // Ensure admin.access is present
+      if (!permissions.includes(adminAccess)) {
+        permissions = [...permissions, adminAccess];
+      }
+      
+      // Add super_admin.access for SUPER_ADMIN role
+      if (currentPrimaryRole === UserRole.SUPER_ADMIN && !permissions.includes(superAdminAccess)) {
+        permissions = [...permissions, superAdminAccess];
+      }
+    }
+    
     const userData: Record<string, any> = {
       firstName: data.firstName || undefined,
       lastName: data.lastName || undefined,
@@ -160,7 +201,7 @@ export const UserFormPage: React.FC = () => {
       city: mapCityToArabic(data.city),
       password: data.password || undefined,
       roles: data.roles,
-      permissions: data.permissions || [],
+      permissions: permissions,
       status: data.status,
     };
 
@@ -170,7 +211,6 @@ export const UserFormPage: React.FC = () => {
     }
 
     // Handle capabilities based on user type
-    const currentPrimaryRole = data.roles[0];
     if (currentPrimaryRole === UserRole.ENGINEER) {
       userData.capabilityRequest = 'engineer';
     } else if (currentPrimaryRole === UserRole.MERCHANT) {

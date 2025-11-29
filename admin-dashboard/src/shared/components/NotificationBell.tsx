@@ -112,6 +112,12 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         }
         return '/products/inventory';
 
+      case NotificationType.NEW_USER_REGISTERED:
+        if (data?.userId) {
+          return `/users/${data.userId}`;
+        }
+        return '/users';
+
       default:
         return null;
     }
@@ -164,6 +170,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
       case NotificationType.LOW_STOCK:
       case NotificationType.OUT_OF_STOCK:
         return '📦';
+      case NotificationType.NEW_USER_REGISTERED:
+        return '👤';
       default:
         return '🔔';
     }
@@ -182,6 +190,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
       case NotificationType.LOW_STOCK:
       case NotificationType.OUT_OF_STOCK:
         return 'warning';
+      case NotificationType.NEW_USER_REGISTERED:
+        return 'info';
       default:
         return 'default';
     }

@@ -17,6 +17,7 @@ import { useDashboard, useRefreshAnalytics } from '../hooks/useAnalytics';
 import { StatsCard } from '../components/StatsCard';
 import { RevenueChart } from '../components/RevenueChart';
 import { PieChartComponent } from '../components/PieChartComponent';
+import { CacheManagement, ComparisonTool } from '../components';
 import { PeriodType } from '../types/analytics.types';
 import { formatCurrency, formatNumber } from '@/shared/utils/formatters';
 
@@ -253,6 +254,20 @@ export const AnalyticsDashboardPage: React.FC = () => {
           </Grid>
         </Grid>
       )}
+
+      {/* Comparison Tool */}
+      <Grid container spacing={isMobile ? 2 : 3} sx={{ mt: { xs: 2, sm: 3 } }}>
+        <Grid size={{ xs: 12 }}>
+          <ComparisonTool />
+        </Grid>
+      </Grid>
+
+      {/* Cache Management */}
+      <Grid container spacing={isMobile ? 2 : 3} sx={{ mt: { xs: 2, sm: 3 } }}>
+        <Grid size={{ xs: 12 }}>
+          <CacheManagement />
+        </Grid>
+      </Grid>
     </Box>
   );
 };

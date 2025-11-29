@@ -59,8 +59,13 @@ import {
   useDeleteReport,
   useArchiveReport,
 } from '../hooks/useAnalytics';
-import { ReportCategory, ReportFormat } from '../types/analytics.types';
-import { DataExportDialog } from '../components/DataExportDialog';
+import {
+  ReportCategory,
+  ReportFormat,
+  GenerateAdvancedReportDto,
+  ReportPriority,
+} from '../types/analytics.types';
+import { DataExportDialog, ReportScheduleForm } from '../components';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { ConfirmDialog } from '@/shared/components';
@@ -98,6 +103,7 @@ export const ReportsManagementPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<ReportCategory | 'all'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'title' | 'category'>('date');
@@ -120,13 +126,23 @@ export const ReportsManagementPage: React.FC = () => {
   const deleteReport = useDeleteReport();
   const archiveReport = useArchiveReport();
 
-  const [reportForm, setReportForm] = useState({
+  const [reportForm, setReportForm] = useState<Partial<GenerateAdvancedReportDto>>({
     title: '',
+    titleEn: '',
     description: '',
+    descriptionEn: '',
     category: ReportCategory.SALES,
-    format: ReportFormat.PDF,
-    includeCharts: true,
-    includeRawData: false,
+    priority: ReportPriority.MEDIUM,
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    exportSettings: {
+      formats: [ReportFormat.PDF],
+      includeCharts: true,
+      includeRawData: false,
+    },
+    compareWithPrevious: false,
+    includeRecommendations: true,
+    generateCharts: true,
   });
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -134,23 +150,52 @@ export const ReportsManagementPage: React.FC = () => {
   };
 
   const handleCreateReport = async () => {
+    if (
+      !reportForm.title ||
+      !reportForm.titleEn ||
+      !reportForm.startDate ||
+      !reportForm.endDate ||
+      !reportForm.category
+    ) {
+      return;
+    }
+
     try {
-      await generateReport.mutateAsync({
+      const reportData: GenerateAdvancedReportDto = {
         title: reportForm.title,
+        titleEn: reportForm.titleEn,
         description: reportForm.description,
+        descriptionEn: reportForm.descriptionEn,
         category: reportForm.category,
-        format: reportForm.format,
-        includeCharts: reportForm.includeCharts,
-        includeRawData: reportForm.includeRawData,
-      });
+        priority: reportForm.priority || ReportPriority.MEDIUM,
+        startDate: reportForm.startDate,
+        endDate: reportForm.endDate,
+        filters: reportForm.filters,
+        exportSettings: reportForm.exportSettings,
+        compareWithPrevious: reportForm.compareWithPrevious || false,
+        includeRecommendations: reportForm.includeRecommendations || true,
+        generateCharts: reportForm.generateCharts || true,
+      };
+
+      await generateReport.mutateAsync(reportData);
       setShowCreateDialog(false);
       setReportForm({
         title: '',
+        titleEn: '',
         description: '',
+        descriptionEn: '',
         category: ReportCategory.SALES,
-        format: ReportFormat.PDF,
-        includeCharts: true,
-        includeRawData: false,
+        priority: ReportPriority.MEDIUM,
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
+        exportSettings: {
+          formats: [ReportFormat.PDF],
+          includeCharts: true,
+          includeRawData: false,
+        },
+        compareWithPrevious: false,
+        includeRecommendations: true,
+        generateCharts: true,
       });
     } catch (error) {
       console.error('Error creating report:', error);
@@ -359,6 +404,23 @@ export const ReportsManagementPage: React.FC = () => {
               }}
             >
               {t('reportsManagement.exportData')}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<AssessmentIcon sx={{ fontSize: breakpoint.isXs ? 18 : undefined }} />}
+              onClick={() => setShowScheduleDialog(true)}
+              size={breakpoint.isXs ? 'medium' : 'medium'}
+              fullWidth={breakpoint.isXs}
+              sx={{
+                color: 'white',
+                borderColor: 'white',
+                '&:hover': {
+                  borderColor: 'rgba(255, 255, 255, 0.8)',
+                },
+                fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+              }}
+            >
+              {t('reportsManagement.scheduleReport')}
             </Button>
 
             <Tooltip title={t('reportsManagement.refresh')}>
@@ -709,100 +771,272 @@ export const ReportsManagementPage: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField
-              label={t('reportsManagement.createDialog.reportTitle')}
-              value={reportForm.title}
-              onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })}
-              fullWidth
-              required
-              size={breakpoint.isXs ? 'medium' : 'medium'}
-              sx={{
-                '& .MuiInputBase-input': {
-                  fontSize: breakpoint.isXs ? '0.875rem' : undefined,
-                },
-              }}
-            />
-
-            <TextField
-              label={t('reportsManagement.createDialog.reportDescription')}
-              value={reportForm.description}
-              onChange={(e) => setReportForm({ ...reportForm, description: e.target.value })}
-              fullWidth
-              multiline
-              rows={3}
-              size={breakpoint.isXs ? 'medium' : 'medium'}
-              sx={{
-                '& .MuiInputBase-input': {
-                  fontSize: breakpoint.isXs ? '0.875rem' : undefined,
-                },
-              }}
-            />
-
-            <FormControl fullWidth size={breakpoint.isXs ? 'medium' : 'medium'}>
-              <InputLabel>{t('reportsManagement.createDialog.reportCategory')}</InputLabel>
-              <Select
-                value={reportForm.category}
-                onChange={(e) =>
-                  setReportForm({ ...reportForm, category: e.target.value as ReportCategory })
-                }
-              >
-                {Object.values(ReportCategory).map((category) => (
-                  <MenuItem key={category} value={category}>
-                    {category}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth size={breakpoint.isXs ? 'medium' : 'medium'}>
-              <InputLabel>{t('reportsManagement.createDialog.reportFormat')}</InputLabel>
-              <Select
-                value={reportForm.format}
-                onChange={(e) =>
-                  setReportForm({ ...reportForm, format: e.target.value as ReportFormat })
-                }
-              >
-                {Object.values(ReportFormat).map((format) => (
-                  <MenuItem key={format} value={format}>
-                    {format.toUpperCase()}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={reportForm.includeCharts}
-                  onChange={(e) =>
-                    setReportForm({ ...reportForm, includeCharts: e.target.checked })
-                  }
+            <Grid container spacing={breakpoint.isXs ? 1.5 : 2}>
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label={t('reportsManagement.createDialog.reportTitle')}
+                  value={reportForm.title || ''}
+                  onChange={(e) => setReportForm({ ...reportForm, title: e.target.value })}
+                  fullWidth
+                  required
+                  size={breakpoint.isXs ? 'medium' : 'medium'}
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+                    },
+                  }}
                 />
-              }
-              label={t('export.filters.includeCharts')}
-              sx={{
-                '& .MuiFormControlLabel-label': {
-                  fontSize: breakpoint.isXs ? '0.875rem' : undefined,
-                },
-              }}
-            />
+              </Grid>
 
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={reportForm.includeRawData}
-                  onChange={(e) =>
-                    setReportForm({ ...reportForm, includeRawData: e.target.checked })
-                  }
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label={t('reportsManagement.createDialog.reportTitleEn')}
+                  value={reportForm.titleEn || ''}
+                  onChange={(e) => setReportForm({ ...reportForm, titleEn: e.target.value })}
+                  fullWidth
+                  required
+                  size={breakpoint.isXs ? 'medium' : 'medium'}
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+                    },
+                  }}
                 />
-              }
-              label={t('export.filters.includeRawData')}
-              sx={{
-                '& .MuiFormControlLabel-label': {
-                  fontSize: breakpoint.isXs ? '0.875rem' : undefined,
-                },
-              }}
-            />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label={t('reportsManagement.createDialog.reportDescription')}
+                  value={reportForm.description || ''}
+                  onChange={(e) => setReportForm({ ...reportForm, description: e.target.value })}
+                  fullWidth
+                  multiline
+                  rows={2}
+                  size={breakpoint.isXs ? 'medium' : 'medium'}
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth size={breakpoint.isXs ? 'medium' : 'medium'}>
+                  <InputLabel>{t('reportsManagement.createDialog.reportCategory')}</InputLabel>
+                  <Select
+                    value={reportForm.category || ReportCategory.SALES}
+                    onChange={(e) =>
+                      setReportForm({ ...reportForm, category: e.target.value as ReportCategory })
+                    }
+                  >
+                    {Object.values(ReportCategory).map((category) => (
+                      <MenuItem key={category} value={category}>
+                        {category}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControl fullWidth size={breakpoint.isXs ? 'medium' : 'medium'}>
+                  <InputLabel>{t('reportsManagement.createDialog.priority')}</InputLabel>
+                  <Select
+                    value={reportForm.priority || ReportPriority.MEDIUM}
+                    onChange={(e) =>
+                      setReportForm({ ...reportForm, priority: e.target.value as ReportPriority })
+                    }
+                  >
+                    {Object.values(ReportPriority).map((priority) => (
+                      <MenuItem key={priority} value={priority}>
+                        {priority}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label={t('reportsManagement.createDialog.startDate')}
+                  type="date"
+                  value={reportForm.startDate || ''}
+                  onChange={(e) => setReportForm({ ...reportForm, startDate: e.target.value })}
+                  fullWidth
+                  required
+                  InputLabelProps={{ shrink: true }}
+                  size={breakpoint.isXs ? 'medium' : 'medium'}
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label={t('reportsManagement.createDialog.endDate')}
+                  type="date"
+                  value={reportForm.endDate || ''}
+                  onChange={(e) => setReportForm({ ...reportForm, endDate: e.target.value })}
+                  fullWidth
+                  required
+                  InputLabelProps={{ shrink: true }}
+                  size={breakpoint.isXs ? 'medium' : 'medium'}
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <FormControl fullWidth size={breakpoint.isXs ? 'medium' : 'medium'}>
+                  <InputLabel>{t('reportsManagement.createDialog.reportFormat')}</InputLabel>
+                  <Select
+                    multiple
+                    value={reportForm.exportSettings?.formats || [ReportFormat.PDF]}
+                    onChange={(e) =>
+                      setReportForm({
+                        ...reportForm,
+                        exportSettings: {
+                          ...reportForm.exportSettings,
+                          formats: e.target.value as ReportFormat[],
+                        },
+                      })
+                    }
+                    renderValue={(selected) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {(selected as ReportFormat[]).map((value) => (
+                          <Chip
+                            key={value}
+                            label={value.toUpperCase()}
+                            size="small"
+                            sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
+                          />
+                        ))}
+                      </Box>
+                    )}
+                  >
+                    {Object.values(ReportFormat).map((format) => (
+                      <MenuItem key={format} value={format}>
+                        {format.toUpperCase()}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={reportForm.exportSettings?.includeCharts || false}
+                      onChange={(e) =>
+                        setReportForm({
+                          ...reportForm,
+                          exportSettings: {
+                            ...reportForm.exportSettings,
+                            includeCharts: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                  }
+                  label={t('export.filters.includeCharts')}
+                  sx={{
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={reportForm.exportSettings?.includeRawData || false}
+                      onChange={(e) =>
+                        setReportForm({
+                          ...reportForm,
+                          exportSettings: {
+                            ...reportForm.exportSettings,
+                            includeRawData: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                  }
+                  label={t('export.filters.includeRawData')}
+                  sx={{
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={reportForm.compareWithPrevious || false}
+                      onChange={(e) =>
+                        setReportForm({ ...reportForm, compareWithPrevious: e.target.checked })
+                      }
+                    />
+                  }
+                  label={t('reportsManagement.createDialog.compareWithPrevious')}
+                  sx={{
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={reportForm.includeRecommendations || false}
+                      onChange={(e) =>
+                        setReportForm({ ...reportForm, includeRecommendations: e.target.checked })
+                      }
+                    />
+                  }
+                  label={t('reportsManagement.createDialog.includeRecommendations')}
+                  sx={{
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={reportForm.generateCharts || false}
+                      onChange={(e) =>
+                        setReportForm({ ...reportForm, generateCharts: e.target.checked })
+                      }
+                    />
+                  }
+                  label={t('reportsManagement.createDialog.generateCharts')}
+                  sx={{
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: breakpoint.isXs ? '0.875rem' : undefined,
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 2 } }}>
@@ -816,12 +1050,18 @@ export const ReportsManagementPage: React.FC = () => {
           <Button
             onClick={handleCreateReport}
             variant="contained"
-            disabled={!reportForm.title || generateReport.isPending}
+            disabled={
+              !reportForm.title ||
+              !reportForm.titleEn ||
+              !reportForm.startDate ||
+              !reportForm.endDate ||
+              generateReport.isPending
+            }
             size={breakpoint.isXs ? 'medium' : 'medium'}
             sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
           >
-            {generateReport.isPending 
-              ? t('reportsManagement.createDialog.creating') 
+            {generateReport.isPending
+              ? t('reportsManagement.createDialog.creating')
               : t('reportsManagement.createDialog.create')}
           </Button>
         </DialogActions>
@@ -829,6 +1069,16 @@ export const ReportsManagementPage: React.FC = () => {
 
       {/* Export Dialog */}
       <DataExportDialog open={showExportDialog} onClose={() => setShowExportDialog(false)} />
+
+      {/* Schedule Report Dialog */}
+      <ReportScheduleForm
+        open={showScheduleDialog}
+        onClose={() => setShowScheduleDialog(false)}
+        onSuccess={() => {
+          setShowScheduleDialog(false);
+          refetch();
+        }}
+      />
 
       {/* Confirm Dialog */}
       <ConfirmDialog {...dialogProps} />

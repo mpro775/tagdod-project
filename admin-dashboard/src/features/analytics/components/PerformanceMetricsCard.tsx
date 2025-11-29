@@ -113,7 +113,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
   const performanceData = [
     {
       time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-      responseTime: data?.averageApiResponseTime || 0,
+      responseTime: data?.apiResponseTime || 0,
       memoryUsage: data?.memoryUsage || 0,
       cpuUsage: data?.cpuUsage || 0,
       errorRate: data?.errorRate || 0,
@@ -206,10 +206,10 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                   fontSize: breakpoint.isXs ? '1.5rem' : undefined,
                 }}
               >
-                {formatTime(data?.averageApiResponseTime || 0)}
+                {formatTime(data?.apiResponseTime || 0)}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                {getPerformanceIcon(data?.averageApiResponseTime || 0, { good: 200, warning: 500 })}
+                {getPerformanceIcon(data?.apiResponseTime || 0, { good: 200, warning: 500 })}
                 <Typography 
                   variant="body2" 
                   sx={{ 
@@ -217,7 +217,7 @@ export const PerformanceMetricsCard: React.FC<PerformanceMetricsCardProps> = ({
                     fontSize: breakpoint.isXs ? '0.75rem' : undefined,
                   }}
                 >
-                  {getPerformanceStatus(data?.averageApiResponseTime || 0, { good: 200, warning: 500 })}
+                  {getPerformanceStatus(data?.apiResponseTime || 0, { good: 200, warning: 500 })}
                 </Typography>
               </Box>
             </Box>

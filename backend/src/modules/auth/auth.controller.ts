@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards, Logger } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards, Logger, Inject, forwardRef } from '@nestjs/common';
 import { Request } from 'express';
 import {
   ApiBearerAuth,
@@ -61,6 +61,8 @@ import { BiometricService } from './biometric.service';
 import { normalizeYemeniPhone } from '../../shared/utils/phone.util';
 import { AuditService } from '../../shared/services/audit.service';
 import { EngineerProfileService } from '../users/services/engineer-profile.service';
+import { NotificationService } from '../notifications/services/notification.service';
+import { NotificationType, NotificationChannel, NotificationPriority } from '../notifications/enums/notification.enums';
 
 @ApiTags('المصادقة')
 @Controller('auth')
@@ -77,6 +79,8 @@ export class AuthController {
     private favoritesService: FavoritesService,
     private auditService: AuditService,
     private engineerProfileService: EngineerProfileService,
+    @Inject(forwardRef(() => NotificationService))
+    private notificationService?: NotificationService,
   ) {}
 
   /**
@@ -113,6 +117,47 @@ export class AuthController {
 
     // إزالة التكرارات
     return Array.from(new Set(finalRoles));
+  }
+
+  /**
+   * إرسال إشعارات للإداريين
+   */
+  private async notifyAdmins(
+    type: NotificationType,
+    title: string,
+    message: string,
+    messageEn: string,
+    data?: Record<string, unknown>,
+  ) {
+    try {
+      if (!this.notificationService) return;
+
+      const admins = await this.userModel
+        .find({
+          roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+          status: 'ACTIVE',
+        })
+        .select('_id')
+        .lean();
+
+      const notificationPromises = admins.map((admin) =>
+        this.notificationService!.createNotification({
+          recipientId: admin._id.toString(),
+          type,
+          title,
+          message,
+          messageEn,
+          data,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+        }),
+      );
+
+      await Promise.all(notificationPromises);
+      this.logger.log(`Sent ${type} notification to ${admins.length} admin(s)`);
+    } catch (error) {
+      this.logger.warn(`Failed to notify admins:`, error);
+    }
   }
 
   private async buildAuthResponse(user: UserDocument) {
@@ -1301,6 +1346,22 @@ export class AuthController {
       merchant_status: user.merchant_status || 'none',
       merchant_discount_percent: 0,
     });
+
+    // إرسال إشعار NEW_USER_REGISTERED للإداريين
+    await this.notifyAdmins(
+      NotificationType.NEW_USER_REGISTERED,
+      'مستخدم جديد',
+      `تم تسجيل مستخدم جديد: ${user.firstName || ''} ${user.lastName || ''} (${user.phone})`,
+      `New user registered: ${user.firstName || ''} ${user.lastName || ''} (${user.phone})`,
+      {
+        userId: user._id.toString(),
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: user.roles,
+        status: user.status,
+      },
+    );
 
     // إرسال OTP عبر SMS بعد إنشاء الحساب (يتطلب الرقم بصيغة +967)
     let normalizedPhone: string;

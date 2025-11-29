@@ -16,7 +16,8 @@ import type {
   ExportReportDto,
   ListReportsParams,
   PeriodType,
- 
+  GenerateAdvancedReportDto,
+  CreateReportScheduleDto,
 } from '../types/analytics.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
@@ -112,6 +113,14 @@ export const analyticsApi = {
     return response.data.data;
   },
 
+  /**
+   * Clear analytics cache
+   */
+  clearCache: async () => {
+    const response = await apiClient.delete<ApiResponse<any>>('/analytics/cache');
+    return response.data.data;
+  },
+
   // ==================== Reports ====================
 
   /**
@@ -133,7 +142,7 @@ export const analyticsApi = {
   /**
    * Schedule report
    */
-  scheduleReport: async (data: any) => {
+  scheduleReport: async (data: CreateReportScheduleDto) => {
     const response = await apiClient.post<ApiResponse<any>>('/analytics/reports/schedule', data);
     return response.data.data;
   },
@@ -289,7 +298,7 @@ export const analyticsApi = {
   /**
    * Generate advanced report
    */
-  generateAdvancedReport: async (data: any): Promise<AdvancedReport> => {
+  generateAdvancedReport: async (data: GenerateAdvancedReportDto): Promise<AdvancedReport> => {
     const response = await apiClient.post<{ success: boolean; data: AdvancedReport }>(
       '/analytics/advanced/reports/generate',
       data

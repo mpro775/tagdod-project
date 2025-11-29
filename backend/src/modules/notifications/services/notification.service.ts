@@ -86,9 +86,20 @@ export class NotificationService {
             );
           });
         } else if (dto.channel === NotificationChannel.DASHBOARD) {
-          // DASHBOARD: خاص بالإداريين - حفظ في قاعدة البيانات فقط
-          // يمكن إضافة WebSocket للإداريين هنا إذا لزم الأمر
-          this.logger.log(`Dashboard notification created for admin: ${dto.recipientId}`);
+          // DASHBOARD: خاص بالإداريين - حفظ في قاعدة البيانات وإرسال عبر WebSocket
+          this.webSocketService.sendToUser(dto.recipientId, 'notification:new', {
+            id: savedNotification._id.toString(),
+            title: savedNotification.title,
+            message: savedNotification.message,
+            messageEn: savedNotification.messageEn,
+            type: savedNotification.type,
+            category: savedNotification.category,
+            priority: savedNotification.priority,
+            data: savedNotification.data,
+            createdAt: savedNotification.createdAt,
+            isRead: false,
+          });
+          this.logger.log(`Dashboard notification created and sent via WebSocket for admin: ${dto.recipientId}`);
         }
       }
 

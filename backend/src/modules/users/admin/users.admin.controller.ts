@@ -10,6 +10,8 @@ import {
   Req,
   UseGuards,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
@@ -40,6 +42,8 @@ import { AdminResetPasswordDto } from './dto/reset-password.dto';
 import { ApproveVerificationDto } from '../dto/approve-verification.dto';
 import { AuditService } from '../../../shared/services/audit.service';
 import { EngineerProfileService } from '../services/engineer-profile.service';
+import { NotificationService } from '../../notifications/services/notification.service';
+import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
 
 @ApiTags('إدارة-المستخدمين')
 @ApiBearerAuth()
@@ -54,6 +58,8 @@ export class UsersAdminController {
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
     private auditService: AuditService,
     private engineerProfileService: EngineerProfileService,
+    @Inject(forwardRef(() => NotificationService))
+    private notificationService?: NotificationService,
   ) {}
 
   // ==================== قائمة المستخدمين مع Pagination ====================
@@ -476,6 +482,47 @@ export class UsersAdminController {
     return await this.createAdmin(adminDto, req);
   }
 
+  /**
+   * إرسال إشعارات للإداريين
+   */
+  private async notifyAdmins(
+    type: NotificationType,
+    title: string,
+    message: string,
+    messageEn: string,
+    data?: Record<string, unknown>,
+  ) {
+    try {
+      if (!this.notificationService) return;
+
+      const admins = await this.userModel
+        .find({
+          roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+          status: 'ACTIVE',
+        })
+        .select('_id')
+        .lean();
+
+      const notificationPromises = admins.map((admin) =>
+        this.notificationService!.createNotification({
+          recipientId: admin._id.toString(),
+          type,
+          title,
+          message,
+          messageEn,
+          data,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+        }),
+      );
+
+      await Promise.all(notificationPromises);
+      this.logger.log(`Sent ${type} notification to ${admins.length} admin(s)`);
+    } catch (error) {
+      this.logger.warn(`Failed to notify admins:`, error);
+    }
+  }
+
   // ==================== إنشاء مستخدم عادي ====================
   @RequirePermissions('users.create', 'admin.access')
   @Post()
@@ -522,10 +569,23 @@ export class UsersAdminController {
       userData.merchant_discount_percent = dto.merchantDiscountPercent || 0;
     }
 
-    // تحديث القدرات للأدمن
+    // تحديث القدرات للأدمن وإضافة الصلاحيات الأساسية
     if (dto.roles?.includes(UserRole.ADMIN) || dto.roles?.includes(UserRole.SUPER_ADMIN)) {
       userData.admin_capable = true;
       userData.admin_status = CapabilityStatus.APPROVED;
+      
+      // إضافة admin.access تلقائياً إذا لم يكن موجوداً
+      if (!userData.permissions || !Array.isArray(userData.permissions)) {
+        userData.permissions = [];
+      }
+      if (!userData.permissions.includes(AdminPermission.ADMIN_ACCESS)) {
+        userData.permissions.push(AdminPermission.ADMIN_ACCESS);
+      }
+      
+      // إضافة super_admin.access للـ SUPER_ADMIN
+      if (dto.roles?.includes(UserRole.SUPER_ADMIN) && !userData.permissions.includes(AdminPermission.SUPER_ADMIN_ACCESS)) {
+        userData.permissions.push(AdminPermission.SUPER_ADMIN_ACCESS);
+      }
     }
 
     // إضافة كلمة المرور إن وجدت
@@ -582,6 +642,23 @@ export class UsersAdminController {
         userAgent: req.headers['user-agent'],
       })
       .catch((err) => this.logger?.error('Failed to log user event', err));
+
+    // إرسال إشعار NEW_USER_REGISTERED للإداريين (استثناء منشئ الحساب)
+    await this.notifyAdmins(
+      NotificationType.NEW_USER_REGISTERED,
+      'مستخدم جديد',
+      `تم إنشاء مستخدم جديد من قبل الإدارة: ${user.firstName || ''} ${user.lastName || ''} (${user.phone})`,
+      `New user created by admin: ${user.firstName || ''} ${user.lastName || ''} (${user.phone})`,
+      {
+        userId: user._id.toString(),
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: user.roles,
+        status: user.status,
+        createdBy: req.user.sub,
+      },
+    );
 
     return {
       id: user._id,
@@ -651,7 +728,25 @@ export class UsersAdminController {
       }
     }
     if (dto.roles !== undefined) user.roles = dto.roles;
-    if (dto.permissions !== undefined) user.permissions = dto.permissions;
+    if (dto.permissions !== undefined) {
+      // التأكد من وجود admin.access للأدمن
+      let permissions = Array.isArray(dto.permissions) ? [...dto.permissions] : [];
+      const mainRole = dto.roles?.[0] || user.roles?.[0];
+      
+      if (mainRole === UserRole.ADMIN || mainRole === UserRole.SUPER_ADMIN) {
+        // إضافة admin.access تلقائياً إذا لم يكن موجوداً
+        if (!permissions.includes(AdminPermission.ADMIN_ACCESS)) {
+          permissions.push(AdminPermission.ADMIN_ACCESS);
+        }
+        
+        // إضافة super_admin.access للـ SUPER_ADMIN
+        if (mainRole === UserRole.SUPER_ADMIN && !permissions.includes(AdminPermission.SUPER_ADMIN_ACCESS)) {
+          permissions.push(AdminPermission.SUPER_ADMIN_ACCESS);
+        }
+      }
+      
+      user.permissions = permissions;
+    }
     if (dto.status !== undefined) user.status = dto.status;
 
     // تحديث كلمة المرور

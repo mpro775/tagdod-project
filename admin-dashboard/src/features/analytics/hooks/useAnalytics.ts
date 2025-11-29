@@ -8,6 +8,8 @@ import type {
   ExportReportDto,
   ListReportsParams,
   PeriodType,
+  GenerateAdvancedReportDto,
+  CreateReportScheduleDto,
 } from '../types/analytics.types';
 
 const ANALYTICS_KEY = 'analytics';
@@ -94,6 +96,18 @@ export const useRefreshAnalytics = () => {
   });
 };
 
+export const useClearCache = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => analyticsApi.clearCache(),
+    onSuccess: () => {
+      toast.success('تم مسح ذاكرة التخزين المؤقت بنجاح');
+      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 // ==================== Reports ====================
 
 export const useGenerateReport = () => {
@@ -123,6 +137,19 @@ export const useMetricTrends = (metric: string, period?: string, days?: number) 
     queryKey: [ANALYTICS_KEY, 'trends', metric, period, days],
     queryFn: () => analyticsApi.getMetricTrends(metric, period as PeriodType, days),
     enabled: !!metric,
+  });
+};
+
+export const useMetricTrendsAdvanced = (
+  metric: string,
+  startDate: string,
+  endDate: string,
+  groupBy?: string
+) => {
+  return useQuery({
+    queryKey: [ANALYTICS_KEY, 'trends', 'advanced', metric, startDate, endDate, groupBy],
+    queryFn: () => analyticsApi.getMetricTrendsAdvanced(metric, startDate, endDate, groupBy),
+    enabled: !!(metric && startDate && endDate),
   });
 };
 
@@ -249,10 +276,22 @@ export const useQuickStats = () => {
 export const useGenerateAdvancedReport = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Record<string, unknown>) => analyticsApi.generateAdvancedReport(data),
+    mutationFn: (data: GenerateAdvancedReportDto) => analyticsApi.generateAdvancedReport(data),
     onSuccess: () => {
       toast.success('تم إنشاء التقرير بنجاح');
       queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'advanced', 'reports'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useScheduleReport = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateReportScheduleDto) => analyticsApi.scheduleReport(data),
+    onSuccess: () => {
+      toast.success('تم جدولة التقرير بنجاح');
+      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'reports'] });
     },
     onError: ErrorHandler.showError,
   });

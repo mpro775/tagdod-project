@@ -333,11 +333,10 @@ export interface AdvancedReport {
 
 // Performance Metrics
 export interface PerformanceMetrics {
-  averageApiResponseTime: number;
-  slowestApiResponseTime: number;
-  fastestApiResponseTime: number;
+  apiResponseTime: number;
   errorRate: number;
   uptime: number;
+  concurrentUsers?: number;
   memoryUsage: number;
   cpuUsage: number;
   diskUsage: number;
@@ -370,4 +369,68 @@ export interface ListReportsParams {
   limit?: number;
   category?: ReportCategory;
   search?: string;
+}
+
+// Report Priority
+export enum ReportPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical',
+}
+
+// Schedule Frequency
+export enum ScheduleFrequency {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+}
+
+// Generate Advanced Report DTO
+export interface GenerateAdvancedReportDto {
+  title: string;
+  titleEn: string;
+  description?: string;
+  descriptionEn?: string;
+  category: ReportCategory;
+  priority?: ReportPriority;
+  startDate: string;
+  endDate: string;
+  filters?: {
+    categories?: string[];
+    brands?: string[];
+    regions?: string[];
+    channels?: string[];
+    status?: string[];
+    customFilters?: Record<string, unknown>;
+  };
+  exportSettings?: {
+    formats: Array<'pdf' | 'excel' | 'csv' | 'json'>;
+    includeCharts: boolean;
+    includeRawData: boolean;
+    customBranding?: {
+      logo: string;
+      companyName: string;
+      colors: {
+        primary: string;
+        secondary: string;
+      };
+    };
+  };
+  compareWithPrevious?: boolean;
+  includeRecommendations?: boolean;
+  generateCharts?: boolean;
+}
+
+// Create Report Schedule DTO
+export interface CreateReportScheduleDto {
+  name: string;
+  description: string;
+  reportType: ReportType;
+  frequency: ScheduleFrequency;
+  formats?: ReportFormat[];
+  recipients?: string[];
+  filters?: Record<string, unknown>;
+  config?: Record<string, unknown>;
 }

@@ -1,19 +1,19 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { 
-  NotificationType, 
-  NotificationStatus, 
-  NotificationChannel, 
+import {
+  NotificationType,
+  NotificationStatus,
+  NotificationChannel,
   NotificationPriority,
-  NotificationCategory 
+  NotificationCategory,
 } from '../enums/notification.enums';
 
 export type UnifiedNotificationDocument = HydratedDocument<UnifiedNotification>;
 
-@Schema({ 
+@Schema({
   timestamps: true,
   collection: 'notifications',
-  versionKey: false
+  versionKey: false,
 })
 export class UnifiedNotification {
   @Prop({ required: true, enum: Object.values(NotificationType), index: true })
@@ -34,34 +34,34 @@ export class UnifiedNotification {
   @Prop({ maxlength: 500 })
   actionUrl?: string;
 
-  @Prop({ 
-    type: String, 
-    enum: Object.values(NotificationChannel), 
+  @Prop({
+    type: String,
+    enum: Object.values(NotificationChannel),
     default: NotificationChannel.IN_APP,
-    index: true 
+    index: true,
   })
   channel!: NotificationChannel;
 
-  @Prop({ 
-    type: String, 
-    enum: Object.values(NotificationStatus), 
+  @Prop({
+    type: String,
+    enum: Object.values(NotificationStatus),
     default: NotificationStatus.PENDING,
-    index: true 
+    index: true,
   })
   status!: NotificationStatus;
 
-  @Prop({ 
-    type: String, 
-    enum: Object.values(NotificationPriority), 
-    default: NotificationPriority.MEDIUM 
+  @Prop({
+    type: String,
+    enum: Object.values(NotificationPriority),
+    default: NotificationPriority.MEDIUM,
   })
   priority!: NotificationPriority;
 
-  @Prop({ 
-    type: String, 
-    enum: Object.values(NotificationCategory), 
+  @Prop({
+    type: String,
+    enum: Object.values(NotificationCategory),
     required: true,
-    index: true 
+    index: true,
   })
   category!: NotificationCategory;
 
@@ -122,9 +122,9 @@ export class UnifiedNotification {
   externalId?: string;
 
   // ===== Metadata =====
-  @Prop({ 
-    type: Object, 
-    default: {} 
+  @Prop({
+    type: Object,
+    default: {},
   })
   metadata!: {
     provider?: string;
@@ -165,32 +165,35 @@ UnifiedNotificationSchema.index({ readAt: 1 }, { sparse: true });
 UnifiedNotificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }); // 90 days
 
 // ===== Virtual Fields =====
-UnifiedNotificationSchema.virtual('isRead').get(function() {
+UnifiedNotificationSchema.virtual('isRead').get(function () {
   return this.status === NotificationStatus.READ;
 });
 
-UnifiedNotificationSchema.virtual('isDelivered').get(function() {
+UnifiedNotificationSchema.virtual('isDelivered').get(function () {
   return this.status === NotificationStatus.DELIVERED;
 });
 
-UnifiedNotificationSchema.virtual('isFailed').get(function() {
+UnifiedNotificationSchema.virtual('isFailed').get(function () {
   return this.status === NotificationStatus.FAILED;
 });
 
 // ===== Methods =====
-UnifiedNotificationSchema.methods.markAsRead = function() {
+UnifiedNotificationSchema.methods.markAsRead = function () {
   this.status = NotificationStatus.READ;
   this.readAt = new Date();
   return this.save();
 };
 
-UnifiedNotificationSchema.methods.markAsDelivered = function() {
+UnifiedNotificationSchema.methods.markAsDelivered = function () {
   this.status = NotificationStatus.DELIVERED;
   this.deliveredAt = new Date();
   return this.save();
 };
 
-UnifiedNotificationSchema.methods.markAsFailed = function(errorMessage: string, errorCode?: string) {
+UnifiedNotificationSchema.methods.markAsFailed = function (
+  errorMessage: string,
+  errorCode?: string,
+) {
   this.status = NotificationStatus.FAILED;
   this.failedAt = new Date();
   this.errorMessage = errorMessage;
@@ -200,12 +203,12 @@ UnifiedNotificationSchema.methods.markAsFailed = function(errorMessage: string, 
 };
 
 // ===== Pre-save Middleware =====
-UnifiedNotificationSchema.pre('save', function(next) {
+UnifiedNotificationSchema.pre('save', function (next) {
   // Auto-generate tracking ID if not provided
   if (!this.trackingId) {
     this.trackingId = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
-  
+
   // Set category based on type if not provided
   if (!this.category) {
     const typeToCategoryMap: Record<NotificationType, NotificationCategory> = {
@@ -232,6 +235,7 @@ UnifiedNotificationSchema.pre('save', function(next) {
       [NotificationType.ACCOUNT_VERIFIED]: NotificationCategory.ACCOUNT,
       [NotificationType.PASSWORD_CHANGED]: NotificationCategory.ACCOUNT,
       [NotificationType.LOGIN_ATTEMPT]: NotificationCategory.ACCOUNT,
+      [NotificationType.NEW_USER_REGISTERED]: NotificationCategory.ACCOUNT,
       [NotificationType.TICKET_CREATED]: NotificationCategory.SUPPORT,
       [NotificationType.TICKET_UPDATED]: NotificationCategory.SUPPORT,
       [NotificationType.TICKET_RESOLVED]: NotificationCategory.SUPPORT,
@@ -247,9 +251,9 @@ UnifiedNotificationSchema.pre('save', function(next) {
       [NotificationType.INVOICE_CREATED]: NotificationCategory.ORDER,
       [NotificationType.COUPON_USED]: NotificationCategory.PROMOTION,
     };
-    
+
     this.category = typeToCategoryMap[this.type] || NotificationCategory.SYSTEM;
   }
-  
+
   next();
 });

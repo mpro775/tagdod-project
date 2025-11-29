@@ -11,6 +11,7 @@ import { Coupon, CouponSchema } from '../../marketing/schemas/coupon.schema';
 import { EngineerProfileService } from '../services/engineer-profile.service';
 import { AuthModule } from '../../auth/auth.module';
 import { SharedModule } from '../../../shared/shared.module';
+import { NotificationsCompleteModule } from '../../notifications/notifications-complete.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SharedModule } from '../../../shared/shared.module';
     ]),
     AuthModule,
     SharedModule,
+    forwardRef(() => NotificationsCompleteModule),
   ],
   controllers: [UsersAdminController, EngineerProfileAdminController],
   providers: [EngineerProfileService],

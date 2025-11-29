@@ -206,11 +206,19 @@ export const MENU_PERMISSIONS = {
 
   // Users section
   users: [PERMISSIONS.USERS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'users-list': [PERMISSIONS.USERS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'users-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'users-deleted': [PERMISSIONS.USERS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'users-verification': [PERMISSIONS.USERS_READ, PERMISSIONS.ADMIN_ACCESS],
   'users-addresses': [PERMISSIONS.ADDRESSES_READ, PERMISSIONS.ADMIN_ACCESS],
+  'users-favorites': [PERMISSIONS.FAVORITES_READ, PERMISSIONS.ADMIN_ACCESS],
 
   // Catalog section
   catalog: [PERMISSIONS.ADMIN_ACCESS], // Parent menu - visible if any child is visible
   products: [PERMISSIONS.PRODUCTS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'products-list': [PERMISSIONS.PRODUCTS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'products-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'products-inventory': [PERMISSIONS.PRODUCTS_READ, PERMISSIONS.ADMIN_ACCESS],
   categories: [PERMISSIONS.CATEGORIES_READ, PERMISSIONS.ADMIN_ACCESS],
   attributes: [PERMISSIONS.ATTRIBUTES_READ, PERMISSIONS.ADMIN_ACCESS],
   brands: [PERMISSIONS.BRANDS_READ, PERMISSIONS.ADMIN_ACCESS],
@@ -218,15 +226,22 @@ export const MENU_PERMISSIONS = {
   // Sales section
   sales: [PERMISSIONS.ADMIN_ACCESS], // Parent menu - visible if any child is visible
   orders: [PERMISSIONS.ORDERS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'orders-list': [PERMISSIONS.ORDERS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'orders-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   carts: [PERMISSIONS.CARTS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'carts-list': [PERMISSIONS.CARTS_READ, PERMISSIONS.ADMIN_ACCESS],
   'carts-abandoned': [PERMISSIONS.CARTS_READ, PERMISSIONS.ADMIN_ACCESS],
   'carts-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   coupons: [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
 
   // Marketing section
   marketing: [PERMISSIONS.ADMIN_ACCESS], // Parent menu - visible if any child is visible
+  'marketing-dashboard': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
+  'price-rules': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
   banners: [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
   promotions: [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
+  'coupons-list': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
+  'coupons-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
 
   // Services section
   services: [PERMISSIONS.ADMIN_ACCESS], // Parent menu - visible if any child is visible
@@ -236,18 +251,35 @@ export const MENU_PERMISSIONS = {
   'services-offers': [PERMISSIONS.SERVICES_READ, PERMISSIONS.ADMIN_ACCESS],
   'services-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
 
+  // Engineers section
+  engineers: [PERMISSIONS.SERVICES_READ, PERMISSIONS.ADMIN_ACCESS],
+  'engineers-management': [PERMISSIONS.SERVICES_READ, PERMISSIONS.ADMIN_ACCESS],
+  'engineers-coupons': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
+
   // Media
   media: [PERMISSIONS.MEDIA_MANAGE, PERMISSIONS.ADMIN_ACCESS],
+  'media-library': [PERMISSIONS.MEDIA_MANAGE, PERMISSIONS.ADMIN_ACCESS],
+  'media-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
 
   // Analytics section
   analytics: [PERMISSIONS.ADMIN_ACCESS], // Parent menu - visible if any child is visible
   'analytics-dashboard': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'analytics-main': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   'analytics-advanced': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   'analytics-export': [PERMISSIONS.ANALYTICS_EXPORT, PERMISSIONS.ADMIN_ACCESS],
   'analytics-reports': [PERMISSIONS.REPORTS_GENERATE, PERMISSIONS.ADMIN_ACCESS],
 
-  // Support
+  // Audit section
+  audit: [PERMISSIONS.AUDIT_READ, PERMISSIONS.ADMIN_ACCESS],
+  'audit-logs': [PERMISSIONS.AUDIT_READ, PERMISSIONS.ADMIN_ACCESS],
+  'audit-main': [PERMISSIONS.AUDIT_READ, PERMISSIONS.ADMIN_ACCESS],
+  'audit-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
+
+  // Support section
   support: [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
+  'support-tickets': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
+  'support-stats': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'support-canned-responses': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
 
   // Notifications section
   notifications: [PERMISSIONS.ADMIN_ACCESS], // Parent menu - visible if any child is visible
@@ -255,11 +287,22 @@ export const MENU_PERMISSIONS = {
   'notifications-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   'notifications-templates': [PERMISSIONS.NOTIFICATIONS_MANAGE, PERMISSIONS.ADMIN_ACCESS],
 
+  // System Management section
+  'system-management': [PERMISSIONS.SETTINGS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'system-monitoring': [PERMISSIONS.SYSTEM_LOGS, PERMISSIONS.ADMIN_ACCESS],
+  'error-logs': [PERMISSIONS.SYSTEM_LOGS, PERMISSIONS.ADMIN_ACCESS],
+  'system-settings': [PERMISSIONS.SETTINGS_READ, PERMISSIONS.ADMIN_ACCESS],
+  policies: [PERMISSIONS.SETTINGS_READ, PERMISSIONS.ADMIN_ACCESS],
+
   // Exchange Rates
   'exchange-rates': [PERMISSIONS.EXCHANGE_RATES_READ, PERMISSIONS.ADMIN_ACCESS],
 
   // Settings
   settings: [PERMISSIONS.SETTINGS_READ, PERMISSIONS.ADMIN_ACCESS],
+
+  // Admin Management section
+  'admin-management': [PERMISSIONS.ADMIN_ACCESS],
+  'admin-search': [PERMISSIONS.ADMIN_ACCESS],
 } as const;
 
 // Helper function to check if user has any of the required permissions
@@ -285,7 +328,9 @@ export const filterMenuByPermissions = (
     .map(item => {
       // Check if user has permission for this menu item
       const itemPermissions = MENU_PERMISSIONS[item.id as keyof typeof MENU_PERMISSIONS];
-      const hasAccess = hasAnyPermission(userPermissions, itemPermissions ? [...itemPermissions] : []);
+      // If item not found in MENU_PERMISSIONS, require ADMIN_ACCESS by default
+      const requiredPermissions = itemPermissions ? [...itemPermissions] : [PERMISSIONS.ADMIN_ACCESS];
+      const hasAccess = hasAnyPermission(userPermissions, requiredPermissions);
 
       if (!hasAccess) {
         return null; // Hide this menu item

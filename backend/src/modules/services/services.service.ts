@@ -344,8 +344,8 @@ export class ServicesService {
       { requestId: String(doc._id) },
     );
 
-    // إرسال SMS لجميع المهندسين
-    await this.sendSMSToAllEngineers(String(doc._id), dto.title);
+    // إرسال SMS لجميع المهندسين - معطل مؤقتاً للتطوير
+    // await this.sendSMSToAllEngineers(String(doc._id), dto.title);
 
     // تحديث استخدام العنوان
     await this.addressesService.markAsUsed(dto.addressId, userId);

@@ -36,6 +36,7 @@ import {
   MarketingReportCard,
   RealTimeMetricsCard,
   AnalyticsSkeleton,
+  TrendsVisualization,
 } from '../components';
 
 // Import hooks
@@ -339,6 +340,13 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               id="analytics-tab-6"
               aria-controls="analytics-tabpanel-6"
             />
+            <Tab
+              icon={<TrendingUp sx={{ fontSize: isMobile ? 18 : 20 }} />}
+              iconPosition="start"
+              label={t('advancedDashboard.tabs.trends')}
+              id="analytics-tab-7"
+              aria-controls="analytics-tabpanel-7"
+            />
           </Tabs>
 
           {/* Overview Tab */}
@@ -400,6 +408,11 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               isLoading={inventoryLoading}
               error={inventoryError}
             />
+          </TabPanel>
+
+          {/* Trends Tab */}
+          <TabPanel value={activeTab} index={7}>
+            <TrendsVisualization />
           </TabPanel>
         </CardContent>
       </Card>

@@ -27,3 +27,7 @@ export { ServiceAnalyticsChart } from './ServiceAnalyticsChart';
 export { SupportAnalyticsChart } from './SupportAnalyticsChart';
 export { AnalyticsSkeleton, DashboardSkeleton, ChartSkeleton, TableSkeleton, CardSkeleton } from './AnalyticsSkeleton';
 export { AnalyticsErrorBoundary, withAnalyticsErrorBoundary, useAnalyticsErrorHandler } from './AnalyticsErrorBoundary';
+export { CacheManagement } from './CacheManagement';
+export { ComparisonTool } from './ComparisonTool';
+export { ReportScheduleForm } from './ReportScheduleForm';
+export { TrendsVisualization } from './TrendsVisualization';
