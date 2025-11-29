@@ -310,24 +310,36 @@ export const EngineersManagementPage: React.FC = () => {
     {
       field: 'coupons',
       headerName: t('services:engineers.coupons', 'الكوبونات'),
-      minWidth: 100,
-      flex: 0.7,
+      minWidth: 120,
+      flex: 0.8,
       sortable: false,
       renderCell: (params) => {
         const engineerId = params.row.engineerId || params.row._id;
-        const couponCount = params.row.couponCount || 0;
+        const totalCoupons = params.row.totalCoupons || 0;
+        const activeCoupons = params.row.activeCoupons || 0;
         return (
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/services/engineers/${engineerId}/coupons`);
-            }}
-            sx={{ textTransform: 'none' }}
-          >
-            {formatNumber(couponCount)} {t('services:engineers.coupons', 'كوبون')}
-          </Button>
+          <Box sx={{ py: 0.5 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/services/engineers/${engineerId}/coupons`);
+              }}
+              sx={{ textTransform: 'none', mb: 0.5 }}
+            >
+              {formatNumber(totalCoupons)} {t('services:engineers.totalCoupons', 'كوبون')}
+            </Button>
+            {totalCoupons > 0 && (
+              <Typography
+                variant="caption"
+                color={activeCoupons > 0 ? 'success.main' : 'text.secondary'}
+                sx={{ display: 'block', lineHeight: 1.3 }}
+              >
+                {formatNumber(activeCoupons)} {t('services:engineers.active', 'نشط')}
+              </Typography>
+            )}
+          </Box>
         );
       },
     },

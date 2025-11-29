@@ -206,6 +206,8 @@ export interface EngineerDetails {
   completionRate: number;
   averageRating: number;
   totalRevenue: number;
+  totalCoupons?: number;
+  activeCoupons?: number;
 }
 
 export interface EngineerStatisticsDetails {

@@ -528,18 +528,18 @@ export class EngineerProfileService {
       return;
     }
 
-    // حساب الخدمات المكتملة
+    // حساب الخدمات المكتملة (تشمل COMPLETED و RATED)
     const completedServices = await this.serviceRequestModel.countDocuments({
       engineerId: new Types.ObjectId(engineerId),
-      status: 'COMPLETED',
+      status: { $in: ['COMPLETED', 'RATED'] },
     });
 
-    // حساب الأرباح من العروض المقبولة
+    // حساب الأرباح من العروض المقبولة (تشمل COMPLETED و RATED)
     const earningsResult = await this.serviceRequestModel.aggregate([
       {
         $match: {
           engineerId: new Types.ObjectId(engineerId),
-          status: 'COMPLETED',
+          status: { $in: ['COMPLETED', 'RATED'] },
           acceptedOffer: { $exists: true },
         },
       },

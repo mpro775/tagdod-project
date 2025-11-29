@@ -2,9 +2,14 @@
 
 خدمة الدفع توفر endpoints لإتمام الطلبات وإدارتها.
 
-> ✅ **تم التحقق وتحديث هذه الوثيقة (v2.2.0)** - مطابقة للكود الفعلي في `backend/src/modules/checkout`
+> ✅ **تم التحقق وتحديث هذه الوثيقة (v2.3.0)** - مطابقة للكود الفعلي في `backend/src/modules/checkout`
 >
-> 🆕 **التحديثات الجديدة (v2.2.0):**
+> 🆕 **التحديثات الجديدة (v2.3.0):**
+>
+> - إضافة رفع وحفظ رابط فاتورة PDF في `invoiceUrl` - الفاتورة متاحة للتحميل في تفاصيل الطلب للعميل والإدارة
+> - يتم توليد الفاتورة تلقائياً عند تغيير حالة الطلب إلى `confirmed` أو `completed`
+>
+> 🆕 **التحديثات السابقة (v2.2.0):**
 >
 > - إزالة `currency` من Request Body - النظام يستخدم **USD** كعملة افتراضية لجميع الحسابات
 > - إضافة endpoint جديد `GET /orders/by-status` لفلترة الطلبات حسب الحالة مع إرجاع الطلبات الملغية
@@ -639,6 +644,8 @@ Future<CheckoutPreview> previewCheckout({
       "total": 468000,
       "currency": "YER",
       "customerNotes": "يرجى التوصيل في المساء",
+      "invoiceNumber": "INV-2025-001234",
+      "invoiceUrl": "https://cdn.example.com/invoices/invoice-INV-2025-001234.pdf",
       "statusHistory": [
         {
           "status": "pending_payment",
@@ -1883,6 +1890,8 @@ class OrderDetails {
   final String? shippingCompany;
   final String? trackingNumber;
   final String? trackingUrl;
+  final String? invoiceNumber;
+  final String? invoiceUrl;
   final DateTime? estimatedDeliveryDate;
   final DateTime? deliveredAt;
   final DateTime createdAt;
@@ -1921,6 +1930,8 @@ class OrderDetails {
     this.shippingCompany,
     this.trackingNumber,
     this.trackingUrl,
+    this.invoiceNumber,
+    this.invoiceUrl,
     this.estimatedDeliveryDate,
     this.deliveredAt,
     required this.createdAt,
@@ -1983,6 +1994,8 @@ class OrderDetails {
       shippingCompany: json['shippingCompany'] as String?,
       trackingNumber: json['trackingNumber'] as String?,
       trackingUrl: json['trackingUrl'] as String?,
+      invoiceNumber: json['invoiceNumber'] as String?,
+      invoiceUrl: json['invoiceUrl'] as String?,
       estimatedDeliveryDate: json['estimatedDeliveryDate'] != null
           ? DateTime.parse(json['estimatedDeliveryDate'] as String)
           : null,
@@ -1999,6 +2012,7 @@ class OrderDetails {
   bool get canBeCancelled => ['pending_payment', 'confirmed', 'processing', 'on_hold'].contains(status);
   bool get isActive => !['completed', 'cancelled', 'refunded', 'returned'].contains(status);
   bool get hasTracking => trackingNumber != null || trackingUrl != null;
+  bool get hasInvoice => invoiceUrl != null && invoiceUrl!.isNotEmpty;
 }
 
 class OrderTotalsInAllCurrencies {
@@ -2262,6 +2276,13 @@ class OrderStatusHistory {
    - الحقل `totalsInAllCurrencies` يوفر ملخص USD/YER/SAR باستخدام أسعار الصرف المحدثة.
    - استخدمه لعرض المبالغ المحولة بدون إعادة الحساب على العميل.
 
+9. **الفواتير:**
+   - يتم توليد فاتورة PDF تلقائياً عند تغيير حالة الطلب إلى `confirmed` أو `completed`.
+   - يتم حفظ رابط الفاتورة في حقل `invoiceUrl` في تفاصيل الطلب.
+   - الرابط متاح للتحميل للعميل والإدارة عبر `GET /orders/:id` و `GET /admin/orders/:id`.
+   - رقم الفاتورة يُحفظ في حقل `invoiceNumber` بصيغة `INV-YYYY-NNNNN`.
+   - يمكن توليد وإرسال الفاتورة يدوياً من لوحة التحكم عبر `POST /admin/orders/:id/send-invoice`.
+
 ---
 
 ## 📝 ملاحظات التحديث
@@ -2282,6 +2303,7 @@ class OrderStatusHistory {
 10. ✅ **v2.1.0:** تبسيط checkout response - إزالة `totalsInAllCurrencies` المكرر، إزالة `promotionDiscount` و `autoDiscount` من `pricingSummaryByCurrency`، إزالة `appliedRule` من unit
 11. ✅ **v2.2.0:** إزالة `currency` من Request Body - النظام يستخدم USD كعملة افتراضية لجميع الحسابات
 12. ✅ **v2.2.0:** إضافة endpoint جديد `GET /orders/by-status` لفلترة الطلبات حسب الحالة مع إرجاع الطلبات الملغية
+13. ✅ **v2.3.0:** إضافة رفع وحفظ رابط فاتورة PDF في `invoiceUrl` - الفاتورة متاحة للتحميل في تفاصيل الطلب للعميل والإدارة
 
 ### الملفات المرجعية:
 

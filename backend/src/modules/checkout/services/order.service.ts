@@ -4614,6 +4614,25 @@ export class OrderService {
         'admin',
         `تم رفض الدفع - المبلغ غير كافٍ: ${dto.verifiedAmount} ${dto.verifiedCurrency} (المطلوب: ${order.total} ${order.currency})${dto.notes ? ` - ${dto.notes}` : ''}`,
       );
+
+      // إرسال إشعار للمستخدم بفشل مطابقة الدفع
+      await this.safeNotify(
+        String(order.userId),
+        NotificationType.PAYMENT_FAILED,
+        'فشل مطابقة الدفع',
+        `عذراً، تم رفض مطابقة الدفع للطلب رقم ${order.orderNumber}. المبلغ المدفوع (${dto.verifiedAmount} ${dto.verifiedCurrency}) أقل من المبلغ المطلوب (${order.total} ${order.currency}).${dto.notes ? ` ملاحظة: ${dto.notes}` : ''}`,
+        `Sorry, payment verification for order ${order.orderNumber} was rejected. The paid amount (${dto.verifiedAmount} ${dto.verifiedCurrency}) is less than the required amount (${order.total} ${order.currency}).${dto.notes ? ` Note: ${dto.notes}` : ''}`,
+        {
+          orderId: String(order._id),
+          orderNumber: order.orderNumber,
+          paymentStatus: newPaymentStatus,
+          verifiedAmount: dto.verifiedAmount,
+          verifiedCurrency: dto.verifiedCurrency,
+          requiredAmount: order.total,
+          requiredCurrency: order.currency,
+          failureReason: 'insufficient_amount',
+        },
+      );
     }
 
     await order.save();
@@ -6006,8 +6025,9 @@ export class OrderService {
       // إنشاء رقم فاتورة إذا لم يكن موجوداً
       if (!order.invoiceNumber) {
         const year = new Date().getFullYear();
+        // عد جميع الطلبات في السنة (بغض النظر عن وجود invoiceNumber)
+        // لضمان أن أول طلب في السنة يحصل على رقم 00001 وليس 00000
         const count = await this.orderModel.countDocuments({
-          invoiceNumber: { $exists: true },
           createdAt: { $gte: new Date(`${year}-01-01`), $lt: new Date(`${year + 1}-01-01`) },
         });
         order.invoiceNumber = `INV-${year}-${String(count + 1).padStart(5, '0')}`;
@@ -6037,6 +6057,32 @@ export class OrderService {
       } catch (saveError) {
         this.logger.warn(`Failed to save temporary PDF for order ${order.orderNumber}:`, saveError);
         // لا نوقف العملية إذا فشل الحفظ المؤقت
+      }
+
+      // حفظ رابط الفاتورة في الطلب
+      if (this.uploadService) {
+        try {
+          const fileName = `invoice-${order.invoiceNumber || order.orderNumber}.pdf`;
+          const uploadedResult = await this.uploadService.uploadFile(
+            {
+              buffer: pdfBuffer,
+              originalname: fileName,
+              mimetype: 'application/pdf',
+              size: pdfBuffer.length,
+            },
+            'invoices',
+            fileName,
+          );
+          order.invoiceUrl = uploadedResult.url;
+          await order.save();
+          this.logger.log(`Invoice URL saved: ${uploadedResult.url}`);
+        } catch (uploadError) {
+          this.logger.warn(
+            `Failed to upload invoice PDF for order ${order.orderNumber}:`,
+            uploadError,
+          );
+          // لا نوقف العملية إذا فشل الرفع
+        }
       }
 
       // إرسال الفاتورة عبر البريد الإلكتروني فقط
@@ -6328,8 +6374,9 @@ export class OrderService {
       // إنشاء رقم فاتورة إذا لم يكن موجوداً
       if (!order.invoiceNumber) {
         const year = new Date().getFullYear();
+        // عد جميع الطلبات في السنة (بغض النظر عن وجود invoiceNumber)
+        // لضمان أن أول طلب في السنة يحصل على رقم 00001 وليس 00000
         const count = await this.orderModel.countDocuments({
-          invoiceNumber: { $exists: true },
           createdAt: { $gte: new Date(`${year}-01-01`), $lt: new Date(`${year + 1}-01-01`) },
         });
         order.invoiceNumber = `INV-${year}-${String(count + 1).padStart(5, '0')}`;
@@ -6341,6 +6388,32 @@ export class OrderService {
       this.logger.log(
         `PDF generated successfully for manual invoice send - order ${order.orderNumber}, size: ${pdfBuffer.length} bytes`,
       );
+
+      // حفظ رابط الفاتورة في الطلب
+      if (this.uploadService) {
+        try {
+          const fileName = `invoice-${order.invoiceNumber || order.orderNumber}.pdf`;
+          const uploadedResult = await this.uploadService.uploadFile(
+            {
+              buffer: pdfBuffer,
+              originalname: fileName,
+              mimetype: 'application/pdf',
+              size: pdfBuffer.length,
+            },
+            'invoices',
+            fileName,
+          );
+          order.invoiceUrl = uploadedResult.url;
+          await order.save();
+          this.logger.log(`Invoice URL saved: ${uploadedResult.url}`);
+        } catch (uploadError) {
+          this.logger.warn(
+            `Failed to upload invoice PDF for order ${order.orderNumber}:`,
+            uploadError,
+          );
+          // لا نوقف العملية إذا فشل الرفع
+        }
+      }
 
       // إرسال الفاتورة إلى إيميل المبيعات
       await this.sendOrderInvoiceEmail(order, pdfBuffer);

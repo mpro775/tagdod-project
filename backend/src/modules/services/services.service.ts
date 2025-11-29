@@ -4,8 +4,9 @@ import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
 import { ServiceRequest, ServiceRating } from './schemas/service-request.schema';
 import { EngineerOffer } from './schemas/engineer-offer.schema';
-import { User } from '../users/schemas/user.schema';
+import { User, CapabilityStatus } from '../users/schemas/user.schema';
 import { EngineerProfile } from '../users/schemas/engineer-profile.schema';
+import { Coupon, CouponDocument } from '../marketing/schemas/coupon.schema';
 import { AddressesService } from '../addresses/addresses.service';
 import { NotificationService } from '../notifications/services/notification.service';
 import { EngineerProfileService } from '../users/services/engineer-profile.service';
@@ -112,6 +113,7 @@ export class ServicesService {
     @InjectModel(EngineerOffer.name) private offers: Model<EngineerOffer>,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(EngineerProfile.name) private engineerProfileModel: Model<EngineerProfile>,
+    @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
     @InjectConnection() private conn: Connection,
     private distanceService: DistanceService,
     private addressesService: AddressesService,
@@ -1384,6 +1386,44 @@ export class ServicesService {
     if (String(r.userId) === String(engineerUserId)) return { error: 'SELF_NOT_ALLOWED' };
     if (!['OPEN', 'OFFERS_COLLECTING'].includes(r.status)) return { error: 'INVALID_STATUS' };
 
+    // التحقق من حالة التحقق للمهندس
+    const engineer = await this.userModel.findById(engineerUserId);
+    if (!engineer) return { error: 'ENGINEER_NOT_FOUND' };
+
+    // التحقق من صلاحية المهندس
+    if (!engineer.engineer_capable) {
+      return { 
+        error: 'NOT_ENGINEER', 
+        message: 'يجب تفعيل صلاحية المهندس أولاً' 
+      };
+    }
+
+    // التحقق من حالة التحقق
+    if (engineer.engineer_status !== CapabilityStatus.APPROVED) {
+      switch (engineer.engineer_status) {
+        case CapabilityStatus.UNVERIFIED:
+          return { 
+            error: 'ENGINEER_UNVERIFIED', 
+            message: 'حسابك غير موثق. يرجى رفع وثائق التحقق أولاً' 
+          };
+        case CapabilityStatus.PENDING:
+          return { 
+            error: 'ENGINEER_PENDING', 
+            message: 'طلب التحقق قيد المراجعة. يرجى الانتظار حتى يتم الموافقة على حسابك' 
+          };
+        case CapabilityStatus.REJECTED:
+          return { 
+            error: 'ENGINEER_REJECTED', 
+            message: 'تم رفض طلب التحقق الخاص بك. يرجى التواصل مع الدعم' 
+          };
+        default:
+          return { 
+            error: 'ENGINEER_NOT_APPROVED', 
+            message: 'يجب تفعيل صلاحية المهندس أولاً' 
+          };
+      }
+    }
+
     // التحقق من وجود عرض سابق للمهندس على نفس الطلب
     const existingOffer = await this.offers.findOne({
       requestId: r._id,
@@ -2288,7 +2328,7 @@ export class ServicesService {
           _id: '$engineerId',
           totalRequests: { $sum: 1 },
           completedRequests: {
-            $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] },
+            $sum: { $cond: [{ $in: ['$status', ['COMPLETED', 'RATED']] }, 1, 0] },
           },
           averageRating: {
             $avg: {
@@ -2299,7 +2339,10 @@ export class ServicesService {
             $sum: {
               $cond: [
                 {
-                  $and: [{ $eq: ['$status', 'COMPLETED'] }, { $gt: ['$acceptedOffer.amount', 0] }],
+                  $and: [
+                    { $in: ['$status', ['COMPLETED', 'RATED']] },
+                    { $gt: ['$acceptedOffer.amount', 0] },
+                  ],
                 },
                 '$acceptedOffer.amount',
                 0,
@@ -2326,9 +2369,65 @@ export class ServicesService {
       });
     });
 
+    // جلب عدد الكوبونات النشطة لكل مهندس
+    const couponsMap = new Map<string, { totalCoupons: number; activeCoupons: number }>();
+    // جلب الرصيد من بروفايل المهندس
+    const walletBalanceMap = new Map<string, number>();
+    
+    if (engineerIds.length > 0) {
+      // تحويل engineerIds إلى ObjectId إذا لزم الأمر
+      const engineerObjectIds = engineerIds.map((id) => {
+        if (id instanceof Types.ObjectId) {
+          return id;
+        }
+        const idString = typeof id === 'string' ? id : String(id);
+        return new Types.ObjectId(idString);
+      });
+      
+      // جلب الكوبونات
+      const couponsStats = await this.couponModel.aggregate([
+        {
+          $match: {
+            engineerId: { $in: engineerObjectIds },
+            deletedAt: null,
+          },
+        },
+        {
+          $group: {
+            _id: '$engineerId',
+            totalCoupons: { $sum: 1 },
+            activeCoupons: {
+              $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] },
+            },
+          },
+        },
+      ]);
+
+      couponsStats.forEach((couponStat) => {
+        const engineerIdStr = couponStat._id.toString();
+        couponsMap.set(engineerIdStr, {
+          totalCoupons: couponStat.totalCoupons || 0,
+          activeCoupons: couponStat.activeCoupons || 0,
+        });
+      });
+
+      // جلب الرصيد من بروفايل المهندس
+      const profiles = await this.engineerProfileModel
+        .find({ userId: { $in: engineerObjectIds } })
+        .select('userId walletBalance')
+        .lean();
+
+      profiles.forEach((profile) => {
+        const engineerIdStr = profile.userId.toString();
+        walletBalanceMap.set(engineerIdStr, profile.walletBalance || 0);
+      });
+    }
+
     // دمج البيانات
     const items = engineers.map((engineer) => {
-      const stats = statsMap.get(engineer._id.toString()) || {
+      const engineerIdStr = engineer._id.toString();
+      
+      const stats = statsMap.get(engineerIdStr) || {
         totalRequests: 0,
         completedRequests: 0,
         completionRate: 0,
@@ -2336,8 +2435,15 @@ export class ServicesService {
         totalRevenue: 0,
       };
 
+      const coupons = couponsMap.get(engineerIdStr) || {
+        totalCoupons: 0,
+        activeCoupons: 0,
+      };
+
+      const walletBalance = walletBalanceMap.get(engineerIdStr) || 0;
+
       return {
-        engineerId: engineer._id.toString(),
+        engineerId: engineerIdStr,
         engineerName: `${engineer.firstName || ''} ${engineer.lastName || ''}`.trim() || 'بدون اسم',
         engineerPhone: engineer.phone,
         totalRequests: stats.totalRequests,
@@ -2345,6 +2451,9 @@ export class ServicesService {
         completionRate: stats.completionRate,
         averageRating: stats.averageRating,
         totalRevenue: stats.totalRevenue,
+        walletBalance,
+        totalCoupons: coupons.totalCoupons,
+        activeCoupons: coupons.activeCoupons,
       };
     });
 
@@ -2514,7 +2623,9 @@ export class ServicesService {
             $group: {
               _id: '$engineerId',
               totalRequests: { $sum: 1 },
-              completedRequests: { $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] } },
+              completedRequests: {
+                $sum: { $cond: [{ $in: ['$status', ['COMPLETED', 'RATED']] }, 1, 0] },
+              },
             },
           },
           {
@@ -2533,7 +2644,12 @@ export class ServicesService {
       // إجمالي الإيرادات
       this.requests
         .aggregate([
-          { $match: { status: 'COMPLETED', acceptedOffer: { $exists: true } } },
+          {
+            $match: {
+              status: { $in: ['COMPLETED', 'RATED'] },
+              acceptedOffer: { $exists: true },
+            },
+          },
           { $group: { _id: null, total: { $sum: '$acceptedOffer.amount' } } },
         ])
         .then((result) => result[0]?.total || 0),

@@ -7,7 +7,7 @@ import { Banner, BannerDocument, BannerLocation, BannerNavigationType } from './
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Media } from '../upload/schemas/media.schema';
-import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
+import { User, UserDocument, UserRole, CapabilityStatus } from '../users/schemas/user.schema';
 
 // DTOs
 import { CreatePriceRuleDto, UpdatePriceRuleDto, PreviewPriceRuleDto, PricingQueryDto } from './dto/price-rule.dto';
@@ -681,7 +681,16 @@ export class MarketingService {
   async createEngineerCoupon(dto: CreateEngineerCouponDto, adminId?: string): Promise<Coupon> {
     // التحقق من أن المستخدم مهندس معتمد
     const engineer = await this.userModel.findById(dto.engineerId);
-    if (!engineer || !engineer.isEngineer()) {
+    if (!engineer) {
+      throw new BadRequestException('المستخدم غير موجود');
+    }
+    
+    // التحقق من صلاحية المهندس (بدلاً من استدعاء isEngineer() method)
+    const isEngineer = 
+      engineer.engineer_capable === true && 
+      engineer.engineer_status === CapabilityStatus.APPROVED;
+    
+    if (!isEngineer) {
       throw new BadRequestException('المستخدم المحدد ليس مهندساً معتمداً');
     }
 

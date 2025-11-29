@@ -137,8 +137,8 @@ export interface Coupon {
   usageLimit?: number;
   usageLimitPerUser?: number;
   usedCount: number;
-  validFrom: Date;
-  validUntil: Date;
+  validFrom: Date | string;
+  validUntil: Date | string | null; // null for engineer coupons (unlimited)
   appliesTo:
     | 'all_products'
     | 'specific_products'

@@ -277,6 +277,50 @@ Future<List<EngineerOffer>> getOffersForRequest(
 
 > ⚠️ **مهم:** إذا حاول المهندس تقديم عرض جديد لنفس الطلب الذي قدم عليه عرضاً سابقاً، سيتم إرجاع هذا الخطأ. يجب استخدام endpoint [تحديث عرض](#4-تحديث-عرض) لتعديل العرض الموجود.
 
+#### Response - خطأ (400) - حساب غير موثق
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "ENGINEER_UNVERIFIED",
+      "message": "حسابك غير موثق. يرجى رفع وثائق التحقق أولاً"
+    }
+  }
+}
+```
+
+#### Response - خطأ (400) - طلب التحقق قيد المراجعة
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "ENGINEER_PENDING",
+      "message": "طلب التحقق قيد المراجعة. يرجى الانتظار حتى يتم الموافقة على حسابك"
+    }
+  }
+}
+```
+
+#### Response - خطأ (400) - تم رفض طلب التحقق
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": {
+      "error": "ENGINEER_REJECTED",
+      "message": "تم رفض طلب التحقق الخاص بك. يرجى التواصل مع الدعم"
+    }
+  }
+}
+```
+
+> ⚠️ **مهم:** يجب أن يكون المهندس موثقاً (حالة `APPROVED`) لتقديم العروض. إذا كان الحساب غير موثق أو قيد المراجعة أو مرفوض، سيتم منع تقديم العروض.
+
 #### كود Flutter
 
 ```dart
@@ -320,6 +364,29 @@ Future<EngineerOffer> createOffer({
           throw ApiException('لا يمكنك تقديم عرض على طلبك الخاص');
         case 'INVALID_STATUS':
           throw ApiException('لا يمكن تقديم عرض على هذا الطلب في حالته الحالية');
+        case 'ENGINEER_UNVERIFIED':
+          throw ApiException(
+            result['message'] as String? ??
+            'حسابك غير موثق. يرجى رفع وثائق التحقق أولاً'
+          );
+        case 'ENGINEER_PENDING':
+          throw ApiException(
+            result['message'] as String? ??
+            'طلب التحقق قيد المراجعة. يرجى الانتظار حتى يتم الموافقة على حسابك'
+          );
+        case 'ENGINEER_REJECTED':
+          throw ApiException(
+            result['message'] as String? ??
+            'تم رفض طلب التحقق الخاص بك. يرجى التواصل مع الدعم'
+          );
+        case 'NOT_ENGINEER':
+        case 'ENGINEER_NOT_APPROVED':
+          throw ApiException(
+            result['message'] as String? ??
+            'يجب تفعيل صلاحية المهندس أولاً'
+          );
+        case 'ENGINEER_NOT_FOUND':
+          throw ApiException('لم يتم العثور على بيانات المهندس');
         default:
           throw ApiException('حدث خطأ أثناء تقديم العرض');
       }

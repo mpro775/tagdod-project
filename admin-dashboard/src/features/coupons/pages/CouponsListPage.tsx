@@ -43,8 +43,15 @@ import { toast } from 'react-hot-toast';
 import type { Coupon } from '@/features/marketing/api/marketingApi';
 import type { TFunction } from 'i18next';
 
-const formatDateGregorian = (date: string | Date) => {
+const formatDateGregorian = (date: string | Date | null | undefined) => {
+  if (!date) {
+    return '-'; // Return dash for null/undefined dates
+  }
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    return '-';
+  }
   return dateObj.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -318,7 +325,9 @@ export const CouponsListPage: React.FC = () => {
               mt: 0.5,
             }}
           >
-            {t('fields.to')} {formatDateGregorian(params.row.validUntil)}
+            {params.row.validUntil 
+              ? `${t('fields.to')} ${formatDateGregorian(params.row.validUntil)}`
+              : t('fields.unlimited', 'لا نهائي')}
           </Typography>
         </Box>
       ),
@@ -685,7 +694,9 @@ export const CouponsListPage: React.FC = () => {
 
                       {/* Period */}
                       <Typography variant="caption" color="text.secondary">
-                        {formatDateGregorian(coupon.validFrom)} - {formatDateGregorian(coupon.validUntil)}
+                        {formatDateGregorian(coupon.validFrom)} - {coupon.validUntil 
+                          ? formatDateGregorian(coupon.validUntil)
+                          : t('fields.unlimited', 'لا نهائي')}
                       </Typography>
 
                       {/* Engineer Badge */}

@@ -41,7 +41,6 @@ export class PublicProductsController {
     private publicProductsPresenter: PublicProductsPresenter,
   ) {}
 
-
   // ==================== Products List ====================
 
   @Get()
@@ -302,10 +301,7 @@ export class PublicProductsController {
   @ApiOperation({ summary: 'الحصول على المنتجات المميزة' })
   @ApiResponse({ status: 200, description: 'Featured products retrieved successfully' })
   @CacheResponse({ ttl: 120 }) // 2 minutes
-  async getFeatured(
-    @Query('currency') currency?: string,
-    @Req() req?: RequestWithUser,
-  ) {
+  async getFeatured(@Query('currency') currency?: string, @Req() req?: RequestWithUser) {
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(
       req?.user?.sub,
     );
@@ -337,10 +333,7 @@ export class PublicProductsController {
   @ApiOperation({ summary: 'الحصول على المنتجات الجديدة' })
   @ApiResponse({ status: 200, description: 'New products retrieved successfully' })
   @CacheResponse({ ttl: 120 }) // 2 minutes
-  async getNew(
-    @Query('currency') currency?: string,
-    @Req() req?: RequestWithUser,
-  ) {
+  async getNew(@Query('currency') currency?: string, @Req() req?: RequestWithUser) {
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(
       req?.user?.sub,
     );
@@ -381,6 +374,7 @@ export class PublicProductsController {
     @Req() req?: RequestWithUser,
   ) {
     const allVariants = await this.variantService.findByProductId(productId);
+    // إضافة isAvailable و stockStatus لجميع المتغيرات
     const variants = this.publicProductsPresenter.filterVariantsWithStock(
       allVariants as unknown as Array<WithId & Record<string, unknown>>,
     );
@@ -395,7 +389,7 @@ export class PublicProductsController {
       variants,
       discountPercent,
       requestedCurrency,
-      true,
+      false, // filterZeroStock = false لإرجاع جميع المتغيرات
     );
 
     return {

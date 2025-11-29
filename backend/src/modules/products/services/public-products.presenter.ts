@@ -93,10 +93,34 @@ export class PublicProductsPresenter {
   }
 
   /**
-   * Filters out variants with stock/quantity 0 for public endpoints
-   * Admin endpoints should see all variants including those with stock 0
+   * Adds isAvailable and stockStatus to all variants (does not filter)
+   * Used for product details and variants list endpoints
    */
   filterVariantsWithStock(variants: Array<WithId & AnyRecord>): Array<WithId & AnyRecord> {
+    if (!Array.isArray(variants) || variants.length === 0) {
+      return [];
+    }
+
+    // إرجاع جميع المتغيرات مع إضافة isAvailable و stockStatus
+    return variants.map((variant) => {
+      const stock = this.normalizePrice(variant.stock) ?? 0;
+      const isActive = variant.isActive !== false;
+      const isAvailable = stock > 0 && isActive;
+      const stockStatus = isAvailable ? 'in_stock' : 'out_of_stock';
+
+      return {
+        ...variant,
+        isAvailable,
+        stockStatus,
+        stock, // التأكد من إرجاع الكمية
+      };
+    });
+  }
+
+  /**
+   * Filters out variants with stock/quantity 0 (for product lists only)
+   */
+  filterVariantsWithStockOnly(variants: Array<WithId & AnyRecord>): Array<WithId & AnyRecord> {
     if (!Array.isArray(variants) || variants.length === 0) {
       return [];
     }
@@ -234,9 +258,7 @@ export class PublicProductsPresenter {
           const candidateId = this.extractIdString(attributeRecordWithId._id);
           const id =
             candidateId ??
-            missingIds.find(
-              (missingId) => missingId === String(attributeRecordWithId._id),
-            ) ??
+            missingIds.find((missingId) => missingId === String(attributeRecordWithId._id)) ??
             '';
 
           const attributeType = attributeRecordWithId.type as string | undefined;
@@ -252,12 +274,8 @@ export class PublicProductsPresenter {
               };
 
               const valueId = this.extractIdString(valueRecordWithId._id) ?? '';
-              const value =
-                (valueRecordWithId.value as string | undefined) ??
-                '';
-              const valueEn =
-                (valueRecordWithId.valueEn as string | undefined) ??
-                value;
+              const value = (valueRecordWithId.value as string | undefined) ?? '';
+              const valueEn = (valueRecordWithId.valueEn as string | undefined) ?? value;
 
               const result: {
                 id: string;
@@ -542,13 +560,13 @@ export class PublicProductsPresenter {
             ...(this.extractIdString(attributeValue.attributeId)
               ? { attributeId: this.extractIdString(attributeValue.attributeId) }
               : attributeValue.attributeId
-              ? { attributeId: attributeValue.attributeId }
-              : {}),
+                ? { attributeId: attributeValue.attributeId }
+                : {}),
             ...(this.extractIdString(attributeValue.valueId)
               ? { valueId: this.extractIdString(attributeValue.valueId) }
               : attributeValue.valueId
-              ? { valueId: attributeValue.valueId }
-              : {}),
+                ? { valueId: attributeValue.valueId }
+                : {}),
             ...(attributeValue.name ? { name: attributeValue.name } : {}),
             ...(attributeValue.nameEn ? { nameEn: attributeValue.nameEn } : {}),
             ...(attributeValue.value ? { value: attributeValue.value } : {}),
@@ -563,20 +581,27 @@ export class PublicProductsPresenter {
       ...(variantId ? { _id: variantId } : {}),
       ...(attributeValues.length > 0 ? { attributeValues } : {}),
       ...(typeof rawVariant.isActive === 'boolean' ? { isActive: rawVariant.isActive } : {}),
-      ...(typeof rawVariant.isAvailable === 'boolean' ? { isAvailable: rawVariant.isAvailable } : {}),
+      ...(typeof rawVariant.isAvailable === 'boolean'
+        ? { isAvailable: rawVariant.isAvailable }
+        : {}),
+      ...(rawVariant.stockStatus ? { stockStatus: rawVariant.stockStatus } : {}),
       ...(typeof rawVariant.stock === 'number' ? { stock: rawVariant.stock } : {}),
       // إرجاع القيم الافتراضية إذا كانت undefined (للـ variants القديمة)
-      minOrderQuantity: (typeof rawVariant.minOrderQuantity === 'number' && !isNaN(rawVariant.minOrderQuantity)) 
-        ? rawVariant.minOrderQuantity 
-        : 1,
-      maxOrderQuantity: (typeof rawVariant.maxOrderQuantity === 'number' && !isNaN(rawVariant.maxOrderQuantity)) 
-        ? rawVariant.maxOrderQuantity 
-        : 0,
+      minOrderQuantity:
+        typeof rawVariant.minOrderQuantity === 'number' && !isNaN(rawVariant.minOrderQuantity)
+          ? rawVariant.minOrderQuantity
+          : 1,
+      maxOrderQuantity:
+        typeof rawVariant.maxOrderQuantity === 'number' && !isNaN(rawVariant.maxOrderQuantity)
+          ? rawVariant.maxOrderQuantity
+          : 0,
       ...(typeof rawVariant.salesCount === 'number' ? { salesCount: rawVariant.salesCount } : {}),
     };
 
     if (pricingByCurrency && typeof pricingByCurrency === 'object') {
-      const cleaned = this.cleanPricingMap(pricingByCurrency as Record<string, PriceWithDiscount | null>);
+      const cleaned = this.cleanPricingMap(
+        pricingByCurrency as Record<string, PriceWithDiscount | null>,
+      );
       if (cleaned) {
         sanitized.pricingByCurrency = cleaned;
       }
@@ -612,7 +637,7 @@ export class PublicProductsPresenter {
     const brand = this.simplifyBrand(product.brand ?? product.brandId);
     let mainImage = this.simplifyMedia(product.mainImage ?? product.mainImageId);
     const images = this.simplifyMediaList(product.images ?? product.imageIds);
-    
+
     // إذا لم توجد صورة رئيسية وكانت هناك صور، استخدم أول صورة كصورة رئيسية
     if (!mainImage && images.length > 0) {
       mainImage = images[0];
@@ -658,7 +683,9 @@ export class PublicProductsPresenter {
       ...(product.nameEn ? { nameEn: product.nameEn } : {}),
       ...(product.status ? { status: product.status } : {}),
       ...(includeDescriptions && product.description ? { description: product.description } : {}),
-      ...(includeDescriptions && product.descriptionEn ? { descriptionEn: product.descriptionEn } : {}),
+      ...(includeDescriptions && product.descriptionEn
+        ? { descriptionEn: product.descriptionEn }
+        : {}),
       ...(includeCategory && category ? { category } : {}),
       ...(includeBrand && brand ? { brand } : {}),
       ...(mainImage ? { mainImage } : {}),
@@ -675,17 +702,21 @@ export class PublicProductsPresenter {
       ...(typeof product.manualReviewsCount === 'number'
         ? { manualReviewsCount: product.manualReviewsCount }
         : {}),
-      ...(typeof product.averageRating === 'number' ? { averageRating: product.averageRating } : {}),
+      ...(typeof product.averageRating === 'number'
+        ? { averageRating: product.averageRating }
+        : {}),
       ...(typeof product.reviewsCount === 'number' ? { reviewsCount: product.reviewsCount } : {}),
       ...(typeof product.salesCount === 'number' ? { salesCount: product.salesCount } : {}),
       ...(typeof product.isAvailable === 'boolean' ? { isAvailable: product.isAvailable } : {}),
       // إرجاع القيم الافتراضية إذا كانت undefined (للمنتجات القديمة)
-      minOrderQuantity: (typeof product.minOrderQuantity === 'number' && !isNaN(product.minOrderQuantity)) 
-        ? product.minOrderQuantity 
-        : 1,
-      maxOrderQuantity: (typeof product.maxOrderQuantity === 'number' && !isNaN(product.maxOrderQuantity)) 
-        ? product.maxOrderQuantity 
-        : 0,
+      minOrderQuantity:
+        typeof product.minOrderQuantity === 'number' && !isNaN(product.minOrderQuantity)
+          ? product.minOrderQuantity
+          : 1,
+      maxOrderQuantity:
+        typeof product.maxOrderQuantity === 'number' && !isNaN(product.maxOrderQuantity)
+          ? product.maxOrderQuantity
+          : 0,
       ...(typeof product.stock === 'number' ? { stock: product.stock } : {}),
       ...(includePricingByCurrency
         ? cleanedPricingByCurrency
@@ -721,9 +752,7 @@ export class PublicProductsPresenter {
       new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
     );
 
-    const filteredVariants = filterZeroStock
-      ? this.filterVariantsWithStock(variants)
-      : variants;
+    const filteredVariants = filterZeroStock ? this.filterVariantsWithStock(variants) : variants;
 
     const variantSnapshots: VariantPricingInput[] = filteredVariants.map((variant) => ({
       _id: variant._id,
@@ -749,6 +778,10 @@ export class PublicProductsPresenter {
 
     const variantsWithPricing = filteredVariants.map((variant) => {
       const variantId = variant._id.toString();
+      const stock = this.normalizePrice(variant.stock) ?? 0;
+      const isActive = variant.isActive !== false;
+      const isAvailable = stock > 0 && isActive;
+      const stockStatus = isAvailable ? 'in_stock' : 'out_of_stock';
 
       const pricingByCurrency = this.BASE_PRICING_CURRENCIES.reduce<
         Record<string, PriceWithDiscount | null>
@@ -770,16 +803,18 @@ export class PublicProductsPresenter {
         ...variant,
         pricing: this.stripVariantId(selectedPriceEntry),
         pricingByCurrency,
-        // التأكد من إرجاع الحقول الجديدة
-        ...(typeof variant.isAvailable === 'boolean' ? { isAvailable: variant.isAvailable } : {}),
-        ...(typeof variant.stock === 'number' ? { stock: variant.stock } : {}),
+        isAvailable,
+        stockStatus,
+        stock,
         // إرجاع القيم الافتراضية إذا كانت undefined (للـ variants القديمة)
-        minOrderQuantity: (typeof variant.minOrderQuantity === 'number' && !isNaN(variant.minOrderQuantity)) 
-          ? variant.minOrderQuantity 
-          : 1,
-        maxOrderQuantity: (typeof variant.maxOrderQuantity === 'number' && !isNaN(variant.maxOrderQuantity)) 
-          ? variant.maxOrderQuantity 
-          : 0,
+        minOrderQuantity:
+          typeof variant.minOrderQuantity === 'number' && !isNaN(variant.minOrderQuantity)
+            ? variant.minOrderQuantity
+            : 1,
+        maxOrderQuantity:
+          typeof variant.maxOrderQuantity === 'number' && !isNaN(variant.maxOrderQuantity)
+            ? variant.maxOrderQuantity
+            : 0,
         ...(typeof variant.salesCount === 'number' ? { salesCount: variant.salesCount } : {}),
       };
     });
@@ -803,7 +838,7 @@ export class PublicProductsPresenter {
         const productRecord = productRaw as AnyRecord;
         const productId = this.extractIdString(productRecord._id) ?? String(productRecord._id);
         const allVariants = await this.variantService.findByProductId(productId);
-        const variants = this.filterVariantsWithStock(
+        const variants = this.filterVariantsWithStockOnly(
           allVariants as unknown as Array<WithId & AnyRecord>,
         );
 
@@ -862,10 +897,7 @@ export class PublicProductsPresenter {
           });
         }
 
-        const {
-          variantsWithPricing,
-          pricesByCurrency,
-        } = await this.enrichVariantsPricing(
+        const { variantsWithPricing, pricesByCurrency } = await this.enrichVariantsPricing(
           productId,
           variants as unknown as Array<WithId & AnyRecord>,
           discountPercent,
@@ -942,20 +974,18 @@ export class PublicProductsPresenter {
 
         try {
           const allVariantsForProduct =
-            variantsByProductId[id]?.map((variant) => variant as unknown as WithId & AnyRecord) ?? [];
+            variantsByProductId[id]?.map((variant) => variant as unknown as WithId & AnyRecord) ??
+            [];
           const variantsForProduct = this.filterVariantsWithStock(allVariantsForProduct);
 
-          const {
-            variantsWithPricing,
-            currenciesForPricing,
-            pricesByCurrency,
-          } = await this.enrichVariantsPricing(
-            id,
-            variantsForProduct,
-            discountPercent,
-            selectedCurrencyInput,
-            true,
-          );
+          const { variantsWithPricing, currenciesForPricing, pricesByCurrency } =
+            await this.enrichVariantsPricing(
+              id,
+              variantsForProduct,
+              discountPercent,
+              selectedCurrencyInput,
+              true,
+            );
 
           void (await this.getAttributeSummaries(productRecord.attributes as unknown[]));
 
@@ -1001,9 +1031,7 @@ export class PublicProductsPresenter {
             priceRangeByCurrency = this.computePriceRangeByCurrency(pricesByCurrency);
             const pricingSummary = this.summarizeCurrencyPricing(pricesByCurrency);
             pricingByCurrency = Object.fromEntries(
-              Object.entries(pricingSummary).filter(
-                ([, value]) => value !== null,
-              ),
+              Object.entries(pricingSummary).filter(([, value]) => value !== null),
             ) as Record<string, PriceWithDiscount>;
             const selectedCurrency = this.normalizeCurrency(selectedCurrencyInput);
             const fallbackCurrency =
@@ -1042,9 +1070,7 @@ export class PublicProductsPresenter {
       }),
     );
 
-    return relatedProducts.filter(
-      (item): item is RelatedProductPayload => Boolean(item),
-    );
+    return relatedProducts.filter((item): item is RelatedProductPayload => Boolean(item));
   }
 
   async buildProductDetailResponse(
@@ -1054,22 +1080,18 @@ export class PublicProductsPresenter {
     discountPercent: number,
     selectedCurrencyInput: string,
   ) {
-    const filteredVariants = this.filterVariantsWithStock(variants);
-    const {
-      variantsWithPricing,
-      currenciesForPricing,
-      pricesByCurrency,
-    } = await this.enrichVariantsPricing(
-      productId,
-      filteredVariants,
-      discountPercent,
-      selectedCurrencyInput,
-      true,
-    );
+    // إرجاع جميع المتغيرات بدون تصفية مع إضافة isAvailable و stockStatus
+    const allVariants = this.filterVariantsWithStock(variants);
+    const { variantsWithPricing, currenciesForPricing, pricesByCurrency } =
+      await this.enrichVariantsPricing(
+        productId,
+        allVariants,
+        discountPercent,
+        selectedCurrencyInput,
+        false, // filterZeroStock = false لإرجاع جميع المتغيرات
+      );
 
-    const attributesDetails = await this.getAttributeSummaries(
-      product.attributes as unknown[],
-    );
+    const attributesDetails = await this.getAttributeSummaries(product.attributes as unknown[]);
 
     let productPricingByCurrency: Record<string, PriceWithDiscount> | undefined;
     let productPriceRangeByCurrency:
@@ -1112,7 +1134,9 @@ export class PublicProductsPresenter {
       ) as Record<string, PriceWithDiscount>;
       const selectedCurrency = this.normalizeCurrency(selectedCurrencyInput);
       const fallbackCurrency =
-        selectedCurrency !== 'USD' && !pricesByCurrency[selectedCurrency] ? 'USD' : selectedCurrency;
+        selectedCurrency !== 'USD' && !pricesByCurrency[selectedCurrency]
+          ? 'USD'
+          : selectedCurrency;
       const selectedVariantPrice =
         pricesByCurrency[fallbackCurrency]?.[0] ?? pricesByCurrency.USD?.[0] ?? null;
       defaultPricing = this.stripVariantId(selectedVariantPrice);
@@ -1152,4 +1176,3 @@ export class PublicProductsPresenter {
     };
   }
 }
-
