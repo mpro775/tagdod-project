@@ -752,7 +752,11 @@ export class PublicProductsPresenter {
       new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
     );
 
-    const filteredVariants = filterZeroStock ? this.filterVariantsWithStock(variants) : variants;
+    // عند filterZeroStock = true: تصفية المتغيرات ذات الكمية صفر
+    // عند filterZeroStock = false: إرجاع جميع المتغيرات مع إضافة isAvailable و stockStatus
+    const filteredVariants = filterZeroStock
+      ? this.filterVariantsWithStockOnly(variants)
+      : this.filterVariantsWithStock(variants);
 
     const variantSnapshots: VariantPricingInput[] = filteredVariants.map((variant) => ({
       _id: variant._id,
