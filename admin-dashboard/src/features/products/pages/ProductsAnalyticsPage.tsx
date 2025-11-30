@@ -114,7 +114,7 @@ export const ProductsAnalyticsPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<ArrowBack />}
-            onClick={() => navigate('/products')}
+            onClick={() => navigate(-1)}
             fullWidth={isMobile}
             size={isMobile ? 'small' : 'medium'}
           >

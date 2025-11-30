@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Chip,
@@ -47,7 +47,7 @@ import {
   Cached,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -74,22 +74,51 @@ const isImageWithUrl = (value: unknown): value is ImageWithUrl =>
 
 export const ProductsListPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useTranslation('products');
   const { isMobile } = useBreakpoint();
   const { confirmDialog, dialogProps } = useConfirmDialog();
 
-  // State
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
-    page: 0,
-    pageSize: 20,
-  });
-  const [search, setSearch] = useState('');
-  const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'createdAt', sort: 'asc' }]);
+  // Helper function to parse URL params
+  const getParamNumber = useCallback((key: string, defaultValue: number) => {
+    const value = searchParams.get(key);
+    if (value === null) return defaultValue;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? defaultValue : parsed;
+  }, [searchParams]);
+
+  const getParamString = useCallback((key: string, defaultValue: string) => {
+    return searchParams.get(key) ?? defaultValue;
+  }, [searchParams]);
+
+  const getParamBoolean = useCallback((key: string): boolean | 'all' => {
+    const value = searchParams.get(key);
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return 'all';
+  }, [searchParams]);
+
+  // State initialized from URL params (الأحدث أولاً كافتراضي)
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>(() => ({
+    page: getParamNumber('page', 0),
+    pageSize: getParamNumber('pageSize', 20),
+  }));
+  const [search, setSearch] = useState(() => getParamString('search', ''));
+  const [sortModel, setSortModel] = useState<GridSortModel>(() => [{
+    field: getParamString('sortBy', 'createdAt'),
+    sort: (getParamString('sortOrder', 'desc') as 'asc' | 'desc'),
+  }]);
   const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
-  const [statusFilter, setStatusFilter] = useState<ProductStatus | 'all'>('all');
-  const [featuredFilter, setFeaturedFilter] = useState<boolean | 'all'>('all');
-  const [newFilter, setNewFilter] = useState<boolean | 'all'>('all');
-  const [bestsellerFilter, setBestsellerFilter] = useState<boolean | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<ProductStatus | 'all'>(() => {
+    const status = searchParams.get('status');
+    if (status === 'active' || status === 'draft' || status === 'archived') {
+      return status as ProductStatus;
+    }
+    return 'all';
+  });
+  const [featuredFilter, setFeaturedFilter] = useState<boolean | 'all'>(() => getParamBoolean('isFeatured'));
+  const [newFilter, setNewFilter] = useState<boolean | 'all'>(() => getParamBoolean('isNew'));
+  const [bestsellerFilter, setBestsellerFilter] = useState<boolean | 'all'>(() => getParamBoolean('isBestseller'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => {
@@ -98,6 +127,35 @@ export const ProductsListPage: React.FC = () => {
     return saved === 'grid' || saved === 'table' ? saved : 'table';
   });
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+
+  // Sync state changes to URL params
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    // Pagination
+    if (paginationModel.page !== 0) params.set('page', paginationModel.page.toString());
+    if (paginationModel.pageSize !== 20) params.set('pageSize', paginationModel.pageSize.toString());
+
+    // Search
+    if (search) params.set('search', search);
+
+    // Sort (only if different from default: createdAt desc)
+    const sortBy = sortModel[0]?.field || 'createdAt';
+    const sortOrder = sortModel[0]?.sort || 'desc';
+    if (sortBy !== 'createdAt' || sortOrder !== 'desc') {
+      params.set('sortBy', sortBy);
+      params.set('sortOrder', sortOrder);
+    }
+
+    // Filters
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (featuredFilter !== 'all') params.set('isFeatured', featuredFilter.toString());
+    if (newFilter !== 'all') params.set('isNew', newFilter.toString());
+    if (bestsellerFilter !== 'all') params.set('isBestseller', bestsellerFilter.toString());
+
+    // Update URL without navigation (replace to avoid history pollution)
+    setSearchParams(params, { replace: true });
+  }, [paginationModel, search, sortModel, statusFilter, featuredFilter, newFilter, bestsellerFilter, setSearchParams]);
 
   // Count active filters
   const activeFiltersCount = React.useMemo(() => {
@@ -109,12 +167,13 @@ export const ProductsListPage: React.FC = () => {
     return count;
   }, [statusFilter, featuredFilter, newFilter, bestsellerFilter]);
 
-  // Clear all filters
+  // Clear all filters (also reset to first page)
   const clearAllFilters = () => {
     setStatusFilter('all');
     setFeaturedFilter('all');
     setNewFilter('all');
     setBestsellerFilter('all');
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
   };
 
   // API
@@ -123,7 +182,7 @@ export const ProductsListPage: React.FC = () => {
     limit: paginationModel.pageSize,
     search,
     sortBy: sortModel[0]?.field || 'createdAt',
-    sortOrder: sortModel[0]?.sort || 'asc',
+    sortOrder: sortModel[0]?.sort || 'desc', // الأحدث أولاً كافتراضي
     status: statusFilter !== 'all' ? statusFilter : undefined,
     isFeatured: featuredFilter !== 'all' ? featuredFilter : undefined,
     isNew: newFilter !== 'all' ? newFilter : undefined,
@@ -656,7 +715,7 @@ export const ProductsListPage: React.FC = () => {
             {sortModel[0]?.field === 'name' && t('list.sort.name', 'الاسم')}
             {sortModel[0]?.field === 'price' && t('list.sort.price', 'السعر')}
             {sortModel[0]?.field === 'stock' && t('list.sort.stock', 'المخزون')}
-            {!sortModel[0]?.field && t('list.sort.oldest', 'الأقدم')}
+            {!sortModel[0]?.field && t('list.sort.newest', 'الأحدث')}
           </Button>
           <Menu
             anchorEl={sortMenuAnchor}

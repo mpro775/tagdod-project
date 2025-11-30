@@ -35,20 +35,31 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ Debug logging
+  console.log('🔍 RelatedProductsSelector render:', {
+    value,
+    selectedProductsCount: selectedProducts.length,
+    productsCount: products.length,
+  });
+
   // Load available products
   useEffect(() => {
     loadProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load selected products when value changes
+  // Load selected products when value or products changes
   useEffect(() => {
-    if (value && value.length > 0) {
-      loadSelectedProducts();
-    } else {
+    if (products.length > 0 && value && value.length > 0) {
+      const loadedProducts = products.filter((p: Product) => value.includes(p._id));
+      console.log('🔄 Loading selected products:', {
+        valueIds: value,
+        loadedProducts: loadedProducts.map(p => ({ id: p._id, name: p.name })),
+      });
+      setSelectedProducts(loadedProducts);
+    } else if (!value || value.length === 0) {
       setSelectedProducts([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, products]);
 
   const loadProducts = async () => {
@@ -63,6 +74,11 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
       
       // تحقق من أن response.data array
       const productsData = Array.isArray(response.data) ? response.data : [];
+      
+      console.log('📦 Loaded products:', {
+        total: productsData.length,
+        currentProductId,
+      });
       
       // Filter out current product if in edit mode
       const filteredProducts = currentProductId
@@ -79,19 +95,16 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
     }
   };
 
-  const loadSelectedProducts = async () => {
-    try {
-      const loadedProducts = (products || []).filter((p: Product) => value.includes(p._id));
-      setSelectedProducts(loadedProducts || []);
-    } catch (err) {
-      console.error('Error loading selected products:', err);
-      setSelectedProducts([]);
-    }
-  };
-
   const handleChange = (_: any, newValue: Product[]) => {
+    console.log('✨ handleChange called:', {
+      newValueCount: newValue.length,
+      newValueIds: newValue.map(p => p._id),
+      newValueNames: newValue.map(p => p.name),
+    });
     setSelectedProducts(newValue);
-    onChange(newValue.map((p) => p._id));
+    const productIds = newValue.map((p) => p._id);
+    console.log('📤 Calling onChange with:', productIds);
+    onChange(productIds);
   };
 
   return (

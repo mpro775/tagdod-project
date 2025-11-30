@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Paper,
@@ -16,10 +17,6 @@ import {
   Rating,
   Card,
   CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   FormControlLabel,
   Switch,
   TextField,
@@ -51,14 +48,16 @@ import {
   useProduct,
   useCreateProduct,
   useUpdateProduct,
-  useGenerateVariants,
+  useProductVariants,
 } from '../hooks/useProducts';
+import { productsApi } from '../api/productsApi';
 import { useProductFormData } from '../hooks/useProductData';
 import { AttributeSelector } from '../components/AttributeSelector';
 import { MultipleImagesSelector } from '../components/MultipleImagesSelector';
 import { RelatedProductsSelector } from '../components/RelatedProductsSelector';
+import { GenerateVariantsDialog } from '../components/GenerateVariantsDialog';
 import { ProductStatus } from '../types/product.types';
-import type { CreateProductDto } from '../types/product.types';
+import type { CreateProductDto, UpdateProductDto } from '../types/product.types';
 
 // Validation Schema
 const productSchema = z.object({
@@ -113,6 +112,16 @@ export const ProductFormPage: React.FC = () => {
   const [selectedImages, setSelectedImages] = React.useState<any[]>([]);
   const [selectedAttributes, setSelectedAttributes] = React.useState<string[]>([]);
   const [relatedProducts, setRelatedProducts] = React.useState<string[]>([]);
+
+  // ✅ استخدام useRef للحفاظ على القيمة الحالية (حل مشكلة stale closure)
+  const relatedProductsRef = React.useRef<string[]>([]);
+
+  // ✅ Debug: Log relatedProducts changes وتحديث الـ ref
+  React.useEffect(() => {
+    console.log('📝 relatedProducts state changed:', relatedProducts);
+    relatedProductsRef.current = relatedProducts;
+  }, [relatedProducts]);
+
   const [metaKeywords, setMetaKeywords] = React.useState<string[]>([]);
   const [defaultPrice, setDefaultPrice] = React.useState<number>(0);
   const [defaultStock, setDefaultStock] = React.useState<number>(0);
@@ -121,8 +130,7 @@ export const ProductFormPage: React.FC = () => {
   const [useManualRating, setUseManualRating] = React.useState<boolean>(false);
   const [manualRating, setManualRating] = React.useState<number>(0);
   const [manualReviewsCount, setManualReviewsCount] = React.useState<number>(0);
-  const [confirmGenerateOpen, setConfirmGenerateOpen] = React.useState(false);
-  const [overwriteExisting, setOverwriteExisting] = React.useState<boolean>(false);
+  const [generateVariantsDialogOpen, setGenerateVariantsDialogOpen] = React.useState(false);
 
   const parseOptionalNumber = React.useCallback((value: string): number | undefined => {
     if (!value) {
@@ -155,8 +163,9 @@ export const ProductFormPage: React.FC = () => {
   const { data: product, isLoading } = useProduct(id!);
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
   const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
-  const { mutateAsync: generateVariants, isPending: isGeneratingVariants } = useGenerateVariants();
   const { categoryOptions, brandOptions, isLoading: dataLoading } = useProductFormData();
+  const queryClient = useQueryClient();
+  const { data: existingVariants } = useProductVariants(id || '');
 
   // Step labels
   const steps = [
@@ -266,9 +275,8 @@ export const ProductFormPage: React.FC = () => {
     }
   }, [selectedImage]);
 
-  // Generate variants handler
-  const handleGenerateVariants = async () => {
-    // التحقق من المدخلات أولاً
+  // Open generate variants dialog
+  const handleOpenGenerateDialog = () => {
     if (selectedAttributes.length === 0) {
       toast.error(t('products:messages.needAttributes', 'يجب اختيار سمات لتوليد المتغيرات'));
       return;
@@ -284,25 +292,31 @@ export const ProductFormPage: React.FC = () => {
       return;
     }
 
+    setGenerateVariantsDialogOpen(true);
+  };
+
+  // Generate selected variants handler
+  const handleGenerateSelectedVariants = async (
+    variants: Array<{
+      attributeValues: Array<{ attributeId: string; valueId: string }>;
+      price: number;
+      stock: number;
+    }>,
+    replaceExisting: boolean = false
+  ) => {
     try {
       let productId = id;
 
-      // إذا كان المنتج جديداً (غير محفوظ)، نحفظه أولاً تلقائياً
+      // إذا كان المنتج جديداً (غير محفوظ)، نحفظه أولاً تلقائياً في الخلفية
       if (!isEditMode || !id) {
-        toast.loading(t('products:messages.saveProduct', 'جارٍ حفظ المنتج...'), {
-          id: 'save-product',
-        });
-
         // التحقق من صحة البيانات الأساسية
         const isValid = await methods.trigger();
         if (!isValid) {
-          toast.error(t('products:messages.fillRequired', 'الرجاء ملء الحقول المطلوبة'), {
-            id: 'save-product',
-          });
+          toast.error(t('products:messages.fillRequired', 'الرجاء ملء الحقول المطلوبة'));
           return;
         }
 
-        // حفظ المنتج
+        // حفظ المنتج في الخلفية بدون إظهار رسائل مفرطة
         const formData = methods.getValues();
         const basePriceValue = defaultPrice > 0 ? defaultPrice : undefined;
         const compareAtValue = parseOptionalNumber(simpleCompareAtPrice);
@@ -324,7 +338,10 @@ export const ProductFormPage: React.FC = () => {
           metaDescription: formData.metaDescription,
           metaKeywords: metaKeywords,
           attributes: selectedAttributes,
-          relatedProducts: relatedProducts,
+          // ✅ استخدام الـ ref للحصول على القيمة الحالية
+          relatedProducts: Array.isArray(relatedProductsRef.current)
+            ? relatedProductsRef.current
+            : [],
           mainImageId: selectedImage?._id,
           imageIds: selectedImages.map((img: any) => img._id).filter(Boolean),
           useManualRating: useManualRating,
@@ -333,87 +350,126 @@ export const ProductFormPage: React.FC = () => {
           basePriceUSD: basePriceValue,
           compareAtPriceUSD: compareAtValue,
           costPriceUSD: costValue,
-          // المخزون
           stock: stockValue,
         };
 
         // التحقق من صحة البيانات قبل الإرسال
         if (basePriceValue !== undefined && (isNaN(basePriceValue) || basePriceValue < 0)) {
-          toast.error(t('products:messages.invalidPrice', 'السعر غير صحيح'), {
-            id: 'save-product',
-          });
+          toast.error(t('products:messages.invalidPrice', 'السعر غير صحيح'));
           return;
         }
 
         if (compareAtValue !== undefined && (isNaN(compareAtValue) || compareAtValue < 0)) {
-          toast.error(t('products:messages.invalidCompareAtPrice', 'سعر المقارنة غير صحيح'), {
-            id: 'save-product',
-          });
+          toast.error(t('products:messages.invalidCompareAtPrice', 'سعر المقارنة غير صحيح'));
           return;
         }
 
         if (costValue !== undefined && (isNaN(costValue) || costValue < 0)) {
-          toast.error(t('products:messages.invalidCostPrice', 'سعر التكلفة غير صحيح'), {
-            id: 'save-product',
-          });
+          toast.error(t('products:messages.invalidCostPrice', 'سعر التكلفة غير صحيح'));
           return;
         }
 
-        // حفظ المنتج والحصول على الـ ID
-        const savedProduct = await new Promise<any>((resolve, reject) => {
-          createProduct(productData, {
-            onSuccess: (data) => {
-              toast.success(t('products:messages.productSaved', 'تم حفظ المنتج بنجاح'), {
-                id: 'save-product',
-              });
-              resolve(data);
-            },
-            onError: (error: any) => {
-              const errorMessage =
-                error?.response?.data?.message ||
-                error?.message ||
-                t('products:messages.productSaveFailed', 'فشل حفظ المنتج');
-              toast.error(errorMessage, { id: 'save-product' });
-              reject(error);
-            },
-          });
-        });
+        // حفظ المنتج في الخلفية بدون إظهار toast - استخدام API مباشرة
+        try {
+          const savedProduct = await productsApi.create(productData);
+          productId = savedProduct._id;
 
-        productId = savedProduct._id;
+          // تحديث URL بدون إعادة تحميل الصفحة
+          window.history.replaceState({}, '', `/products/${productId}`);
 
-        // تحديث URL للانتقال لوضع التعديل
-        navigate(`/products/${productId}`, { replace: true });
-
-        // انتظار قليل لتحديث الحالة
-        await new Promise((resolve) => setTimeout(resolve, 500));
+          // تحديث query cache بدون إعادة تحميل
+          queryClient.setQueryData(['products', productId], savedProduct);
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+        } catch (error: any) {
+          const errorMessage =
+            error?.response?.data?.message ||
+            error?.message ||
+            t('products:messages.productSaveFailed', 'فشل حفظ المنتج');
+          toast.error(errorMessage);
+          return;
+        }
       }
 
-      // الآن نولد المتغيرات
-      toast.loading(t('products:messages.generateVariants', 'جارٍ توليد المتغيرات...'), {
-        id: 'generate-variants',
-      });
+      // توليد المتغيرات في الخلفية
+      toast.loading(
+        replaceExisting
+          ? t('products:messages.replacingVariants', 'جارٍ استبدال المتغيرات...')
+          : t('products:messages.generateVariants', 'جارٍ توليد المتغيرات...'),
+        { id: 'generate-variants' }
+      );
 
-      await generateVariants({
-        productId: productId!,
-        data: {
-          defaultPrice,
-          defaultStock,
-          overwriteExisting,
-        },
-      });
+      // إذا كان الاستبدال مفعلاً، نحذف المتغيرات الحالية أولاً
+      if (replaceExisting && existingVariants && existingVariants.length > 0) {
+        let deleteCount = 0;
+        for (const variant of existingVariants) {
+          try {
+            await productsApi.deleteVariant(variant._id);
+            deleteCount++;
+          } catch (error) {
+            console.error('Error deleting variant:', error);
+          }
+        }
+        console.log(`Deleted ${deleteCount} existing variants`);
+      }
 
-      toast.success(t('products:messages.variantsGenerated', 'تم توليد المتغيرات بنجاح'), {
-        id: 'generate-variants',
-      });
+      // إنشاء المتغيرات واحداً تلو الآخر في الخلفية
+      let successCount = 0;
+      let errorCount = 0;
 
-      // الانتقال لصفحة المتغيرات
-      setTimeout(() => {
-        navigate(`/products/${productId}/variants`);
-      }, 1000);
-    } catch {
+      for (const variant of variants) {
+        try {
+          // استخدام API مباشرة لتجنب toast من الـ hook
+          await productsApi.addVariant({
+            productId: productId!,
+            sku: undefined,
+            attributeValues: variant.attributeValues,
+            price: variant.price,
+            stock: variant.stock,
+          });
+          successCount++;
+        } catch (error) {
+          console.error('Error creating variant:', error);
+          errorCount++;
+        }
+      }
+
+      // تحديث cache بعد إنشاء المتغيرات
+      queryClient.invalidateQueries({ queryKey: ['products', productId, 'variants'] });
+      queryClient.invalidateQueries({ queryKey: ['products', productId] });
+
+      toast.dismiss('generate-variants');
+
+      // إظهار رسالة نجاح بسيطة فقط
+      if (errorCount === 0) {
+        toast.success(
+          t('products:messages.variantsGenerated', 'تم توليد {{count}} متغير بنجاح', {
+            count: successCount,
+          }),
+          { duration: 2000 }
+        );
+      } else if (successCount > 0) {
+        toast.success(
+          t(
+            'products:messages.variantsPartiallyGenerated',
+            'تم توليد {{success}} من {{total}} متغير',
+            {
+              success: successCount,
+              total: variants.length,
+            }
+          ),
+          { duration: 2000 }
+        );
+      } else {
+        toast.error(t('products:messages.variantsGenerationFailed', 'فشل في توليد المتغيرات'));
+        return;
+      }
+
+      // إغلاق الدايلوج فقط - لا ننتقل لأي صفحة
+      // الدايلوج سيُغلق تلقائياً من خلال onClose في GenerateVariantsDialog
+    } catch (error) {
       toast.dismiss('save-product');
       toast.dismiss('generate-variants');
-      // الخطأ سيتم التعامل معه تلقائياً بواسطة ErrorHandler في الـ hook
+      console.error('Error generating variants:', error);
     }
   };
 
@@ -546,9 +602,7 @@ export const ProductFormPage: React.FC = () => {
 
       // Load stock value
       const productStock =
-        typeof (product as any).stock === 'number'
-          ? (product as any).stock
-          : undefined;
+        typeof (product as any).stock === 'number' ? (product as any).stock : undefined;
       if (typeof productStock === 'number' && !Number.isNaN(productStock)) {
         setDefaultStock(productStock);
       }
@@ -561,49 +615,107 @@ export const ProductFormPage: React.FC = () => {
     const compareAtValue = parseOptionalNumber(simpleCompareAtPrice);
     const costValue = parseOptionalNumber(simpleCostPrice);
     const stockValue = defaultStock >= 0 ? defaultStock : undefined;
-    const productData: CreateProductDto = {
-      name: data.name,
-      nameEn: data.nameEn,
-      description: data.description,
-      descriptionEn: data.descriptionEn,
-      categoryId: data.categoryId,
-      brandId: data.brandId,
-      sku: data.sku,
-      status: data.status,
-      isFeatured: data.isFeatured,
-      isNew: data.isNew,
-      isBestseller: data.isBestseller,
-      metaTitle: data.metaTitle,
-      metaDescription: data.metaDescription,
-      metaKeywords: metaKeywords,
-      attributes: selectedAttributes,
-      relatedProducts: relatedProducts,
-      mainImageId: selectedImage?._id,
-      imageIds: selectedImages.map((img: any) => img._id).filter(Boolean),
-      // التقييم اليدوي
-      useManualRating: useManualRating,
-      manualRating: useManualRating ? manualRating : undefined,
-      manualReviewsCount: useManualRating ? manualReviewsCount : undefined,
-      basePriceUSD: basePriceValue,
-      compareAtPriceUSD: compareAtValue,
-      costPriceUSD: costValue,
-      // المخزون
-      stock: stockValue,
-    };
 
     if (isEditMode) {
+      // ✅ استخدام relatedProductsRef.current للحصول على القيمة الحالية (حل مشكلة stale closure)
+      const currentRelatedProducts = relatedProductsRef.current;
+
+      // عند التحديث، استخدم UpdateProductDto
+      const updateData: UpdateProductDto = {
+        name: data.name,
+        nameEn: data.nameEn,
+        description: data.description,
+        descriptionEn: data.descriptionEn,
+        categoryId: data.categoryId,
+        brandId: data.brandId,
+        sku: data.sku,
+        status: data.status,
+        isFeatured: data.isFeatured,
+        isNew: data.isNew,
+        isBestseller: data.isBestseller,
+        metaTitle: data.metaTitle,
+        metaDescription: data.metaDescription,
+        metaKeywords: metaKeywords,
+        attributes: selectedAttributes,
+        // ✅ استخدام الـ ref للحصول على القيمة الحالية
+        relatedProducts: Array.isArray(currentRelatedProducts) ? currentRelatedProducts : [],
+        mainImageId: selectedImage?._id,
+        imageIds: selectedImages.map((img: any) => img._id).filter(Boolean),
+        // التقييم اليدوي
+        useManualRating: useManualRating,
+        manualRating: useManualRating ? manualRating : undefined,
+        manualReviewsCount: useManualRating ? manualReviewsCount : undefined,
+        basePriceUSD: basePriceValue,
+        compareAtPriceUSD: compareAtValue,
+        costPriceUSD: costValue,
+        // المخزون
+        stock: stockValue,
+      };
+
+      // ✅ التحقق من البيانات قبل الإرسال
+      console.log('🔍 Updating product with relatedProducts:', {
+        productId: id,
+        relatedProductsFromRef: currentRelatedProducts,
+        relatedProductsInData: updateData.relatedProducts,
+        relatedProductsLength: updateData.relatedProducts?.length || 0,
+      });
+
       updateProduct(
-        { id: id!, data: productData },
+        { id: id!, data: updateData },
         {
-          onSuccess: () => {
-            navigate('/products');
+          onSuccess: (updatedProduct) => {
+            console.log('✅ Product updated successfully:', {
+              productId: updatedProduct._id,
+              relatedProducts: updatedProduct.relatedProducts,
+            });
+            // العودة للصفحة السابقة مع الحفاظ على الـ pagination params
+            navigate(-1);
+          },
+          onError: (error) => {
+            console.error('❌ Error updating product:', error);
           },
         }
       );
     } else {
+      // ✅ استخدام relatedProductsRef.current للحصول على القيمة الحالية
+      const currentRelatedProducts = relatedProductsRef.current;
+
+      // عند الإنشاء، استخدم CreateProductDto
+      const productData: CreateProductDto = {
+        name: data.name,
+        nameEn: data.nameEn,
+        description: data.description,
+        descriptionEn: data.descriptionEn,
+        categoryId: data.categoryId,
+        brandId: data.brandId,
+        sku: data.sku,
+        status: data.status,
+        isFeatured: data.isFeatured,
+        isNew: data.isNew,
+        isBestseller: data.isBestseller,
+        metaTitle: data.metaTitle,
+        metaDescription: data.metaDescription,
+        metaKeywords: metaKeywords,
+        attributes: selectedAttributes,
+        // ✅ استخدام الـ ref للحصول على القيمة الحالية
+        relatedProducts: Array.isArray(currentRelatedProducts) ? currentRelatedProducts : [],
+        mainImageId: selectedImage?._id,
+        imageIds: selectedImages.map((img: any) => img._id).filter(Boolean),
+        // التقييم اليدوي
+        useManualRating: useManualRating,
+        manualRating: useManualRating ? manualRating : undefined,
+        manualReviewsCount: useManualRating ? manualReviewsCount : undefined,
+        basePriceUSD: basePriceValue,
+        compareAtPriceUSD: compareAtValue,
+        costPriceUSD: costValue,
+        // المخزون
+        stock: stockValue,
+      };
+
       createProduct(productData, {
         onSuccess: () => {
-          navigate('/products');
+          // العودة للصفحة السابقة مع الحفاظ على الـ pagination params
+          navigate(-1);
         },
       });
     }
@@ -882,19 +994,14 @@ export const ProductFormPage: React.FC = () => {
                         <Button
                           variant="contained"
                           size="large"
-                          disabled={
-                            defaultPrice <= 0 ||
-                            defaultStock < 0 ||
-                            isGeneratingVariants ||
-                            isCreating
-                          }
-                          onClick={() => setConfirmGenerateOpen(true)}
+                          disabled={defaultPrice <= 0 || defaultStock < 0 || isCreating}
+                          onClick={handleOpenGenerateDialog}
                           sx={{
                             minWidth: { xs: '100%', sm: 150 },
                             width: { xs: '100%', sm: 'auto' },
                           }}
                         >
-                          {isGeneratingVariants || isCreating
+                          {isCreating
                             ? '⏳ ' + t('common:common.loading', 'جارٍ التحميل')
                             : '🚀 ' + t('products:form.generateVariants', 'توليد المتغيرات')}
                         </Button>
@@ -1121,7 +1228,10 @@ export const ProductFormPage: React.FC = () => {
               <Grid size={{ xs: 12 }}>
                 <RelatedProductsSelector
                   value={relatedProducts}
-                  onChange={setRelatedProducts}
+                  onChange={(productIds) => {
+                    console.log('🔄 RelatedProductsSelector onChange called:', productIds);
+                    setRelatedProducts(productIds);
+                  }}
                   currentProductId={isEditMode ? id : undefined}
                 />
               </Grid>
@@ -1197,7 +1307,7 @@ export const ProductFormPage: React.FC = () => {
             <Button
               variant="outlined"
               startIcon={<ArrowBack />}
-              onClick={() => navigate('/products')}
+              onClick={() => navigate(-1)}
               size={isMobile ? 'small' : 'medium'}
             >
               {t('common:actions.back', 'رجوع')}
@@ -1458,7 +1568,7 @@ export const ProductFormPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   startIcon={<Cancel />}
-                  onClick={() => navigate('/products')}
+                  onClick={() => navigate(-1)}
                   size={isMobile ? 'medium' : 'large'}
                   sx={{ width: { xs: '100%', sm: 'auto' }, flex: { xs: 1, sm: 'none' } }}
                 >
@@ -1470,96 +1580,17 @@ export const ProductFormPage: React.FC = () => {
         </form>
       </FormProvider>
 
-      {/* Professional confirm dialog for generating variants */}
-      <Dialog
-        open={confirmGenerateOpen}
-        onClose={() => setConfirmGenerateOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {t('products:form.generateVariantsConfirm', 'تأكيد توليد المتغيرات')}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <Alert severity="warning">
-              {isEditMode
-                ? t(
-                    'products:form.generateVariantsWarningExisting',
-                    'سيتم إنشاء متغيرات جديدة وفق السمات المحددة. لن يتم حذف المتغيرات الحالية.'
-                  )
-                : t(
-                    'products:form.variantsWillBeSaved',
-                    'سيتم حفظ المنتج أولاً قبل توليد المتغيرات'
-                  )}
-            </Alert>
-            {isEditMode && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={overwriteExisting}
-                    onChange={(e) => setOverwriteExisting(e.target.checked)}
-                  />
-                }
-                label={
-                  t(
-                    'products:form.overwriteExisting',
-                    'استبدال المتغيرات الحالية (حذف وإعادة توليد)'
-                  ) as string
-                }
-              />
-            )}
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                  {t('products:form.summary', 'الملخص')}
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('products:list.columns.price', 'السعر')}
-                    </Typography>
-                    <Typography variant="h6">${defaultPrice}</Typography>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('products:list.columns.stock', 'المخزون')}
-                    </Typography>
-                    <Typography variant="h6">{defaultStock}</Typography>
-                  </Grid>
-                  <Grid size={{ xs: 12 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('products:form.attributesCount', 'عدد السمات')}
-                    </Typography>
-                    <Typography variant="h6">{selectedAttributes.length}</Typography>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ flexWrap: 'wrap', gap: 1 }}>
-          <Button
-            onClick={() => setConfirmGenerateOpen(false)}
-            startIcon={<Cancel />}
-            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: '100%', sm: 100 } }}
-          >
-            {t('common:actions.cancel', 'إلغاء')}
-          </Button>
-          <Button
-            onClick={() => {
-              setConfirmGenerateOpen(false);
-              handleGenerateVariants();
-            }}
-            variant="contained"
-            startIcon={<Save />}
-            disabled={defaultPrice <= 0 || defaultStock < 0 || isGeneratingVariants || isCreating}
-            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: '100%', sm: 150 } }}
-          >
-            {t('products:form.generateVariants', 'توليد المتغيرات')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Generate Variants Dialog */}
+      <GenerateVariantsDialog
+        open={generateVariantsDialogOpen}
+        onClose={() => setGenerateVariantsDialogOpen(false)}
+        onGenerate={handleGenerateSelectedVariants}
+        selectedAttributeIds={selectedAttributes}
+        defaultPrice={defaultPrice}
+        defaultStock={defaultStock}
+        isEditMode={isEditMode}
+        existingVariantsCount={existingVariants?.length || 0}
+      />
     </Box>
   );
 };

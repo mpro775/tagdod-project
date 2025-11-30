@@ -130,7 +130,7 @@ export const ProductViewPage: React.FC = () => {
         <Button
           variant="outlined"
           startIcon={<ArrowBack />}
-          onClick={() => navigate('/products')}
+          onClick={() => navigate(-1)}
           fullWidth={isMobile}
         >
           {t('view.backToProducts')}

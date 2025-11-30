@@ -838,21 +838,53 @@ export class PublicProductsPresenter {
         const productRecord = productRaw as AnyRecord;
         const productId = this.extractIdString(productRecord._id) ?? String(productRecord._id);
         const allVariants = await this.variantService.findByProductId(productId);
-        const variants = this.filterVariantsWithStockOnly(
-          allVariants as unknown as Array<WithId & AnyRecord>,
-        );
+        
+        // حساب إجمالي الـ stock من جميع المتغيرات (النشطة وغير المحذوفة)
+        const allVariantsArray = allVariants as unknown as Array<WithId & AnyRecord>;
+        const totalStock = allVariantsArray.reduce((sum, variant) => {
+          const stock = this.normalizePrice(variant.stock) ?? 0;
+          const isActive = variant.isActive !== false;
+          const isNotDeleted = !variant.deletedAt;
+          return sum + (isActive && isNotDeleted ? stock : 0);
+        }, 0);
+        
+        // حساب isAvailable بناءً على المتغيرات أو المنتج البسيط
+        let productIsAvailable: boolean;
+        if (allVariantsArray.length > 0) {
+          // للمنتجات مع variants: متاح إذا كان هناك variant واحد على الأقل متاح
+          productIsAvailable = allVariantsArray.some((variant) => {
+            const stock = this.normalizePrice(variant.stock) ?? 0;
+            const isActive = variant.isActive !== false;
+            const isNotDeleted = !variant.deletedAt;
+            return stock > 0 && isActive && isNotDeleted;
+          });
+        } else {
+          // للمنتجات البسيطة
+          const productStock = this.normalizePrice(productRecord.stock) ?? 0;
+          const productIsActive = productRecord.isActive !== false;
+          productIsAvailable = productStock > 0 && productIsActive;
+        }
+        
+        const variants = this.filterVariantsWithStockOnly(allVariantsArray);
 
         if (variants.length === 0) {
+          // إذا لم يكن هناك variants مع stock، نتحقق من السعر البسيط
           if (!this.hasSimplePricing(productRecord)) {
-            return this.buildSimplifiedProduct(productRecord, {
+            const simplifiedProduct = this.buildSimplifiedProduct(productRecord, {
               variants: [],
-              hasVariants: false,
+              hasVariants: allVariantsArray.length > 0,
               includeImages: false,
               includeCategory: false,
               includeBrand: false,
               includeAttributes: false,
               includeVariants: false,
             });
+            // إضافة stock و isAvailable
+            return {
+              ...simplifiedProduct,
+              stock: allVariantsArray.length > 0 ? totalStock : (this.normalizePrice(productRecord.stock) ?? 0),
+              isAvailable: productIsAvailable,
+            };
           }
 
           const basePriceUSD = this.normalizePrice(
@@ -880,9 +912,9 @@ export class PublicProductsPresenter {
             derivedPricing,
           );
 
-          return this.buildSimplifiedProduct(productRecord, {
+          const simplifiedProduct = this.buildSimplifiedProduct(productRecord, {
             variants: [],
-            hasVariants: false,
+            hasVariants: allVariantsArray.length > 0,
             pricingByCurrency,
             defaultPricing: this.cleanPrice(
               pricingByCurrency[normalizedCurrency] ?? pricingByCurrency.USD,
@@ -895,6 +927,13 @@ export class PublicProductsPresenter {
             includePriceRange: false,
             includeDefaultPricing: false,
           });
+          
+          // إضافة stock و isAvailable
+          return {
+            ...simplifiedProduct,
+            stock: allVariantsArray.length > 0 ? totalStock : (this.normalizePrice(productRecord.stock) ?? 0),
+            isAvailable: productIsAvailable,
+          };
         }
 
         const { variantsWithPricing, pricesByCurrency } = await this.enrichVariantsPricing(
@@ -910,7 +949,7 @@ export class PublicProductsPresenter {
         const selectedVariantPricing =
           pricesByCurrency[normalizedCurrency]?.[0] ?? pricesByCurrency.USD?.[0] ?? null;
 
-        return this.buildSimplifiedProduct(productRecord, {
+        const simplifiedProduct = this.buildSimplifiedProduct(productRecord, {
           variants: variantsWithPricing,
           hasVariants: true,
           priceRangeByCurrency,
@@ -924,6 +963,13 @@ export class PublicProductsPresenter {
           includePriceRange: false,
           includeDefaultPricing: false,
         });
+        
+        // إضافة stock و isAvailable
+        return {
+          ...simplifiedProduct,
+          stock: totalStock,
+          isAvailable: productIsAvailable,
+        };
       }),
     );
   }

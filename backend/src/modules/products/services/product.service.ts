@@ -304,9 +304,24 @@ export class ProductService {
       ? await this.buildDerivedPricingFields({ ...product.toObject(), ...productUpdateDto })
       : {};
 
+    // ✅ التأكد من تحديث relatedProducts حتى لو كانت فارغة
+    // إذا كان relatedProducts موجود في productUpdateDto، يجب تحديثه
+    const updatePayload: any = { ...productUpdateDto, ...pricingFields };
+    
+    // إذا كان relatedProducts موجود في DTO، تأكد من تحديثه (حتى لو كان [])
+    if (Object.prototype.hasOwnProperty.call(productUpdateDto, 'relatedProducts')) {
+      updatePayload.relatedProducts = Array.isArray(productUpdateDto.relatedProducts)
+        ? productUpdateDto.relatedProducts
+        : [];
+      this.logger.log(`Updating relatedProducts for product ${id}:`, {
+        relatedProducts: updatePayload.relatedProducts,
+        count: updatePayload.relatedProducts.length,
+      });
+    }
+
     await this.productModel.updateOne(
       { _id: id },
-      { $set: { ...productUpdateDto, ...pricingFields } },
+      { $set: updatePayload },
     );
     await this.clearCache();
 
@@ -549,16 +564,25 @@ export class ProductService {
     }
 
     // تحديد الترتيب: إذا تم تحديد sortBy و sortOrder، نستخدمهما، وإلا نستخدم الترتيب الافتراضي (الأحدث أولاً)
-    // إضافة _id كحقل ترتيب ثانوي لضمان الترتيب المستقر عند وجود قيم متطابقة
+    // ملاحظة: بعض المنتجات قد لا تحتوي على createdAt، لذا نستخدم _id كـ primary sort للأحدث/الأقدم
+    // MongoDB ObjectId يحتوي على timestamp في أول 4 bytes، لذا الترتيب بـ _id يعطي ترتيب زمني صحيح
     let sortCriteria: Record<string, 1 | -1> = {};
     
     if (sortBy && sortOrder) {
-      // ترتيب مخصص من المستخدم مع إضافة _id كترتيب ثانوي لضمان الاستقرار
-      sortCriteria[sortBy] = sortOrder === 'asc' ? 1 : -1;
-      sortCriteria._id = sortOrder === 'asc' ? 1 : -1;
+      // إذا كان الترتيب المطلوب هو createdAt، نستخدم _id كـ primary لضمان الترتيب الصحيح
+      // حتى للمنتجات التي لا تحتوي على createdAt
+      if (sortBy === 'createdAt') {
+        // الترتيب بـ _id يعطي نفس النتيجة الزمنية لأن ObjectId يحتوي على timestamp
+        sortCriteria._id = sortOrder === 'asc' ? 1 : -1;
+      } else {
+        // ترتيب مخصص آخر (name, price, etc.)
+        sortCriteria[sortBy] = sortOrder === 'asc' ? 1 : -1;
+        sortCriteria._id = sortOrder === 'asc' ? 1 : -1;
+      }
     } else {
-      // الترتيب الافتراضي: الأحدث أولاً (createdAt: -1)، ثم الترتيب اليدوي (order: 1)، ثم _id للاستقرار
-      sortCriteria = { createdAt: -1, order: 1, _id: -1 };
+      // الترتيب الافتراضي: الأحدث أولاً باستخدام _id (أكثر موثوقية من createdAt)
+      // ثم الترتيب اليدوي (order)
+      sortCriteria = { _id: -1, order: 1 };
     }
 
     // تحويل filter إلى format يمكن loggingه بشكل صحيح
@@ -1040,6 +1064,7 @@ export class ProductService {
     }
 
     // جلب المنتجات الشبيهة مع ترتيب مستقر
+    // استخدام _id بدلاً من createdAt لأن بعض المنتجات قد لا تحتوي على createdAt
     const relatedProducts = await this.productModel
       .find({
         _id: { $in: product.relatedProducts },
@@ -1050,7 +1075,7 @@ export class ProductService {
       .populate('categoryId')
       .populate('brandId')
       .populate('mainImageId')
-      .sort({ createdAt: -1, order: 1, _id: -1 }) // ترتيب مستقر
+      .sort({ _id: -1, order: 1 }) // ترتيب مستقر باستخدام _id
       .limit(limit)
       .lean();
 

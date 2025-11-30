@@ -101,7 +101,7 @@ export const InventoryPage: React.FC = () => {
         <Button
           variant="outlined"
           startIcon={<ArrowBack />}
-          onClick={() => navigate('/products')}
+          onClick={() => navigate(-1)}
           fullWidth={isMobile}
           sx={{
             backgroundColor: theme.palette.mode === 'dark' 
