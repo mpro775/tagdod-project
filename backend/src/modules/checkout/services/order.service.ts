@@ -4530,8 +4530,22 @@ export class OrderService {
       });
     }
 
-    // مقارنة المبلغ
-    const isAmountSufficient = dto.verifiedAmount >= order.total;
+    // دالة تقريب المبالغ حسب العملة (لتجنب أخطاء التقريب العشري)
+    const roundForCurrency = (amount: number, currencyCode: string): number => {
+      if (!Number.isFinite(amount)) {
+        return amount;
+      }
+      const normalized = this.normalizeCurrency(currencyCode);
+      if (normalized === 'YER') {
+        return Math.round(amount);
+      }
+      return Math.round(amount * 100) / 100;
+    };
+
+    // مقارنة المبلغ - تقريب كلا المبلغين لتجنب أخطاء التقريب العشري
+    const roundedVerifiedAmount = roundForCurrency(dto.verifiedAmount, dto.verifiedCurrency);
+    const roundedOrderTotal = roundForCurrency(order.total, order.currency);
+    const isAmountSufficient = roundedVerifiedAmount >= roundedOrderTotal;
 
     // تحديث معلومات المطابقة
     order.verifiedPaymentAmount = dto.verifiedAmount;

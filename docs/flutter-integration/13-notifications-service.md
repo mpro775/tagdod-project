@@ -2,7 +2,7 @@
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
 > 📅 **آخر تحديث**: ديسمبر 2024  
-> 🆕 **محدث**: مطابق تماماً للـ Backend - شرح مفصل للقنوات (IN_APP vs PUSH)
+> 🆕 **محدث**: مطابق تماماً للـ Backend - شرح مفصل للقنوات (IN_APP vs PUSH) + نظام التنقل الجديد
 
 خدمة الإشعارات توفر endpoints لإدارة الإشعارات وتسجيل الأجهزة مع دعم قنوات متعددة.
 
@@ -12,13 +12,13 @@
 
 ### القنوات المتاحة
 
-| القناة | الاستخدام | آلية الإرسال |
-|--------|----------|-------------|
-| `inApp` | المستخدم داخل التطبيق | WebSocket فقط |
-| `push` | المستخدم خارج التطبيق | FCM (Firebase Cloud Messaging) |
-| `dashboard` | الإداريين | WebSocket |
-| `sms` | رسائل نصية | SMS Provider |
-| `email` | بريد إلكتروني | SMTP |
+| القناة      | الاستخدام             | آلية الإرسال                   |
+| ----------- | --------------------- | ------------------------------ |
+| `inApp`     | المستخدم داخل التطبيق | WebSocket فقط                  |
+| `push`      | المستخدم خارج التطبيق | FCM (Firebase Cloud Messaging) |
+| `dashboard` | الإداريين             | WebSocket                      |
+| `sms`       | رسائل نصية            | SMS Provider                   |
+| `email`     | بريد إلكتروني         | SMTP                           |
 
 ### الفرق بين IN_APP و PUSH
 
@@ -149,10 +149,11 @@ Firebase يرسل الإشعار للأجهزة
 7. [إلغاء تسجيل الجهاز](#7-إلغاء-تسجيل-الجهاز)
 8. [الحصول على أجهزة المستخدم](#8-الحصول-على-أجهزة-المستخدم)
 9. [WebSocket - الإشعارات الفورية](#9-websocket---الإشعارات-الفورية)
-10. [Models في Flutter](#10-models-في-flutter)
-11. [دليل التكامل الكامل مع Push Notifications](#11-دليل-التكامل-الكامل-مع-push-notifications)
-12. [إرسال الإشعارات من لوحة التحكم](#12-إرسال-الإشعارات-من-لوحة-التحكم)
-13. [Enums والثوابت](#13-enums-والثوابت)
+10. [نظام التنقل في الإشعارات](#10-نظام-التنقل-في-الإشعارات)
+11. [Models في Flutter](#11-models-في-flutter)
+12. [دليل التكامل الكامل مع Push Notifications](#12-دليل-التكامل-الكامل-مع-push-notifications)
+13. [إرسال الإشعارات من لوحة التحكم](#13-إرسال-الإشعارات-من-لوحة-التحكم)
+14. [Enums والثوابت](#14-enums-والثوابت)
 
 ---
 
@@ -169,10 +170,10 @@ Firebase يرسل الإشعار للأجهزة
 
 ### Query Parameters
 
-| المعامل | النوع | مطلوب | الوصف |
-|---------|------|-------|-------|
-| `limit` | `number` | ❌ | عدد العناصر (افتراضي: 20) |
-| `offset` | `number` | ❌ | الإزاحة (افتراضي: 0) |
+| المعامل  | النوع    | مطلوب | الوصف                     |
+| -------- | -------- | ----- | ------------------------- |
+| `limit`  | `number` | ❌    | عدد العناصر (افتراضي: 20) |
+| `offset` | `number` | ❌    | الإزاحة (افتراضي: 0)      |
 
 ### Response - نجاح
 
@@ -189,6 +190,10 @@ Firebase يرسل الإشعار للأجهزة
         "orderId": "order_123",
         "orderNumber": "ORD-2025-001234"
       },
+      "actionUrl": "/orders/order_123",
+      "navigationType": "order",
+      "navigationTarget": "order_123",
+      "navigationParams": {},
       "channel": "inApp",
       "status": "sent",
       "priority": "medium",
@@ -438,12 +443,12 @@ Future<NotificationStats> getStats() async {
 }
 ```
 
-| الحقل | النوع | مطلوب | الوصف |
-|-------|------|-------|-------|
-| `platform` | `string` | ✅ | المنصة: `"ios"`, `"android"`, أو `"web"` |
-| `token` | `string` | ✅ | FCM Token (أقصى طول: 500 حرف) |
-| `userAgent` | `string` | ❌ | معلومات الجهاز (أقصى طول: 500 حرف) |
-| `appVersion` | `string` | ❌ | إصدار التطبيق (أقصى طول: 50 حرف) |
+| الحقل        | النوع    | مطلوب | الوصف                                    |
+| ------------ | -------- | ----- | ---------------------------------------- |
+| `platform`   | `string` | ✅    | المنصة: `"ios"`, `"android"`, أو `"web"` |
+| `token`      | `string` | ✅    | FCM Token (أقصى طول: 500 حرف)            |
+| `userAgent`  | `string` | ❌    | معلومات الجهاز (أقصى طول: 500 حرف)       |
+| `appVersion` | `string` | ❌    | إصدار التطبيق (أقصى طول: 50 حرف)         |
 
 ### Response - نجاح
 
@@ -472,10 +477,10 @@ Future<NotificationStats> getStats() async {
 Future<void> registerDevice(String fcmToken) async {
   final deviceInfo = DeviceInfoPlugin();
   final packageInfo = await PackageInfo.fromPlatform();
-  
+
   String platform;
   String? userAgent;
-  
+
   if (Platform.isAndroid) {
     final androidInfo = await deviceInfo.androidInfo;
     platform = 'android';
@@ -487,7 +492,7 @@ Future<void> registerDevice(String fcmToken) async {
   } else {
     platform = 'web';
   }
-  
+
   final response = await _dio.post(
     '/notifications/devices/register',
     data: {
@@ -497,7 +502,7 @@ Future<void> registerDevice(String fcmToken) async {
       'appVersion': packageInfo.version,
     },
   );
-  
+
   if (response.statusCode == 200 || response.statusCode == 201) {
     print('✅ Device registered successfully');
   }
@@ -507,6 +512,7 @@ Future<void> registerDevice(String fcmToken) async {
 ### ملاحظات مهمة
 
 1. **التسجيل التلقائي**: يتم استدعاء هذا الـ endpoint تلقائياً عند:
+
    - الحصول على FCM Token لأول مرة
    - تحديث FCM Token (عند `onTokenRefresh`)
 
@@ -567,7 +573,7 @@ Future<void> unregisterDevice(String fcmToken) async {
       'token': fcmToken,
     },
   );
-  
+
   if (response.statusCode == 200) {
     print('✅ Device unregistered successfully');
   }
@@ -628,7 +634,7 @@ Future<void> unregisterDevice(String fcmToken) async {
 ```dart
 Future<List<DeviceToken>> getUserDevices() async {
   final response = await _dio.get('/notifications/devices');
-  
+
   if (response.statusCode == 200) {
     final devices = (response.data['data']['devices'] as List)
         .map((item) => DeviceToken.fromJson(item))
@@ -661,6 +667,7 @@ Future<List<DeviceToken>> getUserDevices() async {
 ### إعداد Dependencies
 
 في `pubspec.yaml`:
+
 ```yaml
 dependencies:
   socket_io_client: ^2.0.3+1
@@ -674,14 +681,14 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationsWebSocketService {
-  static final NotificationsWebSocketService _instance = 
+  static final NotificationsWebSocketService _instance =
       NotificationsWebSocketService._internal();
   factory NotificationsWebSocketService() => _instance;
   NotificationsWebSocketService._internal();
 
   IO.Socket? _socket;
   bool _isConnected = false;
-  
+
   // Callbacks
   Function(Map<String, dynamic>)? onNotificationReceived;
   Function(int)? onUnreadCountChanged;
@@ -699,7 +706,7 @@ class NotificationsWebSocketService {
       // الحصول على Token
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
-      
+
       if (token == null) {
         throw Exception('No access token found');
       }
@@ -717,7 +724,7 @@ class NotificationsWebSocketService {
 
       // إعداد Event Listeners
       _setupEventListeners();
-      
+
       _isConnected = true;
       print('✅ Connected to notifications WebSocket');
     } catch (e) {
@@ -829,23 +836,23 @@ class NotificationsWebSocketService {
 
 ### الأحداث المتاحة (Events)
 
-| الحدث | الوصف | البيانات |
-|------|-------|---------|
-| `connected` | اتصال ناجح | `{ success: true, userId: string, timestamp: string }` |
-| `notification:new` | إشعار جديد | `{ id, title, message, messageEn, type, category, priority, data, createdAt, isRead }` |
-| `unread-count` | عدد غير مقروء | `{ count: number }` |
-| `marked-as-read` | تم تحديد كمقروء | `{ success: true, markedCount: number }` |
-| `marked-all-as-read` | تم تحديد الكل كمقروء | `{ success: true, markedCount: number }` |
-| `pong` | رد على ping | `{ pong: true, timestamp: string }` |
+| الحدث                | الوصف                | البيانات                                                                               |
+| -------------------- | -------------------- | -------------------------------------------------------------------------------------- |
+| `connected`          | اتصال ناجح           | `{ success: true, userId: string, timestamp: string }`                                 |
+| `notification:new`   | إشعار جديد           | `{ id, title, message, messageEn, type, category, priority, data, createdAt, isRead }` |
+| `unread-count`       | عدد غير مقروء        | `{ count: number }`                                                                    |
+| `marked-as-read`     | تم تحديد كمقروء      | `{ success: true, markedCount: number }`                                               |
+| `marked-all-as-read` | تم تحديد الكل كمقروء | `{ success: true, markedCount: number }`                                               |
+| `pong`               | رد على ping          | `{ pong: true, timestamp: string }`                                                    |
 
 ### الأوامر المتاحة (Commands)
 
-| الأمر | الوصف | البيانات |
-|------|-------|---------|
-| `ping` | اختبار الاتصال | لا |
-| `get-unread-count` | طلب عدد غير مقروء | لا |
-| `mark-as-read` | تحديد كمقروء | `{ notificationIds: string[] }` |
-| `mark-all-as-read` | تحديد الكل كمقروء | لا |
+| الأمر              | الوصف             | البيانات                        |
+| ------------------ | ----------------- | ------------------------------- |
+| `ping`             | اختبار الاتصال    | لا                              |
+| `get-unread-count` | طلب عدد غير مقروء | لا                              |
+| `mark-as-read`     | تحديد كمقروء      | `{ notificationIds: string[] }` |
+| `mark-all-as-read` | تحديد الكل كمقروء | لا                              |
 
 ### استخدام الخدمة في التطبيق
 
@@ -855,36 +862,36 @@ import 'services/notifications_websocket_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // تهيئة WebSocket للإشعارات
   final wsService = NotificationsWebSocketService();
-  
+
   // إعداد Callbacks
   wsService.onNotificationReceived = (notification) {
     // عرض الإشعار في UI
     _showInAppNotification(notification);
   };
-  
+
   wsService.onUnreadCountChanged = (count) {
     // تحديث Badge
     _updateUnreadBadge(count);
   };
-  
+
   wsService.onConnected = () {
     print('✅ Connected to real-time notifications');
     // طلب عدد الإشعارات غير المقروءة
     wsService.getUnreadCount();
   };
-  
+
   wsService.onDisconnected = () {
     print('❌ Disconnected from notifications');
     // إعادة الاتصال بعد 5 ثوان
     Future.delayed(Duration(seconds: 5), () => wsService.connect());
   };
-  
+
   // الاتصال
   await wsService.connect();
-  
+
   runApp(MyApp());
 }
 ```
@@ -899,7 +906,101 @@ void main() async {
 
 ---
 
-## 10. Models في Flutter
+## 10. نظام التنقل في الإشعارات
+
+نظام التنقل يسمح بتحديد وجهة التوجيه عند النقر على الإشعار. يتم بناء `actionUrl` تلقائياً من `navigationType` و `navigationTarget`.
+
+### حقول التنقل
+
+| الحقل              | النوع    | الوصف                                                                         |
+| ------------------ | -------- | ----------------------------------------------------------------------------- |
+| `navigationType`   | `string` | نوع التنقل: `none`, `external_url`, `category`, `product`, `section`, `order` |
+| `navigationTarget` | `string` | الهدف: ID للفئة/المنتج/الطلب، أو URL خارجي، أو اسم القسم                      |
+| `navigationParams` | `object` | معاملات إضافية للتنقل (اختياري)                                               |
+| `actionUrl`        | `string` | رابط التوجيه (يُبنى تلقائياً من حقول التنقل)                                  |
+
+### أنواع التنقل (NotificationNavigationType)
+
+| النوع          | الوصف          | مثال `navigationTarget` | `actionUrl` الناتج            |
+| -------------- | -------------- | ----------------------- | ----------------------------- |
+| `none`         | بدون تنقل      | -                       | `null`                        |
+| `external_url` | رابط خارجي     | `https://example.com`   | `https://example.com`         |
+| `category`     | فئة معينة      | `category_id_123`       | `/categories/category_id_123` |
+| `product`      | منتج معين      | `product_id_456`        | `/products/product_id_456`    |
+| `section`      | قسم في التطبيق | `cart`                  | `/cart`                       |
+| `order`        | تفاصيل طلب     | `order_id_789`          | `/orders/order_id_789`        |
+
+### مثال Response مع التنقل
+
+```json
+{
+  "_id": "64notif123",
+  "type": "ORDER_CONFIRMED",
+  "title": "تم تأكيد طلبك",
+  "message": "طلب رقم #123 تم تأكيده",
+  "actionUrl": "/orders/order_123",
+  "navigationType": "order",
+  "navigationTarget": "order_123",
+  "navigationParams": {},
+  "channel": "inApp",
+  "status": "sent"
+}
+```
+
+### استخدام في Flutter
+
+```dart
+// عند النقر على الإشعار
+void handleNotificationTap(AppNotification notification) {
+  if (notification.actionUrl != null) {
+    // استخدام actionUrl للتنقل
+    Navigator.pushNamed(context, notification.actionUrl!);
+  } else if (notification.navigationType != null &&
+             notification.navigationTarget != null) {
+    // بناء المسار من حقول التنقل
+    String? route = _buildRouteFromNavigation(
+      notification.navigationType!,
+      notification.navigationTarget!,
+    );
+    if (route != null) {
+      Navigator.pushNamed(context, route);
+    }
+  }
+}
+
+String? _buildRouteFromNavigation(
+  NotificationNavigationType type,
+  String target,
+) {
+  switch (type) {
+    case NotificationNavigationType.order:
+      return '/orders/$target';
+    case NotificationNavigationType.category:
+      return '/categories/$target';
+    case NotificationNavigationType.product:
+      return '/products/$target';
+    case NotificationNavigationType.section:
+      return '/$target';
+    case NotificationNavigationType.externalUrl:
+      // فتح رابط خارجي
+      launchUrl(Uri.parse(target));
+      return null;
+    case NotificationNavigationType.none:
+      return null;
+  }
+}
+```
+
+### ملاحظات مهمة
+
+1. **الأولوية**: إذا كان `actionUrl` موجوداً، استخدمه مباشرة
+2. **البناء التلقائي**: Backend يبني `actionUrl` تلقائياً من `navigationType` و `navigationTarget`
+3. **التوافق**: الحفاظ على دعم `actionUrl` المباشر للتوافق مع الإصدارات السابقة
+4. **التحقق**: تحقق من وجود `navigationTarget` قبل بناء المسار
+
+---
+
+## 11. Models في Flutter
 
 ### ملف: `lib/models/notification/notification_models.dart`
 
@@ -913,7 +1014,7 @@ enum NotificationType {
   ORDER_CANCELLED,
   ORDER_REFUNDED,
   ORDER_RATED,
-  
+
   // Service related
   SERVICE_REQUEST_OPENED,
   NEW_ENGINEER_OFFER,
@@ -924,44 +1025,44 @@ enum NotificationType {
   SERVICE_COMPLETED,
   SERVICE_RATED,
   SERVICE_REQUEST_CANCELLED,
-  
+
   // Product related
   PRODUCT_BACK_IN_STOCK,
   PRODUCT_PRICE_DROP,
   LOW_STOCK,
   OUT_OF_STOCK,
-  
+
   // Promotion related
   PROMOTION_STARTED,
   PROMOTION_ENDING,
   COUPON_USED,
-  
+
   // Account & Security
   ACCOUNT_VERIFIED,
   PASSWORD_CHANGED,
   LOGIN_ATTEMPT,
   NEW_USER_REGISTERED,
-  
+
   // Support
   TICKET_CREATED,
   TICKET_UPDATED,
   TICKET_RESOLVED,
   SUPPORT_MESSAGE_RECEIVED,
-  
+
   // System
   SYSTEM_MAINTENANCE,
   NEW_FEATURE,
   SYSTEM_ALERT,
-  
+
   // Marketing
   WELCOME_NEW_USER,
   BIRTHDAY_GREETING,
   CART_ABANDONMENT,
-  
+
   // Payment
   PAYMENT_FAILED,
   PAYMENT_SUCCESS,
-  
+
   // Invoice
   INVOICE_CREATED,
 }
@@ -1013,6 +1114,15 @@ enum DevicePlatform {
   web,
 }
 
+enum NotificationNavigationType {
+  none,
+  externalUrl,
+  category,
+  product,
+  section,
+  order,
+}
+
 // ===== Models =====
 
 class AppNotification {
@@ -1023,6 +1133,9 @@ class AppNotification {
   final String messageEn;
   final Map<String, dynamic> data;
   final String? actionUrl;
+  final NotificationNavigationType? navigationType;
+  final String? navigationTarget;
+  final Map<String, dynamic>? navigationParams;
   final NotificationChannel channel;
   final NotificationStatus status;
   final NotificationPriority priority;
@@ -1059,6 +1172,9 @@ class AppNotification {
     required this.messageEn,
     required this.data,
     this.actionUrl,
+    this.navigationType,
+    this.navigationTarget,
+    this.navigationParams,
     required this.channel,
     required this.status,
     required this.priority,
@@ -1097,11 +1213,16 @@ class AppNotification {
       messageEn: json['messageEn'] ?? '',
       data: Map<String, dynamic>.from(json['data'] ?? {}),
       actionUrl: json['actionUrl'],
+      navigationType: _parseNavigationType(json['navigationType']),
+      navigationTarget: json['navigationTarget'],
+      navigationParams: json['navigationParams'] != null
+          ? Map<String, dynamic>.from(json['navigationParams'])
+          : null,
       channel: _parseChannel(json['channel']),
       status: _parseStatus(json['status']),
       priority: _parsePriority(json['priority']),
       category: _parseCategory(json['category']),
-      targetRoles: json['targetRoles'] != null 
+      targetRoles: json['targetRoles'] != null
           ? List<String>.from(json['targetRoles'])
           : null,
       recipientId: json['recipientId'],
@@ -1165,10 +1286,35 @@ class AppNotification {
   String? get serviceId => data['serviceId']?.toString();
   String? get ticketId => data['ticketId']?.toString();
 
+  // Navigation helpers
+  String? get navigationRoute {
+    if (actionUrl != null) return actionUrl;
+    if (navigationType == null || navigationTarget == null) return null;
+
+    switch (navigationType!) {
+      case NotificationNavigationType.order:
+        return '/orders/$navigationTarget';
+      case NotificationNavigationType.category:
+        return '/categories/$navigationTarget';
+      case NotificationNavigationType.product:
+        return '/products/$navigationTarget';
+      case NotificationNavigationType.section:
+        return '/$navigationTarget';
+      case NotificationNavigationType.externalUrl:
+        return navigationTarget;
+      case NotificationNavigationType.none:
+        return null;
+    }
+  }
+
+  bool get hasNavigation => navigationType != null &&
+                           navigationType != NotificationNavigationType.none &&
+                           navigationTarget != null;
+
   // Timing
   DateTime get displayDate => readAt ?? deliveredAt ?? sentAt ?? createdAt;
   bool get isRecent => DateTime.now().difference(displayDate).inDays < 7;
-  
+
   // Helper parsers
   static NotificationType _parseNotificationType(String? type) {
     if (type == null) return NotificationType.SYSTEM_ALERT;
@@ -1232,6 +1378,19 @@ class AppNotification {
       case 'payment': return NotificationCategory.payment;
       case 'marketing': return NotificationCategory.marketing;
       default: return NotificationCategory.system;
+    }
+  }
+
+  static NotificationNavigationType? _parseNavigationType(String? type) {
+    if (type == null) return null;
+    switch (type) {
+      case 'none': return NotificationNavigationType.none;
+      case 'external_url': return NotificationNavigationType.externalUrl;
+      case 'category': return NotificationNavigationType.category;
+      case 'product': return NotificationNavigationType.product;
+      case 'section': return NotificationNavigationType.section;
+      case 'order': return NotificationNavigationType.order;
+      default: return null;
     }
   }
 }
@@ -1343,11 +1502,12 @@ class NotificationStats {
 
 ---
 
-## 11. دليل التكامل الكامل مع Push Notifications
+## 12. دليل التكامل الكامل مع Push Notifications
 
 ### 📦 1. إعداد Dependencies
 
 في `pubspec.yaml`:
+
 ```yaml
 dependencies:
   firebase_core: ^2.24.0
@@ -1366,12 +1526,15 @@ dependencies:
 1. حمّل ملف `google-services.json` من Firebase Console
 2. ضعه في `android/app/`
 3. أضف في `android/build.gradle`:
+
 ```gradle
 dependencies {
     classpath 'com.google.gms:google-services:4.4.0'
 }
 ```
+
 4. أضف في `android/app/build.gradle`:
+
 ```gradle
 apply plugin: 'com.google.gms.google-services'
 ```
@@ -1381,6 +1544,7 @@ apply plugin: 'com.google.gms.google-services'
 1. حمّل ملف `GoogleService-Info.plist` من Firebase Console
 2. ضعه في `ios/Runner/`
 3. في `ios/Runner/Info.plist` أضف:
+
 ```xml
 <key>FirebaseAppDelegateProxyEnabled</key>
 <false/>
@@ -1415,35 +1579,35 @@ class NotificationsService {
   NotificationsService._internal();
 
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = 
+  final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
-  
+
   bool _isInitialized = false;
   String? _currentToken;
-  
+
   // Callback للتنقل عند النقر على الإشعار
   Function(Map<String, dynamic>)? onNotificationTapped;
 
   /// تهيئة خدمة الإشعارات
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     try {
       // 1. تهيئة Local Notifications
       await _initializeLocalNotifications();
-      
+
       // 2. طلب الأذونات
       final settings = await _requestPermissions();
-      
+
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        
+
         // 3. الحصول على Token وتسجيله
         await _setupToken();
-        
+
         // 4. إعداد Listeners للإشعارات
         await _setupNotificationListeners();
-        
+
         _isInitialized = true;
         print('✅ NotificationsService initialized successfully');
       } else {
@@ -1462,17 +1626,17 @@ class NotificationsService {
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
-    
+
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
-    
+
     await _localNotifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
-    
+
     // إنشاء Notification Channel للـ Android
     if (Platform.isAndroid) {
       const androidChannel = AndroidNotificationChannel(
@@ -1483,7 +1647,7 @@ class NotificationsService {
         playSound: true,
         enableVibration: true,
       );
-      
+
       await _localNotifications
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()
@@ -1506,26 +1670,26 @@ class NotificationsService {
     try {
       // الحصول على Token الحالي
       _currentToken = await _fcm.getToken();
-      
+
       if (_currentToken != null) {
         print('📱 FCM Token: ${_currentToken!.substring(0, 20)}...');
-        
+
         // تسجيل الجهاز في Backend
         await _registerDeviceWithBackend(_currentToken!);
-        
+
         // حفظ Token محلياً
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('fcm_token', _currentToken!);
       }
-      
+
       // الاستماع لتحديثات Token
       _fcm.onTokenRefresh.listen((newToken) async {
         print('🔄 FCM Token refreshed');
         _currentToken = newToken;
-        
+
         // تحديث Token في Backend
         await _registerDeviceWithBackend(newToken);
-        
+
         // حفظ Token الجديد
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('fcm_token', newToken);
@@ -1540,10 +1704,10 @@ class NotificationsService {
     try {
       final deviceInfo = DeviceInfoPlugin();
       final packageInfo = await PackageInfo.fromPlatform();
-      
+
       String platform;
       String? userAgent;
-      
+
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
         platform = 'android';
@@ -1555,10 +1719,10 @@ class NotificationsService {
       } else {
         platform = 'web';
       }
-      
+
       // TODO: استدعاء API
       // await _apiClient.post('/notifications/devices/register', data: {...});
-      
+
       print('✅ Device registered: $platform');
     } catch (e) {
       print('❌ Error registering device: $e');
@@ -1572,14 +1736,14 @@ class NotificationsService {
         final prefs = await SharedPreferences.getInstance();
         _currentToken = prefs.getString('fcm_token');
       }
-      
+
       if (_currentToken != null) {
         // TODO: استدعاء API
         // await _apiClient.post('/notifications/devices/unregister', data: {...});
-        
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('fcm_token');
-        
+
         print('✅ Device unregistered');
       }
     } catch (e) {
@@ -1594,13 +1758,13 @@ class NotificationsService {
       print('📨 Foreground notification received');
       _handleForegroundNotification(message);
     });
-    
+
     // 2. إشعارات Background (التطبيق في الخلفية)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('📨 Background notification tapped');
       _handleNotificationTap(message);
     });
-    
+
     // 3. إشعار فتح التطبيق (التطبيق كان مغلقاً)
     final initialMessage = await _fcm.getInitialMessage();
     if (initialMessage != null) {
@@ -1614,25 +1778,25 @@ class NotificationsService {
     // عرض إشعار محلي
     final notification = message.notification;
     if (notification == null) return;
-    
+
     const androidDetails = AndroidNotificationDetails(
       'high_importance_channel',
       'High Importance Notifications',
       importance: Importance.high,
       priority: Priority.high,
     );
-    
+
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
     );
-    
+
     const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
-    
+
     await _localNotifications.show(
       message.hashCode,
       notification.title ?? 'إشعار جديد',
@@ -1670,36 +1834,67 @@ import 'services/notifications_websocket_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 1. تهيئة Firebase
   await Firebase.initializeApp();
-  
+
   // 2. تسجيل Background Handler
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  
+
   // 3. تهيئة خدمة Push Notifications
   final pushService = NotificationsService();
   await pushService.initialize();
-  
+
   pushService.onNotificationTapped = (data) {
     _handleNotificationNavigation(data);
   };
-  
+
   // 4. تهيئة WebSocket للإشعارات IN_APP
   final wsService = NotificationsWebSocketService();
   wsService.onNotificationReceived = (notification) {
     _showInAppNotification(notification);
   };
   await wsService.connect();
-  
+
   runApp(MyApp());
 }
 
 void _handleNotificationNavigation(Map<String, dynamic> data) {
+  // استخدام actionUrl إذا كان موجوداً
+  if (data['actionUrl'] != null) {
+    Navigator.pushNamed(context, data['actionUrl']);
+    return;
+  }
+
+  // استخدام حقول التنقل
+  final navigationType = data['navigationType'];
+  final navigationTarget = data['navigationTarget'];
+
+  if (navigationType != null && navigationTarget != null) {
+    switch (navigationType) {
+      case 'order':
+        Navigator.pushNamed(context, '/orders/$navigationTarget');
+        break;
+      case 'category':
+        Navigator.pushNamed(context, '/categories/$navigationTarget');
+        break;
+      case 'product':
+        Navigator.pushNamed(context, '/products/$navigationTarget');
+        break;
+      case 'section':
+        Navigator.pushNamed(context, '/$navigationTarget');
+        break;
+      case 'external_url':
+        launchUrl(Uri.parse(navigationTarget));
+        break;
+    }
+  }
+
+  // Fallback للبيانات القديمة
   if (data['orderId'] != null) {
-    // Navigate to order details
+    Navigator.pushNamed(context, '/orders/${data['orderId']}');
   } else if (data['productId'] != null) {
-    // Navigate to product
+    Navigator.pushNamed(context, '/products/${data['productId']}');
   }
 }
 
@@ -1710,7 +1905,7 @@ void _showInAppNotification(Map<String, dynamic> notification) {
 
 ---
 
-## 12. إرسال الإشعارات من لوحة التحكم
+## 13. إرسال الإشعارات من لوحة التحكم
 
 ### Admin Endpoints
 
@@ -1721,6 +1916,7 @@ POST /notifications/admin/create
 ```
 
 **Request:**
+
 ```json
 {
   "type": "ORDER_CONFIRMED",
@@ -1733,11 +1929,19 @@ POST /notifications/admin/create
   "data": {
     "orderId": "order_123",
     "orderNumber": "123"
-  }
+  },
+  "navigationType": "order",
+  "navigationTarget": "order_123",
+  "navigationParams": {}
 }
 ```
 
+**ملاحظة:** عند تحديد `navigationType` و `navigationTarget`، يتم بناء `actionUrl` تلقائياً:
+
+- `navigationType: "order"` + `navigationTarget: "order_123"` → `actionUrl: "/orders/order_123"`
+
 **Response:**
+
 ```json
 {
   "notification": { ... },
@@ -1758,6 +1962,7 @@ POST /notifications/admin/bulk-send
 ```
 
 **Request:**
+
 ```json
 {
   "type": "PROMOTION_STARTED",
@@ -1777,6 +1982,7 @@ GET /notifications/admin/users/:userId/devices
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -1801,6 +2007,7 @@ POST /notifications/admin/users/devices/check
 ```
 
 **Request:**
+
 ```json
 {
   "userIds": ["user_1", "user_2", "user_3"]
@@ -1814,6 +2021,7 @@ GET /notifications/admin/fcm-status
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -1827,112 +2035,129 @@ GET /notifications/admin/fcm-status
 
 ---
 
-## 13. Enums والثوابت
+## 14. Enums والثوابت
 
 ### NotificationType (35 نوع)
 
 ```typescript
 // Order related
-ORDER_CREATED, ORDER_CONFIRMED, ORDER_CANCELLED, ORDER_REFUNDED, ORDER_RATED
+ORDER_CREATED, ORDER_CONFIRMED, ORDER_CANCELLED, ORDER_REFUNDED, ORDER_RATED;
 
 // Service related
-SERVICE_REQUEST_OPENED, NEW_ENGINEER_OFFER, OFFER_ACCEPTED, OFFER_REJECTED,
-OFFER_CANCELLED, SERVICE_STARTED, SERVICE_COMPLETED, SERVICE_RATED,
-SERVICE_REQUEST_CANCELLED
+SERVICE_REQUEST_OPENED,
+  NEW_ENGINEER_OFFER,
+  OFFER_ACCEPTED,
+  OFFER_REJECTED,
+  OFFER_CANCELLED,
+  SERVICE_STARTED,
+  SERVICE_COMPLETED,
+  SERVICE_RATED,
+  SERVICE_REQUEST_CANCELLED;
 
 // Product related
-PRODUCT_BACK_IN_STOCK, PRODUCT_PRICE_DROP, LOW_STOCK, OUT_OF_STOCK
+PRODUCT_BACK_IN_STOCK, PRODUCT_PRICE_DROP, LOW_STOCK, OUT_OF_STOCK;
 
 // Promotion related
-PROMOTION_STARTED, PROMOTION_ENDING, COUPON_USED
+PROMOTION_STARTED, PROMOTION_ENDING, COUPON_USED;
 
 // Account & Security
-ACCOUNT_VERIFIED, PASSWORD_CHANGED, LOGIN_ATTEMPT, NEW_USER_REGISTERED
+ACCOUNT_VERIFIED, PASSWORD_CHANGED, LOGIN_ATTEMPT, NEW_USER_REGISTERED;
 
 // Support
-TICKET_CREATED, TICKET_UPDATED, TICKET_RESOLVED, SUPPORT_MESSAGE_RECEIVED
+TICKET_CREATED, TICKET_UPDATED, TICKET_RESOLVED, SUPPORT_MESSAGE_RECEIVED;
 
 // System
-SYSTEM_MAINTENANCE, NEW_FEATURE, SYSTEM_ALERT
+SYSTEM_MAINTENANCE, NEW_FEATURE, SYSTEM_ALERT;
 
 // Marketing
-WELCOME_NEW_USER, BIRTHDAY_GREETING, CART_ABANDONMENT
+WELCOME_NEW_USER, BIRTHDAY_GREETING, CART_ABANDONMENT;
 
 // Payment
-PAYMENT_FAILED, PAYMENT_SUCCESS
+PAYMENT_FAILED, PAYMENT_SUCCESS;
 
 // Invoice
-INVOICE_CREATED
+INVOICE_CREATED;
 ```
 
 ### NotificationStatus (11 حالة)
 
 ```typescript
-pending    // في الانتظار
-queued     // في الصف
-sending    // جاري الإرسال
-sent       // تم الإرسال
-delivered  // تم التسليم
-read       // مقروء
-clicked    // تم النقر
-failed     // فشل
-bounced    // مرتد
-rejected   // مرفوض
-cancelled  // ملغي
+pending; // في الانتظار
+queued; // في الصف
+sending; // جاري الإرسال
+sent; // تم الإرسال
+delivered; // تم التسليم
+read; // مقروء
+clicked; // تم النقر
+failed; // فشل
+bounced; // مرتد
+rejected; // مرفوض
+cancelled; // ملغي
 ```
 
 ### NotificationChannel (5 قنوات)
 
 ```typescript
-inApp      // داخل التطبيق (WebSocket)
-push       // Push Notification (FCM)
-sms        // رسالة نصية
-email      // بريد إلكتروني
-dashboard  // لوحة التحكم (للإداريين)
+inApp; // داخل التطبيق (WebSocket)
+push; // Push Notification (FCM)
+sms; // رسالة نصية
+email; // بريد إلكتروني
+dashboard; // لوحة التحكم (للإداريين)
 ```
 
 ### NotificationPriority (4 مستويات)
 
 ```typescript
-low        // منخفضة
-medium     // متوسطة (افتراضي)
-high       // عالية
-urgent     // عاجلة
+low; // منخفضة
+medium; // متوسطة (افتراضي)
+high; // عالية
+urgent; // عاجلة
 ```
 
 ### NotificationCategory (9 فئات)
 
 ```typescript
-order      // طلبات
-product    // منتجات
-service    // خدمات
-promotion  // عروض
-account    // حساب
-system     // نظام
-support    // دعم
-payment    // دفع
-marketing  // تسويق
+order; // طلبات
+product; // منتجات
+service; // خدمات
+promotion; // عروض
+account; // حساب
+system; // نظام
+support; // دعم
+payment; // دفع
+marketing; // تسويق
 ```
 
 ### DevicePlatform (3 منصات)
 
 ```typescript
-ios        // iOS
-android    // Android
-web        // Web
+ios; // iOS
+android; // Android
+web; // Web
+```
+
+### NotificationNavigationType (6 أنواع)
+
+```typescript
+none; // بدون تنقل
+external_url; // رابط خارجي
+category; // فئة معينة
+product; // منتج معين
+section; // قسم في التطبيق
+order; // تفاصيل طلب
 ```
 
 ---
 
 ## 📝 ملخص القنوات
 
-| السيناريو | القناة | يحتاج FCM Token | يحتاج WebSocket |
-|-----------|--------|-----------------|-----------------|
-| المستخدم داخل التطبيق | `inApp` | ❌ | ✅ |
-| المستخدم خارج التطبيق | `push` | ✅ | ❌ |
-| إشعار للإداريين | `dashboard` | ❌ | ✅ |
-| رسالة نصية | `sms` | ❌ | ❌ |
-| بريد إلكتروني | `email` | ❌ | ❌ |
+| السيناريو             | القناة      | يحتاج FCM Token | يحتاج WebSocket |
+| --------------------- | ----------- | --------------- | --------------- |
+| المستخدم داخل التطبيق | `inApp`     | ❌              | ✅              |
+| المستخدم خارج التطبيق | `push`      | ✅              | ❌              |
+| إشعار للإداريين       | `dashboard` | ❌              | ✅              |
+| رسالة نصية            | `sms`       | ❌              | ❌              |
+| بريد إلكتروني         | `email`     | ❌              | ❌              |
 
 ---
 
@@ -1946,10 +2171,15 @@ web        // Web
 6. ✅ توضيح أن FCM Token مطلوب لـ `push` فقط
 7. ✅ إضافة كود Flutter كامل للتكامل
 8. ✅ تحديث Response schemas لتطابق Controller
+9. ✅ **إضافة نظام التنقل** (`navigationType`, `navigationTarget`, `navigationParams`)
+10. ✅ **إضافة دعم التنقل إلى تفاصيل الطلب** (`order`)
+11. ✅ **بناء `actionUrl` تلقائياً** من حقول التنقل
+12. ✅ **تحديث Flutter Models** لتشمل حقول التنقل
 
 ---
 
 **ملفات Backend المرجعية:**
+
 - `backend/src/modules/notifications/controllers/unified-notification.controller.ts`
 - `backend/src/modules/notifications/services/notification.service.ts`
 - `backend/src/modules/notifications/gateways/notifications.gateway.ts`

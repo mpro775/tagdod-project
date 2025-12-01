@@ -6,6 +6,7 @@ import {
   NotificationChannel,
   NotificationPriority,
   NotificationCategory,
+  NotificationNavigationType,
 } from '../enums/notification.enums';
 import { UserRole } from '../../users/schemas/user.schema';
 
@@ -34,6 +35,20 @@ export class UnifiedNotification {
 
   @Prop({ maxlength: 500 })
   actionUrl?: string;
+
+  // ===== Navigation Settings =====
+  @Prop({
+    type: String,
+    enum: Object.values(NotificationNavigationType),
+    default: NotificationNavigationType.NONE,
+  })
+  navigationType!: NotificationNavigationType;
+
+  @Prop({ maxlength: 500 })
+  navigationTarget?: string; // Category ID, Product ID, Order ID, Section name, or external URL
+
+  @Prop({ type: Object })
+  navigationParams?: Record<string, unknown>; // Additional parameters for navigation
 
   @Prop({
     type: String,

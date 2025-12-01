@@ -81,6 +81,15 @@ export enum NotificationCategory {
   MARKETING = 'marketing',
 }
 
+export enum NotificationNavigationType {
+  NONE = 'none',
+  EXTERNAL_URL = 'external_url',
+  CATEGORY = 'category',
+  PRODUCT = 'product',
+  SECTION = 'section',
+  ORDER = 'order',
+}
+
 export interface Notification extends BaseEntity {
   userId?: string;
   notificationId?: string;
@@ -96,6 +105,9 @@ export interface Notification extends BaseEntity {
   messageEn: string;
   data: Record<string, unknown>;
   actionUrl?: string;
+  navigationType?: NotificationNavigationType;
+  navigationTarget?: string;
+  navigationParams?: Record<string, unknown>;
   imageUrl?: string;
   recipientEmail?: string;
   recipientPhone?: string;
@@ -193,6 +205,9 @@ export interface CreateNotificationDto {
   createdBy?: string;
   isSystemGenerated?: boolean;
   actionUrl?: string;
+  navigationType?: NotificationNavigationType;
+  navigationTarget?: string;
+  navigationParams?: Record<string, unknown>;
 }
 
 export interface UpdateNotificationDto {
@@ -204,6 +219,10 @@ export interface UpdateNotificationDto {
   priority?: NotificationPriority;
   status?: NotificationStatus;
   scheduledFor?: Date;
+  actionUrl?: string;
+  navigationType?: NotificationNavigationType;
+  navigationTarget?: string;
+  navigationParams?: Record<string, unknown>;
 }
 
 export interface SendNotificationDto {
@@ -387,3 +406,13 @@ export interface InitializeChannelConfigsResponse {
   created: number;
   updated: number;
 }
+
+// ===== Navigation Type Options =====
+export const NOTIFICATION_NAVIGATION_TYPE_OPTIONS = [
+  { value: NotificationNavigationType.NONE, label: 'بدون تنقل' },
+  { value: NotificationNavigationType.EXTERNAL_URL, label: 'رابط خارجي' },
+  { value: NotificationNavigationType.CATEGORY, label: 'فئة' },
+  { value: NotificationNavigationType.PRODUCT, label: 'منتج' },
+  { value: NotificationNavigationType.SECTION, label: 'قسم في التطبيق' },
+  { value: NotificationNavigationType.ORDER, label: 'طلب' },
+];

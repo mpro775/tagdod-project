@@ -126,3 +126,12 @@ export enum NotificationFrequency {
   MONTHLY = 'monthly',
   NEVER = 'never',
 }
+
+export enum NotificationNavigationType {
+  NONE = 'none',
+  EXTERNAL_URL = 'external_url',
+  CATEGORY = 'category',
+  PRODUCT = 'product',
+  SECTION = 'section',
+  ORDER = 'order',
+}

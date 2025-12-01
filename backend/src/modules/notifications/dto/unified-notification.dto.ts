@@ -22,6 +22,7 @@ import {
   NotificationPriority,
   NotificationCategory,
   DevicePlatform,
+  NotificationNavigationType,
 } from '../enums/notification.enums';
 import { UserRole } from '../../users/schemas/user.schema';
 import { PaginationMetaDto } from '../../../shared/dto/api-responses.dto';
@@ -63,6 +64,19 @@ export class BaseNotificationDto {
   @IsString()
   @MaxLength(500)
   actionUrl?: string;
+
+  @IsOptional()
+  @IsEnum(NotificationNavigationType)
+  navigationType?: NotificationNavigationType;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  navigationTarget?: string;
+
+  @IsOptional()
+  @IsObject()
+  navigationParams?: Record<string, unknown>;
 
   @IsOptional()
   @IsArray()
@@ -130,6 +144,19 @@ export class UpdateNotificationDto {
   @IsString()
   @MaxLength(500)
   actionUrl?: string;
+
+  @IsOptional()
+  @IsEnum(NotificationNavigationType)
+  navigationType?: NotificationNavigationType;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  navigationTarget?: string;
+
+  @IsOptional()
+  @IsObject()
+  navigationParams?: Record<string, unknown>;
 
   @IsOptional()
   @IsEnum(NotificationChannel)

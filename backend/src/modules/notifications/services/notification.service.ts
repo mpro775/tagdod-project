@@ -17,6 +17,7 @@ import {
   NotificationStatus,
   NotificationChannel,
   NotificationPriority,
+  NotificationNavigationType,
 } from '../enums/notification.enums';
 import {
   NotificationNotFoundException,
@@ -50,6 +51,35 @@ export class NotificationService {
     private readonly pushNotificationAdapter: PushNotificationAdapter,
     private readonly channelConfigService: NotificationChannelConfigService,
   ) {}
+
+  // ===== Helper Methods =====
+
+  /**
+   * بناء actionUrl من navigationType و navigationTarget
+   */
+  private buildActionUrl(
+    navigationType?: NotificationNavigationType,
+    navigationTarget?: string,
+  ): string | undefined {
+    if (!navigationType || navigationType === NotificationNavigationType.NONE || !navigationTarget) {
+      return undefined;
+    }
+
+    switch (navigationType) {
+      case NotificationNavigationType.ORDER:
+        return `/orders/${navigationTarget}`;
+      case NotificationNavigationType.CATEGORY:
+        return `/categories/${navigationTarget}`;
+      case NotificationNavigationType.PRODUCT:
+        return `/products/${navigationTarget}`;
+      case NotificationNavigationType.SECTION:
+        return `/${navigationTarget}`;
+      case NotificationNavigationType.EXTERNAL_URL:
+        return navigationTarget; // استخدام navigationTarget مباشرة كرابط خارجي
+      default:
+        return undefined;
+    }
+  }
 
   // ===== Core CRUD Operations =====
 
@@ -112,8 +142,25 @@ export class NotificationService {
         }
       }
 
+      // بناء actionUrl من navigationType و navigationTarget إذا كانا محددين
+      // إذا كان actionUrl محدداً مسبقاً و navigationType غير محدد، نستخدم actionUrl كما هو (للتوافق مع الإصدارات السابقة)
+      let finalActionUrl = dto.actionUrl;
+      if (dto.navigationType && dto.navigationTarget) {
+        const builtActionUrl = this.buildActionUrl(dto.navigationType, dto.navigationTarget);
+        if (builtActionUrl) {
+          finalActionUrl = builtActionUrl;
+          this.logger.debug(
+            `Built actionUrl from navigation: ${dto.navigationType} -> ${finalActionUrl}`,
+          );
+        }
+      }
+
       const notification = new this.notificationModel({
         ...dto,
+        actionUrl: finalActionUrl,
+        navigationType: dto.navigationType || NotificationNavigationType.NONE,
+        navigationTarget: dto.navigationTarget,
+        navigationParams: dto.navigationParams,
         recipientId: dto.recipientId ? new Types.ObjectId(dto.recipientId) : undefined,
         createdBy: dto.createdBy ? new Types.ObjectId(dto.createdBy) : undefined,
         scheduledFor: dto.scheduledFor || new Date(),
@@ -217,6 +264,9 @@ export class NotificationService {
                 messageEn: savedNotification.messageEn,
                 data: savedNotification.data,
                 actionUrl: savedNotification.actionUrl,
+                navigationType: savedNotification.navigationType,
+                navigationTarget: savedNotification.navigationTarget,
+                navigationParams: savedNotification.navigationParams,
                 channel: savedNotification.channel,
                 status: NotificationStatus.SENT,
                 priority: savedNotification.priority,
@@ -311,9 +361,25 @@ export class NotificationService {
    * تحديث إشعار
    */
   async updateNotification(id: string, dto: UpdateNotificationDto): Promise<UnifiedNotification> {
+    // بناء actionUrl من navigationType و navigationTarget إذا كانا محددين
+    const updateData: any = { ...dto };
+    
+    if (dto.navigationType && dto.navigationTarget) {
+      const builtActionUrl = this.buildActionUrl(dto.navigationType, dto.navigationTarget);
+      if (builtActionUrl) {
+        updateData.actionUrl = builtActionUrl;
+        this.logger.debug(
+          `Built actionUrl from navigation during update: ${dto.navigationType} -> ${builtActionUrl}`,
+        );
+      }
+    } else if (dto.navigationType === NotificationNavigationType.NONE) {
+      // إذا تم تعيين navigationType إلى NONE، لا نغير actionUrl (للحفاظ على القيمة الحالية)
+      updateData.navigationType = NotificationNavigationType.NONE;
+    }
+
     const notification = await this.notificationModel.findByIdAndUpdate(
       id,
-      { $set: dto },
+      { $set: updateData },
       { new: true },
     );
 
@@ -1292,6 +1358,9 @@ export class NotificationService {
           messageEn: notification.messageEn,
           data: notification.data,
           actionUrl: notification.actionUrl,
+          navigationType: notification.navigationType,
+          navigationTarget: notification.navigationTarget,
+          navigationParams: notification.navigationParams,
           channel: notification.channel,
           status: NotificationStatus.SENT,
           priority: notification.priority,
