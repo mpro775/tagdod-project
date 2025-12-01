@@ -810,7 +810,7 @@ export class UnifiedNotificationController {
         );
       } else if (notification.channel === NotificationChannel.IN_APP) {
         // إرسال عبر WebSocket
-        // سيتم إرساله تلقائياً عند التحديث
+        await this.notificationService.resendInAppNotification(id);
       }
     }
 

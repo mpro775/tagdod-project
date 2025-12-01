@@ -1415,4 +1415,50 @@ export class NotificationService {
       return 0;
     }
   }
+
+  /**
+   * إعادة إرسال إشعار IN_APP عبر WebSocket
+   */
+  async resendInAppNotification(notificationId: string): Promise<boolean> {
+    try {
+      const notification = await this.getNotificationById(notificationId);
+
+      if (notification.channel !== NotificationChannel.IN_APP) {
+        this.logger.warn(`Cannot resend non-IN_APP notification ${notificationId}`);
+        return false;
+      }
+
+      if (!notification.recipientId) {
+        this.logger.warn(`Cannot resend notification ${notificationId} without recipientId`);
+        return false;
+      }
+
+      const recipientId = notification.recipientId.toString();
+      const sent = this.webSocketService.sendToUser(recipientId, 'notification:new', {
+        id: notification._id.toString(),
+        title: notification.title,
+        message: notification.message,
+        messageEn: notification.messageEn,
+        type: notification.type,
+        category: notification.category,
+        priority: notification.priority,
+        data: notification.data,
+        createdAt: notification.createdAt,
+        isRead: notification.readAt ? true : false,
+      });
+
+      if (sent) {
+        this.logger.log(
+          `✅ Resent IN_APP notification ${notificationId} to user ${recipientId} via WebSocket`,
+        );
+      } else {
+        this.logger.warn(`⚠️ User ${recipientId} not connected to WebSocket`);
+      }
+
+      return sent;
+    } catch (error) {
+      this.logger.error(`❌ Failed to resend notification: ${error}`);
+      return false;
+    }
+  }
 }
