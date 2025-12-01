@@ -62,6 +62,13 @@ export const NotificationTable: React.FC<NotificationTableProps> = ({
     [onView, onEdit, onSend, onDelete, isSending, isDeleting, isMobile, t]
   );
 
+  // Calculate rowCount for pagination
+  // For server-side pagination, we must use paginationMeta.total
+  // Using notifications.length would prevent pagination from working correctly
+  // because DataGrid would think there are only as many rows as in the current page
+  // If paginationMeta exists, it should always have a total value from the API
+  const rowCount = paginationMeta?.total ?? 0;
+
   return (
     <Box
       sx={{
@@ -81,9 +88,9 @@ export const NotificationTable: React.FC<NotificationTableProps> = ({
         rows={notifications}
         loading={loading}
         paginationMode="server"
-        rowCount={paginationMeta?.total ?? notifications.length}
+        rowCount={rowCount}
         paginationModel={{
-          page: (filters.page || 1) - 1,
+          page: Math.max(0, (filters.page || 1) - 1),
           pageSize: filters.limit || 20,
         }}
         onPaginationModelChange={(model) => {

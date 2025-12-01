@@ -1,14 +1,70 @@
 # 🔔 خدمة الإشعارات (Notifications Service)
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
-> 📅 **آخر تحديث**: يناير 2025  
-> 🆕 **محدث**: إضافة WebSocket للإشعارات الفورية + تسجيل الأجهزة + التحقق من الأجهزة
+> 📅 **آخر تحديث**: ديسمبر 2024  
+> 🆕 **محدث**: مطابق تماماً للـ Backend - شرح مفصل للقنوات (IN_APP vs PUSH)
 
 خدمة الإشعارات توفر endpoints لإدارة الإشعارات وتسجيل الأجهزة مع دعم قنوات متعددة.
 
+---
+
+## 🎯 فهم قنوات الإشعارات
+
+### القنوات المتاحة
+
+| القناة | الاستخدام | آلية الإرسال |
+|--------|----------|-------------|
+| `inApp` | المستخدم داخل التطبيق | WebSocket فقط |
+| `push` | المستخدم خارج التطبيق | FCM (Firebase Cloud Messaging) |
+| `dashboard` | الإداريين | WebSocket |
+| `sms` | رسائل نصية | SMS Provider |
+| `email` | بريد إلكتروني | SMTP |
+
+### الفرق بين IN_APP و PUSH
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         IN_APP (inApp)                              │
+│                                                                     │
+│  المستخدم متصل بالتطبيق (WebSocket)                                  │
+│                                                                     │
+│  Backend                WebSocket                Flutter App        │
+│    │                       │                        │               │
+│    │──── notification:new ─┴────────────────────►│ │               │
+│    │                                               │ │ يظهر فوراً   │
+│    │                                               │ │ في التطبيق   │
+│                                                                     │
+│  ✅ فوري - لا يحتاج FCM Token                                        │
+│  ✅ يعمل فقط إذا المستخدم متصل                                        │
+│  ❌ لا يعمل إذا التطبيق مغلق                                         │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                          PUSH (push)                                │
+│                                                                     │
+│  المستخدم خارج التطبيق (FCM)                                        │
+│                                                                     │
+│  Backend       FCM       Firebase      Device      Flutter App      │
+│    │            │           │            │              │           │
+│    │──Send──►│  │           │            │              │           │
+│    │            │───────►│  │            │              │           │
+│    │            │           │────────►│  │              │           │
+│    │            │           │            │──────────►│  │           │
+│    │            │           │            │              │ إشعار     │
+│    │            │           │            │              │ notification│
+│                                                                     │
+│  ✅ يعمل حتى لو التطبيق مغلق                                        │
+│  ✅ يظهر في شريط الإشعارات                                          │
+│  ❗ يحتاج تسجيل FCM Token أولاً                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🎯 السيناريو الكامل للإشعارات
 
-### 1. تسجيل الجهاز (من Flutter)
+### 1. تسجيل الجهاز (من Flutter) - مطلوب لـ PUSH فقط
+
 ```
 المستخدم يفتح التطبيق
     ↓
@@ -24,37 +80,60 @@ POST /notifications/devices/register
 }
     ↓
 Backend يحفظ Token في قاعدة البيانات مع userId
+    ↓
+الآن المستخدم مستعد لاستقبال Push Notifications
 ```
 
-### 2. إرسال إشعار (من لوحة التحكم)
+### 2. إرسال إشعار IN_APP (المستخدم داخل التطبيق)
+
 ```
-Admin ينشئ إشعار من لوحة التحكم:
+النظام ينشئ إشعار بـ channel: "inApp":
 POST /notifications/admin/create
 {
-  "channel": "push",
+  "type": "ORDER_CONFIRMED",
+  "channel": "inApp",
   "recipientId": "user_id",
-  "title": "عنوان",
-  "message": "محتوى"
+  "title": "تم تأكيد طلبك",
+  "message": "طلبك رقم #123 تم تأكيده"
 }
     ↓
-Backend يجلب جميع Device Tokens النشطة للمستخدم
+Backend يحفظ الإشعار في قاعدة البيانات
     ↓
-Backend يرسل الإشعار لكل Token عبر FCM
+Backend يرسل عبر WebSocket:
+this.webSocketService.sendToUser(recipientId, 'notification:new', {...})
+    ↓
+Flutter يستقبل الحدث (إذا متصل):
+socket.on('notification:new', (data) => { ... })
+    ↓
+التطبيق يعرض الإشعار للمستخدم
+```
+
+### 3. إرسال إشعار PUSH (المستخدم خارج التطبيق)
+
+```
+النظام ينشئ إشعار بـ channel: "push":
+POST /notifications/admin/create
+{
+  "type": "ORDER_CONFIRMED",
+  "channel": "push",
+  "recipientId": "user_id",
+  "title": "تم تأكيد طلبك",
+  "message": "طلبك رقم #123 تم تأكيده"
+}
+    ↓
+Backend يحفظ الإشعار في قاعدة البيانات
+    ↓
+Backend يبحث عن Device Tokens النشطة للمستخدم:
+DeviceToken.find({ userId, isActive: true })
+    ↓
+Backend يرسل لكل Token عبر FCM:
+fcmAdapter.sendToDevice(token, notification)
     ↓
 Firebase يرسل الإشعار للأجهزة
     ↓
-الإشعار يظهر على الهاتف
-```
-
-### 3. استقبال الإشعار (في Flutter)
-```
-Firebase يستقبل الإشعار
+الإشعار يظهر في شريط إشعارات الهاتف
     ↓
-Flutter يعرض الإشعار (Foreground/Background/Terminated)
-    ↓
-المستخدم ينقر على الإشعار
-    ↓
-التطبيق يفتح ويتنقل للصفحة المناسبة
+المستخدم ينقر → التطبيق يفتح
 ```
 
 ---
@@ -65,11 +144,15 @@ Flutter يعرض الإشعار (Foreground/Background/Terminated)
 2. [تحديد كمقروء (متعدد)](#2-تحديد-كمقروء-متعدد)
 3. [تحديد الكل كمقروء](#3-تحديد-الكل-كمقروء)
 4. [عدد الإشعارات غير المقروءة](#4-عدد-الإشعارات-غير-المقروءة)
-5. [تسجيل الجهاز للإشعارات](#5-تسجيل-الجهاز-للإشعارات)
-6. [إلغاء تسجيل الجهاز](#6-إلغاء-تسجيل-الجهاز)
-7. [الحصول على أجهزة المستخدم](#7-الحصول-على-أجهزة-المستخدم)
-8. [WebSocket - الإشعارات الفورية](#8-websocket---الإشعارات-الفورية)
-9. [Models في Flutter](#models-في-flutter)
+5. [إحصائيات الإشعارات](#5-إحصائيات-الإشعارات)
+6. [تسجيل الجهاز للإشعارات](#6-تسجيل-الجهاز-للإشعارات)
+7. [إلغاء تسجيل الجهاز](#7-إلغاء-تسجيل-الجهاز)
+8. [الحصول على أجهزة المستخدم](#8-الحصول-على-أجهزة-المستخدم)
+9. [WebSocket - الإشعارات الفورية](#9-websocket---الإشعارات-الفورية)
+10. [Models في Flutter](#10-models-في-flutter)
+11. [دليل التكامل الكامل مع Push Notifications](#11-دليل-التكامل-الكامل-مع-push-notifications)
+12. [إرسال الإشعارات من لوحة التحكم](#12-إرسال-الإشعارات-من-لوحة-التحكم)
+13. [Enums والثوابت](#13-enums-والثوابت)
 
 ---
 
@@ -95,44 +178,28 @@ Flutter يعرض الإشعار (Foreground/Background/Terminated)
 
 ```json
 {
-  "success": true,
   "notifications": [
     {
       "_id": "64notif123",
-      "type": "ORDER_SHIPPED",
-      "title": "تم شحن طلبك",
-      "message": "طلب رقم ORD-2025-001234 في الطريق إليك",
-      "messageEn": "Order #ORD-2025-001234 is on its way",
+      "type": "ORDER_CONFIRMED",
+      "title": "تم تأكيد طلبك",
+      "message": "طلب رقم ORD-2025-001234 تم تأكيده",
+      "messageEn": "Order #ORD-2025-001234 has been confirmed",
       "data": {
         "orderId": "order_123",
         "orderNumber": "ORD-2025-001234"
       },
-      "channel": "push",
+      "channel": "inApp",
       "status": "sent",
       "priority": "medium",
       "category": "order",
       "recipientId": "64user123",
-      "recipientEmail": "user@example.com",
-      "recipientPhone": "+967123456789",
-      "templateId": "64template123",
-      "templateKey": "order_shipped",
+      "targetRoles": ["user"],
       "scheduledFor": "2025-01-15T14:30:00.000Z",
       "sentAt": "2025-01-15T14:30:00.000Z",
-      "deliveredAt": "2025-01-15T14:30:05.000Z",
       "readAt": null,
-      "clickedAt": null,
-      "failedAt": null,
-      "errorMessage": null,
-      "errorCode": null,
-      "retryCount": 0,
-      "nextRetryAt": null,
       "trackingId": "notif_1234567890_abc123",
-      "externalId": null,
-      "metadata": {
-        "provider": "fcm",
-        "campaign": "order_updates"
-      },
-      "createdBy": "64admin123",
+      "metadata": {},
       "isSystemGenerated": true,
       "createdAt": "2025-01-15T14:30:00.000Z",
       "updatedAt": "2025-01-15T14:30:05.000Z"
@@ -143,8 +210,7 @@ Flutter يعرض الإشعار (Foreground/Background/Terminated)
   "limit": 20,
   "totalPages": 3,
   "hasNextPage": true,
-  "hasPrevPage": false,
-  "requestId": "req_notif_001"
+  "hasPrevPage": false
 }
 ```
 
@@ -160,15 +226,10 @@ Future<PaginatedNotifications> getNotifications({
     'offset': offset,
   });
 
-  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
-    response.data,
-    (json) => json as Map<String, dynamic>,
-  );
-
-  if (apiResponse.isSuccess) {
-    return PaginatedNotifications.fromJson(apiResponse.data!);
+  if (response.statusCode == 200) {
+    return PaginatedNotifications.fromJson(response.data);
   } else {
-    throw ApiException(apiResponse.error!);
+    throw ApiException('Failed to load notifications');
   }
 }
 ```
@@ -198,10 +259,8 @@ Future<PaginatedNotifications> getNotifications({
 
 ```json
 {
-  "success": true,
   "markedCount": 3,
-  "message": "3 notifications marked as read",
-  "requestId": "req_notif_002"
+  "message": "3 notifications marked as read"
 }
 ```
 
@@ -213,15 +272,10 @@ Future<int> markAsRead(List<String> notificationIds) async {
     'notificationIds': notificationIds,
   });
 
-  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
-    response.data,
-    (json) => json as Map<String, dynamic>,
-  );
-
-  if (apiResponse.isSuccess) {
-    return apiResponse.data!['markedCount'] ?? 0;
+  if (response.statusCode == 200) {
+    return response.data['markedCount'] ?? 0;
   } else {
-    throw ApiException(apiResponse.error!);
+    throw ApiException('Failed to mark notifications as read');
   }
 }
 ```
@@ -243,10 +297,8 @@ Future<int> markAsRead(List<String> notificationIds) async {
 
 ```json
 {
-  "success": true,
-  "markedCount": 5,
-  "message": "5 notifications marked as read",
-  "requestId": "req_notif_003"
+  "markedCount": 15,
+  "message": "15 notifications marked as read"
 }
 ```
 
@@ -256,15 +308,10 @@ Future<int> markAsRead(List<String> notificationIds) async {
 Future<int> markAllAsRead() async {
   final response = await _dio.post('/notifications/mark-all-read');
 
-  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
-    response.data,
-    (json) => json as Map<String, dynamic>,
-  );
-
-  if (apiResponse.isSuccess) {
-    return apiResponse.data!['markedCount'] ?? 0;
+  if (response.statusCode == 200) {
+    return response.data['markedCount'] ?? 0;
   } else {
-    throw ApiException(apiResponse.error!);
+    throw ApiException('Failed to mark all notifications as read');
   }
 }
 ```
@@ -287,12 +334,11 @@ Future<int> markAllAsRead() async {
 ```json
 {
   "success": true,
-  "unreadCount": 5,
-  "requestId": "req_notif_004"
+  "data": {
+    "count": 5
+  }
 }
 ```
-
-**ملاحظة:** الـ response يعيد فقط عدد الإشعارات غير المقروءة (بدون تفصيل حسب النوع أو القناة).
 
 ### كود Flutter
 
@@ -300,24 +346,79 @@ Future<int> markAllAsRead() async {
 Future<int> getUnreadCount() async {
   final response = await _dio.get('/notifications/unread-count');
 
-  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
-    response.data,
-    (json) => json as Map<String, dynamic>,
-  );
-
-  if (apiResponse.isSuccess) {
-    return apiResponse.data!['unreadCount'] ?? 0;
+  if (response.statusCode == 200) {
+    return response.data['data']['count'] ?? 0;
   } else {
-    throw ApiException(apiResponse.error!);
+    throw ApiException('Failed to get unread count');
   }
 }
 ```
 
 ---
 
-## 5. تسجيل الجهاز للإشعارات
+## 5. إحصائيات الإشعارات
+
+يسترجع إحصائيات مفصلة حول إشعارات المستخدم.
+
+### معلومات الطلب
+
+- **Method:** `GET`
+- **Endpoint:** `/notifications/stats`
+- **Auth Required:** ✅ نعم
+- **Cache:** ❌ لا
+
+### Response - نجاح
+
+```json
+{
+  "total": 150,
+  "byType": {
+    "ORDER_CONFIRMED": 50,
+    "SERVICE_COMPLETED": 30,
+    "PROMOTION_STARTED": 20
+  },
+  "byStatus": {
+    "sent": 100,
+    "read": 45,
+    "pending": 5
+  },
+  "byChannel": {
+    "inApp": 120,
+    "push": 30
+  },
+  "byCategory": {
+    "order": 60,
+    "service": 40,
+    "promotion": 30,
+    "system": 20
+  },
+  "unreadCount": 5,
+  "readRate": 30.67,
+  "deliveryRate": 95.5
+}
+```
+
+### كود Flutter
+
+```dart
+Future<NotificationStats> getStats() async {
+  final response = await _dio.get('/notifications/stats');
+
+  if (response.statusCode == 200) {
+    return NotificationStats.fromJson(response.data);
+  } else {
+    throw ApiException('Failed to get notification stats');
+  }
+}
+```
+
+---
+
+## 6. تسجيل الجهاز للإشعارات
 
 تسجيل أو تحديث FCM Token للجهاز لاستقبال Push Notifications.
+
+### ⚠️ مهم: هذا مطلوب فقط لـ PUSH notifications
 
 ### معلومات الطلب
 
@@ -363,7 +464,7 @@ Future<int> getUnreadCount() async {
 }
 ```
 
-**ملاحظة:** يتم إخفاء جزء من Token في الـ Response للأمان (أول 20 حرف فقط).
+**ملاحظة:** يتم إخفاء جزء من Token في الـ Response للأمان (أول 20 حرف فقط + ...).
 
 ### كود Flutter
 
@@ -413,11 +514,13 @@ Future<void> registerDevice(String fcmToken) async {
 
 3. **دعم عدة أجهزة**: يمكن للمستخدم تسجيل عدة أجهزة (مثل هاتف + تابلت)
 
-4. **الأمان**: Token يتم إخفاء جزء منه في الـ Response
+4. **تعطيل تلقائي**: عند تسجيل token جديد لنفس المستخدم والمنصة، يتم تعطيل الـ tokens القديمة
+
+5. **Token واحد لكل منصة**: النظام يضمن وجود token نشط واحد فقط لكل منصة لكل مستخدم
 
 ---
 
-## 6. إلغاء تسجيل الجهاز
+## 7. إلغاء تسجيل الجهاز
 
 تعطيل FCM Token للجهاز (لن يستقبل Push Notifications بعد الآن).
 
@@ -436,16 +539,21 @@ Future<void> registerDevice(String fcmToken) async {
 }
 ```
 
-| الحقل | النوع | مطلوب | الوصف |
-|-------|------|-------|-------|
-| `token` | `string` | ✅ | FCM Token للجهاز |
-
 ### Response - نجاح
 
 ```json
 {
   "success": true,
   "message": "Device unregistered successfully"
+}
+```
+
+### Response - Token غير موجود
+
+```json
+{
+  "success": false,
+  "message": "Device token not found"
 }
 ```
 
@@ -474,7 +582,7 @@ Future<void> unregisterDevice(String fcmToken) async {
 
 ---
 
-## 7. الحصول على أجهزة المستخدم
+## 8. الحصول على أجهزة المستخدم
 
 استرداد قائمة بجميع الأجهزة المسجلة للمستخدم.
 
@@ -521,27 +629,24 @@ Future<void> unregisterDevice(String fcmToken) async {
 Future<List<DeviceToken>> getUserDevices() async {
   final response = await _dio.get('/notifications/devices');
   
-  final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
-    response.data,
-    (json) => json as Map<String, dynamic>,
-  );
-  
-  if (apiResponse.isSuccess) {
-    final devices = (apiResponse.data!['devices'] as List)
+  if (response.statusCode == 200) {
+    final devices = (response.data['data']['devices'] as List)
         .map((item) => DeviceToken.fromJson(item))
         .toList();
     return devices;
   } else {
-    throw ApiException(apiResponse.error!);
+    throw ApiException('Failed to get user devices');
   }
 }
 ```
 
 ---
 
-## 8. WebSocket - الإشعارات الفورية
+## 9. WebSocket - الإشعارات الفورية
 
-يوفر النظام اتصال WebSocket في الوقت الفعلي لاستقبال الإشعارات فوراً دون الحاجة لـ polling.
+يوفر النظام اتصال WebSocket في الوقت الفعلي لاستقبال إشعارات `inApp` فوراً.
+
+### ⚠️ مهم: WebSocket مطلوب لإشعارات `inApp` فقط
 
 ### معلومات الاتصال
 
@@ -549,6 +654,9 @@ Future<List<DeviceToken>> getUserDevices() async {
 - **URL:** `ws://your-api-url/notifications` أو `wss://your-api-url/notifications`
 - **Auth Required:** ✅ نعم (JWT Token)
 - **Reconnection:** ✅ تلقائي
+- **Transports:** `['websocket', 'polling']`
+- **Ping Timeout:** 60000ms
+- **Ping Interval:** 25000ms
 
 ### إعداد Dependencies
 
@@ -637,7 +745,7 @@ class NotificationsWebSocketService {
       print('✅ Authenticated: $data');
     });
 
-    // إشعار جديد
+    // إشعار جديد (IN_APP notifications)
     _socket!.on('notification:new', (data) {
       print('🔔 New notification received: $data');
       if (onNotificationReceived != null) {
@@ -675,6 +783,16 @@ class NotificationsWebSocketService {
     _socket!.on('pong', (data) {
       print('🏓 Pong received');
     });
+
+    // تأكيد تحديد كمقروء
+    _socket!.on('marked-as-read', (data) {
+      print('✅ Marked as read: $data');
+    });
+
+    // تأكيد تحديد الكل كمقروء
+    _socket!.on('marked-all-as-read', (data) {
+      print('✅ All marked as read: $data');
+    });
   }
 
   /// طلب عدد الإشعارات غير المقروءة
@@ -709,6 +827,26 @@ class NotificationsWebSocketService {
 }
 ```
 
+### الأحداث المتاحة (Events)
+
+| الحدث | الوصف | البيانات |
+|------|-------|---------|
+| `connected` | اتصال ناجح | `{ success: true, userId: string, timestamp: string }` |
+| `notification:new` | إشعار جديد | `{ id, title, message, messageEn, type, category, priority, data, createdAt, isRead }` |
+| `unread-count` | عدد غير مقروء | `{ count: number }` |
+| `marked-as-read` | تم تحديد كمقروء | `{ success: true, markedCount: number }` |
+| `marked-all-as-read` | تم تحديد الكل كمقروء | `{ success: true, markedCount: number }` |
+| `pong` | رد على ping | `{ pong: true, timestamp: string }` |
+
+### الأوامر المتاحة (Commands)
+
+| الأمر | الوصف | البيانات |
+|------|-------|---------|
+| `ping` | اختبار الاتصال | لا |
+| `get-unread-count` | طلب عدد غير مقروء | لا |
+| `mark-as-read` | تحديد كمقروء | `{ notificationIds: string[] }` |
+| `mark-all-as-read` | تحديد الكل كمقروء | لا |
+
 ### استخدام الخدمة في التطبيق
 
 ```dart
@@ -718,15 +856,13 @@ import 'services/notifications_websocket_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // ... تهيئة أخرى ...
-  
   // تهيئة WebSocket للإشعارات
   final wsService = NotificationsWebSocketService();
   
   // إعداد Callbacks
   wsService.onNotificationReceived = (notification) {
     // عرض الإشعار في UI
-    _showNotification(notification);
+    _showInAppNotification(notification);
   };
   
   wsService.onUnreadCountChanged = (count) {
@@ -736,6 +872,8 @@ void main() async {
   
   wsService.onConnected = () {
     print('✅ Connected to real-time notifications');
+    // طلب عدد الإشعارات غير المقروءة
+    wsService.getUnreadCount();
   };
   
   wsService.onDisconnected = () {
@@ -751,75 +889,6 @@ void main() async {
 }
 ```
 
-### استخدام في Widget
-
-```dart
-// lib/screens/notifications_screen.dart
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  final _wsService = NotificationsWebSocketService();
-  final _notificationsApi = NotificationsApi();
-  
-  List<Notification> _notifications = [];
-  int _unreadCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _setupWebSocket();
-    _loadNotifications();
-  }
-
-  void _setupWebSocket() {
-    _wsService.onNotificationReceived = (data) {
-      // إضافة الإشعار الجديد للقائمة
-      setState(() {
-        _notifications.insert(0, Notification.fromJson(data));
-        _unreadCount++;
-      });
-      
-      // عرض إشعار محلي
-      _showLocalNotification(data);
-    };
-    
-    _wsService.onUnreadCountChanged = (count) {
-      setState(() {
-        _unreadCount = count;
-      });
-    };
-    
-    _wsService.connect();
-  }
-
-  @override
-  void dispose() {
-    _wsService.disconnect();
-    super.dispose();
-  }
-
-  // ... باقي الكود ...
-}
-```
-
-### الأحداث المتاحة
-
-| الحدث | الوصف | البيانات |
-|------|-------|---------|
-| `connected` | اتصال ناجح | `{ success: true, userId: string, timestamp: string }` |
-| `notification:new` | إشعار جديد | `{ id, title, message, messageEn, type, priority, data, createdAt, isRead }` |
-| `unread-count` | عدد غير مقروء | `{ count: number }` |
-| `marked-as-read` | تم تحديد كمقروء | `{ success: true, markedCount: number }` |
-| `marked-all-as-read` | تم تحديد الكل كمقروء | `{ success: true, markedCount: number }` |
-| `pong` | رد على ping | `{ pong: true, timestamp: string }` |
-
-### الأوامر المتاحة
-
-| الأمر | الوصف | البيانات |
-|------|-------|---------|
-| `ping` | اختبار الاتصال | لا |
-| `get-unread-count` | طلب عدد غير مقروء | لا |
-| `mark-as-read` | تحديد كمقروء | `{ notificationIds: string[] }` |
-| `mark-all-as-read` | تحديد الكل كمقروء | لا |
-
 ### ملاحظات مهمة
 
 1. **Authentication**: يجب إرسال JWT Token في `authorization` header أو `auth.token`
@@ -830,23 +899,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
 ---
 
-## Models في Flutter
+## 10. Models في Flutter
 
 ### ملف: `lib/models/notification/notification_models.dart`
 
 ```dart
+// ===== Enums =====
+
 enum NotificationType {
   // Order related
+  ORDER_CREATED,
   ORDER_CONFIRMED,
-  ORDER_SHIPPED,
-  ORDER_DELIVERED,
   ORDER_CANCELLED,
   ORDER_REFUNDED,
+  ORDER_RATED,
   
   // Service related
   SERVICE_REQUEST_OPENED,
   NEW_ENGINEER_OFFER,
   OFFER_ACCEPTED,
+  OFFER_REJECTED,
+  OFFER_CANCELLED,
   SERVICE_STARTED,
   SERVICE_COMPLETED,
   SERVICE_RATED,
@@ -861,16 +934,19 @@ enum NotificationType {
   // Promotion related
   PROMOTION_STARTED,
   PROMOTION_ENDING,
+  COUPON_USED,
   
   // Account & Security
   ACCOUNT_VERIFIED,
   PASSWORD_CHANGED,
   LOGIN_ATTEMPT,
+  NEW_USER_REGISTERED,
   
   // Support
   TICKET_CREATED,
   TICKET_UPDATED,
   TICKET_RESOLVED,
+  SUPPORT_MESSAGE_RECEIVED,
   
   // System
   SYSTEM_MAINTENANCE,
@@ -885,6 +961,9 @@ enum NotificationType {
   // Payment
   PAYMENT_FAILED,
   PAYMENT_SUCCESS,
+  
+  // Invoice
+  INVOICE_CREATED,
 }
 
 enum NotificationStatus {
@@ -928,17 +1007,27 @@ enum NotificationCategory {
   marketing,
 }
 
-class Notification {
+enum DevicePlatform {
+  ios,
+  android,
+  web,
+}
+
+// ===== Models =====
+
+class AppNotification {
   final String id;
   final NotificationType type;
   final String title;
   final String message;
   final String messageEn;
   final Map<String, dynamic> data;
+  final String? actionUrl;
   final NotificationChannel channel;
   final NotificationStatus status;
   final NotificationPriority priority;
   final NotificationCategory category;
+  final List<String>? targetRoles;
   final String? recipientId;
   final String? recipientEmail;
   final String? recipientPhone;
@@ -962,17 +1051,19 @@ class Notification {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  Notification({
+  AppNotification({
     required this.id,
     required this.type,
     required this.title,
     required this.message,
     required this.messageEn,
     required this.data,
+    this.actionUrl,
     required this.channel,
     required this.status,
     required this.priority,
     required this.category,
+    this.targetRoles,
     this.recipientId,
     this.recipientEmail,
     this.recipientPhone,
@@ -997,33 +1088,22 @@ class Notification {
     required this.updatedAt,
   });
 
-  factory Notification.fromJson(Map<String, dynamic> json) {
-    return Notification(
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
       id: json['_id'] ?? '',
-      type: NotificationType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => NotificationType.SYSTEM_ALERT,
-      ),
+      type: _parseNotificationType(json['type']),
       title: json['title'] ?? '',
       message: json['message'] ?? '',
       messageEn: json['messageEn'] ?? '',
       data: Map<String, dynamic>.from(json['data'] ?? {}),
-      channel: NotificationChannel.values.firstWhere(
-        (e) => e.name == json['channel'],
-        orElse: () => NotificationChannel.inApp,
-      ),
-      status: NotificationStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => NotificationStatus.pending,
-      ),
-      priority: NotificationPriority.values.firstWhere(
-        (e) => e.name == json['priority'],
-        orElse: () => NotificationPriority.medium,
-      ),
-      category: NotificationCategory.values.firstWhere(
-        (e) => e.name == json['category'],
-        orElse: () => NotificationCategory.system,
-      ),
+      actionUrl: json['actionUrl'],
+      channel: _parseChannel(json['channel']),
+      status: _parseStatus(json['status']),
+      priority: _parsePriority(json['priority']),
+      category: _parseCategory(json['category']),
+      targetRoles: json['targetRoles'] != null 
+          ? List<String>.from(json['targetRoles'])
+          : null,
       recipientId: json['recipientId'],
       recipientEmail: json['recipientEmail'],
       recipientPhone: json['recipientPhone'],
@@ -1054,88 +1134,110 @@ class Notification {
     return message;
   }
 
-  // Type checks
+  // Status checks
+  bool get isRead => status == NotificationStatus.read;
+  bool get isUnread => status != NotificationStatus.read;
+  bool get isPending => status == NotificationStatus.pending;
+  bool get isSent => status == NotificationStatus.sent;
+  bool get isDelivered => status == NotificationStatus.delivered;
+  bool get isFailed => status == NotificationStatus.failed;
+
+  // Channel checks
+  bool get isInApp => channel == NotificationChannel.inApp;
+  bool get isPush => channel == NotificationChannel.push;
+  bool get isDashboard => channel == NotificationChannel.dashboard;
+
+  // Category checks
   bool get isOrderType => category == NotificationCategory.order;
   bool get isServiceType => category == NotificationCategory.service;
   bool get isProductType => category == NotificationCategory.product;
   bool get isPromotionType => category == NotificationCategory.promotion;
-  bool get isAccountType => category == NotificationCategory.account;
   bool get isSystemType => category == NotificationCategory.system;
-  bool get isSupportType => category == NotificationCategory.support;
-  bool get isPaymentType => category == NotificationCategory.payment;
-  bool get isMarketingType => category == NotificationCategory.marketing;
-  
-  // Status checks
-  bool get isPending => status == NotificationStatus.pending;
-  bool get isQueued => status == NotificationStatus.queued;
-  bool get isSending => status == NotificationStatus.sending;
-  bool get isSent => status == NotificationStatus.sent;
-  bool get isDelivered => status == NotificationStatus.delivered;
-  bool get isRead => status == NotificationStatus.read;
-  bool get isClicked => status == NotificationStatus.clicked;
-  bool get isFailed => status == NotificationStatus.failed;
-  bool get isBounced => status == NotificationStatus.bounced;
-  bool get isRejected => status == NotificationStatus.rejected;
-  bool get isCancelled => status == NotificationStatus.cancelled;
-  bool get isUnread => status != NotificationStatus.read;
-  
-  // Channel checks
-  bool get isInApp => channel == NotificationChannel.inApp;
-  bool get isEmail => channel == NotificationChannel.email;
-  bool get isSms => channel == NotificationChannel.sms;
-  bool get isPush => channel == NotificationChannel.push;
-  bool get isDashboard => channel == NotificationChannel.dashboard;
-  
+
   // Priority checks
-  bool get isLowPriority => priority == NotificationPriority.low;
-  bool get isMediumPriority => priority == NotificationPriority.medium;
-  bool get isHighPriority => priority == NotificationPriority.high;
   bool get isUrgent => priority == NotificationPriority.urgent;
-  
-  // Field checks
-  bool get hasRecipient => recipientId != null;
-  bool get hasEmail => recipientEmail != null && recipientEmail!.isNotEmpty;
-  bool get hasPhone => recipientPhone != null && recipientPhone!.isNotEmpty;
-  bool get hasTemplate => templateId != null || templateKey != null;
-  bool get hasError => errorMessage != null && errorMessage!.isNotEmpty;
-  bool get hasRetries => retryCount > 0;
-  bool get isScheduled => scheduledFor != null;
-  bool get hasCreator => createdBy != null;
-  bool get hasTracking => trackingId != null;
-  bool get hasExternalId => externalId != null;
-  bool get hasMetadata => metadata.isNotEmpty;
-  
+  bool get isHighPriority => priority == NotificationPriority.high;
+
   // Data extraction
   String? get orderId => data['orderId']?.toString();
   String? get orderNumber => data['orderNumber']?.toString();
   String? get productId => data['productId']?.toString();
-  String? get userId => data['userId']?.toString();
   String? get serviceId => data['serviceId']?.toString();
   String? get ticketId => data['ticketId']?.toString();
-  
-  bool get hasOrderData => orderId != null || orderNumber != null;
-  bool get hasProductData => productId != null;
-  bool get hasUserData => userId != null;
-  bool get hasServiceData => serviceId != null;
-  bool get hasTicketData => ticketId != null;
-  
-  // Metadata extraction
-  String? get provider => metadata['provider']?.toString();
-  double? get cost => metadata['cost']?.toDouble();
-  int? get credits => metadata['credits']?.toInt();
-  String? get campaign => metadata['campaign']?.toString();
-  List<String>? get tags => metadata['tags'] != null 
-      ? List<String>.from(metadata['tags']) 
-      : null;
-  
+
   // Timing
   DateTime get displayDate => readAt ?? deliveredAt ?? sentAt ?? createdAt;
   bool get isRecent => DateTime.now().difference(displayDate).inDays < 7;
-  bool get isOld => DateTime.now().difference(displayDate).inDays > 30;
+  
+  // Helper parsers
+  static NotificationType _parseNotificationType(String? type) {
+    if (type == null) return NotificationType.SYSTEM_ALERT;
+    try {
+      return NotificationType.values.firstWhere(
+        (e) => e.name == type,
+        orElse: () => NotificationType.SYSTEM_ALERT,
+      );
+    } catch (_) {
+      return NotificationType.SYSTEM_ALERT;
+    }
+  }
+
+  static NotificationChannel _parseChannel(String? channel) {
+    switch (channel) {
+      case 'inApp': return NotificationChannel.inApp;
+      case 'push': return NotificationChannel.push;
+      case 'sms': return NotificationChannel.sms;
+      case 'email': return NotificationChannel.email;
+      case 'dashboard': return NotificationChannel.dashboard;
+      default: return NotificationChannel.inApp;
+    }
+  }
+
+  static NotificationStatus _parseStatus(String? status) {
+    switch (status) {
+      case 'pending': return NotificationStatus.pending;
+      case 'queued': return NotificationStatus.queued;
+      case 'sending': return NotificationStatus.sending;
+      case 'sent': return NotificationStatus.sent;
+      case 'delivered': return NotificationStatus.delivered;
+      case 'read': return NotificationStatus.read;
+      case 'clicked': return NotificationStatus.clicked;
+      case 'failed': return NotificationStatus.failed;
+      case 'bounced': return NotificationStatus.bounced;
+      case 'rejected': return NotificationStatus.rejected;
+      case 'cancelled': return NotificationStatus.cancelled;
+      default: return NotificationStatus.pending;
+    }
+  }
+
+  static NotificationPriority _parsePriority(String? priority) {
+    switch (priority) {
+      case 'low': return NotificationPriority.low;
+      case 'medium': return NotificationPriority.medium;
+      case 'high': return NotificationPriority.high;
+      case 'urgent': return NotificationPriority.urgent;
+      default: return NotificationPriority.medium;
+    }
+  }
+
+  static NotificationCategory _parseCategory(String? category) {
+    switch (category) {
+      case 'order': return NotificationCategory.order;
+      case 'product': return NotificationCategory.product;
+      case 'service': return NotificationCategory.service;
+      case 'promotion': return NotificationCategory.promotion;
+      case 'account': return NotificationCategory.account;
+      case 'system': return NotificationCategory.system;
+      case 'support': return NotificationCategory.support;
+      case 'payment': return NotificationCategory.payment;
+      case 'marketing': return NotificationCategory.marketing;
+      default: return NotificationCategory.system;
+    }
+  }
 }
 
 class PaginatedNotifications {
-  final List<Notification> notifications;
+  final List<AppNotification> notifications;
   final int total;
   final int page;
   final int limit;
@@ -1156,7 +1258,7 @@ class PaginatedNotifications {
   factory PaginatedNotifications.fromJson(Map<String, dynamic> json) {
     return PaginatedNotifications(
       notifications: (json['notifications'] as List)
-          .map((item) => Notification.fromJson(item))
+          .map((item) => AppNotification.fromJson(item))
           .toList(),
       total: json['total'] ?? 0,
       page: json['page'] ?? 1,
@@ -1167,29 +1269,83 @@ class PaginatedNotifications {
     );
   }
 
-  bool get hasNotifications => notifications.isNotEmpty;
   bool get isEmpty => notifications.isEmpty;
-  int get count => notifications.length;
-  List<Notification> get unreadNotifications => notifications.where((n) => n.isUnread).toList();
-  List<Notification> get readNotifications => notifications.where((n) => n.isRead).toList();
-  int get unreadCount => unreadNotifications.length;
-  int get readCount => readNotifications.length;
-  bool get isFirstPage => page == 1;
-  bool get isLastPage => page == totalPages;
+  int get unreadCount => notifications.where((n) => n.isUnread).length;
+}
+
+class DeviceToken {
+  final String id;
+  final String platform;
+  final String? userAgent;
+  final String? appVersion;
+  final bool isActive;
+  final DateTime? lastUsedAt;
+  final DateTime? createdAt;
+
+  DeviceToken({
+    required this.id,
+    required this.platform,
+    this.userAgent,
+    this.appVersion,
+    required this.isActive,
+    this.lastUsedAt,
+    this.createdAt,
+  });
+
+  factory DeviceToken.fromJson(Map<String, dynamic> json) {
+    return DeviceToken(
+      id: json['_id'] ?? '',
+      platform: json['platform'] ?? 'unknown',
+      userAgent: json['userAgent'],
+      appVersion: json['appVersion'],
+      isActive: json['isActive'] ?? false,
+      lastUsedAt: json['lastUsedAt'] != null ? DateTime.parse(json['lastUsedAt']) : null,
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+    );
+  }
+}
+
+class NotificationStats {
+  final int total;
+  final Map<String, int> byType;
+  final Map<String, int> byStatus;
+  final Map<String, int> byChannel;
+  final Map<String, int> byCategory;
+  final int unreadCount;
+  final double readRate;
+  final double deliveryRate;
+
+  NotificationStats({
+    required this.total,
+    required this.byType,
+    required this.byStatus,
+    required this.byChannel,
+    required this.byCategory,
+    required this.unreadCount,
+    required this.readRate,
+    required this.deliveryRate,
+  });
+
+  factory NotificationStats.fromJson(Map<String, dynamic> json) {
+    return NotificationStats(
+      total: json['total'] ?? 0,
+      byType: Map<String, int>.from(json['byType'] ?? {}),
+      byStatus: Map<String, int>.from(json['byStatus'] ?? {}),
+      byChannel: Map<String, int>.from(json['byChannel'] ?? {}),
+      byCategory: Map<String, int>.from(json['byCategory'] ?? {}),
+      unreadCount: json['unreadCount'] ?? 0,
+      readRate: (json['readRate'] ?? 0).toDouble(),
+      deliveryRate: (json['deliveryRate'] ?? 0).toDouble(),
+    );
+  }
 }
 ```
 
 ---
 
-## 🔔 دليل التكامل الكامل مع Push Notifications (FCM)
+## 11. دليل التكامل الكامل مع Push Notifications
 
-هذا الدليل يشرح كيفية ربط تطبيق Flutter مع خدمة الإشعارات بشكل صحيح، بحيث تظهر الإشعارات داخل وخارج التطبيق.
-
----
-
-## 📦 1. إعداد المشروع
-
-### 1.1 إضافة Dependencies
+### 📦 1. إعداد Dependencies
 
 في `pubspec.yaml`:
 ```yaml
@@ -1200,21 +1356,14 @@ dependencies:
   device_info_plus: ^9.1.0
   package_info_plus: ^5.0.1
   shared_preferences: ^2.2.2
+  socket_io_client: ^2.0.3+1
 ```
 
-### 1.2 إعداد Firebase
+### 🚀 2. تهيئة Firebase
 
 #### Android:
 
-> **📥 تحميل ملف `google-services.json`:**
-> 
-> تمت تهيئة Android app في Firebase. يمكنك تحميل الملف مباشرة من الرابط التالي:
-> 
-> **[⬇️ تحميل google-services.json](https://console.firebase.google.com/project/tagadod-5932b/settings/general/android:com.tagadod.app)**
-> 
-> سيجد الملف جاهزاً للتحميل في الصفحة (ستجد زر "Download google-services.json" في أعلى الصفحة).
-
-1. حمّل ملف `google-services.json` من الرابط أعلاه (أو من Firebase Console)
+1. حمّل ملف `google-services.json` من Firebase Console
 2. ضعه في `android/app/`
 3. أضف في `android/build.gradle`:
 ```gradle
@@ -1228,65 +1377,37 @@ apply plugin: 'com.google.gms.google-services'
 ```
 
 #### iOS:
+
 1. حمّل ملف `GoogleService-Info.plist` من Firebase Console
 2. ضعه في `ios/Runner/`
 3. في `ios/Runner/Info.plist` أضف:
 ```xml
 <key>FirebaseAppDelegateProxyEnabled</key>
 <false/>
+<key>UIBackgroundModes</key>
+<array>
+  <string>remote-notification</string>
+</array>
 ```
 
----
-
-## 🚀 2. تهيئة Firebase في التطبيق
-
-### 2.1 إعداد Background Handler
+### 🎯 3. خدمة الإشعارات الكاملة
 
 ```dart
-// lib/main.dart
+// lib/services/notifications_service.dart
+import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Handler للإشعارات في الخلفية (يجب أن يكون top-level function)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print('Handling background message: ${message.messageId}');
-  print('Message data: ${message.data}');
-  
-  // يمكنك إضافة منطق إضافي هنا (مثل تحديث قاعدة البيانات المحلية)
 }
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // تهيئة Firebase
-  await Firebase.initializeApp();
-  
-  // تسجيل Background Handler
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  
-  runApp(MyApp());
-}
-```
-
----
-
-## 🎯 3. إنشاء خدمة الإشعارات الكاملة
-
-### 3.1 ملف الخدمة الأساسي
-
-```dart
-// lib/services/notifications_service.dart
-import 'dart:io';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../api/api_client.dart';
-import '../models/notification/notification_models.dart';
 
 class NotificationsService {
   static final NotificationsService _instance = NotificationsService._internal();
@@ -1296,7 +1417,6 @@ class NotificationsService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotifications = 
       FlutterLocalNotificationsPlugin();
-  final ApiClient _apiClient = ApiClient();
   
   bool _isInitialized = false;
   String? _currentToken;
@@ -1378,9 +1498,6 @@ class NotificationsService {
       badge: true,
       sound: true,
       provisional: false,
-      announcement: false,
-      carPlay: false,
-      criticalAlert: false,
     );
   }
 
@@ -1391,10 +1508,10 @@ class NotificationsService {
       _currentToken = await _fcm.getToken();
       
       if (_currentToken != null) {
-        print('📱 FCM Token: ${_currentToken.substring(0, 20)}...');
+        print('📱 FCM Token: ${_currentToken!.substring(0, 20)}...');
         
         // تسجيل الجهاز في Backend
-        await _registerDevice(_currentToken!);
+        await _registerDeviceWithBackend(_currentToken!);
         
         // حفظ Token محلياً
         final prefs = await SharedPreferences.getInstance();
@@ -1407,7 +1524,7 @@ class NotificationsService {
         _currentToken = newToken;
         
         // تحديث Token في Backend
-        await _registerDevice(newToken);
+        await _registerDeviceWithBackend(newToken);
         
         // حفظ Token الجديد
         final prefs = await SharedPreferences.getInstance();
@@ -1419,7 +1536,7 @@ class NotificationsService {
   }
 
   /// تسجيل الجهاز في Backend
-  Future<void> _registerDevice(String token) async {
+  Future<void> _registerDeviceWithBackend(String token) async {
     try {
       final deviceInfo = DeviceInfoPlugin();
       final packageInfo = await PackageInfo.fromPlatform();
@@ -1439,27 +1556,12 @@ class NotificationsService {
         platform = 'web';
       }
       
-      final response = await _apiClient.dio.post(
-        '/notifications/devices/register',
-        data: {
-          'platform': platform,
-          'token': token,
-          'userAgent': userAgent,
-          'appVersion': packageInfo.version,
-        },
-      );
+      // TODO: استدعاء API
+      // await _apiClient.post('/notifications/devices/register', data: {...});
       
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        print('✅ Device registered successfully');
-        
-        // حفظ معلومات التسجيل
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('device_registered', 'true');
-        await prefs.setString('device_platform', platform);
-      }
+      print('✅ Device registered: $platform');
     } catch (e) {
       print('❌ Error registering device: $e');
-      // لا نرمي خطأ هنا لأن التطبيق يجب أن يعمل حتى لو فشل التسجيل
     }
   }
 
@@ -1472,41 +1574,16 @@ class NotificationsService {
       }
       
       if (_currentToken != null) {
-        await _apiClient.dio.post(
-          '/notifications/devices/unregister',
-          data: {
-            'token': _currentToken,
-          },
-        );
+        // TODO: استدعاء API
+        // await _apiClient.post('/notifications/devices/unregister', data: {...});
         
-        print('✅ Device unregistered successfully');
-        
-        // حذف معلومات التسجيل
         final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('device_registered');
-        await prefs.remove('device_platform');
         await prefs.remove('fcm_token');
+        
+        print('✅ Device unregistered');
       }
     } catch (e) {
       print('❌ Error unregistering device: $e');
-    }
-  }
-
-  /// الحصول على أجهزة المستخدم المسجلة
-  Future<List<Map<String, dynamic>>> getUserDevices() async {
-    try {
-      final response = await _apiClient.dio.get('/notifications/devices');
-      
-      if (response.statusCode == 200) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        final devices = data['devices'] as List;
-        return devices.cast<Map<String, dynamic>>();
-      }
-      
-      return [];
-    } catch (e) {
-      print('❌ Error getting user devices: $e');
-      return [];
     }
   }
 
@@ -1535,30 +1612,14 @@ class NotificationsService {
   /// معالجة إشعار Foreground
   Future<void> _handleForegroundNotification(RemoteMessage message) async {
     // عرض إشعار محلي
-    await _showLocalNotification(message);
-    
-    // تحديث حالة الإشعار في Backend (delivered)
-    if (message.data['notificationId'] != null) {
-      await _markAsDelivered(message.data['notificationId']);
-    }
-  }
-
-  /// عرض إشعار محلي
-  Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
-    final data = message.data;
-    
     if (notification == null) return;
     
     const androidDetails = AndroidNotificationDetails(
       'high_importance_channel',
       'High Importance Notifications',
-      channelDescription: 'This channel is used for important notifications',
       importance: Importance.high,
       priority: Priority.high,
-      showWhen: true,
-      enableVibration: true,
-      playSound: true,
     );
     
     const iosDetails = DarwinNotificationDetails(
@@ -1577,530 +1638,146 @@ class NotificationsService {
       notification.title ?? 'إشعار جديد',
       notification.body ?? '',
       details,
-      payload: data.toString(),
+      payload: message.data.toString(),
     );
   }
 
-  /// معالجة النقر على الإشعار
   void _onNotificationTapped(NotificationResponse response) {
     if (response.payload != null) {
-      // يمكنك parse الـ payload هنا
       print('Notification tapped: ${response.payload}');
     }
   }
 
-  /// معالجة النقر على إشعار FCM
   void _handleNotificationTap(RemoteMessage message) {
-    final data = message.data;
-    
-    // استدعاء Callback للتنقل
     if (onNotificationTapped != null) {
-      onNotificationTapped!(data);
-    }
-    
-    // تحديث حالة الإشعار في Backend (clicked)
-    if (data['notificationId'] != null) {
-      _markAsClicked(data['notificationId']);
+      onNotificationTapped!(message.data);
     }
   }
 
-  /// تحديث حالة الإشعار كمقروء
-  Future<void> markAsRead(String notificationId) async {
-    try {
-      await _apiClient.dio.post(
-        '/notifications/mark-read',
-        data: {
-          'notificationIds': [notificationId],
-        },
-      );
-    } catch (e) {
-      print('❌ Error marking notification as read: $e');
-    }
-  }
-
-  /// تحديث حالة الإشعار كمقروء (متعدد)
-  Future<void> markMultipleAsRead(List<String> notificationIds) async {
-    try {
-      await _apiClient.dio.post(
-        '/notifications/mark-read',
-        data: {
-          'notificationIds': notificationIds,
-        },
-      );
-    } catch (e) {
-      print('❌ Error marking notifications as read: $e');
-    }
-  }
-
-  /// تحديث حالة الإشعار كـ delivered
-  Future<void> _markAsDelivered(String notificationId) async {
-
-    // يمكنك إضافة endpoint خاص لهذا إذا كان متوفراً
-    // أو يمكنك استخدام markAsRead
-  }
-
-  /// تحديث حالة الإشعار كـ clicked
-  Future<void> _markAsClicked(String notificationId) async {
-    // يمكنك إضافة endpoint خاص لهذا إذا كان متوفراً
-    // أو يمكنك استخدام markAsRead
-  }
-
-  /// الحصول على Token الحالي
   String? get currentToken => _currentToken;
-
-  /// التحقق من حالة التهيئة
   bool get isInitialized => _isInitialized;
 }
 ```
 
----
-
-## 🎨 4. استخدام الخدمة في التطبيق
-
-### 4.1 تهيئة الخدمة في main.dart
+### 📱 4. استخدام في main.dart
 
 ```dart
 // lib/main.dart
-import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/notifications_service.dart';
+import 'services/notifications_websocket_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // ... تهيئة Firebase ...
+  // 1. تهيئة Firebase
+  await Firebase.initializeApp();
   
-  // تهيئة خدمة الإشعارات
-  final notificationsService = NotificationsService();
-  await notificationsService.initialize();
+  // 2. تسجيل Background Handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   
-  // إعداد Callback للتنقل
-  notificationsService.onNotificationTapped = (data) {
+  // 3. تهيئة خدمة Push Notifications
+  final pushService = NotificationsService();
+  await pushService.initialize();
+  
+  pushService.onNotificationTapped = (data) {
     _handleNotificationNavigation(data);
   };
+  
+  // 4. تهيئة WebSocket للإشعارات IN_APP
+  final wsService = NotificationsWebSocketService();
+  wsService.onNotificationReceived = (notification) {
+    _showInAppNotification(notification);
+  };
+  await wsService.connect();
   
   runApp(MyApp());
 }
 
 void _handleNotificationNavigation(Map<String, dynamic> data) {
-  // معالجة التنقل حسب نوع الإشعار
-  final navigatorKey = GlobalKey<NavigatorState>();
-  
   if (data['orderId'] != null) {
-    navigatorKey.currentState?.pushNamed('/orders/${data['orderId']}');
+    // Navigate to order details
   } else if (data['productId'] != null) {
-    navigatorKey.currentState?.pushNamed('/products/${data['productId']}');
-  } else if (data['serviceId'] != null) {
-    navigatorKey.currentState?.pushNamed('/services/${data['serviceId']}');
-  } else if (data['ticketId'] != null) {
-    navigatorKey.currentState?.pushNamed('/support/${data['ticketId']}');
+    // Navigate to product
   }
-  // ... إلخ
-}
-```
-
-### 4.2 استخدام الخدمة في Widget
-
-```dart
-// lib/screens/notifications_screen.dart
-import 'package:flutter/material.dart';
-import '../services/notifications_service.dart';
-import '../api/notifications_api.dart';
-
-class NotificationsScreen extends StatefulWidget {
-  @override
-  _NotificationsScreenState createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  final NotificationsService _notificationsService = NotificationsService();
-  final NotificationsApi _api = NotificationsApi();
-  
-  List<Notification> _notifications = [];
-  bool _isLoading = true;
-  int _unreadCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadNotifications();
-    _loadUnreadCount();
-  }
-
-  Future<void> _loadNotifications() async {
-    try {
-      setState(() => _isLoading = true);
-      final result = await _api.getNotifications();
-      setState(() {
-        _notifications = result.notifications;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ في تحميل الإشعارات: $e')),
-      );
-    }
-  }
-
-  Future<void> _loadUnreadCount() async {
-    try {
-      final count = await _api.getUnreadCount();
-      setState(() => _unreadCount = count);
-    } catch (e) {
-      print('Error loading unread count: $e');
-    }
-  }
-
-  Future<void> _markAsRead(String notificationId) async {
-    try {
-      await _notificationsService.markAsRead(notificationId);
-      await _loadNotifications();
-      await _loadUnreadCount();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ في تحديث الإشعار')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('الإشعارات'),
-        actions: [
-          if (_unreadCount > 0)
-            Center(
-              child: Padding(
-                padding: EdgeInsets.only(right: 16),
-                child: Text(
-                  '$_unreadCount',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-        ],
-      ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : _notifications.isEmpty
-              ? Center(child: Text('لا توجد إشعارات'))
-              : RefreshIndicator(
-                  onRefresh: _loadNotifications,
-                  child: ListView.builder(
-                    itemCount: _notifications.length,
-                    itemBuilder: (context, index) {
-                      final notification = _notifications[index];
-                      return ListTile(
-                        leading: _getNotificationIcon(notification),
-                        title: Text(notification.title),
-                        subtitle: Text(notification.getMessage('ar')),
-                        trailing: notification.isUnread
-                            ? Icon(Icons.circle, color: Colors.blue, size: 12)
-                            : null,
-                        onTap: () {
-                          _markAsRead(notification.id);
-                          _handleNotificationTap(notification);
-                        },
-                      );
-                    },
-                  ),
-                ),
-    );
-  }
-
-  Widget _getNotificationIcon(Notification notification) {
-    if (notification.isOrderType) {
-      return Icon(Icons.shopping_cart, color: Colors.blue);
-    } else if (notification.isServiceType) {
-      return Icon(Icons.build, color: Colors.orange);
-    } else if (notification.isProductType) {
-      return Icon(Icons.shopping_bag, color: Colors.green);
-    } else {
-      return Icon(Icons.notifications, color: Colors.grey);
-    }
-  }
-
-  void _handleNotificationTap(Notification notification) {
-    // التنقل حسب نوع الإشعار
-    if (notification.orderId != null) {
-      Navigator.pushNamed(context, '/orders/${notification.orderId}');
-    } else if (notification.productId != null) {
-      Navigator.pushNamed(context, '/products/${notification.productId}');
-    } else if (notification.serviceId != null) {
-      Navigator.pushNamed(context, '/services/${notification.serviceId}');
-    }
-  }
+void _showInAppNotification(Map<String, dynamic> notification) {
+  // Show in-app banner or snackbar
 }
 ```
 
 ---
 
-## 📱 5. معالجة الإشعارات حسب الحالة
+## 12. إرسال الإشعارات من لوحة التحكم
 
-### 5.1 داخل التطبيق (Foreground)
+### Admin Endpoints
 
-عندما يكون التطبيق مفتوحاً، يتم استقبال الإشعارات عبر `FirebaseMessaging.onMessage` ويتم عرضها كإشعارات محلية.
+#### 1. إنشاء إشعار
 
-### 5.2 في الخلفية (Background)
-
-عندما يكون التطبيق في الخلفية، يتم استقبال الإشعارات عبر `FirebaseMessaging.onMessageOpenedApp` عند النقر عليها.
-
-### 5.3 التطبيق مغلق (Terminated)
-
-عندما يكون التطبيق مغلقاً تماماً، يتم استقبال الإشعارات عبر `FirebaseMessaging.getInitialMessage()` عند فتح التطبيق.
-
----
-
-## 🔧 6. إعدادات إضافية
-
-### 6.1 إعدادات Android (android/app/src/main/AndroidManifest.xml)
-
-```xml
-<manifest>
-  <uses-permission android:name="android.permission.INTERNET"/>
-  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-  
-  <application>
-    <!-- ... -->
-    
-    <!-- إشعارات FCM -->
-    <service
-      android:name="com.google.firebase.messaging.FirebaseMessagingService"
-      android:exported="false">
-      <intent-filter>
-        <action android:name="com.google.firebase.MESSAGING_EVENT" />
-      </intent-filter>
-    </service>
-  </application>
-</manifest>
+```
+POST /notifications/admin/create
 ```
 
-### 6.2 إعدادات iOS (ios/Runner/Info.plist)
-
-```xml
-<key>UIBackgroundModes</key>
-<array>
-  <string>remote-notification</string>
-</array>
-```
-
----
-
-## ✅ 7. التحقق من التكامل
-
-### 7.1 التحقق من Token
-
-```dart
-final token = await NotificationsService().currentToken;
-print('FCM Token: $token');
-```
-
-### 7.2 التحقق من تسجيل الجهاز
-
-```dart
-// الحصول على الأجهزة المسجلة
-final devices = await NotificationsService().getUserDevices();
-print('Registered devices: ${devices.length}');
-
-for (var device in devices) {
-  print('Platform: ${device['platform']}, Active: ${device['isActive']}');
-}
-```
-
-### 7.3 اختبار الإشعارات
-
-1. **من Firebase Console**: أرسل إشعار تجريبي
-2. **من Backend**: استخدم endpoint إرسال الإشعارات
-3. **من لوحة التحكم**: أنشئ إشعار جديد مع `channel: "push"`
-4. **تحقق من**:
-   - ✅ تسجيل الجهاز في Backend (`GET /notifications/devices`)
-   - ✅ ظهور الإشعار داخل التطبيق (Foreground)
-   - ✅ ظهور الإشعار في الخلفية (Background)
-   - ✅ فتح التطبيق عند النقر على الإشعار (Terminated)
-   - ✅ تحديث حالة الإشعار في Backend (sent, delivered, read)
-
-### 7.4 التحقق من الأجهزة (Admin)
-
-```typescript
-// التحقق من أجهزة مستخدم واحد
-GET /notifications/admin/users/:userId/devices
-
-// التحقق من عدة مستخدمين
-POST /notifications/admin/users/devices/check
-{
-  "userIds": ["user_id_1", "user_id_2"]
-}
-```
-
----
-
-## 🎯 8. أفضل الممارسات
-
-1. **احفظ Token محلياً**: لتجنب إعادة التسجيل عند كل تشغيل
-2. **عالج الأخطاء**: لا ترمي أخطاء عند فشل التسجيل
-3. **استخدم Callbacks**: للتنقل عند النقر على الإشعارات
-4. **حدّث الحالة**: حدّث حالة الإشعارات (read, clicked) في Backend
-5. **اختبر جميع الحالات**: Foreground, Background, Terminated
-6. **تسجيل تلقائي**: سجّل الجهاز تلقائياً عند الحصول على Token
-7. **تحديث Token**: استمع لتحديثات Token (`onTokenRefresh`) وأعد التسجيل
-8. **إلغاء التسجيل**: ألغِ تسجيل الجهاز عند تسجيل الخروج
-9. **التحقق قبل الإرسال**: تحقق من وجود أجهزة مسجلة قبل إرسال Push Notifications
-10. **دعم عدة أجهزة**: النظام يدعم عدة أجهزة لنفس المستخدم تلقائياً
-
----
-
-## 📝 ملاحظات مهمة
-
-### تسجيل الأجهزة:
-- **Background Handler**: يجب أن يكون top-level function
-- **Token Refresh**: استمع لتحديثات Token (`onTokenRefresh`) وأعد التسجيل تلقائياً
-- **تسجيل تلقائي**: سجّل الجهاز تلقائياً عند الحصول على FCM Token
-- **إلغاء التسجيل**: ألغِ تسجيل الجهاز عند تسجيل الخروج أو حذف التطبيق
-- **دعم عدة أجهزة**: يمكن للمستخدم تسجيل عدة أجهزة (هاتف + تابلت)
-
-### الإشعارات:
-- **Permissions**: اطلب الأذونات بشكل مناسب حسب المنصة
-- **Navigation**: استخدم NavigatorKey للتنقل من أي مكان
-- **Error Handling**: تعامل مع الأخطاء بشكل مناسب
-- **Channel مهم**: استخدم `"push"` أو `"dashboard"` لإرسال Push Notifications
-- **Device Token مطلوب**: بدون Device Token مسجل، لن يتم إرسال الإشعار
-
-### من لوحة التحكم:
-- **التحقق قبل الإرسال**: استخدم `GET /notifications/admin/users/:userId/devices` للتحقق
-- **Bulk Check**: استخدم `POST /notifications/admin/users/devices/check` للتحقق من عدة مستخدمين
-- **Channel**: تأكد من استخدام `channel: "push"` أو `"dashboard"` للإرسال
-- **recipientId**: يجب تحديد `recipientId` (User ID) للإرسال
-
----
-
-## 🎛️ إرسال الإشعارات من لوحة التحكم (Admin Dashboard)
-
-بعد إعداد Firebase في تطبيق Flutter وتسجيل الأجهزة، يمكن للمسؤولين إرسال إشعارات إلى العملاء من لوحة التحكم.
-
-### ✅ المتطلبات
-
-1. **Backend مُعد بشكل صحيح:**
-   - متغيرات FCM موجودة في `.env`:
-     ```env
-     FCM_PROJECT_ID=your-firebase-project-id
-     FCM_PRIVATE_KEY_ID=your-private-key-id
-     FCM_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-     FCM_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
-     FCM_CLIENT_ID=your-client-id
-     ```
-   - Firebase Admin SDK مُهيأ
-   - Endpoints الإدارية متاحة
-
-2. **تطبيق Flutter مُعد:**
-   - Firebase مُهيأ
-   - الأجهزة مسجلة (`POST /notifications/devices/register`)
-   - Token محفوظ في Backend
-
-3. **التحقق من الأجهزة (اختياري):**
-   - يمكن التحقق من وجود أجهزة مسجلة للمستخدم قبل الإرسال:
-     - `GET /notifications/admin/users/:userId/devices` - لمستخدم واحد
-     - `POST /notifications/admin/users/devices/check` - لعدة مستخدمين
-
-### 📤 كيفية الإرسال من لوحة التحكم
-
-#### الطريقة 1: إنشاء وإرسال إشعار واحد
-
-1. **من لوحة التحكم:**
-   - اذهب إلى صفحة الإشعارات
-   - اضغط "إنشاء إشعار جديد"
-   - املأ البيانات:
-     ```json
-     {
-       "type": "SYSTEM_ALERT",
-       "title": "إعلان مهم",
-       "message": "رسالة مهمة لجميع المستخدمين",
-       "messageEn": "Important announcement for all users",
-       "channel": "push",
-       "priority": "high",
-       "category": "system",
-       "recipientId": "user_id_here"
-     }
-     ```
-
-2. **الإرسال:**
-   - بعد إنشاء الإشعار، اضغط "إرسال"
-   - سيتم إرسال الإشعار عبر FCM إلى الجهاز المسجل
-
-#### الطريقة 2: إرسال مجمع (Bulk Send)
-
-لإرسال إشعار لعدة مستخدمين دفعة واحدة:
-
+**Request:**
 ```json
+{
+  "type": "ORDER_CONFIRMED",
+  "title": "تم تأكيد طلبك",
+  "message": "طلبك رقم #123 تم تأكيده بنجاح",
+  "messageEn": "Your order #123 has been confirmed",
+  "channel": "push",
+  "recipientId": "user_id_here",
+  "priority": "medium",
+  "data": {
+    "orderId": "order_123",
+    "orderNumber": "123"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "notification": { ... },
+  "message": "Notification created successfully"
+}
+```
+
+#### 2. إرسال إشعار موجود
+
+```
+POST /notifications/admin/notification/:id/send
+```
+
+#### 3. إرسال مجمع
+
+```
 POST /notifications/admin/bulk-send
+```
+
+**Request:**
+```json
 {
   "type": "PROMOTION_STARTED",
   "title": "عرض جديد",
-  "message": "عرض خاص على جميع المنتجات",
-  "messageEn": "Special offer on all products",
+  "message": "خصم 30% على جميع المنتجات",
+  "messageEn": "30% off on all products",
   "channel": "push",
-  "priority": "medium",
-  "category": "promotion",
-  "targetUserIds": [
-    "user_id_1",
-    "user_id_2",
-    "user_id_3"
-  ],
-  "data": {
-    "promotionId": "promo_123",
-    "discount": 30
-  }
+  "targetUserIds": ["user_1", "user_2", "user_3"],
+  "priority": "high"
 }
 ```
 
-### 🔄 تدفق الإرسال
+#### 4. التحقق من أجهزة مستخدم
 
 ```
-لوحة التحكم (Admin Dashboard)
-    ↓
-POST /notifications/admin/create
-    ↓
-Backend يحفظ الإشعار في قاعدة البيانات
-    ↓
-POST /notifications/admin/{id}/send
-    ↓
-Backend يبحث عن Device Tokens للمستخدم
-    ↓
-Backend يرسل عبر FCM إلى Firebase
-    ↓
-Firebase يرسل إلى الأجهزة المسجلة
-    ↓
-تطبيق Flutter يستقبل الإشعار
-    ↓
-يظهر الإشعار للمستخدم
-```
-
-### 📋 البيانات المطلوبة للإرسال
-
-عند إنشاء إشعار من لوحة التحكم، تأكد من:
-
-1. **`channel`**: يجب أن يكون `"push"` أو `"dashboard"` لإرسال Push Notification
-2. **`recipientId`**: معرف المستخدم المستلم (مطلوب)
-3. **`title`** و **`message`**: محتوى الإشعار
-4. **`data`**: بيانات إضافية (اختياري) مثل:
-   ```json
-   {
-     "orderId": "order_123",
-     "productId": "product_456",
-     "serviceId": "service_789",
-     "notificationId": "notif_123"
-   }
-   ```
-
-### 🔍 التحقق من الأجهزة قبل الإرسال
-
-قبل إرسال Push Notification، يمكنك التحقق من وجود أجهزة مسجلة للمستخدم:
-
-#### لمستخدم واحد:
-```typescript
 GET /notifications/admin/users/:userId/devices
+```
 
-// Response:
+**Response:**
+```json
 {
   "success": true,
   "data": {
@@ -2117,330 +1794,168 @@ GET /notifications/admin/users/:userId/devices
 }
 ```
 
-#### لعدة مستخدمين:
-```typescript
-POST /notifications/admin/users/devices/check
-{
-  "userIds": ["user_id_1", "user_id_2", "user_id_3"]
-}
+#### 5. التحقق من أجهزة عدة مستخدمين
 
-// Response:
+```
+POST /notifications/admin/users/devices/check
+```
+
+**Request:**
+```json
+{
+  "userIds": ["user_1", "user_2", "user_3"]
+}
+```
+
+#### 6. التحقق من حالة FCM
+
+```
+GET /notifications/admin/fcm-status
+```
+
+**Response:**
+```json
 {
   "success": true,
   "data": {
-    "total": 3,
-    "withDevices": 2,
-    "withoutDevices": 1,
-    "results": [
-      {
-        "userId": "user_id_1",
-        "hasDevices": true,
-        "deviceCount": 2,
-        "platforms": { "ios": 1, "android": 1, "web": 0 }
-      },
-      ...
-    ]
+    "isConfigured": true,
+    "status": "configured",
+    "message": "FCM is configured and ready to send push notifications"
   }
 }
 ```
 
-### ✅ التحقق من نجاح الإرسال
+---
 
-بعد إرسال الإشعار، يمكنك التحقق من:
+## 13. Enums والثوابت
 
-1. **قبل الإرسال (مستحسن):**
-   - استخدم `GET /notifications/admin/users/:userId/devices` للتحقق من وجود أجهزة مسجلة
-   - إذا كان `hasDevices: false`، لن يتم إرسال الإشعار
-
-2. **في لوحة التحكم:**
-   - حالة الإشعار (sent, delivered, failed)
-   - وقت الإرسال
-   - أي أخطاء حدثت
-   - عدد الأجهزة التي تم الإرسال إليها
-
-3. **في تطبيق Flutter:**
-   - يجب أن يظهر الإشعار للمستخدم
-   - يمكن التحقق من سجل الإشعارات في التطبيق
-   - يمكن التحقق من الأجهزة المسجلة عبر `GET /notifications/devices`
-
-### 🔍 مثال: التحقق قبل الإرسال
+### NotificationType (35 نوع)
 
 ```typescript
-// في لوحة التحكم - قبل إرسال إشعار
-async function checkAndSend(userId: string) {
-  // 1. التحقق من وجود أجهزة
-  const devicesCheck = await fetch(
-    `/notifications/admin/users/${userId}/devices`
-  );
-  const devicesInfo = await devicesCheck.json();
-  
-  if (!devicesInfo.data.hasDevices) {
-    alert('⚠️ هذا المستخدم لا يملك أجهزة مسجلة. لن يتم إرسال Push Notification.');
-    return;
-  }
-  
-  console.log(`✅ المستخدم لديه ${devicesInfo.data.deviceCount} جهاز مسجل`);
-  console.log(`📱 المنصات:`, devicesInfo.data.platforms);
-  
-  // 2. إرسال الإشعار
-  await fetch('/notifications/admin/create', {
-    method: 'POST',
-    body: JSON.stringify({
-      channel: 'push',
-      recipientId: userId,
-      // ...
-    }),
-  });
-}
+// Order related
+ORDER_CREATED, ORDER_CONFIRMED, ORDER_CANCELLED, ORDER_REFUNDED, ORDER_RATED
+
+// Service related
+SERVICE_REQUEST_OPENED, NEW_ENGINEER_OFFER, OFFER_ACCEPTED, OFFER_REJECTED,
+OFFER_CANCELLED, SERVICE_STARTED, SERVICE_COMPLETED, SERVICE_RATED,
+SERVICE_REQUEST_CANCELLED
+
+// Product related
+PRODUCT_BACK_IN_STOCK, PRODUCT_PRICE_DROP, LOW_STOCK, OUT_OF_STOCK
+
+// Promotion related
+PROMOTION_STARTED, PROMOTION_ENDING, COUPON_USED
+
+// Account & Security
+ACCOUNT_VERIFIED, PASSWORD_CHANGED, LOGIN_ATTEMPT, NEW_USER_REGISTERED
+
+// Support
+TICKET_CREATED, TICKET_UPDATED, TICKET_RESOLVED, SUPPORT_MESSAGE_RECEIVED
+
+// System
+SYSTEM_MAINTENANCE, NEW_FEATURE, SYSTEM_ALERT
+
+// Marketing
+WELCOME_NEW_USER, BIRTHDAY_GREETING, CART_ABANDONMENT
+
+// Payment
+PAYMENT_FAILED, PAYMENT_SUCCESS
+
+// Invoice
+INVOICE_CREATED
 ```
 
-### ⚠️ ملاحظات مهمة
+### NotificationStatus (11 حالة)
 
-1. **Device Token مطلوب:**
-   - يجب أن يكون المستخدم قد سجل جهازه أولاً عبر `POST /notifications/devices/register`
-   - بدون Device Token، لن يتم إرسال الإشعار
-   - يمكن التحقق من وجود أجهزة قبل الإرسال
+```typescript
+pending    // في الانتظار
+queued     // في الصف
+sending    // جاري الإرسال
+sent       // تم الإرسال
+delivered  // تم التسليم
+read       // مقروء
+clicked    // تم النقر
+failed     // فشل
+bounced    // مرتد
+rejected   // مرفوض
+cancelled  // ملغي
+```
 
-2. **Channel مهم:**
-   - استخدم `"push"` للإشعارات الفورية (Push Notifications)
-   - استخدم `"dashboard"` للإشعارات من لوحة التحكم (يُرسل أيضاً كـ Push)
-   - استخدم `"inApp"` للإشعارات داخل التطبيق فقط (WebSocket)
+### NotificationChannel (5 قنوات)
 
-3. **الأذونات:**
-   - يجب أن يكون المستخدم قد منح أذونات الإشعارات
-   - على Android 13+، يجب طلب الأذونات صراحة
-   - على iOS، يجب طلب الأذونات عند أول استخدام
+```typescript
+inApp      // داخل التطبيق (WebSocket)
+push       // Push Notification (FCM)
+sms        // رسالة نصية
+email      // بريد إلكتروني
+dashboard  // لوحة التحكم (للإداريين)
+```
 
-4. **الحالة:**
-   - الإشعارات تُحفظ في قاعدة البيانات أولاً
-   - ثم تُرسل عبر FCM لكل Device Token نشط للمستخدم
-   - يمكن تتبع حالة كل إشعار (sent, delivered, read, clicked)
+### NotificationPriority (4 مستويات)
 
-5. **دعم عدة أجهزة:**
-   - يمكن للمستخدم تسجيل عدة أجهزة (هاتف + تابلت)
-   - سيتم إرسال الإشعار لكل جهاز نشط
-   - يمكن للمستخدم إلغاء تسجيل جهاز معين
+```typescript
+low        // منخفضة
+medium     // متوسطة (افتراضي)
+high       // عالية
+urgent     // عاجلة
+```
 
-6. **الربط بين Device و User:**
-   - كل Device Token مرتبط بـ `userId` في قاعدة البيانات
-   - عند الإرسال، يتم البحث عن جميع Tokens النشطة للمستخدم
-   - يتم إرسال الإشعار لكل Token عبر FCM
+### NotificationCategory (9 فئات)
 
----
+```typescript
+order      // طلبات
+product    // منتجات
+service    // خدمات
+promotion  // عروض
+account    // حساب
+system     // نظام
+support    // دعم
+payment    // دفع
+marketing  // تسويق
+```
 
-## 📝 ملاحظات مهمة
+### DevicePlatform (3 منصات)
 
-1. **أنواع الإشعارات (43 نوع):**
-   - **Order**: ORDER_CONFIRMED, ORDER_SHIPPED, ORDER_DELIVERED, ORDER_CANCELLED, ORDER_REFUNDED
-   - **Service**: SERVICE_REQUEST_OPENED, NEW_ENGINEER_OFFER, OFFER_ACCEPTED, SERVICE_STARTED, SERVICE_COMPLETED, SERVICE_RATED, SERVICE_REQUEST_CANCELLED
-   - **Product**: PRODUCT_BACK_IN_STOCK, PRODUCT_PRICE_DROP, LOW_STOCK, OUT_OF_STOCK
-   - **Promotion**: PROMOTION_STARTED, PROMOTION_ENDING
-   - **Account**: ACCOUNT_VERIFIED, PASSWORD_CHANGED, LOGIN_ATTEMPT
-   - **Support**: TICKET_CREATED, TICKET_UPDATED, TICKET_RESOLVED
-   - **System**: SYSTEM_MAINTENANCE, NEW_FEATURE, SYSTEM_ALERT
-   - **Marketing**: WELCOME_NEW_USER, BIRTHDAY_GREETING, CART_ABANDONMENT
-   - **Payment**: PAYMENT_FAILED, PAYMENT_SUCCESS
-
-2. **حالات الإشعارات (11 حالة):**
-   - `pending`: في الانتظار
-   - `queued`: في الصف
-   - `sending`: جاري الإرسال
-   - `sent`: تم الإرسال
-   - `delivered`: تم التسليم
-   - `read`: مقروء
-   - `clicked`: تم النقر عليه
-   - `failed`: فشل
-   - `bounced`: مرتد
-   - `rejected`: مرفوض
-   - `cancelled`: ملغي
-
-3. **قنوات الإشعارات:**
-   - `inApp`: داخل التطبيق
-   - `push`: الإشعارات الفورية
-   - `sms`: الرسائل النصية
-   - `email`: البريد الإلكتروني
-   - `dashboard`: لوحة التحكم
-
-4. **الأولويات:**
-   - `low`: منخفضة
-   - `medium`: متوسطة
-   - `high`: عالية
-   - `urgent`: عاجلة
-
-5. **الفئات:**
-   - `order`: طلبات
-   - `product`: منتجات
-   - `service`: خدمات
-   - `promotion`: عروض
-   - `account`: حساب
-   - `system`: نظام
-   - `support`: دعم
-   - `payment`: دفع
-   - `marketing`: تسويق
-
-6. **البيانات الإضافية:**
-   - `data`: بيانات إضافية (orderId, productId, userId, serviceId, ticketId)
-   - `recipientId`: معرف المستلم
-   - `recipientEmail`: بريد المستلم
-   - `recipientPhone`: هاتف المستلم
-   - `templateId`/`templateKey`: معلومات القالب
-   - `scheduledFor`: موعد الإرسال المجدول
-   - `sentAt`: وقت الإرسال
-   - `deliveredAt`: وقت التسليم
-   - `readAt`: وقت القراءة
-   - `clickedAt`: وقت النقر
-   - `failedAt`: وقت الفشل
-   - `errorMessage`/`errorCode`: معلومات الخطأ
-   - `retryCount`/`nextRetryAt`: معلومات إعادة المحاولة
-   - `trackingId`/`externalId`: معلومات التتبع
-   - `metadata`: بيانات وصفية (provider, cost, credits, campaign, tags)
-
-7. **التحقق من الفئة:**
-   - `isOrderType`: إشعار طلب
-   - `isServiceType`: إشعار خدمة
-   - `isProductType`: إشعار منتج
-   - `isPromotionType`: إشعار عرض
-   - `isAccountType`: إشعار حساب
-   - `isSystemType`: إشعار نظام
-   - `isSupportType`: إشعار دعم
-   - `isPaymentType`: إشعار دفع
-   - `isMarketingType`: إشعار تسويقي
-
-8. **التحقق من الحالة:**
-   - `isPending`, `isQueued`, `isSending`, `isSent`, `isDelivered`
-   - `isRead`, `isClicked`, `isFailed`, `isBounced`, `isRejected`, `isCancelled`
-   - `isUnread`: غير مقروء
-
-9. **التحقق من القناة:**
-   - `isInApp`: داخل التطبيق
-   - `isEmail`: بريد إلكتروني
-   - `isSms`: رسالة نصية
-   - `isPush`: إشعار فوري
-   - `isDashboard`: لوحة تحكم
-
-10. **التحقق من الأولوية:**
-    - `isLowPriority`: منخفضة
-    - `isMediumPriority`: متوسطة
-    - `isHighPriority`: عالية
-    - `isUrgent`: عاجلة
-
-11. **التحقق من البيانات:**
-    - `hasRecipient`, `hasEmail`, `hasPhone`: معلومات المستلم
-    - `hasTemplate`, `hasError`, `hasRetries`: معلومات الإرسال
-    - `isScheduled`, `hasCreator`, `isSystemGenerated`: معلومات النظام
-    - `hasTracking`, `hasExternalId`, `hasMetadata`: معلومات التتبع
-
-12. **استخراج البيانات:**
-    - `orderId`, `orderNumber`: بيانات الطلب
-    - `productId`: بيانات المنتج
-    - `userId`: بيانات المستخدم
-    - `serviceId`: بيانات الخدمة
-    - `ticketId`: بيانات التذكرة
-    - `hasOrderData`, `hasProductData`, `hasUserData`, `hasServiceData`, `hasTicketData`
-
-13. **استخراج Metadata:**
-    - `provider`: مزود الخدمة
-    - `cost`: تكلفة الإرسال
-    - `credits`: الأرصدة المستخدمة
-    - `campaign`: اسم الحملة
-    - `tags`: وسوم الإشعار
-
-14. **التوقيت:**
-    - `displayDate`: تاريخ العرض (readAt ?? deliveredAt ?? sentAt ?? createdAt)
-    - `isRecent`: حديث (أقل من 7 أيام)
-    - `isOld`: قديم (أكثر من 30 يوم)
-
-15. **الصفحات:**
-    - `PaginatedNotifications`: للنتائج مع الصفحات الكاملة
-    - `page`, `limit`, `totalPages`, `hasNextPage`, `hasPrevPage`
-    - `hasNotifications`, `isEmpty`, `count`
-    - `unreadNotifications`, `readNotifications`
-    - `unreadCount`, `readCount`
-    - `isFirstPage`, `isLastPage`
-
-16. **الاستخدام:**
-    - استخدم `getMessage(locale)` للحصول على الرسالة حسب اللغة
-    - استخدم category helpers للتحقق من الفئة (isOrderType, isServiceType, إلخ)
-    - استخدم `isRead`, `isUnread` للتحقق من القراءة
-    - استخدم channel helpers للتمييز بين القنوات
-    - استخدم priority helpers للتحقق من الأولوية
-
-17. **البيانات:**
-    - استخدم `orderId`, `orderNumber` لبيانات الطلب
-    - استخدم `productId`, `userId`, `serviceId`, `ticketId` لبيانات أخرى
-    - استخدم data helpers (hasOrderData, hasProductData, إلخ) للتحقق
-    - استخدم metadata helpers (provider, cost, campaign, tags)
-
-18. **التوقيت:**
-    - استخدم `displayDate` لعرض التاريخ (ذكي - يختار الأفضل)
-    - استخدم `isRecent`, `isOld` للتصنيف الزمني
-    - استخدم `sentAt`, `deliveredAt`, `readAt`, `clickedAt` للتوقيتات المحددة
-
-19. **التحسين:**
-    - استخدم `hasNextPage`, `hasPrevPage` للتنقل
-    - استخدم `isFirstPage`, `isLastPage` للتحقق
-    - استخدم `unreadCount` في الـ badge
-    - استخدم `isUrgent` لتمييز الإشعارات العاجلة
+```typescript
+ios        // iOS
+android    // Android
+web        // Web
+```
 
 ---
 
-## 🔄 Notes on Update
+## 📝 ملخص القنوات
 
-**التغييرات الرئيسية:**
-1. ✅ تصحيح Endpoint - `/notifications` بدلاً من `/notifications/history`
-2. ✅ تصحيح mark-read endpoint - `/notifications/mark-read` مع body (notificationIds array)
-3. ✅ تصحيح mark-all-read endpoint - `/notifications/mark-all-read`
-4. ✅ تصحيح unread-count response - `{ count: number }` بدلاً من البنية المعقدة
-5. ✅ تصحيح Response Structure - إضافة pagination fields في نفس المستوى
-6. ✅ **إضافة WebSocket للإشعارات الفورية**:
-   - Namespace: `/notifications`
-   - Events: `notification:new`, `unread-count`, `marked-as-read`, `marked-all-as-read`
-   - Commands: `ping`, `get-unread-count`, `mark-as-read`, `mark-all-as-read`
-   - Real-time notifications بدون polling
-7. ✅ **إضافة Device Registration Endpoints**:
-   - `POST /notifications/devices/register` - تسجيل أو تحديث Device Token
-   - `POST /notifications/devices/unregister` - إلغاء تسجيل Device Token
-   - `GET /notifications/devices` - الحصول على أجهزة المستخدم المسجلة
-8. ✅ **إضافة Admin Device Check Endpoints**:
-   - `GET /notifications/admin/users/:userId/devices` - التحقق من أجهزة مستخدم واحد
-   - `POST /notifications/admin/users/devices/check` - التحقق من أجهزة عدة مستخدمين
-9. ✅ **توسيع كبير في الـ Enums**:
-   - NotificationType: من 6 أنواع إلى 43 نوع
-   - NotificationStatus: من 4 حالات إلى 11 حالة
-   - NotificationChannel: إضافة inApp و dashboard
-   - إضافة NotificationPriority (4 levels)
-   - إضافة NotificationCategory (9 فئات)
-10. ✅ **توسيع نموذج Notification**:
-    - إضافة priority, category
-    - إضافة templateId, templateKey
-    - إضافة deliveredAt, clickedAt, failedAt
-    - إضافة errorCode, nextRetryAt
-    - إضافة trackingId, externalId
-    - إضافة metadata object
-11. ✅ تحديث PaginatedNotifications - إضافة pagination fields كـ properties
-12. ✅ إزالة UnreadCount model - يتم إرجاع عدد فقط
-13. ✅ **تحسين Push Notifications**:
-    - ربط Device Tokens مع User ID
-    - دعم عدة أجهزة لنفس المستخدم
-    - إرسال تلقائي عند إنشاء إشعار بـ channel = "push" أو "dashboard"
+| السيناريو | القناة | يحتاج FCM Token | يحتاج WebSocket |
+|-----------|--------|-----------------|-----------------|
+| المستخدم داخل التطبيق | `inApp` | ❌ | ✅ |
+| المستخدم خارج التطبيق | `push` | ✅ | ❌ |
+| إشعار للإداريين | `dashboard` | ❌ | ✅ |
+| رسالة نصية | `sms` | ❌ | ❌ |
+| بريد إلكتروني | `email` | ❌ | ❌ |
 
-**ملاحظات مهمة:**
-- الـ endpoint الأساسي هو `/notifications` (وليس `/notifications/history`)
-- mark-read يأخذ array من IDs (يمكن تحديد متعدد)
-- unread-count يعيد رقم فقط (بدون تفاصيل)
-- `category` يتم تحديدها تلقائياً من `type` في Backend
-- `status` الافتراضي: `pending`، وليس boolean `isRead`
+---
+
+## 🔄 ملخص التغييرات عن الإصدار السابق
+
+1. ✅ توضيح الفرق بين `inApp` و `push` بشكل مفصل
+2. ✅ تحديث الـ Enums لتطابق Backend تماماً (35 نوع)
+3. ✅ إضافة `targetRoles` في الـ Response
+4. ✅ إضافة endpoint `/notifications/stats`
+5. ✅ توضيح أن WebSocket مطلوب لـ `inApp` فقط
+6. ✅ توضيح أن FCM Token مطلوب لـ `push` فقط
+7. ✅ إضافة كود Flutter كامل للتكامل
+8. ✅ تحديث Response schemas لتطابق Controller
+
+---
 
 **ملفات Backend المرجعية:**
-- `backend/src/modules/notifications/controllers/unified-notification.controller.ts` - جميع endpoints
-- `backend/src/modules/notifications/services/notification.service.ts` - المنطق (يشمل Device Management)
-- `backend/src/modules/notifications/schemas/unified-notification.schema.ts` - Schema
-- `backend/src/modules/notifications/schemas/device-token.schema.ts` - Device Token Schema
-- `backend/src/modules/notifications/enums/notification.enums.ts` - جميع Enums
-- `backend/src/modules/notifications/adapters/fcm.adapter.ts` - FCM Adapter
-- `backend/src/modules/notifications/adapters/notification.adapters.ts` - Notification Adapters
-
----
-
-**التالي:** [خدمة الطلبات الهندسية (Services)](./15-services-service.md)
-
+- `backend/src/modules/notifications/controllers/unified-notification.controller.ts`
+- `backend/src/modules/notifications/services/notification.service.ts`
+- `backend/src/modules/notifications/gateways/notifications.gateway.ts`
+- `backend/src/modules/notifications/adapters/notification.adapters.ts`
+- `backend/src/modules/notifications/adapters/fcm.adapter.ts`
+- `backend/src/modules/notifications/schemas/unified-notification.schema.ts`
+- `backend/src/modules/notifications/schemas/device-token.schema.ts`
+- `backend/src/modules/notifications/enums/notification.enums.ts`
+- `backend/src/modules/notifications/dto/unified-notification.dto.ts`
