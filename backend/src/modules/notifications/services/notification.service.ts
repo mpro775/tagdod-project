@@ -1434,8 +1434,10 @@ export class NotificationService {
       }
 
       const recipientId = notification.recipientId.toString();
+      // Type assertion لأن lean() document يحتوي على _id لكن TypeScript لا يعرفه
+      const notificationWithId = notification as UnifiedNotification & { _id: Types.ObjectId };
       const sent = this.webSocketService.sendToUser(recipientId, 'notification:new', {
-        id: notification._id.toString(),
+        id: notificationWithId._id.toString(),
         title: notification.title,
         message: notification.message,
         messageEn: notification.messageEn,
