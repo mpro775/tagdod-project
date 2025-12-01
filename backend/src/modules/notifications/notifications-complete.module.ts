@@ -29,6 +29,7 @@ import { NotificationChannelConfigService } from './services/notification-channe
 
 // Controllers
 import { UnifiedNotificationController } from './controllers/unified-notification.controller';
+import { NotificationChannelConfigController } from './controllers/notification-channel-config.controller';
 
 // Adapters
 import {
@@ -73,7 +74,7 @@ import { NotificationsCronService } from './notifications.cron';
     forwardRef(() => AuthModule),
     SharedModule,
   ],
-  controllers: [UnifiedNotificationController],
+  controllers: [NotificationChannelConfigController, UnifiedNotificationController],
   providers: [
     // Core Services
     NotificationService,

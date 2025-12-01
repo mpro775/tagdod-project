@@ -55,7 +55,7 @@ export const notificationsApi = {
   },
 
   getById: async (id: string): Promise<Notification> => {
-    const response = await apiClient.get<ApiResponse<Notification>>(`/notifications/admin/${id}`);
+    const response = await apiClient.get<ApiResponse<Notification>>(`/notifications/admin/notification/${id}`);
     // Backend returns: { success: true, data: notification }
     return response.data.data || response.data;
   },
@@ -72,7 +72,7 @@ export const notificationsApi = {
 
   update: async (id: string, data: UpdateNotificationDto): Promise<Notification> => {
     const response = await apiClient.put<ApiResponse<Notification>>(
-      `/notifications/admin/${id}`,
+      `/notifications/admin/notification/${id}`,
       data
     );
     // Backend returns: { success: true, data: notification }
@@ -80,12 +80,12 @@ export const notificationsApi = {
   },
 
   delete: async (id: string): Promise<void> => {
-    await apiClient.delete(`/notifications/admin/${id}`);
+    await apiClient.delete(`/notifications/admin/notification/${id}`);
   },
 
   send: async (id: string, data: SendNotificationDto = {}): Promise<Notification> => {
     const response = await apiClient.post<ApiResponse<Notification>>(
-      `/notifications/admin/${id}/send`,
+      `/notifications/admin/notification/${id}/send`,
       data
     );
     // Backend returns notification in data field
@@ -359,7 +359,28 @@ export const notificationsApi = {
     const response = await apiClient.get<ApiResponse<NotificationChannelConfig[]>>(
       '/notifications/admin/channel-configs'
     );
-    return response.data.data || [];
+    
+    // Extract data from nested response structure
+    // Response structure: { success: true, data: { success: true, data: [...] } }
+    // Due to ResponseEnvelopeInterceptor wrapping the controller response
+    const extractData = (obj: any): NotificationChannelConfig[] => {
+      if (Array.isArray(obj)) {
+        return obj;
+      }
+      if (obj && typeof obj === 'object') {
+        // Check if it's an API envelope with data field
+        if ('data' in obj && obj.data !== undefined) {
+          return extractData(obj.data);
+        }
+        // Check if it's the direct array
+        if (Array.isArray(obj)) {
+          return obj;
+        }
+      }
+      return [];
+    };
+    
+    return extractData(response.data);
   },
 
   getChannelConfigByType: async (type: NotificationType): Promise<NotificationChannelConfig | null> => {

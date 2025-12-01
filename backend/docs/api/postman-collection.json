@@ -2480,6 +2480,178 @@
       "description": "Endpoints for السمات-العامة functionality"
     },
     {
+      "name": "إعدادات قنوات الإشعارات",
+      "item": [
+        {
+          "name": "الإدارة: قائمة جميع إعدادات القنوات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/channel-configs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "channel-configs"
+              ]
+            },
+            "description": "استرداد قائمة بجميع إعدادات القنوات لأنواع الإشعارات (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: إنشاء إعدادات قناة جديدة",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/channel-configs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "channel-configs"
+              ]
+            },
+            "description": "إنشاء إعدادات قناة جديدة لنوع إشعار (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: إعدادات قناة لنوع محدد",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/channel-configs/{type}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "channel-configs",
+                "{type}"
+              ]
+            },
+            "description": "استرداد إعدادات القناة لنوع إشعار محدد (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: تحديث إعدادات قناة",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/channel-configs/{type}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "channel-configs",
+                "{type}"
+              ]
+            },
+            "description": "تحديث إعدادات القناة لنوع إشعار محدد (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: حذف إعدادات قناة",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/channel-configs/{type}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "channel-configs",
+                "{type}"
+              ]
+            },
+            "description": "حذف إعدادات القناة لنوع إشعار محدد (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: تهيئة القيم الافتراضية",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/channel-configs/initialize",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "channel-configs",
+                "initialize"
+              ]
+            },
+            "description": "تهيئة جميع إعدادات القنوات بالقيم الافتراضية من notification-rules.ts (للإداريين فقط)"
+          }
+        }
+      ],
+      "description": "Endpoints for إعدادات قنوات الإشعارات functionality"
+    },
+    {
       "name": "الإشعارات",
       "item": [
         {
@@ -2865,7 +3037,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
+              "raw": "{{base_url}}/api/v1/notifications/admin/notification/{id}",
               "host": [
                 "{{base_url}}"
               ],
@@ -2874,6 +3046,7 @@
                 "v1",
                 "notifications",
                 "admin",
+                "notification",
                 "{id}"
               ]
             },
@@ -2892,7 +3065,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
+              "raw": "{{base_url}}/api/v1/notifications/admin/notification/{id}",
               "host": [
                 "{{base_url}}"
               ],
@@ -2901,6 +3074,7 @@
                 "v1",
                 "notifications",
                 "admin",
+                "notification",
                 "{id}"
               ]
             },
@@ -2919,7 +3093,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/{id}",
+              "raw": "{{base_url}}/api/v1/notifications/admin/notification/{id}",
               "host": [
                 "{{base_url}}"
               ],
@@ -2928,6 +3102,7 @@
                 "v1",
                 "notifications",
                 "admin",
+                "notification",
                 "{id}"
               ]
             },
@@ -2946,7 +3121,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/notifications/admin/{id}/send",
+              "raw": "{{base_url}}/api/v1/notifications/admin/notification/{id}/send",
               "host": [
                 "{{base_url}}"
               ],
@@ -2955,6 +3130,7 @@
                 "v1",
                 "notifications",
                 "admin",
+                "notification",
                 "{id}",
                 "send"
               ]

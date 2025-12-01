@@ -443,6 +443,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             icon: <ViewModule />,
             path: '/notifications/templates',
           },
+          {
+            id: 'notifications-channel-configs',
+            label: t('navigation.notificationsChannelConfigs', 'إعدادات القنوات'),
+            icon: <Settings />,
+            path: '/notifications/channel-configs',
+          },
         ],
       },
       {

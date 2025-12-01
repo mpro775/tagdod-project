@@ -61,7 +61,9 @@ export const NotificationChannelConfigPage: React.FC = () => {
   const [selectedConfig, setSelectedConfig] = useState<NotificationChannelConfig | null>(null);
   const [selectedType, setSelectedType] = useState<NotificationType | null>(null);
 
-  const { data: configs = [], isLoading, refetch } = useChannelConfigs();
+  const { data: configsData, isLoading, refetch } = useChannelConfigs();
+  // Ensure configs is always an array
+  const configs = Array.isArray(configsData) ? configsData : [];
   const { mutate: createConfig, isPending: isCreating } = useCreateChannelConfig();
   const { mutate: updateConfig, isPending: isUpdating } = useUpdateChannelConfig();
   const { isPending: isDeleting } = useDeleteChannelConfig();
@@ -95,9 +97,15 @@ export const NotificationChannelConfigPage: React.FC = () => {
 
   const handleEdit = (config: NotificationChannelConfig | null, type?: NotificationType) => {
     if (config && config._id) {
+      // إعداد موجود في قاعدة البيانات - تعديل
       setSelectedConfig(config);
       setSelectedType(null);
+    } else if (config) {
+      // إعداد غير موجود في قاعدة البيانات - إنشاء جديد لهذا النوع
+      setSelectedConfig(null);
+      setSelectedType(config.notificationType);
     } else if (type) {
+      // نوع إشعار محدد - إنشاء جديد
       setSelectedConfig(null);
       setSelectedType(type);
     }
@@ -117,6 +125,8 @@ export const NotificationChannelConfigPage: React.FC = () => {
             setEditDialogOpen(false);
             setSelectedConfig(null);
             setSelectedType(null);
+            // إعادة جلب البيانات للتأكد من تحديثها
+            refetch();
           },
         }
       );
@@ -127,6 +137,8 @@ export const NotificationChannelConfigPage: React.FC = () => {
           setEditDialogOpen(false);
           setSelectedConfig(null);
           setSelectedType(null);
+          // إعادة جلب البيانات للتأكد من تحديثها
+          refetch();
         },
       });
     }

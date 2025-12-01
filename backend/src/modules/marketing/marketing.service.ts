@@ -2,16 +2,39 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { PriceRule, PriceRuleDocument } from './schemas/price-rule.schema';
-import { Coupon, CouponDocument, CouponStatus, CouponType, CouponVisibility, DiscountAppliesTo } from './schemas/coupon.schema';
-import { Banner, BannerDocument, BannerLocation, BannerNavigationType } from './schemas/banner.schema';
+import {
+  Coupon,
+  CouponDocument,
+  CouponStatus,
+  CouponType,
+  CouponVisibility,
+  DiscountAppliesTo,
+} from './schemas/coupon.schema';
+import {
+  Banner,
+  BannerDocument,
+  BannerLocation,
+  BannerNavigationType,
+} from './schemas/banner.schema';
 import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Media } from '../upload/schemas/media.schema';
 import { User, UserDocument, UserRole, CapabilityStatus } from '../users/schemas/user.schema';
 
 // DTOs
-import { CreatePriceRuleDto, UpdatePriceRuleDto, PreviewPriceRuleDto, PricingQueryDto } from './dto/price-rule.dto';
-import { CreateCouponDto, UpdateCouponDto, ValidateCouponDto, ListCouponsDto, CreateEngineerCouponDto } from './dto/coupon.dto';
+import {
+  CreatePriceRuleDto,
+  UpdatePriceRuleDto,
+  PreviewPriceRuleDto,
+  PricingQueryDto,
+} from './dto/price-rule.dto';
+import {
+  CreateCouponDto,
+  UpdateCouponDto,
+  ValidateCouponDto,
+  ListCouponsDto,
+  CreateEngineerCouponDto,
+} from './dto/coupon.dto';
 import { CreateBannerDto, UpdateBannerDto, ListBannersDto } from './dto/banner.dto';
 
 // Types
@@ -70,10 +93,12 @@ export class MarketingService {
         ...dto.effects,
         badge: badge || undefined,
       },
-      usageLimits: dto.usageLimits ? {
-        ...dto.usageLimits,
-        currentUses: 0,
-      } : undefined,
+      usageLimits: dto.usageLimits
+        ? {
+            ...dto.usageLimits,
+            currentUses: 0,
+          }
+        : undefined,
       metadata: dto.metadata || undefined,
       couponCode: dto.couponCode || undefined,
     });
@@ -83,7 +108,7 @@ export class MarketingService {
     const updateData: Record<string, unknown> = { ...dto };
     if (dto.startAt) updateData.startAt = new Date(dto.startAt);
     if (dto.endAt) updateData.endAt = new Date(dto.endAt);
-    
+
     // Generate badge automatically if effects are being updated
     if (dto.effects) {
       let badge = '';
@@ -94,13 +119,13 @@ export class MarketingService {
       } else if (dto.effects.specialPrice) {
         badge = 'عرض خاص';
       }
-      
+
       updateData.effects = {
         ...dto.effects,
         badge: badge || dto.effects.badge || undefined,
       };
     }
-    
+
     return this.priceRuleModel.findByIdAndUpdate(id, updateData, { new: true });
   }
 
@@ -182,43 +207,57 @@ export class MarketingService {
    * Batch preview for multiple items - optimized for cart preview
    * Accepts pre-fetched variants and products to avoid N+1 queries
    */
-  async previewBatch(inputs: Array<{
-    variantId?: string;
-    productId?: string;
-    currency: string;
-    qty: number;
-    accountType: 'any' | 'customer' | 'engineer' | 'merchant';
-  }>, preloadedData?: {
-    variants?: Map<string, unknown>;
-    products?: Map<string, unknown>;
-  }): Promise<Map<string, {
-    finalPrice: number;
-    basePrice: number;
-    appliedRule: unknown;
-  }>> {
-    const results = new Map<string, {
-      finalPrice: number;
-      basePrice: number;
-      appliedRule: unknown;
-    }>();
+  async previewBatch(
+    inputs: Array<{
+      variantId?: string;
+      productId?: string;
+      currency: string;
+      qty: number;
+      accountType: 'any' | 'customer' | 'engineer' | 'merchant';
+    }>,
+    preloadedData?: {
+      variants?: Map<string, unknown>;
+      products?: Map<string, unknown>;
+    },
+  ): Promise<
+    Map<
+      string,
+      {
+        finalPrice: number;
+        basePrice: number;
+        appliedRule: unknown;
+      }
+    >
+  > {
+    const results = new Map<
+      string,
+      {
+        finalPrice: number;
+        basePrice: number;
+        appliedRule: unknown;
+      }
+    >();
 
     if (inputs.length === 0) {
       return results;
     }
 
     const now = new Date();
-    
+
     // جلب جميع priceRules مرة واحدة فقط
-    const applicableRules = await this.priceRuleModel.find({
-      active: true,
-      startAt: { $lte: now },
-      endAt: { $gte: now },
-    }).sort({ priority: -1 }).lean();
+    const applicableRules = await this.priceRuleModel
+      .find({
+        active: true,
+        startAt: { $lte: now },
+        endAt: { $gte: now },
+      })
+      .sort({ priority: -1 })
+      .lean();
 
     // جلب جميع variants و products المطلوبة إذا لم تكن محملة مسبقاً
     const variantIds = new Set<string>();
     const productIds = new Set<string>();
-    
+
     for (const input of inputs) {
       if (input.variantId) variantIds.add(input.variantId);
       if (input.productId) productIds.add(input.productId);
@@ -232,7 +271,7 @@ export class MarketingService {
       // جلب variants
       if (variantIds.size > 0) {
         const variants = await this.variantModel
-          .find({ _id: { $in: Array.from(variantIds).map(id => new Types.ObjectId(id)) } })
+          .find({ _id: { $in: Array.from(variantIds).map((id) => new Types.ObjectId(id)) } })
           .lean();
         for (const variant of variants) {
           variantsMap.set(String(variant._id), variant);
@@ -245,7 +284,7 @@ export class MarketingService {
       // جلب products
       if (productIds.size > 0) {
         const products = await this.productModel
-          .find({ _id: { $in: Array.from(productIds).map(id => new Types.ObjectId(id)) } })
+          .find({ _id: { $in: Array.from(productIds).map((id) => new Types.ObjectId(id)) } })
           .lean();
         for (const product of products) {
           productsMap.set(String(product._id), product);
@@ -314,8 +353,8 @@ export class MarketingService {
             originalPrice = (productRecord.basePriceYER as number) ?? null;
           }
           if (originalPrice === null) {
-            originalPrice = (productRecord.basePriceUSD as number) ?? 
-                           (productRecord.basePrice as number) ?? null;
+            originalPrice =
+              (productRecord.basePriceUSD as number) ?? (productRecord.basePrice as number) ?? null;
           }
         }
 
@@ -324,45 +363,45 @@ export class MarketingService {
         }
 
         // البحث عن القواعد المطابقة
-        const matchingRules = applicableRules.filter(rule => {
+        const matchingRules = applicableRules.filter((rule) => {
           const cond = rule.conditions;
-          
+
           // Variant check
           if (cond.variantId && variantIdStr && cond.variantId !== variantIdStr) return false;
-          
+
           // Product check
           if (cond.productId && productIdStr && cond.productId !== productIdStr) return false;
-          
+
           // Category check
           if (cond.categoryId && product) {
             const productRecord = product as Record<string, unknown>;
             const categoryId = String(productRecord.categoryId || '');
             if (cond.categoryId !== categoryId) return false;
           }
-          
+
           // Brand check
           if (cond.brandId && product) {
             const productRecord = product as Record<string, unknown>;
             const brandId = productRecord.brandId ? String(productRecord.brandId) : '';
             if (cond.brandId !== brandId) return false;
           }
-          
+
           // Currency check
           if (cond.currency && cond.currency !== input.currency) return false;
-          
+
           // Min quantity check
           if (cond.minQty && input.qty < cond.minQty) return false;
-          
+
           // Account type check
           if (cond.accountType && cond.accountType !== input.accountType) return false;
-          
+
           return true;
         });
 
         // تطبيق أعلى أولوية قاعدة
         const appliedRule = matchingRules[0];
         let effectivePrice = originalPrice;
-        
+
         if (appliedRule) {
           effectivePrice = this.calculateEffectivePriceFromRule(originalPrice, appliedRule);
         }
@@ -415,37 +454,39 @@ export class MarketingService {
     }
 
     // Find applicable rules
-    const applicableRules = await this.priceRuleModel.find({
-      active: true,
-      startAt: { $lte: now },
-      endAt: { $gte: now },
-    }).sort({ priority: -1 });
+    const applicableRules = await this.priceRuleModel
+      .find({
+        active: true,
+        startAt: { $lte: now },
+        endAt: { $gte: now },
+      })
+      .sort({ priority: -1 });
 
     // Filter rules based on conditions
-    const matchingRules = applicableRules.filter(rule => {
+    const matchingRules = applicableRules.filter((rule) => {
       const cond = rule.conditions;
-      
+
       // Variant check
       if (cond.variantId && cond.variantId !== variantId) return false;
-      
+
       // Product check
       if (cond.productId && cond.productId !== String(variant.productId)) return false;
-      
+
       // Category check
       if (cond.categoryId && cond.categoryId !== String(product.categoryId)) return false;
-      
+
       // Brand check
       if (cond.brandId && product.brandId && cond.brandId !== String(product.brandId)) return false;
-      
+
       // Currency check
       if (cond.currency && cond.currency !== currency) return false;
-      
+
       // Min quantity check
       if (cond.minQty && qty < cond.minQty) return false;
-      
+
       // Account type check
       if (cond.accountType && cond.accountType !== accountType) return false;
-      
+
       return true;
     });
 
@@ -512,11 +553,7 @@ export class MarketingService {
       updateData.lastModifiedBy = adminId;
     }
 
-    return this.couponModel.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    );
+    return this.couponModel.findByIdAndUpdate(id, updateData, { new: true });
   }
 
   async getCoupon(id: string): Promise<Coupon | null> {
@@ -556,16 +593,16 @@ export class MarketingService {
   }
 
   async deleteCoupon(id: string, adminId?: string): Promise<boolean> {
-    const result = await this.couponModel.findByIdAndUpdate(
-      id,
-      { deletedAt: new Date(), deletedBy: adminId }
-    );
+    const result = await this.couponModel.findByIdAndUpdate(id, {
+      deletedAt: new Date(),
+      deletedBy: adminId,
+    });
     return !!result;
   }
 
   async validateCoupon(dto: ValidateCouponDto) {
     const { code, userId, orderAmount, productIds } = dto;
-    
+
     const coupon = await this.couponModel.findOne({
       code: code.toUpperCase(),
       status: CouponStatus.ACTIVE,
@@ -589,9 +626,9 @@ export class MarketingService {
 
     // Check minimum order amount
     if (coupon.minimumOrderAmount && orderAmount && orderAmount < coupon.minimumOrderAmount) {
-      return { 
-        valid: false, 
-        message: `Minimum order amount is ${coupon.minimumOrderAmount}` 
+      return {
+        valid: false,
+        message: `Minimum order amount is ${coupon.minimumOrderAmount}`,
       };
     }
 
@@ -621,55 +658,80 @@ export class MarketingService {
       // Check usage limit per user (for engineer coupons)
       // ملاحظة: هذا ينطبق على جميع المستخدمين بما في ذلك المهندس المالك
       if (coupon.usageLimitPerUser && coupon.engineerId) {
-        const userUsageCount = coupon.usageHistory?.filter(
-          usage => String(usage.userId) === userId
-        ).length || 0;
-        
+        const userUsageCount =
+          coupon.usageHistory?.filter((usage) => String(usage.userId) === userId).length || 0;
+
         if (userUsageCount >= coupon.usageLimitPerUser) {
-          return { 
-            valid: false, 
-            message: 'تم الوصول إلى الحد الأقصى لاستخدام هذا الكوبون' 
+          return {
+            valid: false,
+            message: 'تم الوصول إلى الحد الأقصى لاستخدام هذا الكوبون',
           };
         }
       }
     }
 
     // Check product restrictions if productIds are provided (can be variantIds or productIds)
-    if (productIds && productIds.length > 0 && coupon.appliesTo !== 'all_products' && coupon.appliesTo !== 'minimum_order_amount') {
+    if (
+      productIds &&
+      productIds.length > 0 &&
+      coupon.appliesTo !== 'all_products' &&
+      coupon.appliesTo !== 'minimum_order_amount'
+    ) {
       let isValidForProducts = false;
 
       const { combinedProductIds } = await this.extractProductIdsFromCartItems(productIds);
 
-      if (coupon.appliesTo === 'specific_products' && coupon.applicableProductIds && coupon.applicableProductIds.length > 0) {
+      if (
+        coupon.appliesTo === 'specific_products' &&
+        coupon.applicableProductIds &&
+        coupon.applicableProductIds.length > 0
+      ) {
         // Check if at least one product in cart matches
-        isValidForProducts = combinedProductIds.some(id => coupon.applicableProductIds.includes(id));
-      } else if (coupon.appliesTo === 'specific_categories' && coupon.applicableCategoryIds && coupon.applicableCategoryIds.length > 0) {
+        isValidForProducts = combinedProductIds.some((id) =>
+          coupon.applicableProductIds.includes(id),
+        );
+      } else if (
+        coupon.appliesTo === 'specific_categories' &&
+        coupon.applicableCategoryIds &&
+        coupon.applicableCategoryIds.length > 0
+      ) {
         const products = await this.productModel
           .find({
-            _id: { $in: combinedProductIds.map(id => new Types.ObjectId(id)) },
+            _id: { $in: combinedProductIds.map((id) => new Types.ObjectId(id)) },
           })
           .select('categoryId')
           .lean();
 
-        const categoryIds = products.map(p => String(p.categoryId));
-        isValidForProducts = categoryIds.some(catId => coupon.applicableCategoryIds.includes(catId));
-      } else if (coupon.appliesTo === 'specific_brands' && coupon.applicableBrandIds && coupon.applicableBrandIds.length > 0) {
+        const categoryIds = products.map((p) => String(p.categoryId));
+        isValidForProducts = categoryIds.some((catId) =>
+          coupon.applicableCategoryIds.includes(catId),
+        );
+      } else if (
+        coupon.appliesTo === 'specific_brands' &&
+        coupon.applicableBrandIds &&
+        coupon.applicableBrandIds.length > 0
+      ) {
         const products = await this.productModel
           .find({
-            _id: { $in: combinedProductIds.map(id => new Types.ObjectId(id)) },
+            _id: { $in: combinedProductIds.map((id) => new Types.ObjectId(id)) },
           })
           .select('brandId')
           .lean();
 
         const brandIds = products
-          .map(p => p.brandId)
+          .map((p) => p.brandId)
           .filter(Boolean)
-          .map(id => String(id));
-        isValidForProducts = brandIds.some(brandId => coupon.applicableBrandIds.includes(brandId));
+          .map((id) => String(id));
+        isValidForProducts = brandIds.some((brandId) =>
+          coupon.applicableBrandIds.includes(brandId),
+        );
       }
 
       if (!isValidForProducts) {
-        return { valid: false, message: 'This coupon is not applicable to the products in your cart' };
+        return {
+          valid: false,
+          message: 'This coupon is not applicable to the products in your cart',
+        };
       }
     }
 
@@ -684,12 +746,11 @@ export class MarketingService {
     if (!engineer) {
       throw new BadRequestException('المستخدم غير موجود');
     }
-    
+
     // التحقق من صلاحية المهندس (بدلاً من استدعاء isEngineer() method)
-    const isEngineer = 
-      engineer.engineer_capable === true && 
-      engineer.engineer_status === CapabilityStatus.APPROVED;
-    
+    const isEngineer =
+      engineer.engineer_capable === true && engineer.engineer_status === CapabilityStatus.APPROVED;
+
     if (!isEngineer) {
       throw new BadRequestException('المستخدم المحدد ليس مهندساً معتمداً');
     }
@@ -740,10 +801,12 @@ export class MarketingService {
   }
 
   async getEngineerCoupons(engineerId: string): Promise<Coupon[]> {
-    return this.couponModel.find({
-      engineerId: new Types.ObjectId(engineerId),
-      deletedAt: null,
-    }).sort({ createdAt: -1 });
+    return this.couponModel
+      .find({
+        engineerId: new Types.ObjectId(engineerId),
+        deletedAt: null,
+      })
+      .sort({ createdAt: -1 });
   }
 
   async getEngineerCouponStats(engineerId: string) {
@@ -754,11 +817,11 @@ export class MarketingService {
 
     const stats = {
       totalCoupons: coupons.length,
-      activeCoupons: coupons.filter(c => c.status === CouponStatus.ACTIVE).length,
+      activeCoupons: coupons.filter((c) => c.status === CouponStatus.ACTIVE).length,
       totalUses: coupons.reduce((sum, c) => sum + (c.usedCount || 0), 0),
       totalCommissionEarned: coupons.reduce((sum, c) => sum + (c.totalCommissionEarned || 0), 0),
       totalDiscountGiven: coupons.reduce((sum, c) => sum + (c.totalDiscountGiven || 0), 0),
-      coupons: coupons.map(c => ({
+      coupons: coupons.map((c) => ({
         code: c.code,
         name: c.name,
         usedCount: c.usedCount || 0,
@@ -786,8 +849,8 @@ export class MarketingService {
       return null; // ليس كوبون مهندس
     }
 
-    // حساب العمولة (نسبة من مبلغ الخصم)
-    const commissionAmount = (params.discountAmount * coupon.commissionRate) / 100;
+    // حساب العمولة (نسبة من إجمالي قيمة الطلب الأصلي)
+    const commissionAmount = (params.orderTotal * coupon.commissionRate) / 100;
 
     // تحديث سجل الاستخدام
     coupon.usageHistory = coupon.usageHistory || [];
@@ -820,26 +883,26 @@ export class MarketingService {
 
     const [totalCoupons, activeCoupons, expiredCoupons, coupons] = await Promise.all([
       this.couponModel.countDocuments({ deletedAt: null }),
-      this.couponModel.countDocuments({ 
-        deletedAt: null, 
+      this.couponModel.countDocuments({
+        deletedAt: null,
         status: CouponStatus.ACTIVE,
         $or: [
           { validUntil: { $gte: new Date() } },
           { validUntil: null },
-          { validUntil: { $exists: false } }
-        ]
+          { validUntil: { $exists: false } },
+        ],
       }),
-      this.couponModel.countDocuments({ 
-        deletedAt: null, 
+      this.couponModel.countDocuments({
+        deletedAt: null,
         status: CouponStatus.ACTIVE,
-        validUntil: { $exists: true, $ne: null, $lt: new Date() }
+        validUntil: { $exists: true, $ne: null, $lt: new Date() },
       }),
-      this.couponModel.find({ deletedAt: null }).lean()
+      this.couponModel.find({ deletedAt: null }).lean(),
     ]);
 
     const totalUses = coupons.reduce((sum, c) => sum + (c.usedCount || 0), 0);
     const totalLimit = coupons.reduce((sum, c) => sum + (c.usageLimit || 0), 0);
-    
+
     return {
       success: true,
       data: {
@@ -850,7 +913,7 @@ export class MarketingService {
         totalLimit,
         usageRate: totalLimit > 0 ? ((totalUses / totalLimit) * 100).toFixed(2) : 0,
         period,
-      }
+      },
     };
   }
 
@@ -872,8 +935,8 @@ export class MarketingService {
       .select('_id productId')
       .lean();
 
-    const variantIdSet = new Set(variants.map(v => String(v._id)));
-    const directProductIds = ids.filter(id => !variantIdSet.has(id));
+    const variantIdSet = new Set(variants.map((v) => String(v._id)));
+    const directProductIds = ids.filter((id) => !variantIdSet.has(id));
 
     const validDirectProductIds: string[] = [];
     for (const id of directProductIds) {
@@ -887,10 +950,7 @@ export class MarketingService {
     }
 
     const combinedProductIds = Array.from(
-      new Set([
-        ...variants.map(v => String(v.productId)),
-        ...validDirectProductIds,
-      ]),
+      new Set([...variants.map((v) => String(v.productId)), ...validDirectProductIds]),
     );
 
     const typedVariants: Array<{ _id: Types.ObjectId; productId: Types.ObjectId }> = [];
@@ -914,26 +974,28 @@ export class MarketingService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - period);
 
-    const coupons = await this.couponModel.find({ 
-      deletedAt: null,
-      createdAt: { $gte: startDate }
-    }).lean();
+    const coupons = await this.couponModel
+      .find({
+        deletedAt: null,
+        createdAt: { $gte: startDate },
+      })
+      .lean();
 
     const statusBreakdown = {
       active: 0,
       inactive: 0,
       expired: 0,
-      scheduled: 0
+      scheduled: 0,
     };
 
     const typeBreakdown = {
       percentage: 0,
       fixed: 0,
-      freeShipping: 0
+      freeShipping: 0,
     };
 
     const now = new Date();
-    coupons.forEach(coupon => {
+    coupons.forEach((coupon) => {
       // Status breakdown
       if (coupon.status === CouponStatus.ACTIVE) {
         if (now < coupon.validFrom) {
@@ -971,8 +1033,8 @@ export class MarketingService {
         typeBreakdown,
         topUsedCoupons,
         period,
-        totalInPeriod: coupons.length
-      }
+        totalInPeriod: coupons.length,
+      },
     };
   }
 
@@ -982,12 +1044,12 @@ export class MarketingService {
     // Handle backward compatibility: if linkUrl is provided but navigationType is not set, use external_url
     let navigationType = dto.navigationType ?? BannerNavigationType.NONE;
     let navigationTarget = dto.navigationTarget;
-    
+
     if (dto.linkUrl && !dto.navigationType && !dto.navigationTarget) {
       navigationType = BannerNavigationType.EXTERNAL_URL;
       navigationTarget = dto.linkUrl;
     }
-    
+
     const banner = new this.bannerModel({
       ...dto,
       navigationType,
@@ -999,7 +1061,10 @@ export class MarketingService {
     });
 
     const savedBanner = await banner.save();
-    const populatedBanner = await this.bannerModel.findById(savedBanner._id).populate('imageId').lean<BannerWithPopulatedImage>();
+    const populatedBanner = await this.bannerModel
+      .findById(savedBanner._id)
+      .populate('imageId')
+      .lean<BannerWithPopulatedImage>();
     if (!populatedBanner) throw new Error('Failed to create banner');
     return this.formatBannerForResponse(populatedBanner);
   }
@@ -1007,27 +1072,41 @@ export class MarketingService {
   async updateBanner(id: string, dto: UpdateBannerDto): Promise<Banner | null> {
     // Handle backward compatibility: if linkUrl is provided but navigationType is not set, use external_url
     const updateData: Record<string, unknown> = { ...dto };
-    
+
     if (dto.linkUrl && !dto.navigationType && !dto.navigationTarget) {
       updateData.navigationType = BannerNavigationType.EXTERNAL_URL;
       updateData.navigationTarget = dto.linkUrl;
     }
-    
+
     const updated = await this.bannerModel.findByIdAndUpdate(id, updateData, { new: true });
     if (!updated) return null;
-    const banner = await this.bannerModel.findById(id).populate('imageId').lean<BannerWithPopulatedImage>();
+    const banner = await this.bannerModel
+      .findById(id)
+      .populate('imageId')
+      .lean<BannerWithPopulatedImage>();
     if (!banner) return null;
     return this.formatBannerForResponse(banner);
   }
 
   async getBanner(id: string): Promise<Banner | null> {
-    const banner = await this.bannerModel.findById(id).populate('imageId').lean<BannerWithPopulatedImage>();
+    const banner = await this.bannerModel
+      .findById(id)
+      .populate('imageId')
+      .lean<BannerWithPopulatedImage>();
     if (!banner) return null;
     return this.formatBannerForResponse(banner);
   }
 
   async listBanners(dto: ListBannersDto) {
-    const { page = 1, limit = 20, search, isActive, location, sortBy = 'sortOrder', sortOrder = 'asc' } = dto;
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      isActive,
+      location,
+      sortBy = 'sortOrder',
+      sortOrder = 'asc',
+    } = dto;
     const skip = (page - 1) * limit;
     const query: Record<string, unknown> = { deletedAt: null };
 
@@ -1045,12 +1124,18 @@ export class MarketingService {
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [banners, total] = await Promise.all([
-      this.bannerModel.find(query).populate('imageId').skip(skip).limit(limit).sort(sort).lean<BannerWithPopulatedImage[]>(),
+      this.bannerModel
+        .find(query)
+        .populate('imageId')
+        .skip(skip)
+        .limit(limit)
+        .sort(sort)
+        .lean<BannerWithPopulatedImage[]>(),
       this.bannerModel.countDocuments(query),
     ]);
 
     return {
-      data: banners.map(banner => this.formatBannerForResponse(banner)),
+      data: banners.map((banner) => this.formatBannerForResponse(banner)),
       pagination: {
         page,
         limit,
@@ -1061,10 +1146,7 @@ export class MarketingService {
   }
 
   async deleteBanner(id: string): Promise<boolean> {
-    const result = await this.bannerModel.findByIdAndUpdate(
-      id,
-      { deletedAt: new Date() }
-    );
+    const result = await this.bannerModel.findByIdAndUpdate(id, { deletedAt: new Date() });
     return !!result;
   }
 
@@ -1074,7 +1156,7 @@ export class MarketingService {
    */
   async deactivateExpiredBanners(): Promise<{ deactivated: number }> {
     const now = new Date();
-    
+
     const result = await this.bannerModel.updateMany(
       {
         isActive: true,
@@ -1104,16 +1186,10 @@ export class MarketingService {
       deletedAt: null,
       $and: [
         {
-          $or: [
-            { startDate: { $exists: false } },
-            { startDate: { $lte: now } },
-          ],
+          $or: [{ startDate: { $exists: false } }, { startDate: { $lte: now } }],
         },
         {
-          $or: [
-            { endDate: { $exists: false } },
-            { endDate: { $gte: now } },
-          ],
+          $or: [{ endDate: { $exists: false } }, { endDate: { $gte: now } }],
         },
       ],
     };
@@ -1121,7 +1197,11 @@ export class MarketingService {
     if (location) query.location = location;
 
     // Get all banners that match the query
-    const allBanners = await this.bannerModel.find(query).populate('imageId').sort({ sortOrder: 1 }).lean<BannerWithPopulatedImage[]>();
+    const allBanners = await this.bannerModel
+      .find(query)
+      .populate('imageId')
+      .sort({ sortOrder: 1 })
+      .lean<BannerWithPopulatedImage[]>();
 
     // Filter by user types
     // If banner has no targetUserTypes (empty array), it's visible to everyone
@@ -1145,18 +1225,18 @@ export class MarketingService {
   private formatBannerForResponse(banner: BannerWithPopulatedImage): Banner {
     // Ensure navigation information is properly structured
     const formatted: Banner = { ...banner } as unknown as Banner;
-    
+
     // Backward compatibility: if navigationType is not set but linkUrl exists, use it
     if (!formatted.navigationType && formatted.linkUrl) {
       formatted.navigationType = BannerNavigationType.EXTERNAL_URL;
       formatted.navigationTarget = formatted.linkUrl;
     }
-    
+
     // If navigationType is NONE, ensure navigationTarget is not set
     if (formatted.navigationType === BannerNavigationType.NONE) {
       formatted.navigationTarget = undefined;
     }
-    
+
     return formatted;
   }
 
@@ -1208,9 +1288,9 @@ export class MarketingService {
 
   async getBannersAnalytics() {
     const totalBanners = await this.bannerModel.countDocuments({ deletedAt: null });
-    const activeBanners = await this.bannerModel.countDocuments({ 
-      deletedAt: null, 
-      isActive: true 
+    const activeBanners = await this.bannerModel.countDocuments({
+      deletedAt: null,
+      isActive: true,
     });
 
     // Get aggregated stats
@@ -1221,8 +1301,8 @@ export class MarketingService {
           _id: null,
           totalViews: { $sum: '$viewCount' },
           totalClicks: { $sum: '$clickCount' },
-        }
-      }
+        },
+      },
     ]);
 
     const totalViews = stats[0]?.totalViews || 0;
@@ -1237,12 +1317,12 @@ export class MarketingService {
       .limit(5)
       .lean();
 
-    const topPerformingFormatted = topPerforming.map(banner => ({
+    const topPerformingFormatted = topPerforming.map((banner) => ({
       id: banner._id.toString(),
       title: banner.title,
       views: banner.viewCount || 0,
       clicks: banner.clickCount || 0,
-      ctr: banner.viewCount > 0 ? ((banner.clickCount || 0) / banner.viewCount) * 100 : 0
+      ctr: banner.viewCount > 0 ? ((banner.clickCount || 0) / banner.viewCount) * 100 : 0,
     }));
 
     return {
@@ -1253,8 +1333,8 @@ export class MarketingService {
         totalViews,
         totalClicks,
         averageCTR: parseFloat(averageCTR.toFixed(2)),
-        topPerforming: topPerformingFormatted
-      }
+        topPerforming: topPerformingFormatted,
+      },
     };
   }
 
@@ -1266,7 +1346,7 @@ export class MarketingService {
   private async getBasePrice(variantId: string, _currency: string): Promise<number | null> {
     try {
       const variant = await this.variantModel.findById(variantId).lean();
-      
+
       void _currency;
       if (!variant || variant.deletedAt) {
         return null;
@@ -1304,10 +1384,7 @@ export class MarketingService {
     this.logger.log('Exporting coupons data:', { format, period });
 
     // Get coupons data
-    const coupons = await this.couponModel
-      .find({ deletedAt: null })
-      .sort({ createdAt: -1 })
-      .lean();
+    const coupons = await this.couponModel.find({ deletedAt: null }).sort({ createdAt: -1 }).lean();
 
     // Get analytics
     const analytics = await this.getCouponsAnalytics(period || 30);
@@ -1334,7 +1411,7 @@ export class MarketingService {
           statusBreakdown: statistics.data.statusBreakdown,
           typeBreakdown: statistics.data.typeBreakdown,
         },
-      }
+      },
     };
   }
 }

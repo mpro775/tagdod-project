@@ -4714,7 +4714,7 @@ export class OrderService {
                 orderId: String(order._id),
                 userId: String(order.userId),
                 discountAmount: couponInfo.discount,
-                orderTotal: order.total,
+                orderTotal: order.subtotal, // الإجمالي الأصلي قبل الخصم
               });
 
               if (commissionResult) {

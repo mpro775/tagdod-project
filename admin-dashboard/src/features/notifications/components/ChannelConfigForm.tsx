@@ -40,14 +40,16 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
 }) => {
   const { isMobile } = useBreakpoint();
   const [formData, setFormData] = useState<CreateChannelConfigDto | UpdateChannelConfigDto>(() => {
-    if (config) {
+    if (config && config._id) {
+      // إعداد موجود في قاعدة البيانات
       return {
-        allowedChannels: config.allowedChannels,
-        defaultChannel: config.defaultChannel,
+        allowedChannels: config.allowedChannels.length > 0 ? config.allowedChannels : [NotificationChannel.IN_APP],
+        defaultChannel: config.defaultChannel || NotificationChannel.IN_APP,
         targetRoles: config.targetRoles,
         isActive: config.isActive,
       } as UpdateChannelConfigDto;
     }
+    // إنشاء إعداد جديد
     return {
       notificationType: notificationType,
       allowedChannels: [NotificationChannel.IN_APP],
@@ -58,15 +60,25 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
   });
 
   useEffect(() => {
-    if (config) {
+    if (config && config._id) {
+      // إعداد موجود في قاعدة البيانات
       setFormData({
-        allowedChannels: config.allowedChannels,
-        defaultChannel: config.defaultChannel,
+        allowedChannels: config.allowedChannels.length > 0 ? config.allowedChannels : [NotificationChannel.IN_APP],
+        defaultChannel: config.defaultChannel || NotificationChannel.IN_APP,
         targetRoles: config.targetRoles as UserRole[],
         isActive: config.isActive,
       } as UpdateChannelConfigDto);
+    } else if (notificationType) {
+      // إنشاء إعداد جديد
+      setFormData({
+        notificationType: notificationType,
+        allowedChannels: [NotificationChannel.IN_APP],
+        defaultChannel: NotificationChannel.IN_APP,
+        targetRoles: [UserRole.USER],
+        isActive: true,
+      } as CreateChannelConfigDto);
     }
-  }, [config]);
+  }, [config, notificationType]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -252,7 +264,7 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
             disabled={isLoading || !isDefaultChannelValid}
             size={isMobile ? 'small' : 'medium'}
           >
-            {config ? 'تحديث' : 'إنشاء'}
+            {config && config._id ? 'تحديث' : 'إنشاء'}
           </Button>
         </Stack>
       </Stack>

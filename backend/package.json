@@ -38,7 +38,8 @@
     "update:super-admin": "ts-node scripts/update-super-admin-permissions.ts",
     "fix-nan-values": "ts-node scripts/fix-nan-stock-values.ts",
     "migrate:stock": "ts-node scripts/migrate-add-socket-quantity.ts",
-    "migrate:inventory-objectid": "ts-node scripts/migrate-inventory-to-objectid.ts"
+    "migrate:inventory-objectid": "ts-node scripts/migrate-inventory-to-objectid.ts",
+    "fix:commissions": "ts-node src/scripts/fix-engineer-commissions.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

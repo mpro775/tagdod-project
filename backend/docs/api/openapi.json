@@ -5479,6 +5479,308 @@
         }
       }
     },
+    "/api/v1/notifications/admin/channel-configs": {
+      "get": {
+        "operationId": "getAllConfigs",
+        "summary": "الإدارة: قائمة جميع إعدادات القنوات",
+        "description": "استرداد قائمة بجميع إعدادات القنوات لأنواع الإشعارات (للإداريين فقط)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإعدادات بنجاح"
+          }
+        },
+        "tags": [
+          "إعدادات قنوات الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createConfig",
+        "summary": "الإدارة: إنشاء إعدادات قناة جديدة",
+        "description": "إنشاء إعدادات قناة جديدة لنوع إشعار (للإداريين فقط)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChannelConfigDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء الإعدادات بنجاح"
+          },
+          "400": {
+            "description": "بيانات غير صحيحة أو الإعدادات موجودة بالفعل"
+          }
+        },
+        "tags": [
+          "إعدادات قنوات الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/admin/channel-configs/{type}": {
+      "get": {
+        "operationId": "getConfigByType",
+        "summary": "الإدارة: إعدادات قناة لنوع محدد",
+        "description": "استرداد إعدادات القناة لنوع إشعار محدد (للإداريين فقط)",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "description": "نوع الإشعار",
+            "schema": {
+              "enum": [
+                "ORDER_CREATED",
+                "ORDER_CONFIRMED",
+                "ORDER_CANCELLED",
+                "ORDER_REFUNDED",
+                "ORDER_RATED",
+                "SERVICE_REQUEST_OPENED",
+                "NEW_ENGINEER_OFFER",
+                "OFFER_ACCEPTED",
+                "OFFER_REJECTED",
+                "OFFER_CANCELLED",
+                "SERVICE_STARTED",
+                "SERVICE_COMPLETED",
+                "SERVICE_RATED",
+                "SERVICE_REQUEST_CANCELLED",
+                "PRODUCT_BACK_IN_STOCK",
+                "PRODUCT_PRICE_DROP",
+                "LOW_STOCK",
+                "OUT_OF_STOCK",
+                "PROMOTION_STARTED",
+                "PROMOTION_ENDING",
+                "ACCOUNT_VERIFIED",
+                "PASSWORD_CHANGED",
+                "LOGIN_ATTEMPT",
+                "NEW_USER_REGISTERED",
+                "TICKET_CREATED",
+                "TICKET_UPDATED",
+                "TICKET_RESOLVED",
+                "SUPPORT_MESSAGE_RECEIVED",
+                "SYSTEM_MAINTENANCE",
+                "NEW_FEATURE",
+                "SYSTEM_ALERT",
+                "WELCOME_NEW_USER",
+                "BIRTHDAY_GREETING",
+                "CART_ABANDONMENT",
+                "PAYMENT_FAILED",
+                "PAYMENT_SUCCESS",
+                "INVOICE_CREATED",
+                "COUPON_USED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإعدادات بنجاح"
+          },
+          "404": {
+            "description": "الإعدادات غير موجودة"
+          }
+        },
+        "tags": [
+          "إعدادات قنوات الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateConfig",
+        "summary": "الإدارة: تحديث إعدادات قناة",
+        "description": "تحديث إعدادات القناة لنوع إشعار محدد (للإداريين فقط)",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "description": "نوع الإشعار",
+            "schema": {
+              "enum": [
+                "ORDER_CREATED",
+                "ORDER_CONFIRMED",
+                "ORDER_CANCELLED",
+                "ORDER_REFUNDED",
+                "ORDER_RATED",
+                "SERVICE_REQUEST_OPENED",
+                "NEW_ENGINEER_OFFER",
+                "OFFER_ACCEPTED",
+                "OFFER_REJECTED",
+                "OFFER_CANCELLED",
+                "SERVICE_STARTED",
+                "SERVICE_COMPLETED",
+                "SERVICE_RATED",
+                "SERVICE_REQUEST_CANCELLED",
+                "PRODUCT_BACK_IN_STOCK",
+                "PRODUCT_PRICE_DROP",
+                "LOW_STOCK",
+                "OUT_OF_STOCK",
+                "PROMOTION_STARTED",
+                "PROMOTION_ENDING",
+                "ACCOUNT_VERIFIED",
+                "PASSWORD_CHANGED",
+                "LOGIN_ATTEMPT",
+                "NEW_USER_REGISTERED",
+                "TICKET_CREATED",
+                "TICKET_UPDATED",
+                "TICKET_RESOLVED",
+                "SUPPORT_MESSAGE_RECEIVED",
+                "SYSTEM_MAINTENANCE",
+                "NEW_FEATURE",
+                "SYSTEM_ALERT",
+                "WELCOME_NEW_USER",
+                "BIRTHDAY_GREETING",
+                "CART_ABANDONMENT",
+                "PAYMENT_FAILED",
+                "PAYMENT_SUCCESS",
+                "INVOICE_CREATED",
+                "COUPON_USED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChannelConfigDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث الإعدادات بنجاح"
+          },
+          "404": {
+            "description": "الإعدادات غير موجودة"
+          }
+        },
+        "tags": [
+          "إعدادات قنوات الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteConfig",
+        "summary": "الإدارة: حذف إعدادات قناة",
+        "description": "حذف إعدادات القناة لنوع إشعار محدد (للإداريين فقط)",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "description": "نوع الإشعار",
+            "schema": {
+              "enum": [
+                "ORDER_CREATED",
+                "ORDER_CONFIRMED",
+                "ORDER_CANCELLED",
+                "ORDER_REFUNDED",
+                "ORDER_RATED",
+                "SERVICE_REQUEST_OPENED",
+                "NEW_ENGINEER_OFFER",
+                "OFFER_ACCEPTED",
+                "OFFER_REJECTED",
+                "OFFER_CANCELLED",
+                "SERVICE_STARTED",
+                "SERVICE_COMPLETED",
+                "SERVICE_RATED",
+                "SERVICE_REQUEST_CANCELLED",
+                "PRODUCT_BACK_IN_STOCK",
+                "PRODUCT_PRICE_DROP",
+                "LOW_STOCK",
+                "OUT_OF_STOCK",
+                "PROMOTION_STARTED",
+                "PROMOTION_ENDING",
+                "ACCOUNT_VERIFIED",
+                "PASSWORD_CHANGED",
+                "LOGIN_ATTEMPT",
+                "NEW_USER_REGISTERED",
+                "TICKET_CREATED",
+                "TICKET_UPDATED",
+                "TICKET_RESOLVED",
+                "SUPPORT_MESSAGE_RECEIVED",
+                "SYSTEM_MAINTENANCE",
+                "NEW_FEATURE",
+                "SYSTEM_ALERT",
+                "WELCOME_NEW_USER",
+                "BIRTHDAY_GREETING",
+                "CART_ABANDONMENT",
+                "PAYMENT_FAILED",
+                "PAYMENT_SUCCESS",
+                "INVOICE_CREATED",
+                "COUPON_USED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف الإعدادات بنجاح"
+          },
+          "404": {
+            "description": "الإعدادات غير موجودة"
+          }
+        },
+        "tags": [
+          "إعدادات قنوات الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/admin/channel-configs/initialize": {
+      "post": {
+        "operationId": "initializeDefaults",
+        "summary": "الإدارة: تهيئة القيم الافتراضية",
+        "description": "تهيئة جميع إعدادات القنوات بالقيم الافتراضية من notification-rules.ts (للإداريين فقط)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم تهيئة القيم الافتراضية بنجاح"
+          }
+        },
+        "tags": [
+          "إعدادات قنوات الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/notifications": {
       "get": {
         "operationId": "getUserNotifications",
@@ -6352,7 +6654,7 @@
         ]
       }
     },
-    "/api/v1/notifications/admin/{id}": {
+    "/api/v1/notifications/admin/notification/{id}": {
       "get": {
         "operationId": "adminGetNotification",
         "summary": "الإدارة: تفاصيل إشعار",
@@ -6371,6 +6673,9 @@
         "responses": {
           "200": {
             "description": "Notification retrieved successfully"
+          },
+          "400": {
+            "description": "Invalid notification ID format"
           },
           "404": {
             "description": "Notification not found"
@@ -6414,6 +6719,9 @@
           "200": {
             "description": "Notification updated successfully"
           },
+          "400": {
+            "description": "Invalid notification ID format"
+          },
           "404": {
             "description": "Notification not found"
           }
@@ -6446,6 +6754,9 @@
           "200": {
             "description": "Notification deleted successfully"
           },
+          "400": {
+            "description": "Invalid notification ID format"
+          },
           "404": {
             "description": "Notification not found"
           }
@@ -6460,7 +6771,7 @@
         ]
       }
     },
-    "/api/v1/notifications/admin/{id}/send": {
+    "/api/v1/notifications/admin/notification/{id}/send": {
       "post": {
         "operationId": "adminSendNotification",
         "summary": "الإدارة: إرسال إشعار محدد",
@@ -31907,6 +32218,14 @@
             "default": true
           }
         }
+      },
+      "CreateChannelConfigDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateChannelConfigDto": {
+        "type": "object",
+        "properties": {}
       },
       "MarkAsReadDto": {
         "type": "object",

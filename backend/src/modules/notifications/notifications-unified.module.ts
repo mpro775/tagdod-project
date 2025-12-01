@@ -19,7 +19,7 @@ import { SharedModule } from '../../shared/shared.module';
     ]),
     SharedModule,
   ],
-  controllers: [UnifiedNotificationController, NotificationChannelConfigController],
+  controllers: [NotificationChannelConfigController, UnifiedNotificationController],
   providers: [NotificationService, NotificationChannelConfigService],
   exports: [NotificationService, NotificationChannelConfigService],
 })

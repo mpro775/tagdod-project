@@ -9,6 +9,8 @@ import {
   Param,
   UseGuards,
   Request,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Request as ExpressRequest } from 'express';
 
@@ -55,6 +57,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { UserRole } from '../../users/schemas/user.schema';
 import { AdminGuard } from '../../../shared/guards/admin.guard';
+import { Types } from 'mongoose';
 
 @ApiTags('الإشعارات')
 @Controller('notifications')
@@ -696,7 +699,7 @@ export class UnifiedNotificationController {
     };
   }
 
-  @Get('admin/:id')
+  @Get('admin/notification/:id')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
@@ -706,12 +709,17 @@ export class UnifiedNotificationController {
   @ApiParam({ name: 'id', description: 'معرف الإشعار' })
   @ApiResponse({ status: 200, description: 'Notification retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Notification not found' })
+  @ApiResponse({ status: 400, description: 'Invalid notification ID format' })
   async adminGetNotification(@Param('id') id: string) {
+    // Validate ObjectId format
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid notification ID format');
+    }
     const notification = await this.notificationService.getNotificationById(id);
     return { success: true, data: notification };
   }
 
-  @Put('admin/:id')
+  @Put('admin/notification/:id')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
@@ -722,12 +730,17 @@ export class UnifiedNotificationController {
   @ApiBody({ type: UpdateNotificationDto })
   @ApiResponse({ status: 200, description: 'Notification updated successfully' })
   @ApiResponse({ status: 404, description: 'Notification not found' })
+  @ApiResponse({ status: 400, description: 'Invalid notification ID format' })
   async adminUpdateNotification(@Param('id') id: string, @Body() dto: UpdateNotificationDto) {
+    // Validate ObjectId format
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid notification ID format');
+    }
     const notification = await this.notificationService.updateNotification(id, dto);
     return { success: true, data: notification };
   }
 
-  @Delete('admin/:id')
+  @Delete('admin/notification/:id')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
@@ -737,7 +750,12 @@ export class UnifiedNotificationController {
   @ApiParam({ name: 'id', description: 'معرف الإشعار' })
   @ApiResponse({ status: 200, description: 'Notification deleted successfully' })
   @ApiResponse({ status: 404, description: 'Notification not found' })
+  @ApiResponse({ status: 400, description: 'Invalid notification ID format' })
   async adminDeleteNotification(@Param('id') id: string) {
+    // Validate ObjectId format
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid notification ID format');
+    }
     const deleted = await this.notificationService.deleteNotification(id);
     return {
       success: deleted,
@@ -745,7 +763,7 @@ export class UnifiedNotificationController {
     };
   }
 
-  @Post('admin/:id/send')
+  @Post('admin/notification/:id/send')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
