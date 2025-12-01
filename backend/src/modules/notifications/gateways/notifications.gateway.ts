@@ -19,6 +19,7 @@ import { WebSocketService } from '../../../shared/websocket/websocket.service';
 import { getWebSocketCorsOrigins } from '../../../shared/websocket/websocket-cors.helper';
 import { WebSocketExceptionFilter } from '../../../shared/filters/websocket-exception.filter';
 import { NotificationService } from '../services/notification.service';
+import { TokensService } from '../../auth/tokens.service';
 
 @WebSocketGateway({
   cors: {
@@ -43,6 +44,7 @@ export class NotificationsGateway
   constructor(
     private readonly webSocketService: WebSocketService,
     private readonly notificationService: NotificationService,
+    private readonly tokensService: TokensService,
   ) {}
 
   afterInit(server: Server): void {
@@ -54,20 +56,61 @@ export class NotificationsGateway
     // ✅ Logging مفصل للـ debugging
     this.logger.log(`🔌 New WebSocket connection attempt: ${client.id}`);
     this.logger.log(`   - Handshake auth: ${JSON.stringify(client.handshake.auth)}`);
-    this.logger.log(
-      `   - User from auth: ${client.user ? client.user.userId || client.user.sub || JSON.stringify(client.user) : 'NO USER'}`,
-    );
-    this.logger.log(
-      `   - Full user object: ${client.user ? JSON.stringify(client.user) : 'NO USER OBJECT'}`,
-    );
 
+    // ⚠️ IMPORTANT: @UseGuards لا يعمل مع handleConnection في NestJS
+    // يجب استخراج وتحقق الـ token يدوياً هنا
     try {
+      // استخراج الـ token
+      const token = this.extractToken(client);
+
+      if (!token) {
+        this.logger.warn(`❌ No token provided for socket ${client.id}`);
+        client.emit('error', { message: 'Unauthorized: No token provided' });
+        client.disconnect();
+        return;
+      }
+
+      this.logger.log(`   - Token found: ${token.substring(0, 20)}...`);
+
+      // التحقق من الـ token واستخراج بيانات المستخدم
+      try {
+        const payload = this.tokensService.verifyAccess(token) as {
+          sub: string;
+          phone: string;
+          isAdmin: boolean;
+          roles?: string[];
+          permissions?: string[];
+          preferredCurrency?: string;
+        };
+
+        // ✅ تعيين client.user - هذا ما كان مفقوداً!
+        client.user = {
+          sub: payload.sub,
+          id: payload.sub,
+          userId: payload.sub,
+          phone: payload.phone,
+          isAdmin: payload.isAdmin,
+          roles: payload.roles,
+          permissions: payload.permissions,
+          preferredCurrency: payload.preferredCurrency,
+        };
+
+        this.logger.log(`✅ Token verified for user: ${payload.sub} (${payload.phone})`);
+        this.logger.log(`   - User object set: ${JSON.stringify(client.user)}`);
+      } catch (tokenError) {
+        this.logger.warn(
+          `❌ Token validation failed for socket ${client.id}: ${tokenError instanceof Error ? tokenError.message : 'Unknown error'}`,
+        );
+        client.emit('error', { message: 'Unauthorized: Invalid token' });
+        client.disconnect();
+        return;
+      }
+
+      // الآن client.user معين، يمكننا تسجيل الاتصال
       this.webSocketService.handleConnection(client);
       const userId = client.user?.userId || client.user?.sub;
       if (userId) {
         this.logger.log(`✅ Connection registered successfully for user: ${userId} (socket: ${client.id})`);
-      } else {
-        this.logger.warn(`⚠️ Connection registered but no userId found (socket: ${client.id})`);
       }
     } catch (error) {
       this.logger.error(`❌ Connection error for socket ${client.id}:`, error);
@@ -77,6 +120,34 @@ export class NotificationsGateway
       }
       client.disconnect();
     }
+  }
+
+  /**
+   * استخراج الـ token من Socket
+   */
+  private extractToken(client: AuthenticatedSocket): string | null {
+    // من Authorization header
+    const authHeader = client.handshake.headers.authorization;
+    if (authHeader && typeof authHeader === 'string') {
+      const [type, token] = authHeader.split(' ');
+      if (type === 'Bearer' && token) {
+        return token;
+      }
+    }
+
+    // من handshake.auth.token (Flutter يرسل هكذا)
+    const authToken = client.handshake.auth?.token;
+    if (authToken && typeof authToken === 'string') {
+      return authToken;
+    }
+
+    // من query string
+    const queryToken = client.handshake.query?.token;
+    if (queryToken && typeof queryToken === 'string') {
+      return queryToken;
+    }
+
+    return null;
   }
 
   handleDisconnect(client: AuthenticatedSocket): void {
