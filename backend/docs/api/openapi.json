@@ -7362,6 +7362,613 @@
         ]
       }
     },
+    "/api/v1/exchange-rates": {
+      "get": {
+        "operationId": "getCurrentRates",
+        "summary": "الحصول على أسعار الصرف الحالية",
+        "description": "استرداد أسعار صرف العملات الحالية (دولار أمريكي إلى ريال يمني وريال سعودي)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد أسعار الصرف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "usdToYer": {
+                      "type": "number",
+                      "example": 250.5,
+                      "description": "سعر الدولار مقابل الريال اليمني"
+                    },
+                    "usdToSar": {
+                      "type": "number",
+                      "example": 3.75,
+                      "description": "سعر الدولار مقابل الريال السعودي"
+                    },
+                    "lastUpdated": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-15T10:30:00Z",
+                      "description": "تاريخ آخر تحديث"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "أسعار-الصرف"
+        ]
+      }
+    },
+    "/api/v1/exchange-rates/convert": {
+      "post": {
+        "operationId": "convertCurrency",
+        "summary": "تحويل العملة",
+        "description": "تحويل مبلغ من عملة إلى أخرى باستخدام أسعار الصرف الحالية",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertCurrencyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحويل العملة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fromCurrency": {
+                      "type": "string",
+                      "example": "USD",
+                      "description": "العملة المصدر"
+                    },
+                    "toCurrency": {
+                      "type": "string",
+                      "example": "YER",
+                      "description": "العملة الهدف"
+                    },
+                    "amount": {
+                      "type": "number",
+                      "example": 100,
+                      "description": "المبلغ الأصلي"
+                    },
+                    "convertedAmount": {
+                      "type": "number",
+                      "example": 25050,
+                      "description": "المبلغ المحول"
+                    },
+                    "rate": {
+                      "type": "number",
+                      "example": 250.5,
+                      "description": "سعر الصرف المستخدم"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-15T10:30:00Z",
+                      "description": "تاريخ التحويل"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "بيانات غير صحيحة أو عملة غير مدعومة"
+          }
+        },
+        "tags": [
+          "أسعار-الصرف"
+        ]
+      }
+    },
+    "/api/v1/exchange-rates/usd-to-yer": {
+      "get": {
+        "operationId": "getUSDToYERRate",
+        "summary": "الحصول على سعر الدولار مقابل الريال اليمني",
+        "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال اليمني الحالي",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد سعر الصرف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rate": {
+                      "type": "number",
+                      "example": 250.5,
+                      "description": "سعر الصرف الحالي"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "example": "YER",
+                      "description": "رمز العملة"
+                    },
+                    "formatted": {
+                      "type": "string",
+                      "example": "1 USD = 250.50 $",
+                      "description": "السعر منسق للعرض"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "أسعار-الصرف"
+        ]
+      }
+    },
+    "/api/v1/exchange-rates/usd-to-sar": {
+      "get": {
+        "operationId": "getUSDToSARRate",
+        "summary": "الحصول على سعر الدولار مقابل الريال السعودي",
+        "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال السعودي الحالي",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد سعر الصرف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rate": {
+                      "type": "number",
+                      "example": 3.75,
+                      "description": "سعر الصرف الحالي"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "example": "SAR",
+                      "description": "رمز العملة"
+                    },
+                    "formatted": {
+                      "type": "string",
+                      "example": "1 USD = 3.75 $",
+                      "description": "السعر منسق للعرض"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "أسعار-الصرف"
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates": {
+      "get": {
+        "operationId": "getCurrentRates",
+        "summary": "الحصول على أسعار الصرف الحالية (إداري)",
+        "description": "استرداد أسعار صرف العملات الحالية مع تفاصيل إضافية للإداريين",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد أسعار الصرف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "usdToYer": {
+                      "type": "number",
+                      "example": 250.5,
+                      "description": "سعر الدولار مقابل الريال اليمني"
+                    },
+                    "usdToSar": {
+                      "type": "number",
+                      "example": 3.75,
+                      "description": "سعر الدولار مقابل الريال السعودي"
+                    },
+                    "lastUpdatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-15T10:30:00Z",
+                      "description": "تاريخ آخر تحديث"
+                    },
+                    "lastUpdatedBy": {
+                      "type": "string",
+                      "example": "user123",
+                      "description": "معرف المستخدم الذي قام بآخر تحديث"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مصرح لك بالوصول إلى هذه البيانات"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/update": {
+      "post": {
+        "operationId": "updateRates",
+        "summary": "تحديث أسعار الصرف",
+        "description": "تحديث أسعار صرف العملات الجديدة في النظام",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExchangeRateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث أسعار الصرف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "تم تحديث أسعار الصرف بنجاح"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "usdToYer": {
+                          "type": "number",
+                          "example": 251,
+                          "description": "السعر الجديد للدولار مقابل الريال اليمني"
+                        },
+                        "usdToSar": {
+                          "type": "number",
+                          "example": 3.76,
+                          "description": "السعر الجديد للدولار مقابل الريال السعودي"
+                        },
+                        "lastUpdatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-15T11:00:00Z"
+                        },
+                        "lastUpdatedBy": {
+                          "type": "string",
+                          "example": "admin123"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "بيانات غير صحيحة أو أسعار غير صالحة"
+          },
+          "403": {
+            "description": "غير مصرح لك بتحديث أسعار الصرف"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/convert": {
+      "post": {
+        "operationId": "convertCurrency",
+        "summary": "تحويل العملة (إداري)",
+        "description": "تحويل مبلغ من عملة إلى أخرى للاختبار والتحقق من أسعار الصرف",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertCurrencyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحويل العملة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fromCurrency": {
+                      "type": "string",
+                      "example": "USD",
+                      "description": "العملة المصدر"
+                    },
+                    "toCurrency": {
+                      "type": "string",
+                      "example": "YER",
+                      "description": "العملة الهدف"
+                    },
+                    "amount": {
+                      "type": "number",
+                      "example": 100,
+                      "description": "المبلغ الأصلي"
+                    },
+                    "convertedAmount": {
+                      "type": "number",
+                      "example": 25050,
+                      "description": "المبلغ المحول"
+                    },
+                    "rate": {
+                      "type": "number",
+                      "example": 250.5,
+                      "description": "سعر الصرف المستخدم"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2024-01-15T10:30:00Z",
+                      "description": "تاريخ التحويل"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "بيانات غير صحيحة أو عملة غير مدعومة"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/usd-to-yer": {
+      "get": {
+        "operationId": "getUSDToYERRate",
+        "summary": "الحصول على سعر الدولار مقابل الريال اليمني (إداري)",
+        "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال اليمني الحالي مع تفاصيل إضافية",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد سعر الصرف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rate": {
+                      "type": "number",
+                      "example": 250.5,
+                      "description": "سعر الصرف الحالي"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "example": "YER",
+                      "description": "رمز العملة"
+                    },
+                    "formatted": {
+                      "type": "string",
+                      "example": "1 USD = 250.50 $",
+                      "description": "السعر منسق للعرض"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/usd-to-sar": {
+      "get": {
+        "operationId": "getUSDToSARRate",
+        "summary": "الحصول على سعر الدولار مقابل الريال السعودي (إداري)",
+        "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال السعودي الحالي مع تفاصيل إضافية",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد سعر الصرف بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rate": {
+                      "type": "number",
+                      "example": 3.75,
+                      "description": "سعر الصرف الحالي"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "example": "SAR",
+                      "description": "رمز العملة"
+                    },
+                    "formatted": {
+                      "type": "string",
+                      "example": "1 USD = 3.75 $",
+                      "description": "السعر منسق للعرض"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/sync": {
+      "post": {
+        "operationId": "triggerSync",
+        "summary": "إطلاق مزامنة أسعار المنتجات",
+        "description": "يبدأ عملية إعادة حساب أسعار المنتجات بالاعتماد على أسعار الصرف الحالية",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "تم إنشاء مهمة المزامنة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/sync-jobs": {
+      "get": {
+        "operationId": "listSyncJobs",
+        "summary": "قائمة مهام مزامنة الأسعار",
+        "description": "يعرض قائمة بآخر مهام مزامنة أسعار المنتجات مع حالات كل مهمة",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد قائمة المهام بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/sync-jobs/{id}": {
+      "get": {
+        "operationId": "getSyncJob",
+        "summary": "تفاصيل مهمة مزامنة الأسعار",
+        "description": "يعرض تفاصيل مهمة محددة بما في ذلك التقدم والأخطاء",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد تفاصيل المهمة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/exchange-rates/sync-jobs/{id}/retry-product": {
+      "post": {
+        "operationId": "retrySyncJobProduct",
+        "summary": "إعادة محاولة المزامنة لمنتج محدد",
+        "description": "إعادة حساب أسعار منتج أو متغيرات محددة ضمن مهمة المزامنة",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrySyncJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تمت إعادة المحاولة وتحديث المهمة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-أسعار-الصرف"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/admin/categories": {
       "post": {
         "operationId": "createCategory",
@@ -8942,613 +9549,6 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/exchange-rates": {
-      "get": {
-        "operationId": "getCurrentRates",
-        "summary": "الحصول على أسعار الصرف الحالية",
-        "description": "استرداد أسعار صرف العملات الحالية (دولار أمريكي إلى ريال يمني وريال سعودي)",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد أسعار الصرف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "usdToYer": {
-                      "type": "number",
-                      "example": 250.5,
-                      "description": "سعر الدولار مقابل الريال اليمني"
-                    },
-                    "usdToSar": {
-                      "type": "number",
-                      "example": 3.75,
-                      "description": "سعر الدولار مقابل الريال السعودي"
-                    },
-                    "lastUpdated": {
-                      "type": "string",
-                      "format": "date-time",
-                      "example": "2024-01-15T10:30:00Z",
-                      "description": "تاريخ آخر تحديث"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "أسعار-الصرف"
-        ]
-      }
-    },
-    "/api/v1/exchange-rates/convert": {
-      "post": {
-        "operationId": "convertCurrency",
-        "summary": "تحويل العملة",
-        "description": "تحويل مبلغ من عملة إلى أخرى باستخدام أسعار الصرف الحالية",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConvertCurrencyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم تحويل العملة بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "fromCurrency": {
-                      "type": "string",
-                      "example": "USD",
-                      "description": "العملة المصدر"
-                    },
-                    "toCurrency": {
-                      "type": "string",
-                      "example": "YER",
-                      "description": "العملة الهدف"
-                    },
-                    "amount": {
-                      "type": "number",
-                      "example": 100,
-                      "description": "المبلغ الأصلي"
-                    },
-                    "convertedAmount": {
-                      "type": "number",
-                      "example": 25050,
-                      "description": "المبلغ المحول"
-                    },
-                    "rate": {
-                      "type": "number",
-                      "example": 250.5,
-                      "description": "سعر الصرف المستخدم"
-                    },
-                    "timestamp": {
-                      "type": "string",
-                      "format": "date-time",
-                      "example": "2024-01-15T10:30:00Z",
-                      "description": "تاريخ التحويل"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "بيانات غير صحيحة أو عملة غير مدعومة"
-          }
-        },
-        "tags": [
-          "أسعار-الصرف"
-        ]
-      }
-    },
-    "/api/v1/exchange-rates/usd-to-yer": {
-      "get": {
-        "operationId": "getUSDToYERRate",
-        "summary": "الحصول على سعر الدولار مقابل الريال اليمني",
-        "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال اليمني الحالي",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد سعر الصرف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "rate": {
-                      "type": "number",
-                      "example": 250.5,
-                      "description": "سعر الصرف الحالي"
-                    },
-                    "currency": {
-                      "type": "string",
-                      "example": "YER",
-                      "description": "رمز العملة"
-                    },
-                    "formatted": {
-                      "type": "string",
-                      "example": "1 USD = 250.50 $",
-                      "description": "السعر منسق للعرض"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "أسعار-الصرف"
-        ]
-      }
-    },
-    "/api/v1/exchange-rates/usd-to-sar": {
-      "get": {
-        "operationId": "getUSDToSARRate",
-        "summary": "الحصول على سعر الدولار مقابل الريال السعودي",
-        "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال السعودي الحالي",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد سعر الصرف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "rate": {
-                      "type": "number",
-                      "example": 3.75,
-                      "description": "سعر الصرف الحالي"
-                    },
-                    "currency": {
-                      "type": "string",
-                      "example": "SAR",
-                      "description": "رمز العملة"
-                    },
-                    "formatted": {
-                      "type": "string",
-                      "example": "1 USD = 3.75 $",
-                      "description": "السعر منسق للعرض"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "أسعار-الصرف"
-        ]
-      }
-    },
-    "/api/v1/admin/exchange-rates": {
-      "get": {
-        "operationId": "getCurrentRates",
-        "summary": "الحصول على أسعار الصرف الحالية (إداري)",
-        "description": "استرداد أسعار صرف العملات الحالية مع تفاصيل إضافية للإداريين",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد أسعار الصرف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "usdToYer": {
-                      "type": "number",
-                      "example": 250.5,
-                      "description": "سعر الدولار مقابل الريال اليمني"
-                    },
-                    "usdToSar": {
-                      "type": "number",
-                      "example": 3.75,
-                      "description": "سعر الدولار مقابل الريال السعودي"
-                    },
-                    "lastUpdatedAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "example": "2024-01-15T10:30:00Z",
-                      "description": "تاريخ آخر تحديث"
-                    },
-                    "lastUpdatedBy": {
-                      "type": "string",
-                      "example": "user123",
-                      "description": "معرف المستخدم الذي قام بآخر تحديث"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "غير مصرح لك بالوصول إلى هذه البيانات"
-          }
-        },
-        "tags": [
-          "إدارة-أسعار-الصرف"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/exchange-rates/update": {
-      "post": {
-        "operationId": "updateRates",
-        "summary": "تحديث أسعار الصرف",
-        "description": "تحديث أسعار صرف العملات الجديدة في النظام",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateExchangeRateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم تحديث أسعار الصرف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "تم تحديث أسعار الصرف بنجاح"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "usdToYer": {
-                          "type": "number",
-                          "example": 251,
-                          "description": "السعر الجديد للدولار مقابل الريال اليمني"
-                        },
-                        "usdToSar": {
-                          "type": "number",
-                          "example": 3.76,
-                          "description": "السعر الجديد للدولار مقابل الريال السعودي"
-                        },
-                        "lastUpdatedAt": {
-                          "type": "string",
-                          "format": "date-time",
-                          "example": "2024-01-15T11:00:00Z"
-                        },
-                        "lastUpdatedBy": {
-                          "type": "string",
-                          "example": "admin123"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "بيانات غير صحيحة أو أسعار غير صالحة"
-          },
-          "403": {
-            "description": "غير مصرح لك بتحديث أسعار الصرف"
-          }
-        },
-        "tags": [
-          "إدارة-أسعار-الصرف"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/exchange-rates/convert": {
-      "post": {
-        "operationId": "convertCurrency",
-        "summary": "تحويل العملة (إداري)",
-        "description": "تحويل مبلغ من عملة إلى أخرى للاختبار والتحقق من أسعار الصرف",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConvertCurrencyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم تحويل العملة بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "fromCurrency": {
-                      "type": "string",
-                      "example": "USD",
-                      "description": "العملة المصدر"
-                    },
-                    "toCurrency": {
-                      "type": "string",
-                      "example": "YER",
-                      "description": "العملة الهدف"
-                    },
-                    "amount": {
-                      "type": "number",
-                      "example": 100,
-                      "description": "المبلغ الأصلي"
-                    },
-                    "convertedAmount": {
-                      "type": "number",
-                      "example": 25050,
-                      "description": "المبلغ المحول"
-                    },
-                    "rate": {
-                      "type": "number",
-                      "example": 250.5,
-                      "description": "سعر الصرف المستخدم"
-                    },
-                    "timestamp": {
-                      "type": "string",
-                      "format": "date-time",
-                      "example": "2024-01-15T10:30:00Z",
-                      "description": "تاريخ التحويل"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "بيانات غير صحيحة أو عملة غير مدعومة"
-          }
-        },
-        "tags": [
-          "إدارة-أسعار-الصرف"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/exchange-rates/usd-to-yer": {
-      "get": {
-        "operationId": "getUSDToYERRate",
-        "summary": "الحصول على سعر الدولار مقابل الريال اليمني (إداري)",
-        "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال اليمني الحالي مع تفاصيل إضافية",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد سعر الصرف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "rate": {
-                      "type": "number",
-                      "example": 250.5,
-                      "description": "سعر الصرف الحالي"
-                    },
-                    "currency": {
-                      "type": "string",
-                      "example": "YER",
-                      "description": "رمز العملة"
-                    },
-                    "formatted": {
-                      "type": "string",
-                      "example": "1 USD = 250.50 $",
-                      "description": "السعر منسق للعرض"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة-أسعار-الصرف"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/exchange-rates/usd-to-sar": {
-      "get": {
-        "operationId": "getUSDToSARRate",
-        "summary": "الحصول على سعر الدولار مقابل الريال السعودي (إداري)",
-        "description": "استرداد سعر صرف الدولار الأمريكي مقابل الريال السعودي الحالي مع تفاصيل إضافية",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد سعر الصرف بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "rate": {
-                      "type": "number",
-                      "example": 3.75,
-                      "description": "سعر الصرف الحالي"
-                    },
-                    "currency": {
-                      "type": "string",
-                      "example": "SAR",
-                      "description": "رمز العملة"
-                    },
-                    "formatted": {
-                      "type": "string",
-                      "example": "1 USD = 3.75 $",
-                      "description": "السعر منسق للعرض"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة-أسعار-الصرف"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/exchange-rates/sync": {
-      "post": {
-        "operationId": "triggerSync",
-        "summary": "إطلاق مزامنة أسعار المنتجات",
-        "description": "يبدأ عملية إعادة حساب أسعار المنتجات بالاعتماد على أسعار الصرف الحالية",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "تم إنشاء مهمة المزامنة بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-أسعار-الصرف"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/exchange-rates/sync-jobs": {
-      "get": {
-        "operationId": "listSyncJobs",
-        "summary": "قائمة مهام مزامنة الأسعار",
-        "description": "يعرض قائمة بآخر مهام مزامنة أسعار المنتجات مع حالات كل مهمة",
-        "parameters": [
-          {
-            "name": "limit",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد قائمة المهام بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-أسعار-الصرف"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/exchange-rates/sync-jobs/{id}": {
-      "get": {
-        "operationId": "getSyncJob",
-        "summary": "تفاصيل مهمة مزامنة الأسعار",
-        "description": "يعرض تفاصيل مهمة محددة بما في ذلك التقدم والأخطاء",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد تفاصيل المهمة بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-أسعار-الصرف"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/exchange-rates/sync-jobs/{id}/retry-product": {
-      "post": {
-        "operationId": "retrySyncJobProduct",
-        "summary": "إعادة محاولة المزامنة لمنتج محدد",
-        "description": "إعادة حساب أسعار منتج أو متغيرات محددة ضمن مهمة المزامنة",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RetrySyncJobDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تمت إعادة المحاولة وتحديث المهمة بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-أسعار-الصرف"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
       }
     },
     "/api/v1/admin/user-analytics/user/{userId}": {
@@ -32255,14 +32255,6 @@
         "type": "object",
         "properties": {}
       },
-      "CreateCategoryDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdateCategoryDto": {
-        "type": "object",
-        "properties": {}
-      },
       "ConvertCurrencyDto": {
         "type": "object",
         "properties": {}
@@ -32272,6 +32264,14 @@
         "properties": {}
       },
       "RetrySyncJobDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateCategoryDto": {
         "type": "object",
         "properties": {}
       },

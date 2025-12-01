@@ -12,6 +12,7 @@ import { EngineerProfileService } from '../services/engineer-profile.service';
 import { AuthModule } from '../../auth/auth.module';
 import { SharedModule } from '../../../shared/shared.module';
 import { NotificationsCompleteModule } from '../../notifications/notifications-complete.module';
+import { ExchangeRatesModule } from '../../exchange-rates/exchange-rates.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { NotificationsCompleteModule } from '../../notifications/notifications-c
     AuthModule,
     SharedModule,
     forwardRef(() => NotificationsCompleteModule),
+    ExchangeRatesModule,
   ],
   controllers: [UsersAdminController, EngineerProfileAdminController],
   providers: [EngineerProfileService],

@@ -16,6 +16,7 @@ import { EngineerProfileService } from '../users/services/engineer-profile.servi
 import { ServiceRequest, ServiceRequestSchema } from '../services/schemas/service-request.schema';
 import { Order, OrderSchema } from '../checkout/schemas/order.schema';
 import { Coupon, CouponSchema } from '../marketing/schemas/coupon.schema';
+import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { Coupon, CouponSchema } from '../marketing/schemas/coupon.schema';
     ]),
     SharedModule,
     NotificationsCompleteModule, // Import notifications module to access SMSAdapter
+    ExchangeRatesModule,
   ],
   controllers: [AuthController],
   providers: [OtpService, TokensService, JwtAuthGuard, OptionalJwtAuthGuard, BiometricService, EngineerProfileService],
