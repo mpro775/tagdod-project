@@ -37,6 +37,7 @@ import {
 import { GetRatingsQueryDto } from '../dto/engineer-profile.dto';
 import { UserNotFoundException } from '../../../shared/exceptions';
 import { AuditService } from '../../../shared/services/audit.service';
+import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.service';
 
 @ApiTags('إدارة-بروفايل-المهندس')
 @ApiBearerAuth()
@@ -49,6 +50,7 @@ export class EngineerProfileAdminController {
   constructor(
     private readonly engineerProfileService: EngineerProfileService,
     private readonly auditService: AuditService,
+    private readonly exchangeRatesService: ExchangeRatesService,
   ) {}
 
   @RequirePermissions('users.read', 'admin.access')
@@ -246,6 +248,11 @@ export class EngineerProfileAdminController {
 
     await profile.save();
 
+    // تحويل العملات
+    const oldBalanceConverted = await this.convertAmountFromUSD(oldBalance);
+    const newBalanceConverted = await this.convertAmountFromUSD(newBalance);
+    const amountConverted = await this.convertAmountFromUSD(dto.amount);
+
     // تسجيل الحدث في audit log
     this.auditService
       .logUserEvent({
@@ -269,12 +276,48 @@ export class EngineerProfileAdminController {
       success: true,
       message: `تم ${dto.type === 'add' ? 'إضافة' : dto.type === 'deduct' ? 'خصم' : 'سحب'} الرصيد بنجاح`,
       data: {
-        oldBalance,
-        newBalance,
-        amount: dto.amount,
+        oldBalance, // USD (الأصلي - للتوافق مع الكود القديم)
+        newBalance, // USD (الأصلي - للتوافق مع الكود القديم)
+        amount: dto.amount, // USD (الأصلي - للتوافق مع الكود القديم)
         type: dto.type,
+        // إضافة تحويلات العملات
+        oldBalanceUSD: oldBalanceConverted.usd,
+        oldBalanceYER: oldBalanceConverted.yer,
+        oldBalanceSAR: oldBalanceConverted.sar,
+        newBalanceUSD: newBalanceConverted.usd,
+        newBalanceYER: newBalanceConverted.yer,
+        newBalanceSAR: newBalanceConverted.sar,
+        amountUSD: amountConverted.usd,
+        amountYER: amountConverted.yer,
+        amountSAR: amountConverted.sar,
       },
     };
+  }
+
+  /**
+   * تحويل المبلغ من USD إلى العملات الأخرى
+   */
+  private async convertAmountFromUSD(amountUSD: number): Promise<{
+    usd: number;
+    yer: number;
+    sar: number;
+  }> {
+    try {
+      const rates = await this.exchangeRatesService.getCurrentRates();
+      return {
+        usd: amountUSD,
+        yer: Math.round(amountUSD * rates.usdToYer),
+        sar: Math.round((amountUSD * rates.usdToSar) * 100) / 100,
+      };
+    } catch (error) {
+      this.logger.warn('Failed to get exchange rates, using USD only', error);
+      // في حالة الخطأ، نعيد USD فقط
+      return {
+        usd: amountUSD,
+        yer: amountUSD,
+        sar: amountUSD,
+      };
+    }
   }
 
   @RequirePermissions('users.read', 'admin.access')
@@ -305,12 +348,33 @@ export class EngineerProfileAdminController {
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(startIndex, startIndex + limitNum);
 
+    // تحويل العملات لكل معاملة
+    const transactionsWithCurrencies = await Promise.all(
+      paginatedTransactions.map(async (transaction) => {
+        const amountUSD = Math.abs(transaction.amount);
+        const converted = await this.convertAmountFromUSD(amountUSD);
+        return {
+          ...transaction,
+          amountUSD: transaction.amount >= 0 ? converted.usd : -converted.usd,
+          amountYER: transaction.amount >= 0 ? converted.yer : -converted.yer,
+          amountSAR: transaction.amount >= 0 ? converted.sar : -converted.sar,
+        };
+      }),
+    );
+
+    // تحويل العملات للرصيد
+    const walletBalanceUSD = profile.walletBalance || 0;
+    const walletBalanceConverted = await this.convertAmountFromUSD(walletBalanceUSD);
+
     return {
-      transactions: paginatedTransactions,
+      transactions: transactionsWithCurrencies,
       total: transactions.length,
       page: pageNum,
       limit: limitNum,
-      walletBalance: profile.walletBalance || 0,
+      walletBalance: walletBalanceUSD, // USD (الأصلي - للتوافق مع الكود القديم)
+      walletBalanceUSD: walletBalanceConverted.usd,
+      walletBalanceYER: walletBalanceConverted.yer,
+      walletBalanceSAR: walletBalanceConverted.sar,
     };
   }
 

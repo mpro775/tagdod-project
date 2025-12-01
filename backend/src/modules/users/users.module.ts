@@ -25,6 +25,7 @@ import { UsersAdminModule } from './admin/users.admin.module';
 import { CapabilitiesModule } from '../capabilities/capabilities.module';
 import { UploadModule } from '../upload/upload.module';
 import { Coupon, CouponSchema } from '../marketing/schemas/coupon.schema';
+import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { Coupon, CouponSchema } from '../marketing/schemas/coupon.schema';
     UsersAdminModule,
     CapabilitiesModule,
     UploadModule,
+    ExchangeRatesModule,
   ],
   controllers: [UserAnalyticsController, UserVerificationController, EngineerProfileController],
   providers: [

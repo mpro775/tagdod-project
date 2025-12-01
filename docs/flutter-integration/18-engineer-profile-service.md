@@ -1,7 +1,7 @@
 # 👷 خدمة بروفايل المهندس (Engineer Profile Service)
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
-> 📅 **آخر تحديث**: نوفمبر 2025  
+> 📅 **آخر تحديث**: ديسمبر 2025  
 > 🔄 **التحديثات الأخيرة**: 
 > - إزالة حقل `languages` (لم يعد متاحاً)
 > - إضافة `jobTitle` في endpoint التحديث
@@ -10,6 +10,7 @@
 > - إضافة حقل `joinedAt` (تاريخ الانضمام) في الاستجابة
 > - إضافة حقل `totalCommissionEarnings` (إجمالي الدخل من العمولات) في الاستجابة
 > - تحديث `totalCompletedServices` ليعرض العدد الصحيح من قاعدة البيانات
+> - **🆕 إضافة تحويل العملات**: جميع المبالغ تُرجع الآن بثلاث عملات (USD, YER, SAR) بناءً على أسعار الصرف في النظام
 
 خدمة بروفايل المهندس توفر endpoints لإدارة بروفايل المهندس، التقييمات، الرصيد، والعمولات.
 
@@ -93,6 +94,9 @@
       }
     },
     "totalCommissionEarnings": 750,
+    "totalCommissionEarningsUSD": 750,
+    "totalCommissionEarningsYER": 187500,
+    "totalCommissionEarningsSAR": 2812.5,
     "ratings": [
       {
         "score": 5,
@@ -109,11 +113,17 @@
     "totalCompletedServices": 50,
     "totalEarnings": 50000,
     "walletBalance": 2500,
+    "walletBalanceUSD": 2500,
+    "walletBalanceYER": 625000,
+    "walletBalanceSAR": 9375,
     "commissionTransactions": [
       {
         "transactionId": "COMM-1697123456-abc123",
         "type": "commission",
         "amount": 100,
+        "amountUSD": 100,
+        "amountYER": 25000,
+        "amountSAR": 375,
         "orderId": "64order123",
         "couponCode": "ENG2024",
         "description": "عمولة من كوبون ENG2024",
@@ -525,8 +535,14 @@ class EngineerProfile {
   final List<int> ratingDistribution; // [5نجوم, 4نجوم, 3نجوم, 2نجوم, 1نجمة]
   final int totalCompletedServices;
   final double totalEarnings;
-  final double walletBalance; // فقط في /me
-  final double totalCommissionEarnings; // إجمالي الدخل من العمولات (فقط في /me)
+  final double walletBalance; // فقط في /me (USD - للتوافق مع الكود القديم)
+  final double? walletBalanceUSD; // فقط في /me
+  final double? walletBalanceYER; // فقط في /me
+  final double? walletBalanceSAR; // فقط في /me
+  final double totalCommissionEarnings; // إجمالي الدخل من العمولات (فقط في /me - USD - للتوافق مع الكود القديم)
+  final double? totalCommissionEarningsUSD; // فقط في /me
+  final double? totalCommissionEarningsYER; // فقط في /me
+  final double? totalCommissionEarningsSAR; // فقط في /me
   final List<CommissionTransaction> commissionTransactions; // فقط في /me
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -552,7 +568,13 @@ class EngineerProfile {
       required this.totalCompletedServices,
       required this.totalEarnings,
       this.walletBalance = 0,
+      this.walletBalanceUSD,
+      this.walletBalanceYER,
+      this.walletBalanceSAR,
       this.totalCommissionEarnings = 0,
+      this.totalCommissionEarningsUSD,
+      this.totalCommissionEarningsYER,
+      this.totalCommissionEarningsSAR,
       this.commissionTransactions = const [],
     required this.createdAt,
     required this.updatedAt,
@@ -596,7 +618,25 @@ class EngineerProfile {
       totalCompletedServices: json['totalCompletedServices'] ?? 0,
       totalEarnings: (json['totalEarnings'] ?? 0).toDouble(),
       walletBalance: (json['walletBalance'] ?? 0).toDouble(),
+      walletBalanceUSD: json['walletBalanceUSD'] != null
+          ? (json['walletBalanceUSD'] as num).toDouble()
+          : null,
+      walletBalanceYER: json['walletBalanceYER'] != null
+          ? (json['walletBalanceYER'] as num).toDouble()
+          : null,
+      walletBalanceSAR: json['walletBalanceSAR'] != null
+          ? (json['walletBalanceSAR'] as num).toDouble()
+          : null,
       totalCommissionEarnings: (json['totalCommissionEarnings'] ?? 0).toDouble(),
+      totalCommissionEarningsUSD: json['totalCommissionEarningsUSD'] != null
+          ? (json['totalCommissionEarningsUSD'] as num).toDouble()
+          : null,
+      totalCommissionEarningsYER: json['totalCommissionEarningsYER'] != null
+          ? (json['totalCommissionEarningsYER'] as num).toDouble()
+          : null,
+      totalCommissionEarningsSAR: json['totalCommissionEarningsSAR'] != null
+          ? (json['totalCommissionEarningsSAR'] as num).toDouble()
+          : null,
       commissionTransactions: json['commissionTransactions'] != null
           ? (json['commissionTransactions'] as List)
               .map((t) => CommissionTransaction.fromJson(t))
@@ -629,7 +669,13 @@ class EngineerProfile {
       'totalCompletedServices': totalCompletedServices,
       'totalEarnings': totalEarnings,
       'walletBalance': walletBalance,
+      'walletBalanceUSD': walletBalanceUSD,
+      'walletBalanceYER': walletBalanceYER,
+      'walletBalanceSAR': walletBalanceSAR,
       'totalCommissionEarnings': totalCommissionEarnings,
+      'totalCommissionEarningsUSD': totalCommissionEarningsUSD,
+      'totalCommissionEarningsYER': totalCommissionEarningsYER,
+      'totalCommissionEarningsSAR': totalCommissionEarningsSAR,
       'commissionTransactions':
           commissionTransactions.map((t) => t.toJson()).toList(),
       'createdAt': createdAt.toIso8601String(),
@@ -850,7 +896,10 @@ class EngineerRating {
 class CommissionTransaction {
   final String transactionId;
   final String type; // 'commission' | 'withdrawal' | 'refund'
-  final double amount;
+  final double amount; // USD (الأصلي - للتوافق مع الكود القديم)
+  final double? amountUSD; // المبلغ بالدولار
+  final double? amountYER; // المبلغ بالريال اليمني
+  final double? amountSAR; // المبلغ بالريال السعودي
   final String? orderId;
   final String? couponCode;
   final String? description;
@@ -860,6 +909,9 @@ class CommissionTransaction {
     required this.transactionId,
     required this.type,
     required this.amount,
+    this.amountUSD,
+    this.amountYER,
+    this.amountSAR,
     this.orderId,
     this.couponCode,
     this.description,
@@ -871,6 +923,15 @@ class CommissionTransaction {
       transactionId: json['transactionId'] ?? '',
       type: json['type'] ?? '',
       amount: (json['amount'] ?? 0).toDouble(),
+      amountUSD: json['amountUSD'] != null
+          ? (json['amountUSD'] as num).toDouble()
+          : null,
+      amountYER: json['amountYER'] != null
+          ? (json['amountYER'] as num).toDouble()
+          : null,
+      amountSAR: json['amountSAR'] != null
+          ? (json['amountSAR'] as num).toDouble()
+          : null,
       orderId: json['orderId'] is String
           ? json['orderId']
           : json['orderId']?['_id'] ?? json['orderId']?.toString(),
@@ -885,6 +946,9 @@ class CommissionTransaction {
       'transactionId': transactionId,
       'type': type,
       'amount': amount,
+      'amountUSD': amountUSD,
+      'amountYER': amountYER,
+      'amountSAR': amountSAR,
       'orderId': orderId,
       'couponCode': couponCode,
       'description': description,
@@ -987,11 +1051,13 @@ class RatingsResponse {
 ### ⚠️ تحذيرات
 
 1. **`walletBalance` و `commissionTransactions` و `totalCommissionEarnings`** متاحة فقط في `/me` endpoint
-2. **`coupon.stats`** متاحة فقط عند وجود كوبون نشط للمهندس
-3. **التقييمات تتزامن تلقائياً** - لا حاجة لمزامنة يدوية
-4. **التعليق مطلوب** عند إضافة تقييم (لا يمكن إضافة تقييم بدون نص)
-5. **النجوم من 1-5** فقط
-6. **`totalCompletedServices`** يتم تحديثه تلقائياً من قاعدة البيانات عند جلب البروفايل
+2. **الحقول الجديدة للعملات** (`walletBalanceUSD/YER/SAR`, `totalCommissionEarningsUSD/YER/SAR`, `amountUSD/YER/SAR`) متاحة فقط في `/me` endpoint
+3. **`coupon.stats`** متاحة فقط عند وجود كوبون نشط للمهندس
+4. **التقييمات تتزامن تلقائياً** - لا حاجة لمزامنة يدوية
+5. **التعليق مطلوب** عند إضافة تقييم (لا يمكن إضافة تقييم بدون نص)
+6. **النجوم من 1-5** فقط
+7. **`totalCompletedServices`** يتم تحديثه تلقائياً من قاعدة البيانات عند جلب البروفايل
+8. **أسعار الصرف**: في حالة فشل جلب أسعار الصرف، يتم إرجاع القيم بالدولار فقط
 
 ---
 
@@ -1222,11 +1288,25 @@ Future<void> updateProfile() async {
 
 ### نظام الرصيد والعمولات
 
-- **الرصيد**: `walletBalance` يحتوي على الرصيد الحالي للمهندس
+- **الرصيد**: `walletBalance` يحتوي على الرصيد الحالي للمهندس (بالدولار - USD)
+- **الرصيد بالعملات الثلاث**: 
+  - `walletBalanceUSD`: الرصيد بالدولار الأمريكي
+  - `walletBalanceYER`: الرصيد بالريال اليمني (محسوب بناءً على سعر الصرف)
+  - `walletBalanceSAR`: الرصيد بالريال السعودي (محسوب بناءً على سعر الصرف)
 - **العمولات**: `commissionTransactions` يحتوي على سجل جميع المعاملات
-- **إجمالي الدخل من العمولات**: `totalCommissionEarnings` يحتوي على إجمالي الدخل من جميع العمولات (محسوب من `commissionTransactions` من نوع `commission`)
+- **العمولات بالعملات الثلاث**: كل معاملة تحتوي على:
+  - `amount`: المبلغ بالدولار (الأصلي - للتوافق مع الكود القديم)
+  - `amountUSD`: المبلغ بالدولار الأمريكي
+  - `amountYER`: المبلغ بالريال اليمني (محسوب بناءً على سعر الصرف)
+  - `amountSAR`: المبلغ بالريال السعودي (محسوب بناءً على سعر الصرف)
+- **إجمالي الدخل من العمولات**: `totalCommissionEarnings` يحتوي على إجمالي الدخل من جميع العمولات (بالدولار - USD)
+- **إجمالي الدخل بالعملات الثلاث**:
+  - `totalCommissionEarningsUSD`: إجمالي الدخل بالدولار الأمريكي
+  - `totalCommissionEarningsYER`: إجمالي الدخل بالريال اليمني (محسوب بناءً على سعر الصرف)
+  - `totalCommissionEarningsSAR`: إجمالي الدخل بالريال السعودي (محسوب بناءً على سعر الصرف)
 - **المصدر**: العمولات تأتي من استخدام كوبونات المهندس
 - **إحصائيات الكوبون**: `coupon.stats` يحتوي على إحصائيات الكوبون (عدد الاستخدامات، إجمالي العمولات المكتسبة، إجمالي الخصومات، إجمالي الإيرادات)
+- **أسعار الصرف**: جميع التحويلات تعتمد على أسعار الصرف الحالية في النظام (`usdToYer` و `usdToSar`)
 
 ### الفصل بين Schemas
 
@@ -1236,6 +1316,6 @@ Future<void> updateProfile() async {
 
 ---
 
-**آخر تحديث:** نوفمبر 2025  
-**النسخة:** 1.0.0
+**آخر تحديث:** ديسمبر 2025  
+**النسخة:** 1.1.0
 
