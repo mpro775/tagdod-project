@@ -51,15 +51,37 @@ export class NotificationsGateway
   }
 
   handleConnection(client: AuthenticatedSocket): void {
+    // ✅ Logging مفصل للـ debugging
+    this.logger.log(`🔌 New WebSocket connection attempt: ${client.id}`);
+    this.logger.log(`   - Handshake auth: ${JSON.stringify(client.handshake.auth)}`);
+    this.logger.log(
+      `   - User from auth: ${client.user ? client.user.userId || client.user.sub || JSON.stringify(client.user) : 'NO USER'}`,
+    );
+    this.logger.log(
+      `   - Full user object: ${client.user ? JSON.stringify(client.user) : 'NO USER OBJECT'}`,
+    );
+
     try {
       this.webSocketService.handleConnection(client);
+      const userId = client.user?.userId || client.user?.sub;
+      if (userId) {
+        this.logger.log(`✅ Connection registered successfully for user: ${userId} (socket: ${client.id})`);
+      } else {
+        this.logger.warn(`⚠️ Connection registered but no userId found (socket: ${client.id})`);
+      }
     } catch (error) {
-      this.logger.error(`Connection error for socket ${client.id}:`, error);
+      this.logger.error(`❌ Connection error for socket ${client.id}:`, error);
+      if (error instanceof Error) {
+        this.logger.error(`   - Error message: ${error.message}`);
+        this.logger.error(`   - Error stack: ${error.stack}`);
+      }
       client.disconnect();
     }
   }
 
   handleDisconnect(client: AuthenticatedSocket): void {
+    const userId = client.user?.userId || client.user?.sub;
+    this.logger.log(`🔌 WebSocket disconnected: ${client.id}${userId ? ` (user: ${userId})` : ' (no user)'}`);
     this.webSocketService.handleDisconnection(client);
   }
 

@@ -71,19 +71,28 @@ export class WebSocketAuthGuard implements CanActivate {
   }
 
   private extractTokenFromSocket(client: Socket): string | null {
+    // ✅ Logging مفصل لمعرفة من أين يأتي الـ token
+    this.logger.debug(`Extracting token for socket ${client.id}`);
+    this.logger.debug(`   - Headers: ${JSON.stringify(client.handshake.headers)}`);
+    this.logger.debug(`   - Auth: ${JSON.stringify(client.handshake.auth)}`);
+    this.logger.debug(`   - Query: ${JSON.stringify(client.handshake.query)}`);
+
     const authHeader = client.handshake.headers.authorization;
     if (authHeader && typeof authHeader === 'string') {
       const [type, token] = authHeader.split(' ');
       if (type === 'Bearer' && token) {
+        this.logger.debug(`   ✅ Token found in Authorization header`);
         return token;
       }
     }
 
     const token = client.handshake.auth?.token || client.handshake.query?.token;
     if (token && typeof token === 'string') {
+      this.logger.debug(`   ✅ Token found in auth/query: ${token.substring(0, 20)}...`);
       return token;
     }
 
+    this.logger.debug(`   ❌ No token found`);
     return null;
   }
 }

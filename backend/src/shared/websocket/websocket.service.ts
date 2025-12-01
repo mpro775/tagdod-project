@@ -16,23 +16,40 @@ export class WebSocketService {
   }
 
   handleConnection(client: AuthenticatedSocket): void {
-    if (!client.user) {
-      this.logger.warn(`Connection attempt without authentication: ${client.id}`);
+    // ✅ Logging مفصل للـ debugging
+    this.logger.log(`🔌 WebSocketService.handleConnection called for socket: ${client.id}`);
+    this.logger.log(`   - Has user object: ${!!client.user}`);
+    if (client.user) {
+      this.logger.log(`   - User object: ${JSON.stringify(client.user)}`);
+      this.logger.log(`   - UserId: ${client.user.userId || client.user.sub || 'NOT FOUND'}`);
+    } else {
+      this.logger.warn(`   ⚠️ Connection attempt without authentication: ${client.id}`);
+      this.logger.warn(`   - This means WebSocketAuthGuard did not set client.user`);
       return;
     }
 
     const userId = client.user.userId || client.user.sub;
+    if (!userId) {
+      this.logger.error(`   ❌ No userId found in user object for socket: ${client.id}`);
+      return;
+    }
+
     const userRoom = `user:${userId}`;
 
     client.join(userRoom);
+    this.logger.log(`   ✅ Socket ${client.id} joined room: ${userRoom}`);
 
     if (!this.userSockets.has(userId)) {
       this.userSockets.set(userId, new Set());
+      this.logger.log(`   ✅ Created new socket set for user: ${userId}`);
     }
     this.userSockets.get(userId)!.add(client.id);
     this.socketUsers.set(client.id, userId);
 
-    this.logger.log(`User ${userId} connected (Socket: ${client.id}). Total sockets: ${this.userSockets.get(userId)!.size}`);
+    const totalSockets = this.userSockets.get(userId)!.size;
+    this.logger.log(
+      `✅ User ${userId} connected (Socket: ${client.id}). Total sockets for this user: ${totalSockets}`,
+    );
 
     client.emit('connected', {
       success: true,
@@ -40,6 +57,7 @@ export class WebSocketService {
       userId,
       timestamp: new Date().toISOString(),
     });
+    this.logger.log(`   ✅ Sent 'connected' event to socket ${client.id}`);
   }
 
   handleDisconnection(client: AuthenticatedSocket): void {
