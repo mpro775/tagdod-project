@@ -499,6 +499,9 @@ export class Order {
   @Prop()
   receiptUrl?: string;
 
+  @Prop({ type: Date })
+  invoiceSentAt?: Date; // تاريخ إرسال الفاتورة للمبيعات
+
   // ===== فاتورة الإرجاع =====
   @Prop()
   returnInvoiceNumber?: string; // RET-2024-00001

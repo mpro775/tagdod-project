@@ -2697,13 +2697,22 @@ export class OrderService {
       `Order ${order.orderNumber} status updated to ${newStatus} (from ${previousStatus}) by ${changedByRole}`,
     );
 
-    // إرسال الفاتورة عند تأكيد الطلب أو إكماله
-    // يتم توليد الفاتورة عند تحديث الحالة إلى CONFIRMED أو COMPLETED من أي مصدر (لوحة التحكم، النظام، العميل)
-    if (newStatus === OrderStatus.CONFIRMED || newStatus === OrderStatus.COMPLETED) {
+    // إرسال الفاتورة عند تأكيد الطلب فقط (مرة واحدة)
+    // يتم إرسال الفاتورة عند CONFIRMED فقط لتجنب الإرسال المزدوج
+    // إذا لم يتم إرسالها عند CONFIRMED، سيتم إرسالها عند COMPLETED
+    if (newStatus === OrderStatus.CONFIRMED) {
       this.logger.log(
         `Generating invoice for order ${order.orderNumber} - Status changed to ${newStatus} by ${changedByRole}`,
       );
       // استخدام orderId بدلاً من order object لتجنب ParallelSaveError
+      this.sendOrderInvoiceForStatus(order._id.toString()).catch((err: any) => {
+        this.logger.error(`Failed to send invoice for order ${order.orderNumber}:`, err);
+      });
+    } else if (newStatus === OrderStatus.COMPLETED && !order.invoiceSentAt) {
+      // إرسال الفاتورة عند COMPLETED فقط إذا لم يتم إرسالها عند CONFIRMED
+      this.logger.log(
+        `Generating invoice for order ${order.orderNumber} - Status changed to ${newStatus} by ${changedByRole} (invoice not sent at CONFIRMED)`,
+      );
       this.sendOrderInvoiceForStatus(order._id.toString()).catch((err: any) => {
         this.logger.error(`Failed to send invoice for order ${order.orderNumber}:`, err);
       });
@@ -6033,8 +6042,13 @@ export class OrderService {
       orderNumber = order.orderNumber;
       this.logger.log(`Processing invoice for order ${orderNumber} with status ${order.status}`);
 
-      // التحقق من أن الفاتورة لم يتم إرسالها مسبقاً (اختياري - يمكن إزالة هذا إذا أردت إعادة الإرسال)
-      // يمكن إضافة حقل `invoiceSentAt` لتتبع ذلك
+      // التحقق من أن الفاتورة لم يتم إرسالها مسبقاً
+      if (order.invoiceSentAt) {
+        this.logger.log(
+          `Invoice already sent for order ${orderNumber} at ${order.invoiceSentAt}. Skipping duplicate send.`,
+        );
+        return;
+      }
 
       // إنشاء رقم فاتورة إذا لم يكن موجوداً
       if (!order.invoiceNumber) {
@@ -6100,11 +6114,25 @@ export class OrderService {
       }
 
       // إرسال الفاتورة عبر البريد الإلكتروني فقط
-      await this.sendOrderInvoiceEmail(order, pdfBuffer).catch((err) => {
+      const emailSent = await this.sendOrderInvoiceEmail(order, pdfBuffer).catch((err) => {
         this.logger.warn(`Email sending failed for order ${order.orderNumber}:`, err);
+        return false;
       });
 
-      this.logger.log(`Invoice sent successfully for order ${order.orderNumber}`);
+      // تحديث invoiceSentAt بعد الإرسال الناجح
+      if (emailSent !== false) {
+        // جلب نسخة جديدة من الطلب لتحديث invoiceSentAt
+        const updatedOrder = await this.orderModel.findById(orderId);
+        if (updatedOrder) {
+          updatedOrder.invoiceSentAt = new Date();
+          await updatedOrder.save();
+          this.logger.log(
+            `Invoice sent successfully for order ${order.orderNumber} at ${updatedOrder.invoiceSentAt}`,
+          );
+        }
+      } else {
+        this.logger.warn(`Invoice email failed for order ${order.orderNumber}, invoiceSentAt not updated`);
+      }
     } catch (error) {
       this.logger.error(`Error sending invoice for order ${orderNumber}:`, error);
       // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
@@ -6113,12 +6141,13 @@ export class OrderService {
 
   /**
    * إرسال فاتورة الطلب عبر البريد الإلكتروني
+   * @returns true إذا تم الإرسال بنجاح، false إذا فشل
    */
-  private async sendOrderInvoiceEmail(order: OrderDocument, pdfBuffer: Buffer): Promise<void> {
+  private async sendOrderInvoiceEmail(order: OrderDocument, pdfBuffer: Buffer): Promise<boolean> {
     try {
       if (!this.emailAdapter || !this.emailAdapter.isInitialized()) {
         this.logger.warn('Email adapter not initialized. Cannot send invoice email.');
-        return;
+        return false;
       }
 
       // جلب بيانات المستخدم للحصول على الاسم الكامل
@@ -6240,14 +6269,16 @@ export class OrderService {
         this.logger.log(
           `Invoice email sent successfully for order ${order.orderNumber} to sales manager`,
         );
+        return true;
       } else {
         this.logger.error(
           `Failed to send invoice email for order ${order.orderNumber}: ${result.error}`,
         );
+        return false;
       }
     } catch (error) {
       this.logger.error(`Error sending invoice email for order ${order.orderNumber}:`, error);
-      // لا نرمي خطأ هنا حتى لا نوقف عملية تحديث الحالة
+      return false;
     }
   }
 
@@ -6430,13 +6461,21 @@ export class OrderService {
       }
 
       // إرسال الفاتورة إلى إيميل المبيعات
-      await this.sendOrderInvoiceEmail(order, pdfBuffer);
+      const emailSent = await this.sendOrderInvoiceEmail(order, pdfBuffer);
+
+      // تحديث invoiceSentAt بعد الإرسال الناجح
+      if (emailSent) {
+        order.invoiceSentAt = new Date();
+        await order.save();
+      }
 
       return {
-        success: true,
-        message: `تم توليد وإرسال الفاتورة بنجاح إلى إيميل المبيعات`,
+        success: emailSent,
+        message: emailSent
+          ? `تم توليد وإرسال الفاتورة بنجاح إلى إيميل المبيعات`
+          : `تم توليد الفاتورة ولكن فشل إرسال الإيميل`,
         invoiceNumber: order.invoiceNumber,
-        emailSent: true,
+        emailSent: emailSent,
       };
     } catch (error) {
       this.logger.error(`Error manually sending invoice for order ${orderId}:`, error);
