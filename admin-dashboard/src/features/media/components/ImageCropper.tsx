@@ -92,12 +92,13 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
     if (!croppedAreaPixels) return null;
 
     const image = new Image();
+    image.crossOrigin = 'anonymous'; // للسماح بالتعامل مع الصور من مصادر مختلفة
     image.src = imageSrc;
 
     return new Promise((resolve) => {
       image.onload = () => {
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: false });
 
         if (!ctx) {
           resolve(null);
@@ -116,17 +117,20 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
         canvas.width = bBoxWidth;
         canvas.height = bBoxHeight;
 
+        // مسح Canvas لضمان عدم وجود خلفية
+        ctx.clearRect(0, 0, bBoxWidth, bBoxHeight);
+
         // تحريك المركز
         ctx.translate(bBoxWidth / 2, bBoxHeight / 2);
         ctx.rotate(rotRad);
         ctx.translate(-image.width / 2, -image.height / 2);
 
-        // رسم الصورة
+        // رسم الصورة مع الحفاظ على الشفافية
         ctx.drawImage(image, 0, 0);
 
         // إنشاء canvas للقص
         const croppedCanvas = document.createElement('canvas');
-        const croppedCtx = croppedCanvas.getContext('2d');
+        const croppedCtx = croppedCanvas.getContext('2d', { willReadFrequently: false });
 
         if (!croppedCtx) {
           resolve(null);
@@ -140,7 +144,10 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
         croppedCanvas.width = outputWidth;
         croppedCanvas.height = outputHeight;
 
-        // رسم الجزء المقصوص
+        // مسح Canvas للقص لضمان عدم وجود خلفية
+        croppedCtx.clearRect(0, 0, outputWidth, outputHeight);
+
+        // رسم الجزء المقصوص مع الحفاظ على الشفافية
         croppedCtx.drawImage(
           canvas,
           croppedAreaPixels.x,
@@ -153,7 +160,12 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
           outputHeight
         );
 
-        // تحويل إلى Blob
+        // تحديد نوع الصورة بناءً على الصورة الأصلية (PNG للشفافية، JPEG للصور العادية)
+        // نستخدم PNG دائماً للحفاظ على الشفافية
+        const imageType = 'image/png';
+        const quality = 1.0; // PNG لا يستخدم quality، لكن نضعه للتوافق
+
+        // تحويل إلى Blob مع الحفاظ على الشفافية
         croppedCanvas.toBlob(
           (blob) => {
             if (blob) {
@@ -163,8 +175,8 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
               resolve(null);
             }
           },
-          'image/jpeg',
-          0.95
+          imageType,
+          quality
         );
       };
 

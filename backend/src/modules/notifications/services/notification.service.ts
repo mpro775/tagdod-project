@@ -178,24 +178,55 @@ export class NotificationService {
       // إرسال الإشعار حسب القناة
       if (dto.recipientId) {
         if (channel === NotificationChannel.IN_APP) {
-          // IN_APP: إرسال عبر WebSocket فقط - المستخدم موجود داخل التطبيق
-          this.webSocketService.sendToUser(
-            dto.recipientId,
-            'notification:new',
-            {
-              id: savedNotification._id.toString(),
-              title: savedNotification.title,
-              message: savedNotification.message,
-              messageEn: savedNotification.messageEn,
-              type: savedNotification.type,
-              category: savedNotification.category,
-              priority: savedNotification.priority,
-              data: savedNotification.data,
-              createdAt: savedNotification.createdAt,
-              isRead: false,
-            },
-            '/notifications', // ✅ تمرير namespace
-          );
+          // IN_APP: التحقق من حالة الاتصال أولاً
+          const isUserOnline = this.webSocketService.isUserOnline(dto.recipientId);
+          
+          if (isUserOnline) {
+            // المستخدم متصل - إرسال عبر WebSocket
+            const sent = this.webSocketService.sendToUser(
+              dto.recipientId,
+              'notification:new',
+              {
+                id: savedNotification._id.toString(),
+                title: savedNotification.title,
+                message: savedNotification.message,
+                messageEn: savedNotification.messageEn,
+                type: savedNotification.type,
+                category: savedNotification.category,
+                priority: savedNotification.priority,
+                data: savedNotification.data,
+                createdAt: savedNotification.createdAt,
+                isRead: false,
+              },
+              '/notifications', // ✅ تمرير namespace
+            );
+            
+            if (sent) {
+              this.logger.log(
+                `IN_APP notification sent via WebSocket to online user: ${dto.recipientId}`,
+              );
+            } else {
+              // فشل الإرسال عبر WebSocket - إرسال Push كبديل
+              this.logger.log(
+                `User ${dto.recipientId} was online but WebSocket send failed, falling back to push notification`,
+              );
+              this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
+                this.logger.error(
+                  `Failed to send push notification fallback: ${error instanceof Error ? error.message : String(error)}`,
+                );
+              });
+            }
+          } else {
+            // المستخدم غير متصل - إرسال Push Notification تلقائياً
+            this.logger.log(
+              `User ${dto.recipientId} is offline, sending push notification instead of IN_APP`,
+            );
+            this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
+              this.logger.error(
+                `Failed to send push notification: ${error instanceof Error ? error.message : String(error)}`,
+              );
+            });
+          }
         } else if (channel === NotificationChannel.PUSH) {
           // PUSH: إرسال Push Notification فقط - المستخدم خارج التطبيق
           this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {

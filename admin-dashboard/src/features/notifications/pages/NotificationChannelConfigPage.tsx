@@ -41,6 +41,8 @@ import type {
 } from '../types/notification.types';
 import { NotificationChannel, NotificationType } from '../types/notification.types';
 import { UserRole } from '@/features/users/types/user.types';
+import { getNotificationTypeLabel } from '../components/notificationHelpers';
+import { useTranslation } from 'react-i18next';
 
 // Helper function to get role label
 const getRoleLabel = (role: string): string => {
@@ -56,6 +58,7 @@ const getRoleLabel = (role: string): string => {
 
 export const NotificationChannelConfigPage: React.FC = () => {
   const { isMobile } = useBreakpoint();
+  const { t } = useTranslation('notifications');
   const [searchTerm, setSearchTerm] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<NotificationChannelConfig | null>(null);
@@ -259,7 +262,7 @@ export const NotificationChannelConfigPage: React.FC = () => {
                     <TableRow key={config.notificationType}>
                       <TableCell>
                         <Typography variant="body2" fontWeight={500}>
-                          {config.notificationType}
+                          {getNotificationTypeLabel(config.notificationType, t)}
                         </Typography>
                       </TableCell>
                       <TableCell>

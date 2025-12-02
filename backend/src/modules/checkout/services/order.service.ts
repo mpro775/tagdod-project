@@ -2245,6 +2245,21 @@ export class OrderService {
 
       this.logger.log(`Order created: ${order.orderNumber}, Cart converted`);
 
+      // إرسال إشعار ORDER_CREATED للعميل
+      await this.safeNotify(
+        userId,
+        NotificationType.ORDER_CREATED,
+        'تم إنشاء طلبك بنجاح',
+        `تم إنشاء طلبك رقم ${order.orderNumber} بنجاح. المبلغ الإجمالي: ${total} ${dto.currency}`,
+        `Your order ${order.orderNumber} has been created successfully. Total amount: ${total} ${dto.currency}`,
+        {
+          orderId: order._id.toString(),
+          orderNumber: order.orderNumber,
+          total: total,
+          currency: dto.currency,
+        },
+      );
+
       // إرسال إشعار ORDER_CREATED للمدراء
       await this.notifyAdmins(
         NotificationType.ORDER_CREATED,
@@ -2696,6 +2711,62 @@ export class OrderService {
     this.logger.log(
       `Order ${order.orderNumber} status updated to ${newStatus} (from ${previousStatus}) by ${changedByRole}`,
     );
+
+    // إرسال إشعار للعميل عند تغيير الحالة
+    const statusMessages: Partial<
+      Record<
+        OrderStatus,
+        { title: string; message: string; messageEn: string; type: NotificationType }
+      >
+    > = {
+      [OrderStatus.CONFIRMED]: {
+        title: 'تم تأكيد طلبك',
+        message: `تم تأكيد طلبك رقم ${order.orderNumber}`,
+        messageEn: `Your order ${order.orderNumber} has been confirmed`,
+        type: NotificationType.ORDER_CONFIRMED,
+      },
+      [OrderStatus.CANCELLED]: {
+        title: 'تم إلغاء طلبك',
+        message: `تم إلغاء طلبك رقم ${order.orderNumber}${notes ? `. السبب: ${notes}` : ''}`,
+        messageEn: `Your order ${order.orderNumber} has been cancelled${notes ? `. Reason: ${notes}` : ''}`,
+        type: NotificationType.ORDER_CANCELLED,
+      },
+      [OrderStatus.COMPLETED]: {
+        title: 'تم إكمال طلبك',
+        message: `تم إكمال طلبك رقم ${order.orderNumber} بنجاح`,
+        messageEn: `Your order ${order.orderNumber} has been completed successfully`,
+        type: NotificationType.ORDER_CONFIRMED,
+      },
+      [OrderStatus.PROCESSING]: {
+        title: 'طلبك قيد التجهيز',
+        message: `طلبك رقم ${order.orderNumber} قيد التجهيز الآن`,
+        messageEn: `Your order ${order.orderNumber} is now being processed`,
+        type: NotificationType.ORDER_CONFIRMED,
+      },
+      [OrderStatus.REFUNDED]: {
+        title: 'تم استرداد المبلغ',
+        message: `تم استرداد المبلغ للطلب رقم ${order.orderNumber}`,
+        messageEn: `Amount has been refunded for order ${order.orderNumber}`,
+        type: NotificationType.ORDER_REFUNDED,
+      },
+    };
+
+    if (statusMessages[newStatus]) {
+      const statusMsg = statusMessages[newStatus]!;
+      await this.safeNotify(
+        String(order.userId),
+        statusMsg.type,
+        statusMsg.title,
+        statusMsg.message,
+        statusMsg.messageEn,
+        {
+          orderId: String(order._id),
+          orderNumber: order.orderNumber,
+          status: newStatus,
+          previousStatus: previousStatus,
+        },
+      );
+    }
 
     // إرسال الفاتورة عند تأكيد الطلب فقط (مرة واحدة)
     // يتم إرسال الفاتورة عند CONFIRMED فقط لتجنب الإرسال المزدوج
@@ -6131,7 +6202,9 @@ export class OrderService {
           );
         }
       } else {
-        this.logger.warn(`Invoice email failed for order ${order.orderNumber}, invoiceSentAt not updated`);
+        this.logger.warn(
+          `Invoice email failed for order ${order.orderNumber}, invoiceSentAt not updated`,
+        );
       }
     } catch (error) {
       this.logger.error(`Error sending invoice for order ${orderNumber}:`, error);

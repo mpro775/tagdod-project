@@ -25,7 +25,7 @@ import {
   NotificationNavigationType,
   NOTIFICATION_NAVIGATION_TYPE_OPTIONS,
 } from '../types/notification.types';
-import { getCategoryLabel } from './notificationHelpers';
+import { getCategoryLabel, getNotificationTypeLabel } from './notificationHelpers';
 import { NotificationUserSelector } from './NotificationUserSelector';
 import { useCategories } from '@/features/categories/hooks/useCategories';
 import { productsApi } from '@/features/products/api/productsApi';
@@ -182,7 +182,7 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
               >
                 {Object.values(NotificationType).map((type) => (
                   <MenuItem key={type} value={type}>
-                    {type}
+                    {getNotificationTypeLabel(type, t)}
                   </MenuItem>
                 ))}
               </Select>

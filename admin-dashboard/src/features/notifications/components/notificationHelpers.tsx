@@ -17,6 +17,7 @@ import {
   NotificationChannel,
   NotificationPriority,
   NotificationCategory,
+  NotificationType,
 } from '../types/notification.types';
 import { STATUS_COLORS, PRIORITY_COLORS } from './notificationConstants';
 
@@ -148,6 +149,13 @@ export const getCategoryLabel = (category: NotificationCategory, t: (key: string
     [NotificationCategory.MARKETING]: t('categories.MARKETING'),
   };
   return labels[category] || category;
+};
+
+/**
+ * Get label for notification type (requires translation function)
+ */
+export const getNotificationTypeLabel = (type: string, t: (key: string) => string): string => {
+  return t(`types.${type}`) || type;
 };
 
 /**

@@ -22,6 +22,8 @@ import {
   NotificationChannel,
 } from '../types/notification.types';
 import { UserRole } from '@/features/users/types/user.types';
+import { getNotificationTypeLabel } from './notificationHelpers';
+import { useTranslation } from 'react-i18next';
 
 interface ChannelConfigFormProps {
   config?: NotificationChannelConfig | null;
@@ -39,6 +41,7 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
   isLoading,
 }) => {
   const { isMobile } = useBreakpoint();
+  const { t } = useTranslation('notifications');
   const [formData, setFormData] = useState<CreateChannelConfigDto | UpdateChannelConfigDto>(() => {
     if (config && config._id) {
       // إعداد موجود في قاعدة البيانات
@@ -143,7 +146,7 @@ export const ChannelConfigForm: React.FC<ChannelConfigFormProps> = ({
           >
             {Object.values(NotificationType).map((type) => (
               <MenuItem key={type} value={type}>
-                {type}
+                {getNotificationTypeLabel(type, t)}
               </MenuItem>
             ))}
           </Select>

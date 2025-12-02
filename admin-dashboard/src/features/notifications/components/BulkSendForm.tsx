@@ -20,6 +20,8 @@ import {
   NotificationPriority,
   NotificationCategory,
 } from '../types/notification.types';
+import { getNotificationTypeLabel } from './notificationHelpers';
+import { NotificationUserSelector } from './NotificationUserSelector';
 
 interface BulkSendFormProps {
   onSave: (data: BulkSendNotificationDto) => void;
@@ -30,6 +32,7 @@ interface BulkSendFormProps {
 export const BulkSendForm: React.FC<BulkSendFormProps> = ({ onSave, onCancel, isLoading }) => {
   const { t } = useTranslation('notifications');
   const { isMobile } = useBreakpoint();
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [formData, setFormData] = useState<BulkSendNotificationDto>({
     type: NotificationType.ORDER_CONFIRMED,
     title: '',
@@ -44,9 +47,23 @@ export const BulkSendForm: React.FC<BulkSendFormProps> = ({ onSave, onCancel, is
     data: {},
   });
 
+  // Update formData when selectedUserIds changes
+  React.useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      targetUserIds: selectedUserIds,
+    }));
+  }, [selectedUserIds]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    if (selectedUserIds.length === 0) {
+      return;
+    }
+    onSave({
+      ...formData,
+      targetUserIds: selectedUserIds,
+    });
   };
 
   return (
@@ -72,7 +89,7 @@ export const BulkSendForm: React.FC<BulkSendFormProps> = ({ onSave, onCancel, is
               >
                 {Object.values(NotificationType).map((type) => (
                   <MenuItem key={type} value={type}>
-                    {type}
+                    {getNotificationTypeLabel(type, t)}
                   </MenuItem>
                 ))}
               </Select>
@@ -140,25 +157,10 @@ export const BulkSendForm: React.FC<BulkSendFormProps> = ({ onSave, onCancel, is
           aria-label={t('forms.messageEn')}
         />
 
-        <TextField
-          fullWidth
-          label={t('forms.targetUserIds')}
-          value={formData.targetUserIds.join(', ')}
-          onChange={(e) =>
-            setFormData((prev) => ({
-              ...prev,
-              targetUserIds: e.target.value
-                .split(',')
-                .map((id) => id.trim())
-                .filter((id) => id),
-            }))
-          }
-          placeholder={t('placeholders.userIds')}
-          required
+        <NotificationUserSelector
+          selectedUserIds={selectedUserIds}
+          onUserIdsChange={setSelectedUserIds}
           disabled={isLoading}
-          helperText={t('forms.targetUserIdsHelper')}
-          size={isMobile ? 'small' : 'medium'}
-          aria-label={t('forms.targetUserIds')}
         />
 
         <Box
@@ -181,7 +183,7 @@ export const BulkSendForm: React.FC<BulkSendFormProps> = ({ onSave, onCancel, is
           <Button
             type="submit"
             variant="contained"
-            disabled={isLoading}
+            disabled={isLoading || selectedUserIds.length === 0}
             size={isMobile ? 'small' : 'medium'}
             fullWidth={isMobile}
             aria-label={t('forms.sendBulk')}
