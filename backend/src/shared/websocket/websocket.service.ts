@@ -12,7 +12,10 @@ export class WebSocketService {
 
   setServer(server: Server): void {
     this.server = server;
-    this.logger.log('WebSocket server initialized');
+    // ✅ Log namespace info
+    const serverAny = server as any;
+    const namespace = serverAny.name || serverAny._path || '/';
+    this.logger.log(`✅ WebSocket server initialized for namespace: "${namespace}"`);
   }
 
   handleConnection(client: AuthenticatedSocket): void {
@@ -112,16 +115,27 @@ export class WebSocketService {
       return false;
     }
 
+    // ✅ Debug logging للتحقق من namespace
+    const serverAny = this.server as any;
+    const namespace = serverAny.name || serverAny._path || '/';
+    this.logger.log(`🔍 [DEBUG] Sending event: "${event}"`);
+    this.logger.log(`🔍 [DEBUG] Server namespace: "${namespace}"`);
+    this.logger.log(`🔍 [DEBUG] To user: ${userId}`);
+
     const room = `user:${userId}`;
     const sockets = this.userSockets.get(userId);
 
     if (!sockets || sockets.size === 0) {
-      this.logger.debug(`User ${userId} has no active connections`);
+      this.logger.warn(`⚠️ User ${userId} has no active connections in namespace "${namespace}"`);
+      this.logger.warn(`   - Available users: [${Array.from(this.userSockets.keys()).join(', ')}]`);
       return false;
     }
 
+    this.logger.log(`🔍 [DEBUG] User ${userId} has ${sockets.size} active socket(s): [${Array.from(sockets).join(', ')}]`);
+    this.logger.log(`🔍 [DEBUG] Emitting to room: "${room}"`);
+
     this.server.to(room).emit(event, data);
-    this.logger.log(`Sent ${event} to user ${userId} (${sockets.size} socket(s))`);
+    this.logger.log(`✅ Sent ${event} to user ${userId} (${sockets.size} socket(s)) on namespace "${namespace}"`);
     return true;
   }
 
