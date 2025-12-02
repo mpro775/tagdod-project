@@ -94,8 +94,22 @@ export interface MediaStats {
 export interface UploadResponse {
   media: Media;
   isDuplicate: boolean;
+  wasResized?: boolean;
   message: string;
 }
+
+// Product Image Dimension Constraints (فقط لصور المنتجات)
+export const PRODUCT_IMAGE_CONSTRAINTS = {
+  MIN_WIDTH: 400,
+  MIN_HEIGHT: 400,
+  MAX_WIDTH: 2000,
+  MAX_HEIGHT: 2000,
+  ASPECT_RATIO: 1, // 1:1 (مربع)
+  ASPECT_RATIO_TOLERANCE: 0.05, // 5% تفاوت مسموح
+} as const;
+
+// الفئات التي تطبق عليها قيود الأبعاد
+export const CATEGORIES_WITH_CONSTRAINTS: MediaCategory[] = [MediaCategory.PRODUCT];
 
 // Cleanup Operations (Super Admin only)
 export interface CleanupResponse {

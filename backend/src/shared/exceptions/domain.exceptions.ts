@@ -473,6 +473,18 @@ export class MediaNotFoundException extends UploadException {
   }
 }
 
+export class ImageTooSmallException extends UploadException {
+  constructor(details?: unknown) {
+    super(ErrorCode.UPLOAD_IMAGE_TOO_SMALL, details);
+  }
+}
+
+export class InvalidAspectRatioException extends UploadException {
+  constructor(details?: unknown) {
+    super(ErrorCode.UPLOAD_INVALID_ASPECT_RATIO, details);
+  }
+}
+
 // ==================== Exchange Rate Exceptions ====================
 
 export class ExchangeRateException extends DomainException {

@@ -39,7 +39,9 @@ export const useUploadMedia = () => {
       mediaApi.upload(file, data),
     onSuccess: (response) => {
       if (response.isDuplicate) {
-        toast.success('الصورة موجودة مسبقاً');
+        toast.success('الصورة موجودة مسبقاً في المكتبة');
+      } else if (response.wasResized) {
+        toast.success('تم رفع الصورة بنجاح (تم تصغيرها تلقائياً)');
       } else {
         toast.success('تم رفع الملف بنجاح');
       }

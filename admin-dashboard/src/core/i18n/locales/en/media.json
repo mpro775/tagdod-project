@@ -25,6 +25,25 @@
   "private": "Private",
   "deleted": "Deleted",
   "used": "Used",
+  "review": "Review",
+  "dataReview": "Review Data",
+  "fileName": "File Name",
+  "category": "Category",
+  "status": "Status",
+  "size": "Size",
+  "description": "Description",
+  "tags": "Tags",
+
+  "form": {
+    "back": "Previous",
+    "next": "Next",
+    "cancel": "Cancel",
+    "save": "Save",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "reset": "Reset"
+  },
+
   "autoDelete": {
     "countdown": "Auto cleanup {{time}}",
     "due": "Auto cleanup imminent",
@@ -114,7 +133,31 @@
     "uploadFile": "Upload File",
     "review": "Review Upload",
     "dataReview": "Review Data",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "imageRequirements": "Product Image Requirements",
+    "minDimensions": "Min: {{width}}×{{height}} px",
+    "maxDimensions": "Max: {{width}}×{{height}} px",
+    "aspectRatio": "Image must be square (1:1)",
+    "autoResize": "Large images will be resized automatically",
+    "imageTooSmall": "Image dimensions too small. Product image requirements: minimum {{width}}×{{height}} px, must be square (1:1)",
+    "invalidAspectRatio": "Invalid aspect ratio. Product image requirements: must be square (1:1), minimum {{minWidth}}×{{minHeight}} px",
+    "currentDimensions": "Current: {{width}}×{{height}}",
+    "imageResized": "Image was automatically resized",
+    "needsCropping": "Image is not square. Please crop it to make it square (1:1)",
+    "cropRequired": "Image must be cropped to be square (1:1)"
+  },
+
+  "cropper": {
+    "title": "Crop Image",
+    "info": "Select the square area you want to crop. Image must be square (1:1)",
+    "zoom": "Zoom",
+    "rotation": "Rotation",
+    "reset": "Reset",
+    "confirm": "Confirm Crop",
+    "processing": "Processing...",
+    "cropImage": "Crop Image",
+    "cropSuccess": "Image cropped successfully",
+    "cropError": "An error occurred while cropping"
   },
 
   "cleanup": {
@@ -225,6 +268,8 @@
 
   "messages": {
     "uploadSuccess": "File uploaded successfully",
+    "uploadSuccessResized": "Image uploaded successfully (auto-resized)",
+    "uploadDuplicate": "Image already exists in the library",
     "deleteSuccess": "File deleted successfully",
     "restoreSuccess": "File restored successfully",
     "updateSuccess": "File updated successfully",
@@ -236,8 +281,10 @@
     "largestFilesError": "Failed to load largest files",
     "recentFilesError": "Failed to load recent files",
     "uploadError": "An error occurred during upload",
-    "deleteConfirm": "Do you want to delete \"{name}\"?",
-    "confirmDelete": "Confirm Delete"
+    "deleteTitle": "Confirm Delete",
+    "deleteConfirm": "Do you want to delete \"{{name}}\"?",
+    "confirmDelete": "Confirm Delete",
+    "permanentDeleteWarning": "This action cannot be undone"
   },
 
   "units": {

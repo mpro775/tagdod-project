@@ -5,6 +5,7 @@ export { MediaListItem } from './components/MediaListItem';
 export { SortableMediaCard } from './components/SortableMediaCard';
 export { MediaPicker } from './components/MediaPicker';
 export { ImageField } from './components/ImageField';
+export { ImageCropper } from './components/ImageCropper';
 export { mediaApi } from './api/mediaApi';
 export * from './hooks/useMedia';
 export * from './types/media.types';

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -30,14 +30,22 @@ import {
   Image,
   VideoFile,
   Description,
-  CheckCircle,  
+  CheckCircle,
+  Info,
+  Crop,
 } from '@mui/icons-material';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useDropzone } from 'react-dropzone';
 import { useUploadMedia } from '../hooks/useMedia';
+import { ErrorHandler } from '@/core/error/ErrorHandler';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
-import { MediaCategory } from '../types/media.types';
+import {
+  MediaCategory,
+  PRODUCT_IMAGE_CONSTRAINTS,
+  CATEGORIES_WITH_CONSTRAINTS,
+} from '../types/media.types';
+import { ImageCropper } from './ImageCropper';
 
 interface MediaUploaderProps {
   open: boolean;
@@ -51,12 +59,12 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   open,
   onClose,
   onSuccess,
-  defaultCategory = MediaCategory.OTHER
+  defaultCategory = MediaCategory.OTHER,
 }) => {
   const { t } = useTranslation('media');
   const theme = useTheme();
   const { isMobile } = useBreakpoint();
-  
+
   const [activeStep, setActiveStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState('');
@@ -68,32 +76,131 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   const [preview, setPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(
+    null
+  );
+  const [dimensionError, setDimensionError] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
+  const [needsCropping, setNeedsCropping] = useState(false);
 
   const { mutate: upload, isPending } = useUploadMedia();
+
+  // التحقق مما إذا كانت الفئة الحالية تتطلب قيود أبعاد
+  const hasConstraints = CATEGORIES_WITH_CONSTRAINTS.includes(category);
+
+  // دالة مساعدة للتحقق من الأبعاد حسب الفئة
+  const validateImageDimensionsForCategory = useCallback(
+    (
+      width: number,
+      height: number,
+      cat: MediaCategory
+    ): { error: string | null; needsCrop: boolean } => {
+      if (!CATEGORIES_WITH_CONSTRAINTS.includes(cat)) {
+        return { error: null, needsCrop: false };
+      }
+
+      // التحقق من الحد الأدنى
+      if (
+        width < PRODUCT_IMAGE_CONSTRAINTS.MIN_WIDTH ||
+        height < PRODUCT_IMAGE_CONSTRAINTS.MIN_HEIGHT
+      ) {
+        return {
+          error: t('uploader.imageTooSmall', {
+            minWidth: PRODUCT_IMAGE_CONSTRAINTS.MIN_WIDTH,
+            minHeight: PRODUCT_IMAGE_CONSTRAINTS.MIN_HEIGHT,
+            maxWidth: PRODUCT_IMAGE_CONSTRAINTS.MAX_WIDTH,
+            maxHeight: PRODUCT_IMAGE_CONSTRAINTS.MAX_HEIGHT,
+          }),
+          needsCrop: false,
+        };
+      }
+
+      // التحقق من نسبة الأبعاد (1:1)
+      const aspectRatio = width / height;
+      const tolerance = PRODUCT_IMAGE_CONSTRAINTS.ASPECT_RATIO_TOLERANCE;
+      if (Math.abs(aspectRatio - PRODUCT_IMAGE_CONSTRAINTS.ASPECT_RATIO) > tolerance) {
+        // الصورة غير مربعة - يمكن قصها
+        return {
+          error: null,
+          needsCrop: true,
+        };
+      }
+
+      return { error: null, needsCrop: false };
+    },
+    [t]
+  );
+
+  // إعادة التحقق عند تغيير الفئة
+  useEffect(() => {
+    if (imageDimensions && originalImageSrc) {
+      if (CATEGORIES_WITH_CONSTRAINTS.includes(category)) {
+        // تطبيق القيود على الفئة الجديدة
+        const { error, needsCrop } = validateImageDimensionsForCategory(
+          imageDimensions.width,
+          imageDimensions.height,
+          category
+        );
+        setDimensionError(error);
+
+        // إذا كانت الصورة تحتاج قص وتم تغيير الفئة لفئة محدودة
+        if (needsCrop && !needsCropping) {
+          setNeedsCropping(true);
+          setShowCropper(true);
+        }
+      } else {
+        // إزالة الخطأ للفئات بدون قيود
+        setDimensionError(null);
+        setNeedsCropping(false);
+      }
+    }
+  }, [
+    category,
+    imageDimensions,
+    originalImageSrc,
+    validateImageDimensionsForCategory,
+    needsCropping,
+  ]);
 
   const handleFileSelect = useCallback((selectedFile: File) => {
     setFile(selectedFile);
     setName(selectedFile.name.split('.')[0]);
     setUploadError(null);
+    setDimensionError(null);
+    setImageDimensions(null);
+    setNeedsCropping(false);
 
-    // Create preview for images
+    // Create preview for images and get dimensions (without validation yet)
     if (selectedFile.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result as string);
+        const imageSrc = reader.result as string;
+        setPreview(imageSrc);
+        setOriginalImageSrc(imageSrc);
+
+        // Get image dimensions only - validation happens in step 2
+        const img = new window.Image();
+        img.onload = () => {
+          setImageDimensions({ width: img.width, height: img.height });
+        };
+        img.src = imageSrc;
       };
       reader.readAsDataURL(selectedFile);
     }
-    
+
     // Auto-advance to next step
     setActiveStep(1);
   }, []);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles && acceptedFiles.length > 0) {
-      handleFileSelect(acceptedFiles[0]);
-    }
-  }, [handleFileSelect]);
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      if (acceptedFiles && acceptedFiles.length > 0) {
+        handleFileSelect(acceptedFiles[0]);
+      }
+    },
+    [handleFileSelect]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -122,16 +229,19 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     }
   }, [tagInput, tags]);
 
-  const handleRemoveTag = useCallback((tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  }, [tags]);
+  const handleRemoveTag = useCallback(
+    (tagToRemove: string) => {
+      setTags(tags.filter((tag) => tag !== tagToRemove));
+    },
+    [tags]
+  );
 
   const handleNext = useCallback(() => {
-    setActiveStep(prev => prev + 1);
+    setActiveStep((prev) => prev + 1);
   }, []);
 
   const handleBack = useCallback(() => {
-    setActiveStep(prev => prev - 1);
+    setActiveStep((prev) => prev - 1);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -145,8 +255,55 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     setPreview(null);
     setUploadProgress(0);
     setUploadError(null);
+    setImageDimensions(null);
+    setDimensionError(null);
+    setShowCropper(false);
+    setOriginalImageSrc(null);
+    setNeedsCropping(false);
     onClose();
   }, [onClose]);
+
+  // معالجة نتيجة القص
+  const handleCropComplete = useCallback(
+    (croppedBlob: Blob, croppedImageUrl: string) => {
+      // تحديث الملف بالصورة المقصوصة
+      const croppedFile = new File([croppedBlob], file?.name || 'cropped-image.jpg', {
+        type: 'image/jpeg',
+      });
+
+      setFile(croppedFile);
+      setPreview(croppedImageUrl);
+      setNeedsCropping(false);
+      setShowCropper(false);
+
+      // تحديث الأبعاد بعد القص
+      const img = new window.Image();
+      img.onload = () => {
+        setImageDimensions({ width: img.width, height: img.height });
+        setDimensionError(null);
+        // الانتقال للخطوة التالية بعد القص
+        setActiveStep(1);
+      };
+      img.src = croppedImageUrl;
+    },
+    [file]
+  );
+
+  // إغلاق القاص بدون قص
+  const handleCropperClose = useCallback(() => {
+    setShowCropper(false);
+    // إذا كانت الصورة تحتاج قص ولم يتم القص، نعرض خطأ
+    if (needsCropping) {
+      setDimensionError(t('uploader.cropRequired', 'يجب قص الصورة لتصبح مربعة (1:1)'));
+    }
+  }, [needsCropping, t]);
+
+  // فتح القاص يدوياً
+  const handleOpenCropper = useCallback(() => {
+    if (originalImageSrc) {
+      setShowCropper(true);
+    }
+  }, [originalImageSrc]);
 
   const handleUpload = useCallback(() => {
     if (!file || !name) return;
@@ -174,7 +331,8 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           }, 1000);
         },
         onError: (error) => {
-          setUploadError((error as Error).message || t('uploader.uploadError'));
+          const errorMessage = ErrorHandler.getErrorMessage(error);
+          setUploadError(errorMessage);
         },
       }
     );
@@ -189,32 +347,19 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleClose} 
-      maxWidth="lg" 
-      fullWidth
-      fullScreen={isMobile}
-    >
+    <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth fullScreen={isMobile}>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <CloudUpload color="primary" />
-          <Typography 
-            variant="h6"
-            sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
-          >
+          <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
             {t('uploadNewFile')}
           </Typography>
         </Box>
       </DialogTitle>
-      
+
       <DialogContent sx={{ p: { xs: 1, sm: 3 } }}>
         <Box>
-          <Stepper 
-            activeStep={activeStep} 
-            orientation={isMobile ? 'vertical' : 'horizontal'}
-            sx={{ mb: 3 }}
-          >
+          <Stepper activeStep={activeStep} orientation="vertical" sx={{ mb: 3 }}>
             {/* Step 1: File Selection */}
             <Step>
               <StepLabel>{t('uploader.selectFile')}</StepLabel>
@@ -224,20 +369,16 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                   sx={{
                     p: { xs: 2, sm: 3 },
                     border: '2px dashed',
-                    borderColor: isDragActive 
-                      ? 'primary.main' 
-                      : file 
-                        ? 'success.main' 
-                        : 'divider',
+                    borderColor: isDragActive ? 'primary.main' : file ? 'success.main' : 'divider',
                     bgcolor: isDragActive
                       ? theme.palette.mode === 'dark'
                         ? 'primary.dark'
                         : 'primary.light'
-                      : file 
-                        ? theme.palette.mode === 'dark' 
-                          ? 'success.dark' 
-                          : 'success.light' 
-                        : 'background.paper',
+                      : file
+                      ? theme.palette.mode === 'dark'
+                        ? 'success.dark'
+                        : 'success.light'
+                      : 'background.paper',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
@@ -245,19 +386,17 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     transform: isDragActive ? 'scale(1.02)' : 'scale(1)',
                     '&:hover': {
                       borderColor: 'primary.main',
-                      bgcolor: theme.palette.mode === 'dark' 
-                        ? 'action.hover' 
-                        : 'primary.light',
+                      bgcolor: theme.palette.mode === 'dark' ? 'action.hover' : 'primary.light',
                     },
                   }}
                 >
                   <input {...getInputProps()} />
-                  
+
                   {file ? (
                     <Box>
                       <CheckCircle color="success" sx={{ fontSize: { xs: 40, sm: 48 }, mb: 2 }} />
-                      <Typography 
-                        variant="h6" 
+                      <Typography
+                        variant="h6"
                         gutterBottom
                         sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
                       >
@@ -273,21 +412,28 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                             sx={{ objectFit: 'cover' }}
                           />
                         ) : (
-                          <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Box
+                            sx={{
+                              p: 3,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
                             {getFileIcon(file)}
                           </Box>
                         )}
                         <CardContent>
-                          <Typography 
-                            variant="body2" 
-                            fontWeight="medium" 
+                          <Typography
+                            variant="body2"
+                            fontWeight="medium"
                             noWrap
                             sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
                           >
                             {file.name}
                           </Typography>
-                          <Typography 
-                            variant="caption" 
+                          <Typography
+                            variant="caption"
                             color="text.secondary"
                             sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                           >
@@ -298,27 +444,27 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     </Box>
                   ) : (
                     <Box>
-                      <CloudUpload 
-                        sx={{ 
-                          fontSize: { xs: 40, sm: 48 }, 
-                          color: isDragActive ? 'primary.main' : 'text.disabled', 
+                      <CloudUpload
+                        sx={{
+                          fontSize: { xs: 40, sm: 48 },
+                          color: isDragActive ? 'primary.main' : 'text.disabled',
                           mb: 2,
                           transition: 'all 0.3s ease',
                           transform: isDragActive ? 'scale(1.1)' : 'scale(1)',
-                        }} 
+                        }}
                       />
-                      <Typography 
-                        variant="h6" 
+                      <Typography
+                        variant="h6"
                         gutterBottom
-                        sx={{ 
+                        sx={{
                           fontSize: { xs: '0.875rem', sm: '1rem' },
                           color: isDragActive ? 'primary.main' : 'text.primary',
                         }}
                       >
                         {isDragActive ? t('uploader.dropFile') : t('uploader.selectFile')}
                       </Typography>
-                      <Typography 
-                        variant="body2" 
+                      <Typography
+                        variant="body2"
                         color="text.secondary"
                         sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
                       >
@@ -327,11 +473,21 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     </Box>
                   )}
                 </Paper>
-                
+
+                {/* Image Dimensions Display - معلومات فقط */}
+                {imageDimensions && (
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    {t('uploader.currentDimensions', {
+                      width: imageDimensions.width,
+                      height: imageDimensions.height,
+                    })}
+                  </Alert>
+                )}
+
                 {file && (
                   <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button 
-                      variant="contained" 
+                    <Button
+                      variant="contained"
                       onClick={handleNext}
                       fullWidth={isMobile}
                       size={isMobile ? 'medium' : 'small'}
@@ -369,7 +525,9 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                         size={isMobile ? 'small' : 'medium'}
                       >
                         <MenuItem value={MediaCategory.PRODUCT}>{t('categories.product')}</MenuItem>
-                        <MenuItem value={MediaCategory.CATEGORY}>{t('categories.category')}</MenuItem>
+                        <MenuItem value={MediaCategory.CATEGORY}>
+                          {t('categories.category')}
+                        </MenuItem>
                         <MenuItem value={MediaCategory.BRAND}>{t('categories.brand')}</MenuItem>
                         <MenuItem value={MediaCategory.BANNER}>{t('categories.banner')}</MenuItem>
                         <MenuItem value={MediaCategory.OTHER}>{t('categories.other')}</MenuItem>
@@ -434,20 +592,103 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                       </Box>
                     )}
                   </Grid>
+
+                  {/* متطلبات صور المنتجات - تظهر فقط عند اختيار فئة المنتجات */}
+                  {hasConstraints && file?.type.startsWith('image/') && (
+                    <Grid size={{ xs: 12 }}>
+                      <Alert severity="info" icon={<Info />} sx={{ textAlign: 'start' }}>
+                        <Typography variant="body2" fontWeight="medium" sx={{ mb: 0.5 }}>
+                          {t('uploader.imageRequirements')}
+                        </Typography>
+                        <Typography variant="caption" component="div">
+                          •{' '}
+                          {t('uploader.minDimensions', {
+                            width: PRODUCT_IMAGE_CONSTRAINTS.MIN_WIDTH,
+                            height: PRODUCT_IMAGE_CONSTRAINTS.MIN_HEIGHT,
+                          })}
+                        </Typography>
+                        <Typography variant="caption" component="div">
+                          •{' '}
+                          {t('uploader.maxDimensions', {
+                            width: PRODUCT_IMAGE_CONSTRAINTS.MAX_WIDTH,
+                            height: PRODUCT_IMAGE_CONSTRAINTS.MAX_HEIGHT,
+                          })}
+                        </Typography>
+                        <Typography variant="caption" component="div">
+                          • {t('uploader.aspectRatio')}
+                        </Typography>
+                        <Typography variant="caption" component="div" color="text.secondary">
+                          • {t('uploader.autoResize')}
+                        </Typography>
+                      </Alert>
+                    </Grid>
+                  )}
+
+                  {/* خطأ الأبعاد - فقط لصور المنتجات */}
+                  {hasConstraints && dimensionError && (
+                    <Grid size={{ xs: 12 }}>
+                      <Alert severity="error">
+                        {dimensionError}
+                        {imageDimensions && (
+                          <Typography variant="caption" component="div" sx={{ mt: 0.5 }}>
+                            {t('uploader.currentDimensions', {
+                              width: imageDimensions.width,
+                              height: imageDimensions.height,
+                            })}
+                          </Typography>
+                        )}
+                      </Alert>
+                    </Grid>
+                  )}
+
+                  {/* تحذير القص - الصورة غير مربعة */}
+                  {hasConstraints && needsCropping && !dimensionError && (
+                    <Grid size={{ xs: 12 }}>
+                      <Alert
+                        severity="warning"
+                        action={
+                          <Button
+                            color="inherit"
+                            size="small"
+                            startIcon={<Crop />}
+                            onClick={handleOpenCropper}
+                          >
+                            {t('cropper.cropImage', 'قص الصورة')}
+                          </Button>
+                        }
+                      >
+                        {t(
+                          'uploader.needsCropping',
+                          'الصورة ليست مربعة. يرجى قصها لتصبح مربعة (1:1)'
+                        )}
+                      </Alert>
+                    </Grid>
+                  )}
                 </Grid>
 
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', gap: 2 }}>
-                  <Button 
+                  <Button
                     onClick={handleBack}
                     fullWidth={isMobile}
                     size={isMobile ? 'medium' : 'small'}
                   >
                     {t('form.back')}
                   </Button>
-                  <Button 
-                    variant="contained" 
-                    onClick={handleNext} 
-                    disabled={!name}
+                  {/* زر القص */}
+                  {hasConstraints && originalImageSrc && (needsCropping || dimensionError) && (
+                    <Button
+                      variant="outlined"
+                      onClick={handleOpenCropper}
+                      startIcon={<Crop />}
+                      size={isMobile ? 'medium' : 'small'}
+                    >
+                      {t('cropper.cropImage', 'قص الصورة')}
+                    </Button>
+                  )}
+                  <Button
+                    variant="contained"
+                    onClick={handleNext}
+                    disabled={!name || (hasConstraints && (!!dimensionError || needsCropping))}
                     fullWidth={isMobile}
                     size={isMobile ? 'medium' : 'small'}
                   >
@@ -462,14 +703,14 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
               <StepLabel>{t('review')}</StepLabel>
               <StepContent>
                 <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
-                  <Typography 
-                    variant="h6" 
+                  <Typography
+                    variant="h6"
                     gutterBottom
                     sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
                   >
                     {t('dataReview')}
                   </Typography>
-                  
+
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Typography variant="body2" color="text.secondary">
@@ -479,7 +720,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                         {name}
                       </Typography>
                     </Grid>
-                    
+
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Typography variant="body2" color="text.secondary">
                         {t('category')}:
@@ -488,18 +729,18 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                         {category}
                       </Typography>
                     </Grid>
-                    
+
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Typography variant="body2" color="text.secondary">
                         {t('status')}:
                       </Typography>
-                      <Chip 
-                        label={isPublic ? t('public') : t('private')} 
-                        color={isPublic ? 'success' : 'warning'} 
-                        size="small" 
+                      <Chip
+                        label={isPublic ? t('public') : t('private')}
+                        color={isPublic ? 'success' : 'warning'}
+                        size="small"
                       />
                     </Grid>
-                    
+
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Typography variant="body2" color="text.secondary">
                         {t('size')}:
@@ -508,18 +749,16 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                         {file ? formatFileSize(file.size) : '-'}
                       </Typography>
                     </Grid>
-                    
+
                     {description && (
                       <Grid size={{ xs: 12 }}>
                         <Typography variant="body2" color="text.secondary">
                           {t('description')}:
                         </Typography>
-                        <Typography variant="body1">
-                          {description}
-                        </Typography>
+                        <Typography variant="body1">{description}</Typography>
                       </Grid>
                     )}
-                    
+
                     {tags.length > 0 && (
                       <Grid size={{ xs: 12 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -553,17 +792,17 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 )}
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
-                  <Button 
-                    onClick={handleBack} 
+                  <Button
+                    onClick={handleBack}
                     disabled={isPending}
                     fullWidth={isMobile}
                     size={isMobile ? 'medium' : 'small'}
                   >
                     {t('form.back')}
                   </Button>
-                  <Button 
-                    variant="contained" 
-                    onClick={handleUpload} 
+                  <Button
+                    variant="contained"
+                    onClick={handleUpload}
                     disabled={!file || !name || isPending}
                     startIcon={isPending ? <Skeleton width={20} height={20} /> : <CloudUpload />}
                     fullWidth={isMobile}
@@ -577,10 +816,10 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           </Stepper>
         </Box>
       </DialogContent>
-      
+
       <DialogActions sx={{ p: { xs: 1, sm: 2 } }}>
-        <Button 
-          onClick={handleClose} 
+        <Button
+          onClick={handleClose}
           disabled={isPending}
           fullWidth={isMobile}
           size={isMobile ? 'medium' : 'small'}
@@ -588,6 +827,19 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           {t('form.cancel')}
         </Button>
       </DialogActions>
+
+      {/* Image Cropper Dialog */}
+      {originalImageSrc && showCropper && (
+        <ImageCropper
+          open={true}
+          imageSrc={originalImageSrc}
+          onClose={handleCropperClose}
+          onCropComplete={handleCropComplete}
+          aspectRatio={PRODUCT_IMAGE_CONSTRAINTS.ASPECT_RATIO}
+          minWidth={PRODUCT_IMAGE_CONSTRAINTS.MIN_WIDTH}
+          minHeight={PRODUCT_IMAGE_CONSTRAINTS.MIN_HEIGHT}
+        />
+      )}
     </Dialog>
   );
 };

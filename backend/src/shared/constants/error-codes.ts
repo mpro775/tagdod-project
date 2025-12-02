@@ -213,6 +213,8 @@ export enum ErrorCode {
   UPLOAD_NO_FILE = 'UPLOAD_1053',
   MEDIA_NOT_FOUND = 'UPLOAD_1054',
   MEDIA_DELETE_FAILED = 'UPLOAD_1055',
+  UPLOAD_IMAGE_TOO_SMALL = 'UPLOAD_1056',
+  UPLOAD_INVALID_ASPECT_RATIO = 'UPLOAD_1057',
 
   // ==================== أسعار الصرف (EXCHANGE_RATES: 1100-1149) ====================
   EXCHANGE_RATE_NOT_FOUND = 'EXCHANGE_1100',
@@ -466,6 +468,8 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.UPLOAD_NO_FILE]: 'لم يتم اختيار ملف',
   [ErrorCode.MEDIA_NOT_FOUND]: 'الملف غير موجود',
   [ErrorCode.MEDIA_DELETE_FAILED]: 'فشل حذف الملف',
+  [ErrorCode.UPLOAD_IMAGE_TOO_SMALL]: 'أبعاد الصورة صغيرة جداً. متطلبات صور المنتجات: الحد الأدنى 400×400 بكسل، الحد الأقصى 2000×2000 بكسل، ويجب أن تكون الصورة مربعة (1:1)',
+  [ErrorCode.UPLOAD_INVALID_ASPECT_RATIO]: 'نسبة أبعاد الصورة غير صحيحة. متطلبات صور المنتجات: يجب أن تكون الصورة مربعة (1:1)، الحد الأدنى 400×400 بكسل، الحد الأقصى 2000×2000 بكسل',
 
   // ==================== أسعار الصرف ====================
   [ErrorCode.EXCHANGE_RATE_NOT_FOUND]: 'سعر الصرف غير موجود',

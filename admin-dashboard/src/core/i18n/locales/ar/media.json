@@ -25,6 +25,25 @@
   "private": "خاص",
   "deleted": "محذوف",
   "used": "مستخدم",
+  "review": "مراجعة",
+  "dataReview": "مراجعة البيانات",
+  "fileName": "اسم الملف",
+  "category": "الفئة",
+  "status": "الحالة",
+  "size": "الحجم",
+  "description": "الوصف",
+  "tags": "الوسوم",
+
+  "form": {
+    "back": "السابق",
+    "next": "التالي",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "submit": "إرسال",
+    "confirm": "تأكيد",
+    "reset": "إعادة تعيين"
+  },
+
   "autoDelete": {
     "countdown": "سيتم الحذف التلقائي {{time}}",
     "due": "الحذف التلقائي وشيك",
@@ -114,7 +133,31 @@
     "uploadFile": "رفع الملف",
     "review": "مراجعة الرفع",
     "dataReview": "مراجعة البيانات",
-    "saving": "جاري الحفظ..."
+    "saving": "جاري الحفظ...",
+    "imageRequirements": "متطلبات صور المنتجات",
+    "minDimensions": "الحد الأدنى: {{width}}×{{height}} بكسل",
+    "maxDimensions": "الحد الأقصى: {{width}}×{{height}} بكسل",
+    "aspectRatio": "يجب أن تكون الصورة مربعة (1:1)",
+    "autoResize": "سيتم تصغير الصور الكبيرة تلقائياً",
+    "imageTooSmall": "أبعاد الصورة صغيرة جداً. متطلبات صور المنتجات: الحد الأدنى {{width}}×{{height}} بكسل، ويجب أن تكون مربعة (1:1)",
+    "invalidAspectRatio": "نسبة أبعاد الصورة غير صحيحة. متطلبات صور المنتجات: يجب أن تكون مربعة (1:1)، الحد الأدنى {{minWidth}}×{{minHeight}} بكسل",
+    "currentDimensions": "الأبعاد الحالية: {{width}}×{{height}}",
+    "imageResized": "تم تصغير الصورة تلقائياً",
+    "needsCropping": "الصورة ليست مربعة. يرجى قصها لتصبح مربعة (1:1)",
+    "cropRequired": "يجب قص الصورة لتصبح مربعة (1:1)"
+  },
+
+  "cropper": {
+    "title": "قص الصورة",
+    "info": "قم بتحديد المنطقة المربعة التي تريد قصها. الصورة يجب أن تكون مربعة (1:1)",
+    "zoom": "التكبير",
+    "rotation": "الدوران",
+    "reset": "إعادة تعيين",
+    "confirm": "تأكيد القص",
+    "processing": "جاري المعالجة...",
+    "cropImage": "قص الصورة",
+    "cropSuccess": "تم قص الصورة بنجاح",
+    "cropError": "حدث خطأ أثناء قص الصورة"
   },
 
   "cleanup": {
@@ -225,6 +268,8 @@
 
   "messages": {
     "uploadSuccess": "تم رفع الملف بنجاح",
+    "uploadSuccessResized": "تم رفع الصورة بنجاح (تم تصغيرها تلقائياً)",
+    "uploadDuplicate": "الصورة موجودة مسبقاً في المكتبة",
     "deleteSuccess": "تم حذف الملف بنجاح",
     "restoreSuccess": "تم استعادة الملف بنجاح",
     "updateSuccess": "تم تحديث الملف بنجاح",
@@ -236,8 +281,10 @@
     "largestFilesError": "فشل تحميل أكبر الملفات",
     "recentFilesError": "فشل تحميل الملفات الحديثة",
     "uploadError": "حدث خطأ أثناء الرفع",
-    "deleteConfirm": "هل تريد حذف \"{name}\"؟",
-    "confirmDelete": "تأكيد الحذف"
+    "deleteTitle": "تأكيد الحذف",
+    "deleteConfirm": "هل تريد حذف \"{{name}}\"؟",
+    "confirmDelete": "تأكيد الحذف",
+    "permanentDeleteWarning": "هذا الإجراء لا يمكن التراجع عنه"
   },
 
   "units": {

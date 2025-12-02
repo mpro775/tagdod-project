@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Media } from './schemas/media.schema';
+import { Media, MediaCategory } from './schemas/media.schema';
 import { 
   MediaNotFoundException,
   UploadException,
-  ErrorCode 
+  ErrorCode,
+  ImageTooSmallException,
+  InvalidAspectRatioException,
 } from '../../shared/exceptions';
 import { UploadService } from './upload.service';
 import { UploadMediaDto } from './dto/upload-media.dto';
@@ -14,6 +16,25 @@ import { ListMediaDto } from './dto/list-media.dto';
 import * as crypto from 'crypto';
 import * as sharp from 'sharp';
 import { Cron, CronExpression } from '@nestjs/schedule';
+
+/**
+ * قيود أبعاد الصور للمنتجات فقط
+ * Product Image Dimension Constraints (ONLY for product category)
+ */
+const PRODUCT_IMAGE_CONSTRAINTS = {
+  MIN_WIDTH: 400,
+  MIN_HEIGHT: 400,
+  MAX_WIDTH: 2000,
+  MAX_HEIGHT: 2000,
+  ASPECT_RATIO: 1, // 1:1 (مربع)
+  ASPECT_RATIO_TOLERANCE: 0.05, // 5% تفاوت مسموح
+};
+
+/**
+ * الفئات التي تطبق عليها قيود الأبعاد
+ * Categories that have dimension constraints
+ */
+const CATEGORIES_WITH_CONSTRAINTS = [MediaCategory.PRODUCT];
 
 @Injectable()
 export class MediaService {
@@ -28,8 +49,53 @@ export class MediaService {
    * رفع صورة إلى المستودع
    */
   async uploadToLibrary(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, dto: UploadMediaDto, userId: string) {
-    // حساب hash للملف للكشف عن التكرار
-    const fileHash = this.calculateFileHash(file.buffer);
+    let processedFile = file;
+    let width: number | undefined;
+    let height: number | undefined;
+    let wasResized = false;
+
+    // التحقق مما إذا كانت الفئة تتطلب قيود على الأبعاد
+    const hasConstraints = CATEGORIES_WITH_CONSTRAINTS.includes(dto.category as MediaCategory);
+
+    // معالجة الصور فقط (التحقق من الأبعاد والتصغير)
+    if (file.mimetype.startsWith('image/')) {
+      // استخراج أبعاد الصورة الأصلية
+      const metadata = await sharp(file.buffer).metadata();
+      const originalWidth = metadata.width || 0;
+      const originalHeight = metadata.height || 0;
+
+      // التحقق من أبعاد الصورة (فقط لصور المنتجات)
+      if (hasConstraints) {
+        this.validateProductImageDimensions(originalWidth, originalHeight);
+
+        // تصغير الصورة إذا كانت أكبر من الحد الأقصى
+        const resizeResult = await this.resizeProductImageIfNeeded(
+          file.buffer,
+          originalWidth,
+          originalHeight,
+        );
+
+        width = resizeResult.width;
+        height = resizeResult.height;
+        wasResized = resizeResult.wasResized;
+
+        // تحديث الملف إذا تم تصغيره
+        if (wasResized) {
+          processedFile = {
+            ...file,
+            buffer: resizeResult.buffer,
+            size: resizeResult.buffer.length,
+          };
+        }
+      } else {
+        // للفئات الأخرى: فقط حفظ الأبعاد بدون قيود
+        width = originalWidth;
+        height = originalHeight;
+      }
+    }
+
+    // حساب hash للملف المعالج للكشف عن التكرار
+    const fileHash = this.calculateFileHash(processedFile.buffer);
 
     // فحص التكرار
     const existingMedia = await this.mediaModel
@@ -52,15 +118,7 @@ export class MediaService {
     const folder = `media/${dto.category}`;
 
     // رفع الملف إلى Bunny.net
-    const uploadResult = await this.uploadService.uploadFile(file, folder);
-
-    // استخراج أبعاد الصورة
-    let width, height;
-    if (file.mimetype.startsWith('image/')) {
-      const metadata = await sharp(file.buffer).metadata();
-      width = metadata.width;
-      height = metadata.height;
-    }
+    const uploadResult = await this.uploadService.uploadFile(processedFile, folder);
 
     // حفظ البيانات في قاعدة البيانات
     const media = await this.mediaModel.create({
@@ -86,7 +144,10 @@ export class MediaService {
     return {
       media,
       isDuplicate: false,
-      message: 'تم رفع الصورة بنجاح',
+      wasResized,
+      message: wasResized 
+        ? 'تم رفع الصورة بنجاح (تم تصغيرها تلقائياً)' 
+        : 'تم رفع الصورة بنجاح',
     };
   }
 
@@ -384,6 +445,76 @@ export class MediaService {
    */
   private calculateFileHash(buffer: Buffer): string {
     return crypto.createHash('sha256').update(buffer).digest('hex');
+  }
+
+  /**
+   * التحقق من أبعاد صورة المنتج
+   * Validate product image dimensions (min size and aspect ratio)
+   * تطبق فقط على صور المنتجات
+   */
+  private validateProductImageDimensions(width: number, height: number): void {
+    // التحقق من الحد الأدنى للأبعاد
+    if (width < PRODUCT_IMAGE_CONSTRAINTS.MIN_WIDTH || height < PRODUCT_IMAGE_CONSTRAINTS.MIN_HEIGHT) {
+      throw new ImageTooSmallException({
+        currentWidth: width,
+        currentHeight: height,
+        minWidth: PRODUCT_IMAGE_CONSTRAINTS.MIN_WIDTH,
+        minHeight: PRODUCT_IMAGE_CONSTRAINTS.MIN_HEIGHT,
+      });
+    }
+
+    // التحقق من نسبة الأبعاد (1:1 مربع)
+    const aspectRatio = width / height;
+    const expectedRatio = PRODUCT_IMAGE_CONSTRAINTS.ASPECT_RATIO;
+    const tolerance = PRODUCT_IMAGE_CONSTRAINTS.ASPECT_RATIO_TOLERANCE;
+
+    if (Math.abs(aspectRatio - expectedRatio) > tolerance) {
+      throw new InvalidAspectRatioException({
+        currentWidth: width,
+        currentHeight: height,
+        currentRatio: aspectRatio.toFixed(2),
+        expectedRatio: '1:1',
+        tolerance: `${tolerance * 100}%`,
+      });
+    }
+  }
+
+  /**
+   * تصغير صورة المنتج إذا كانت أكبر من الحد الأقصى
+   * Resize product image if larger than max dimensions
+   * تطبق فقط على صور المنتجات
+   */
+  private async resizeProductImageIfNeeded(
+    buffer: Buffer,
+    width: number,
+    height: number,
+  ): Promise<{ buffer: Buffer; width: number; height: number; wasResized: boolean }> {
+    // إذا كانت الصورة ضمن الحدود المسموحة
+    if (width <= PRODUCT_IMAGE_CONSTRAINTS.MAX_WIDTH && height <= PRODUCT_IMAGE_CONSTRAINTS.MAX_HEIGHT) {
+      return { buffer, width, height, wasResized: false };
+    }
+
+    // تصغير الصورة مع الحفاظ على نسبة الأبعاد
+    const resizedBuffer = await sharp(buffer)
+      .resize(PRODUCT_IMAGE_CONSTRAINTS.MAX_WIDTH, PRODUCT_IMAGE_CONSTRAINTS.MAX_HEIGHT, {
+        fit: 'inside', // الحفاظ على نسبة الأبعاد
+        withoutEnlargement: true, // عدم تكبير الصور الصغيرة
+      })
+      .toBuffer();
+
+    // الحصول على الأبعاد الجديدة
+    const newMetadata = await sharp(resizedBuffer).metadata();
+    
+    this.logger.log(
+      `Product image resized from ${width}x${height} to ${newMetadata.width}x${newMetadata.height}`,
+    );
+
+    return {
+      buffer: resizedBuffer,
+      width: newMetadata.width || width,
+      height: newMetadata.height || height,
+      wasResized: true,
+    };
   }
 
   /**
