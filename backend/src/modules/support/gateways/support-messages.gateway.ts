@@ -42,8 +42,8 @@ export class SupportMessagesGateway implements OnGatewayInit, OnGatewayConnectio
   ) {}
 
   afterInit(server: Server): void {
-    this.webSocketService.setServer(server);
-    this.logger.log('Support Messages WebSocket Gateway initialized');
+    this.webSocketService.setServer(server, '/support');
+    this.logger.log('✅ Support Messages WebSocket Gateway initialized on /support');
   }
 
   handleConnection(client: AuthenticatedSocket): void {

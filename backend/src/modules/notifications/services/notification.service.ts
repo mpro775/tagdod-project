@@ -179,18 +179,23 @@ export class NotificationService {
       if (dto.recipientId) {
         if (channel === NotificationChannel.IN_APP) {
           // IN_APP: إرسال عبر WebSocket فقط - المستخدم موجود داخل التطبيق
-          this.webSocketService.sendToUser(dto.recipientId, 'notification:new', {
-            id: savedNotification._id.toString(),
-            title: savedNotification.title,
-            message: savedNotification.message,
-            messageEn: savedNotification.messageEn,
-            type: savedNotification.type,
-            category: savedNotification.category,
-            priority: savedNotification.priority,
-            data: savedNotification.data,
-            createdAt: savedNotification.createdAt,
-            isRead: false,
-          });
+          this.webSocketService.sendToUser(
+            dto.recipientId,
+            'notification:new',
+            {
+              id: savedNotification._id.toString(),
+              title: savedNotification.title,
+              message: savedNotification.message,
+              messageEn: savedNotification.messageEn,
+              type: savedNotification.type,
+              category: savedNotification.category,
+              priority: savedNotification.priority,
+              data: savedNotification.data,
+              createdAt: savedNotification.createdAt,
+              isRead: false,
+            },
+            '/notifications', // ✅ تمرير namespace
+          );
         } else if (channel === NotificationChannel.PUSH) {
           // PUSH: إرسال Push Notification فقط - المستخدم خارج التطبيق
           this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
@@ -200,18 +205,23 @@ export class NotificationService {
           });
         } else if (channel === NotificationChannel.DASHBOARD) {
           // DASHBOARD: خاص بالإداريين - حفظ في قاعدة البيانات وإرسال عبر WebSocket
-          this.webSocketService.sendToUser(dto.recipientId, 'notification:new', {
-            id: savedNotification._id.toString(),
-            title: savedNotification.title,
-            message: savedNotification.message,
-            messageEn: savedNotification.messageEn,
-            type: savedNotification.type,
-            category: savedNotification.category,
-            priority: savedNotification.priority,
-            data: savedNotification.data,
-            createdAt: savedNotification.createdAt,
-            isRead: false,
-          });
+          this.webSocketService.sendToUser(
+            dto.recipientId,
+            'notification:new',
+            {
+              id: savedNotification._id.toString(),
+              title: savedNotification.title,
+              message: savedNotification.message,
+              messageEn: savedNotification.messageEn,
+              type: savedNotification.type,
+              category: savedNotification.category,
+              priority: savedNotification.priority,
+              data: savedNotification.data,
+              createdAt: savedNotification.createdAt,
+              isRead: false,
+            },
+            '/notifications', // ✅ تمرير namespace
+          );
           this.logger.log(
             `Dashboard notification created and sent via WebSocket for admin: ${dto.recipientId}`,
           );
@@ -311,6 +321,7 @@ export class NotificationService {
                 createdAt: savedNotification.createdAt,
                 isRead: false,
               },
+              '/notifications', // ✅ تمرير namespace
             );
 
             // تحديث حالة الإشعار الأصلي إلى "sent"
@@ -1390,18 +1401,23 @@ export class NotificationService {
       });
 
       // إرسال الإشعار لجميع المستخدمين عبر WebSocket
-      const sentCount = this.webSocketService.sendToMultipleUsers(userIds, 'notification:new', {
-        id: notification._id.toString(),
-        title: notification.title,
-        message: notification.message,
-        messageEn: notification.messageEn,
-        type: notification.type,
-        category: notification.category,
-        priority: notification.priority,
-        data: notification.data,
-        createdAt: notification.createdAt,
-        isRead: false,
-      });
+      const sentCount = this.webSocketService.sendToMultipleUsers(
+        userIds,
+        'notification:new',
+        {
+          id: notification._id.toString(),
+          title: notification.title,
+          message: notification.message,
+          messageEn: notification.messageEn,
+          type: notification.type,
+          category: notification.category,
+          priority: notification.priority,
+          data: notification.data,
+          createdAt: notification.createdAt,
+          isRead: false,
+        },
+        '/notifications', // ✅ تمرير namespace
+      );
 
       this.logger.log(
         `Notification ${notification.type} sent via WebSocket to ${sentCount}/${userIds.length} users with roles [${rolesToSend.join(', ')}]`,
@@ -1436,18 +1452,23 @@ export class NotificationService {
       const recipientId = notification.recipientId.toString();
       // Type assertion لأن lean() document يحتوي على _id لكن TypeScript لا يعرفه
       const notificationWithId = notification as UnifiedNotification & { _id: Types.ObjectId };
-      const sent = this.webSocketService.sendToUser(recipientId, 'notification:new', {
-        id: notificationWithId._id.toString(),
-        title: notification.title,
-        message: notification.message,
-        messageEn: notification.messageEn,
-        type: notification.type,
-        category: notification.category,
-        priority: notification.priority,
-        data: notification.data,
-        createdAt: notification.createdAt,
-        isRead: notification.readAt ? true : false,
-      });
+      const sent = this.webSocketService.sendToUser(
+        recipientId,
+        'notification:new',
+        {
+          id: notificationWithId._id.toString(),
+          title: notification.title,
+          message: notification.message,
+          messageEn: notification.messageEn,
+          type: notification.type,
+          category: notification.category,
+          priority: notification.priority,
+          data: notification.data,
+          createdAt: notification.createdAt,
+          isRead: notification.readAt ? true : false,
+        },
+        '/notifications', // ✅ تمرير namespace
+      );
 
       if (sent) {
         this.logger.log(

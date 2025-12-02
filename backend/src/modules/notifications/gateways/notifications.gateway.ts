@@ -48,8 +48,8 @@ export class NotificationsGateway
   ) {}
 
   afterInit(server: Server): void {
-    this.webSocketService.setServer(server);
-    this.logger.log('Notifications WebSocket Gateway initialized');
+    this.webSocketService.setServer(server, '/notifications');
+    this.logger.log('✅ Notifications WebSocket Gateway initialized on /notifications');
   }
 
   handleConnection(client: AuthenticatedSocket): void {
