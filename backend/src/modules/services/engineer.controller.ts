@@ -52,9 +52,17 @@ export class EngineerServicesController {
   @RequireServicePermission(ServicePermission.ENGINEER)
   @ApiOperation({
     summary: 'طلبات قريبة من الفني',
-    description: 'البحث عن طلبات الخدمات القريبة من موقع الفني الحالي',
+    description: 'البحث عن طلبات الخدمات القريبة من موقع الفني الحالي مع إمكانية الفلترة حسب الحالة',
   })
   @ApiQuery({ type: NearbyQueryDto })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.',
+    type: [String],
+    isArray: true,
+    example: ['OPEN', 'OFFERS_COLLECTING'],
+  })
   @ApiResponse({
     status: 200,
     description: 'تم العثور على الطلبات القريبة بنجاح',
@@ -95,8 +103,12 @@ export class EngineerServicesController {
     status: 401,
     description: 'غير مصرح لك بالوصول',
   })
-  async nearby(@Req() req: RequestWithUser, @Query() q: NearbyQueryDto) {
-    const data = await this.svc.nearby(req.user!.sub, q.lat, q.lng, q.radiusKm);
+  async nearby(
+    @Req() req: RequestWithUser,
+    @Query() q: NearbyQueryDto,
+    @Query('status') status?: string | string[],
+  ) {
+    const data = await this.svc.nearby(req.user!.sub, q.lat, q.lng, q.radiusKm, status);
     return { data };
   }
 
@@ -104,7 +116,15 @@ export class EngineerServicesController {
   @RequireServicePermission(ServicePermission.ENGINEER)
   @ApiOperation({
     summary: 'طلبات في نفس مدينة الفني',
-    description: 'استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة',
+    description: 'استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة مع إمكانية الفلترة حسب الحالة',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.',
+    type: [String],
+    isArray: true,
+    example: ['OPEN', 'OFFERS_COLLECTING'],
   })
   @ApiResponse({
     status: 200,
@@ -128,8 +148,8 @@ export class EngineerServicesController {
       },
     },
   })
-  async listInCity(@Req() req: RequestWithUser) {
-    const data = await this.svc.listRequestsInEngineerCity(req.user!.sub);
+  async listInCity(@Req() req: RequestWithUser, @Query('status') status?: string | string[]) {
+    const data = await this.svc.listRequestsInEngineerCity(req.user!.sub, status);
     return { data };
   }
 
@@ -137,7 +157,15 @@ export class EngineerServicesController {
   @RequireServicePermission(ServicePermission.ENGINEER)
   @ApiOperation({
     summary: 'جميع طلبات الخدمات المتاحة',
-    description: 'استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة',
+    description: 'استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة مع إمكانية الفلترة حسب الحالة',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.',
+    type: [String],
+    isArray: true,
+    example: ['OPEN', 'OFFERS_COLLECTING'],
   })
   @ApiResponse({
     status: 200,
@@ -161,8 +189,8 @@ export class EngineerServicesController {
       },
     },
   })
-  async listAll() {
-    const data = await this.svc.listAllAvailableRequests();
+  async listAll(@Query('status') status?: string | string[]) {
+    const data = await this.svc.listAllAvailableRequests(status);
     return { data };
   }
 
@@ -343,7 +371,15 @@ export class EngineerServicesController {
   @Get('offers/my')
   @ApiOperation({
     summary: 'عروضي',
-    description: 'استرداد جميع العروض المقدمة من قبل الفني',
+    description: 'استرداد جميع العروض المقدمة من قبل الفني مع إمكانية الفلترة حسب الحالة',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'فلترة حسب حالة العرض (OFFERED, ACCEPTED, REJECTED, CANCELLED, OUTBID, EXPIRED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: جميع العروض.',
+    type: [String],
+    isArray: true,
+    example: ['OFFERED', 'ACCEPTED'],
   })
   @ApiResponse({
     status: 200,
@@ -378,8 +414,8 @@ export class EngineerServicesController {
     status: 401,
     description: 'غير مصرح لك بالوصول',
   })
-  async myOffers(@Req() req: RequestWithUser) {
-    const data = await this.svc.myOffers(req.user!.sub);
+  async myOffers(@Req() req: RequestWithUser, @Query('status') status?: string | string[]) {
+    const data = await this.svc.myOffers(req.user!.sub, status);
     return { data };
   }
 

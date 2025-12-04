@@ -326,6 +326,9 @@ const SystemSettingsPage = lazy(() => import('@/features/system-settings/pages/S
 // Policies
 const PoliciesManagementPage = lazy(() => import('@/features/policies/pages/PoliciesManagementPage').then((m) => ({ default: m.PoliciesManagementPage })));
 
+// About
+const AboutManagementPage = lazy(() => import('@/features/about/pages/AboutManagementPage').then((m) => ({ default: m.AboutManagementPage })));
+
 // Addresses Admin
 const AddressesDashboardPage = lazy(() => import('@/features/addresses/pages/AddressesDashboardPage').then((m) => ({ default: m.AddressesDashboardPage })));
 
@@ -751,6 +754,10 @@ export const routes: RouteObject[] = [
       {
         path: 'policies',
         element: <PoliciesManagementPage />,
+      },
+      {
+        path: 'about',
+        element: <AboutManagementPage />,
       },
 
       // ===========================================

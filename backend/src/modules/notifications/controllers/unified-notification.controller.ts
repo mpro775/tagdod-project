@@ -41,7 +41,11 @@ import {
 } from '@nestjs/swagger';
 import { NotificationService } from '../services/notification.service';
 import { NotificationTemplateService } from '../services/notification-template.service';
+import { NotificationPreferenceService } from '../services/notification-preference.service';
+import { FrequencyLimitService } from '../services/frequency-limit.service';
+import { NotificationAnalyticsService } from '../services/notification-analytics.service';
 import { NotificationTemplate } from '../schemas/notification-template.schema';
+import { AnalyticsFilterDto } from '../dto/analytics.dto';
 import {
   CreateNotificationDto,
   UpdateNotificationDto,
@@ -67,6 +71,9 @@ export class UnifiedNotificationController {
   constructor(
     private readonly notificationService: NotificationService,
     private readonly templateService: NotificationTemplateService,
+    private readonly preferenceService: NotificationPreferenceService,
+    private readonly frequencyLimitService: FrequencyLimitService,
+    private readonly analyticsService: NotificationAnalyticsService,
   ) { }
 
   // ===== User Endpoints =====
@@ -1249,6 +1256,153 @@ export class UnifiedNotificationController {
       notifications: result.notifications,
       total: result.meta.total,
       meta: result.meta,
+    };
+  }
+
+  // ===== Frequency Limit Admin Endpoints =====
+
+  @Get('admin/users/:userId/frequency-stats')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: إحصائيات تكرار الإشعارات للمستخدم',
+    description: 'استرداد إحصائيات تكرار الإشعارات لمستخدم محدد (للإداريين فقط)',
+  })
+  @ApiParam({ name: 'userId', description: 'معرف المستخدم' })
+  @ApiResponse({ status: 200, description: 'Frequency stats retrieved successfully' })
+  async adminGetUserFrequencyStats(@Param('userId') userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid userId format');
+    }
+
+    const status = await this.preferenceService.getUserFrequencyStatus(userId);
+    const history = await this.frequencyLimitService.getFrequencyStats(userId, 30);
+
+    return {
+      success: true,
+      data: {
+        currentStatus: status,
+        history,
+      },
+    };
+  }
+
+  @Post('admin/users/:userId/frequency-reset')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: إعادة تعيين عدادات التكرار للمستخدم',
+    description: 'إعادة تعيين جميع عدادات تكرار الإشعارات لمستخدم محدد (للإداريين فقط)',
+  })
+  @ApiParam({ name: 'userId', description: 'معرف المستخدم' })
+  @ApiResponse({ status: 200, description: 'Frequency counters reset successfully' })
+  async adminResetUserFrequencyCounters(@Param('userId') userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid userId format');
+    }
+
+    await this.preferenceService.resetUserFrequencyCounters(userId);
+
+    return {
+      success: true,
+      message: 'Frequency counters reset successfully',
+    };
+  }
+
+  @Get('admin/queue-stats')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: إحصائيات الـ Queue',
+    description: 'استرداد إحصائيات طوابير الإشعارات (للإداريين فقط)',
+  })
+  @ApiResponse({ status: 200, description: 'Queue stats retrieved successfully' })
+  async adminGetQueueStats() {
+    const stats = await this.notificationService.getQueueStats();
+
+    return {
+      success: true,
+      data: stats,
+    };
+  }
+
+  // ===== Analytics Admin Endpoints =====
+
+  @Get('admin/analytics/ctr')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: معدل النقر (CTR)',
+    description: 'استرداد إحصائيات معدل النقر للإشعارات (للإداريين فقط)',
+  })
+  @ApiQuery({ type: AnalyticsFilterDto })
+  @ApiResponse({ status: 200, description: 'CTR stats retrieved successfully' })
+  async adminGetCTR(@Query() filter: AnalyticsFilterDto) {
+    const ctr = await this.analyticsService.getClickThroughRate(filter);
+
+    return {
+      success: true,
+      data: ctr,
+    };
+  }
+
+  @Get('admin/analytics/conversion')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: معدل التحويل',
+    description: 'استرداد إحصائيات معدل التحويل للإشعارات (للإداريين فقط)',
+  })
+  @ApiQuery({ type: AnalyticsFilterDto })
+  @ApiResponse({ status: 200, description: 'Conversion stats retrieved successfully' })
+  async adminGetConversionRate(@Query() filter: AnalyticsFilterDto) {
+    const conversion = await this.analyticsService.getConversionRate(filter);
+
+    return {
+      success: true,
+      data: conversion,
+    };
+  }
+
+  @Get('admin/analytics/performance')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: أداء الإشعارات حسب النوع',
+    description: 'استرداد إحصائيات أداء الإشعارات حسب النوع (للإداريين فقط)',
+  })
+  @ApiQuery({ type: AnalyticsFilterDto })
+  @ApiResponse({ status: 200, description: 'Performance stats retrieved successfully' })
+  async adminGetPerformanceByType(@Query() filter: AnalyticsFilterDto) {
+    const [byType, byChannel] = await Promise.all([
+      this.analyticsService.getPerformanceByType(filter),
+      this.analyticsService.getPerformanceByChannel(filter),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        byType,
+        byChannel,
+      },
+    };
+  }
+
+  @Get('admin/analytics/advanced')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: تحليلات متقدمة',
+    description: 'استرداد تحليلات متقدمة شاملة للإشعارات (للإداريين فقط)',
+  })
+  @ApiQuery({ type: AnalyticsFilterDto })
+  @ApiResponse({ status: 200, description: 'Advanced analytics retrieved successfully' })
+  async adminGetAdvancedAnalytics(@Query() filter: AnalyticsFilterDto) {
+    const analytics = await this.analyticsService.getAdvancedStats(filter);
+
+    return {
+      success: true,
+      data: analytics,
     };
   }
 }

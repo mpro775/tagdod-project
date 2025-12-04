@@ -522,11 +522,23 @@ Future<bool> deleteOffer(String offerId) async {
 
 ### 6. عروضي
 
-يسترجع عروض المهندس.
+يسترجع عروض المهندس مع إمكانية الفلترة حسب الحالة.
 
 **Method:** `GET`  
 **Endpoint:** `/services/engineer/offers/my`  
 **Auth Required:** ✅ نعم (Engineer)
+
+#### Query Parameters
+
+| المعامل  | النوع                  | مطلوب | الوصف                                                                                                                                     |
+| -------- | ---------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `status` | `string` أو `string[]` | ❌    | فلترة حسب حالة العرض (OFFERED, ACCEPTED, REJECTED, CANCELLED, OUTBID, EXPIRED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: جميع العروض. |
+
+#### أمثلة على الاستخدام
+
+- `GET /services/engineer/offers/my` - جميع العروض
+- `GET /services/engineer/offers/my?status=OFFERED` - العروض المقدمة فقط
+- `GET /services/engineer/offers/my?status=ACCEPTED&status=OUTBID` - العروض المقبولة والملغاة بسبب قبول عرض آخر
 
 #### Response - نجاح
 
@@ -560,8 +572,16 @@ Future<bool> deleteOffer(String offerId) async {
 #### كود Flutter
 
 ```dart
-Future<List<EngineerOffer>> getMyOffers() async {
-  final response = await _dio.get('/services/engineer/offers/my');
+Future<List<EngineerOffer>> getMyOffers({List<String>? status}) async {
+  final queryParameters = <String, dynamic>{};
+  if (status != null && status.isNotEmpty) {
+    queryParameters['status'] = status;
+  }
+
+  final response = await _dio.get(
+    '/services/engineer/offers/my',
+    queryParameters: queryParameters,
+  );
 
   final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
     response.data,
@@ -577,6 +597,19 @@ Future<List<EngineerOffer>> getMyOffers() async {
   }
 }
 ```
+
+> ✅ **مثال على الاستخدام:**
+>
+> ```dart
+> // جلب جميع العروض
+> final allOffers = await getMyOffers();
+>
+> // جلب العروض المقدمة فقط
+> final offeredOffers = await getMyOffers(status: ['OFFERED']);
+>
+> // جلب العروض المقبولة والملغاة
+> final acceptedAndOutbid = await getMyOffers(status: ['ACCEPTED', 'OUTBID']);
+> ```
 
 ---
 

@@ -419,4 +419,143 @@ export const notificationsApi = {
     );
     return response.data.data || response.data;
   },
+
+  // ===== Advanced Analytics =====
+  getAdvancedAnalytics: async (params: {
+    startDate?: string;
+    endDate?: string;
+    type?: string;
+    channel?: string;
+    campaign?: string;
+  } = {}): Promise<{
+    overview: {
+      totalSent: number;
+      totalDelivered: number;
+      totalOpened: number;
+      totalClicked: number;
+      totalConverted: number;
+      overallDeliveryRate: number;
+      overallOpenRate: number;
+      overallCTR: number;
+      overallConversionRate: number;
+    };
+    topPerformingTypes: Array<{
+      category: string;
+      sent: number;
+      delivered: number;
+      opened: number;
+      clicked: number;
+      converted: number;
+      deliveryRate: number;
+      openRate: number;
+      ctr: number;
+      conversionRate: number;
+    }>;
+    recentTrend: Array<{
+      period: string;
+      sent: number;
+      opened: number;
+      clicked: number;
+      openRate: number;
+      clickRate: number;
+      ctr: number;
+    }>;
+  }> => {
+    const response = await apiClient.get<ApiResponse<any>>(
+      '/notifications/admin/analytics/advanced',
+      { params }
+    );
+    return response.data.data;
+  },
+
+  getCTR: async (params: {
+    startDate?: string;
+    endDate?: string;
+    type?: string;
+    channel?: string;
+  } = {}): Promise<Array<{
+    period: string;
+    sent: number;
+    opened: number;
+    clicked: number;
+    openRate: number;
+    clickRate: number;
+    ctr: number;
+  }>> => {
+    const response = await apiClient.get<ApiResponse<any>>(
+      '/notifications/admin/analytics/ctr',
+      { params }
+    );
+    return response.data.data;
+  },
+
+  getConversionRate: async (params: {
+    startDate?: string;
+    endDate?: string;
+    type?: string;
+    channel?: string;
+  } = {}): Promise<Array<{
+    period: string;
+    sent: number;
+    converted: number;
+    conversionRate: number;
+    totalValue: number;
+    avgValue: number;
+  }>> => {
+    const response = await apiClient.get<ApiResponse<any>>(
+      '/notifications/admin/analytics/conversion',
+      { params }
+    );
+    return response.data.data;
+  },
+
+  getPerformance: async (params: {
+    startDate?: string;
+    endDate?: string;
+    type?: string;
+    channel?: string;
+  } = {}): Promise<{
+    byType: Array<{
+      category: string;
+      sent: number;
+      delivered: number;
+      opened: number;
+      clicked: number;
+      converted: number;
+      deliveryRate: number;
+      openRate: number;
+      ctr: number;
+      conversionRate: number;
+    }>;
+    byChannel: Array<{
+      category: string;
+      sent: number;
+      delivered: number;
+      opened: number;
+      clicked: number;
+      converted: number;
+      deliveryRate: number;
+      openRate: number;
+      ctr: number;
+      conversionRate: number;
+    }>;
+  }> => {
+    const response = await apiClient.get<ApiResponse<any>>(
+      '/notifications/admin/analytics/performance',
+      { params }
+    );
+    return response.data.data;
+  },
+
+  getQueueStats: async (): Promise<{
+    send: { waiting: number; active: number; completed: number; failed: number; delayed: number };
+    scheduled: { waiting: number; active: number; completed: number; failed: number; delayed: number };
+    retry: { waiting: number; active: number; completed: number; failed: number; delayed: number };
+    totalPending: number;
+  }> => {
+    const response = await apiClient.get<ApiResponse<any>>(
+      '/notifications/admin/queue-stats'
+    );
+    return response.data.data;
+  },
 };

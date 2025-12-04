@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -6,18 +6,12 @@ import {
   NotificationPreferenceDocument,
 } from '../schemas/notification-preference.schema';
 import { UpdatePreferenceDto } from '../dto/unified-notification.dto';
-import { NotificationCategory } from '../enums/notification.enums';
+import { NotificationCategory, NotificationChannel } from '../enums/notification.enums';
 import { 
   NotificationException,
   ErrorCode 
 } from '../../../shared/exceptions';
-
-interface FrequencyLimits {
-  maxNotificationsPerDay?: number;
-  maxEmailsPerWeek?: number;
-  maxSmsPerMonth?: number;
-  maxPushPerHour?: number;
-}
+import { FrequencyLimitService, FrequencyLimits } from './frequency-limit.service';
 
 @Injectable()
 export class NotificationPreferenceService {
@@ -26,6 +20,8 @@ export class NotificationPreferenceService {
   constructor(
     @InjectModel(NotificationPreference.name)
     private preferenceModel: Model<NotificationPreferenceDocument>,
+    @Inject(forwardRef(() => FrequencyLimitService))
+    private frequencyLimitService: FrequencyLimitService,
   ) {}
 
   /**
@@ -297,19 +293,57 @@ export class NotificationPreferenceService {
   }
 
   /**
-   * التحقق من حدود التكرار
+   * التحقق من حدود التكرار باستخدام FrequencyLimitService
    */
   private async checkFrequencyLimits(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     userId: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     channel: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     limits: FrequencyLimits,
   ): Promise<{ canSend: boolean; reason?: string }> {
-    // هذا يتطلب تنفيذ أكثر تعقيداً مع تتبع الإحصائيات
-    // للآن، سنعود بـ true
-    return { canSend: true };
+    return this.frequencyLimitService.checkLimit(
+      userId,
+      channel as NotificationChannel,
+      limits,
+    );
+  }
+
+  /**
+   * الحصول على حالة تكرار المستخدم
+   */
+  async getUserFrequencyStatus(userId: string): Promise<{
+    daily: { count: number; limit: number; remaining: number };
+    push: { count: number; limit: number; remaining: number; resetsIn: number };
+    email: { count: number; limit: number; remaining: number; resetsIn: number };
+    sms: { count: number; limit: number; remaining: number; resetsIn: number };
+  }> {
+    const preferences = await this.getUserPreferences(userId);
+    const limits = preferences.frequencyLimits || {};
+    const status = await this.frequencyLimitService.getUserLimitStatus(userId, limits);
+    return {
+      daily: status.daily,
+      push: status.push,
+      email: status.email,
+      sms: status.sms,
+    };
+  }
+
+  /**
+   * زيادة عداد التكرار بعد إرسال الإشعار
+   */
+  async incrementFrequencyCounter(
+    userId: string,
+    channel: NotificationChannel,
+    templateKey?: string,
+  ): Promise<void> {
+    await this.frequencyLimitService.incrementCounter(userId, channel, templateKey);
+  }
+
+  /**
+   * إعادة تعيين عدادات المستخدم (للمسؤول)
+   */
+  async resetUserFrequencyCounters(userId: string): Promise<void> {
+    await this.frequencyLimitService.resetUserCounters(userId);
+    this.logger.log(`Frequency counters reset for user ${userId}`);
   }
 
   /**

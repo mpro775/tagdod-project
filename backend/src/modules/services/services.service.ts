@@ -1247,7 +1247,13 @@ export class ServicesService {
   }
 
   // ---- Engineer flows
-  async nearby(engineerUserId: string, lat: number, lng: number, radiusKm: number) {
+  async nearby(
+    engineerUserId: string,
+    lat: number,
+    lng: number,
+    radiusKm: number,
+    status?: string | string[],
+  ) {
     const meters = radiusKm * 1000;
 
     // جلب مدينة المهندس
@@ -1258,48 +1264,141 @@ export class ServicesService {
       `Engineer ${engineerUserId} from city: ${engineerCity} searching for nearby requests`,
     );
 
-    const list = await this.requests
-      .find({
-        status: { $in: ['OPEN', 'OFFERS_COLLECTING'] },
-        engineerId: null,
-        city: engineerCity, // فقط الطلبات من نفس المدينة
-        userId: { $ne: new Types.ObjectId(engineerUserId) }, // منع المهندس من رؤية طلباته الخاصة
-        location: {
-          $near: {
-            $geometry: { type: 'Point', coordinates: [lng, lat] },
-            $maxDistance: meters,
-          },
+    // بناء فلتر الحالة
+    // بدون فلترة: السلوك الافتراضي (OPEN, OFFERS_COLLECTING)
+    // مع فلترة: تطبيق الفلترة على الحالات المحددة
+    let statusFilter: string[] = ['OPEN', 'OFFERS_COLLECTING'];
+    if (status) {
+      const statuses = Array.isArray(status) ? status : [status];
+      if (statuses.length > 0) {
+        statusFilter = statuses;
+      }
+    }
+
+    const query: any = {
+      city: engineerCity, // فقط الطلبات من نفس المدينة
+      userId: { $ne: new Types.ObjectId(engineerUserId) }, // منع المهندس من رؤية طلباته الخاصة
+      location: {
+        $near: {
+          $geometry: { type: 'Point', coordinates: [lng, lat] },
+          $maxDistance: meters,
         },
-      })
-      .limit(100)
-      .lean();
+      },
+    };
+
+    // إذا كانت الفلترة تشمل فقط OPEN و OFFERS_COLLECTING، نضيف شرط engineerId: null
+    // إذا كانت الفلترة تشمل ASSIGNED أو COMPLETED أو RATED فقط، نضيف شرط engineerId: engineerUserId
+    // إذا كانت الفلترة تشمل كلا النوعين، نستخدم $or للجمع بين الحالتين
+    const hasAvailableStatuses = statusFilter.some((s) => ['OPEN', 'OFFERS_COLLECTING'].includes(s));
+    const hasAssignedStatuses = statusFilter.some((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s));
+
+    if (hasAvailableStatuses && !hasAssignedStatuses) {
+      // فقط حالات متاحة
+      query.status = { $in: statusFilter };
+      query.engineerId = null;
+    } else if (hasAssignedStatuses && !hasAvailableStatuses) {
+      // فقط حالات مخصصة
+      query.status = { $in: statusFilter };
+      query.engineerId = new Types.ObjectId(engineerUserId);
+    } else if (hasAvailableStatuses && hasAssignedStatuses) {
+      // كلا النوعين - نستخدم $or
+      query.$or = [
+        {
+          engineerId: null,
+          status: { $in: statusFilter.filter((s) => ['OPEN', 'OFFERS_COLLECTING'].includes(s)) },
+        },
+        {
+          engineerId: new Types.ObjectId(engineerUserId),
+          status: { $in: statusFilter.filter((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s)) },
+        },
+      ];
+    } else {
+      // حالات أخرى (مثل CANCELLED)
+      query.status = { $in: statusFilter };
+    }
+
+    const list = await this.requests.find(query).limit(100).lean();
 
     this.logger.log(`Found ${list.length} nearby requests in city ${engineerCity}`);
     return list;
   }
 
-  async listRequestsInEngineerCity(engineerUserId: string) {
+  async listRequestsInEngineerCity(engineerUserId: string, status?: string | string[]) {
     const engineer = await this.userModel.findById(engineerUserId).select('city').lean();
     const engineerCity = engineer?.city || 'صنعاء';
 
-    return this.requests
-      .find({
-        status: { $in: ['OPEN', 'OFFERS_COLLECTING'] },
-        engineerId: null,
-        city: engineerCity,
-      })
-      .sort({ createdAt: -1 })
-      .lean();
+    // بناء فلتر الحالة
+    // بدون فلترة: السلوك الافتراضي (OPEN, OFFERS_COLLECTING)
+    // مع فلترة: تطبيق الفلترة على الحالات المحددة
+    let statusFilter: string[] = ['OPEN', 'OFFERS_COLLECTING'];
+    if (status) {
+      const statuses = Array.isArray(status) ? status : [status];
+      if (statuses.length > 0) {
+        statusFilter = statuses;
+      }
+    }
+
+    const query: any = {
+      status: { $in: statusFilter },
+      city: engineerCity,
+    };
+
+    // إذا كانت الفلترة تشمل فقط OPEN و OFFERS_COLLECTING، نضيف شرط engineerId: null
+    // إذا كانت الفلترة تشمل ASSIGNED أو COMPLETED أو RATED فقط، نضيف شرط engineerId: engineerUserId
+    // إذا كانت الفلترة تشمل كلا النوعين، نستخدم $or للجمع بين الحالتين
+    const hasAvailableStatuses = statusFilter.some((s) => ['OPEN', 'OFFERS_COLLECTING'].includes(s));
+    const hasAssignedStatuses = statusFilter.some((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s));
+
+    if (hasAvailableStatuses && !hasAssignedStatuses) {
+      // فقط حالات متاحة
+      query.engineerId = null;
+    } else if (hasAssignedStatuses && !hasAvailableStatuses) {
+      // فقط حالات مخصصة
+      query.engineerId = new Types.ObjectId(engineerUserId);
+    } else if (hasAvailableStatuses && hasAssignedStatuses) {
+      // كلا النوعين - نستخدم $or
+      query.$or = [
+        { engineerId: null, status: { $in: statusFilter.filter((s) => ['OPEN', 'OFFERS_COLLECTING'].includes(s)) } },
+        {
+          engineerId: new Types.ObjectId(engineerUserId),
+          status: { $in: statusFilter.filter((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s)) },
+        },
+      ];
+      // نزيل status من query الرئيسي لأننا استخدمناها في $or
+      delete query.status;
+    }
+
+    return this.requests.find(query).sort({ createdAt: -1 }).lean();
   }
 
-  async listAllAvailableRequests() {
-    return this.requests
-      .find({
-        status: { $in: ['OPEN', 'OFFERS_COLLECTING'] },
-        engineerId: null,
-      })
-      .sort({ createdAt: -1 })
-      .lean();
+  async listAllAvailableRequests(status?: string | string[]) {
+    // بناء فلتر الحالة
+    // بدون فلترة: السلوك الافتراضي (OPEN, OFFERS_COLLECTING)
+    // مع فلترة: تطبيق الفلترة على الحالات المحددة
+    let statusFilter: string[] = ['OPEN', 'OFFERS_COLLECTING'];
+    if (status) {
+      const statuses = Array.isArray(status) ? status : [status];
+      if (statuses.length > 0) {
+        statusFilter = statuses;
+      }
+    }
+
+    const query: any = {
+      status: { $in: statusFilter },
+    };
+
+    // إذا كانت الفلترة تشمل فقط OPEN و OFFERS_COLLECTING، نضيف شرط engineerId: null
+    // إذا كانت الفلترة تشمل ASSIGNED أو COMPLETED أو RATED، نضيف شرط engineerId: engineerUserId
+    // لكن في listAllAvailableRequests، لا نعرف engineerUserId، لذا نزيل شرط engineerId فقط إذا كانت الفلترة تشمل حالات متاحة
+    const hasOnlyAvailableStatuses =
+      statusFilter.length === 2 && statusFilter.includes('OPEN') && statusFilter.includes('OFFERS_COLLECTING');
+
+    if (hasOnlyAvailableStatuses) {
+      query.engineerId = null;
+    }
+    // إذا كانت الفلترة تشمل حالات أخرى، لا نضيف شرط engineerId للسماح برؤية جميع الطلبات
+
+    return this.requests.find(query).sort({ createdAt: -1 }).lean();
   }
 
   // Helper: حساب المسافة بين نقطتين (Haversine formula)
@@ -1538,12 +1637,22 @@ export class ServicesService {
   }
 
   // جلب عروض المهندس
-  async myOffers(engineerUserId: string) {
-    return this.offers
-      .find({ engineerId: new Types.ObjectId(engineerUserId) })
-      .populate('requestId')
-      .sort({ createdAt: -1 })
-      .lean();
+  async myOffers(engineerUserId: string, status?: string | string[]) {
+    const query: any = {
+      engineerId: new Types.ObjectId(engineerUserId),
+    };
+
+    // بناء فلتر الحالة
+    // بدون فلترة: جميع العروض
+    // مع فلترة: تطبيق الفلترة على الحالات المحددة
+    if (status) {
+      const statuses = Array.isArray(status) ? status : [status];
+      if (statuses.length > 0) {
+        query.status = { $in: statuses };
+      }
+    }
+
+    return this.offers.find(query).populate('requestId').sort({ createdAt: -1 }).lean();
   }
 
   // جلب تفاصيل الطلب للمهندس

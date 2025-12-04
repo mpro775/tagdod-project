@@ -3443,9 +3443,352 @@
             },
             "description": "استرداد سجل مفصل لجميع الإشعارات مع تفاصيل الإرسال (للإداريين فقط)"
           }
+        },
+        {
+          "name": "الإدارة: إحصائيات تكرار الإشعارات للمستخدم",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/users/{userId}/frequency-stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "users",
+                "{userId}",
+                "frequency-stats"
+              ]
+            },
+            "description": "استرداد إحصائيات تكرار الإشعارات لمستخدم محدد (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: إعادة تعيين عدادات التكرار للمستخدم",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/users/{userId}/frequency-reset",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "users",
+                "{userId}",
+                "frequency-reset"
+              ]
+            },
+            "description": "إعادة تعيين جميع عدادات تكرار الإشعارات لمستخدم محدد (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: إحصائيات الـ Queue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/queue-stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "queue-stats"
+              ]
+            },
+            "description": "استرداد إحصائيات طوابير الإشعارات (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: معدل النقر (CTR)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/analytics/ctr",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "analytics",
+                "ctr"
+              ]
+            },
+            "description": "استرداد إحصائيات معدل النقر للإشعارات (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: معدل التحويل",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/analytics/conversion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "analytics",
+                "conversion"
+              ]
+            },
+            "description": "استرداد إحصائيات معدل التحويل للإشعارات (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: أداء الإشعارات حسب النوع",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/analytics/performance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "analytics",
+                "performance"
+              ]
+            },
+            "description": "استرداد إحصائيات أداء الإشعارات حسب النوع (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: تحليلات متقدمة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/analytics/advanced",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "analytics",
+                "advanced"
+              ]
+            },
+            "description": "استرداد تحليلات متقدمة شاملة للإشعارات (للإداريين فقط)"
+          }
         }
       ],
       "description": "Endpoints for الإشعارات functionality"
+    },
+    {
+      "name": "Notification Tracking",
+      "item": [
+        {
+          "name": "Track notification open",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/track/{trackingId}/open",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "track",
+                "{trackingId}",
+                "open"
+              ]
+            },
+            "description": "Track when a notification is opened. Returns a tracking pixel for email notifications."
+          }
+        },
+        {
+          "name": "Track notification click",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/track/{trackingId}/click",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "track",
+                "{trackingId}",
+                "click"
+              ]
+            },
+            "description": "Track when a notification link is clicked and redirect to target URL."
+          }
+        },
+        {
+          "name": "Track notification click (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/track/{trackingId}/click",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "track",
+                "{trackingId}",
+                "click"
+              ]
+            },
+            "description": "Track notification click from mobile apps or web SDK."
+          }
+        },
+        {
+          "name": "Track conversion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/track/{trackingId}/convert",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "track",
+                "{trackingId}",
+                "convert"
+              ]
+            },
+            "description": "Track when a user completes a conversion action from a notification."
+          }
+        },
+        {
+          "name": "Track notification dismissal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/track/{trackingId}/dismiss",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "track",
+                "{trackingId}",
+                "dismiss"
+              ]
+            },
+            "description": "Track when a notification is dismissed by the user."
+          }
+        }
+      ],
+      "description": "Endpoints for Notification Tracking functionality"
     },
     {
       "name": "أسعار-الصرف",
@@ -12291,7 +12634,7 @@
                 "nearby"
               ]
             },
-            "description": "البحث عن طلبات الخدمات القريبة من موقع الفني الحالي"
+            "description": "البحث عن طلبات الخدمات القريبة من موقع الفني الحالي مع إمكانية الفلترة حسب الحالة"
           }
         },
         {
@@ -12319,7 +12662,7 @@
                 "city"
               ]
             },
-            "description": "استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة"
+            "description": "استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة مع إمكانية الفلترة حسب الحالة"
           }
         },
         {
@@ -12347,7 +12690,7 @@
                 "all"
               ]
             },
-            "description": "استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة"
+            "description": "استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة مع إمكانية الفلترة حسب الحالة"
           }
         },
         {
@@ -12487,7 +12830,7 @@
                 "my"
               ]
             },
-            "description": "استرداد جميع العروض المقدمة من قبل الفني"
+            "description": "استرداد جميع العروض المقدمة من قبل الفني مع إمكانية الفلترة حسب الحالة"
           }
         },
         {
@@ -14365,6 +14708,149 @@
         }
       ],
       "description": "Endpoints for السياسات-العامة functionality"
+    },
+    {
+      "name": "إدارة-من-نحن",
+      "item": [
+        {
+          "name": "جلب صفحة من نحن",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/about",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "about"
+              ]
+            },
+            "description": "الحصول على بيانات صفحة من نحن (للأدمن)"
+          }
+        },
+        {
+          "name": "إنشاء صفحة من نحن",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/about",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "about"
+              ]
+            },
+            "description": "إنشاء صفحة من نحن جديدة (مرة واحدة فقط)"
+          }
+        },
+        {
+          "name": "تحديث صفحة من نحن",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/about",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "about"
+              ]
+            },
+            "description": "تحديث بيانات صفحة من نحن"
+          }
+        },
+        {
+          "name": "تفعيل/تعطيل صفحة من نحن",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/about/toggle",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "about",
+                "toggle"
+              ]
+            },
+            "description": "تفعيل أو تعطيل عرض صفحة من نحن للعامة"
+          }
+        }
+      ],
+      "description": "Endpoints for إدارة-من-نحن functionality"
+    },
+    {
+      "name": "من-نحن-العام",
+      "item": [
+        {
+          "name": "جلب صفحة من نحن",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/about/public",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "about",
+                "public"
+              ]
+            },
+            "description": "الحصول على بيانات صفحة من نحن النشطة (عام - بدون مصادقة)"
+          }
+        }
+      ],
+      "description": "Endpoints for من-نحن-العام functionality"
     },
     {
       "name": "General",

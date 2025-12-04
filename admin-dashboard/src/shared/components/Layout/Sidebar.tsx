@@ -45,6 +45,7 @@ import {
   Policy,
   DeleteForever,
   VerifiedUser,
+  Info,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -480,6 +481,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             label: t('navigation.policies', 'السياسات'),
             icon: <Policy />,
             path: '/policies',
+          },
+          {
+            id: 'about',
+            label: t('navigation.about', 'من نحن'),
+            icon: <Info />,
+            path: '/about',
           },
         ],
       },

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -35,9 +35,10 @@ import {
   isRoleAllowedForType,
 } from '../config/notification-rules';
 import { NotificationChannelConfigService } from './notification-channel-config.service';
+import { NotificationQueueService, NotificationJobData } from '../queue/notification-queue.service';
 
 @Injectable()
-export class NotificationService {
+export class NotificationService implements OnModuleInit {
   private readonly logger = new Logger(NotificationService.name);
 
   constructor(
@@ -50,9 +51,39 @@ export class NotificationService {
     private readonly webSocketService: WebSocketService,
     private readonly pushNotificationAdapter: PushNotificationAdapter,
     private readonly channelConfigService: NotificationChannelConfigService,
+    private readonly queueService: NotificationQueueService,
   ) {}
 
   // ===== Helper Methods =====
+
+  /**
+   * إنشاء بيانات Job للـ Queue
+   */
+  private createJobData(
+    notification: UnifiedNotificationDocument,
+    recipientId?: string,
+  ): NotificationJobData {
+    return {
+      notificationId: notification._id.toString(),
+      recipientId: recipientId || notification.recipientId?.toString(),
+      channel: notification.channel,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      messageEn: notification.messageEn,
+      data: notification.data,
+      priority: notification.priority,
+      actionUrl: (notification as any).actionUrl,
+    };
+  }
+
+  /**
+   * التحقق مما إذا كان الإشعار مجدول للمستقبل
+   */
+  private isScheduledForFuture(scheduledFor?: Date): boolean {
+    if (!scheduledFor) return false;
+    return scheduledFor.getTime() > Date.now() + 60000; // أكثر من دقيقة في المستقبل
+  }
 
   /**
    * بناء actionUrl من navigationType و navigationTarget
@@ -61,7 +92,11 @@ export class NotificationService {
     navigationType?: NotificationNavigationType,
     navigationTarget?: string,
   ): string | undefined {
-    if (!navigationType || navigationType === NotificationNavigationType.NONE || !navigationTarget) {
+    if (
+      !navigationType ||
+      navigationType === NotificationNavigationType.NONE ||
+      !navigationTarget
+    ) {
       return undefined;
     }
 
@@ -175,14 +210,29 @@ export class NotificationService {
         `Notification created: ${savedNotification._id} (${dto.type}) for roles [${targetRoles.join(', ')}]`,
       );
 
+      // التحقق من الإشعارات المجدولة - استخدام Queue
+      if (this.isScheduledForFuture(dto.scheduledFor)) {
+        const jobData = this.createJobData(savedNotification, dto.recipientId);
+        await this.queueService.scheduleNotification(jobData, dto.scheduledFor!);
+        this.logger.log(
+          `Notification ${savedNotification._id} scheduled for ${dto.scheduledFor!.toISOString()}`,
+        );
+        // تحديث الحالة إلى QUEUED
+        await this.notificationModel.updateOne(
+          { _id: savedNotification._id },
+          { $set: { status: NotificationStatus.QUEUED } },
+        );
+        return savedNotification;
+      }
+
       // إرسال الإشعار حسب القناة
       if (dto.recipientId) {
         if (channel === NotificationChannel.IN_APP) {
           // IN_APP: التحقق من حالة الاتصال أولاً
           const isUserOnline = this.webSocketService.isUserOnline(dto.recipientId);
-          
+
           if (isUserOnline) {
-            // المستخدم متصل - إرسال عبر WebSocket
+            // المستخدم متصل - إرسال عبر WebSocket (متزامن للـ real-time)
             const sent = this.webSocketService.sendToUser(
               dto.recipientId,
               'notification:new',
@@ -198,44 +248,43 @@ export class NotificationService {
                 createdAt: savedNotification.createdAt,
                 isRead: false,
               },
-              '/notifications', // ✅ تمرير namespace
+              '/notifications',
             );
-            
+
             if (sent) {
               this.logger.log(
                 `IN_APP notification sent via WebSocket to online user: ${dto.recipientId}`,
               );
-            } else {
-              // فشل الإرسال عبر WebSocket - إرسال Push كبديل
-              this.logger.log(
-                `User ${dto.recipientId} was online but WebSocket send failed, falling back to push notification`,
+              // تحديث الحالة إلى SENT
+              await this.notificationModel.updateOne(
+                { _id: savedNotification._id },
+                { $set: { status: NotificationStatus.SENT, sentAt: new Date() } },
               );
-              this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
-                this.logger.error(
-                  `Failed to send push notification fallback: ${error instanceof Error ? error.message : String(error)}`,
-                );
-              });
+            } else {
+              // فشل الإرسال عبر WebSocket - إضافة للـ Queue كبديل
+              this.logger.log(
+                `User ${dto.recipientId} was online but WebSocket send failed, queuing push notification`,
+              );
+              const jobData = this.createJobData(savedNotification, dto.recipientId);
+              jobData.channel = NotificationChannel.PUSH;
+              await this.queueService.addToQueue(jobData);
             }
           } else {
-            // المستخدم غير متصل - إرسال Push Notification تلقائياً
+            // المستخدم غير متصل - إضافة للـ Queue (Push)
             this.logger.log(
-              `User ${dto.recipientId} is offline, sending push notification instead of IN_APP`,
+              `User ${dto.recipientId} is offline, queuing push notification instead of IN_APP`,
             );
-            this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
-              this.logger.error(
-                `Failed to send push notification: ${error instanceof Error ? error.message : String(error)}`,
-              );
-            });
+            const jobData = this.createJobData(savedNotification, dto.recipientId);
+            jobData.channel = NotificationChannel.PUSH;
+            await this.queueService.addToQueue(jobData);
           }
         } else if (channel === NotificationChannel.PUSH) {
-          // PUSH: إرسال Push Notification فقط - المستخدم خارج التطبيق
-          this.sendPushNotification(savedNotification, dto.recipientId).catch((error) => {
-            this.logger.error(
-              `Failed to send push notification: ${error instanceof Error ? error.message : String(error)}`,
-            );
-          });
+          // PUSH: إضافة للـ Queue
+          const jobData = this.createJobData(savedNotification, dto.recipientId);
+          await this.queueService.addToQueue(jobData);
+          this.logger.log(`Push notification ${savedNotification._id} added to queue`);
         } else if (channel === NotificationChannel.DASHBOARD) {
-          // DASHBOARD: خاص بالإداريين - حفظ في قاعدة البيانات وإرسال عبر WebSocket
+          // DASHBOARD: خاص بالإداريين - إرسال عبر WebSocket (متزامن)
           this.webSocketService.sendToUser(
             dto.recipientId,
             'notification:new',
@@ -251,10 +300,15 @@ export class NotificationService {
               createdAt: savedNotification.createdAt,
               isRead: false,
             },
-            '/notifications', // ✅ تمرير namespace
+            '/notifications',
           );
           this.logger.log(
             `Dashboard notification created and sent via WebSocket for admin: ${dto.recipientId}`,
+          );
+          // تحديث الحالة إلى SENT
+          await this.notificationModel.updateOne(
+            { _id: savedNotification._id },
+            { $set: { status: NotificationStatus.SENT, sentAt: new Date() } },
           );
         }
       } else if (targetRoles && targetRoles.length > 0) {
@@ -277,6 +331,17 @@ export class NotificationService {
 
           if (rolesToSend.length === 0) {
             this.logger.warn(`No roles to send notification ${dto.type} to (MERCHANT excluded)`);
+            // تحديث حالة الإشعار إلى FAILED لأنه لا يوجد مستلمين
+            await this.notificationModel.updateOne(
+              { _id: savedNotification._id },
+              {
+                $set: {
+                  status: NotificationStatus.FAILED,
+                  errorMessage: 'No target roles available (MERCHANT excluded)',
+                  failedAt: new Date(),
+                },
+              },
+            );
             return savedNotification;
           }
 
@@ -373,6 +438,17 @@ export class NotificationService {
             this.logger.warn(
               `No users found with roles [${rolesToSend.join(', ')}] for notification type ${dto.type}`,
             );
+            // تحديث حالة الإشعار إلى FAILED لأنه لا يوجد مستخدمين بالأدوار المطلوبة
+            await this.notificationModel.updateOne(
+              { _id: savedNotification._id },
+              {
+                $set: {
+                  status: NotificationStatus.FAILED,
+                  errorMessage: `No active users found with roles [${rolesToSend.join(', ')}]`,
+                  failedAt: new Date(),
+                },
+              },
+            );
           }
         }
       }
@@ -405,7 +481,7 @@ export class NotificationService {
   async updateNotification(id: string, dto: UpdateNotificationDto): Promise<UnifiedNotification> {
     // بناء actionUrl من navigationType و navigationTarget إذا كانا محددين
     const updateData: any = { ...dto };
-    
+
     if (dto.navigationType && dto.navigationTarget) {
       const builtActionUrl = this.buildActionUrl(dto.navigationType, dto.navigationTarget);
       if (builtActionUrl) {
@@ -1513,6 +1589,171 @@ export class NotificationService {
     } catch (error) {
       this.logger.error(`❌ Failed to resend notification: ${error}`);
       return false;
+    }
+  }
+
+  // ===== Queue Operations =====
+
+  /**
+   * الحصول على إحصائيات الـ Queue
+   */
+  async getQueueStats(): Promise<{
+    send: { waiting: number; active: number; completed: number; failed: number; delayed: number };
+    scheduled: {
+      waiting: number;
+      active: number;
+      completed: number;
+      failed: number;
+      delayed: number;
+    };
+    retry: { waiting: number; active: number; completed: number; failed: number; delayed: number };
+    totalPending: number;
+  }> {
+    const stats = await this.queueService.getQueueStats();
+    const totalPending = await this.queueService.getPendingCount();
+    return { ...stats, totalPending };
+  }
+
+  /**
+   * إعادة إرسال الإشعارات الفاشلة
+   */
+  async retryFailedNotifications(limit: number = 100): Promise<number> {
+    // ✅ إضافة شرط: فقط الإشعارات التي لها recipientId
+    const failedNotifications = await this.notificationModel
+      .find({
+        status: NotificationStatus.FAILED,
+        retryCount: { $lt: 5 },
+        recipientId: { $exists: true, $ne: null }, // ✅ فقط الإشعارات التي لها recipientId
+      })
+      .limit(limit)
+      .lean();
+
+    let retriedCount = 0;
+    let skippedCount = 0;
+    for (const notification of failedNotifications) {
+      try {
+        // التحقق مرة أخرى من وجود recipientId (للأمان)
+        if (!notification.recipientId) {
+          skippedCount++;
+          continue;
+        }
+
+        const jobData = this.createJobData(notification as any);
+        await this.queueService.retryNotification(jobData, (notification.retryCount || 0) + 1);
+        retriedCount++;
+      } catch (error) {
+        // تحسين معالجة الأخطاء: استخدام debug بدلاً من error للإشعارات بدون recipientId
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('recipientId')) {
+          this.logger.debug(
+            `Skipping retry for notification ${notification._id} - ${errorMessage}`,
+          );
+          skippedCount++;
+        } else {
+          this.logger.error(
+            `Failed to queue retry for notification ${notification._id}: ${errorMessage}`,
+          );
+        }
+      }
+    }
+
+    if (skippedCount > 0) {
+      this.logger.debug(`Skipped ${skippedCount} notifications without recipientId`);
+    }
+    this.logger.log(`Queued ${retriedCount} failed notifications for retry`);
+    return retriedCount;
+  }
+
+  /**
+   * معالجة الإشعارات المجدولة التي حان وقتها
+   */
+  async processScheduledNotifications(): Promise<number> {
+    const now = new Date();
+    const scheduledNotifications = await this.notificationModel
+      .find({
+        status: { $in: [NotificationStatus.PENDING, NotificationStatus.QUEUED] },
+        scheduledFor: { $lte: now },
+      })
+      .limit(100)
+      .lean();
+
+    let processedCount = 0;
+    for (const notification of scheduledNotifications) {
+      try {
+        // التحقق من أنه غير موجود بالفعل في الـ Queue
+        const isQueued = await this.queueService.isQueued(notification._id.toString());
+        if (!isQueued) {
+          const jobData = this.createJobData(notification as any);
+          await this.queueService.addToQueue(jobData);
+          processedCount++;
+        }
+      } catch (error) {
+        this.logger.error(
+          `Failed to process scheduled notification ${notification._id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+
+    if (processedCount > 0) {
+      this.logger.log(`Processed ${processedCount} scheduled notifications`);
+    }
+    return processedCount;
+  }
+
+  /**
+   * تنظيف الإشعارات غير الصالحة (بدون recipientId) عند بدء التشغيل
+   */
+  async cleanupInvalidNotifications(): Promise<number> {
+    const invalidNotifications = await this.notificationModel
+      .find({
+        status: {
+          $in: [NotificationStatus.PENDING, NotificationStatus.QUEUED, NotificationStatus.SENDING],
+        },
+        $or: [{ recipientId: { $exists: false } }, { recipientId: null }],
+      })
+      .lean();
+
+    let cleanedCount = 0;
+    for (const notification of invalidNotifications) {
+      try {
+        await this.notificationModel.updateOne(
+          { _id: notification._id },
+          {
+            $set: {
+              status: NotificationStatus.FAILED,
+              errorMessage: 'Invalid notification: missing recipientId',
+              failedAt: new Date(),
+            },
+          },
+        );
+        cleanedCount++;
+      } catch (error) {
+        this.logger.error(
+          `Failed to cleanup notification ${notification._id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+
+    if (cleanedCount > 0) {
+      this.logger.log(`Cleaned up ${cleanedCount} invalid notifications (missing recipientId)`);
+    }
+    return cleanedCount;
+  }
+
+  /**
+   * يتم استدعاؤها تلقائياً عند بدء تشغيل الوحدة
+   */
+  async onModuleInit(): Promise<void> {
+    try {
+      // تنظيف الإشعارات غير الصالحة بعد 5 ثوانٍ من بدء التشغيل
+      // لإعطاء الوقت للـ queue للاتصال بـ Redis
+      setTimeout(async () => {
+        await this.cleanupInvalidNotifications();
+      }, 5000);
+    } catch (error) {
+      this.logger.error(
+        `Error during notification service initialization: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 }

@@ -107,6 +107,11 @@ export class EngineerProfileService {
           type?: string;
           commissionRate?: number;
         };
+        exchangeRates?: {
+          usdToYer: number;
+          usdToSar: number;
+          lastUpdatedAt?: Date;
+        };
       })
     | null
   > {
@@ -244,6 +249,9 @@ export class EngineerProfileService {
     const walletBalanceConverted = await this.convertAmountFromUSD(walletBalanceUSD);
     const totalCommissionEarningsConverted = await this.convertAmountFromUSD(totalCommissionEarnings);
 
+    // جلب أسعار الصرف الحالية
+    const exchangeRates = await this.exchangeRatesService.getCurrentRates();
+
     const result = {
       ...profile,
       jobTitle: profile.jobTitle || (userData?.jobTitle ?? undefined),
@@ -256,6 +264,12 @@ export class EngineerProfileService {
       totalCommissionEarningsUSD: totalCommissionEarningsConverted.usd,
       totalCommissionEarningsYER: totalCommissionEarningsConverted.yer,
       totalCommissionEarningsSAR: totalCommissionEarningsConverted.sar,
+      // إضافة أسعار الصرف
+      exchangeRates: {
+        usdToYer: exchangeRates.usdToYer,
+        usdToSar: exchangeRates.usdToSar,
+        lastUpdatedAt: exchangeRates.lastUpdatedAt,
+      },
     } as EngineerProfileDocument & {
       jobTitle?: string;
       joinedAt?: Date;
@@ -266,6 +280,11 @@ export class EngineerProfileService {
       totalCommissionEarningsUSD?: number;
       totalCommissionEarningsYER?: number;
       totalCommissionEarningsSAR?: number;
+      exchangeRates?: {
+        usdToYer: number;
+        usdToSar: number;
+        lastUpdatedAt?: Date;
+      };
       coupon?: {
         code: string;
         name: string;

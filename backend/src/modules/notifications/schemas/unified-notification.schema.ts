@@ -146,6 +146,29 @@ export class UnifiedNotification {
   @Prop({ maxlength: 100 })
   externalId?: string;
 
+  // ===== Analytics =====
+  @Prop({ type: Number, default: 0 })
+  openCount!: number;
+
+  @Prop({ type: Number, default: 0 })
+  clickCount!: number;
+
+  @Prop({
+    type: [
+      {
+        url: { type: String, maxlength: 500 },
+        buttonId: { type: String, maxlength: 50 },
+        clickedAt: { type: Date },
+      },
+    ],
+    default: [],
+  })
+  clickHistory!: Array<{
+    url: string;
+    buttonId?: string;
+    clickedAt: Date;
+  }>;
+
   // ===== Metadata =====
   @Prop({
     type: Object,

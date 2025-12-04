@@ -17,7 +17,6 @@ import {
   NotificationChannel,
   NotificationPriority,
   NotificationCategory,
-  NotificationType,
 } from '../types/notification.types';
 import { STATUS_COLORS, PRIORITY_COLORS } from './notificationConstants';
 

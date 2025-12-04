@@ -11,6 +11,7 @@
 > - إضافة حقل `totalCommissionEarnings` (إجمالي الدخل من العمولات) في الاستجابة
 > - تحديث `totalCompletedServices` ليعرض العدد الصحيح من قاعدة البيانات
 > - **🆕 إضافة تحويل العملات**: جميع المبالغ تُرجع الآن بثلاث عملات (USD, YER, SAR) بناءً على أسعار الصرف في النظام
+> - **🆕 إضافة أسعار الصرف**: إضافة حقل `exchangeRates` يحتوي على أسعار الصرف اليمني والسعودي الحالية
 
 خدمة بروفايل المهندس توفر endpoints لإدارة بروفايل المهندس، التقييمات، الرصيد، والعمولات.
 
@@ -132,7 +133,12 @@
     ],
     "createdAt": "2025-01-01T00:00:00.000Z",
     "updatedAt": "2025-10-15T10:30:00.000Z",
-    "joinedAt": "2025-01-01T00:00:00.000Z"
+    "joinedAt": "2025-01-01T00:00:00.000Z",
+    "exchangeRates": {
+      "usdToYer": 250,
+      "usdToSar": 3.75,
+      "lastUpdatedAt": "2025-10-15T08:00:00.000Z"
+    }
   },
   "requestId": "req_123"
 }
@@ -313,7 +319,12 @@ Future<EngineerProfile> updateMyProfile({
     "averageRating": 4.8,
     "ratingDistribution": [15, 5, 3, 1, 1],
     "totalCompletedServices": 50,
-    "joinedAt": "2025-01-01T00:00:00.000Z"
+    "joinedAt": "2025-01-01T00:00:00.000Z",
+    "exchangeRates": {
+      "usdToYer": 250,
+      "usdToSar": 3.75,
+      "lastUpdatedAt": "2025-10-15T08:00:00.000Z"
+    }
   },
   "requestId": "req_123"
 }
@@ -544,6 +555,7 @@ class EngineerProfile {
   final double? totalCommissionEarningsYER; // فقط في /me
   final double? totalCommissionEarningsSAR; // فقط في /me
   final List<CommissionTransaction> commissionTransactions; // فقط في /me
+  final ExchangeRates? exchangeRates; // أسعار الصرف الحالية
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? joinedAt; // تاريخ الانضمام (تاريخ إنشاء البروفايل)
@@ -576,6 +588,7 @@ class EngineerProfile {
       this.totalCommissionEarningsYER,
       this.totalCommissionEarningsSAR,
       this.commissionTransactions = const [],
+      this.exchangeRates,
     required this.createdAt,
     required this.updatedAt,
     this.joinedAt,
@@ -642,6 +655,9 @@ class EngineerProfile {
               .map((t) => CommissionTransaction.fromJson(t))
               .toList()
           : [],
+      exchangeRates: json['exchangeRates'] != null
+          ? ExchangeRates.fromJson(json['exchangeRates'])
+          : null,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       joinedAt: json['joinedAt'] != null ? DateTime.parse(json['joinedAt']) : null,
@@ -678,6 +694,7 @@ class EngineerProfile {
       'totalCommissionEarningsSAR': totalCommissionEarningsSAR,
       'commissionTransactions':
           commissionTransactions.map((t) => t.toJson()).toList(),
+      'exchangeRates': exchangeRates?.toJson(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'joinedAt': joinedAt?.toIso8601String(),
@@ -831,6 +848,40 @@ class CouponStats {
       'totalCommissionEarned': totalCommissionEarned,
       'totalDiscountGiven': totalDiscountGiven,
       'totalRevenue': totalRevenue,
+    };
+  }
+}
+```
+
+### ExchangeRates Model
+
+```dart
+class ExchangeRates {
+  final double usdToYer; // سعر الدولار بالريال اليمني
+  final double usdToSar; // سعر الدولار بالريال السعودي
+  final DateTime? lastUpdatedAt; // تاريخ آخر تحديث
+
+  ExchangeRates({
+    required this.usdToYer,
+    required this.usdToSar,
+    this.lastUpdatedAt,
+  });
+
+  factory ExchangeRates.fromJson(Map<String, dynamic> json) {
+    return ExchangeRates(
+      usdToYer: (json['usdToYer'] ?? 0).toDouble(),
+      usdToSar: (json['usdToSar'] ?? 0).toDouble(),
+      lastUpdatedAt: json['lastUpdatedAt'] != null
+          ? DateTime.parse(json['lastUpdatedAt'])
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'usdToYer': usdToYer,
+      'usdToSar': usdToSar,
+      'lastUpdatedAt': lastUpdatedAt?.toIso8601String(),
     };
   }
 }
@@ -1053,11 +1104,12 @@ class RatingsResponse {
 1. **`walletBalance` و `commissionTransactions` و `totalCommissionEarnings`** متاحة فقط في `/me` endpoint
 2. **الحقول الجديدة للعملات** (`walletBalanceUSD/YER/SAR`, `totalCommissionEarningsUSD/YER/SAR`, `amountUSD/YER/SAR`) متاحة فقط في `/me` endpoint
 3. **`coupon.stats`** متاحة فقط عند وجود كوبون نشط للمهندس
-4. **التقييمات تتزامن تلقائياً** - لا حاجة لمزامنة يدوية
-5. **التعليق مطلوب** عند إضافة تقييم (لا يمكن إضافة تقييم بدون نص)
-6. **النجوم من 1-5** فقط
-7. **`totalCompletedServices`** يتم تحديثه تلقائياً من قاعدة البيانات عند جلب البروفايل
-8. **أسعار الصرف**: في حالة فشل جلب أسعار الصرف، يتم إرجاع القيم بالدولار فقط
+4. **`exchangeRates`** متاحة في جميع endpoints (يحتوي على أسعار الصرف اليمني والسعودي الحالية)
+5. **التقييمات تتزامن تلقائياً** - لا حاجة لمزامنة يدوية
+6. **التعليق مطلوب** عند إضافة تقييم (لا يمكن إضافة تقييم بدون نص)
+7. **النجوم من 1-5** فقط
+8. **`totalCompletedServices`** يتم تحديثه تلقائياً من قاعدة البيانات عند جلب البروفايل
+9. **أسعار الصرف**: في حالة فشل جلب أسعار الصرف، يتم إرجاع القيم بالدولار فقط
 
 ---
 
@@ -1307,6 +1359,16 @@ Future<void> updateProfile() async {
 - **المصدر**: العمولات تأتي من استخدام كوبونات المهندس
 - **إحصائيات الكوبون**: `coupon.stats` يحتوي على إحصائيات الكوبون (عدد الاستخدامات، إجمالي العمولات المكتسبة، إجمالي الخصومات، إجمالي الإيرادات)
 - **أسعار الصرف**: جميع التحويلات تعتمد على أسعار الصرف الحالية في النظام (`usdToYer` و `usdToSar`)
+
+### نظام أسعار الصرف
+
+- **`exchangeRates`**: يحتوي على أسعار الصرف الحالية في النظام
+  - `usdToYer`: سعر الدولار الأمريكي بالريال اليمني (مثال: 250)
+  - `usdToSar`: سعر الدولار الأمريكي بالريال السعودي (مثال: 3.75)
+  - `lastUpdatedAt`: تاريخ آخر تحديث لأسعار الصرف
+- **التوفر**: `exchangeRates` متاح في جميع endpoints (ليس فقط `/me`)
+- **الاستخدام**: يمكن استخدام هذه الأسعار لعرض المبالغ المحولة أو للتحقق من صحة الحسابات
+- **التحديث**: يتم تحديث أسعار الصرف من قبل الأدمن عبر نظام إدارة أسعار الصرف
 
 ### الفصل بين Schemas
 

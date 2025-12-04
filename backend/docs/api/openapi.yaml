@@ -4877,6 +4877,995 @@ paths:
         - الإشعارات
       security:
         - bearer: []
+  /api/v1/notifications/admin/users/{userId}/frequency-stats:
+    get:
+      operationId: adminGetUserFrequencyStats
+      summary: 'الإدارة: إحصائيات تكرار الإشعارات للمستخدم'
+      description: استرداد إحصائيات تكرار الإشعارات لمستخدم محدد (للإداريين فقط)
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          description: معرف المستخدم
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Frequency stats retrieved successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/users/{userId}/frequency-reset:
+    post:
+      operationId: adminResetUserFrequencyCounters
+      summary: 'الإدارة: إعادة تعيين عدادات التكرار للمستخدم'
+      description: إعادة تعيين جميع عدادات تكرار الإشعارات لمستخدم محدد (للإداريين فقط)
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          description: معرف المستخدم
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Frequency counters reset successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/queue-stats:
+    get:
+      operationId: adminGetQueueStats
+      summary: 'الإدارة: إحصائيات الـ Queue'
+      description: استرداد إحصائيات طوابير الإشعارات (للإداريين فقط)
+      parameters: []
+      responses:
+        '200':
+          description: Queue stats retrieved successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/analytics/ctr:
+    get:
+      operationId: adminGetCTR
+      summary: 'الإدارة: معدل النقر (CTR)'
+      description: استرداد إحصائيات معدل النقر للإشعارات (للإداريين فقط)
+      parameters:
+        - name: startDate
+          required: false
+          in: query
+          description: Start date for analytics period
+          schema:
+            format: date-time
+            example: '2024-01-01'
+            type: string
+        - name: endDate
+          required: false
+          in: query
+          description: End date for analytics period
+          schema:
+            format: date-time
+            example: '2024-12-31'
+            type: string
+        - name: type
+          required: false
+          in: query
+          description: Filter by notification type
+          schema:
+            enum:
+              - ORDER_CREATED
+              - ORDER_CONFIRMED
+              - ORDER_CANCELLED
+              - ORDER_REFUNDED
+              - ORDER_RATED
+              - SERVICE_REQUEST_OPENED
+              - NEW_ENGINEER_OFFER
+              - OFFER_ACCEPTED
+              - OFFER_REJECTED
+              - OFFER_CANCELLED
+              - SERVICE_STARTED
+              - SERVICE_COMPLETED
+              - SERVICE_RATED
+              - SERVICE_REQUEST_CANCELLED
+              - PRODUCT_BACK_IN_STOCK
+              - PRODUCT_PRICE_DROP
+              - LOW_STOCK
+              - OUT_OF_STOCK
+              - PROMOTION_STARTED
+              - PROMOTION_ENDING
+              - ACCOUNT_VERIFIED
+              - PASSWORD_CHANGED
+              - LOGIN_ATTEMPT
+              - NEW_USER_REGISTERED
+              - TICKET_CREATED
+              - TICKET_UPDATED
+              - TICKET_RESOLVED
+              - SUPPORT_MESSAGE_RECEIVED
+              - SYSTEM_MAINTENANCE
+              - NEW_FEATURE
+              - SYSTEM_ALERT
+              - WELCOME_NEW_USER
+              - BIRTHDAY_GREETING
+              - CART_ABANDONMENT
+              - PAYMENT_FAILED
+              - PAYMENT_SUCCESS
+              - INVOICE_CREATED
+              - COUPON_USED
+            type: string
+        - name: channel
+          required: false
+          in: query
+          description: Filter by notification channel
+          schema:
+            enum:
+              - inApp
+              - push
+              - sms
+              - email
+              - dashboard
+            type: string
+        - name: status
+          required: false
+          in: query
+          description: Filter by notification status
+          schema:
+            enum:
+              - pending
+              - queued
+              - sending
+              - sent
+              - delivered
+              - read
+              - clicked
+              - failed
+              - bounced
+              - rejected
+              - cancelled
+            type: string
+        - name: campaign
+          required: false
+          in: query
+          description: Filter by campaign name
+          schema:
+            example: summer-sale-2024
+            type: string
+        - description: Start date for analytics period
+          required: false
+          name: startDate
+          in: query
+          schema:
+            format: date-time
+            example: '2024-01-01'
+            type: string
+        - description: End date for analytics period
+          required: false
+          name: endDate
+          in: query
+          schema:
+            format: date-time
+            example: '2024-12-31'
+            type: string
+        - description: Filter by notification type
+          required: false
+          name: type
+          in: query
+          schema:
+            enum:
+              - ORDER_CREATED
+              - ORDER_CONFIRMED
+              - ORDER_CANCELLED
+              - ORDER_REFUNDED
+              - ORDER_RATED
+              - SERVICE_REQUEST_OPENED
+              - NEW_ENGINEER_OFFER
+              - OFFER_ACCEPTED
+              - OFFER_REJECTED
+              - OFFER_CANCELLED
+              - SERVICE_STARTED
+              - SERVICE_COMPLETED
+              - SERVICE_RATED
+              - SERVICE_REQUEST_CANCELLED
+              - PRODUCT_BACK_IN_STOCK
+              - PRODUCT_PRICE_DROP
+              - LOW_STOCK
+              - OUT_OF_STOCK
+              - PROMOTION_STARTED
+              - PROMOTION_ENDING
+              - ACCOUNT_VERIFIED
+              - PASSWORD_CHANGED
+              - LOGIN_ATTEMPT
+              - NEW_USER_REGISTERED
+              - TICKET_CREATED
+              - TICKET_UPDATED
+              - TICKET_RESOLVED
+              - SUPPORT_MESSAGE_RECEIVED
+              - SYSTEM_MAINTENANCE
+              - NEW_FEATURE
+              - SYSTEM_ALERT
+              - WELCOME_NEW_USER
+              - BIRTHDAY_GREETING
+              - CART_ABANDONMENT
+              - PAYMENT_FAILED
+              - PAYMENT_SUCCESS
+              - INVOICE_CREATED
+              - COUPON_USED
+            type: string
+        - description: Filter by notification channel
+          required: false
+          name: channel
+          in: query
+          schema:
+            enum:
+              - inApp
+              - push
+              - sms
+              - email
+              - dashboard
+            type: string
+        - description: Filter by notification status
+          required: false
+          name: status
+          in: query
+          schema:
+            enum:
+              - pending
+              - queued
+              - sending
+              - sent
+              - delivered
+              - read
+              - clicked
+              - failed
+              - bounced
+              - rejected
+              - cancelled
+            type: string
+        - description: Filter by campaign name
+          required: false
+          name: campaign
+          in: query
+          schema:
+            example: summer-sale-2024
+            type: string
+      responses:
+        '200':
+          description: CTR stats retrieved successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/analytics/conversion:
+    get:
+      operationId: adminGetConversionRate
+      summary: 'الإدارة: معدل التحويل'
+      description: استرداد إحصائيات معدل التحويل للإشعارات (للإداريين فقط)
+      parameters:
+        - name: startDate
+          required: false
+          in: query
+          description: Start date for analytics period
+          schema:
+            format: date-time
+            example: '2024-01-01'
+            type: string
+        - name: endDate
+          required: false
+          in: query
+          description: End date for analytics period
+          schema:
+            format: date-time
+            example: '2024-12-31'
+            type: string
+        - name: type
+          required: false
+          in: query
+          description: Filter by notification type
+          schema:
+            enum:
+              - ORDER_CREATED
+              - ORDER_CONFIRMED
+              - ORDER_CANCELLED
+              - ORDER_REFUNDED
+              - ORDER_RATED
+              - SERVICE_REQUEST_OPENED
+              - NEW_ENGINEER_OFFER
+              - OFFER_ACCEPTED
+              - OFFER_REJECTED
+              - OFFER_CANCELLED
+              - SERVICE_STARTED
+              - SERVICE_COMPLETED
+              - SERVICE_RATED
+              - SERVICE_REQUEST_CANCELLED
+              - PRODUCT_BACK_IN_STOCK
+              - PRODUCT_PRICE_DROP
+              - LOW_STOCK
+              - OUT_OF_STOCK
+              - PROMOTION_STARTED
+              - PROMOTION_ENDING
+              - ACCOUNT_VERIFIED
+              - PASSWORD_CHANGED
+              - LOGIN_ATTEMPT
+              - NEW_USER_REGISTERED
+              - TICKET_CREATED
+              - TICKET_UPDATED
+              - TICKET_RESOLVED
+              - SUPPORT_MESSAGE_RECEIVED
+              - SYSTEM_MAINTENANCE
+              - NEW_FEATURE
+              - SYSTEM_ALERT
+              - WELCOME_NEW_USER
+              - BIRTHDAY_GREETING
+              - CART_ABANDONMENT
+              - PAYMENT_FAILED
+              - PAYMENT_SUCCESS
+              - INVOICE_CREATED
+              - COUPON_USED
+            type: string
+        - name: channel
+          required: false
+          in: query
+          description: Filter by notification channel
+          schema:
+            enum:
+              - inApp
+              - push
+              - sms
+              - email
+              - dashboard
+            type: string
+        - name: status
+          required: false
+          in: query
+          description: Filter by notification status
+          schema:
+            enum:
+              - pending
+              - queued
+              - sending
+              - sent
+              - delivered
+              - read
+              - clicked
+              - failed
+              - bounced
+              - rejected
+              - cancelled
+            type: string
+        - name: campaign
+          required: false
+          in: query
+          description: Filter by campaign name
+          schema:
+            example: summer-sale-2024
+            type: string
+        - description: Start date for analytics period
+          required: false
+          name: startDate
+          in: query
+          schema:
+            format: date-time
+            example: '2024-01-01'
+            type: string
+        - description: End date for analytics period
+          required: false
+          name: endDate
+          in: query
+          schema:
+            format: date-time
+            example: '2024-12-31'
+            type: string
+        - description: Filter by notification type
+          required: false
+          name: type
+          in: query
+          schema:
+            enum:
+              - ORDER_CREATED
+              - ORDER_CONFIRMED
+              - ORDER_CANCELLED
+              - ORDER_REFUNDED
+              - ORDER_RATED
+              - SERVICE_REQUEST_OPENED
+              - NEW_ENGINEER_OFFER
+              - OFFER_ACCEPTED
+              - OFFER_REJECTED
+              - OFFER_CANCELLED
+              - SERVICE_STARTED
+              - SERVICE_COMPLETED
+              - SERVICE_RATED
+              - SERVICE_REQUEST_CANCELLED
+              - PRODUCT_BACK_IN_STOCK
+              - PRODUCT_PRICE_DROP
+              - LOW_STOCK
+              - OUT_OF_STOCK
+              - PROMOTION_STARTED
+              - PROMOTION_ENDING
+              - ACCOUNT_VERIFIED
+              - PASSWORD_CHANGED
+              - LOGIN_ATTEMPT
+              - NEW_USER_REGISTERED
+              - TICKET_CREATED
+              - TICKET_UPDATED
+              - TICKET_RESOLVED
+              - SUPPORT_MESSAGE_RECEIVED
+              - SYSTEM_MAINTENANCE
+              - NEW_FEATURE
+              - SYSTEM_ALERT
+              - WELCOME_NEW_USER
+              - BIRTHDAY_GREETING
+              - CART_ABANDONMENT
+              - PAYMENT_FAILED
+              - PAYMENT_SUCCESS
+              - INVOICE_CREATED
+              - COUPON_USED
+            type: string
+        - description: Filter by notification channel
+          required: false
+          name: channel
+          in: query
+          schema:
+            enum:
+              - inApp
+              - push
+              - sms
+              - email
+              - dashboard
+            type: string
+        - description: Filter by notification status
+          required: false
+          name: status
+          in: query
+          schema:
+            enum:
+              - pending
+              - queued
+              - sending
+              - sent
+              - delivered
+              - read
+              - clicked
+              - failed
+              - bounced
+              - rejected
+              - cancelled
+            type: string
+        - description: Filter by campaign name
+          required: false
+          name: campaign
+          in: query
+          schema:
+            example: summer-sale-2024
+            type: string
+      responses:
+        '200':
+          description: Conversion stats retrieved successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/analytics/performance:
+    get:
+      operationId: adminGetPerformanceByType
+      summary: 'الإدارة: أداء الإشعارات حسب النوع'
+      description: استرداد إحصائيات أداء الإشعارات حسب النوع (للإداريين فقط)
+      parameters:
+        - name: startDate
+          required: false
+          in: query
+          description: Start date for analytics period
+          schema:
+            format: date-time
+            example: '2024-01-01'
+            type: string
+        - name: endDate
+          required: false
+          in: query
+          description: End date for analytics period
+          schema:
+            format: date-time
+            example: '2024-12-31'
+            type: string
+        - name: type
+          required: false
+          in: query
+          description: Filter by notification type
+          schema:
+            enum:
+              - ORDER_CREATED
+              - ORDER_CONFIRMED
+              - ORDER_CANCELLED
+              - ORDER_REFUNDED
+              - ORDER_RATED
+              - SERVICE_REQUEST_OPENED
+              - NEW_ENGINEER_OFFER
+              - OFFER_ACCEPTED
+              - OFFER_REJECTED
+              - OFFER_CANCELLED
+              - SERVICE_STARTED
+              - SERVICE_COMPLETED
+              - SERVICE_RATED
+              - SERVICE_REQUEST_CANCELLED
+              - PRODUCT_BACK_IN_STOCK
+              - PRODUCT_PRICE_DROP
+              - LOW_STOCK
+              - OUT_OF_STOCK
+              - PROMOTION_STARTED
+              - PROMOTION_ENDING
+              - ACCOUNT_VERIFIED
+              - PASSWORD_CHANGED
+              - LOGIN_ATTEMPT
+              - NEW_USER_REGISTERED
+              - TICKET_CREATED
+              - TICKET_UPDATED
+              - TICKET_RESOLVED
+              - SUPPORT_MESSAGE_RECEIVED
+              - SYSTEM_MAINTENANCE
+              - NEW_FEATURE
+              - SYSTEM_ALERT
+              - WELCOME_NEW_USER
+              - BIRTHDAY_GREETING
+              - CART_ABANDONMENT
+              - PAYMENT_FAILED
+              - PAYMENT_SUCCESS
+              - INVOICE_CREATED
+              - COUPON_USED
+            type: string
+        - name: channel
+          required: false
+          in: query
+          description: Filter by notification channel
+          schema:
+            enum:
+              - inApp
+              - push
+              - sms
+              - email
+              - dashboard
+            type: string
+        - name: status
+          required: false
+          in: query
+          description: Filter by notification status
+          schema:
+            enum:
+              - pending
+              - queued
+              - sending
+              - sent
+              - delivered
+              - read
+              - clicked
+              - failed
+              - bounced
+              - rejected
+              - cancelled
+            type: string
+        - name: campaign
+          required: false
+          in: query
+          description: Filter by campaign name
+          schema:
+            example: summer-sale-2024
+            type: string
+        - description: Start date for analytics period
+          required: false
+          name: startDate
+          in: query
+          schema:
+            format: date-time
+            example: '2024-01-01'
+            type: string
+        - description: End date for analytics period
+          required: false
+          name: endDate
+          in: query
+          schema:
+            format: date-time
+            example: '2024-12-31'
+            type: string
+        - description: Filter by notification type
+          required: false
+          name: type
+          in: query
+          schema:
+            enum:
+              - ORDER_CREATED
+              - ORDER_CONFIRMED
+              - ORDER_CANCELLED
+              - ORDER_REFUNDED
+              - ORDER_RATED
+              - SERVICE_REQUEST_OPENED
+              - NEW_ENGINEER_OFFER
+              - OFFER_ACCEPTED
+              - OFFER_REJECTED
+              - OFFER_CANCELLED
+              - SERVICE_STARTED
+              - SERVICE_COMPLETED
+              - SERVICE_RATED
+              - SERVICE_REQUEST_CANCELLED
+              - PRODUCT_BACK_IN_STOCK
+              - PRODUCT_PRICE_DROP
+              - LOW_STOCK
+              - OUT_OF_STOCK
+              - PROMOTION_STARTED
+              - PROMOTION_ENDING
+              - ACCOUNT_VERIFIED
+              - PASSWORD_CHANGED
+              - LOGIN_ATTEMPT
+              - NEW_USER_REGISTERED
+              - TICKET_CREATED
+              - TICKET_UPDATED
+              - TICKET_RESOLVED
+              - SUPPORT_MESSAGE_RECEIVED
+              - SYSTEM_MAINTENANCE
+              - NEW_FEATURE
+              - SYSTEM_ALERT
+              - WELCOME_NEW_USER
+              - BIRTHDAY_GREETING
+              - CART_ABANDONMENT
+              - PAYMENT_FAILED
+              - PAYMENT_SUCCESS
+              - INVOICE_CREATED
+              - COUPON_USED
+            type: string
+        - description: Filter by notification channel
+          required: false
+          name: channel
+          in: query
+          schema:
+            enum:
+              - inApp
+              - push
+              - sms
+              - email
+              - dashboard
+            type: string
+        - description: Filter by notification status
+          required: false
+          name: status
+          in: query
+          schema:
+            enum:
+              - pending
+              - queued
+              - sending
+              - sent
+              - delivered
+              - read
+              - clicked
+              - failed
+              - bounced
+              - rejected
+              - cancelled
+            type: string
+        - description: Filter by campaign name
+          required: false
+          name: campaign
+          in: query
+          schema:
+            example: summer-sale-2024
+            type: string
+      responses:
+        '200':
+          description: Performance stats retrieved successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/admin/analytics/advanced:
+    get:
+      operationId: adminGetAdvancedAnalytics
+      summary: 'الإدارة: تحليلات متقدمة'
+      description: استرداد تحليلات متقدمة شاملة للإشعارات (للإداريين فقط)
+      parameters:
+        - name: startDate
+          required: false
+          in: query
+          description: Start date for analytics period
+          schema:
+            format: date-time
+            example: '2024-01-01'
+            type: string
+        - name: endDate
+          required: false
+          in: query
+          description: End date for analytics period
+          schema:
+            format: date-time
+            example: '2024-12-31'
+            type: string
+        - name: type
+          required: false
+          in: query
+          description: Filter by notification type
+          schema:
+            enum:
+              - ORDER_CREATED
+              - ORDER_CONFIRMED
+              - ORDER_CANCELLED
+              - ORDER_REFUNDED
+              - ORDER_RATED
+              - SERVICE_REQUEST_OPENED
+              - NEW_ENGINEER_OFFER
+              - OFFER_ACCEPTED
+              - OFFER_REJECTED
+              - OFFER_CANCELLED
+              - SERVICE_STARTED
+              - SERVICE_COMPLETED
+              - SERVICE_RATED
+              - SERVICE_REQUEST_CANCELLED
+              - PRODUCT_BACK_IN_STOCK
+              - PRODUCT_PRICE_DROP
+              - LOW_STOCK
+              - OUT_OF_STOCK
+              - PROMOTION_STARTED
+              - PROMOTION_ENDING
+              - ACCOUNT_VERIFIED
+              - PASSWORD_CHANGED
+              - LOGIN_ATTEMPT
+              - NEW_USER_REGISTERED
+              - TICKET_CREATED
+              - TICKET_UPDATED
+              - TICKET_RESOLVED
+              - SUPPORT_MESSAGE_RECEIVED
+              - SYSTEM_MAINTENANCE
+              - NEW_FEATURE
+              - SYSTEM_ALERT
+              - WELCOME_NEW_USER
+              - BIRTHDAY_GREETING
+              - CART_ABANDONMENT
+              - PAYMENT_FAILED
+              - PAYMENT_SUCCESS
+              - INVOICE_CREATED
+              - COUPON_USED
+            type: string
+        - name: channel
+          required: false
+          in: query
+          description: Filter by notification channel
+          schema:
+            enum:
+              - inApp
+              - push
+              - sms
+              - email
+              - dashboard
+            type: string
+        - name: status
+          required: false
+          in: query
+          description: Filter by notification status
+          schema:
+            enum:
+              - pending
+              - queued
+              - sending
+              - sent
+              - delivered
+              - read
+              - clicked
+              - failed
+              - bounced
+              - rejected
+              - cancelled
+            type: string
+        - name: campaign
+          required: false
+          in: query
+          description: Filter by campaign name
+          schema:
+            example: summer-sale-2024
+            type: string
+        - description: Start date for analytics period
+          required: false
+          name: startDate
+          in: query
+          schema:
+            format: date-time
+            example: '2024-01-01'
+            type: string
+        - description: End date for analytics period
+          required: false
+          name: endDate
+          in: query
+          schema:
+            format: date-time
+            example: '2024-12-31'
+            type: string
+        - description: Filter by notification type
+          required: false
+          name: type
+          in: query
+          schema:
+            enum:
+              - ORDER_CREATED
+              - ORDER_CONFIRMED
+              - ORDER_CANCELLED
+              - ORDER_REFUNDED
+              - ORDER_RATED
+              - SERVICE_REQUEST_OPENED
+              - NEW_ENGINEER_OFFER
+              - OFFER_ACCEPTED
+              - OFFER_REJECTED
+              - OFFER_CANCELLED
+              - SERVICE_STARTED
+              - SERVICE_COMPLETED
+              - SERVICE_RATED
+              - SERVICE_REQUEST_CANCELLED
+              - PRODUCT_BACK_IN_STOCK
+              - PRODUCT_PRICE_DROP
+              - LOW_STOCK
+              - OUT_OF_STOCK
+              - PROMOTION_STARTED
+              - PROMOTION_ENDING
+              - ACCOUNT_VERIFIED
+              - PASSWORD_CHANGED
+              - LOGIN_ATTEMPT
+              - NEW_USER_REGISTERED
+              - TICKET_CREATED
+              - TICKET_UPDATED
+              - TICKET_RESOLVED
+              - SUPPORT_MESSAGE_RECEIVED
+              - SYSTEM_MAINTENANCE
+              - NEW_FEATURE
+              - SYSTEM_ALERT
+              - WELCOME_NEW_USER
+              - BIRTHDAY_GREETING
+              - CART_ABANDONMENT
+              - PAYMENT_FAILED
+              - PAYMENT_SUCCESS
+              - INVOICE_CREATED
+              - COUPON_USED
+            type: string
+        - description: Filter by notification channel
+          required: false
+          name: channel
+          in: query
+          schema:
+            enum:
+              - inApp
+              - push
+              - sms
+              - email
+              - dashboard
+            type: string
+        - description: Filter by notification status
+          required: false
+          name: status
+          in: query
+          schema:
+            enum:
+              - pending
+              - queued
+              - sending
+              - sent
+              - delivered
+              - read
+              - clicked
+              - failed
+              - bounced
+              - rejected
+              - cancelled
+            type: string
+        - description: Filter by campaign name
+          required: false
+          name: campaign
+          in: query
+          schema:
+            example: summer-sale-2024
+            type: string
+      responses:
+        '200':
+          description: Advanced analytics retrieved successfully
+      tags:
+        - الإشعارات
+      security:
+        - bearer: []
+  /api/v1/notifications/track/{trackingId}/open:
+    get:
+      operationId: trackOpen
+      summary: Track notification open
+      description: Track when a notification is opened. Returns a tracking pixel for email notifications.
+      parameters:
+        - name: trackingId
+          required: true
+          in: path
+          description: Notification tracking ID
+          schema:
+            type: string
+        - name: r
+          required: false
+          in: query
+          description: Redirect URL after tracking
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Open tracked successfully
+      tags:
+        - Notification Tracking
+  /api/v1/notifications/track/{trackingId}/click:
+    get:
+      operationId: trackClick
+      summary: Track notification click
+      description: Track when a notification link is clicked and redirect to target URL.
+      parameters:
+        - name: trackingId
+          required: true
+          in: path
+          description: Notification tracking ID
+          schema:
+            type: string
+        - name: url
+          required: true
+          in: query
+          description: Target URL to redirect to
+          schema:
+            type: string
+        - name: btn
+          required: false
+          in: query
+          description: Button ID that was clicked
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirected to target URL
+      tags:
+        - Notification Tracking
+    post:
+      operationId: trackClickPost
+      summary: Track notification click (POST)
+      description: Track notification click from mobile apps or web SDK.
+      parameters:
+        - name: trackingId
+          required: true
+          in: path
+          description: Notification tracking ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Click tracked successfully
+      tags:
+        - Notification Tracking
+  /api/v1/notifications/track/{trackingId}/convert:
+    post:
+      operationId: trackConversion
+      summary: Track conversion
+      description: Track when a user completes a conversion action from a notification.
+      parameters:
+        - name: trackingId
+          required: true
+          in: path
+          description: Notification tracking ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Conversion tracked successfully
+      tags:
+        - Notification Tracking
+  /api/v1/notifications/track/{trackingId}/dismiss:
+    post:
+      operationId: trackDismiss
+      summary: Track notification dismissal
+      description: Track when a notification is dismissed by the user.
+      parameters:
+        - name: trackingId
+          required: true
+          in: path
+          description: Notification tracking ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dismissal tracked successfully
+      tags:
+        - Notification Tracking
   /api/v1/exchange-rates:
     get:
       operationId: getCurrentRates
@@ -16708,8 +17697,20 @@ paths:
     get:
       operationId: nearby
       summary: طلبات قريبة من الفني
-      description: البحث عن طلبات الخدمات القريبة من موقع الفني الحالي
-      parameters: []
+      description: البحث عن طلبات الخدمات القريبة من موقع الفني الحالي مع إمكانية الفلترة حسب الحالة
+      parameters:
+        - name: status
+          required: false
+          in: query
+          description: >-
+            فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة
+            أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.
+          schema:
+            example:
+              - OPEN
+              - OFFERS_COLLECTING
+            type: array
+            items: {}
       responses:
         '200':
           description: تم العثور على الطلبات القريبة بنجاح
@@ -16773,8 +17774,20 @@ paths:
     get:
       operationId: listInCity
       summary: طلبات في نفس مدينة الفني
-      description: استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة
-      parameters: []
+      description: استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة مع إمكانية الفلترة حسب الحالة
+      parameters:
+        - name: status
+          required: false
+          in: query
+          description: >-
+            فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة
+            أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.
+          schema:
+            example:
+              - OPEN
+              - OFFERS_COLLECTING
+            type: array
+            items: {}
       responses:
         '200':
           description: تم استرداد الطلبات في المدينة بنجاح
@@ -16811,8 +17824,20 @@ paths:
     get:
       operationId: listAll
       summary: جميع طلبات الخدمات المتاحة
-      description: استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة
-      parameters: []
+      description: استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة مع إمكانية الفلترة حسب الحالة
+      parameters:
+        - name: status
+          required: false
+          in: query
+          description: >-
+            فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة
+            أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.
+          schema:
+            example:
+              - OPEN
+              - OFFERS_COLLECTING
+            type: array
+            items: {}
       responses:
         '200':
           description: تم استرداد جميع الطلبات بنجاح
@@ -17041,8 +18066,20 @@ paths:
     get:
       operationId: myOffers
       summary: عروضي
-      description: استرداد جميع العروض المقدمة من قبل الفني
-      parameters: []
+      description: استرداد جميع العروض المقدمة من قبل الفني مع إمكانية الفلترة حسب الحالة
+      parameters:
+        - name: status
+          required: false
+          in: query
+          description: >-
+            فلترة حسب حالة العرض (OFFERED, ACCEPTED, REJECTED, CANCELLED, OUTBID, EXPIRED). يمكن تمرير قيمة واحدة أو
+            مصفوفة. بدون فلترة: جميع العروض.
+          schema:
+            example:
+              - OFFERED
+              - ACCEPTED
+            type: array
+            items: {}
       responses:
         '200':
           description: تم استرداد عروضك بنجاح
@@ -20416,6 +21453,113 @@ paths:
           description: لا توجد سياسة نشطة
       tags:
         - السياسات-العامة
+  /api/v1/admin/about:
+    get:
+      operationId: get
+      summary: جلب صفحة من نحن
+      description: الحصول على بيانات صفحة من نحن (للأدمن)
+      parameters: []
+      responses:
+        '200':
+          description: تم جلب البيانات بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AboutResponseDto'
+      tags:
+        - إدارة-من-نحن
+      security:
+        - bearer: []
+    post:
+      operationId: create
+      summary: إنشاء صفحة من نحن
+      description: إنشاء صفحة من نحن جديدة (مرة واحدة فقط)
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAboutDto'
+      responses:
+        '201':
+          description: تم إنشاء الصفحة بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AboutResponseDto'
+        '409':
+          description: صفحة من نحن موجودة بالفعل
+      tags:
+        - إدارة-من-نحن
+      security:
+        - bearer: []
+    put:
+      operationId: update
+      summary: تحديث صفحة من نحن
+      description: تحديث بيانات صفحة من نحن
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAboutDto'
+      responses:
+        '200':
+          description: تم تحديث الصفحة بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AboutResponseDto'
+        '404':
+          description: صفحة من نحن غير موجودة
+      tags:
+        - إدارة-من-نحن
+      security:
+        - bearer: []
+  /api/v1/admin/about/toggle:
+    post:
+      operationId: toggle
+      summary: تفعيل/تعطيل صفحة من نحن
+      description: تفعيل أو تعطيل عرض صفحة من نحن للعامة
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleAboutDto'
+      responses:
+        '200':
+          description: تم تحديث حالة الصفحة بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AboutResponseDto'
+        '404':
+          description: صفحة من نحن غير موجودة
+      tags:
+        - إدارة-من-نحن
+      security:
+        - bearer: []
+  /api/v1/about/public:
+    get:
+      operationId: get
+      summary: جلب صفحة من نحن
+      description: الحصول على بيانات صفحة من نحن النشطة (عام - بدون مصادقة)
+      parameters: []
+      responses:
+        '200':
+          description: تم جلب البيانات بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AboutResponseDto'
+        '404':
+          description: صفحة من نحن غير متوفرة
+      tags:
+        - من-نحن-العام
   /api/v1/health:
     get:
       operationId: check
@@ -24673,6 +25817,320 @@ components:
           type: boolean
           description: حالة النشر
     TogglePolicyDto:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+          description: حالة النشر
+      required:
+        - isActive
+    ValueItemDto:
+      type: object
+      properties:
+        titleAr:
+          type: string
+          description: العنوان بالعربية
+        titleEn:
+          type: string
+          description: العنوان بالإنجليزية
+        descriptionAr:
+          type: string
+          description: الوصف بالعربية
+        descriptionEn:
+          type: string
+          description: الوصف بالإنجليزية
+        icon:
+          type: string
+          description: اسم الأيقونة
+      required:
+        - titleAr
+        - titleEn
+    TeamMemberDto:
+      type: object
+      properties:
+        nameAr:
+          type: string
+          description: الاسم بالعربية
+        nameEn:
+          type: string
+          description: الاسم بالإنجليزية
+        positionAr:
+          type: string
+          description: المنصب بالعربية
+        positionEn:
+          type: string
+          description: المنصب بالإنجليزية
+        image:
+          type: string
+          description: رابط الصورة
+        linkedIn:
+          type: string
+          description: رابط LinkedIn
+        isVisible:
+          type: boolean
+          description: مرئي
+          default: true
+        order:
+          type: number
+          description: الترتيب
+          default: 0
+      required:
+        - nameAr
+        - nameEn
+        - positionAr
+        - positionEn
+    StatItemDto:
+      type: object
+      properties:
+        labelAr:
+          type: string
+          description: التسمية بالعربية
+        labelEn:
+          type: string
+          description: التسمية بالإنجليزية
+        value:
+          type: string
+          description: القيمة
+          example: 500+
+        icon:
+          type: string
+          description: اسم الأيقونة
+      required:
+        - labelAr
+        - labelEn
+        - value
+    SocialLinksDto:
+      type: object
+      properties:
+        facebook:
+          type: string
+          description: رابط Facebook
+        twitter:
+          type: string
+          description: رابط Twitter/X
+        instagram:
+          type: string
+          description: رابط Instagram
+        linkedin:
+          type: string
+          description: رابط LinkedIn
+        youtube:
+          type: string
+          description: رابط YouTube
+        whatsapp:
+          type: string
+          description: رقم WhatsApp
+        tiktok:
+          type: string
+          description: رابط TikTok
+    ContactInfoDto:
+      type: object
+      properties:
+        addressAr:
+          type: string
+          description: العنوان بالعربية
+        addressEn:
+          type: string
+          description: العنوان بالإنجليزية
+        phone:
+          type: string
+          description: رقم الهاتف
+        email:
+          type: string
+          description: البريد الإلكتروني
+        workingHoursAr:
+          type: string
+          description: ساعات العمل بالعربية
+        workingHoursEn:
+          type: string
+          description: ساعات العمل بالإنجليزية
+        socialLinks:
+          description: روابط التواصل الاجتماعي
+          allOf:
+            - $ref: '#/components/schemas/SocialLinksDto'
+    AboutResponseDto:
+      type: object
+      properties:
+        _id:
+          type: string
+        titleAr:
+          type: string
+        titleEn:
+          type: string
+        descriptionAr:
+          type: string
+        descriptionEn:
+          type: string
+        heroImage:
+          type: string
+        visionAr:
+          type: string
+        visionEn:
+          type: string
+        missionAr:
+          type: string
+        missionEn:
+          type: string
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValueItemDto'
+        storyAr:
+          type: string
+        storyEn:
+          type: string
+        teamMembers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMemberDto'
+        stats:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatItemDto'
+        contactInfo:
+          $ref: '#/components/schemas/ContactInfoDto'
+        isActive:
+          type: boolean
+        lastUpdatedBy:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+      required:
+        - _id
+        - titleAr
+        - titleEn
+        - descriptionAr
+        - descriptionEn
+        - isActive
+        - createdAt
+        - updatedAt
+    CreateAboutDto:
+      type: object
+      properties:
+        titleAr:
+          type: string
+          description: العنوان الرئيسي بالعربية
+        titleEn:
+          type: string
+          description: العنوان الرئيسي بالإنجليزية
+        descriptionAr:
+          type: string
+          description: الوصف بالعربية
+        descriptionEn:
+          type: string
+          description: الوصف بالإنجليزية
+        heroImage:
+          type: string
+          description: صورة الـ Hero
+        visionAr:
+          type: string
+          description: الرؤية بالعربية
+        visionEn:
+          type: string
+          description: الرؤية بالإنجليزية
+        missionAr:
+          type: string
+          description: الرسالة بالعربية
+        missionEn:
+          type: string
+          description: الرسالة بالإنجليزية
+        values:
+          description: القيم
+          type: array
+          items:
+            $ref: '#/components/schemas/ValueItemDto'
+        storyAr:
+          type: string
+          description: قصتنا بالعربية (HTML)
+        storyEn:
+          type: string
+          description: قصتنا بالإنجليزية (HTML)
+        teamMembers:
+          description: فريق العمل
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMemberDto'
+        stats:
+          description: الإحصائيات
+          type: array
+          items:
+            $ref: '#/components/schemas/StatItemDto'
+        contactInfo:
+          description: معلومات التواصل
+          allOf:
+            - $ref: '#/components/schemas/ContactInfoDto'
+        isActive:
+          type: boolean
+          description: حالة النشر
+          default: true
+      required:
+        - titleAr
+        - titleEn
+        - descriptionAr
+        - descriptionEn
+    UpdateAboutDto:
+      type: object
+      properties:
+        titleAr:
+          type: string
+          description: العنوان الرئيسي بالعربية
+        titleEn:
+          type: string
+          description: العنوان الرئيسي بالإنجليزية
+        descriptionAr:
+          type: string
+          description: الوصف بالعربية
+        descriptionEn:
+          type: string
+          description: الوصف بالإنجليزية
+        heroImage:
+          type: string
+          description: صورة الـ Hero
+        visionAr:
+          type: string
+          description: الرؤية بالعربية
+        visionEn:
+          type: string
+          description: الرؤية بالإنجليزية
+        missionAr:
+          type: string
+          description: الرسالة بالعربية
+        missionEn:
+          type: string
+          description: الرسالة بالإنجليزية
+        values:
+          description: القيم
+          type: array
+          items:
+            $ref: '#/components/schemas/ValueItemDto'
+        storyAr:
+          type: string
+          description: قصتنا بالعربية (HTML)
+        storyEn:
+          type: string
+          description: قصتنا بالإنجليزية (HTML)
+        teamMembers:
+          description: فريق العمل
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMemberDto'
+        stats:
+          description: الإحصائيات
+          type: array
+          items:
+            $ref: '#/components/schemas/StatItemDto'
+        contactInfo:
+          description: معلومات التواصل
+          allOf:
+            - $ref: '#/components/schemas/ContactInfoDto'
+        isActive:
+          type: boolean
+          description: حالة النشر
+    ToggleAboutDto:
       type: object
       properties:
         isActive:

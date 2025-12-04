@@ -1,0 +1,136 @@
+{
+  "title": "About Us Page",
+  "subtitle": "Manage about us page content and contact information",
+
+  "tabs": {
+    "general": "General",
+    "values": "Values",
+    "team": "Team",
+    "stats": "Stats",
+    "contact": "Contact"
+  },
+
+  "sections": {
+    "overview": "Overview",
+    "vision": "Our Vision",
+    "mission": "Our Mission",
+    "story": "Our Story",
+    "values": "Our Values",
+    "team": "Team Members",
+    "stats": "Achievements & Numbers",
+    "contactBasic": "Contact Information",
+    "socialLinks": "Social Media Links"
+  },
+
+  "fields": {
+    "title": "Title",
+    "titleAr": "Title (Arabic)",
+    "titleEn": "Title (English)",
+    "description": "Description",
+    "descriptionAr": "Description (Arabic)",
+    "descriptionEn": "Description (English)",
+    "heroImage": "Hero Image",
+    "vision": "Vision",
+    "mission": "Mission",
+    "story": "Story",
+    "value": "Value",
+    "labelAr": "Label (Arabic)",
+    "labelEn": "Label (English)",
+    "icon": "Icon",
+    "nameAr": "Name (Arabic)",
+    "nameEn": "Name (English)",
+    "positionAr": "Position (Arabic)",
+    "positionEn": "Position (English)",
+    "image": "Image",
+    "linkedIn": "LinkedIn",
+    "order": "Order",
+    "isVisible": "Visible",
+    "addressAr": "Address (Arabic)",
+    "addressEn": "Address (English)",
+    "phone": "Phone",
+    "email": "Email",
+    "workingHoursAr": "Working Hours (Arabic)",
+    "workingHoursEn": "Working Hours (English)"
+  },
+
+  "placeholders": {
+    "titleAr": "Enter title in Arabic",
+    "titleEn": "Enter title in English",
+    "descriptionAr": "Enter description in Arabic",
+    "descriptionEn": "Enter description in English",
+    "heroImage": "Hero image URL",
+    "visionAr": "Enter vision in Arabic",
+    "visionEn": "Enter vision in English",
+    "missionAr": "Enter mission in Arabic",
+    "missionEn": "Enter mission in English",
+    "storyAr": "Enter company story in Arabic (HTML supported)",
+    "storyEn": "Enter company story in English (HTML supported)",
+    "statValue": "e.g., 500+ or 10 years",
+    "workingHoursAr": "e.g., Sun - Thu, 9 AM - 5 PM",
+    "workingHoursEn": "e.g., Sun - Thu, 9 AM - 5 PM"
+  },
+
+  "helpers": {
+    "heroImage": "URL for the main hero image",
+    "story": "You can use HTML to format the text",
+    "icon": "Material Icon name (e.g., Star, People, TrendingUp)",
+    "statValue": "The value as it will appear (e.g., +500, 10 years, 1000+)",
+    "memberImage": "URL for the member's photo",
+    "order": "Display order (lower numbers appear first)"
+  },
+
+  "status": {
+    "active": "Active",
+    "activeDesc": "Page is active and visible to the public",
+    "inactive": "Inactive",
+    "inactiveDesc": "Page is inactive and not visible to the public",
+    "notCreated": "Not Created",
+    "notCreatedDesc": "About us page has not been created yet",
+    "published": "Published",
+    "draft": "Draft",
+    "hidden": "Hidden"
+  },
+
+  "actions": {
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "addValue": "Add Value",
+    "addStat": "Add Stat",
+    "addMember": "Add Member"
+  },
+
+  "dialogs": {
+    "addValue": "Add New Value",
+    "editValue": "Edit Value",
+    "addStat": "Add New Stat",
+    "editStat": "Edit Stat",
+    "addMember": "Add New Member",
+    "editMember": "Edit Member"
+  },
+
+  "empty": {
+    "title": "About us page has not been created yet",
+    "description": "Add content in the fields below and click Save to create the page.",
+    "values": "No values added yet. Click 'Add Value' to get started.",
+    "stats": "No stats added yet. Click 'Add Stat' to get started.",
+    "team": "No team members added yet. Click 'Add Member' to get started."
+  },
+
+  "language": {
+    "arabic": "العربية",
+    "english": "English"
+  },
+
+  "messages": {
+    "loadError": "Failed to load data",
+    "createSuccess": "Page created successfully",
+    "createError": "Failed to create page",
+    "updateSuccess": "Page updated successfully",
+    "updateError": "Failed to update page",
+    "toggleError": "Failed to change page status",
+    "activated": "Page activated",
+    "deactivated": "Page deactivated"
+  }
+}
+

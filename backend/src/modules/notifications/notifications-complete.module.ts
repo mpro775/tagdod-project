@@ -14,6 +14,7 @@ import {
 } from './schemas/notification-preference.schema';
 import { DeviceToken, DeviceTokenSchema } from './schemas/device-token.schema';
 import { NotificationLog, NotificationLogSchema } from './schemas/notification-log.schema';
+import { FrequencyLog, FrequencyLogSchema } from './schemas/frequency-log.schema';
 import {
   NotificationChannelConfig,
   NotificationChannelConfigSchema,
@@ -26,10 +27,13 @@ import { NotificationService } from './services/notification.service';
 import { NotificationTemplateService } from './services/notification-template.service';
 import { NotificationPreferenceService } from './services/notification-preference.service';
 import { NotificationChannelConfigService } from './services/notification-channel-config.service';
+import { FrequencyLimitService } from './services/frequency-limit.service';
+import { NotificationAnalyticsService } from './services/notification-analytics.service';
 
 // Controllers
 import { UnifiedNotificationController } from './controllers/unified-notification.controller';
 import { NotificationChannelConfigController } from './controllers/notification-channel-config.controller';
+import { TrackingController } from './controllers/tracking.controller';
 
 // Adapters
 import {
@@ -60,6 +64,14 @@ import { WebSocketService } from '../../shared/websocket/websocket.service';
 // Cron Services
 import { NotificationsCronService } from './notifications.cron';
 
+// Queue
+import { NotificationQueueModule } from './queue/notification-queue.module';
+import {
+  NotificationProcessor,
+  ScheduledNotificationProcessor,
+  RetryNotificationProcessor,
+} from './queue/notification.processor';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -70,17 +82,21 @@ import { NotificationsCronService } from './notifications.cron';
       { name: NotificationLog.name, schema: NotificationLogSchema },
       { name: NotificationChannelConfig.name, schema: NotificationChannelConfigSchema },
       { name: User.name, schema: UserSchema },
+      { name: FrequencyLog.name, schema: FrequencyLogSchema },
     ]),
     forwardRef(() => AuthModule),
     SharedModule,
+    NotificationQueueModule,
   ],
-  controllers: [NotificationChannelConfigController, UnifiedNotificationController],
+  controllers: [NotificationChannelConfigController, UnifiedNotificationController, TrackingController],
   providers: [
     // Core Services
     NotificationService,
     NotificationTemplateService,
     NotificationPreferenceService,
     NotificationChannelConfigService,
+    FrequencyLimitService,
+    NotificationAnalyticsService,
 
     // Adapters
     FCMAdapter, // FCM Adapter for push notifications
@@ -106,6 +122,11 @@ import { NotificationsCronService } from './notifications.cron';
 
     // Cron Services
     NotificationsCronService,
+
+    // Queue Processors
+    NotificationProcessor,
+    ScheduledNotificationProcessor,
+    RetryNotificationProcessor,
 
     // Port Providers
     {
@@ -135,6 +156,8 @@ import { NotificationsCronService } from './notifications.cron';
     NotificationTemplateService,
     NotificationPreferenceService,
     NotificationChannelConfigService,
+    FrequencyLimitService,
+    NotificationAnalyticsService,
 
     // Adapters
     NotificationAdapterFactory,
@@ -157,6 +180,9 @@ import { NotificationsCronService } from './notifications.cron';
 
     // WebSocket Gateway
     NotificationsGateway,
+
+    // Queue - Re-export the module to make NotificationQueueService available
+    NotificationQueueModule,
   ],
 })
 export class NotificationsCompleteModule {}

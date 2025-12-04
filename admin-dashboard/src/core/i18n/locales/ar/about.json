@@ -1,0 +1,136 @@
+{
+  "title": "صفحة من نحن",
+  "subtitle": "إدارة محتوى صفحة من نحن والتواصل",
+
+  "tabs": {
+    "general": "عام",
+    "values": "القيم",
+    "team": "الفريق",
+    "stats": "الأرقام",
+    "contact": "التواصل"
+  },
+
+  "sections": {
+    "overview": "نظرة عامة",
+    "vision": "رؤيتنا",
+    "mission": "رسالتنا",
+    "story": "قصتنا",
+    "values": "قيمنا",
+    "team": "فريق العمل",
+    "stats": "الإنجازات والأرقام",
+    "contactBasic": "معلومات الاتصال",
+    "socialLinks": "روابط التواصل الاجتماعي"
+  },
+
+  "fields": {
+    "title": "العنوان",
+    "titleAr": "العنوان بالعربية",
+    "titleEn": "العنوان بالإنجليزية",
+    "description": "الوصف",
+    "descriptionAr": "الوصف بالعربية",
+    "descriptionEn": "الوصف بالإنجليزية",
+    "heroImage": "صورة الغلاف",
+    "vision": "الرؤية",
+    "mission": "الرسالة",
+    "story": "قصتنا",
+    "value": "القيمة",
+    "labelAr": "التسمية بالعربية",
+    "labelEn": "التسمية بالإنجليزية",
+    "icon": "الأيقونة",
+    "nameAr": "الاسم بالعربية",
+    "nameEn": "الاسم بالإنجليزية",
+    "positionAr": "المنصب بالعربية",
+    "positionEn": "المنصب بالإنجليزية",
+    "image": "الصورة",
+    "linkedIn": "LinkedIn",
+    "order": "الترتيب",
+    "isVisible": "مرئي",
+    "addressAr": "العنوان بالعربية",
+    "addressEn": "العنوان بالإنجليزية",
+    "phone": "الهاتف",
+    "email": "البريد الإلكتروني",
+    "workingHoursAr": "ساعات العمل بالعربية",
+    "workingHoursEn": "ساعات العمل بالإنجليزية"
+  },
+
+  "placeholders": {
+    "titleAr": "أدخل العنوان بالعربية",
+    "titleEn": "Enter title in English",
+    "descriptionAr": "أدخل الوصف بالعربية",
+    "descriptionEn": "Enter description in English",
+    "heroImage": "رابط صورة الغلاف",
+    "visionAr": "أدخل الرؤية بالعربية",
+    "visionEn": "Enter vision in English",
+    "missionAr": "أدخل الرسالة بالعربية",
+    "missionEn": "Enter mission in English",
+    "storyAr": "أدخل قصة الشركة بالعربية (يدعم HTML)",
+    "storyEn": "Enter company story in English (HTML supported)",
+    "statValue": "مثال: 500+ أو 10 سنوات",
+    "workingHoursAr": "مثال: الأحد - الخميس، 9 ص - 5 م",
+    "workingHoursEn": "e.g., Sun - Thu, 9 AM - 5 PM"
+  },
+
+  "helpers": {
+    "heroImage": "رابط URL لصورة الغلاف الرئيسية",
+    "story": "يمكنك استخدام HTML لتنسيق النص",
+    "icon": "اسم الأيقونة من Material Icons (مثل: Star, People, TrendingUp)",
+    "statValue": "القيمة كما ستظهر (مثل: +500، 10 سنوات، 1000+)",
+    "memberImage": "رابط URL لصورة العضو",
+    "order": "رقم الترتيب (الأصغر يظهر أولاً)"
+  },
+
+  "status": {
+    "active": "نشط",
+    "activeDesc": "الصفحة نشطة ومتاحة للعموم",
+    "inactive": "غير نشط",
+    "inactiveDesc": "الصفحة غير نشطة ولن تظهر للعموم",
+    "notCreated": "لم يتم الإنشاء بعد",
+    "notCreatedDesc": "لم يتم إنشاء صفحة من نحن بعد",
+    "published": "منشور",
+    "draft": "مسودة",
+    "hidden": "مخفي"
+  },
+
+  "actions": {
+    "save": "حفظ",
+    "saving": "جاري الحفظ...",
+    "cancel": "إلغاء",
+    "addValue": "إضافة قيمة",
+    "addStat": "إضافة إحصائية",
+    "addMember": "إضافة عضو"
+  },
+
+  "dialogs": {
+    "addValue": "إضافة قيمة جديدة",
+    "editValue": "تعديل القيمة",
+    "addStat": "إضافة إحصائية جديدة",
+    "editStat": "تعديل الإحصائية",
+    "addMember": "إضافة عضو جديد",
+    "editMember": "تعديل بيانات العضو"
+  },
+
+  "empty": {
+    "title": "لم يتم إنشاء صفحة من نحن بعد",
+    "description": "أضف المحتوى في الحقول أدناه ثم اضغط حفظ لإنشاء الصفحة.",
+    "values": "لم تتم إضافة أي قيم بعد. اضغط على 'إضافة قيمة' للبدء.",
+    "stats": "لم تتم إضافة أي إحصائيات بعد. اضغط على 'إضافة إحصائية' للبدء.",
+    "team": "لم تتم إضافة أي أعضاء بعد. اضغط على 'إضافة عضو' للبدء."
+  },
+
+  "language": {
+    "arabic": "العربية",
+    "english": "English"
+  },
+
+  "messages": {
+    "loadError": "فشل تحميل البيانات",
+    "createSuccess": "تم إنشاء الصفحة بنجاح",
+    "createError": "فشل إنشاء الصفحة",
+    "updateSuccess": "تم تحديث الصفحة بنجاح",
+    "updateError": "فشل تحديث الصفحة",
+    "toggleError": "فشل تغيير حالة الصفحة",
+    "activated": "تم تفعيل الصفحة",
+    "deactivated": "تم تعطيل الصفحة"
+  }
+}
+

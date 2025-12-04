@@ -360,3 +360,63 @@ export const useInitializeChannelConfigs = () => {
     onError: ErrorHandler.showError,
   });
 };
+
+// ===== Advanced Analytics =====
+const ANALYTICS_KEY = 'notification-analytics';
+
+export const useAdvancedAnalytics = (params: {
+  startDate?: string;
+  endDate?: string;
+  type?: string;
+  channel?: string;
+  campaign?: string;
+} = {}) => {
+  return useQuery({
+    queryKey: [ANALYTICS_KEY, 'advanced', params],
+    queryFn: () => notificationsApi.getAdvancedAnalytics(params),
+  });
+};
+
+export const useCTR = (params: {
+  startDate?: string;
+  endDate?: string;
+  type?: string;
+  channel?: string;
+} = {}) => {
+  return useQuery({
+    queryKey: [ANALYTICS_KEY, 'ctr', params],
+    queryFn: () => notificationsApi.getCTR(params),
+  });
+};
+
+export const useConversionRate = (params: {
+  startDate?: string;
+  endDate?: string;
+  type?: string;
+  channel?: string;
+} = {}) => {
+  return useQuery({
+    queryKey: [ANALYTICS_KEY, 'conversion', params],
+    queryFn: () => notificationsApi.getConversionRate(params),
+  });
+};
+
+export const usePerformance = (params: {
+  startDate?: string;
+  endDate?: string;
+  type?: string;
+  channel?: string;
+} = {}) => {
+  return useQuery({
+    queryKey: [ANALYTICS_KEY, 'performance', params],
+    queryFn: () => notificationsApi.getPerformance(params),
+  });
+};
+
+export const useQueueStats = () => {
+  return useQuery({
+    queryKey: [ANALYTICS_KEY, 'queue'],
+    queryFn: () => notificationsApi.getQueueStats(),
+    refetchInterval: 10000, // Refetch every 10 seconds
+  });
+};
