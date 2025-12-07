@@ -94,6 +94,9 @@
     "refresh": "Refresh Data",
     "advancedFilters": "Advanced Filters",
     "totalUsers": "Total Users",
+    "activeServices": "Active Services",
+    "openSupportTickets": "Open Support Tickets",
+    "systemHealth": "System Health",
     "tabs": {
       "overview": "Overview",
       "revenue": "Revenue",
@@ -108,6 +111,7 @@
       "systemPerformance": "System Performance",
       "detailedData": "Detailed Data"
     },
+    "userRegistrationTrend": "User Registration Trend",
     "tableColumns": {
       "product": "Product",
       "sales": "Sales",
@@ -337,7 +341,8 @@
       "customers": "Customers",
       "financial": "Financial",
       "marketing": "Marketing",
-      "inventory": "Inventory"
+      "inventory": "Inventory",
+      "trends": "Trends"
     },
     "realTimeStatus": {
       "activeUsers": "Active Users",
@@ -367,6 +372,105 @@
         "description": "Export data in different formats"
       }
     }
+  },
+  "comparison": {
+    "title": "Period Comparison",
+    "description": "Compare performance between two periods",
+    "comparing": "Comparing...",
+    "compare": "Compare Periods",
+    "currentPeriod": "Current Period",
+    "previousPeriod": "Previous Period",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "error": "Error loading comparison data",
+    "results": "Comparison Results",
+    "totalUsers": "Total Users",
+    "totalRevenue": "Total Revenue",
+    "totalOrders": "Total Orders",
+    "previous": "Previous"
+  },
+  "trends": {
+    "title": "Trends Analysis",
+    "description": "Visualize trends for key metrics",
+    "metric": "Metric",
+    "period": "Period",
+    "days": "Days",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "groupBy": "Group By",
+    "useAdvancedMode": "Use Advanced Mode",
+    "error": "Error loading trends data",
+    "trend": "Trend",
+    "noData": "No data available",
+    "metrics": {
+      "revenue": "Revenue",
+      "users": "Users",
+      "orders": "Orders",
+      "products": "Products",
+      "services": "Services",
+      "support_tickets": "Support Tickets",
+      "conversion_rate": "Conversion Rate",
+      "average_order_value": "Average Order Value"
+    },
+    "groupByOptions": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly"
+    }
+  },
+  "cacheManagement": {
+    "title": "Cache Management",
+    "description": "Clear analytics cache to refresh data",
+    "clearCache": "Clear Cache",
+    "clearing": "Clearing...",
+    "success": "Cache cleared successfully",
+    "error": "Failed to clear cache",
+    "confirmTitle": "Confirm Cache Clear",
+    "confirmMessage": "This will clear analytics cache and refresh data.",
+    "warning": "This action might temporarily slow analytics while data reloads.",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "reportSchedule": {
+    "title": "Schedule Report",
+    "basicInfo": "Basic Information",
+    "name": "Schedule Name",
+    "description": "Description",
+    "reportConfig": "Report Configuration",
+    "reportType": "Report Type",
+    "reportTypes": {
+      "daily_report": "Daily Report",
+      "weekly_report": "Weekly Report",
+      "monthly_report": "Monthly Report",
+      "quarterly_report": "Quarterly Report",
+      "yearly_report": "Yearly Report",
+      "custom_report": "Custom Report"
+    },
+    "frequency": "Frequency",
+    "frequencies": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly"
+    },
+    "formats": "Formats",
+    "recipients": {
+      "title": "Recipients",
+      "email": "Email",
+      "add": "Add Recipient",
+      "emailRequired": "Email is required",
+      "invalidEmail": "Invalid email address",
+      "duplicateEmail": "Email already added"
+    },
+    "advancedOptions": "Advanced Options",
+    "includeCharts": "Include Charts",
+    "includeRawData": "Include Raw Data",
+    "success": "Report scheduled successfully",
+    "error": "Failed to schedule report",
+    "cancel": "Cancel",
+    "schedule": "Schedule Report",
+    "scheduling": "Scheduling..."
   },
   "export": {
     "title": "Export Data",
@@ -491,4 +595,3 @@
     "loadError": "An error occurred while loading reports. Please try again."
   }
 }
-

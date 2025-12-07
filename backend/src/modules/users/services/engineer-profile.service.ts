@@ -46,7 +46,7 @@ export class EngineerProfileService {
       return {
         usd: amountUSD,
         yer: Math.round(amountUSD * rates.usdToYer),
-        sar: Math.round((amountUSD * rates.usdToSar) * 100) / 100,
+        sar: Math.round(amountUSD * rates.usdToSar * 100) / 100,
       };
     } catch (error) {
       this.logger.warn('Failed to get exchange rates, using USD only', error);
@@ -112,6 +112,8 @@ export class EngineerProfileService {
           usdToSar: number;
           lastUpdatedAt?: Date;
         };
+        usdToYerRate?: number;
+        usdToSarRate?: number;
       })
     | null
   > {
@@ -247,7 +249,8 @@ export class EngineerProfileService {
     // تحويل العملات للرصيد وإجمالي العمولات
     const walletBalanceUSD = profile.walletBalance || 0;
     const walletBalanceConverted = await this.convertAmountFromUSD(walletBalanceUSD);
-    const totalCommissionEarningsConverted = await this.convertAmountFromUSD(totalCommissionEarnings);
+    const totalCommissionEarningsConverted =
+      await this.convertAmountFromUSD(totalCommissionEarnings);
 
     // جلب أسعار الصرف الحالية
     const exchangeRates = await this.exchangeRatesService.getCurrentRates();
@@ -270,6 +273,9 @@ export class EngineerProfileService {
         usdToSar: exchangeRates.usdToSar,
         lastUpdatedAt: exchangeRates.lastUpdatedAt,
       },
+      // إرجاع أسعار الصرف بشكل مباشر لاستخدامها في الواجهة
+      usdToYerRate: exchangeRates.usdToYer,
+      usdToSarRate: exchangeRates.usdToSar,
     } as EngineerProfileDocument & {
       jobTitle?: string;
       joinedAt?: Date;
@@ -285,6 +291,8 @@ export class EngineerProfileService {
         usdToSar: number;
         lastUpdatedAt?: Date;
       };
+      usdToYerRate?: number;
+      usdToSarRate?: number;
       coupon?: {
         code: string;
         name: string;

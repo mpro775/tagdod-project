@@ -94,6 +94,9 @@
     "refresh": "تحديث البيانات",
     "advancedFilters": "فلاتر متقدمة",
     "totalUsers": "إجمالي المستخدمين",
+    "activeServices": "الخدمات النشطة",
+    "openSupportTickets": "تذاكر الدعم المفتوحة",
+    "systemHealth": "صحة النظام",
     "tabs": {
       "overview": "نظرة عامة",
       "revenue": "الإيرادات",
@@ -108,6 +111,7 @@
       "systemPerformance": "أداء النظام",
       "detailedData": "البيانات التفصيلية"
     },
+    "userRegistrationTrend": "اتجاه تسجيل المستخدمين",
     "tableColumns": {
       "product": "المنتج",
       "sales": "المبيعات",
@@ -337,7 +341,8 @@
       "customers": "العملاء",
       "financial": "المالية",
       "marketing": "التسويق",
-      "inventory": "المخزون"
+      "inventory": "المخزون",
+      "trends": "الاتجاهات"
     },
     "realTimeStatus": {
       "activeUsers": "المستخدمون النشطون",
@@ -367,6 +372,105 @@
         "description": "تصدير البيانات بصيغ مختلفة"
       }
     }
+  },
+  "comparison": {
+    "title": "مقارنة الفترات",
+    "description": "مقارنة الأداء بين فترتين",
+    "comparing": "جاري المقارنة...",
+    "compare": "مقارنة الفترات",
+    "currentPeriod": "الفترة الحالية",
+    "previousPeriod": "الفترة السابقة",
+    "startDate": "تاريخ البداية",
+    "endDate": "تاريخ النهاية",
+    "error": "حدث خطأ أثناء تحميل بيانات المقارنة",
+    "results": "نتائج المقارنة",
+    "totalUsers": "إجمالي المستخدمين",
+    "totalRevenue": "إجمالي الإيرادات",
+    "totalOrders": "إجمالي الطلبات",
+    "previous": "السابق"
+  },
+  "trends": {
+    "title": "تحليل الاتجاهات",
+    "description": "عرض اتجاهات المؤشرات الرئيسية",
+    "metric": "المؤشر",
+    "period": "الفترة",
+    "days": "الأيام",
+    "startDate": "تاريخ البداية",
+    "endDate": "تاريخ النهاية",
+    "groupBy": "تجميع حسب",
+    "useAdvancedMode": "استخدام الوضع المتقدم",
+    "error": "حدث خطأ أثناء تحميل بيانات الاتجاهات",
+    "trend": "الاتجاه",
+    "noData": "لا توجد بيانات",
+    "metrics": {
+      "revenue": "الإيرادات",
+      "users": "المستخدمون",
+      "orders": "الطلبات",
+      "products": "المنتجات",
+      "services": "الخدمات",
+      "support_tickets": "تذاكر الدعم",
+      "conversion_rate": "معدل التحويل",
+      "average_order_value": "متوسط قيمة الطلب"
+    },
+    "groupByOptions": {
+      "daily": "يومي",
+      "weekly": "أسبوعي",
+      "monthly": "شهري",
+      "quarterly": "ربعي"
+    }
+  },
+  "cacheManagement": {
+    "title": "إدارة الذاكرة المؤقتة",
+    "description": "مسح ذاكرة التحليلات المؤقتة لتحديث البيانات",
+    "clearCache": "مسح الذاكرة المؤقتة",
+    "clearing": "جارٍ المسح...",
+    "success": "تم مسح الذاكرة المؤقتة بنجاح",
+    "error": "فشل في مسح الذاكرة المؤقتة",
+    "confirmTitle": "تأكيد مسح الذاكرة المؤقتة",
+    "confirmMessage": "سيتم مسح ذاكرة التحليلات المؤقتة وتحديث البيانات.",
+    "warning": "قد يبطئ هذا الإجراء التحليلات مؤقتًا أثناء إعادة التحميل.",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد"
+  },
+  "reportSchedule": {
+    "title": "جدولة تقرير",
+    "basicInfo": "المعلومات الأساسية",
+    "name": "اسم الجدولة",
+    "description": "الوصف",
+    "reportConfig": "إعدادات التقرير",
+    "reportType": "نوع التقرير",
+    "reportTypes": {
+      "daily_report": "تقرير يومي",
+      "weekly_report": "تقرير أسبوعي",
+      "monthly_report": "تقرير شهري",
+      "quarterly_report": "تقرير ربع سنوي",
+      "yearly_report": "تقرير سنوي",
+      "custom_report": "تقرير مخصص"
+    },
+    "frequency": "التكرار",
+    "frequencies": {
+      "daily": "يومي",
+      "weekly": "أسبوعي",
+      "monthly": "شهري",
+      "quarterly": "ربع سنوي"
+    },
+    "formats": "الصيغ",
+    "recipients": {
+      "title": "المستلمون",
+      "email": "البريد الإلكتروني",
+      "add": "إضافة مستلم",
+      "emailRequired": "البريد الإلكتروني مطلوب",
+      "invalidEmail": "بريد إلكتروني غير صالح",
+      "duplicateEmail": "تمت إضافة البريد مسبقًا"
+    },
+    "advancedOptions": "خيارات متقدمة",
+    "includeCharts": "تضمين الرسوم البيانية",
+    "includeRawData": "تضمين البيانات الأولية",
+    "success": "تمت جدولة التقرير بنجاح",
+    "error": "فشل في جدولة التقرير",
+    "cancel": "إلغاء",
+    "schedule": "جدولة التقرير",
+    "scheduling": "جاري الجدولة..."
   },
   "export": {
     "title": "تصدير البيانات",
@@ -491,4 +595,3 @@
     "loadError": "حدث خطأ في تحميل التقارير. يرجى المحاولة مرة أخرى."
   }
 }
-
