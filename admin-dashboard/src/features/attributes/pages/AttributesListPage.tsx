@@ -12,8 +12,14 @@ import {
   Stack,
   Skeleton,
   Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Divider,
+  TextField,
 } from '@mui/material';
-import { Edit, Delete, Restore, AddCircle, Add } from '@mui/icons-material';
+import { Edit, Delete, Restore, AddCircle, Add, ShoppingBag } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -26,6 +32,7 @@ import {
   useDeleteAttribute,
   useRestoreAttribute,
   useAttributeStats,
+  useAttributeProducts,
 } from '../hooks/useAttributes';
 import { formatDate } from '@/shared/utils/formatters';
 import { AttributeStatsCards } from '../components/AttributeStatsCards';
@@ -65,11 +72,33 @@ export const AttributesListPage: React.FC = () => {
     message: '',
     severity: 'info',
   });
+  const [productsDialog, setProductsDialog] = useState<{
+    open: boolean;
+    attribute: Attribute | null;
+    page: number;
+    pageSize: number;
+    search: string;
+  }>({
+    open: false,
+    attribute: null,
+    page: 1,
+    pageSize: 10,
+    search: '',
+  });
 
   const { data: attributesResponse, isLoading, refetch } = useAttributes(filters);
   const { data: stats, isLoading: statsLoading } = useAttributeStats();
   const { mutate: deleteAttribute } = useDeleteAttribute();
   const { mutate: restoreAttribute } = useRestoreAttribute();
+  const activeAttributeId = productsDialog.attribute?._id || '';
+  const {
+    data: attributeProducts,
+    isLoading: productsLoading,
+  } = useAttributeProducts(activeAttributeId, {
+    page: productsDialog.page,
+    limit: productsDialog.pageSize,
+    search: productsDialog.search,
+  });
 
   const attributes = attributesResponse?.data || [];
 
@@ -120,6 +149,40 @@ export const AttributesListPage: React.FC = () => {
       },
     });
   }, [restoreAttribute, showSnackbar, t, refetch]);
+
+  const openProductsDialog = useCallback((attribute: Attribute) => {
+    setProductsDialog({
+      open: true,
+      attribute,
+      page: 1,
+      pageSize: 10,
+      search: '',
+    });
+  }, []);
+
+  const closeProductsDialog = () => {
+    setProductsDialog((prev) => ({
+      ...prev,
+      open: false,
+      attribute: null,
+    }));
+  };
+
+  const handleProductsPageChange = (_: unknown, page: number) => {
+    setProductsDialog((prev) => ({
+      ...prev,
+      page,
+    }));
+  };
+
+  const handleProductsSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setProductsDialog((prev) => ({
+      ...prev,
+      search: value,
+      page: 1,
+    }));
+  };
 
   const attributeTypeLabels = getAttributeTypeLabels(t);
   const attributeTypeColorsMemo = useMemo(() => attributeTypeColors, []);
@@ -251,6 +314,19 @@ export const AttributesListPage: React.FC = () => {
 
         return (
           <Box display="flex" gap={0.5}>
+            <Tooltip title="عرض المنتجات المرتبطة">
+              <IconButton
+                size="small"
+                color="secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openProductsDialog(attr);
+                }}
+              >
+                <ShoppingBag fontSize="small" />
+              </IconButton>
+            </Tooltip>
+
             <Tooltip title={t('tooltips.edit')}>
               <IconButton
                 size="small"
@@ -301,10 +377,13 @@ export const AttributesListPage: React.FC = () => {
         );
       },
     },
-  ], [t, attributeTypeLabels, navigate, handleRestore, handleDelete]);
+  ], [t, attributeTypeLabels, navigate, handleRestore, handleDelete, openProductsDialog]);
 
   // Calculate total pages for mobile pagination
   const totalPages = attributesResponse?.meta ? Math.ceil(attributesResponse.meta.total / paginationModel.pageSize) : 0;
+  const linkedProducts = attributeProducts?.items || [];
+  const linkedProductsMeta = attributeProducts?.meta;
+  const linkedProductsTotalPages = linkedProductsMeta ? linkedProductsMeta.totalPages : 0;
 
   // Show full page loading state
   const isPageLoading = isLoading || statsLoading;
@@ -504,6 +583,108 @@ export const AttributesListPage: React.FC = () => {
           </Box>
         )}
       </Box>
+
+      {/* Linked Products Dialog */}
+      <Dialog open={productsDialog.open} onClose={closeProductsDialog} fullWidth maxWidth="md">
+        <DialogTitle>
+          المنتجات المرتبطة بالسمة {productsDialog.attribute?.name ? `(${productsDialog.attribute?.name})` : ''}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            <TextField
+              label="بحث عن منتج"
+              placeholder="اكتب اسم المنتج أو الـ slug"
+              value={productsDialog.search}
+              onChange={handleProductsSearchChange}
+              fullWidth
+              size="small"
+            />
+
+            {productsLoading ? (
+              <Stack spacing={1.5}>
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} variant="rectangular" height={80} sx={{ borderRadius: 1 }} />
+                ))}
+              </Stack>
+            ) : linkedProducts.length > 0 ? (
+              <Stack spacing={2}>
+                {linkedProducts.map((product) => (
+                  <Box
+                    key={product._id}
+                    sx={{
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 1.5,
+                      p: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 2,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <Box sx={{ minWidth: 220 }}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {product.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {product.nameEn}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        slug: {product.slug}
+                      </Typography>
+                    </Box>
+
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                      <Chip
+                        size="small"
+                        color={product.isActive ? 'success' : 'default'}
+                        label={product.isActive ? 'نشط' : 'غير نشط'}
+                      />
+                      <Chip size="small" label={`الحالة: ${product.status}`} />
+                      <Chip
+                        size="small"
+                        color="info"
+                        label={`متغيرات مطابقة: ${product.matchedVariantsCount ?? 0}`}
+                      />
+                      <Chip size="small" label={`إجمالي المتغيرات: ${product.variantsCount ?? 0}`} />
+                    </Stack>
+
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => navigate(`/products/${product._id}/view`)}
+                    >
+                      عرض المنتج
+                    </Button>
+                  </Box>
+                ))}
+              </Stack>
+            ) : (
+              <Alert severity="info">لا توجد منتجات مرتبطة بهذه السمة حالياً</Alert>
+            )}
+
+            {linkedProductsTotalPages > 1 && (
+              <>
+                <Divider />
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Pagination
+                    count={linkedProductsTotalPages}
+                    page={productsDialog.page}
+                    onChange={handleProductsPageChange}
+                    color="primary"
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              </>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeProductsDialog}>إغلاق</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbar for notifications */}
       <Snackbar

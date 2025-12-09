@@ -2145,6 +2145,34 @@
           }
         },
         {
+          "name": "عرض المنتجات المرتبطة بسمة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/attributes/{id}/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "attributes",
+                "{id}",
+                "products"
+              ]
+            },
+            "description": "يعيد قائمة المنتجات التي تحتوي متغيرات مرتبطة بالسمة المحددة مع ترقيم صفحات."
+          }
+        },
+        {
           "name": "الحصول على سمة واحدة",
           "request": {
             "method": "GET",

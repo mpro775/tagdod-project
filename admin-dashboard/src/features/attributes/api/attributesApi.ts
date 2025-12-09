@@ -9,6 +9,8 @@ import type {
   CreateAttributeValueDto,
   UpdateAttributeValueDto,
   AttributeStats,
+  AttributeProductLink,
+  AttributeProductsParams,
 } from '../types/attribute.types';
 
 export const attributesApi = {
@@ -132,5 +134,25 @@ export const attributesApi = {
     const response = await apiClient.get<ApiResponse<{ data: AttributeStats }>>('/admin/attributes/stats/summary');
     // Backend يرجع data.data.data بسبب التداخل
     return (response.data.data as any).data || response.data.data;
+  },
+
+  /**
+   * الحصول على المنتجات المرتبطة بسمة
+   * GET /admin/attributes/:id/products
+   */
+  listProducts: async (
+    attributeId: string,
+    params: AttributeProductsParams = {},
+  ): Promise<{ items: AttributeProductLink[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
+    const response = await apiClient.get<
+      ApiResponse<{
+        items: AttributeProductLink[];
+        meta: { total: number; page: number; limit: number; totalPages: number };
+      }>
+    >(`/admin/attributes/${attributeId}/products`, {
+      params,
+    });
+
+    return response.data.data;
   },
 };

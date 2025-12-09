@@ -215,6 +215,92 @@ export class AttributesAdminController {
     return attributes;
   }
 
+  @Get(':id/products')
+  @ApiOperation({
+    summary: 'عرض المنتجات المرتبطة بسمة',
+    description: 'يعيد قائمة المنتجات التي تحتوي متغيرات مرتبطة بالسمة المحددة مع ترقيم صفحات.',
+    tags: ['إدارة السمات'],
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'معرف السمة',
+    example: '64a1b2c3d4e5f6789abcdef0',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'رقم الصفحة (يبدأ من 1)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'عدد العناصر في الصفحة',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'البحث في اسم / سلاج المنتج',
+    example: 'آيفون',
+  })
+  @ApiOkResponse({
+    description: 'تم الحصول على المنتجات المرتبطة بالسمة',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'object',
+          properties: {
+            items: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  _id: { type: 'string', example: '64a1b2c3d4e5f6789abc1234' },
+                  name: { type: 'string', example: 'آيفون 15' },
+                  nameEn: { type: 'string', example: 'iPhone 15' },
+                  slug: { type: 'string', example: 'iphone-15' },
+                  status: { type: 'string', example: 'active' },
+                  isActive: { type: 'boolean', example: true },
+                  variantsCount: { type: 'number', example: 3 },
+                  matchedVariantsCount: { type: 'number', example: 2 },
+                  basePriceUSD: { type: 'number', example: 899 },
+                  compareAtPriceUSD: { type: 'number', example: 999 },
+                  mainImageId: { type: 'string', example: '64a1b2c3d4e5f6789img123' },
+                  createdAt: { type: 'string', format: 'date-time' },
+                  updatedAt: { type: 'string', format: 'date-time' },
+                },
+              },
+            },
+            meta: {
+              type: 'object',
+              properties: {
+                total: { type: 'number', example: 25 },
+                page: { type: 'number', example: 1 },
+                limit: { type: 'number', example: 20 },
+                totalPages: { type: 'number', example: 2 },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async listAttributeProducts(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    const products = await this.attributesService.listProductsByAttribute(id, {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      search,
+    });
+    return products;
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'الحصول على سمة واحدة',

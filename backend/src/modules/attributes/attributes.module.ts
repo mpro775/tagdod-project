@@ -7,6 +7,8 @@ import { Attribute, AttributeSchema } from './schemas/attribute.schema';
 import { AttributeValue, AttributeValueSchema } from './schemas/attribute-value.schema';
 import { AttributeGroup, AttributeGroupSchema } from './schemas/attribute-group.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { Product, ProductSchema } from '../products/schemas/product.schema';
+import { Variant, VariantSchema } from '../products/schemas/variant.schema';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
 
@@ -17,6 +19,8 @@ import { SharedModule } from '../../shared/shared.module';
       { name: AttributeValue.name, schema: AttributeValueSchema },
       { name: AttributeGroup.name, schema: AttributeGroupSchema },
       { name: User.name, schema: UserSchema },
+      { name: Product.name, schema: ProductSchema },
+      { name: Variant.name, schema: VariantSchema },
     ]),
     forwardRef(() => AuthModule),
     SharedModule,

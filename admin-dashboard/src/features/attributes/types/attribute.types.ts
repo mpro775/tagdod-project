@@ -1,4 +1,5 @@
 import { BaseEntity, ListParams } from '@/shared/types/common.types';
+import type { Product } from '@/features/products/types/product.types';
 
 // Attribute Type - متطابق مع Backend
 export enum AttributeType {
@@ -160,6 +161,12 @@ export interface AttributeStats {
     color: number;
   };
 }
+
+export interface AttributeProductLink extends Product {
+  matchedVariantsCount: number;
+}
+
+export interface AttributeProductsParams extends ListParams {}
 
 // ==================== Form Types ====================
 

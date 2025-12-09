@@ -8,6 +8,7 @@ import type {
   UpdateAttributeDto,
   CreateAttributeValueDto,
   UpdateAttributeValueDto,
+  AttributeProductsParams,
 } from '../types/attribute.types';
 
 const ATTRIBUTES_KEY = 'attributes';
@@ -132,5 +133,13 @@ export const useAttributeStats = () => {
   return useQuery({
     queryKey: [ATTRIBUTES_KEY, 'stats'],
     queryFn: () => attributesApi.getStats(),
+  });
+};
+
+export const useAttributeProducts = (attributeId: string, params: AttributeProductsParams = {}) => {
+  return useQuery({
+    queryKey: [ATTRIBUTES_KEY, attributeId, 'products', params],
+    queryFn: () => attributesApi.listProducts(attributeId, params),
+    enabled: !!attributeId,
   });
 };

@@ -4,6 +4,8 @@ import { Model, Types } from 'mongoose';
 import { Attribute, AttributeType } from './schemas/attribute.schema';
 import { AttributeValue } from './schemas/attribute-value.schema';
 import { AttributeGroup } from './schemas/attribute-group.schema';
+import { Product, ProductStatus } from '../products/schemas/product.schema';
+import { Variant } from '../products/schemas/variant.schema';
 import { slugify } from '../../shared/utils/slug.util';
 import { 
   AttributeNotFoundException,
@@ -26,6 +28,8 @@ export class AttributesService {
     @InjectModel(Attribute.name) private attributeModel: Model<Attribute>,
     @InjectModel(AttributeValue.name) private valueModel: Model<AttributeValue>,
     @InjectModel(AttributeGroup.name) private groupModel: Model<AttributeGroup>,
+    @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Variant.name) private variantModel: Model<Variant>,
   ) {}
 
   // ==================== Attributes ====================
@@ -458,6 +462,138 @@ export class AttributesService {
       .find({ attributeId: new Types.ObjectId(attributeId), deletedAt: null })
       .sort({ order: 1, value: 1 })
       .lean();
+  }
+
+  async listProductsByAttribute(
+    attributeId: string,
+    options: { page?: number; limit?: number; search?: string } = {},
+  ): Promise<{
+    items: Array<
+      Product & {
+        matchedVariantsCount: number;
+      }
+    >;
+    meta: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    if (!Types.ObjectId.isValid(attributeId)) {
+      return {
+        items: [],
+        meta: { total: 0, page: 1, limit: 20, totalPages: 0 },
+      };
+    }
+
+    const pageRaw = Number(options.page ?? 1);
+    const page = Math.max(1, Number.isFinite(pageRaw) ? pageRaw : 1);
+    const limitRaw = Number(options.limit ?? 20);
+    const limit = Math.min(Math.max(1, limitRaw), 100);
+    const skip = (page - 1) * limit;
+    const search = options.search?.trim();
+
+    const attributeObjectId = new Types.ObjectId(attributeId);
+
+    const variants = await this.variantModel
+      .find({
+        $and: [
+          {
+            $or: [
+              { 'attributeValues.attributeId': attributeObjectId },
+              { 'attributeValues.attributeId': attributeId }, // in case stored as string
+            ],
+          },
+          {
+            $or: [
+              { deletedAt: null },
+              { deletedAt: { $exists: false } }, // tolerate missing field
+            ],
+          },
+        ],
+      })
+      .select('productId')
+      .lean();
+
+    const productIds = Array.from(new Set(variants.map((v) => String(v.productId)).filter(Boolean)));
+
+    if (productIds.length === 0) {
+      return {
+        items: [],
+        meta: { total: 0, page, limit, totalPages: 0 },
+      };
+    }
+
+    const productObjectIds = productIds
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+
+    const productFilter: Record<string, unknown> = {
+      _id: { $in: productObjectIds },
+      status: ProductStatus.ACTIVE,
+      isActive: true,
+      $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+    };
+
+    if (search) {
+      productFilter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { nameEn: { $regex: search, $options: 'i' } },
+        { slug: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const total = await this.productModel.countDocuments(productFilter);
+
+    if (total === 0) {
+      return {
+        items: [],
+        meta: { total: 0, page, limit, totalPages: 0 },
+      };
+    }
+
+    const productVariantsCount = variants.reduce<Record<string, number>>((acc, variant) => {
+      const pid = String(variant.productId);
+      acc[pid] = (acc[pid] || 0) + 1;
+      return acc;
+    }, {});
+
+    const products = await this.productModel
+      .find(productFilter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select([
+        'name',
+        'nameEn',
+        'slug',
+        'mainImageId',
+        'imageIds',
+        'status',
+        'isActive',
+        'variantsCount',
+        'basePriceUSD',
+        'compareAtPriceUSD',
+        'createdAt',
+        'updatedAt',
+      ])
+      .lean();
+
+    const items = products.map((product) => ({
+      ...product,
+      matchedVariantsCount: productVariantsCount[String(product._id)] || 0,
+    })) as Array<Product & { matchedVariantsCount: number }>;
+
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   // ==================== Helpers ====================
