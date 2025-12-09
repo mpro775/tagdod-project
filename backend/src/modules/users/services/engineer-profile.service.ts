@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -17,8 +17,6 @@ import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.servic
 
 @Injectable()
 export class EngineerProfileService {
-  private readonly logger = new Logger(EngineerProfileService.name);
-
   constructor(
     @InjectModel(EngineerProfile.name)
     private readonly engineerProfileModel: Model<EngineerProfileDocument>,
@@ -32,32 +30,6 @@ export class EngineerProfileService {
     private readonly couponModel: Model<CouponDocument>,
     private readonly exchangeRatesService: ExchangeRatesService,
   ) {}
-
-  /**
-   * تحويل المبلغ من USD إلى العملات الأخرى
-   */
-  private async convertAmountFromUSD(amountUSD: number): Promise<{
-    usd: number;
-    yer: number;
-    sar: number;
-  }> {
-    try {
-      const rates = await this.exchangeRatesService.getCurrentRates();
-      return {
-        usd: amountUSD,
-        yer: Math.round(amountUSD * rates.usdToYer),
-        sar: Math.round(amountUSD * rates.usdToSar * 100) / 100,
-      };
-    } catch (error) {
-      this.logger.warn('Failed to get exchange rates, using USD only', error);
-      // في حالة الخطأ، نعيد USD فقط
-      return {
-        usd: amountUSD,
-        yer: amountUSD,
-        sar: amountUSD,
-      };
-    }
-  }
 
   /**
    * إنشاء بروفايل للمهندس (يُستدعى عند الموافقة على المهندس)
@@ -246,12 +218,6 @@ export class EngineerProfileService {
       updatedAt?: Date;
     };
 
-    // تحويل العملات للرصيد وإجمالي العمولات
-    const walletBalanceUSD = profile.walletBalance || 0;
-    const walletBalanceConverted = await this.convertAmountFromUSD(walletBalanceUSD);
-    const totalCommissionEarningsConverted =
-      await this.convertAmountFromUSD(totalCommissionEarnings);
-
     // جلب أسعار الصرف الحالية
     const exchangeRates = await this.exchangeRatesService.getCurrentRates();
 
@@ -260,13 +226,6 @@ export class EngineerProfileService {
       jobTitle: profile.jobTitle || (userData?.jobTitle ?? undefined),
       joinedAt: profileWithTimestamps.createdAt, // تاريخ الانضمام (تاريخ إنشاء البروفايل)
       totalCommissionEarnings, // إجمالي الدخل من العمولات (USD - للتوافق مع الكود القديم)
-      // إضافة تحويلات العملات
-      walletBalanceUSD: walletBalanceConverted.usd,
-      walletBalanceYER: walletBalanceConverted.yer,
-      walletBalanceSAR: walletBalanceConverted.sar,
-      totalCommissionEarningsUSD: totalCommissionEarningsConverted.usd,
-      totalCommissionEarningsYER: totalCommissionEarningsConverted.yer,
-      totalCommissionEarningsSAR: totalCommissionEarningsConverted.sar,
       // إضافة أسعار الصرف
       exchangeRates: {
         usdToYer: exchangeRates.usdToYer,
@@ -280,12 +239,6 @@ export class EngineerProfileService {
       jobTitle?: string;
       joinedAt?: Date;
       totalCommissionEarnings?: number;
-      walletBalanceUSD?: number;
-      walletBalanceYER?: number;
-      walletBalanceSAR?: number;
-      totalCommissionEarningsUSD?: number;
-      totalCommissionEarningsYER?: number;
-      totalCommissionEarningsSAR?: number;
       exchangeRates?: {
         usdToYer: number;
         usdToSar: number;
