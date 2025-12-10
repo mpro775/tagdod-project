@@ -37,7 +37,12 @@
   averageRating: number, // المتوسط (محسوب تلقائياً)
   ratingDistribution: number[], // [5نجوم, 4نجوم, 3نجوم, 2نجوم, 1نجمة]
   totalCompletedServices: number,
-  totalEarnings: number,
+  offersTotalProfit: {
+    USD: number,
+    YER: number,
+    SAR: number
+  },
+  totalEarnings: number, // legacy aggregate (غير محول)
   specialties?: string[],
   yearsOfExperience?: number,
   certifications?: string[],

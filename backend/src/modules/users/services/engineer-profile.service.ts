@@ -86,6 +86,11 @@ export class EngineerProfileService {
         };
         usdToYerRate?: number;
         usdToSarRate?: number;
+        offersTotalProfit?: {
+          USD: number;
+          YER: number;
+          SAR: number;
+        };
       })
     | null
   > {
@@ -176,6 +181,9 @@ export class EngineerProfileService {
       }
     }
 
+    // حساب مجموع الأرباح حسب العملة من العروض المقبولة
+    const offersTotalProfit = await this.getOffersTotalProfit(actualUserId?.toString());
+
     // جلب الكوبون المرتبط بالمهندس مع إحصائياته
     const coupon = await this.couponModel
       .findOne({ engineerId: actualUserId, status: 'active' })
@@ -235,6 +243,7 @@ export class EngineerProfileService {
       // إرجاع أسعار الصرف بشكل مباشر لاستخدامها في الواجهة
       usdToYerRate: exchangeRates.usdToYer,
       usdToSarRate: exchangeRates.usdToSar,
+      offersTotalProfit,
     } as EngineerProfileDocument & {
       jobTitle?: string;
       joinedAt?: Date;
@@ -246,6 +255,11 @@ export class EngineerProfileService {
       };
       usdToYerRate?: number;
       usdToSarRate?: number;
+      offersTotalProfit?: {
+        USD: number;
+        YER: number;
+        SAR: number;
+      };
       coupon?: {
         code: string;
         name: string;
@@ -261,6 +275,25 @@ export class EngineerProfileService {
         };
       };
     };
+
+    // إخفاء yearsOfExperience حالياً من الاستجابة
+    delete (result as any).yearsOfExperience;
+
+    // تقريب مبالغ معاملات العمولات لمرتين عشريتين
+    if (Array.isArray(result.commissionTransactions)) {
+      const round2Num = (v: number) => Math.round(v * 100) / 100;
+      const round2Opt = (v: unknown) => (typeof v === 'number' ? Math.round(v * 100) / 100 : v);
+
+      result.commissionTransactions = result.commissionTransactions.map((tx) => ({
+        ...tx,
+        // amount مطلوب رقمياً
+        amount: round2Num(tx.amount),
+        // الحقول التالية اختيارية، نقوم بتقريبها إن وُجدت
+        amountUSD: round2Opt((tx as any).amountUSD) as number | undefined,
+        amountYER: round2Opt((tx as any).amountYER) as number | undefined,
+        amountSAR: round2Opt((tx as any).amountSAR) as number | undefined,
+      }));
+    }
 
     // إضافة الكوبون مع إحصائياته
     if (coupon) {
@@ -584,6 +617,40 @@ export class EngineerProfileService {
     profile.calculateRatings();
 
     await profile.save();
+  }
+
+  /**
+   * حساب مجموع الأرباح حسب العملة (العروض المقبولة فقط)
+   */
+  private async getOffersTotalProfit(
+    engineerId?: string,
+  ): Promise<{ USD: number; YER: number; SAR: number }> {
+    if (!engineerId) return { USD: 0, YER: 0, SAR: 0 };
+
+    const rows = await this.serviceRequestModel.aggregate([
+      {
+        $match: {
+          engineerId: new Types.ObjectId(engineerId),
+          status: { $in: ['COMPLETED', 'RATED'] },
+          acceptedOffer: { $exists: true },
+        },
+      },
+      {
+        $group: {
+          _id: '$acceptedOffer.currency',
+          total: { $sum: '$acceptedOffer.amount' },
+        },
+      },
+    ]);
+
+    return rows.reduce(
+      (acc, row) => {
+        const key = (row?._id as string) || 'USD';
+        acc[key] = Math.round((row?.total || 0) * 100) / 100;
+        return acc;
+      },
+      { USD: 0, YER: 0, SAR: 0 } as { USD: number; YER: number; SAR: number },
+    );
   }
 
   /**

@@ -29,6 +29,11 @@ export class OffersStatisticsDto {
   pendingOffers!: number;
   totalValue!: number;
   averageOffer!: number;
+  offersTotalProfit!: Partial<Record<Currency, number>> & {
+    USD?: number;
+    YER?: number;
+    SAR?: number;
+  };
 }
 
 export class EngineersOverviewStatisticsDto {

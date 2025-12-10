@@ -2782,7 +2782,7 @@ export class ServicesService {
       if (filters.dateTo) (q.createdAt as Record<string, Date>).$lte = filters.dateTo;
     }
 
-    const [totalOffers, acceptedOffers, pendingOffers, totalValue, averageOffer] =
+    const [totalOffers, acceptedOffers, pendingOffers, totalValue, averageOffer, totalsByCurrency] =
       await Promise.all([
         this.offers.countDocuments(q),
         this.offers.countDocuments({ ...q, status: 'ACCEPTED' }),
@@ -2796,6 +2796,25 @@ export class ServicesService {
         this.offers
           .aggregate([{ $match: q }, { $group: { _id: null, average: { $avg: '$amount' } } }])
           .then((result) => result[0]?.average || 0),
+        this.offers
+          .aggregate([
+            { $match: { ...q, status: 'ACCEPTED' } },
+            { $group: { _id: '$currency', total: { $sum: '$amount' } } },
+          ])
+          .then((rows) =>
+            rows.reduce(
+              (acc, row) => {
+                const key = (row?._id as string) || 'USD';
+                acc[key] = Math.round((row?.total || 0) * 100) / 100;
+                return acc;
+              },
+              {
+                USD: 0,
+                YER: 0,
+                SAR: 0,
+              } as Record<string, number>,
+            ),
+          ),
       ]);
 
     return {
@@ -2804,6 +2823,7 @@ export class ServicesService {
       pendingOffers,
       totalValue: Math.round(totalValue * 100) / 100, // Round to 2 decimal places
       averageOffer: Math.round(averageOffer * 100) / 100,
+      offersTotalProfit: totalsByCurrency,
     };
   }
 
