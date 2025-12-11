@@ -55,16 +55,17 @@ export const notificationsApi = {
   },
 
   getById: async (id: string): Promise<Notification> => {
-    const response = await apiClient.get<ApiResponse<Notification>>(`/notifications/admin/notification/${id}`);
+    const response = await apiClient.get<ApiResponse<Notification>>(
+      `/notifications/admin/notification/${id}`
+    );
     // Backend returns: { success: true, data: notification }
     return response.data.data || response.data;
   },
 
   create: async (data: CreateNotificationDto): Promise<Notification> => {
-    const response = await apiClient.post<ApiResponse<{ notification: Notification; message: string }>>(
-      '/notifications/admin/create',
-      data
-    );
+    const response = await apiClient.post<
+      ApiResponse<{ notification: Notification; message: string }>
+    >('/notifications/admin/create', data);
     // Backend returns: { notification, message }
     const responseData = response.data.data || response.data;
     return responseData.notification || responseData;
@@ -155,13 +156,32 @@ export const notificationsApi = {
         params,
       }
     );
-    // Backend returns: { success: true, data: stats }
-    return response.data.data || response.data;
+    // Backend returns nested structure: { success: true, data: { success: true, data: stats } }
+    // Extract the actual stats data from nested response
+    const responseData = response.data.data;
+    let stats: NotificationStats;
+
+    if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+      stats = (responseData as any).data || responseData;
+    } else {
+      stats = responseData || response.data;
+    }
+
+    // Debug logging
+    console.log('getStats - Full response:', response);
+    console.log('getStats - Extracted stats:', stats);
+
+    return stats;
   },
 
   getStatsOverview: async (): Promise<any> => {
     const response = await apiClient.get<ApiResponse<any>>('/notifications/admin/stats/overview');
-    return response.data.data;
+    // Handle nested response structure
+    const responseData = response.data.data;
+    if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+      return (responseData as any).data || responseData;
+    }
+    return responseData || response.data;
   },
 
   getLogs: async (
@@ -212,7 +232,10 @@ export const notificationsApi = {
     console.log('getUserNotifications - Full response:', response);
     console.log('getUserNotifications - response.data:', response.data);
     console.log('getUserNotifications - response.data.data:', response.data.data);
-    console.log('getUserNotifications - response.data.data.notifications:', response.data.data?.notifications);
+    console.log(
+      'getUserNotifications - response.data.data.notifications:',
+      response.data.data?.notifications
+    );
 
     const notifications = response.data.data?.notifications || [];
     const total = response.data.data?.total || 0;
@@ -278,7 +301,9 @@ export const notificationsApi = {
   },
 
   // ===== Device Check (Admin) =====
-  checkUserDevices: async (userId: string): Promise<{
+  checkUserDevices: async (
+    userId: string
+  ): Promise<{
     userId: string;
     hasDevices: boolean;
     deviceCount: number;
@@ -297,29 +322,33 @@ export const notificationsApi = {
       web: number;
     };
   }> => {
-    const response = await apiClient.get<ApiResponse<{
-      userId: string;
-      hasDevices: boolean;
-      deviceCount: number;
-      devices: Array<{
-        _id: string;
-        platform: string;
-        userAgent?: string;
-        appVersion?: string;
-        isActive: boolean;
-        lastUsedAt?: string;
-        createdAt?: string;
-      }>;
-      platforms: {
-        ios: number;
-        android: number;
-        web: number;
-      };
-    }>>(`/notifications/admin/users/${userId}/devices`);
+    const response = await apiClient.get<
+      ApiResponse<{
+        userId: string;
+        hasDevices: boolean;
+        deviceCount: number;
+        devices: Array<{
+          _id: string;
+          platform: string;
+          userAgent?: string;
+          appVersion?: string;
+          isActive: boolean;
+          lastUsedAt?: string;
+          createdAt?: string;
+        }>;
+        platforms: {
+          ios: number;
+          android: number;
+          web: number;
+        };
+      }>
+    >(`/notifications/admin/users/${userId}/devices`);
     return response.data.data;
   },
 
-  checkMultipleUsersDevices: async (userIds: string[]): Promise<{
+  checkMultipleUsersDevices: async (
+    userIds: string[]
+  ): Promise<{
     total: number;
     withDevices: number;
     withoutDevices: number;
@@ -334,21 +363,23 @@ export const notificationsApi = {
       };
     }>;
   }> => {
-    const response = await apiClient.post<ApiResponse<{
-      total: number;
-      withDevices: number;
-      withoutDevices: number;
-      results: Array<{
-        userId: string;
-        hasDevices: boolean;
-        deviceCount: number;
-        platforms: {
-          ios: number;
-          android: number;
-          web: number;
-        };
-      }>;
-    }>>('/notifications/admin/users/devices/check', {
+    const response = await apiClient.post<
+      ApiResponse<{
+        total: number;
+        withDevices: number;
+        withoutDevices: number;
+        results: Array<{
+          userId: string;
+          hasDevices: boolean;
+          deviceCount: number;
+          platforms: {
+            ios: number;
+            android: number;
+            web: number;
+          };
+        }>;
+      }>
+    >('/notifications/admin/users/devices/check', {
       userIds,
     });
     return response.data.data;
@@ -359,7 +390,7 @@ export const notificationsApi = {
     const response = await apiClient.get<ApiResponse<NotificationChannelConfig[]>>(
       '/notifications/admin/channel-configs'
     );
-    
+
     // Extract data from nested response structure
     // Response structure: { success: true, data: { success: true, data: [...] } }
     // Due to ResponseEnvelopeInterceptor wrapping the controller response
@@ -379,11 +410,13 @@ export const notificationsApi = {
       }
       return [];
     };
-    
+
     return extractData(response.data);
   },
 
-  getChannelConfigByType: async (type: NotificationType): Promise<NotificationChannelConfig | null> => {
+  getChannelConfigByType: async (
+    type: NotificationType
+  ): Promise<NotificationChannelConfig | null> => {
     const response = await apiClient.get<ApiResponse<NotificationChannelConfig>>(
       `/notifications/admin/channel-configs/${type}`
     );
@@ -421,13 +454,15 @@ export const notificationsApi = {
   },
 
   // ===== Advanced Analytics =====
-  getAdvancedAnalytics: async (params: {
-    startDate?: string;
-    endDate?: string;
-    type?: string;
-    channel?: string;
-    campaign?: string;
-  } = {}): Promise<{
+  getAdvancedAnalytics: async (
+    params: {
+      startDate?: string;
+      endDate?: string;
+      type?: string;
+      channel?: string;
+      campaign?: string;
+    } = {}
+  ): Promise<{
     overview: {
       totalSent: number;
       totalDelivered: number;
@@ -468,40 +503,47 @@ export const notificationsApi = {
     return response.data.data;
   },
 
-  getCTR: async (params: {
-    startDate?: string;
-    endDate?: string;
-    type?: string;
-    channel?: string;
-  } = {}): Promise<Array<{
-    period: string;
-    sent: number;
-    opened: number;
-    clicked: number;
-    openRate: number;
-    clickRate: number;
-    ctr: number;
-  }>> => {
-    const response = await apiClient.get<ApiResponse<any>>(
-      '/notifications/admin/analytics/ctr',
-      { params }
-    );
+  getCTR: async (
+    params: {
+      startDate?: string;
+      endDate?: string;
+      type?: string;
+      channel?: string;
+    } = {}
+  ): Promise<
+    Array<{
+      period: string;
+      sent: number;
+      opened: number;
+      clicked: number;
+      openRate: number;
+      clickRate: number;
+      ctr: number;
+    }>
+  > => {
+    const response = await apiClient.get<ApiResponse<any>>('/notifications/admin/analytics/ctr', {
+      params,
+    });
     return response.data.data;
   },
 
-  getConversionRate: async (params: {
-    startDate?: string;
-    endDate?: string;
-    type?: string;
-    channel?: string;
-  } = {}): Promise<Array<{
-    period: string;
-    sent: number;
-    converted: number;
-    conversionRate: number;
-    totalValue: number;
-    avgValue: number;
-  }>> => {
+  getConversionRate: async (
+    params: {
+      startDate?: string;
+      endDate?: string;
+      type?: string;
+      channel?: string;
+    } = {}
+  ): Promise<
+    Array<{
+      period: string;
+      sent: number;
+      converted: number;
+      conversionRate: number;
+      totalValue: number;
+      avgValue: number;
+    }>
+  > => {
     const response = await apiClient.get<ApiResponse<any>>(
       '/notifications/admin/analytics/conversion',
       { params }
@@ -509,12 +551,14 @@ export const notificationsApi = {
     return response.data.data;
   },
 
-  getPerformance: async (params: {
-    startDate?: string;
-    endDate?: string;
-    type?: string;
-    channel?: string;
-  } = {}): Promise<{
+  getPerformance: async (
+    params: {
+      startDate?: string;
+      endDate?: string;
+      type?: string;
+      channel?: string;
+    } = {}
+  ): Promise<{
     byType: Array<{
       category: string;
       sent: number;
@@ -549,13 +593,17 @@ export const notificationsApi = {
 
   getQueueStats: async (): Promise<{
     send: { waiting: number; active: number; completed: number; failed: number; delayed: number };
-    scheduled: { waiting: number; active: number; completed: number; failed: number; delayed: number };
+    scheduled: {
+      waiting: number;
+      active: number;
+      completed: number;
+      failed: number;
+      delayed: number;
+    };
     retry: { waiting: number; active: number; completed: number; failed: number; delayed: number };
     totalPending: number;
   }> => {
-    const response = await apiClient.get<ApiResponse<any>>(
-      '/notifications/admin/queue-stats'
-    );
+    const response = await apiClient.get<ApiResponse<any>>('/notifications/admin/queue-stats');
     return response.data.data;
   },
 };

@@ -237,7 +237,7 @@ export class OrderService {
           message,
           messageEn,
           data,
-          channel: NotificationChannel.IN_APP,
+          channel: NotificationChannel.DASHBOARD,
           priority: NotificationPriority.HIGH,
         }),
       );

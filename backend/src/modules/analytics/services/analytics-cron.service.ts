@@ -3,10 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { AnalyticsService } from '../analytics.service';
 import { StockAlertService } from '../../products/services/stock-alert.service';
 import { PeriodType } from '../schemas/analytics-snapshot.schema';
-import {
-  AnalyticsCronJobFailedException,
-  AnalyticsException,
-} from '../../../shared/exceptions';
+import { AnalyticsCronJobFailedException, AnalyticsException } from '../../../shared/exceptions';
 
 @Injectable()
 export class AnalyticsCronService {
@@ -25,10 +22,10 @@ export class AnalyticsCronService {
   async generateDailyAnalytics() {
     try {
       this.logger.log('Starting daily analytics generation...');
-      
+
       const today = new Date();
       await this.analyticsService.generateAnalyticsSnapshot(today, PeriodType.DAILY);
-      
+
       this.logger.log('Daily analytics generated successfully');
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -62,10 +59,10 @@ export class AnalyticsCronService {
   async generateWeeklyAnalytics() {
     try {
       this.logger.log('Starting weekly analytics generation...');
-      
+
       const today = new Date();
       await this.analyticsService.generateAnalyticsSnapshot(today, PeriodType.WEEKLY);
-      
+
       this.logger.log('Weekly analytics generated successfully');
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -99,10 +96,10 @@ export class AnalyticsCronService {
   async generateMonthlyAnalytics() {
     try {
       this.logger.log('Starting monthly analytics generation...');
-      
+
       const today = new Date();
       await this.analyticsService.generateAnalyticsSnapshot(today, PeriodType.MONTHLY);
-      
+
       this.logger.log('Monthly analytics generated successfully');
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -130,30 +127,39 @@ export class AnalyticsCronService {
 
   /**
    * Check for low stock alerts
-   * Runs every hour
+   * DISABLED: Stock alerts are now sent only when inventory changes occur
+   * This prevents duplicate notifications from being sent periodically
    */
-  @Cron(CronExpression.EVERY_HOUR)
+  // @Cron(CronExpression.EVERY_HOUR)
   async checkLowStockAlerts() {
-    try {
-      this.logger.log('Checking for low stock alerts...');
-      
-      await this.stockAlertService.checkLowStockAlerts();
-      await this.stockAlertService.checkOutOfStockAlerts();
-      
-      this.logger.log('Low stock alerts check completed');
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      this.logger.error('Failed to check low stock alerts', {
-        error: err.message,
-        stack: err.stack,
-        jobName: 'checkLowStockAlerts',
-      });
+    // DISABLED: Stock alerts are sent immediately when inventory changes
+    // See: inventory.service.ts -> updateVariantStock() method
+    this.logger.debug(
+      'Stock alerts cron job is disabled. Alerts are sent on inventory changes only.',
+    );
+    return;
 
-      throw new AnalyticsCronJobFailedException({
-        jobName: 'checkLowStockAlerts',
-        error: err.message,
-      });
-    }
+    // OLD CODE - KEPT FOR REFERENCE:
+    // try {
+    //   this.logger.log('Checking for low stock alerts...');
+    //
+    //   await this.stockAlertService.checkLowStockAlerts();
+    //   await this.stockAlertService.checkOutOfStockAlerts();
+    //
+    //   this.logger.log('Low stock alerts check completed');
+    // } catch (error) {
+    //   const err = error instanceof Error ? error : new Error(String(error));
+    //   this.logger.error('Failed to check low stock alerts', {
+    //     error: err.message,
+    //     stack: err.stack,
+    //     jobName: 'checkLowStockAlerts',
+    //   });
+    //
+    //   throw new AnalyticsCronJobFailedException({
+    //     jobName: 'checkLowStockAlerts',
+    //     error: err.message,
+    //   });
+    // }
   }
 
   /**
@@ -164,9 +170,9 @@ export class AnalyticsCronService {
   async clearOldAnalyticsCache() {
     try {
       this.logger.log('Clearing old analytics cache...');
-      
+
       await this.analyticsService.clearAnalyticsCaches();
-      
+
       this.logger.log('Analytics cache cleared successfully');
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -198,10 +204,10 @@ export class AnalyticsCronService {
   async generateQuarterlyAnalytics() {
     try {
       this.logger.log('Starting quarterly analytics generation...');
-      
+
       const today = new Date();
       await this.analyticsService.generateAnalyticsSnapshot(today, PeriodType.QUARTERLY);
-      
+
       this.logger.log('Quarterly analytics generated successfully');
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -235,10 +241,10 @@ export class AnalyticsCronService {
   async generateYearlyAnalytics() {
     try {
       this.logger.log('Starting yearly analytics generation...');
-      
+
       const today = new Date();
       await this.analyticsService.generateAnalyticsSnapshot(today, PeriodType.YEARLY);
-      
+
       this.logger.log('Yearly analytics generated successfully');
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -272,10 +278,10 @@ export class AnalyticsCronService {
   async analyticsHealthCheck() {
     try {
       this.logger.log('Running analytics health check...');
-      
+
       // Check if analytics service is responsive
       const cacheStats = await this.analyticsService.getCacheStats();
-      
+
       this.logger.log(`Analytics health check passed. Cache stats: ${JSON.stringify(cacheStats)}`);
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));

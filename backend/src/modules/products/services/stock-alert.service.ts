@@ -177,9 +177,25 @@ export class StockAlertService {
     messageEn: string;
   }): Promise<void> {
     try {
+      const notificationType =
+        alert.type === 'LOW_STOCK' ? NotificationType.LOW_STOCK : NotificationType.OUT_OF_STOCK;
+
+      // التحقق من وجود إشعار حديث لنفس المتغير (خلال آخر ساعة) لمنع التكرار
+      const hasRecent = await this.notificationService.hasRecentNotification(
+        notificationType,
+        alert.variantId,
+        60 * 60 * 1000, // آخر ساعة
+      );
+
+      if (hasRecent) {
+        this.logger.debug(
+          `Skipping ${alert.type} alert for variant ${alert.variantId} - recent notification exists`,
+        );
+        return;
+      }
+
       await this.notificationService.createNotification({
-        type:
-          alert.type === 'LOW_STOCK' ? NotificationType.LOW_STOCK : NotificationType.OUT_OF_STOCK,
+        type: notificationType,
         title: alert.type === 'LOW_STOCK' ? 'تنبيه مخزون منخفض' : 'تنبيه نفاد المخزون',
         message: alert.message,
         messageEn: alert.messageEn,
@@ -188,7 +204,16 @@ export class StockAlertService {
         category: NotificationCategory.PRODUCT,
         data: {
           variantId: alert.variantId,
-          productId: alert.productId,
+          productId: (() => {
+            // Extract productId safely - handle both string and object cases
+            if (typeof alert.productId === 'string') {
+              return alert.productId;
+            } else if (alert.productId) {
+              const productIdObj = alert.productId as any;
+              return productIdObj._id?.toString() || productIdObj.toString() || '';
+            }
+            return '';
+          })(),
           productName: alert.productName,
           productNameEn: alert.productNameEn,
           sku: alert.sku,

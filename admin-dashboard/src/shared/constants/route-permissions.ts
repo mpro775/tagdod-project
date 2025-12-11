@@ -91,6 +91,7 @@ export const ROUTE_PERMISSIONS = {
   '/support/canned-responses': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
 
   // Notifications
+  '/my-notifications': [PERMISSIONS.NOTIFICATIONS_READ], // User's own notifications - no admin access required
   '/notifications': [PERMISSIONS.NOTIFICATIONS_READ, PERMISSIONS.ADMIN_ACCESS],
   '/notifications/analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   '/notifications/templates': [PERMISSIONS.NOTIFICATIONS_MANAGE, PERMISSIONS.ADMIN_ACCESS],

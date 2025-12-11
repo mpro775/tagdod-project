@@ -302,6 +302,33 @@ export class InventoryService {
 
   private async sendLowStockAlert(variant: Variant & { _id: Types.ObjectId }): Promise<void> {
     try {
+      // التحقق من وجود إشعار حديث لنفس المتغير (خلال آخر ساعة) لمنع التكرار
+      const hasRecent = await this.notificationService.hasRecentNotification(
+        NotificationType.LOW_STOCK,
+        variant._id.toString(),
+        60 * 60 * 1000, // آخر ساعة
+      );
+
+      if (hasRecent) {
+        this.logger.debug(
+          `Skipping LOW_STOCK alert for variant ${variant._id.toString()} - recent notification exists`,
+        );
+        return;
+      }
+
+      // Extract productId safely - handle both string and ObjectId/populated object cases
+      let productIdString = '';
+      if (typeof variant.productId === 'string') {
+        productIdString = variant.productId;
+      } else if (variant.productId) {
+        const productIdObj = variant.productId as any;
+        productIdString = productIdObj._id?.toString() || productIdObj.toString() || '';
+      }
+
+      this.logger.debug(
+        `LOW_STOCK alert - variant.productId type: ${typeof variant.productId}, value: ${JSON.stringify(variant.productId)}, extracted: ${productIdString}`,
+      );
+
       await this.notificationService.createNotification({
         type: NotificationType.LOW_STOCK,
         title: 'تنبيه مخزون منخفض',
@@ -312,7 +339,7 @@ export class InventoryService {
         category: NotificationCategory.PRODUCT,
         data: {
           variantId: variant._id.toString(),
-          productId: variant.productId.toString(),
+          productId: productIdString,
           currentStock: variant.stock,
           minStock: variant.minStock,
         },
@@ -332,6 +359,33 @@ export class InventoryService {
 
   private async sendOutOfStockAlert(variant: Variant & { _id: Types.ObjectId }): Promise<void> {
     try {
+      // التحقق من وجود إشعار حديث لنفس المتغير (خلال آخر ساعة) لمنع التكرار
+      const hasRecent = await this.notificationService.hasRecentNotification(
+        NotificationType.OUT_OF_STOCK,
+        variant._id.toString(),
+        60 * 60 * 1000, // آخر ساعة
+      );
+
+      if (hasRecent) {
+        this.logger.debug(
+          `Skipping OUT_OF_STOCK alert for variant ${variant._id.toString()} - recent notification exists`,
+        );
+        return;
+      }
+
+      // Extract productId safely - handle both string and ObjectId/populated object cases
+      let productIdString = '';
+      if (typeof variant.productId === 'string') {
+        productIdString = variant.productId;
+      } else if (variant.productId) {
+        const productIdObj = variant.productId as any;
+        productIdString = productIdObj._id?.toString() || productIdObj.toString() || '';
+      }
+
+      this.logger.debug(
+        `OUT_OF_STOCK alert - variant.productId type: ${typeof variant.productId}, value: ${JSON.stringify(variant.productId)}, extracted: ${productIdString}`,
+      );
+
       await this.notificationService.createNotification({
         type: NotificationType.OUT_OF_STOCK,
         title: 'تنبيه نفاد المخزون',
@@ -342,7 +396,7 @@ export class InventoryService {
         category: NotificationCategory.PRODUCT,
         data: {
           variantId: variant._id.toString(),
-          productId: variant.productId.toString(),
+          productId: productIdString,
           currentStock: 0,
         },
         isSystemGenerated: true,

@@ -11,7 +11,7 @@ import { UserRole } from '../../users/schemas/user.schema';
  */
 export const NOTIFICATION_TYPE_ROLES: Record<NotificationType, UserRole[]> = {
   // ===== Order Notifications - للمستخدمين العاديين =====
-  [NotificationType.ORDER_CREATED]: [UserRole.USER],
+  [NotificationType.ORDER_CREATED]: [UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN],
   [NotificationType.ORDER_CONFIRMED]: [UserRole.USER],
   [NotificationType.ORDER_CANCELLED]: [UserRole.USER],
   [NotificationType.ORDER_REFUNDED]: [UserRole.USER],
@@ -76,7 +76,11 @@ export const NOTIFICATION_TYPE_ROLES: Record<NotificationType, UserRole[]> = {
  */
 export const NOTIFICATION_TYPE_CHANNELS: Record<NotificationType, NotificationChannel[]> = {
   // ===== Order Notifications =====
-  [NotificationType.ORDER_CREATED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+  [NotificationType.ORDER_CREATED]: [
+    NotificationChannel.IN_APP,
+    NotificationChannel.PUSH,
+    NotificationChannel.DASHBOARD,
+  ],
   [NotificationType.ORDER_CONFIRMED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
   [NotificationType.ORDER_CANCELLED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
   [NotificationType.ORDER_REFUNDED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
@@ -244,4 +248,3 @@ export function isRoleAllowedForType(type: NotificationType, userRole: UserRole)
   const targetRoles = getNotificationTargetRoles(type);
   return targetRoles.includes(userRole);
 }
-

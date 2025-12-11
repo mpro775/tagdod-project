@@ -257,6 +257,11 @@ const NotificationsListPage = lazy(() =>
     default: m.NotificationsListPage,
   }))
 );
+const MyNotificationsPage = lazy(() =>
+  import('@/features/notifications/pages/MyNotificationsPage').then((m) => ({
+    default: m.MyNotificationsPage,
+  }))
+);
 const NotificationsAnalyticsPage = lazy(() =>
   import('@/features/notifications/pages/NotificationsAnalyticsPage').then((m) => ({
     default: m.NotificationsAnalyticsPage,
@@ -312,32 +317,64 @@ const CartAnalyticsPage = lazy(() =>
     default: m.CartAnalyticsPage,
   }))
 );
-const NotFoundPage = lazy(() => import('@/features/auth/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
-const ExchangeRatesPage = lazy(() => import('@/features/exchange-rates/pages/ExchangeRatesPage').then((m) => ({ default: m.default })));
+const NotFoundPage = lazy(() =>
+  import('@/features/auth/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
+);
+const ExchangeRatesPage = lazy(() =>
+  import('@/features/exchange-rates/pages/ExchangeRatesPage').then((m) => ({ default: m.default }))
+);
 const ExchangeRateSyncJobDetailsPage = lazy(() =>
   import('@/features/exchange-rates/pages/ExchangeRateSyncJobDetailsPage').then((m) => ({
     default: m.ExchangeRateSyncJobDetailsPage,
-  })),
+  }))
 );
-const SystemMonitoringPage = lazy(() => import('@/features/system-monitoring/pages/SystemMonitoringPage').then((m) => ({ default: m.SystemMonitoringPage })));
-const ErrorLogsPage = lazy(() => import('@/features/error-logs/pages/ErrorLogsPage').then((m) => ({ default: m.ErrorLogsPage })));
-const SystemSettingsPage = lazy(() => import('@/features/system-settings/pages/SystemSettingsPage').then((m) => ({ default: m.SystemSettingsPage })));
+const SystemMonitoringPage = lazy(() =>
+  import('@/features/system-monitoring/pages/SystemMonitoringPage').then((m) => ({
+    default: m.SystemMonitoringPage,
+  }))
+);
+const ErrorLogsPage = lazy(() =>
+  import('@/features/error-logs/pages/ErrorLogsPage').then((m) => ({ default: m.ErrorLogsPage }))
+);
+const SystemSettingsPage = lazy(() =>
+  import('@/features/system-settings/pages/SystemSettingsPage').then((m) => ({
+    default: m.SystemSettingsPage,
+  }))
+);
 
 // Policies
-const PoliciesManagementPage = lazy(() => import('@/features/policies/pages/PoliciesManagementPage').then((m) => ({ default: m.PoliciesManagementPage })));
+const PoliciesManagementPage = lazy(() =>
+  import('@/features/policies/pages/PoliciesManagementPage').then((m) => ({
+    default: m.PoliciesManagementPage,
+  }))
+);
 
 // About
-const AboutManagementPage = lazy(() => import('@/features/about/pages/AboutManagementPage').then((m) => ({ default: m.AboutManagementPage })));
+const AboutManagementPage = lazy(() =>
+  import('@/features/about/pages/AboutManagementPage').then((m) => ({
+    default: m.AboutManagementPage,
+  }))
+);
 
 // Addresses Admin
-const AddressesDashboardPage = lazy(() => import('@/features/addresses/pages/AddressesDashboardPage').then((m) => ({ default: m.AddressesDashboardPage })));
+const AddressesDashboardPage = lazy(() =>
+  import('@/features/addresses/pages/AddressesDashboardPage').then((m) => ({
+    default: m.AddressesDashboardPage,
+  }))
+);
 
 // Search Admin
-const SearchDashboardPage = lazy(() => import('@/features/search/pages/SearchDashboardPage').then((m) => ({ default: m.SearchDashboardPage })));
+const SearchDashboardPage = lazy(() =>
+  import('@/features/search/pages/SearchDashboardPage').then((m) => ({
+    default: m.SearchDashboardPage,
+  }))
+);
 
 // Favorites Admin
 const FavoritesAdminPage = lazy(() =>
-  import('@/features/favorites/pages/FavoritesAdminPage').then((m) => ({ default: m.FavoritesAdminPage }))
+  import('@/features/favorites/pages/FavoritesAdminPage').then((m) => ({
+    default: m.FavoritesAdminPage,
+  }))
 );
 
 export const routes: RouteObject[] = [
@@ -652,6 +689,10 @@ export const routes: RouteObject[] = [
 
       // Notifications
       {
+        path: 'my-notifications',
+        element: <MyNotificationsPage />,
+      },
+      {
         path: 'notifications',
         element: <NotificationsListPage />,
       },
@@ -726,8 +767,6 @@ export const routes: RouteObject[] = [
         element: <ExchangeRateSyncJobDetailsPage />,
       },
 
-     
-
       // ===========================================
       // SYSTEM MANAGEMENT (NEW)
       // ===========================================
@@ -743,8 +782,6 @@ export const routes: RouteObject[] = [
         path: 'system/error-logs',
         element: <ErrorLogsPage />,
       },
-
-     
 
       // System Settings
       {
@@ -792,4 +829,3 @@ export const routes: RouteObject[] = [
     element: <NotFoundPage />,
   },
 ];
-

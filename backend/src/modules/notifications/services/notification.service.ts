@@ -207,7 +207,7 @@ export class NotificationService implements OnModuleInit {
 
       const savedNotification = await notification.save();
       this.logger.log(
-        `Notification created: ${savedNotification._id} (${dto.type}) for roles [${targetRoles.join(', ')}]`,
+        `Notification created: ${savedNotification._id} (${dto.type}) for roles [${targetRoles.join(', ')}] channel: ${channel} recipientId: ${dto.recipientId || 'none'}`,
       );
 
       // التحقق من الإشعارات المجدولة - استخدام Queue
@@ -568,6 +568,16 @@ export class NotificationService implements OnModuleInit {
       `User notifications query: userId=${userId}, userRoles=[${userRoles.join(', ')}], found=${notifications.length}, total=${total}`,
     );
 
+    // Log channel distribution for debugging
+    const channelCounts = notifications.reduce(
+      (acc, n) => {
+        acc[n.channel] = (acc[n.channel] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    this.logger.debug(`Notification channels distribution: ${JSON.stringify(channelCounts)}`);
+
     return { notifications, total };
   }
 
@@ -643,6 +653,26 @@ export class NotificationService implements OnModuleInit {
     );
 
     return count;
+  }
+
+  /**
+   * التحقق من وجود إشعار حديث لنفس المتغير (لمنع التكرار)
+   */
+  async hasRecentNotification(
+    type: NotificationType,
+    variantId: string,
+    timeWindowMs: number = 60 * 60 * 1000, // افتراضي: ساعة واحدة
+  ): Promise<boolean> {
+    const recentNotification = await this.notificationModel
+      .findOne({
+        type,
+        'data.variantId': variantId,
+        createdAt: { $gte: new Date(Date.now() - timeWindowMs) },
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return !!recentNotification;
   }
 
   // ===== List & Search Operations =====
