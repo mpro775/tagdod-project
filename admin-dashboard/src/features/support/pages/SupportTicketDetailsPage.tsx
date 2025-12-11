@@ -21,6 +21,7 @@ import {
   Select,
   MenuItem,
   AlertTitle,
+  useTheme,
 } from '@mui/material';
 import { ArrowBack, Send, Warning, Refresh } from '@mui/icons-material';
 import {
@@ -37,6 +38,8 @@ import { SupportStatus, SupportPriority, SupportCategory } from '../types/suppor
 export const SupportTicketDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<SupportStatus | ''>('');
   const [priority, setPriority] = useState<SupportPriority | ''>('');
@@ -248,9 +251,18 @@ export const SupportTicketDetailsPage: React.FC = () => {
       <Grid container spacing={3}>
         {/* Messages */}
         <Grid component="div" size={{ xs: 12, lg: 8 }}>
-          <Paper sx={{ p: 3, height: 'calc(100vh - 400px)', overflow: 'auto' }}>
+          <Paper 
+            sx={{ 
+              p: 3, 
+              height: 'calc(100vh - 400px)', 
+              overflow: 'auto',
+              bgcolor: isDarkMode ? 'background.paper' : 'background.default',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">المحادثة</Typography>
+              <Typography variant="h6" color="text.primary">المحادثة</Typography>
               <Typography variant="body2" color="text.secondary">
                 {messagesData?.data?.length || 0} رسالة
               </Typography>
@@ -258,11 +270,19 @@ export const SupportTicketDetailsPage: React.FC = () => {
             <Divider sx={{ mb: 2 }} />
 
             {/* Messages List */}
-            <Box sx={{ mb: 3 }}>
+            <Box 
+              sx={{ 
+                mb: 3,
+                p: 2,
+                borderRadius: 2,
+                bgcolor: isDarkMode ? 'grey.900' : 'grey.50',
+                minHeight: 200,
+              }}
+            >
               {messagesLoading ? (
                 <Stack spacing={2}>
                   {[...Array(3)].map((_, index) => (
-                    <Skeleton key={index} variant="rectangular" height={80} />
+                    <Skeleton key={index} variant="rectangular" height={80} sx={{ borderRadius: 2 }} />
                   ))}
                 </Stack>
               ) : messagesData?.data && messagesData.data.length > 0 ? (
@@ -286,7 +306,18 @@ export const SupportTicketDetailsPage: React.FC = () => {
             </Box>
 
             {/* Send Message */}
-            <Box sx={{ display: 'flex', gap: 1, mt: 3 }}>
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                gap: 1, 
+                mt: 3,
+                p: 2,
+                borderRadius: 2,
+                bgcolor: isDarkMode ? 'grey.900' : 'grey.50',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
               <TextField
                 fullWidth
                 multiline
@@ -300,13 +331,18 @@ export const SupportTicketDetailsPage: React.FC = () => {
                     handleSendMessage();
                   }
                 }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: isDarkMode ? 'grey.800' : 'background.paper',
+                  },
+                }}
               />
               <Button
                 variant="contained"
                 startIcon={isSending ? <CircularProgress size={20} /> : <Send />}
                 onClick={handleSendMessage}
                 disabled={!message.trim() || isSending}
-                sx={{ minWidth: 100, height: 'fit-content' }}
+                sx={{ minWidth: 100, height: 'fit-content', alignSelf: 'flex-end' }}
               >
                 إرسال
               </Button>
@@ -318,9 +354,15 @@ export const SupportTicketDetailsPage: React.FC = () => {
         <Grid component="div" size={{ xs: 12, lg: 4 }}>
           <Stack spacing={3}>
             {/* Ticket Details */}
-            <Card>
+            <Card 
+              sx={{ 
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
               <CardContent>
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" gutterBottom color="text.primary">
                   تفاصيل التذكرة
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
@@ -330,7 +372,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
                     <Typography variant="caption" color="text.secondary">
                       الفئة
                     </Typography>
-                    <Typography variant="body2">
+                    <Typography variant="body2" color="text.primary">
                       {getCategoryLabel(ticket.category)}
                     </Typography>
                   </Box>
@@ -339,14 +381,16 @@ export const SupportTicketDetailsPage: React.FC = () => {
                     <Typography variant="caption" color="text.secondary">
                       الحالة
                     </Typography>
-                    <Typography variant="body2">{getStatusLabel(ticket.status)}</Typography>
+                    <Typography variant="body2" color="text.primary">
+                      {getStatusLabel(ticket.status)}
+                    </Typography>
                   </Box>
 
                   <Box>
                     <Typography variant="caption" color="text.secondary">
                       الأولوية
                     </Typography>
-                    <Typography variant="body2">
+                    <Typography variant="body2" color="text.primary">
                       {getPriorityLabel(ticket.priority)}
                     </Typography>
                   </Box>
@@ -356,7 +400,7 @@ export const SupportTicketDetailsPage: React.FC = () => {
                       <Typography variant="caption" color="text.secondary">
                         انتهاء SLA
                       </Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" color="text.primary">
                         {format(new Date(ticket.slaDueDate), 'dd/MM/yyyy HH:mm')}
                       </Typography>
                     </Box>
@@ -367,9 +411,9 @@ export const SupportTicketDetailsPage: React.FC = () => {
                       <Typography variant="caption" color="text.secondary">
                         التقييم
                       </Typography>
-                      <Typography variant="body2">⭐ {ticket.rating}/5</Typography>
+                      <Typography variant="body2" color="text.primary">⭐ {ticket.rating}/5</Typography>
                       {ticket.feedback && (
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
                           {ticket.feedback}
                         </Typography>
                       )}
@@ -381,20 +425,41 @@ export const SupportTicketDetailsPage: React.FC = () => {
 
             {/* SLA Status */}
             {ticket.slaBreached && (
-              <Alert severity="error" icon={<Warning />}>
+              <Alert 
+                severity="error" 
+                icon={<Warning />}
+                sx={{
+                  bgcolor: isDarkMode ? 'error.dark' : 'error.light',
+                  '& .MuiAlert-message': {
+                    color: isDarkMode ? 'error.contrastText' : 'error.dark',
+                  },
+                }}
+              >
                 <AlertTitle>تنبيه SLA</AlertTitle>
                 هذه التذكرة متجاوزة لوقت الاستجابة المتفق عليه
               </Alert>
             )}
 
             {/* Ticket Description */}
-            <Card>
+            <Card
+              sx={{ 
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
               <CardContent>
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" gutterBottom color="text.primary">
                   وصف المشكلة
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    whiteSpace: 'pre-wrap',
+                    color: 'text.primary',
+                  }}
+                >
                   {ticket.description}
                 </Typography>
               </CardContent>

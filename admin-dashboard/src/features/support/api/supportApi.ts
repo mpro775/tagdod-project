@@ -31,26 +31,35 @@ export const supportApi = {
   },
 
   /**
-   * List all tickets (Admin only)
+   * List all tickets (Admin only) - includes lastMessage
    */
   getTickets: async (params: ListTicketsParams): Promise<PaginatedResponse<SupportTicket>> => {
     const response = await apiClient.get<ApiResponse<{
       tickets: SupportTicket[];
       total: number;
-      limit: number;
-      skip: number;
-      hasMore: boolean;
+      page: number;
+      totalPages: number;
+      limit?: number;
+      skip?: number;
+      hasMore?: boolean;
     }>>(
       '/admin/support/tickets',
       { params }
     );
+    
+    const responseData = response.data.data;
+    
     return {
-      data: response.data.data.tickets,
+      data: responseData.tickets,
       meta: {
-        page: Math.floor(response.data.data.skip / response.data.data.limit) + 1,
-        limit: response.data.data.limit,
-        total: response.data.data.total,
-        totalPages: Math.ceil(response.data.data.total / response.data.data.limit),
+        page: responseData.page || (responseData.skip !== undefined && responseData.limit 
+          ? Math.floor(responseData.skip / responseData.limit) + 1 
+          : 1),
+        limit: responseData.limit || params.limit || 20,
+        total: responseData.total,
+        totalPages: responseData.totalPages || (responseData.limit 
+          ? Math.ceil(responseData.total / responseData.limit) 
+          : 1),
       },
     };
   },
@@ -89,20 +98,29 @@ export const supportApi = {
     const response = await apiClient.get<ApiResponse<{
       messages: SupportMessage[];
       total: number;
-      limit: number;
-      skip: number;
-      hasMore: boolean;
+      page: number;
+      totalPages: number;
+      limit?: number;
+      skip?: number;
+      hasMore?: boolean;
     }>>(
       `/admin/support/tickets/${ticketId}/messages`,
       { params: { page, limit } }
     );
+    
+    const responseData = response.data.data;
+    
     return {
-      data: response.data.data.messages,
+      data: responseData.messages,
       meta: {
-        page: Math.floor(response.data.data.skip / response.data.data.limit) + 1,
-        limit: response.data.data.limit,
-        total: response.data.data.total,
-        totalPages: Math.ceil(response.data.data.total / response.data.data.limit),
+        page: responseData.page || (responseData.skip !== undefined && responseData.limit 
+          ? Math.floor(responseData.skip / responseData.limit) + 1 
+          : page),
+        limit: responseData.limit || limit,
+        total: responseData.total,
+        totalPages: responseData.totalPages || (responseData.limit 
+          ? Math.ceil(responseData.total / responseData.limit) 
+          : 1),
       },
     };
   },

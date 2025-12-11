@@ -7,8 +7,11 @@
   },
   "labels": {
     "user": "User",
+    "customer": "Customer",
+    "support": "Support",
     "admin": "Admin",
     "system": "System",
+    "lastMessage": "Last Message",
     "attachment": "attachment",
     "attachments": "attachments",
     "tag": "tag",

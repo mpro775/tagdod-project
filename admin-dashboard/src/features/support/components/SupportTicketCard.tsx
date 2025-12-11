@@ -20,10 +20,19 @@ import {
   CheckCircle,
   Pending,
   Assignment,
+  Message,
+  AdminPanelSettings,
 } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
+import { ar } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
-import { SupportTicket, SupportStatus, SupportPriority, SupportCategory } from '../types/support.types';
+import {
+  SupportTicket,
+  SupportStatus,
+  SupportPriority,
+  SupportCategory,
+  MessageType,
+} from '../types/support.types';
 
 interface SupportTicketCardProps {
   ticket: SupportTicket;
@@ -31,7 +40,9 @@ interface SupportTicketCardProps {
   showUser?: boolean;
 }
 
-const getStatusColor = (status: SupportStatus): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+const getStatusColor = (
+  status: SupportStatus
+): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
   switch (status) {
     case SupportStatus.OPEN:
       return 'default';
@@ -65,7 +76,9 @@ const getStatusIcon = (status: SupportStatus) => {
   }
 };
 
-const getPriorityColor = (priority: SupportPriority): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+const getPriorityColor = (
+  priority: SupportPriority
+): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
   switch (priority) {
     case SupportPriority.LOW:
       return 'default';
@@ -110,10 +123,12 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
       sx={{
         cursor: onClick ? 'pointer' : 'default',
         transition: 'all 0.2s ease-in-out',
-        '&:hover': onClick ? {
-          transform: 'translateY(-2px)',
-          boxShadow: 3,
-        } : {},
+        '&:hover': onClick
+          ? {
+              transform: 'translateY(-2px)',
+              boxShadow: 3,
+            }
+          : {},
         border: isSLABreached ? '2px solid' : '1px solid',
         borderColor: isSLABreached ? 'error.main' : 'divider',
         position: 'relative',
@@ -138,11 +153,7 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
       )}
 
       <CardHeader
-        avatar={
-          <Avatar sx={{ bgcolor: 'primary.main' }}>
-            {getStatusIcon(ticket.status)}
-          </Avatar>
-        }
+        avatar={<Avatar sx={{ bgcolor: 'primary.main' }}>{getStatusIcon(ticket.status)}</Avatar>}
         title={
           <Typography variant="h6" component="div" noWrap>
             {ticket.title}
@@ -189,33 +200,97 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
 
       <CardContent>
         <Stack spacing={2}>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
-            {ticket.description}
-          </Typography>
+          {/* آخر رسالة في المحادثة */}
+          {ticket.lastMessage && (
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: (theme) =>
+                  ticket.lastMessage?.messageType === MessageType.ADMIN_REPLY
+                    ? theme.palette.mode === 'dark'
+                      ? 'success.dark'
+                      : 'success.light'
+                    : theme.palette.mode === 'dark'
+                    ? 'grey.800'
+                    : 'grey.100',
+                border: '1px solid',
+                borderColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.700' : 'grey.300'),
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="flex-start">
+                <Avatar
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    bgcolor:
+                      ticket.lastMessage.messageType === MessageType.ADMIN_REPLY
+                        ? 'success.main'
+                        : 'primary.main',
+                  }}
+                >
+                  {ticket.lastMessage.messageType === MessageType.ADMIN_REPLY ? (
+                    <AdminPanelSettings sx={{ fontSize: 14 }} />
+                  ) : (
+                    <Person sx={{ fontSize: 14 }} />
+                  )}
+                </Avatar>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    mb={0.5}
+                  >
+                    <Typography variant="caption" fontWeight="bold" color="text.secondary">
+                      {ticket.lastMessage.messageType === MessageType.ADMIN_REPLY
+                        ? ticket.lastMessage.sender?.name || t('labels.support')
+                        : ticket.lastMessage.sender?.name || t('labels.customer')}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatDistanceToNow(new Date(ticket.lastMessage.createdAt), {
+                        addSuffix: true,
+                        locale: ar,
+                      })}
+                    </Typography>
+                  </Stack>
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    sx={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {ticket.lastMessage.content}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
+          )}
+
+          {/* وصف التذكرة (فقط إذا لم تكن هناك رسالة أخيرة) */}
+          {!ticket.lastMessage && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {ticket.description}
+            </Typography>
+          )}
 
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Chip
-              label={getCategoryLabel(ticket.category, t)}
-              size="small"
-              variant="outlined"
-            />
+            <Chip label={getCategoryLabel(ticket.category, t)} size="small" variant="outlined" />
             {ticket.tags.slice(0, 3).map((tag, index) => (
-              <Chip
-                key={index}
-                label={tag}
-                size="small"
-                variant="outlined"
-                color="secondary"
-              />
+              <Chip key={index} label={tag} size="small" variant="outlined" color="secondary" />
             ))}
             {ticket.tags.length > 3 && (
               <Chip
@@ -235,11 +310,11 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
               </Typography>
             </Stack>
 
-            {showUser && (
+            {showUser && ticket.user && (
               <Stack direction="row" spacing={1} alignItems="center">
                 <Person fontSize="small" color="action" />
                 <Typography variant="caption" color="text.secondary">
-                  {t('labels.user')}
+                  {ticket.user.name || ticket.user.phone || t('labels.user')}
                 </Typography>
               </Stack>
             )}

@@ -1,8 +1,8 @@
 # 🎧 خدمة الدعم (Support Service)
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
-> 📅 **آخر تحديث**: نوفمبر 2025  
-> 🆕 **محدث**: إضافة WebSocket للرسائل الفورية
+> 📅 **آخر تحديث**: ديسمبر 2025  
+> 🆕 **محدث**: إضافة `lastMessage` - آخر رسالة مع كل تذكرة
 
 خدمة الدعم توفر endpoints لإدارة تذاكر الدعم والرسائل.
 
@@ -40,9 +40,7 @@
   "description": "اللوحة لا تعمل بشكل صحيح منذ يومين",
   "category": "technical",
   "priority": "medium",
-  "attachments": [
-    "https://cdn.bunny.net/uploads/image1.jpg"
-  ],
+  "attachments": ["https://cdn.bunny.net/uploads/image1.jpg"],
   "metadata": {
     "orderId": "12345",
     "productId": "67890"
@@ -64,9 +62,7 @@
     "priority": "medium",
     "status": "open",
     "assignedTo": null,
-    "attachments": [
-      "https://cdn.bunny.net/uploads/image1.jpg"
-    ],
+    "attachments": ["https://cdn.bunny.net/uploads/image1.jpg"],
     "tags": [],
     "isArchived": false,
     "firstResponseAt": null,
@@ -137,10 +133,10 @@ Future<SupportTicket> createSupportTicket({
 
 ### Query Parameters
 
-| المعامل | النوع | مطلوب | الوصف |
-|---------|------|-------|-------|
-| `page` | `number` | ❌ | رقم الصفحة (افتراضي: 1) |
-| `limit` | `number` | ❌ | عدد العناصر (افتراضي: 10) |
+| المعامل | النوع    | مطلوب | الوصف                     |
+| ------- | -------- | ----- | ------------------------- |
+| `page`  | `number` | ❌    | رقم الصفحة (افتراضي: 1)   |
+| `limit` | `number` | ❌    | عدد العناصر (افتراضي: 10) |
 
 ### Response - نجاح
 
@@ -156,10 +152,12 @@ Future<SupportTicket> createSupportTicket({
       "category": "technical",
       "priority": "medium",
       "status": "open",
-      "assignedTo": null,
-      "attachments": [
-        "https://cdn.bunny.net/uploads/image1.jpg"
-      ],
+      "assignedTo": {
+        "_id": "64admin123",
+        "name": "أحمد محمد",
+        "email": "admin@example.com"
+      },
+      "attachments": ["https://cdn.bunny.net/uploads/image1.jpg"],
       "tags": [],
       "isArchived": false,
       "firstResponseAt": null,
@@ -175,8 +173,24 @@ Future<SupportTicket> createSupportTicket({
         "orderId": "12345",
         "productId": "67890"
       },
+      "lastMessage": {
+        "_id": "64message456",
+        "ticketId": "64ticket123",
+        "senderId": "64admin123",
+        "messageType": "admin_reply",
+        "content": "نحن نعمل على حل المشكلة. سيتم التواصل معك قريباً.",
+        "attachments": [],
+        "isInternal": false,
+        "createdAt": "2025-01-15T12:00:00.000Z",
+        "updatedAt": "2025-01-15T12:00:00.000Z",
+        "sender": {
+          "_id": "64admin123",
+          "name": "أحمد محمد",
+          "email": "admin@example.com"
+        }
+      },
       "createdAt": "2025-01-15T10:00:00.000Z",
-      "updatedAt": "2025-01-15T10:00:00.000Z"
+      "updatedAt": "2025-01-15T12:00:00.000Z"
     }
   ],
   "total": 1,
@@ -185,6 +199,8 @@ Future<SupportTicket> createSupportTicket({
   "requestId": "req_support_002"
 }
 ```
+
+> **ملاحظة مهمة:** `lastMessage` يحتوي على **آخر رسالة** في المحادثة (مرتبة بـ `createdAt: -1`)، وليس أول رسالة. هذا يساعد في عرض ملخص سريع للمحادثة في قائمة التذاكر.
 
 ### كود Flutter
 
@@ -238,9 +254,7 @@ Future<PaginatedSupportTickets> getMyTickets({
     "priority": "medium",
     "status": "open",
     "assignedTo": null,
-    "attachments": [
-      "https://cdn.bunny.net/uploads/image1.jpg"
-    ],
+    "attachments": ["https://cdn.bunny.net/uploads/image1.jpg"],
     "tags": [],
     "isArchived": false,
     "firstResponseAt": null,
@@ -297,10 +311,10 @@ Future<SupportTicket> getSupportTicket(String ticketId) async {
 
 ### Query Parameters
 
-| المعامل | النوع | مطلوب | الوصف |
-|---------|------|-------|-------|
-| `page` | `number` | ❌ | رقم الصفحة (افتراضي: 1) |
-| `limit` | `number` | ❌ | عدد العناصر (افتراضي: 50) |
+| المعامل | النوع    | مطلوب | الوصف                     |
+| ------- | -------- | ----- | ------------------------- |
+| `page`  | `number` | ❌    | رقم الصفحة (افتراضي: 1)   |
+| `limit` | `number` | ❌    | عدد العناصر (افتراضي: 50) |
 
 ### Response - نجاح
 
@@ -372,9 +386,7 @@ Future<PaginatedSupportMessages> getTicketMessages(
 ```json
 {
   "content": "شكراً لك على الإبلاغ عن المشكلة. سنعمل على حلها في أقرب وقت ممكن.",
-  "attachments": [
-    "https://cdn.bunny.net/uploads/solution.pdf"
-  ],
+  "attachments": ["https://cdn.bunny.net/uploads/solution.pdf"],
   "isInternal": false,
   "metadata": {
     "action": "escalated"
@@ -393,9 +405,7 @@ Future<PaginatedSupportMessages> getTicketMessages(
     "senderId": "64user123",
     "messageType": "user_message",
     "content": "شكراً لك على الإبلاغ عن المشكلة. سنعمل على حلها في أقرب وقت ممكن.",
-    "attachments": [
-      "https://cdn.bunny.net/uploads/solution.pdf"
-    ],
+    "attachments": ["https://cdn.bunny.net/uploads/solution.pdf"],
     "isInternal": false,
     "metadata": {
       "action": "escalated"
@@ -491,6 +501,7 @@ Future<bool> archiveTicket(String ticketId) async {
 ### إعداد Dependencies
 
 في `pubspec.yaml`:
+
 ```yaml
 dependencies:
   socket_io_client: ^2.0.3+1
@@ -504,7 +515,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SupportWebSocketService {
-  static final SupportWebSocketService _instance = 
+  static final SupportWebSocketService _instance =
       SupportWebSocketService._internal();
   factory SupportWebSocketService() => _instance;
   SupportWebSocketService._internal();
@@ -512,7 +523,7 @@ class SupportWebSocketService {
   IO.Socket? _socket;
   bool _isConnected = false;
   String? _currentTicketId;
-  
+
   // Callbacks
   Function(Map<String, dynamic>)? onMessageReceived;
   Function(Map<String, dynamic>)? onNewMessageNotification;
@@ -531,7 +542,7 @@ class SupportWebSocketService {
       // الحصول على Token
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
-      
+
       if (token == null) {
         throw Exception('No access token found');
       }
@@ -549,7 +560,7 @@ class SupportWebSocketService {
 
       // إعداد Event Listeners
       _setupEventListeners();
-      
+
       _isConnected = true;
       print('✅ Connected to support WebSocket');
     } catch (e) {
@@ -570,7 +581,7 @@ class SupportWebSocketService {
       if (onConnected != null) {
         onConnected!();
       }
-      
+
       // إعادة الانضمام للتذكرة إذا كانت موجودة
       if (_currentTicketId != null) {
         joinTicket(_currentTicketId!);
@@ -675,7 +686,7 @@ class SupportWebSocketService {
 
   /// التحقق من حالة الاتصال
   bool get isConnected => _isConnected && (_socket?.connected ?? false);
-  
+
   /// الحصول على التذكرة الحالية
   String? get currentTicketId => _currentTicketId;
 }
@@ -688,7 +699,7 @@ class SupportWebSocketService {
 class _SupportTicketDetailsScreenState extends State<SupportTicketDetailsScreen> {
   final _wsService = SupportWebSocketService();
   final _supportApi = SupportApi();
-  
+
   List<SupportMessage> _messages = [];
   bool _isTyping = false;
   String? _typingUserId;
@@ -706,11 +717,11 @@ class _SupportTicketDetailsScreenState extends State<SupportTicketDetailsScreen>
       setState(() {
         _messages.add(SupportMessage.fromJson(data));
       });
-      
+
       // إعادة تحميل الرسائل للتأكد من الترتيب
       _loadMessages();
     };
-    
+
     // مؤشر الكتابة
     _wsService.onUserTyping = (data) {
       if (data['ticketId'] == widget.ticketId) {
@@ -720,7 +731,7 @@ class _SupportTicketDetailsScreenState extends State<SupportTicketDetailsScreen>
         });
       }
     };
-    
+
     // الاتصال والانضمام للتذكرة
     _wsService.connect().then((_) {
       _wsService.joinTicket(widget.ticketId);
@@ -734,7 +745,7 @@ class _SupportTicketDetailsScreenState extends State<SupportTicketDetailsScreen>
         widget.ticketId,
         content: content,
       );
-      
+
       // الرسالة ستصل عبر WebSocket تلقائياً
     } catch (e) {
       print('Error sending message: $e');
@@ -773,7 +784,7 @@ class _SupportTicketDetailsScreenState extends State<SupportTicketDetailsScreen>
               },
             ),
           ),
-          
+
           // حقل الإدخال
           MessageInputField(
             onSend: _sendMessage,
@@ -788,24 +799,24 @@ class _SupportTicketDetailsScreenState extends State<SupportTicketDetailsScreen>
 
 ### الأحداث المتاحة
 
-| الحدث | الوصف | البيانات |
-|------|-------|---------|
-| `connected` | اتصال ناجح | `{ success: true, userId: string, timestamp: string }` |
-| `message:new` | رسالة جديدة في التذكرة | `{ id, ticketId, senderId, content, attachments, messageType, createdAt }` |
-| `support:new-message` | إشعار برسالة جديدة (لتذاكر أخرى) | `{ ticketId, ticketTitle, message: {...} }` |
-| `user-typing` | مؤشر الكتابة | `{ userId, ticketId, isTyping: bool, userName }` |
-| `joined-ticket` | انضمام ناجح | `{ success: true, ticketId: string }` |
-| `left-ticket` | مغادرة ناجحة | `{ success: true, ticketId: string }` |
-| `pong` | رد على ping | `{ pong: true, timestamp: string }` |
+| الحدث                 | الوصف                            | البيانات                                                                   |
+| --------------------- | -------------------------------- | -------------------------------------------------------------------------- |
+| `connected`           | اتصال ناجح                       | `{ success: true, userId: string, timestamp: string }`                     |
+| `message:new`         | رسالة جديدة في التذكرة           | `{ id, ticketId, senderId, content, attachments, messageType, createdAt }` |
+| `support:new-message` | إشعار برسالة جديدة (لتذاكر أخرى) | `{ ticketId, ticketTitle, message: {...} }`                                |
+| `user-typing`         | مؤشر الكتابة                     | `{ userId, ticketId, isTyping: bool, userName }`                           |
+| `joined-ticket`       | انضمام ناجح                      | `{ success: true, ticketId: string }`                                      |
+| `left-ticket`         | مغادرة ناجحة                     | `{ success: true, ticketId: string }`                                      |
+| `pong`                | رد على ping                      | `{ pong: true, timestamp: string }`                                        |
 
 ### الأوامر المتاحة
 
-| الأمر | الوصف | البيانات |
-|------|-------|---------|
-| `ping` | اختبار الاتصال | لا |
-| `join-ticket` | الانضمام لتذكرة | `{ ticketId: string }` |
-| `leave-ticket` | مغادرة تذكرة | `{ ticketId: string }` |
-| `typing` | إرسال مؤشر الكتابة | `{ ticketId: string, isTyping: bool }` |
+| الأمر          | الوصف              | البيانات                               |
+| -------------- | ------------------ | -------------------------------------- |
+| `ping`         | اختبار الاتصال     | لا                                     |
+| `join-ticket`  | الانضمام لتذكرة    | `{ ticketId: string }`                 |
+| `leave-ticket` | مغادرة تذكرة       | `{ ticketId: string }`                 |
+| `typing`       | إرسال مؤشر الكتابة | `{ ticketId: string, isTyping: bool }` |
 
 ### ملاحظات مهمة
 
@@ -834,7 +845,7 @@ enum SupportCategory {
 
 extension SupportCategoryExtension on SupportCategory {
   String get value => name;
-  
+
   static SupportCategory fromString(String value) {
     return SupportCategory.values.firstWhere(
       (e) => e.name == value,
@@ -852,7 +863,7 @@ enum SupportPriority {
 
 extension SupportPriorityExtension on SupportPriority {
   String get value => name;
-  
+
   static SupportPriority fromString(String value) {
     return SupportPriority.values.firstWhere(
       (e) => e.name == value,
@@ -911,6 +922,102 @@ extension MessageTypeExtension on MessageType {
   }
 }
 
+/// معلومات المرسل (للرسائل)
+class MessageSender {
+  final String id;
+  final String name;
+  final String email;
+
+  MessageSender({
+    required this.id,
+    required this.name,
+    required this.email,
+  });
+
+  factory MessageSender.fromJson(Map<String, dynamic> json) {
+    return MessageSender(
+      id: json['_id'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+    );
+  }
+}
+
+/// آخر رسالة في التذكرة (تأتي من الـ aggregation)
+class LastMessage {
+  final String id;
+  final String ticketId;
+  final String senderId;
+  final MessageType messageType;
+  final String content;
+  final List<String> attachments;
+  final bool isInternal;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final MessageSender? sender;
+
+  LastMessage({
+    required this.id,
+    required this.ticketId,
+    required this.senderId,
+    required this.messageType,
+    required this.content,
+    required this.attachments,
+    required this.isInternal,
+    required this.createdAt,
+    required this.updatedAt,
+    this.sender,
+  });
+
+  factory LastMessage.fromJson(Map<String, dynamic> json) {
+    return LastMessage(
+      id: json['_id'] ?? '',
+      ticketId: json['ticketId'] ?? '',
+      senderId: json['senderId'] ?? '',
+      messageType: MessageTypeExtension.fromString(json['messageType']),
+      content: json['content'] ?? '',
+      attachments: List<String>.from(json['attachments'] ?? []),
+      isInternal: json['isInternal'] ?? false,
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+      sender: json['sender'] != null ? MessageSender.fromJson(json['sender']) : null,
+    );
+  }
+
+  bool get isUserMessage => messageType == MessageType.user_message;
+  bool get isAdminReply => messageType == MessageType.admin_reply;
+  bool get isSystemMessage => messageType == MessageType.system_message;
+  bool get hasAttachments => attachments.isNotEmpty;
+  bool get hasSender => sender != null;
+
+  /// اسم المرسل للعرض
+  String get senderDisplayName {
+    if (sender != null) return sender!.name;
+    return isAdminReply ? 'الدعم الفني' : 'العميل';
+  }
+}
+
+/// معلومات المسند إليه (populated)
+class AssignedTo {
+  final String id;
+  final String name;
+  final String email;
+
+  AssignedTo({
+    required this.id,
+    required this.name,
+    required this.email,
+  });
+
+  factory AssignedTo.fromJson(Map<String, dynamic> json) {
+    return AssignedTo(
+      id: json['_id'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+    );
+  }
+}
+
 class SupportTicket {
   final String id;
   final String userId;
@@ -919,7 +1026,7 @@ class SupportTicket {
   final SupportCategory category;
   final SupportPriority priority;
   final SupportStatus status;
-  final String? assignedTo;
+  final AssignedTo? assignedTo;
   final List<String> attachments;
   final List<String> tags;
   final bool isArchived;
@@ -935,6 +1042,9 @@ class SupportTicket {
   final Map<String, dynamic> metadata;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// آخر رسالة في المحادثة (تأتي من aggregation)
+  final LastMessage? lastMessage;
 
   SupportTicket({
     required this.id,
@@ -960,18 +1070,28 @@ class SupportTicket {
     required this.metadata,
     required this.createdAt,
     required this.updatedAt,
+    this.lastMessage,
   });
 
   factory SupportTicket.fromJson(Map<String, dynamic> json) {
+    // Handle assignedTo - can be string or object
+    AssignedTo? assignedTo;
+    if (json['assignedTo'] != null) {
+      if (json['assignedTo'] is Map) {
+        assignedTo = AssignedTo.fromJson(json['assignedTo']);
+      }
+      // If it's a string, we don't have full info, so leave as null
+    }
+
     return SupportTicket(
       id: json['_id'] ?? '',
-      userId: json['userId'] ?? '',
+      userId: json['userId'] is Map ? json['userId']['_id'] : (json['userId'] ?? ''),
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       category: SupportCategoryExtension.fromString(json['category']),
       priority: SupportPriorityExtension.fromString(json['priority']),
       status: SupportStatusExtension.fromString(json['status']),
-      assignedTo: json['assignedTo'],
+      assignedTo: assignedTo,
       attachments: List<String>.from(json['attachments'] ?? []),
       tags: List<String>.from(json['tags'] ?? []),
       isArchived: json['isArchived'] ?? false,
@@ -987,6 +1107,7 @@ class SupportTicket {
       metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
+      lastMessage: json['lastMessage'] != null ? LastMessage.fromJson(json['lastMessage']) : null,
     );
   }
 
@@ -995,22 +1116,22 @@ class SupportTicket {
   bool get isWaitingForUser => status == SupportStatus.waiting_for_user;
   bool get isResolved => status == SupportStatus.resolved;
   bool get isClosed => status == SupportStatus.closed;
-  
+
   bool get isTechnical => category == SupportCategory.technical;
   bool get isBilling => category == SupportCategory.billing;
   bool get isProducts => category == SupportCategory.products;
   bool get isServices => category == SupportCategory.services;
   bool get isAccount => category == SupportCategory.account;
   bool get isOther => category == SupportCategory.other;
-  
+
   bool get isLowPriority => priority == SupportPriority.low;
   bool get isMediumPriority => priority == SupportPriority.medium;
   bool get isHighPriority => priority == SupportPriority.high;
   bool get isUrgentPriority => priority == SupportPriority.urgent;
-  
+
   bool get hasAttachments => attachments.isNotEmpty;
   bool get hasTags => tags.isNotEmpty;
-  bool get hasAssignedTo => assignedTo != null && assignedTo!.isNotEmpty;
+  bool get hasAssignedTo => assignedTo != null;
   bool get hasFirstResponse => firstResponseAt != null;
   bool get hasResolved => resolvedAt != null;
   bool get hasClosed => closedAt != null;
@@ -1019,12 +1140,20 @@ class SupportTicket {
   bool get hasFeedback => feedback != null && feedback!.isNotEmpty;
   bool get hasFeedbackAt => feedbackAt != null;
   bool get hasMetadata => metadata.isNotEmpty;
-  
+
+  /// هل يوجد آخر رسالة؟
+  bool get hasLastMessage => lastMessage != null;
+
+  /// هل آخر رسالة من الدعم الفني؟
+  bool get lastMessageFromAdmin => lastMessage?.isAdminReply ?? false;
+
+  /// هل آخر رسالة من العميل؟
+  bool get lastMessageFromUser => lastMessage?.isUserMessage ?? false;
+
   bool get isActive => !isArchived && !isClosed;
   bool get isCompleted => isResolved || isClosed;
   bool get isPending => isOpen || isWaitingForUser;
-  bool get isInProgress => isInProgress;
-  
+
   String get statusDisplay {
     switch (status) {
       case SupportStatus.open:
@@ -1039,7 +1168,7 @@ class SupportTicket {
         return 'مغلق';
     }
   }
-  
+
   String get priorityDisplay {
     switch (priority) {
       case SupportPriority.low:
@@ -1052,7 +1181,7 @@ class SupportTicket {
         return 'عاجل';
     }
   }
-  
+
   String get categoryDisplay {
     switch (category) {
       case SupportCategory.technical:
@@ -1114,10 +1243,10 @@ class SupportMessage {
   bool get isUserMessage => messageType == MessageType.user_message;
   bool get isAdminReply => messageType == MessageType.admin_reply;
   bool get isSystemMessage => messageType == MessageType.system_message;
-  
+
   bool get hasAttachments => attachments.isNotEmpty;
   bool get hasMetadata => metadata.isNotEmpty;
-  
+
   String get messageTypeDisplay {
     switch (messageType) {
       case MessageType.user_message:
@@ -1210,6 +1339,7 @@ class PaginatedSupportMessages {
 ## 📝 ملاحظات مهمة
 
 1. **تصنيفات التذاكر:**
+
    - `technical`: تقني
    - `billing`: فوترة
    - `products`: منتجات
@@ -1218,12 +1348,14 @@ class PaginatedSupportMessages {
    - `other`: أخرى
 
 2. **أولويات التذاكر:**
+
    - `low`: منخفض
    - `medium`: متوسط
    - `high`: عالي
    - `urgent`: عاجل
 
 3. **حالات التذاكر:**
+
    - `open`: مفتوح
    - `in_progress`: جاري العمل
    - `waiting_for_user`: في انتظار المستخدم
@@ -1231,42 +1363,59 @@ class PaginatedSupportMessages {
    - `closed`: مغلق
 
 4. **أنواع الرسائل:**
+
    - `user_message`: رسالة مستخدم
    - `admin_reply`: رد إداري
    - `system_message`: رسالة نظام
 
 5. **SLA (Service Level Agreement):**
+
    - `slaHours`: عدد الساعات المتوقع للحل
    - `slaDueDate`: تاريخ انتهاء SLA
    - `slaBreached`: هل تم تجاوز SLA
 
 6. **التقييم والملاحظات:**
+
    - `rating`: تقييم من 1 إلى 5
    - `feedback`: ملاحظات العميل
    - `feedbackAt`: وقت التقييم
 
-7. **الاستخدام:**
+7. **آخر رسالة (lastMessage):** 🆕
+
+   - كل تذكرة تحتوي على `lastMessage` - آخر رسالة في المحادثة
+   - مرتبة حسب `createdAt` تنازلياً (الأحدث أولاً)
+   - تتضمن `sender` - معلومات المرسل (name, email)
+   - استخدم `hasLastMessage` للتحقق من وجود رسالة
+   - استخدم `lastMessageFromAdmin` للتحقق إذا آخر رسالة من الدعم
+   - استخدم `lastMessageFromUser` للتحقق إذا آخر رسالة من العميل
+   - استخدم `lastMessage?.senderDisplayName` لعرض اسم المرسل
+
+8. **الاستخدام:**
+
    - استخدم `statusDisplay` لعرض حالة التذكرة
    - استخدم `priorityDisplay` لعرض أولوية التذكرة
    - استخدم `categoryDisplay` لعرض تصنيف التذكرة
    - استخدم `messageTypeDisplay` لعرض نوع الرسالة
 
-8. **التحقق من الصحة:**
+9. **التحقق من الصحة:**
+
    - استخدم `isActive` للتحقق من نشاط التذكرة
    - استخدم `isCompleted` للتحقق من اكتمال التذكرة
    - استخدم `isPending` للتحقق من انتظار التذكرة
    - استخدم `hasAttachments` للتحقق من وجود مرفقات
 
-9. **الأداء:**
-   - يتم ترتيب التذاكر حسب تاريخ الإنشاء
-   - يتم ترتيب الرسائل حسب تاريخ الإرسال
-   - يتم دعم الصفحات للنتائج الكبيرة
+10. **الأداء:**
+    - يتم ترتيب التذاكر حسب تاريخ الإنشاء
+    - يتم ترتيب الرسائل حسب تاريخ الإرسال
+    - يتم دعم الصفحات للنتائج الكبيرة
+    - `lastMessage` يأتي مع التذكرة مباشرة (aggregation) - لا حاجة لطلب إضافي
 
 ---
 
 ## 🔄 Notes on Update
 
 **التغييرات الرئيسية:**
+
 1. ✅ تصحيح Endpoint - `/support/tickets/my` بدلاً من `/support/tickets` للحصول على تذاكر المستخدم
 2. ✅ تصحيح Response Structures - `{ tickets, total, page, totalPages }` و `{ messages, total, page, totalPages }` في المستوى العلوي
 3. ✅ تحديث Enums - استخدام snake_case: `in_progress`, `waiting_for_user`, `user_message`, `admin_reply`, `system_message`
@@ -1279,18 +1428,27 @@ class PaginatedSupportMessages {
    - Events: `message:new`, `support:new-message`, `user-typing`, `joined-ticket`, `left-ticket`
    - Commands: `ping`, `join-ticket`, `leave-ticket`, `typing`
    - Real-time messages مع مؤشرات الكتابة
+9. ✅ **[جديد - ديسمبر 2025] إضافة `lastMessage` لكل تذكرة:**
+   - كل تذكرة تحتوي الآن على `lastMessage` - آخر رسالة في المحادثة
+   - مرتبة حسب `createdAt: -1` (الأحدث أولاً)
+   - تتضمن معلومات المرسل (`sender`) مع الاسم والإيميل
+   - مفيدة لعرض ملخص المحادثة في قائمة التذاكر
+   - للعملاء: يتم استثناء الرسائل الداخلية (`isInternal: false`)
 
 **ملاحظات مهمة:**
+
 - endpoint لإنشاء تذكرة: `POST /support/tickets`
 - endpoint لجلب تذاكر المستخدم: `GET /support/tickets/my`
 - `SupportStatus`: الآن `in_progress`, `waiting_for_user` بدلاً من `inProgress`, `waitingForUser`
 - `MessageType`: الآن `user_message`, `admin_reply`, `system_message`
 - `assignedTo` قد يكون populated (object) أو null في بعض الـ responses
 - عند إنشاء تذكرة، يتم إنشاء رسالة أولية تلقائياً مع description
+- **`lastMessage`**: يحتوي على آخر رسالة في المحادثة (وليس أول رسالة) - مفيد لعرض ملخص سريع
 
 **ملفات Backend المرجعية:**
+
 - `backend/src/modules/support/customer.controller.ts` - جميع endpoints للعملاء
-- `backend/src/modules/support/support.service.ts` - المنطق والـ queries
+- `backend/src/modules/support/support.service.ts` - المنطق والـ queries (يستخدم aggregation مع $lookup للحصول على lastMessage)
 - `backend/src/modules/support/schemas/support-ticket.schema.ts` - SupportTicket Schema و Enums
 - `backend/src/modules/support/schemas/support-message.schema.ts` - SupportMessage Schema و MessageType
 

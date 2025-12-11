@@ -30,6 +30,13 @@ export class EngineerProfileController {
       // إنشاء بروفايل جديد إذا لم يكن موجوداً
       return await this.engineerProfileService.createProfile(userId);
     }
+
+    // حذف totalRevenue من إحصائيات الكوبون - هذه المعلومة للإدارة فقط
+    const couponData = profile.coupon as any;
+    if (couponData?.stats) {
+      delete couponData.stats.totalRevenue;
+    }
+
     return profile;
   }
 
@@ -54,6 +61,13 @@ export class EngineerProfileController {
     if (!profile) {
       return { message: 'البروفايل غير موجود' };
     }
+
+    // حذف totalRevenue من إحصائيات الكوبون - هذه المعلومة للإدارة فقط
+    const couponData = profile.coupon as any;
+    if (couponData?.stats) {
+      delete couponData.stats.totalRevenue;
+    }
+
     return profile;
   }
 

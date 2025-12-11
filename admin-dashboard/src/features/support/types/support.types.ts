@@ -49,6 +49,40 @@ export enum MessageType {
   SYSTEM_MESSAGE = 'system_message',
 }
 
+// Support Message Sender Info
+export interface MessageSender {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  name: string; // Computed from firstName + lastName
+  email: string;
+  phone?: string;
+}
+
+// Last Message in Ticket (from aggregation)
+export interface LastMessage {
+  _id: string;
+  ticketId: string;
+  senderId: string;
+  messageType: MessageType;
+  content: string;
+  attachments: string[];
+  isInternal: boolean;
+  createdAt: string;
+  updatedAt: string;
+  sender?: MessageSender;
+}
+
+// User Info for ticket
+export interface TicketUser {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  name: string; // Computed from firstName + lastName
+  email: string;
+  phone?: string;
+}
+
 // Support Ticket Interface - متطابق 100% مع Backend Schema
 export interface SupportTicket extends BaseEntity {
   userId: string;
@@ -57,27 +91,39 @@ export interface SupportTicket extends BaseEntity {
   category: SupportCategory;
   priority: SupportPriority;
   status: SupportStatus;
-  assignedTo: string | null;
+  assignedTo: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    name: string;
+    email: string;
+  } | null;
   attachments: string[];
   tags: string[];
   isArchived: boolean;
-  
+
   // Timing
   firstResponseAt?: Date;
   resolvedAt?: Date;
   closedAt?: Date;
-  
+
   // SLA
   slaHours: number;
   slaDueDate?: Date;
   slaBreached: boolean;
-  
+
   // Rating
   rating?: number;
   feedback?: string;
   feedbackAt?: Date;
-  
+
   metadata?: Record<string, unknown>;
+
+  // معلومات العميل (populated من الـ aggregation)
+  user?: TicketUser;
+
+  // آخر رسالة في التذكرة (تأتي من الـ aggregation)
+  lastMessage?: LastMessage;
 }
 
 // Support Message Interface - متطابق 100% مع Backend Schema
@@ -187,4 +233,3 @@ export interface BreachedSLATicketsResponse {
   totalBreached: number;
   criticalCount: number;
 }
-

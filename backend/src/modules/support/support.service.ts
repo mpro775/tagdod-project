@@ -132,36 +132,144 @@ export class SupportService {
   }
 
   /**
-   * Get user's tickets
+   * Get user's tickets with last message
    */
   async getUserTickets(
     userId: string,
     page = 1,
     limit = 10,
   ): Promise<{
-    tickets: SupportTicketDocument[];
+    tickets: (SupportTicketDocument & { lastMessage?: SupportMessageDocument })[];
     total: number;
     page: number;
     totalPages: number;
   }> {
-    const skip = (page - 1) * limit;
+    // Ensure page and limit are numbers
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
 
-    const [tickets, total] = await Promise.all([
-      this.ticketModel
-        .find({ userId, isArchived: false })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate('assignedTo', 'name email')
-        .exec(),
-      this.ticketModel.countDocuments({ userId, isArchived: false }),
+    const Types = require('mongoose').Types;
+    const userObjectId = new Types.ObjectId(userId);
+
+    const [ticketsWithLastMessage, total] = await Promise.all([
+      this.ticketModel.aggregate([
+        // Match tickets - handle both ObjectId and string userId
+        {
+          $match: {
+            $or: [{ userId: userObjectId }, { userId: userId }],
+            isArchived: false,
+          },
+        },
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limitNum },
+        // Lookup to get the last message for each ticket
+        {
+          $lookup: {
+            from: 'supportmessages',
+            let: { ticketId: { $toString: '$_id' } },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: [{ $toString: '$ticketId' }, '$$ticketId'],
+                  },
+                  isInternal: false,
+                },
+              },
+              { $sort: { createdAt: -1 } },
+              { $limit: 1 },
+              {
+                $lookup: {
+                  from: 'users',
+                  localField: 'senderId',
+                  foreignField: '_id',
+                  as: 'sender',
+                  pipeline: [
+                    {
+                      $project: {
+                        firstName: 1,
+                        lastName: 1,
+                        email: 1,
+                        phone: 1,
+                        name: {
+                          $trim: {
+                            input: {
+                              $concat: [
+                                { $ifNull: ['$firstName', ''] },
+                                ' ',
+                                { $ifNull: ['$lastName', ''] },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+              { $unwind: { path: '$sender', preserveNullAndEmptyArrays: true } },
+            ],
+            as: 'lastMessageArray',
+          },
+        },
+        // Unwind the last message (will be null if no messages)
+        {
+          $addFields: {
+            lastMessage: { $arrayElemAt: ['$lastMessageArray', 0] },
+          },
+        },
+        { $unset: 'lastMessageArray' },
+        // Lookup assignedTo
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'assignedTo',
+            foreignField: '_id',
+            as: 'assignedToUser',
+            pipeline: [
+              {
+                $project: {
+                  firstName: 1,
+                  lastName: 1,
+                  email: 1,
+                  name: {
+                    $trim: {
+                      input: {
+                        $concat: [
+                          { $ifNull: ['$firstName', ''] },
+                          ' ',
+                          { $ifNull: ['$lastName', ''] },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          $addFields: {
+            assignedTo: { $arrayElemAt: ['$assignedToUser', 0] },
+          },
+        },
+        { $unset: 'assignedToUser' },
+      ]),
+      this.ticketModel.countDocuments({
+        $or: [{ userId: userObjectId }, { userId: userId }],
+        isArchived: false,
+      }),
     ]);
 
     return {
-      tickets,
+      tickets: ticketsWithLastMessage as (SupportTicketDocument & {
+        lastMessage?: SupportMessageDocument;
+      })[],
       total,
-      page,
-      totalPages: Math.ceil(total / limit),
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
     };
   }
 
@@ -191,7 +299,7 @@ export class SupportService {
   }
 
   /**
-   * Get all tickets (admin only)
+   * Get all tickets (admin only) with last message
    */
   async getAllTickets(
     filters: {
@@ -203,36 +311,182 @@ export class SupportService {
     page = 1,
     limit = 20,
   ): Promise<{
-    tickets: SupportTicketDocument[];
+    tickets: (SupportTicketDocument & { lastMessage?: SupportMessageDocument })[];
     total: number;
     page: number;
     totalPages: number;
   }> {
-    const skip = (page - 1) * limit;
-    const query: FilterQuery<SupportTicketDocument> = { isArchived: false };
+    // Ensure page and limit are numbers
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 20;
+    const skip = (pageNum - 1) * limitNum;
+    const matchQuery: FilterQuery<SupportTicketDocument> = { isArchived: false };
 
-    if (filters.status) query.status = filters.status;
-    if (filters.priority) query.priority = filters.priority;
-    if (filters.category) query.category = filters.category;
-    if (filters.assignedTo) query.assignedTo = filters.assignedTo;
+    if (filters.status) matchQuery.status = filters.status;
+    if (filters.priority) matchQuery.priority = filters.priority;
+    if (filters.category) matchQuery.category = filters.category;
+    if (filters.assignedTo)
+      matchQuery.assignedTo = new (require('mongoose').Types.ObjectId)(filters.assignedTo);
 
-    const [tickets, total] = await Promise.all([
-      this.ticketModel
-        .find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate('userId', 'name email')
-        .populate('assignedTo', 'name email')
-        .exec(),
-      this.ticketModel.countDocuments(query),
+    const Types = require('mongoose').Types;
+
+    const [ticketsWithLastMessage, total] = await Promise.all([
+      this.ticketModel.aggregate([
+        { $match: matchQuery },
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limitNum },
+        // Convert userId to ObjectId if it's a string (for backward compatibility)
+        {
+          $addFields: {
+            userIdObj: {
+              $cond: {
+                if: { $eq: [{ $type: '$userId' }, 'objectId'] },
+                then: '$userId',
+                else: { $toObjectId: '$userId' },
+              },
+            },
+          },
+        },
+        // Lookup to get the last message for each ticket
+        {
+          $lookup: {
+            from: 'supportmessages',
+            let: { ticketId: { $toString: '$_id' } },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: [{ $toString: '$ticketId' }, '$$ticketId'],
+                  },
+                },
+              },
+              { $sort: { createdAt: -1 } },
+              { $limit: 1 },
+              {
+                $lookup: {
+                  from: 'users',
+                  localField: 'senderId',
+                  foreignField: '_id',
+                  as: 'sender',
+                  pipeline: [
+                    {
+                      $project: {
+                        firstName: 1,
+                        lastName: 1,
+                        email: 1,
+                        phone: 1,
+                        name: {
+                          $trim: {
+                            input: {
+                              $concat: [
+                                { $ifNull: ['$firstName', ''] },
+                                ' ',
+                                { $ifNull: ['$lastName', ''] },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+              { $unwind: { path: '$sender', preserveNullAndEmptyArrays: true } },
+            ],
+            as: 'lastMessageArray',
+          },
+        },
+        // Add lastMessage field
+        {
+          $addFields: {
+            lastMessage: { $arrayElemAt: ['$lastMessageArray', 0] },
+          },
+        },
+        { $unset: 'lastMessageArray' },
+        // Lookup user (customer) info using converted ObjectId
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'userIdObj',
+            foreignField: '_id',
+            as: 'userInfo',
+            pipeline: [
+              {
+                $project: {
+                  firstName: 1,
+                  lastName: 1,
+                  email: 1,
+                  phone: 1,
+                  name: {
+                    $trim: {
+                      input: {
+                        $concat: [
+                          { $ifNull: ['$firstName', ''] },
+                          ' ',
+                          { $ifNull: ['$lastName', ''] },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+        // Add user field with customer info
+        {
+          $addFields: {
+            user: { $arrayElemAt: ['$userInfo', 0] },
+          },
+        },
+        { $unset: ['userInfo', 'userIdObj'] },
+        // Lookup assignedTo user info
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'assignedTo',
+            foreignField: '_id',
+            as: 'assignedToUser',
+            pipeline: [
+              {
+                $project: {
+                  firstName: 1,
+                  lastName: 1,
+                  email: 1,
+                  name: {
+                    $trim: {
+                      input: {
+                        $concat: [
+                          { $ifNull: ['$firstName', ''] },
+                          ' ',
+                          { $ifNull: ['$lastName', ''] },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          $addFields: {
+            assignedTo: { $arrayElemAt: ['$assignedToUser', 0] },
+          },
+        },
+        { $unset: 'assignedToUser' },
+      ]),
+      this.ticketModel.countDocuments(matchQuery),
     ]);
 
     return {
-      tickets,
+      tickets: ticketsWithLastMessage as (SupportTicketDocument & {
+        lastMessage?: SupportMessageDocument;
+      })[],
       total,
-      page,
-      totalPages: Math.ceil(total / limit),
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
     };
   }
 

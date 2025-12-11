@@ -7,6 +7,8 @@ import {
   Stack,
   Chip,
   Divider,
+  useTheme,
+  alpha,
 } from '@mui/material';
 import {
   Person,
@@ -68,8 +70,38 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
   isCurrentUser = false,
   showSenderInfo = true,
 }) => {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const isInternal = message.isInternal;
   const hasAttachments = message.attachments && message.attachments.length > 0;
+
+  // حساب لون الخلفية بناءً على الوضع (فاتح/داكن) ونوع الرسالة
+  const getBubbleBackgroundColor = () => {
+    if (isCurrentUser) {
+      // رسالة المدير/الدعم
+      return isDarkMode 
+        ? theme.palette.primary.dark 
+        : theme.palette.primary.main;
+    }
+    if (isInternal) {
+      // رسالة داخلية
+      return isDarkMode 
+        ? alpha(theme.palette.warning.dark, 0.3) 
+        : theme.palette.warning.light;
+    }
+    // رسالة المستخدم
+    return isDarkMode 
+      ? theme.palette.grey[800] 
+      : theme.palette.grey[100];
+  };
+
+  // حساب لون النص
+  const getTextColor = () => {
+    if (isCurrentUser) {
+      return theme.palette.primary.contrastText;
+    }
+    return theme.palette.text.primary;
+  };
 
   return (
     <Box
@@ -79,12 +111,12 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
         alignItems: 'flex-start',
         gap: 2,
         mb: 2,
-        opacity: isInternal ? 0.7 : 1,
+        opacity: isInternal ? 0.85 : 1,
       }}
     >
       <Avatar
         sx={{
-          bgcolor: getMessageTypeColor(message.messageType) + '.main',
+          bgcolor: `${getMessageTypeColor(message.messageType)}.main`,
           width: 40,
           height: 40,
         }}
@@ -113,6 +145,11 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
               size="small"
               color={getMessageTypeColor(message.messageType)}
               variant="outlined"
+              sx={{
+                borderColor: isDarkMode 
+                  ? alpha(theme.palette[getMessageTypeColor(message.messageType)].main, 0.5) 
+                  : undefined,
+              }}
             />
             {isInternal && (
               <Chip
@@ -130,18 +167,17 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
         )}
 
         <Paper
-          elevation={1}
+          elevation={isDarkMode ? 0 : 1}
           sx={{
             p: 2,
-            bgcolor: isCurrentUser 
-              ? 'primary.main' 
-              : isInternal 
-                ? 'warning.light' 
-                : 'grey.100',
-            color: isCurrentUser ? 'primary.contrastText' : 'text.primary',
+            bgcolor: getBubbleBackgroundColor(),
+            color: getTextColor(),
             borderRadius: 2,
-            border: isInternal ? '1px dashed' : 'none',
-            borderColor: 'warning.main',
+            border: isInternal 
+              ? `1px dashed ${isDarkMode ? theme.palette.warning.dark : theme.palette.warning.main}` 
+              : isDarkMode 
+                ? `1px solid ${theme.palette.divider}` 
+                : 'none',
           }}
         >
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -150,8 +186,16 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
 
           {hasAttachments && (
             <>
-              <Divider sx={{ my: 1, opacity: 0.5 }} />
-              <Stack direction="row" alignItems="center" spacing={1}>
+              <Divider 
+                sx={{ 
+                  my: 1, 
+                  opacity: 0.5,
+                  borderColor: isCurrentUser 
+                    ? alpha(theme.palette.primary.contrastText, 0.3) 
+                    : theme.palette.divider,
+                }} 
+              />
+              <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
                 <Attachment fontSize="small" />
                 <Typography variant="caption">
                   {message.attachments.length} مرفق
@@ -164,6 +208,19 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
                     variant="outlined"
                     clickable
                     onClick={() => window.open(attachment, '_blank')}
+                    sx={{
+                      borderColor: isCurrentUser 
+                        ? alpha(theme.palette.primary.contrastText, 0.5) 
+                        : theme.palette.divider,
+                      color: isCurrentUser 
+                        ? theme.palette.primary.contrastText 
+                        : theme.palette.text.primary,
+                      '&:hover': {
+                        bgcolor: isCurrentUser 
+                          ? alpha(theme.palette.primary.contrastText, 0.1) 
+                          : theme.palette.action.hover,
+                      },
+                    }}
                   />
                 ))}
               </Stack>
