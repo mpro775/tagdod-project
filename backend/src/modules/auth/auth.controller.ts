@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards, Logger, Inject, forwardRef } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+  Logger,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { Request } from 'express';
 import {
   ApiBearerAuth,
@@ -62,7 +74,11 @@ import { normalizeYemeniPhone } from '../../shared/utils/phone.util';
 import { AuditService } from '../../shared/services/audit.service';
 import { EngineerProfileService } from '../users/services/engineer-profile.service';
 import { NotificationService } from '../notifications/services/notification.service';
-import { NotificationType, NotificationChannel, NotificationPriority } from '../notifications/enums/notification.enums';
+import {
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+} from '../notifications/enums/notification.enums';
 
 @ApiTags('المصادقة')
 @Controller('auth')
@@ -135,7 +151,7 @@ export class AuthController {
       const admins = await this.userModel
         .find({
           roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
-          status: 'ACTIVE',
+          status: UserStatus.ACTIVE,
         })
         .select('_id')
         .lean();

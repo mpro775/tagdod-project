@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { 
+import {
   TicketNotFoundException,
   SupportException,
   ForbiddenException,
-  ErrorCode 
+  ErrorCode,
 } from '../../shared/exceptions';
 import { FilterQuery, Model } from 'mongoose';
 import {
@@ -12,17 +12,14 @@ import {
   SupportTicketDocument,
   SupportStatus,
   SupportPriority,
-  SupportCategory
+  SupportCategory,
 } from './schemas/support-ticket.schema';
 import {
   SupportMessage,
   SupportMessageDocument,
-  MessageType
+  MessageType,
 } from './schemas/support-message.schema';
-import {
-  CannedResponse,
-  CannedResponseDocument
-} from './schemas/canned-response.schema';
+import { CannedResponse, CannedResponseDocument } from './schemas/canned-response.schema';
 import { CreateSupportTicketDto } from './dto/create-ticket.dto';
 import { AddSupportMessageDto } from './dto/add-message.dto';
 import { UpdateSupportTicketDto } from './dto/update-ticket.dto';
@@ -30,8 +27,12 @@ import { RateTicketDto } from './dto/rate-ticket.dto';
 import { CreateCannedResponseDto, UpdateCannedResponseDto } from './dto/canned-response.dto';
 import { WebSocketService } from '../../shared/websocket/websocket.service';
 import { NotificationService } from '../notifications/services/notification.service';
-import { NotificationType, NotificationChannel, NotificationPriority } from '../notifications/enums/notification.enums';
-import { User, UserRole } from '../users/schemas/user.schema';
+import {
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+} from '../notifications/enums/notification.enums';
+import { User, UserRole, UserStatus } from '../users/schemas/user.schema';
 
 @Injectable()
 export class SupportService {
@@ -46,14 +47,23 @@ export class SupportService {
 
   // ===== Notification Helpers =====
 
-  private async notifyAdmins(type: NotificationType, title: string, message: string, messageEn: string, data?: Record<string, unknown>) {
+  private async notifyAdmins(
+    type: NotificationType,
+    title: string,
+    message: string,
+    messageEn: string,
+    data?: Record<string, unknown>,
+  ) {
     try {
       if (!this.notificationService) return;
-      
-      const admins = await this.userModel.find({
-        roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
-        status: 'ACTIVE',
-      }).select('_id').lean();
+
+      const admins = await this.userModel
+        .find({
+          roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+          status: UserStatus.ACTIVE,
+        })
+        .select('_id')
+        .lean();
 
       const notificationPromises = admins.map((admin) =>
         this.notificationService!.createNotification({
@@ -65,7 +75,7 @@ export class SupportService {
           data,
           channel: NotificationChannel.IN_APP,
           priority: NotificationPriority.HIGH,
-        })
+        }),
       );
 
       await Promise.all(notificationPromises);
@@ -115,7 +125,7 @@ export class SupportService {
         category: savedTicket.category,
         priority: savedTicket.priority,
         customerId: userId,
-      }
+      },
     );
 
     return savedTicket;
@@ -124,7 +134,11 @@ export class SupportService {
   /**
    * Get user's tickets
    */
-  async getUserTickets(userId: string, page = 1, limit = 10): Promise<{
+  async getUserTickets(
+    userId: string,
+    page = 1,
+    limit = 10,
+  ): Promise<{
     tickets: SupportTicketDocument[];
     total: number;
     page: number;
@@ -154,7 +168,11 @@ export class SupportService {
   /**
    * Get ticket by ID (with permission check)
    */
-  async getTicket(ticketId: string, userId: string, isAdmin = false): Promise<SupportTicketDocument> {
+  async getTicket(
+    ticketId: string,
+    userId: string,
+    isAdmin = false,
+  ): Promise<SupportTicketDocument> {
     const ticket = await this.ticketModel
       .findById(ticketId)
       .populate('assignedTo', 'name email')
@@ -233,7 +251,7 @@ export class SupportService {
 
     // Update status timestamps
     const updateData: UpdateSupportTicketDto & { firstResponseAt?: Date } = { ...dto };
-    
+
     if (dto.status === SupportStatus.RESOLVED && !ticket.resolvedAt) {
       updateData.resolvedAt = new Date();
     }
@@ -408,19 +426,16 @@ export class SupportService {
       {
         $addFields: {
           responseTimeHours: {
-            $divide: [
-              { $subtract: ['$firstResponseAt', '$createdAt'] },
-              1000 * 60 * 60
-            ]
-          }
-        }
+            $divide: [{ $subtract: ['$firstResponseAt', '$createdAt'] }, 1000 * 60 * 60],
+          },
+        },
       },
       {
         $group: {
           _id: null,
-          averageResponseTime: { $avg: '$responseTimeHours' }
-        }
-      }
+          averageResponseTime: { $avg: '$responseTimeHours' },
+        },
+      },
     ]);
 
     // Calculate average resolution time
@@ -429,37 +444,40 @@ export class SupportService {
       {
         $addFields: {
           resolutionTimeHours: {
-            $divide: [
-              { $subtract: ['$resolvedAt', '$createdAt'] },
-              1000 * 60 * 60
-            ]
-          }
-        }
+            $divide: [{ $subtract: ['$resolvedAt', '$createdAt'] }, 1000 * 60 * 60],
+          },
+        },
       },
       {
         $group: {
           _id: null,
-          averageResolutionTime: { $avg: '$resolutionTimeHours' }
-        }
-      }
+          averageResolutionTime: { $avg: '$resolutionTimeHours' },
+        },
+      },
     ]);
 
     // Count SLA breached tickets
     const slaBreachedCount = await this.ticketModel.countDocuments({
       isArchived: false,
-      slaBreached: true
+      slaBreached: true,
     });
 
     return {
       ...baseStats,
-      byCategory: categoryStats.reduce((acc, stat) => {
-        acc[stat._id] = stat.count;
-        return acc;
-      }, {} as Record<string, number>),
-      byPriority: priorityStats.reduce((acc, stat) => {
-        acc[stat._id] = stat.count;
-        return acc;
-      }, {} as Record<string, number>),
+      byCategory: categoryStats.reduce(
+        (acc, stat) => {
+          acc[stat._id] = stat.count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+      byPriority: priorityStats.reduce(
+        (acc, stat) => {
+          acc[stat._id] = stat.count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
       averageResponseTime: responseTimeStats[0]?.averageResponseTime || 0,
       averageResolutionTime: resolutionTimeStats[0]?.averageResolutionTime || 0,
       slaBreachedCount,
@@ -534,12 +552,18 @@ export class SupportService {
 
     // Check if ticket is resolved or closed
     if (![SupportStatus.RESOLVED, SupportStatus.CLOSED].includes(ticket.status)) {
-      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { ticketId, status: ticket.status });
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, {
+        ticketId,
+        status: ticket.status,
+      });
     }
 
     // Check if already rated
     if (ticket.rating) {
-      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { ticketId, reason: 'already_rated' });
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, {
+        ticketId,
+        reason: 'already_rated',
+      });
     }
 
     const updatedTicket = await this.ticketModel
@@ -550,7 +574,7 @@ export class SupportService {
           feedback: dto.feedback,
           feedbackAt: new Date(),
         },
-        { new: true }
+        { new: true },
       )
       .populate('assignedTo', 'name email')
       .exec();
@@ -623,7 +647,10 @@ export class SupportService {
   async getCannedResponse(id: string): Promise<CannedResponseDocument> {
     const response = await this.cannedResponseModel.findById(id);
     if (!response) {
-      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { responseId: id, reason: 'not_found' });
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, {
+        responseId: id,
+        reason: 'not_found',
+      });
     }
     return response;
   }
@@ -635,13 +662,12 @@ export class SupportService {
     id: string,
     dto: UpdateCannedResponseDto,
   ): Promise<CannedResponseDocument> {
-    const response = await this.cannedResponseModel.findByIdAndUpdate(
-      id,
-      dto,
-      { new: true }
-    );
+    const response = await this.cannedResponseModel.findByIdAndUpdate(id, dto, { new: true });
     if (!response) {
-      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { responseId: id, reason: 'not_found' });
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, {
+        responseId: id,
+        reason: 'not_found',
+      });
     }
     return response;
   }
@@ -652,7 +678,10 @@ export class SupportService {
   async deleteCannedResponse(id: string): Promise<void> {
     const response = await this.cannedResponseModel.findByIdAndDelete(id);
     if (!response) {
-      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { responseId: id, reason: 'not_found' });
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, {
+        responseId: id,
+        reason: 'not_found',
+      });
     }
   }
 
@@ -663,10 +692,13 @@ export class SupportService {
     const response = await this.cannedResponseModel.findByIdAndUpdate(
       id,
       { $inc: { usageCount: 1 } },
-      { new: true }
+      { new: true },
     );
     if (!response) {
-      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { responseId: id, reason: 'not_found' });
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, {
+        responseId: id,
+        reason: 'not_found',
+      });
     }
     return response;
   }
@@ -680,7 +712,10 @@ export class SupportService {
       isActive: true,
     });
     if (!response) {
-      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, { shortcut, reason: 'not_found' });
+      throw new SupportException(ErrorCode.TICKET_INVALID_STATUS, {
+        shortcut,
+        reason: 'not_found',
+      });
     }
     return response;
   }
@@ -731,15 +766,11 @@ export class SupportService {
 
         // إرسال إشعار للمستخدم الآخر إذا لم يكن هو المرسل
         if (ticket.userId.toString() !== senderId) {
-          this.webSocketService.sendToUser(
-            ticket.userId.toString(),
-            'support:new-message',
-            {
-              ticketId: ticketId,
-              ticketTitle: ticket.title,
-              message: messageData,
-            },
-          );
+          this.webSocketService.sendToUser(ticket.userId.toString(), 'support:new-message', {
+            ticketId: ticketId,
+            ticketTitle: ticket.title,
+            message: messageData,
+          });
         }
 
         // إرسال إشعار SUPPORT_MESSAGE_RECEIVED للمدراء إذا كانت الرسالة من العميل
@@ -754,7 +785,7 @@ export class SupportService {
               ticketTitle: ticket.title,
               messageId: savedMessage._id.toString(),
               customerId: ticket.userId.toString(),
-            }
+            },
           );
         }
       }

@@ -11,7 +11,7 @@ import {
   NotificationPriority,
   NotificationCategory,
 } from '../../notifications/enums/notification.enums';
-import { User, UserRole } from '../../users/schemas/user.schema';
+import { User, UserRole, UserStatus } from '../../users/schemas/user.schema';
 
 interface PopulatedProduct {
   _id: Types.ObjectId | string;
@@ -455,7 +455,7 @@ export class InventoryService {
       const admins = await this.userModel
         .find({
           roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
-          status: 'ACTIVE',
+          status: UserStatus.ACTIVE,
         })
         .select('_id')
         .lean();

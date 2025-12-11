@@ -14,7 +14,7 @@ import {
 } from '../../../shared/exceptions';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { User, UserRole } from '../../users/schemas/user.schema';
+import { User, UserRole, UserStatus } from '../../users/schemas/user.schema';
 import { EngineerProfile } from '../../users/schemas/engineer-profile.schema';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -235,7 +235,7 @@ export class OrderService {
       const admins = await this.userModel
         .find({
           roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
-          status: 'ACTIVE',
+          status: UserStatus.ACTIVE,
         })
         .select('_id')
         .lean();

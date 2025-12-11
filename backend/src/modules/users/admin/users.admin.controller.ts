@@ -43,7 +43,11 @@ import { ApproveVerificationDto } from '../dto/approve-verification.dto';
 import { AuditService } from '../../../shared/services/audit.service';
 import { EngineerProfileService } from '../services/engineer-profile.service';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { NotificationType, NotificationChannel, NotificationPriority } from '../../notifications/enums/notification.enums';
+import {
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+} from '../../notifications/enums/notification.enums';
 
 @ApiTags('إدارة-المستخدمين')
 @ApiBearerAuth()
@@ -498,7 +502,7 @@ export class UsersAdminController {
       const admins = await this.userModel
         .find({
           roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
-          status: 'ACTIVE',
+          status: UserStatus.ACTIVE,
         })
         .select('_id')
         .lean();
@@ -573,7 +577,7 @@ export class UsersAdminController {
     if (dto.roles?.includes(UserRole.ADMIN) || dto.roles?.includes(UserRole.SUPER_ADMIN)) {
       userData.admin_capable = true;
       userData.admin_status = CapabilityStatus.APPROVED;
-      
+
       // إضافة admin.access تلقائياً إذا لم يكن موجوداً
       if (!userData.permissions || !Array.isArray(userData.permissions)) {
         userData.permissions = [];
@@ -581,9 +585,12 @@ export class UsersAdminController {
       if (!userData.permissions.includes(AdminPermission.ADMIN_ACCESS)) {
         userData.permissions.push(AdminPermission.ADMIN_ACCESS);
       }
-      
+
       // إضافة super_admin.access للـ SUPER_ADMIN
-      if (dto.roles?.includes(UserRole.SUPER_ADMIN) && !userData.permissions.includes(AdminPermission.SUPER_ADMIN_ACCESS)) {
+      if (
+        dto.roles?.includes(UserRole.SUPER_ADMIN) &&
+        !userData.permissions.includes(AdminPermission.SUPER_ADMIN_ACCESS)
+      ) {
         userData.permissions.push(AdminPermission.SUPER_ADMIN_ACCESS);
       }
     }
@@ -732,19 +739,22 @@ export class UsersAdminController {
       // التأكد من وجود admin.access للأدمن
       let permissions = Array.isArray(dto.permissions) ? [...dto.permissions] : [];
       const mainRole = dto.roles?.[0] || user.roles?.[0];
-      
+
       if (mainRole === UserRole.ADMIN || mainRole === UserRole.SUPER_ADMIN) {
         // إضافة admin.access تلقائياً إذا لم يكن موجوداً
         if (!permissions.includes(AdminPermission.ADMIN_ACCESS)) {
           permissions.push(AdminPermission.ADMIN_ACCESS);
         }
-        
+
         // إضافة super_admin.access للـ SUPER_ADMIN
-        if (mainRole === UserRole.SUPER_ADMIN && !permissions.includes(AdminPermission.SUPER_ADMIN_ACCESS)) {
+        if (
+          mainRole === UserRole.SUPER_ADMIN &&
+          !permissions.includes(AdminPermission.SUPER_ADMIN_ACCESS)
+        ) {
           permissions.push(AdminPermission.SUPER_ADMIN_ACCESS);
         }
       }
-      
+
       user.permissions = permissions;
     }
     if (dto.status !== undefined) user.status = dto.status;
