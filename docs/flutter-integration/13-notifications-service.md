@@ -2,7 +2,7 @@
 
 > ✅ **تم التحقق**: 100% متطابق مع الكود الفعلي في Backend  
 > 📅 **آخر تحديث**: ديسمبر 2024  
-> 🆕 **محدث**: مطابق تماماً للـ Backend - شرح مفصل للقنوات (IN_APP vs PUSH) + نظام التنقل الجديد
+> 🆕 **محدث**: مطابق تماماً للـ Backend - شرح مفصل للقنوات (IN_APP vs PUSH) + نظام التنقل الجديد + إثراء حقل data تلقائياً
 
 خدمة الإشعارات توفر endpoints لإدارة الإشعارات وتسجيل الأجهزة مع دعم قنوات متعددة.
 
@@ -218,6 +218,8 @@ Firebase يرسل الإشعار للأجهزة
   "hasPrevPage": false
 }
 ```
+
+> 💡 **ملاحظة:** حقل `data.orderId` يُثرى تلقائياً من `navigationType: "order"` و `navigationTarget: "order_123"`. يمكن للتطبيق استخدام أي منهما للتنقل.
 
 ### كود Flutter
 
@@ -910,14 +912,42 @@ void main() async {
 
 نظام التنقل يسمح بتحديد وجهة التوجيه عند النقر على الإشعار. يتم بناء `actionUrl` تلقائياً من `navigationType` و `navigationTarget`.
 
+### ⚡ إثراء حقل data تلقائياً
+
+عند إنشاء إشعار مع `navigationType` و `navigationTarget`، يتم **تلقائياً** إضافة البيانات المناسبة إلى حقل `data`:
+
+| نوع التنقل        | الحقل المضاف في data |
+| ----------------- | -------------------- |
+| `category`        | `categoryId`         |
+| `product`         | `productId`          |
+| `order`           | `orderId`            |
+| `section`         | `section`            |
+| `external_url`    | `externalUrl`        |
+| `service_request` | `serviceRequestId`   |
+
+**مثال:** عند تحديد `navigationType: "category"` و `navigationTarget: "cat_123"`:
+
+```json
+{
+  "navigationType": "category",
+  "navigationTarget": "cat_123",
+  "data": {
+    "categoryId": "cat_123" // يُضاف تلقائياً
+  }
+}
+```
+
+> 💡 **ملاحظة:** هذا يضمن التوافق مع التطبيقات التي تتوقع وجود `categoryId` أو `productId` أو `orderId` في حقل `data`.
+
 ### حقول التنقل
 
 | الحقل              | النوع    | الوصف                                                                         |
 | ------------------ | -------- | ----------------------------------------------------------------------------- |
-| `navigationType`   | `string` | نوع التنقل: `none`, `external_url`, `category`, `product`, `section`, `order` |
+| `navigationType`   | `string` | نوع التنقل: `none`, `external_url`, `category`, `product`, `section`, `order`, `service_request` |
 | `navigationTarget` | `string` | الهدف: ID للفئة/المنتج/الطلب، أو URL خارجي، أو اسم القسم                      |
 | `navigationParams` | `object` | معاملات إضافية للتنقل (اختياري)                                               |
 | `actionUrl`        | `string` | رابط التوجيه (يُبنى تلقائياً من حقول التنقل)                                  |
+| `data`             | `object` | بيانات إضافية (يُثرى تلقائياً بمعرّف الهدف حسب نوع التنقل)                    |
 
 ### أنواع التنقل (NotificationNavigationType)
 
@@ -942,6 +972,9 @@ void main() async {
   "navigationType": "order",
   "navigationTarget": "order_123",
   "navigationParams": {},
+  "data": {
+    "orderId": "order_123"
+  },
   "channel": "inApp",
   "status": "sent"
 }
@@ -981,6 +1014,8 @@ String? _buildRouteFromNavigation(
       return '/products/$target';
     case NotificationNavigationType.section:
       return '/$target';
+    case NotificationNavigationType.serviceRequest:
+      return '/service-requests/$target';
     case NotificationNavigationType.externalUrl:
       // فتح رابط خارجي
       launchUrl(Uri.parse(target));
@@ -995,8 +1030,10 @@ String? _buildRouteFromNavigation(
 
 1. **الأولوية**: إذا كان `actionUrl` موجوداً، استخدمه مباشرة
 2. **البناء التلقائي**: Backend يبني `actionUrl` تلقائياً من `navigationType` و `navigationTarget`
-3. **التوافق**: الحفاظ على دعم `actionUrl` المباشر للتوافق مع الإصدارات السابقة
-4. **التحقق**: تحقق من وجود `navigationTarget` قبل بناء المسار
+3. **إثراء data تلقائياً**: Backend يضيف المعرّف المناسب (`categoryId`, `productId`, `orderId`, إلخ) إلى حقل `data` تلقائياً
+4. **التوافق**: الحفاظ على دعم `actionUrl` المباشر و حقل `data` للتوافق مع الإصدارات السابقة
+5. **التحقق**: تحقق من وجود `navigationTarget` قبل بناء المسار
+6. **مصدران للبيانات**: يمكن للتطبيق استخدام إما `navigationType`/`navigationTarget` أو حقل `data` مباشرة
 
 ---
 
@@ -1121,6 +1158,7 @@ enum NotificationNavigationType {
   product,
   section,
   order,
+  serviceRequest,
 }
 
 // ===== Models =====
@@ -1279,10 +1317,16 @@ class AppNotification {
   bool get isUrgent => priority == NotificationPriority.urgent;
   bool get isHighPriority => priority == NotificationPriority.high;
 
-  // Data extraction
-  String? get orderId => data['orderId']?.toString();
+  // Data extraction (يمكن استخدام حقل data مباشرة أو navigationTarget)
+  String? get orderId => data['orderId']?.toString() ??
+                        (navigationType == NotificationNavigationType.order ? navigationTarget : null);
   String? get orderNumber => data['orderNumber']?.toString();
-  String? get productId => data['productId']?.toString();
+  String? get productId => data['productId']?.toString() ??
+                          (navigationType == NotificationNavigationType.product ? navigationTarget : null);
+  String? get categoryId => data['categoryId']?.toString() ??
+                           (navigationType == NotificationNavigationType.category ? navigationTarget : null);
+  String? get serviceRequestId => data['serviceRequestId']?.toString() ??
+                                  (navigationType == NotificationNavigationType.serviceRequest ? navigationTarget : null);
   String? get serviceId => data['serviceId']?.toString();
   String? get ticketId => data['ticketId']?.toString();
 
@@ -1300,6 +1344,8 @@ class AppNotification {
         return '/products/$navigationTarget';
       case NotificationNavigationType.section:
         return '/$navigationTarget';
+      case NotificationNavigationType.serviceRequest:
+        return '/service-requests/$navigationTarget';
       case NotificationNavigationType.externalUrl:
         return navigationTarget;
       case NotificationNavigationType.none:
@@ -1390,6 +1436,7 @@ class AppNotification {
       case 'product': return NotificationNavigationType.product;
       case 'section': return NotificationNavigationType.section;
       case 'order': return NotificationNavigationType.order;
+      case 'service_request': return NotificationNavigationType.serviceRequest;
       default: return null;
     }
   }
@@ -1888,13 +1935,23 @@ void _handleNotificationNavigation(Map<String, dynamic> data) {
         launchUrl(Uri.parse(navigationTarget));
         break;
     }
+    return;
   }
 
-  // Fallback للبيانات القديمة
-  if (data['orderId'] != null) {
-    Navigator.pushNamed(context, '/orders/${data['orderId']}');
-  } else if (data['productId'] != null) {
-    Navigator.pushNamed(context, '/products/${data['productId']}');
+  // استخدام حقل data مباشرة (يُثرى تلقائياً من Backend)
+  // هذا يضمن التوافق مع التطبيقات القديمة والجديدة
+  final notificationData = data['data'] as Map<String, dynamic>? ?? {};
+
+  if (notificationData['orderId'] != null) {
+    Navigator.pushNamed(context, '/orders/${notificationData['orderId']}');
+  } else if (notificationData['productId'] != null) {
+    Navigator.pushNamed(context, '/products/${notificationData['productId']}');
+  } else if (notificationData['categoryId'] != null) {
+    Navigator.pushNamed(context, '/categories/${notificationData['categoryId']}');
+  } else if (notificationData['section'] != null) {
+    Navigator.pushNamed(context, '/${notificationData['section']}');
+  } else if (notificationData['externalUrl'] != null) {
+    launchUrl(Uri.parse(notificationData['externalUrl']));
   }
 }
 
@@ -1926,28 +1983,53 @@ POST /notifications/admin/create
   "channel": "push",
   "recipientId": "user_id_here",
   "priority": "medium",
-  "data": {
-    "orderId": "order_123",
-    "orderNumber": "123"
-  },
   "navigationType": "order",
   "navigationTarget": "order_123",
   "navigationParams": {}
 }
 ```
 
-**ملاحظة:** عند تحديد `navigationType` و `navigationTarget`، يتم بناء `actionUrl` تلقائياً:
+**ما يحدث تلقائياً عند إرسال هذا الطلب:**
 
-- `navigationType: "order"` + `navigationTarget: "order_123"` → `actionUrl: "/orders/order_123"`
+1. يتم بناء `actionUrl` تلقائياً:
+
+   - `navigationType: "order"` + `navigationTarget: "order_123"` → `actionUrl: "/orders/order_123"`
+
+2. يتم إثراء حقل `data` تلقائياً:
+   - `navigationType: "order"` + `navigationTarget: "order_123"` → `data: { "orderId": "order_123" }`
 
 **Response:**
 
 ```json
 {
-  "notification": { ... },
+  "notification": {
+    "_id": "notif_123",
+    "type": "ORDER_CONFIRMED",
+    "title": "تم تأكيد طلبك",
+    "message": "طلبك رقم #123 تم تأكيده بنجاح",
+    "actionUrl": "/orders/order_123",
+    "navigationType": "order",
+    "navigationTarget": "order_123",
+    "data": {
+      "orderId": "order_123"
+    }
+  },
   "message": "Notification created successfully"
 }
 ```
+
+#### جدول إثراء data حسب نوع التنقل
+
+| `navigationType`  | `navigationTarget` (مثال) | `data` (يُضاف تلقائياً)                |
+| ----------------- | ------------------------- | -------------------------------------- |
+| `category`        | `cat_123`                 | `{ "categoryId": "cat_123" }`          |
+| `product`         | `prod_456`                | `{ "productId": "prod_456" }`          |
+| `order`           | `order_789`               | `{ "orderId": "order_789" }`           |
+| `section`         | `cart`                    | `{ "section": "cart" }`                |
+| `external_url`    | `https://example.com`     | `{ "externalUrl": "https://..." }`     |
+| `service_request` | `sr_123`                  | `{ "serviceRequestId": "sr_123" }`     |
+
+> 💡 **ملاحظة:** إذا أرسلت بيانات في حقل `data` في الطلب، سيتم دمجها مع البيانات المُضافة تلقائياً.
 
 #### 2. إرسال إشعار موجود
 
@@ -2175,6 +2257,8 @@ order; // تفاصيل طلب
 10. ✅ **إضافة دعم التنقل إلى تفاصيل الطلب** (`order`)
 11. ✅ **بناء `actionUrl` تلقائياً** من حقول التنقل
 12. ✅ **تحديث Flutter Models** لتشمل حقول التنقل
+13. ✅ **إثراء حقل `data` تلقائياً** بمعرّف الهدف (`categoryId`, `productId`, `orderId`, إلخ) حسب نوع التنقل
+14. ✅ **التوافق مع التطبيقات القديمة** التي تتوقع البيانات في حقل `data`
 
 ---
 

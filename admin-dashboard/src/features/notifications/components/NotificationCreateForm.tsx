@@ -109,7 +109,7 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
         ordersData.map((o: any) => ({
           _id: o._id,
           orderNumber: o.orderNumber || o._id,
-        })),
+        }))
       );
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -304,9 +304,7 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
         <Divider sx={{ my: 2 }} />
         <Box display="flex" alignItems="center" gap={1} mb={1}>
           <Navigation />
-          <Typography variant="h6">
-            {t('forms.navigation', 'إعدادات التنقل')}
-          </Typography>
+          <Typography variant="h6">{t('forms.navigation', 'إعدادات التنقل')}</Typography>
         </Box>
 
         <Grid container spacing={2}>
@@ -315,13 +313,27 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
               <InputLabel>{t('forms.navigationType', 'نوع التنقل')}</InputLabel>
               <Select
                 value={formData.navigationType || NotificationNavigationType.NONE}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    navigationType: e.target.value as NotificationNavigationType,
-                    navigationTarget: '', // Reset target when type changes
-                  }))
-                }
+                onChange={(e) => {
+                  const newType = e.target.value as NotificationNavigationType;
+                  setFormData((prev) => {
+                    // Remove old navigation data keys when type changes
+                    const {
+                      categoryId,
+                      productId,
+                      orderId,
+                      section,
+                      externalUrl,
+                      serviceRequestId,
+                      ...restData
+                    } = (prev.data || {}) as Record<string, unknown>;
+                    return {
+                      ...prev,
+                      navigationType: newType,
+                      navigationTarget: '', // Reset target when type changes
+                      data: restData,
+                    };
+                  });
+                }}
                 label={t('forms.navigationType', 'نوع التنقل')}
                 disabled={isLoading}
                 size={isMobile ? 'small' : 'medium'}
@@ -343,9 +355,14 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
                     <InputLabel>{t('forms.navigationTarget', 'الفئة')}</InputLabel>
                     <Select
                       value={formData.navigationTarget || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, navigationTarget: e.target.value }))
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          navigationTarget: value,
+                          data: { ...prev.data, categoryId: value },
+                        }));
+                      }}
                       label={t('forms.navigationTarget', 'الفئة')}
                       disabled={isLoading}
                       size={isMobile ? 'small' : 'medium'}
@@ -364,9 +381,14 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
                     <InputLabel>{t('forms.navigationTarget', 'المنتج')}</InputLabel>
                     <Select
                       value={formData.navigationTarget || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, navigationTarget: e.target.value }))
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          navigationTarget: value,
+                          data: { ...prev.data, productId: value },
+                        }));
+                      }}
                       label={t('forms.navigationTarget', 'المنتج')}
                       disabled={isLoading || loadingProducts}
                       size={isMobile ? 'small' : 'medium'}
@@ -385,9 +407,14 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
                     <InputLabel>{t('forms.navigationTarget', 'الطلب')}</InputLabel>
                     <Select
                       value={formData.navigationTarget || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, navigationTarget: e.target.value }))
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          navigationTarget: value,
+                          data: { ...prev.data, orderId: value },
+                        }));
+                      }}
                       label={t('forms.navigationTarget', 'الطلب')}
                       disabled={isLoading || loadingOrders}
                       size={isMobile ? 'small' : 'medium'}
@@ -406,9 +433,14 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
                     fullWidth
                     label={t('forms.navigationTarget', 'اسم القسم')}
                     value={formData.navigationTarget || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, navigationTarget: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        navigationTarget: value,
+                        data: { ...prev.data, section: value },
+                      }));
+                    }}
                     placeholder="products, categories, cart, etc."
                     disabled={isLoading}
                     size={isMobile ? 'small' : 'medium'}
@@ -421,13 +453,38 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
                     fullWidth
                     label={t('forms.navigationTarget', 'الرابط الخارجي')}
                     value={formData.navigationTarget || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, navigationTarget: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        navigationTarget: value,
+                        data: { ...prev.data, externalUrl: value },
+                      }));
+                    }}
                     placeholder="https://example.com"
                     disabled={isLoading}
                     size={isMobile ? 'small' : 'medium'}
                     helperText={t('forms.navigationTargetHelper', 'رابط خارجي')}
+                  />
+                )}
+
+                {formData.navigationType === NotificationNavigationType.SERVICE_REQUEST && (
+                  <TextField
+                    fullWidth
+                    label={t('forms.navigationTarget', 'معرّف طلب الخدمة')}
+                    value={formData.navigationTarget || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        navigationTarget: value,
+                        data: { ...prev.data, serviceRequestId: value },
+                      }));
+                    }}
+                    placeholder="6123456789abcdef01234567"
+                    disabled={isLoading}
+                    size={isMobile ? 'small' : 'medium'}
+                    helperText={t('forms.serviceRequestIdHelper', 'معرّف طلب الخدمة (ObjectId)')}
                   />
                 )}
               </Grid>
@@ -512,4 +569,3 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
     </Box>
   );
 };
-

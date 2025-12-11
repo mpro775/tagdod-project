@@ -14,6 +14,7 @@ import {
   NotificationType,
   NotificationChannel,
   NotificationPriority,
+  NotificationNavigationType,
 } from '../notifications/enums/notification.enums';
 import { CreateServiceRequestDto, UpdateServiceRequestDto } from './dto/requests.dto';
 import { CreateOfferDto, UpdateOfferDto } from './dto/offers.dto';
@@ -138,6 +139,8 @@ export class ServicesService {
     title: string,
     message: string,
     data?: Record<string, unknown>,
+    navigationType?: NotificationNavigationType,
+    navigationTarget?: string,
   ) {
     try {
       if (this.notificationService) {
@@ -150,6 +153,8 @@ export class ServicesService {
           data,
           channel: NotificationChannel.IN_APP,
           priority: NotificationPriority.MEDIUM,
+          navigationType,
+          navigationTarget,
         });
       }
     } catch (error) {
@@ -344,6 +349,8 @@ export class ServicesService {
       'تم استلام طلب خدمة',
       `تم إنشاء طلب خدمة جديد: ${String(doc._id)}`,
       { requestId: String(doc._id) },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(doc._id),
     );
 
     // إرسال SMS لجميع المهندسين - معطل مؤقتاً للتطوير
@@ -892,6 +899,8 @@ export class ServicesService {
         'تم إلغاء طلب الخدمة',
         `تم إلغاء الطلب ${String(r._id)} من قبل العميل. السبب: ${reason.trim()}`,
         { requestId: String(r._id), reason: reason.trim() },
+        NotificationNavigationType.SERVICE_REQUEST,
+        String(r._id),
       );
     }
 
@@ -901,6 +910,8 @@ export class ServicesService {
       'تم إلغاء طلب الخدمة',
       `تم إلغاء الطلب ${String(r._id)}`,
       { requestId: String(r._id), reason: reason.trim() },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(r._id),
     );
 
     return { ok: true };
@@ -1031,6 +1042,8 @@ export class ServicesService {
           'تم قبول عرض آخر',
           `تم قبول عرض آخر للطلب ${String(r._id)}. تم إيقاف عرضك.`,
           { requestId: String(r._id), offerId: String(otherOffer._id) },
+          NotificationNavigationType.SERVICE_REQUEST,
+          String(r._id),
         );
       }
     }
@@ -1041,6 +1054,8 @@ export class ServicesService {
       'تم قبول عرضك',
       `تم قبول عرضك للطلب ${String(r._id)}`,
       { requestId: String(r._id) },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(r._id),
     );
     return { ok: true };
   }
@@ -1083,6 +1098,8 @@ export class ServicesService {
       'تم تقييم الخدمة',
       `تم تقييم الخدمة بنتيجة ${score} نجوم`,
       { requestId: String(r._id), score },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(r._id),
     );
     return { ok: true };
   }
@@ -1561,6 +1578,8 @@ export class ServicesService {
       'عرض جديد من مهندس',
       `تم تقديم عرض جديد للطلب ${String(r._id)}`,
       { requestId: String(r._id) },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(r._id),
     );
     return doc;
   }
@@ -1631,6 +1650,8 @@ export class ServicesService {
         'تم تأكيد إنجاز الخدمة',
         `تم تأكيد إنجاز الخدمة للطلب ${String(r._id)} من قبل العميل`,
         { requestId: String(r._id) },
+        NotificationNavigationType.SERVICE_REQUEST,
+        String(r._id),
       );
     }
     return { ok: true };
@@ -2008,6 +2029,8 @@ export class ServicesService {
       'تم تحديث حالة الخدمة',
       `تم تحديث حالة الخدمة إلى ${status}`,
       { requestId: String(r._id), status, note },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(r._id),
     );
 
     return { ok: true };
@@ -2038,6 +2061,8 @@ export class ServicesService {
       'تم إلغاء الخدمة من قبل الإدارة',
       `تم إلغاء الخدمة من قبل الإدارة: ${reason || 'لا يوجد سبب محدد'}`,
       { requestId: String(r._id), reason },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(r._id),
     );
 
     return { ok: true };
@@ -2064,6 +2089,8 @@ export class ServicesService {
       'تم تعيين مهندس من قبل الإدارة',
       `تم تعيين مهندس للخدمة من قبل الإدارة`,
       { requestId: String(r._id), engineerId },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(r._id),
     );
 
     return { ok: true };
@@ -3003,6 +3030,8 @@ export class ServicesService {
       'تم قبول عرضك',
       `تم قبول عرضك للطلب ${String(r._id)} من قبل الإدارة`,
       { requestId: String(r._id) },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(r._id),
     );
 
     this.logger.log(`Admin accepted offer ${offerId} for request ${requestId}`);
@@ -3029,6 +3058,8 @@ export class ServicesService {
       'تم رفض عرضك',
       reason || `تم رفض عرضك للطلب ${String(offer.requestId)} من قبل الإدارة`,
       { requestId: String(offer.requestId), reason },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(offer.requestId),
     );
 
     this.logger.log(`Admin rejected offer ${offerId}. Reason: ${reason || 'No reason provided'}`);
@@ -3072,6 +3103,8 @@ export class ServicesService {
       'تم إلغاء عرضك',
       reason || `تم إلغاء عرضك للطلب ${String(offer.requestId)} من قبل الإدارة`,
       { requestId: String(offer.requestId), reason },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(offer.requestId),
     );
 
     this.logger.log(`Admin cancelled offer ${offerId}. Reason: ${reason || 'No reason provided'}`);
@@ -3121,6 +3154,8 @@ export class ServicesService {
           'انتهت صلاحية طلب الخدمة',
           `انتهت صلاحية الطلب ${String(req._id)} بعد 5 أيام بدون قبول أي عرض`,
           { requestId: String(req._id) },
+          NotificationNavigationType.SERVICE_REQUEST,
+          String(req._id),
         );
       }
     }
@@ -3157,6 +3192,8 @@ export class ServicesService {
           'انتهت صلاحية عرضك',
           `انتهت صلاحية عرضك للطلب ${String(offer.requestId)} بعد 5 أيام`,
           { requestId: String(offer.requestId), offerId: String(offer._id) },
+          NotificationNavigationType.SERVICE_REQUEST,
+          String(offer.requestId),
         );
       }
     }

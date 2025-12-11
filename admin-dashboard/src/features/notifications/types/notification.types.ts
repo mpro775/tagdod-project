@@ -88,6 +88,7 @@ export enum NotificationNavigationType {
   PRODUCT = 'product',
   SECTION = 'section',
   ORDER = 'order',
+  SERVICE_REQUEST = 'service_request',
 }
 
 export interface Notification extends BaseEntity {
@@ -415,4 +416,5 @@ export const NOTIFICATION_NAVIGATION_TYPE_OPTIONS = [
   { value: NotificationNavigationType.PRODUCT, label: 'منتج' },
   { value: NotificationNavigationType.SECTION, label: 'قسم في التطبيق' },
   { value: NotificationNavigationType.ORDER, label: 'طلب' },
+  { value: NotificationNavigationType.SERVICE_REQUEST, label: 'طلب خدمة' },
 ];

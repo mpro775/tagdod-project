@@ -15,10 +15,8 @@ import {
   Divider,
 } from '@mui/material';
 import {
-  Notifications as NotificationsIcon,
   CheckCircle,
   Circle,
-  Delete,
   Refresh,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -56,7 +54,7 @@ export const MyNotificationsPage: React.FC = () => {
   const total = notificationsData?.meta?.total || 0;
 
   // Listen for new notifications via WebSocket
-  const { latestNotification } = useNotificationsSocket((notification) => {
+  const { latestNotification } = useNotificationsSocket(() => {
     // Refresh notifications when a new one arrives
     refetch();
     refetchUnreadCount();
@@ -296,7 +294,7 @@ export const MyNotificationsPage: React.FC = () => {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {total > 0
-              ? t('notifications.totalNotifications', { count: total }, `إجمالي ${total} إشعار`)
+              ? t('notifications.totalNotifications', { count: total, defaultValue: `إجمالي ${total} إشعار` })
               : t('notifications.noNotifications', 'لا توجد إشعارات')}
           </Typography>
         </Box>
@@ -322,8 +320,7 @@ export const MyNotificationsPage: React.FC = () => {
         <Alert severity="info" sx={{ mb: 2 }}>
           {t(
             'notifications.unreadCount',
-            { count: unreadCount },
-            `لديك ${unreadCount} إشعار غير مقروء`
+            { count: unreadCount, defaultValue: `لديك ${unreadCount} إشعار غير مقروء` }
           )}
         </Alert>
       )}

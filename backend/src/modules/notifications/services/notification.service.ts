@@ -111,6 +111,8 @@ export class NotificationService implements OnModuleInit {
         return `/${navigationTarget}`;
       case NotificationNavigationType.EXTERNAL_URL:
         return navigationTarget; // استخدام navigationTarget مباشرة كرابط خارجي
+      case NotificationNavigationType.SERVICE_REQUEST:
+        return `/service-requests/${navigationTarget}`;
       default:
         return undefined;
     }
@@ -190,8 +192,37 @@ export class NotificationService implements OnModuleInit {
         }
       }
 
+      // إثراء حقل data بمعلومات التنقل (للتوافق مع التطبيقات التي تتوقع categoryId, productId, orderId في data)
+      let enrichedData: Record<string, unknown> = { ...(dto.data || {}) };
+      if (dto.navigationType && dto.navigationTarget) {
+        switch (dto.navigationType) {
+          case NotificationNavigationType.CATEGORY:
+            enrichedData.categoryId = dto.navigationTarget;
+            break;
+          case NotificationNavigationType.PRODUCT:
+            enrichedData.productId = dto.navigationTarget;
+            break;
+          case NotificationNavigationType.ORDER:
+            enrichedData.orderId = dto.navigationTarget;
+            break;
+          case NotificationNavigationType.SECTION:
+            enrichedData.section = dto.navigationTarget;
+            break;
+          case NotificationNavigationType.EXTERNAL_URL:
+            enrichedData.externalUrl = dto.navigationTarget;
+            break;
+          case NotificationNavigationType.SERVICE_REQUEST:
+            enrichedData.serviceRequestId = dto.navigationTarget;
+            break;
+        }
+        this.logger.debug(
+          `Enriched notification data with navigation: ${dto.navigationType} -> ${dto.navigationTarget}`,
+        );
+      }
+
       const notification = new this.notificationModel({
         ...dto,
+        data: enrichedData,
         actionUrl: finalActionUrl,
         navigationType: dto.navigationType || NotificationNavigationType.NONE,
         navigationTarget: dto.navigationTarget,

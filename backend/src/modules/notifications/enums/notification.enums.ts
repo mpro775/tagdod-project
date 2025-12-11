@@ -134,4 +134,5 @@ export enum NotificationNavigationType {
   PRODUCT = 'product',
   SECTION = 'section',
   ORDER = 'order',
+  SERVICE_REQUEST = 'service_request',
 }

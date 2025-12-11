@@ -19,6 +19,7 @@ import {
   NotificationType,
   NotificationChannel,
   NotificationPriority,
+  NotificationNavigationType,
 } from '../../notifications/enums/notification.enums';
 import { FavoritesService } from '../../favorites/favorites.service';
 
@@ -311,6 +312,8 @@ export class WebhookController {
               },
               channel: NotificationChannel.DASHBOARD,
               priority: NotificationPriority.MEDIUM,
+              navigationType: NotificationNavigationType.PRODUCT,
+              navigationTarget: variant.productId.toString(),
             });
           }
         }
@@ -424,6 +427,8 @@ export class WebhookController {
               },
               channel: NotificationChannel.DASHBOARD,
               priority: NotificationPriority.HIGH,
+              navigationType: NotificationNavigationType.ORDER,
+              navigationTarget: order._id.toString(),
             });
           } catch (notificationError) {
             this.logger.error('Failed to send order ready notification:', notificationError);
@@ -468,6 +473,8 @@ export class WebhookController {
             },
             channel: NotificationChannel.DASHBOARD,
             priority: NotificationPriority.HIGH,
+            navigationType: NotificationNavigationType.ORDER,
+            navigationTarget: order._id.toString(),
           });
         } catch (notificationError) {
           this.logger.error('Failed to send out of stock notification:', notificationError);

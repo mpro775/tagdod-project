@@ -45,6 +45,8 @@ import {
   NotificationType,
   NotificationChannel,
   NotificationPriority,
+  NotificationNavigationType,
+  NotificationCategory,
 } from '../../notifications/enums/notification.enums';
 import { AuditService } from '../../../shared/services/audit.service';
 import { EmailAdapter } from '../../notifications/adapters/email.adapter';
@@ -192,6 +194,9 @@ export class OrderService {
     message: string,
     messageEn: string,
     data?: Record<string, unknown>,
+    navigationType?: NotificationNavigationType,
+    navigationTarget?: string,
+    category: NotificationCategory = NotificationCategory.ORDER,
   ) {
     try {
       if (this.notificationService) {
@@ -204,6 +209,9 @@ export class OrderService {
           data,
           channel: NotificationChannel.IN_APP,
           priority: NotificationPriority.MEDIUM,
+          category,
+          navigationType,
+          navigationTarget,
         });
       }
     } catch (error) {
@@ -217,6 +225,9 @@ export class OrderService {
     message: string,
     messageEn: string,
     data?: Record<string, unknown>,
+    navigationType?: NotificationNavigationType,
+    navigationTarget?: string,
+    category: NotificationCategory = NotificationCategory.ORDER,
   ) {
     try {
       if (!this.notificationService) return;
@@ -239,6 +250,9 @@ export class OrderService {
           data,
           channel: NotificationChannel.DASHBOARD,
           priority: NotificationPriority.HIGH,
+          category,
+          navigationType,
+          navigationTarget,
         }),
       );
 
@@ -2258,6 +2272,8 @@ export class OrderService {
           total: total,
           currency: dto.currency,
         },
+        NotificationNavigationType.ORDER,
+        order._id.toString(),
       );
 
       // إرسال إشعار ORDER_CREATED للمدراء
@@ -2273,6 +2289,8 @@ export class OrderService {
           total: total,
           currency: dto.currency,
         },
+        NotificationNavigationType.ORDER,
+        order._id.toString(),
       );
 
       // إرسال إشعار COUPON_USED للمدراء إذا تم استخدام كوبون
@@ -2289,6 +2307,8 @@ export class OrderService {
             discountAmount: couponDiscount,
             currency: dto.currency,
           },
+          NotificationNavigationType.ORDER,
+          order._id.toString(),
         );
       }
 
@@ -2765,6 +2785,8 @@ export class OrderService {
           status: newStatus,
           previousStatus: previousStatus,
         },
+        NotificationNavigationType.ORDER,
+        String(order._id),
       );
     }
 
@@ -3528,6 +3550,8 @@ export class OrderService {
         review: dto.review,
         customerId: userId,
       },
+      NotificationNavigationType.ORDER,
+      order._id.toString(),
     );
 
     return order;
@@ -4726,6 +4750,8 @@ export class OrderService {
           requiredCurrency: order.currency,
           failureReason: 'insufficient_amount',
         },
+        NotificationNavigationType.ORDER,
+        String(order._id),
       );
     }
 

@@ -9,6 +9,7 @@ import {
   NotificationChannel,
   NotificationPriority,
   NotificationCategory,
+  NotificationNavigationType,
 } from '../../notifications/enums/notification.enums';
 
 type PopulatedProduct = { name: string; nameEn: string };
@@ -194,6 +195,17 @@ export class StockAlertService {
         return;
       }
 
+      // Extract productId safely - handle both string and object cases
+      const productId = (() => {
+        if (typeof alert.productId === 'string') {
+          return alert.productId;
+        } else if (alert.productId) {
+          const productIdObj = alert.productId as any;
+          return productIdObj._id?.toString() || productIdObj.toString() || '';
+        }
+        return '';
+      })();
+
       await this.notificationService.createNotification({
         type: notificationType,
         title: alert.type === 'LOW_STOCK' ? 'تنبيه مخزون منخفض' : 'تنبيه نفاد المخزون',
@@ -204,16 +216,7 @@ export class StockAlertService {
         category: NotificationCategory.PRODUCT,
         data: {
           variantId: alert.variantId,
-          productId: (() => {
-            // Extract productId safely - handle both string and object cases
-            if (typeof alert.productId === 'string') {
-              return alert.productId;
-            } else if (alert.productId) {
-              const productIdObj = alert.productId as any;
-              return productIdObj._id?.toString() || productIdObj.toString() || '';
-            }
-            return '';
-          })(),
+          productId,
           productName: alert.productName,
           productNameEn: alert.productNameEn,
           sku: alert.sku,
@@ -221,6 +224,8 @@ export class StockAlertService {
           minStock: alert.minStock,
           timestamp: alert.timestamp,
         },
+        navigationType: NotificationNavigationType.PRODUCT,
+        navigationTarget: productId,
         isSystemGenerated: true,
       });
 
