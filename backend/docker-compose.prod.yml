@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 services:
   redis:
@@ -6,12 +6,12 @@ services:
     container_name: tagdod-redis
     restart: unless-stopped
     ports:
-      - "0.0.0.0:6379:6379"
+      - '0.0.0.0:6379:6379'
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 3s
       retries: 3
@@ -25,15 +25,30 @@ services:
     container_name: tagdod-api
     restart: unless-stopped
     env_file: .env
+    # -------------------------------------------------------
+    # التعديلات الجديدة لضبط الوقت
+    # -------------------------------------------------------
+    environment:
+      - TZ=Asia/Aden # ضبط المتغير البيئي للتوقيت
+    volumes:
+      - /etc/localtime:/etc/localtime:ro # مزامنة ملف الوقت من السيرفر
+      - /etc/timezone:/etc/timezone:ro # مزامنة المنطقة الزمنية
+    # -------------------------------------------------------
     ports:
-      - "127.0.0.1:3000:3000"
+      - '127.0.0.1:3000:3000'
     depends_on:
       redis:
         condition: service_healthy
     networks:
       - tagdod-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health/live',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/health/live',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -46,4 +61,3 @@ volumes:
 networks:
   tagdod-network:
     driver: bridge
-
