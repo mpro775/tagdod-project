@@ -786,6 +786,9 @@ export class PublicProductsPresenter {
 
     // تطبيق قواعد السعر (price rules) إذا كان marketingService متاحاً
     if (this.marketingService && filteredVariants.length > 0) {
+      this.logger.debug(
+        `MarketingService is available for product ${productId} with ${filteredVariants.length} variants`,
+      );
       try {
         // جلب المنتج للحصول على categoryId
         const product = await this.productService.findById(productId);
@@ -816,10 +819,18 @@ export class PublicProductsPresenter {
           }
 
           // استدعاء previewBatch لتطبيق قواعد السعر
+          this.logger.debug(
+            `Calling previewBatch for product ${productId} in ${currency} with ${marketingInputs.length} inputs`,
+          );
+
           const marketingResults = await this.marketingService.previewBatch(marketingInputs, {
             variants: variantsMap,
             products: productsMap,
           });
+
+          this.logger.debug(
+            `previewBatch returned ${marketingResults.size} results for product ${productId}`,
+          );
 
           // تطبيق نتائج قواعد السعر على الأسعار
           if (pricesByCurrency[currency]) {
@@ -835,12 +846,21 @@ export class PublicProductsPresenter {
                 const discountPercentFromRule =
                   originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
 
+                // تقريب القيم إلى منزلتين عشريتين
+                const roundedDiscountPercent = Math.round(discountPercentFromRule * 100) / 100;
+                const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
+                const roundedFinalPrice = Math.round(effectivePrice * 100) / 100;
+
+                this.logger.debug(
+                  `Applied price rule for variant ${variantId} in ${currency}: ${originalBasePrice} -> ${roundedFinalPrice} (${roundedDiscountPercent.toFixed(2)}%)`,
+                );
+
                 return {
                   ...price,
                   basePrice: originalBasePrice,
-                  finalPrice: effectivePrice,
-                  discountAmount: Math.max(0, discountAmount),
-                  discountPercent: discountPercentFromRule,
+                  finalPrice: roundedFinalPrice,
+                  discountAmount: roundedDiscountAmount,
+                  discountPercent: roundedDiscountPercent,
                 };
               }
 
@@ -856,6 +876,8 @@ export class PublicProductsPresenter {
         );
         // في حالة الخطأ، نستخدم الأسعار الأساسية فقط
       }
+    } else if (!this.marketingService) {
+      this.logger.warn(`MarketingService is NOT available for product ${productId}`);
     }
 
     const variantsWithPricing = filteredVariants.map((variant) => {
@@ -999,9 +1021,75 @@ export class PublicProductsPresenter {
 
           // تطبيق قواعد السعر (price rules) على المنتجات البسيطة
           if (this.marketingService) {
+            this.logger.debug(`MarketingService is available for product ${productId}`);
             try {
+              // التأكد من أن productRecord يحتوي على categoryId
+              // إذا لم يكن موجوداً، نحصل على المنتج من قاعدة البيانات
+              let productForMarketing = productRecord;
+              if (!productRecord.categoryId) {
+                const fullProduct = await this.productService.findById(productId);
+                if (fullProduct) {
+                  productForMarketing = fullProduct as unknown as AnyRecord;
+                }
+              }
+
+              // تحويل categoryId إلى string بشكل صحيح (يدعم ObjectId و string)
+              // وتحديث productForMarketing لاستخدام categoryId كـ string
+              let categoryIdStr = 'none';
+              if (productForMarketing.categoryId) {
+                const catId = productForMarketing.categoryId as any;
+                // تحويل ObjectId إلى string - Mongoose ObjectId يدعم toString()
+                if (typeof catId === 'string') {
+                  categoryIdStr = catId;
+                } else if (catId instanceof Types.ObjectId) {
+                  // إذا كان ObjectId من Mongoose، استخدم toString()
+                  categoryIdStr = catId.toString();
+                } else if (catId && typeof catId.toString === 'function') {
+                  // استخدام toString() مباشرة على ObjectId
+                  const converted = catId.toString();
+                  // التحقق من أن النتيجة ليست [object Object]
+                  if (converted && converted !== '[object Object]') {
+                    categoryIdStr = converted;
+                  } else if (catId._id) {
+                    categoryIdStr = String(catId._id);
+                  } else {
+                    categoryIdStr = String(catId);
+                  }
+                } else if (catId && catId._id) {
+                  // إذا كان ObjectId يحتوي على _id
+                  categoryIdStr = String(catId._id);
+                } else {
+                  // استخدام String() كحل أخير
+                  const str = String(catId);
+                  // التحقق من أن النتيجة ليست [object Object]
+                  if (str && str !== '[object Object]') {
+                    categoryIdStr = str;
+                  } else {
+                    // محاولة استخدام toHexString() إذا كان متاحاً
+                    if (catId && typeof (catId as any).toHexString === 'function') {
+                      categoryIdStr = (catId as any).toHexString();
+                    } else {
+                      categoryIdStr = 'none';
+                    }
+                  }
+                }
+                // تحديث productForMarketing لاستخدام categoryId كـ string
+                productForMarketing = {
+                  ...productForMarketing,
+                  categoryId: categoryIdStr,
+                };
+              }
+              this.logger.debug(
+                `Applying price rules for simple product ${productId}, categoryId: ${categoryIdStr}, basePriceUSD: ${productForMarketing.basePriceUSD}`,
+              );
+
               const productsMap = new Map<string, unknown>();
-              productsMap.set(productId, productRecord);
+              productsMap.set(productId, productForMarketing);
+
+              // أولاً: محاولة تطبيق قاعدة السعر على USD (أو أي عملة محددة في قاعدة السعر)
+              // ثم تطبيق نفس نسبة الخصم على جميع العملات الأخرى
+              let appliedDiscountPercent: number | null = null;
+              let appliedRule: unknown = null;
 
               // تطبيق قواعد السعر لكل عملة
               for (const currency of currenciesForPricing) {
@@ -1018,11 +1106,23 @@ export class PublicProductsPresenter {
                   },
                 ];
 
+                this.logger.debug(
+                  `Calling previewBatch for product ${productId} in ${currency} with categoryId: ${categoryIdStr}`,
+                );
+
                 const marketingResults = await this.marketingService.previewBatch(marketingInputs, {
                   products: productsMap,
                 });
 
+                this.logger.debug(
+                  `previewBatch returned ${marketingResults.size} results for product ${productId}`,
+                );
+
                 const marketingResult = marketingResults.get(productId);
+                this.logger.debug(
+                  `Marketing result for product ${productId}: ${JSON.stringify(marketingResult)}`,
+                );
+
                 if (marketingResult && marketingResult.appliedRule) {
                   const originalBasePrice = pricingByCurrency[currency].basePrice;
                   const effectivePrice = marketingResult.finalPrice;
@@ -1030,12 +1130,67 @@ export class PublicProductsPresenter {
                   const discountPercentFromRule =
                     originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
 
+                  // تقريب القيم إلى منزلتين عشريتين
+                  const roundedDiscountPercent = Math.round(discountPercentFromRule * 100) / 100;
+                  const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
+                  const roundedFinalPrice = Math.round(effectivePrice * 100) / 100;
+
+                  // حفظ نسبة الخصم والقاعدة المطبقة لتطبيقها على جميع العملات
+                  if (appliedDiscountPercent === null) {
+                    appliedDiscountPercent = roundedDiscountPercent;
+                    appliedRule = marketingResult.appliedRule;
+                  }
+
+                  this.logger.debug(
+                    `Applied price rule for simple product ${productId} in ${currency}: ${originalBasePrice} -> ${roundedFinalPrice} (${roundedDiscountPercent.toFixed(2)}%)`,
+                  );
+
                   pricingByCurrency[currency] = {
                     ...pricingByCurrency[currency],
                     basePrice: originalBasePrice,
-                    finalPrice: effectivePrice,
-                    discountAmount: Math.max(0, discountAmount),
-                    discountPercent: discountPercentFromRule,
+                    finalPrice: roundedFinalPrice,
+                    discountAmount: roundedDiscountAmount,
+                    discountPercent: roundedDiscountPercent,
+                  };
+                } else {
+                  this.logger.debug(
+                    `No price rule applied for simple product ${productId} in ${currency}. Result: ${JSON.stringify(marketingResult)}`,
+                  );
+                }
+              }
+
+              // إذا تم تطبيق قاعدة سعر على أي عملة، قم بتطبيق نفس نسبة الخصم على جميع العملات الأخرى
+              if (appliedDiscountPercent !== null && appliedRule) {
+                for (const currency of currenciesForPricing) {
+                  if (!pricingByCurrency[currency]) {
+                    continue;
+                  }
+
+                  // تخطي العملات التي تم تطبيق قاعدة السعر عليها بالفعل
+                  if (pricingByCurrency[currency].discountPercent > 0) {
+                    continue;
+                  }
+
+                  // تطبيق نفس نسبة الخصم على هذه العملة
+                  const originalBasePrice = pricingByCurrency[currency].basePrice;
+                  const discountAmount = (originalBasePrice * appliedDiscountPercent) / 100;
+                  const finalPrice = originalBasePrice - discountAmount;
+
+                  // تقريب القيم إلى منزلتين عشريتين
+                  const roundedDiscountPercent = Math.round(appliedDiscountPercent * 100) / 100;
+                  const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
+                  const roundedFinalPrice = Math.round(finalPrice * 100) / 100;
+
+                  this.logger.debug(
+                    `Applying same discount (${roundedDiscountPercent.toFixed(2)}%) to ${currency} for product ${productId}: ${originalBasePrice} -> ${roundedFinalPrice}`,
+                  );
+
+                  pricingByCurrency[currency] = {
+                    ...pricingByCurrency[currency],
+                    basePrice: originalBasePrice,
+                    finalPrice: roundedFinalPrice,
+                    discountAmount: roundedDiscountAmount,
+                    discountPercent: roundedDiscountPercent,
                   };
                 }
               }
@@ -1044,9 +1199,12 @@ export class PublicProductsPresenter {
                 `Failed to apply price rules for simple product ${productId}: ${
                   error instanceof Error ? error.message : String(error)
                 }`,
+                error instanceof Error ? error.stack : undefined,
               );
               // في حالة الخطأ، نستخدم الأسعار الأساسية فقط
             }
+          } else {
+            this.logger.warn(`MarketingService is NOT available for product ${productId}`);
           }
 
           const simplifiedProduct = this.buildSimplifiedProduct(productRecord, {

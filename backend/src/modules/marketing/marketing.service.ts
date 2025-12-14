@@ -375,7 +375,23 @@ export class MarketingService {
           // Category check
           if (cond.categoryId && product) {
             const productRecord = product as Record<string, unknown>;
-            const categoryId = String(productRecord.categoryId || '');
+            // تحويل categoryId إلى string بشكل صحيح (يدعم ObjectId و string)
+            let categoryId = '';
+            const catId = productRecord.categoryId as unknown;
+            if (catId) {
+              if (typeof catId === 'string') {
+                categoryId = catId;
+              } else if (
+                catId &&
+                typeof (catId as { toString?: () => string }).toString === 'function'
+              ) {
+                categoryId = (catId as { toString: () => string }).toString();
+              } else if (catId && typeof catId === 'object' && catId !== null && '_id' in catId) {
+                categoryId = String((catId as { _id?: unknown })._id || catId);
+              } else {
+                categoryId = String(catId);
+              }
+            }
             if (cond.categoryId !== categoryId) return false;
           }
 
@@ -473,7 +489,21 @@ export class MarketingService {
       if (cond.productId && cond.productId !== String(variant.productId)) return false;
 
       // Category check
-      if (cond.categoryId && cond.categoryId !== String(product.categoryId)) return false;
+      if (cond.categoryId && product.categoryId) {
+        // تحويل categoryId إلى string بشكل صحيح (يدعم ObjectId و string)
+        let categoryId = '';
+        const catId = product.categoryId as unknown;
+        if (typeof catId === 'string') {
+          categoryId = catId;
+        } else if (catId && typeof (catId as { toString?: () => string }).toString === 'function') {
+          categoryId = (catId as { toString: () => string }).toString();
+        } else if (catId && typeof catId === 'object' && catId !== null && '_id' in catId) {
+          categoryId = String((catId as { _id?: unknown })._id || catId);
+        } else {
+          categoryId = String(catId);
+        }
+        if (cond.categoryId !== categoryId) return false;
+      }
 
       // Brand check
       if (cond.brandId && product.brandId && cond.brandId !== String(product.brandId)) return false;
