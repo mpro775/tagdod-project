@@ -7,7 +7,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # تثبيت جميع dependencies (بما في ذلك devDependencies للبناء)
-RUN npm ci
+# استخدام npm install بدلاً من npm ci إذا لم يكن package-lock.json موجوداً
+RUN npm install
 
 # نسخ الكود المصدري
 COPY . .
@@ -57,7 +58,7 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 COPY --from=build /app/package*.json ./
 
 # تثبيت production dependencies فقط
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # نسخ الملفات المبنية من مرحلة build
 COPY --from=build /app/dist ./dist
