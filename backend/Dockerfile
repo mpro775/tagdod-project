@@ -62,8 +62,10 @@ RUN npm ci --only=production && npm cache clean --force
 # نسخ الملفات المبنية من مرحلة build
 COPY --from=build /app/dist ./dist
 
-# نسخ الخطوط
-COPY --from=build /app/assets/fonts /app/assets/fonts || true
+# نسخ assets (الخطوط وغيرها) إذا كانت موجودة
+# إنشاء المجلد أولاً ثم نسخ الملفات
+RUN mkdir -p /app/assets
+COPY --from=build /app/assets /app/assets
 
 EXPOSE 3000
 
