@@ -10986,6 +10986,1549 @@
         }
       }
     },
+    "/api/v1/admin/marketing/price-rules": {
+      "post": {
+        "operationId": "createPriceRule",
+        "summary": "إنشاء قاعدة تسعير",
+        "description": "إنشاء قاعدة تسعير جديدة للتحكم في أسعار المنتجات",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePriceRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء قاعدة التسعير بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "507f1f77bcf86cd799439011",
+                          "description": "معرف قاعدة التسعير"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "خصم عيد الفطر",
+                          "description": "اسم قاعدة التسعير"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "percentage",
+                            "fixed",
+                            "buy_x_get_y"
+                          ],
+                          "example": "percentage",
+                          "description": "نوع قاعدة التسعير"
+                        },
+                        "value": {
+                          "type": "number",
+                          "example": 15,
+                          "description": "قيمة الخصم"
+                        },
+                        "isActive": {
+                          "type": "boolean",
+                          "example": true,
+                          "description": "حالة القاعدة"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "بيانات غير صحيحة"
+          },
+          "403": {
+            "description": "غير مصرح لك بالوصول"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "listPriceRules",
+        "summary": "قائمة قواعد التسعير",
+        "description": "استرداد قائمة بجميع قواعد التسعير المتاحة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد قائمة قواعد التسعير بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "507f1f77bcf86cd799439011",
+                            "description": "معرف قاعدة التسعير"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "خصم عيد الفطر",
+                            "description": "اسم قاعدة التسعير"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "percentage",
+                              "fixed",
+                              "buy_x_get_y"
+                            ],
+                            "example": "percentage",
+                            "description": "نوع قاعدة التسعير"
+                          },
+                          "value": {
+                            "type": "number",
+                            "example": 15,
+                            "description": "قيمة الخصم"
+                          },
+                          "isActive": {
+                            "type": "boolean",
+                            "example": true,
+                            "description": "حالة القاعدة"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/price-rules/{id}": {
+      "get": {
+        "operationId": "getPriceRule",
+        "summary": "الحصول على قاعدة تسعير",
+        "description": "استرداد قاعدة تسعير محددة بالمعرف",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف قاعدة التسعير",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد قاعدة التسعير بنجاح"
+          },
+          "404": {
+            "description": "قاعدة التسعير غير موجودة"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updatePriceRule",
+        "summary": "تحديث قاعدة تسعير",
+        "description": "تحديث قاعدة تسعير موجودة",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف قاعدة التسعير",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePriceRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث قاعدة التسعير بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deletePriceRule",
+        "summary": "حذف قاعدة تسعير",
+        "description": "حذف قاعدة تسعير من النظام",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف قاعدة التسعير",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف قاعدة التسعير بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/price-rules/{id}/toggle": {
+      "post": {
+        "operationId": "togglePriceRule",
+        "summary": "تبديل حالة قاعدة تسعير",
+        "description": "تفعيل أو إلغاء تفعيل قاعدة تسعير",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف قاعدة التسعير",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم تبديل حالة قاعدة التسعير بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/price-rules/preview": {
+      "post": {
+        "operationId": "previewPriceRule",
+        "summary": "معاينة قاعدة تسعير",
+        "description": "معاينة تأثير قاعدة تسعير على منتج معين",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewPriceRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم إنشاء المعاينة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/coupons": {
+      "post": {
+        "operationId": "createCoupon",
+        "summary": "إنشاء كوبون",
+        "description": "إنشاء كوبون خصم جديد",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCouponDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء الكوبون بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "listCoupons",
+        "summary": "قائمة الكوبونات",
+        "description": "استرداد قائمة الكوبونات مع إمكانية التصفية",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد قائمة الكوبونات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/coupons/analytics": {
+      "get": {
+        "operationId": "getCouponsAnalytics",
+        "summary": "إحصائيات الكوبونات",
+        "description": "استرداد إحصائيات شاملة عن الكوبونات",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "عدد الأيام للإحصائيات (افتراضي: 30)",
+            "schema": {
+              "example": 30,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد إحصائيات الكوبونات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalCoupons": {
+                          "type": "number",
+                          "example": 25
+                        },
+                        "activeCoupons": {
+                          "type": "number",
+                          "example": 15
+                        },
+                        "expiredCoupons": {
+                          "type": "number",
+                          "example": 5
+                        },
+                        "totalUses": {
+                          "type": "number",
+                          "example": 342
+                        },
+                        "totalLimit": {
+                          "type": "number",
+                          "example": 500
+                        },
+                        "usageRate": {
+                          "type": "string",
+                          "example": "68.40"
+                        },
+                        "period": {
+                          "type": "number",
+                          "example": 30
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/coupons/statistics": {
+      "get": {
+        "operationId": "getCouponsStatistics",
+        "summary": "إحصائيات مفصلة للكوبونات",
+        "description": "استرداد إحصائيات تفصيلية عن استخدام وأنواع الكوبونات",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "عدد الأيام للإحصائيات (افتراضي: 30)",
+            "schema": {
+              "example": 30,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإحصائيات المفصلة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "statusBreakdown": {
+                          "type": "object",
+                          "properties": {
+                            "active": {
+                              "type": "number",
+                              "example": 15
+                            },
+                            "inactive": {
+                              "type": "number",
+                              "example": 3
+                            },
+                            "expired": {
+                              "type": "number",
+                              "example": 5
+                            },
+                            "scheduled": {
+                              "type": "number",
+                              "example": 2
+                            }
+                          }
+                        },
+                        "typeBreakdown": {
+                          "type": "object",
+                          "properties": {
+                            "percentage": {
+                              "type": "number",
+                              "example": 12
+                            },
+                            "fixed": {
+                              "type": "number",
+                              "example": 8
+                            },
+                            "freeShipping": {
+                              "type": "number",
+                              "example": 5
+                            }
+                          }
+                        },
+                        "topUsedCoupons": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "percentage",
+                                  "fixed_amount",
+                                  "free_shipping",
+                                  "buy_x_get_y"
+                                ]
+                              },
+                              "discountValue": {
+                                "type": "number"
+                              },
+                              "usedCount": {
+                                "type": "number"
+                              },
+                              "usageLimit": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        },
+                        "period": {
+                          "type": "number",
+                          "example": 30
+                        },
+                        "totalInPeriod": {
+                          "type": "number",
+                          "example": 25
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/coupons/{id}": {
+      "get": {
+        "operationId": "getCoupon",
+        "summary": "الحصول على كوبون",
+        "description": "استرداد كوبون محدد بالمعرف",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف الكوبون",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الكوبون بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateCoupon",
+        "summary": "تحديث كوبون",
+        "description": "تحديث كوبون موجود",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف الكوبون",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCouponDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث الكوبون بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteCoupon",
+        "summary": "حذف كوبون",
+        "description": "حذف كوبون من النظام",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف الكوبون",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف الكوبون بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/coupons/validate": {
+      "post": {
+        "operationId": "validateCoupon",
+        "summary": "التحقق من صحة كوبون",
+        "description": "التحقق من صحة كوبون وإمكانية استخدامه",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateCouponDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم التحقق من الكوبون بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/banners": {
+      "post": {
+        "operationId": "createBanner",
+        "summary": "إنشاء بانر",
+        "description": "إنشاء بانر إعلاني جديد. يمكن تحديد أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin). إذا تركت فارغاً، سيظهر البانر للجميع. يمكن تحديد نوع التنقل: external_url (رابط خارجي)، category (فئة)، product (منتج)، section (قسم في التطبيق)، أو none (بدون تنقل).",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBannerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء البانر بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "listBanners",
+        "summary": "قائمة البانرات",
+        "description": "استرداد قائمة البانرات الإعلانية",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد قائمة البانرات بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/banners/analytics": {
+      "get": {
+        "operationId": "getBannersAnalytics",
+        "summary": "إحصائيات البانرات",
+        "description": "استرداد إحصائيات الأداء للبانرات الإعلانية",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد إحصائيات البانرات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalBanners": {
+                          "type": "number",
+                          "example": 10,
+                          "description": "إجمالي عدد البانرات"
+                        },
+                        "activeBanners": {
+                          "type": "number",
+                          "example": 7,
+                          "description": "عدد البانرات النشطة"
+                        },
+                        "totalViews": {
+                          "type": "number",
+                          "example": 5420,
+                          "description": "إجمالي المشاهدات"
+                        },
+                        "totalClicks": {
+                          "type": "number",
+                          "example": 342,
+                          "description": "إجمالي النقرات"
+                        },
+                        "averageCTR": {
+                          "type": "number",
+                          "example": 6.31,
+                          "description": "متوسط معدل النقر (%)"
+                        },
+                        "topPerforming": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "views": {
+                                "type": "number"
+                              },
+                              "clicks": {
+                                "type": "number"
+                              },
+                              "ctr": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/banners/{id}": {
+      "get": {
+        "operationId": "getBanner",
+        "summary": "الحصول على بانر",
+        "description": "استرداد بانر محدد بالمعرف",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف البانر",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد البانر بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateBanner",
+        "summary": "تحديث بانر",
+        "description": "تحديث بانر موجود",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف البانر",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBannerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث البانر بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteBanner",
+        "summary": "حذف بانر",
+        "description": "حذف بانر من النظام",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف البانر",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم حذف البانر بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/coupons/export": {
+      "post": {
+        "operationId": "exportCouponsData",
+        "summary": "تصدير بيانات الكوبونات",
+        "description": "تصدير بيانات الكوبونات وتحليلاتها بصيغ مختلفة (CSV, Excel, JSON)",
+        "parameters": [
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "صيغة الملف (csv, xlsx, json)",
+            "schema": {
+              "example": "csv",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "description": "عدد الأيام للتحليلات (افتراضي: 30)",
+            "schema": {
+              "example": 30,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم تصدير البيانات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "fileUrl": {
+                          "type": "string",
+                          "example": "https://api.example.com/exports/coupons_data_1698765432.csv"
+                        },
+                        "format": {
+                          "type": "string",
+                          "example": "csv"
+                        },
+                        "exportedAt": {
+                          "type": "string",
+                          "example": "2024-10-27T12:00:00.000Z"
+                        },
+                        "fileName": {
+                          "type": "string",
+                          "example": "coupons_data_1698765432.csv"
+                        },
+                        "recordCount": {
+                          "type": "number",
+                          "example": 25
+                        },
+                        "summary": {
+                          "type": "object",
+                          "properties": {
+                            "totalCoupons": {
+                              "type": "number",
+                              "example": 25
+                            },
+                            "activeCoupons": {
+                              "type": "number",
+                              "example": 15
+                            },
+                            "expiredCoupons": {
+                              "type": "number",
+                              "example": 5
+                            },
+                            "totalUses": {
+                              "type": "number",
+                              "example": 150
+                            },
+                            "usageRate": {
+                              "type": "string",
+                              "example": "75.00"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/coupons/engineer": {
+      "post": {
+        "operationId": "createEngineerCoupon",
+        "summary": "إنشاء كوبون للمهندس",
+        "description": "إنشاء كوبون مرتبط بمهندس مع نسبة عمولة",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEngineerCouponDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "تم إنشاء الكوبون بنجاح"
+          },
+          "400": {
+            "description": "بيانات غير صحيحة أو المستخدم ليس مهندساً"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/engineers/{engineerId}/coupons": {
+      "get": {
+        "operationId": "getEngineerCoupons",
+        "summary": "كوبونات المهندس",
+        "description": "جلب جميع كوبونات مهندس معين",
+        "parameters": [
+          {
+            "name": "engineerId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المهندس",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد كوبونات المهندس بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/marketing/engineers/{engineerId}/coupons/stats": {
+      "get": {
+        "operationId": "getEngineerCouponStats",
+        "summary": "إحصائيات كوبونات المهندس",
+        "description": "جلب إحصائيات شاملة لكوبونات مهندس معين",
+        "parameters": [
+          {
+            "name": "engineerId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المهندس",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد الإحصائيات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalCoupons": {
+                      "type": "number",
+                      "example": 5
+                    },
+                    "activeCoupons": {
+                      "type": "number",
+                      "example": 3
+                    },
+                    "totalUses": {
+                      "type": "number",
+                      "example": 150
+                    },
+                    "totalCommissionEarned": {
+                      "type": "number",
+                      "example": 750
+                    },
+                    "totalDiscountGiven": {
+                      "type": "number",
+                      "example": 15000
+                    },
+                    "coupons": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "usedCount": {
+                            "type": "number"
+                          },
+                          "commissionEarned": {
+                            "type": "number"
+                          },
+                          "discountGiven": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-التسويق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/marketing/pricing/variant": {
+      "get": {
+        "operationId": "getVariantPrice",
+        "summary": "الحصول على سعر المتغير",
+        "description": "استرداد السعر الفعال لمتغير منتج مع تطبيق قواعد التسعير",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد السعر الفعال بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "originalPrice": {
+                          "type": "number",
+                          "example": 100,
+                          "description": "السعر الأصلي"
+                        },
+                        "effectivePrice": {
+                          "type": "number",
+                          "example": 85,
+                          "description": "السعر الفعال بعد الخصم"
+                        },
+                        "discountAmount": {
+                          "type": "number",
+                          "example": 15,
+                          "description": "مبلغ الخصم"
+                        },
+                        "discountPercent": {
+                          "type": "number",
+                          "example": 15,
+                          "description": "نسبة الخصم"
+                        },
+                        "appliedRules": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "ruleId": {
+                                "type": "string",
+                                "example": "rule123"
+                              },
+                              "ruleName": {
+                                "type": "string",
+                                "example": "خصم عيد الفطر"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "التسويق-العام"
+        ]
+      }
+    },
+    "/api/v1/marketing/coupons/validate": {
+      "get": {
+        "operationId": "validateCoupon",
+        "summary": "التحقق من صحة كوبون",
+        "description": "التحقق من صحة كوبون الخصم وإمكانية استخدامه",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم التحقق من الكوبون بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "valid": {
+                          "type": "boolean",
+                          "example": true,
+                          "description": "صحة الكوبون"
+                        },
+                        "discountType": {
+                          "type": "string",
+                          "enum": [
+                            "percentage",
+                            "fixed"
+                          ],
+                          "example": "percentage",
+                          "description": "نوع الخصم"
+                        },
+                        "discountValue": {
+                          "type": "number",
+                          "example": 15,
+                          "description": "قيمة الخصم"
+                        },
+                        "minimumAmount": {
+                          "type": "number",
+                          "example": 100,
+                          "description": "الحد الأدنى للطلب"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "كوبون صالح",
+                          "description": "رسالة التحقق"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "كوبون غير صحيح أو منتهي الصلاحية"
+          }
+        },
+        "tags": [
+          "التسويق-العام"
+        ]
+      }
+    },
+    "/api/v1/marketing/banners": {
+      "get": {
+        "operationId": "getActiveBanners",
+        "summary": "الحصول على البانرات النشطة",
+        "description": "استرداد قائمة البانرات الإعلانية النشطة حسب الموقع ونوع المستخدم. يتطلب توكن مصادقة لتحديد نوع المستخدم وعرض البانرات المناسبة له.",
+        "parameters": [
+          {
+            "name": "location",
+            "required": false,
+            "in": "query",
+            "description": "موقع عرض البانر",
+            "schema": {
+              "enum": [
+                "home_top",
+                "home_middle",
+                "home_bottom",
+                "category_top",
+                "product_page",
+                "cart_page",
+                "checkout_page",
+                "sidebar",
+                "footer"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم استرداد البانرات النشطة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "banner123",
+                            "description": "معرف البانر"
+                          },
+                          "image": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "img123"
+                              },
+                              "url": {
+                                "type": "string",
+                                "example": "https://cdn.example.com/banner.jpg"
+                              }
+                            }
+                          },
+                          "linkUrl": {
+                            "type": "string",
+                            "example": "https://example.com/special-offer",
+                            "description": "رابط البانر (للتوافق مع الإصدارات القديمة)"
+                          },
+                          "navigationType": {
+                            "type": "string",
+                            "enum": [
+                              "external_url",
+                              "category",
+                              "product",
+                              "section",
+                              "none"
+                            ],
+                            "example": "category",
+                            "description": "نوع التنقل: external_url, category, product, section, none"
+                          },
+                          "navigationTarget": {
+                            "type": "string",
+                            "example": "category123",
+                            "description": "الهدف من التنقل: معرف الفئة، معرف المنتج، اسم القسم، أو رابط خارجي"
+                          },
+                          "navigationParams": {
+                            "type": "object",
+                            "example": {},
+                            "description": "معاملات إضافية للتنقل"
+                          },
+                          "location": {
+                            "type": "string",
+                            "enum": [
+                              "home_top",
+                              "home_middle",
+                              "home_bottom",
+                              "category_top",
+                              "product_page",
+                              "cart_page",
+                              "checkout_page",
+                              "sidebar",
+                              "footer"
+                            ],
+                            "example": "home_top",
+                            "description": "موقع البانر"
+                          },
+                          "sortOrder": {
+                            "type": "number",
+                            "example": 1,
+                            "description": "ترتيب العرض"
+                          },
+                          "isActive": {
+                            "type": "boolean",
+                            "example": true,
+                            "description": "حالة البانر"
+                          },
+                          "altText": {
+                            "type": "string",
+                            "example": "عرض خاص",
+                            "description": "النص البديل للصورة"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "توكن غير صالح أو منتهي الصلاحية"
+          }
+        },
+        "tags": [
+          "التسويق-العام"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/marketing/banners/{id}/view": {
+      "get": {
+        "operationId": "trackBannerView",
+        "summary": "تتبع مشاهدة البانر",
+        "description": "تسجيل مشاهدة لبانر معين (يستخدم للإحصائيات)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف البانر",
+            "schema": {
+              "example": "banner123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم تسجيل المشاهدة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true,
+                      "description": "نجاح العملية"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "التسويق-العام"
+        ]
+      }
+    },
+    "/api/v1/marketing/banners/{id}/click": {
+      "get": {
+        "operationId": "trackBannerClick",
+        "summary": "تتبع نقر البانر",
+        "description": "تسجيل نقرة لبانر معين (يستخدم للإحصائيات)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف البانر",
+            "schema": {
+              "example": "banner123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم تسجيل النقرة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true,
+                      "description": "نجاح العملية"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "التسويق-العام"
+        ]
+      }
+    },
     "/api/v1/admin/user-analytics/user/{userId}": {
       "get": {
         "operationId": "getUserDetailedStats",
@@ -15747,1549 +17290,6 @@
           {
             "bearer": []
           }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/price-rules": {
-      "post": {
-        "operationId": "createPriceRule",
-        "summary": "إنشاء قاعدة تسعير",
-        "description": "إنشاء قاعدة تسعير جديدة للتحكم في أسعار المنتجات",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePriceRuleDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "تم إنشاء قاعدة التسعير بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "example": "507f1f77bcf86cd799439011",
-                          "description": "معرف قاعدة التسعير"
-                        },
-                        "name": {
-                          "type": "string",
-                          "example": "خصم عيد الفطر",
-                          "description": "اسم قاعدة التسعير"
-                        },
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "percentage",
-                            "fixed",
-                            "buy_x_get_y"
-                          ],
-                          "example": "percentage",
-                          "description": "نوع قاعدة التسعير"
-                        },
-                        "value": {
-                          "type": "number",
-                          "example": 15,
-                          "description": "قيمة الخصم"
-                        },
-                        "isActive": {
-                          "type": "boolean",
-                          "example": true,
-                          "description": "حالة القاعدة"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "بيانات غير صحيحة"
-          },
-          "403": {
-            "description": "غير مصرح لك بالوصول"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "get": {
-        "operationId": "listPriceRules",
-        "summary": "قائمة قواعد التسعير",
-        "description": "استرداد قائمة بجميع قواعد التسعير المتاحة",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد قائمة قواعد التسعير بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "example": "507f1f77bcf86cd799439011",
-                            "description": "معرف قاعدة التسعير"
-                          },
-                          "name": {
-                            "type": "string",
-                            "example": "خصم عيد الفطر",
-                            "description": "اسم قاعدة التسعير"
-                          },
-                          "type": {
-                            "type": "string",
-                            "enum": [
-                              "percentage",
-                              "fixed",
-                              "buy_x_get_y"
-                            ],
-                            "example": "percentage",
-                            "description": "نوع قاعدة التسعير"
-                          },
-                          "value": {
-                            "type": "number",
-                            "example": 15,
-                            "description": "قيمة الخصم"
-                          },
-                          "isActive": {
-                            "type": "boolean",
-                            "example": true,
-                            "description": "حالة القاعدة"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/price-rules/{id}": {
-      "get": {
-        "operationId": "getPriceRule",
-        "summary": "الحصول على قاعدة تسعير",
-        "description": "استرداد قاعدة تسعير محددة بالمعرف",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف قاعدة التسعير",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد قاعدة التسعير بنجاح"
-          },
-          "404": {
-            "description": "قاعدة التسعير غير موجودة"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "patch": {
-        "operationId": "updatePriceRule",
-        "summary": "تحديث قاعدة تسعير",
-        "description": "تحديث قاعدة تسعير موجودة",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف قاعدة التسعير",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePriceRuleDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم تحديث قاعدة التسعير بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "deletePriceRule",
-        "summary": "حذف قاعدة تسعير",
-        "description": "حذف قاعدة تسعير من النظام",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف قاعدة التسعير",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم حذف قاعدة التسعير بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/price-rules/{id}/toggle": {
-      "post": {
-        "operationId": "togglePriceRule",
-        "summary": "تبديل حالة قاعدة تسعير",
-        "description": "تفعيل أو إلغاء تفعيل قاعدة تسعير",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف قاعدة التسعير",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم تبديل حالة قاعدة التسعير بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/price-rules/preview": {
-      "post": {
-        "operationId": "previewPriceRule",
-        "summary": "معاينة قاعدة تسعير",
-        "description": "معاينة تأثير قاعدة تسعير على منتج معين",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PreviewPriceRuleDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم إنشاء المعاينة بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/coupons": {
-      "post": {
-        "operationId": "createCoupon",
-        "summary": "إنشاء كوبون",
-        "description": "إنشاء كوبون خصم جديد",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCouponDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "تم إنشاء الكوبون بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "get": {
-        "operationId": "listCoupons",
-        "summary": "قائمة الكوبونات",
-        "description": "استرداد قائمة الكوبونات مع إمكانية التصفية",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد قائمة الكوبونات بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/coupons/analytics": {
-      "get": {
-        "operationId": "getCouponsAnalytics",
-        "summary": "إحصائيات الكوبونات",
-        "description": "استرداد إحصائيات شاملة عن الكوبونات",
-        "parameters": [
-          {
-            "name": "period",
-            "required": false,
-            "in": "query",
-            "description": "عدد الأيام للإحصائيات (افتراضي: 30)",
-            "schema": {
-              "example": 30,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد إحصائيات الكوبونات بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "totalCoupons": {
-                          "type": "number",
-                          "example": 25
-                        },
-                        "activeCoupons": {
-                          "type": "number",
-                          "example": 15
-                        },
-                        "expiredCoupons": {
-                          "type": "number",
-                          "example": 5
-                        },
-                        "totalUses": {
-                          "type": "number",
-                          "example": 342
-                        },
-                        "totalLimit": {
-                          "type": "number",
-                          "example": 500
-                        },
-                        "usageRate": {
-                          "type": "string",
-                          "example": "68.40"
-                        },
-                        "period": {
-                          "type": "number",
-                          "example": 30
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/coupons/statistics": {
-      "get": {
-        "operationId": "getCouponsStatistics",
-        "summary": "إحصائيات مفصلة للكوبونات",
-        "description": "استرداد إحصائيات تفصيلية عن استخدام وأنواع الكوبونات",
-        "parameters": [
-          {
-            "name": "period",
-            "required": false,
-            "in": "query",
-            "description": "عدد الأيام للإحصائيات (افتراضي: 30)",
-            "schema": {
-              "example": 30,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد الإحصائيات المفصلة بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "statusBreakdown": {
-                          "type": "object",
-                          "properties": {
-                            "active": {
-                              "type": "number",
-                              "example": 15
-                            },
-                            "inactive": {
-                              "type": "number",
-                              "example": 3
-                            },
-                            "expired": {
-                              "type": "number",
-                              "example": 5
-                            },
-                            "scheduled": {
-                              "type": "number",
-                              "example": 2
-                            }
-                          }
-                        },
-                        "typeBreakdown": {
-                          "type": "object",
-                          "properties": {
-                            "percentage": {
-                              "type": "number",
-                              "example": 12
-                            },
-                            "fixed": {
-                              "type": "number",
-                              "example": 8
-                            },
-                            "freeShipping": {
-                              "type": "number",
-                              "example": 5
-                            }
-                          }
-                        },
-                        "topUsedCoupons": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "code": {
-                                "type": "string"
-                              },
-                              "type": {
-                                "type": "string",
-                                "enum": [
-                                  "percentage",
-                                  "fixed_amount",
-                                  "free_shipping",
-                                  "buy_x_get_y"
-                                ]
-                              },
-                              "discountValue": {
-                                "type": "number"
-                              },
-                              "usedCount": {
-                                "type": "number"
-                              },
-                              "usageLimit": {
-                                "type": "number"
-                              }
-                            }
-                          }
-                        },
-                        "period": {
-                          "type": "number",
-                          "example": 30
-                        },
-                        "totalInPeriod": {
-                          "type": "number",
-                          "example": 25
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/coupons/{id}": {
-      "get": {
-        "operationId": "getCoupon",
-        "summary": "الحصول على كوبون",
-        "description": "استرداد كوبون محدد بالمعرف",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف الكوبون",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد الكوبون بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "patch": {
-        "operationId": "updateCoupon",
-        "summary": "تحديث كوبون",
-        "description": "تحديث كوبون موجود",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف الكوبون",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCouponDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم تحديث الكوبون بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "deleteCoupon",
-        "summary": "حذف كوبون",
-        "description": "حذف كوبون من النظام",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف الكوبون",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم حذف الكوبون بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/coupons/validate": {
-      "post": {
-        "operationId": "validateCoupon",
-        "summary": "التحقق من صحة كوبون",
-        "description": "التحقق من صحة كوبون وإمكانية استخدامه",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ValidateCouponDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم التحقق من الكوبون بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/banners": {
-      "post": {
-        "operationId": "createBanner",
-        "summary": "إنشاء بانر",
-        "description": "إنشاء بانر إعلاني جديد. يمكن تحديد أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin). إذا تركت فارغاً، سيظهر البانر للجميع. يمكن تحديد نوع التنقل: external_url (رابط خارجي)، category (فئة)، product (منتج)، section (قسم في التطبيق)، أو none (بدون تنقل).",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBannerDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "تم إنشاء البانر بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "get": {
-        "operationId": "listBanners",
-        "summary": "قائمة البانرات",
-        "description": "استرداد قائمة البانرات الإعلانية",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد قائمة البانرات بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/banners/analytics": {
-      "get": {
-        "operationId": "getBannersAnalytics",
-        "summary": "إحصائيات البانرات",
-        "description": "استرداد إحصائيات الأداء للبانرات الإعلانية",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد إحصائيات البانرات بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "totalBanners": {
-                          "type": "number",
-                          "example": 10,
-                          "description": "إجمالي عدد البانرات"
-                        },
-                        "activeBanners": {
-                          "type": "number",
-                          "example": 7,
-                          "description": "عدد البانرات النشطة"
-                        },
-                        "totalViews": {
-                          "type": "number",
-                          "example": 5420,
-                          "description": "إجمالي المشاهدات"
-                        },
-                        "totalClicks": {
-                          "type": "number",
-                          "example": 342,
-                          "description": "إجمالي النقرات"
-                        },
-                        "averageCTR": {
-                          "type": "number",
-                          "example": 6.31,
-                          "description": "متوسط معدل النقر (%)"
-                        },
-                        "topPerforming": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "title": {
-                                "type": "string"
-                              },
-                              "views": {
-                                "type": "number"
-                              },
-                              "clicks": {
-                                "type": "number"
-                              },
-                              "ctr": {
-                                "type": "number"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/banners/{id}": {
-      "get": {
-        "operationId": "getBanner",
-        "summary": "الحصول على بانر",
-        "description": "استرداد بانر محدد بالمعرف",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف البانر",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد البانر بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "patch": {
-        "operationId": "updateBanner",
-        "summary": "تحديث بانر",
-        "description": "تحديث بانر موجود",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف البانر",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBannerDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "تم تحديث البانر بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "delete": {
-        "operationId": "deleteBanner",
-        "summary": "حذف بانر",
-        "description": "حذف بانر من النظام",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف البانر",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم حذف البانر بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/coupons/export": {
-      "post": {
-        "operationId": "exportCouponsData",
-        "summary": "تصدير بيانات الكوبونات",
-        "description": "تصدير بيانات الكوبونات وتحليلاتها بصيغ مختلفة (CSV, Excel, JSON)",
-        "parameters": [
-          {
-            "name": "format",
-            "required": false,
-            "in": "query",
-            "description": "صيغة الملف (csv, xlsx, json)",
-            "schema": {
-              "example": "csv",
-              "type": "string"
-            }
-          },
-          {
-            "name": "period",
-            "required": false,
-            "in": "query",
-            "description": "عدد الأيام للتحليلات (افتراضي: 30)",
-            "schema": {
-              "example": 30,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم تصدير البيانات بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "fileUrl": {
-                          "type": "string",
-                          "example": "https://api.example.com/exports/coupons_data_1698765432.csv"
-                        },
-                        "format": {
-                          "type": "string",
-                          "example": "csv"
-                        },
-                        "exportedAt": {
-                          "type": "string",
-                          "example": "2024-10-27T12:00:00.000Z"
-                        },
-                        "fileName": {
-                          "type": "string",
-                          "example": "coupons_data_1698765432.csv"
-                        },
-                        "recordCount": {
-                          "type": "number",
-                          "example": 25
-                        },
-                        "summary": {
-                          "type": "object",
-                          "properties": {
-                            "totalCoupons": {
-                              "type": "number",
-                              "example": 25
-                            },
-                            "activeCoupons": {
-                              "type": "number",
-                              "example": 15
-                            },
-                            "expiredCoupons": {
-                              "type": "number",
-                              "example": 5
-                            },
-                            "totalUses": {
-                              "type": "number",
-                              "example": 150
-                            },
-                            "usageRate": {
-                              "type": "string",
-                              "example": "75.00"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/coupons/engineer": {
-      "post": {
-        "operationId": "createEngineerCoupon",
-        "summary": "إنشاء كوبون للمهندس",
-        "description": "إنشاء كوبون مرتبط بمهندس مع نسبة عمولة",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateEngineerCouponDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "تم إنشاء الكوبون بنجاح"
-          },
-          "400": {
-            "description": "بيانات غير صحيحة أو المستخدم ليس مهندساً"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/engineers/{engineerId}/coupons": {
-      "get": {
-        "operationId": "getEngineerCoupons",
-        "summary": "كوبونات المهندس",
-        "description": "جلب جميع كوبونات مهندس معين",
-        "parameters": [
-          {
-            "name": "engineerId",
-            "required": true,
-            "in": "path",
-            "description": "معرف المهندس",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد كوبونات المهندس بنجاح"
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/admin/marketing/engineers/{engineerId}/coupons/stats": {
-      "get": {
-        "operationId": "getEngineerCouponStats",
-        "summary": "إحصائيات كوبونات المهندس",
-        "description": "جلب إحصائيات شاملة لكوبونات مهندس معين",
-        "parameters": [
-          {
-            "name": "engineerId",
-            "required": true,
-            "in": "path",
-            "description": "معرف المهندس",
-            "schema": {
-              "example": "507f1f77bcf86cd799439011",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد الإحصائيات بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "totalCoupons": {
-                      "type": "number",
-                      "example": 5
-                    },
-                    "activeCoupons": {
-                      "type": "number",
-                      "example": 3
-                    },
-                    "totalUses": {
-                      "type": "number",
-                      "example": 150
-                    },
-                    "totalCommissionEarned": {
-                      "type": "number",
-                      "example": 750
-                    },
-                    "totalDiscountGiven": {
-                      "type": "number",
-                      "example": 15000
-                    },
-                    "coupons": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "code": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "usedCount": {
-                            "type": "number"
-                          },
-                          "commissionEarned": {
-                            "type": "number"
-                          },
-                          "discountGiven": {
-                            "type": "number"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "إدارة-التسويق"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/marketing/pricing/variant": {
-      "get": {
-        "operationId": "getVariantPrice",
-        "summary": "الحصول على سعر المتغير",
-        "description": "استرداد السعر الفعال لمتغير منتج مع تطبيق قواعد التسعير",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم استرداد السعر الفعال بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "originalPrice": {
-                          "type": "number",
-                          "example": 100,
-                          "description": "السعر الأصلي"
-                        },
-                        "effectivePrice": {
-                          "type": "number",
-                          "example": 85,
-                          "description": "السعر الفعال بعد الخصم"
-                        },
-                        "discountAmount": {
-                          "type": "number",
-                          "example": 15,
-                          "description": "مبلغ الخصم"
-                        },
-                        "discountPercent": {
-                          "type": "number",
-                          "example": 15,
-                          "description": "نسبة الخصم"
-                        },
-                        "appliedRules": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "ruleId": {
-                                "type": "string",
-                                "example": "rule123"
-                              },
-                              "ruleName": {
-                                "type": "string",
-                                "example": "خصم عيد الفطر"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "التسويق-العام"
-        ]
-      }
-    },
-    "/api/v1/marketing/coupons/validate": {
-      "get": {
-        "operationId": "validateCoupon",
-        "summary": "التحقق من صحة كوبون",
-        "description": "التحقق من صحة كوبون الخصم وإمكانية استخدامه",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "تم التحقق من الكوبون بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "valid": {
-                          "type": "boolean",
-                          "example": true,
-                          "description": "صحة الكوبون"
-                        },
-                        "discountType": {
-                          "type": "string",
-                          "enum": [
-                            "percentage",
-                            "fixed"
-                          ],
-                          "example": "percentage",
-                          "description": "نوع الخصم"
-                        },
-                        "discountValue": {
-                          "type": "number",
-                          "example": 15,
-                          "description": "قيمة الخصم"
-                        },
-                        "minimumAmount": {
-                          "type": "number",
-                          "example": 100,
-                          "description": "الحد الأدنى للطلب"
-                        },
-                        "message": {
-                          "type": "string",
-                          "example": "كوبون صالح",
-                          "description": "رسالة التحقق"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "كوبون غير صحيح أو منتهي الصلاحية"
-          }
-        },
-        "tags": [
-          "التسويق-العام"
-        ]
-      }
-    },
-    "/api/v1/marketing/banners": {
-      "get": {
-        "operationId": "getActiveBanners",
-        "summary": "الحصول على البانرات النشطة",
-        "description": "استرداد قائمة البانرات الإعلانية النشطة حسب الموقع ونوع المستخدم. يتطلب توكن مصادقة لتحديد نوع المستخدم وعرض البانرات المناسبة له.",
-        "parameters": [
-          {
-            "name": "location",
-            "required": false,
-            "in": "query",
-            "description": "موقع عرض البانر",
-            "schema": {
-              "enum": [
-                "home_top",
-                "home_middle",
-                "home_bottom",
-                "category_top",
-                "product_page",
-                "cart_page",
-                "checkout_page",
-                "sidebar",
-                "footer"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم استرداد البانرات النشطة بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "example": "banner123",
-                            "description": "معرف البانر"
-                          },
-                          "image": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "example": "img123"
-                              },
-                              "url": {
-                                "type": "string",
-                                "example": "https://cdn.example.com/banner.jpg"
-                              }
-                            }
-                          },
-                          "linkUrl": {
-                            "type": "string",
-                            "example": "https://example.com/special-offer",
-                            "description": "رابط البانر (للتوافق مع الإصدارات القديمة)"
-                          },
-                          "navigationType": {
-                            "type": "string",
-                            "enum": [
-                              "external_url",
-                              "category",
-                              "product",
-                              "section",
-                              "none"
-                            ],
-                            "example": "category",
-                            "description": "نوع التنقل: external_url, category, product, section, none"
-                          },
-                          "navigationTarget": {
-                            "type": "string",
-                            "example": "category123",
-                            "description": "الهدف من التنقل: معرف الفئة، معرف المنتج، اسم القسم، أو رابط خارجي"
-                          },
-                          "navigationParams": {
-                            "type": "object",
-                            "example": {},
-                            "description": "معاملات إضافية للتنقل"
-                          },
-                          "location": {
-                            "type": "string",
-                            "enum": [
-                              "home_top",
-                              "home_middle",
-                              "home_bottom",
-                              "category_top",
-                              "product_page",
-                              "cart_page",
-                              "checkout_page",
-                              "sidebar",
-                              "footer"
-                            ],
-                            "example": "home_top",
-                            "description": "موقع البانر"
-                          },
-                          "sortOrder": {
-                            "type": "number",
-                            "example": 1,
-                            "description": "ترتيب العرض"
-                          },
-                          "isActive": {
-                            "type": "boolean",
-                            "example": true,
-                            "description": "حالة البانر"
-                          },
-                          "altText": {
-                            "type": "string",
-                            "example": "عرض خاص",
-                            "description": "النص البديل للصورة"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "توكن غير صالح أو منتهي الصلاحية"
-          }
-        },
-        "tags": [
-          "التسويق-العام"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/marketing/banners/{id}/view": {
-      "get": {
-        "operationId": "trackBannerView",
-        "summary": "تتبع مشاهدة البانر",
-        "description": "تسجيل مشاهدة لبانر معين (يستخدم للإحصائيات)",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف البانر",
-            "schema": {
-              "example": "banner123",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم تسجيل المشاهدة بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true,
-                      "description": "نجاح العملية"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "التسويق-العام"
-        ]
-      }
-    },
-    "/api/v1/marketing/banners/{id}/click": {
-      "get": {
-        "operationId": "trackBannerClick",
-        "summary": "تتبع نقر البانر",
-        "description": "تسجيل نقرة لبانر معين (يستخدم للإحصائيات)",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "description": "معرف البانر",
-            "schema": {
-              "example": "banner123",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "تم تسجيل النقرة بنجاح",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true,
-                      "description": "نجاح العملية"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "التسويق-العام"
         ]
       }
     },
@@ -33943,6 +33943,42 @@
         "type": "object",
         "properties": {}
       },
+      "CreatePriceRuleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdatePriceRuleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "PreviewPriceRuleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCouponDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateCouponDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ValidateCouponDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateBannerDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateBannerDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateEngineerCouponDto": {
+        "type": "object",
+        "properties": {}
+      },
       "UserInfoDto": {
         "type": "object",
         "properties": {
@@ -35586,42 +35622,6 @@
           "currency",
           "deviceId"
         ]
-      },
-      "CreatePriceRuleDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdatePriceRuleDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "PreviewPriceRuleDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "CreateCouponDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdateCouponDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "ValidateCouponDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "CreateBannerDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdateBannerDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "CreateEngineerCouponDto": {
-        "type": "object",
-        "properties": {}
       },
       "CoordsDto": {
         "type": "object",

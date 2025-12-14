@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MarketingService } from './marketing.service';
 import { MarketingAdminController } from './admin.controller';
@@ -25,7 +25,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
       { name: Product.name, schema: ProductSchema },
       { name: User.name, schema: UserSchema },
     ]),
-    AuthModule,
+    forwardRef(() => AuthModule),
     SharedModule,
   ],
   controllers: [MarketingAdminController, MarketingPublicController],

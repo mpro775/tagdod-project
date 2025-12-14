@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, Optional, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -12,6 +12,7 @@ import { AttributeValue } from '../../attributes/schemas/attribute-value.schema'
 import { ProductService } from './product.service';
 import { User } from '../../users/schemas/user.schema';
 import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
+import { MarketingService } from '../../marketing/marketing.service';
 
 export type WithId = { _id: Types.ObjectId | string };
 
@@ -77,6 +78,9 @@ export class PublicProductsPresenter {
     private attributesService: AttributesService,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Capabilities.name) private capabilitiesModel: Model<Capabilities>,
+    @Optional()
+    @Inject(forwardRef(() => MarketingService))
+    private marketingService?: MarketingService,
   ) {}
 
   get basePricingCurrencies(): readonly string[] {
@@ -780,6 +784,80 @@ export class PublicProductsPresenter {
       { variants: variantSnapshots },
     );
 
+    // تطبيق قواعد السعر (price rules) إذا كان marketingService متاحاً
+    if (this.marketingService && filteredVariants.length > 0) {
+      try {
+        // جلب المنتج للحصول على categoryId
+        const product = await this.productService.findById(productId);
+        const productRecord = product as unknown as AnyRecord;
+
+        // إعداد inputs لـ previewBatch لكل عملة
+        for (const currency of currenciesForPricing) {
+          if (!pricesByCurrency[currency] || pricesByCurrency[currency].length === 0) {
+            continue;
+          }
+
+          const marketingInputs = filteredVariants.map((variant) => ({
+            variantId: variant._id.toString(),
+            currency: currency,
+            qty: 1, // القيمة الافتراضية للكمية
+            accountType: 'any' as const, // القيمة الافتراضية لنوع الحساب
+          }));
+
+          // إعداد preloadedData لتجنب إعادة الجلب
+          const variantsMap = new Map<string, unknown>();
+          const productsMap = new Map<string, unknown>();
+
+          filteredVariants.forEach((variant) => {
+            variantsMap.set(variant._id.toString(), variant);
+          });
+          if (productRecord) {
+            productsMap.set(productId, productRecord);
+          }
+
+          // استدعاء previewBatch لتطبيق قواعد السعر
+          const marketingResults = await this.marketingService.previewBatch(marketingInputs, {
+            variants: variantsMap,
+            products: productsMap,
+          });
+
+          // تطبيق نتائج قواعد السعر على الأسعار
+          if (pricesByCurrency[currency]) {
+            pricesByCurrency[currency] = pricesByCurrency[currency].map((price) => {
+              const variantId = price.variantId;
+              const marketingResult = marketingResults.get(variantId);
+
+              if (marketingResult && marketingResult.appliedRule) {
+                // تطبيق السعر الفعلي من قاعدة السعر
+                const originalBasePrice = price.basePrice;
+                const effectivePrice = marketingResult.finalPrice;
+                const discountAmount = originalBasePrice - effectivePrice;
+                const discountPercentFromRule =
+                  originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
+
+                return {
+                  ...price,
+                  basePrice: originalBasePrice,
+                  finalPrice: effectivePrice,
+                  discountAmount: Math.max(0, discountAmount),
+                  discountPercent: discountPercentFromRule,
+                };
+              }
+
+              return price;
+            });
+          }
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Failed to apply price rules for product ${productId}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        // في حالة الخطأ، نستخدم الأسعار الأساسية فقط
+      }
+    }
+
     const variantsWithPricing = filteredVariants.map((variant) => {
       const variantId = variant._id.toString();
       const stock = this.normalizePrice(variant.stock) ?? 0;
@@ -842,7 +920,7 @@ export class PublicProductsPresenter {
         const productRecord = productRaw as AnyRecord;
         const productId = this.extractIdString(productRecord._id) ?? String(productRecord._id);
         const allVariants = await this.variantService.findByProductId(productId);
-        
+
         // حساب إجمالي الـ stock من جميع المتغيرات (النشطة وغير المحذوفة)
         const allVariantsArray = allVariants as unknown as Array<WithId & AnyRecord>;
         const totalStock = allVariantsArray.reduce((sum, variant) => {
@@ -851,7 +929,7 @@ export class PublicProductsPresenter {
           const isNotDeleted = !variant.deletedAt;
           return sum + (isActive && isNotDeleted ? stock : 0);
         }, 0);
-        
+
         // حساب isAvailable بناءً على المتغيرات أو المنتج البسيط
         let productIsAvailable: boolean;
         if (allVariantsArray.length > 0) {
@@ -868,7 +946,7 @@ export class PublicProductsPresenter {
           const productIsActive = productRecord.isActive !== false;
           productIsAvailable = productStock > 0 && productIsActive;
         }
-        
+
         const variants = this.filterVariantsWithStockOnly(allVariantsArray);
 
         if (variants.length === 0) {
@@ -886,7 +964,10 @@ export class PublicProductsPresenter {
             // إضافة stock و isAvailable
             return {
               ...simplifiedProduct,
-              stock: allVariantsArray.length > 0 ? totalStock : (this.normalizePrice(productRecord.stock) ?? 0),
+              stock:
+                allVariantsArray.length > 0
+                  ? totalStock
+                  : (this.normalizePrice(productRecord.stock) ?? 0),
               isAvailable: productIsAvailable,
             };
           }
@@ -907,7 +988,7 @@ export class PublicProductsPresenter {
 
           const derivedPricing = this.buildSimpleProductDerivedPricing(productRecord);
 
-          const pricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
+          let pricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
             basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
             compareAtPriceUSD,
             costPriceUSD,
@@ -915,6 +996,58 @@ export class PublicProductsPresenter {
             discountPercent,
             derivedPricing,
           );
+
+          // تطبيق قواعد السعر (price rules) على المنتجات البسيطة
+          if (this.marketingService) {
+            try {
+              const productsMap = new Map<string, unknown>();
+              productsMap.set(productId, productRecord);
+
+              // تطبيق قواعد السعر لكل عملة
+              for (const currency of currenciesForPricing) {
+                if (!pricingByCurrency[currency]) {
+                  continue;
+                }
+
+                const marketingInputs = [
+                  {
+                    productId: productId,
+                    currency: currency,
+                    qty: 1,
+                    accountType: 'any' as const,
+                  },
+                ];
+
+                const marketingResults = await this.marketingService.previewBatch(marketingInputs, {
+                  products: productsMap,
+                });
+
+                const marketingResult = marketingResults.get(productId);
+                if (marketingResult && marketingResult.appliedRule) {
+                  const originalBasePrice = pricingByCurrency[currency].basePrice;
+                  const effectivePrice = marketingResult.finalPrice;
+                  const discountAmount = originalBasePrice - effectivePrice;
+                  const discountPercentFromRule =
+                    originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
+
+                  pricingByCurrency[currency] = {
+                    ...pricingByCurrency[currency],
+                    basePrice: originalBasePrice,
+                    finalPrice: effectivePrice,
+                    discountAmount: Math.max(0, discountAmount),
+                    discountPercent: discountPercentFromRule,
+                  };
+                }
+              }
+            } catch (error) {
+              this.logger.warn(
+                `Failed to apply price rules for simple product ${productId}: ${
+                  error instanceof Error ? error.message : String(error)
+                }`,
+              );
+              // في حالة الخطأ، نستخدم الأسعار الأساسية فقط
+            }
+          }
 
           const simplifiedProduct = this.buildSimplifiedProduct(productRecord, {
             variants: [],
@@ -931,11 +1064,14 @@ export class PublicProductsPresenter {
             includePriceRange: false,
             includeDefaultPricing: false,
           });
-          
+
           // إضافة stock و isAvailable
           return {
             ...simplifiedProduct,
-            stock: allVariantsArray.length > 0 ? totalStock : (this.normalizePrice(productRecord.stock) ?? 0),
+            stock:
+              allVariantsArray.length > 0
+                ? totalStock
+                : (this.normalizePrice(productRecord.stock) ?? 0),
             isAvailable: productIsAvailable,
           };
         }
@@ -967,7 +1103,7 @@ export class PublicProductsPresenter {
           includePriceRange: false,
           includeDefaultPricing: false,
         });
-        
+
         // إضافة stock و isAvailable
         return {
           ...simplifiedProduct,

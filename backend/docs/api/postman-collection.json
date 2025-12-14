@@ -4594,6 +4594,852 @@
       "description": "Endpoints for الفئات-العامة functionality"
     },
     {
+      "name": "إدارة-التسويق",
+      "item": [
+        {
+          "name": "إنشاء قاعدة تسعير",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "price-rules"
+              ]
+            },
+            "description": "إنشاء قاعدة تسعير جديدة للتحكم في أسعار المنتجات"
+          }
+        },
+        {
+          "name": "قائمة قواعد التسعير",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "price-rules"
+              ]
+            },
+            "description": "استرداد قائمة بجميع قواعد التسعير المتاحة"
+          }
+        },
+        {
+          "name": "الحصول على قاعدة تسعير",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "price-rules",
+                "{id}"
+              ]
+            },
+            "description": "استرداد قاعدة تسعير محددة بالمعرف"
+          }
+        },
+        {
+          "name": "تحديث قاعدة تسعير",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "price-rules",
+                "{id}"
+              ]
+            },
+            "description": "تحديث قاعدة تسعير موجودة"
+          }
+        },
+        {
+          "name": "حذف قاعدة تسعير",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "price-rules",
+                "{id}"
+              ]
+            },
+            "description": "حذف قاعدة تسعير من النظام"
+          }
+        },
+        {
+          "name": "تبديل حالة قاعدة تسعير",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules/{id}/toggle",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "price-rules",
+                "{id}",
+                "toggle"
+              ]
+            },
+            "description": "تفعيل أو إلغاء تفعيل قاعدة تسعير"
+          }
+        },
+        {
+          "name": "معاينة قاعدة تسعير",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules/preview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "price-rules",
+                "preview"
+              ]
+            },
+            "description": "معاينة تأثير قاعدة تسعير على منتج معين"
+          }
+        },
+        {
+          "name": "إنشاء كوبون",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons"
+              ]
+            },
+            "description": "إنشاء كوبون خصم جديد"
+          }
+        },
+        {
+          "name": "قائمة الكوبونات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons"
+              ]
+            },
+            "description": "استرداد قائمة الكوبونات مع إمكانية التصفية"
+          }
+        },
+        {
+          "name": "إحصائيات الكوبونات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/analytics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "analytics"
+              ]
+            },
+            "description": "استرداد إحصائيات شاملة عن الكوبونات"
+          }
+        },
+        {
+          "name": "إحصائيات مفصلة للكوبونات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "statistics"
+              ]
+            },
+            "description": "استرداد إحصائيات تفصيلية عن استخدام وأنواع الكوبونات"
+          }
+        },
+        {
+          "name": "الحصول على كوبون",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "{id}"
+              ]
+            },
+            "description": "استرداد كوبون محدد بالمعرف"
+          }
+        },
+        {
+          "name": "تحديث كوبون",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "{id}"
+              ]
+            },
+            "description": "تحديث كوبون موجود"
+          }
+        },
+        {
+          "name": "حذف كوبون",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "{id}"
+              ]
+            },
+            "description": "حذف كوبون من النظام"
+          }
+        },
+        {
+          "name": "التحقق من صحة كوبون",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/validate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "validate"
+              ]
+            },
+            "description": "التحقق من صحة كوبون وإمكانية استخدامه"
+          }
+        },
+        {
+          "name": "إنشاء بانر",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/banners",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "banners"
+              ]
+            },
+            "description": "إنشاء بانر إعلاني جديد. يمكن تحديد أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin). إذا تركت فارغاً، سيظهر البانر للجميع. يمكن تحديد نوع التنقل: external_url (رابط خارجي)، category (فئة)، product (منتج)، section (قسم في التطبيق)، أو none (بدون تنقل)."
+          }
+        },
+        {
+          "name": "قائمة البانرات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/banners",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "banners"
+              ]
+            },
+            "description": "استرداد قائمة البانرات الإعلانية"
+          }
+        },
+        {
+          "name": "إحصائيات البانرات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/banners/analytics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "banners",
+                "analytics"
+              ]
+            },
+            "description": "استرداد إحصائيات الأداء للبانرات الإعلانية"
+          }
+        },
+        {
+          "name": "الحصول على بانر",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/banners/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "banners",
+                "{id}"
+              ]
+            },
+            "description": "استرداد بانر محدد بالمعرف"
+          }
+        },
+        {
+          "name": "تحديث بانر",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/banners/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "banners",
+                "{id}"
+              ]
+            },
+            "description": "تحديث بانر موجود"
+          }
+        },
+        {
+          "name": "حذف بانر",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/banners/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "banners",
+                "{id}"
+              ]
+            },
+            "description": "حذف بانر من النظام"
+          }
+        },
+        {
+          "name": "تصدير بيانات الكوبونات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "export"
+              ]
+            },
+            "description": "تصدير بيانات الكوبونات وتحليلاتها بصيغ مختلفة (CSV, Excel, JSON)"
+          }
+        },
+        {
+          "name": "إنشاء كوبون للمهندس",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/engineer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "coupons",
+                "engineer"
+              ]
+            },
+            "description": "إنشاء كوبون مرتبط بمهندس مع نسبة عمولة"
+          }
+        },
+        {
+          "name": "كوبونات المهندس",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/engineers/{engineerId}/coupons",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "engineers",
+                "{engineerId}",
+                "coupons"
+              ]
+            },
+            "description": "جلب جميع كوبونات مهندس معين"
+          }
+        },
+        {
+          "name": "إحصائيات كوبونات المهندس",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/marketing/engineers/{engineerId}/coupons/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "marketing",
+                "engineers",
+                "{engineerId}",
+                "coupons",
+                "stats"
+              ]
+            },
+            "description": "جلب إحصائيات شاملة لكوبونات مهندس معين"
+          }
+        }
+      ],
+      "description": "Endpoints for إدارة-التسويق functionality"
+    },
+    {
+      "name": "التسويق-العام",
+      "item": [
+        {
+          "name": "الحصول على سعر المتغير",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketing/pricing/variant",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "marketing",
+                "pricing",
+                "variant"
+              ]
+            },
+            "description": "استرداد السعر الفعال لمتغير منتج مع تطبيق قواعد التسعير"
+          }
+        },
+        {
+          "name": "التحقق من صحة كوبون",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketing/coupons/validate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "marketing",
+                "coupons",
+                "validate"
+              ]
+            },
+            "description": "التحقق من صحة كوبون الخصم وإمكانية استخدامه"
+          }
+        },
+        {
+          "name": "الحصول على البانرات النشطة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketing/banners",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "marketing",
+                "banners"
+              ]
+            },
+            "description": "استرداد قائمة البانرات الإعلانية النشطة حسب الموقع ونوع المستخدم. يتطلب توكن مصادقة لتحديد نوع المستخدم وعرض البانرات المناسبة له."
+          }
+        },
+        {
+          "name": "تتبع مشاهدة البانر",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketing/banners/{id}/view",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "marketing",
+                "banners",
+                "{id}",
+                "view"
+              ]
+            },
+            "description": "تسجيل مشاهدة لبانر معين (يستخدم للإحصائيات)"
+          }
+        },
+        {
+          "name": "تتبع نقر البانر",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/marketing/banners/{id}/click",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "marketing",
+                "banners",
+                "{id}",
+                "click"
+              ]
+            },
+            "description": "تسجيل نقرة لبانر معين (يستخدم للإحصائيات)"
+          }
+        }
+      ],
+      "description": "Endpoints for التسويق-العام functionality"
+    },
+    {
       "name": "تحليلات-المستخدمين",
       "item": [
         {
@@ -6871,852 +7717,6 @@
         }
       ],
       "description": "Endpoints for إدارة-السلات functionality"
-    },
-    {
-      "name": "إدارة-التسويق",
-      "item": [
-        {
-          "name": "إنشاء قاعدة تسعير",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "price-rules"
-              ]
-            },
-            "description": "إنشاء قاعدة تسعير جديدة للتحكم في أسعار المنتجات"
-          }
-        },
-        {
-          "name": "قائمة قواعد التسعير",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "price-rules"
-              ]
-            },
-            "description": "استرداد قائمة بجميع قواعد التسعير المتاحة"
-          }
-        },
-        {
-          "name": "الحصول على قاعدة تسعير",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "price-rules",
-                "{id}"
-              ]
-            },
-            "description": "استرداد قاعدة تسعير محددة بالمعرف"
-          }
-        },
-        {
-          "name": "تحديث قاعدة تسعير",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "price-rules",
-                "{id}"
-              ]
-            },
-            "description": "تحديث قاعدة تسعير موجودة"
-          }
-        },
-        {
-          "name": "حذف قاعدة تسعير",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "price-rules",
-                "{id}"
-              ]
-            },
-            "description": "حذف قاعدة تسعير من النظام"
-          }
-        },
-        {
-          "name": "تبديل حالة قاعدة تسعير",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules/{id}/toggle",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "price-rules",
-                "{id}",
-                "toggle"
-              ]
-            },
-            "description": "تفعيل أو إلغاء تفعيل قاعدة تسعير"
-          }
-        },
-        {
-          "name": "معاينة قاعدة تسعير",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/price-rules/preview",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "price-rules",
-                "preview"
-              ]
-            },
-            "description": "معاينة تأثير قاعدة تسعير على منتج معين"
-          }
-        },
-        {
-          "name": "إنشاء كوبون",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/coupons",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "coupons"
-              ]
-            },
-            "description": "إنشاء كوبون خصم جديد"
-          }
-        },
-        {
-          "name": "قائمة الكوبونات",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/coupons",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "coupons"
-              ]
-            },
-            "description": "استرداد قائمة الكوبونات مع إمكانية التصفية"
-          }
-        },
-        {
-          "name": "إحصائيات الكوبونات",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/analytics",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "coupons",
-                "analytics"
-              ]
-            },
-            "description": "استرداد إحصائيات شاملة عن الكوبونات"
-          }
-        },
-        {
-          "name": "إحصائيات مفصلة للكوبونات",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/statistics",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "coupons",
-                "statistics"
-              ]
-            },
-            "description": "استرداد إحصائيات تفصيلية عن استخدام وأنواع الكوبونات"
-          }
-        },
-        {
-          "name": "الحصول على كوبون",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "coupons",
-                "{id}"
-              ]
-            },
-            "description": "استرداد كوبون محدد بالمعرف"
-          }
-        },
-        {
-          "name": "تحديث كوبون",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "coupons",
-                "{id}"
-              ]
-            },
-            "description": "تحديث كوبون موجود"
-          }
-        },
-        {
-          "name": "حذف كوبون",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "coupons",
-                "{id}"
-              ]
-            },
-            "description": "حذف كوبون من النظام"
-          }
-        },
-        {
-          "name": "التحقق من صحة كوبون",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/validate",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "coupons",
-                "validate"
-              ]
-            },
-            "description": "التحقق من صحة كوبون وإمكانية استخدامه"
-          }
-        },
-        {
-          "name": "إنشاء بانر",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/banners",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "banners"
-              ]
-            },
-            "description": "إنشاء بانر إعلاني جديد. يمكن تحديد أنواع المستخدمين المستهدفين (user, engineer, merchant, admin, super_admin). إذا تركت فارغاً، سيظهر البانر للجميع. يمكن تحديد نوع التنقل: external_url (رابط خارجي)، category (فئة)، product (منتج)، section (قسم في التطبيق)، أو none (بدون تنقل)."
-          }
-        },
-        {
-          "name": "قائمة البانرات",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/banners",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "banners"
-              ]
-            },
-            "description": "استرداد قائمة البانرات الإعلانية"
-          }
-        },
-        {
-          "name": "إحصائيات البانرات",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/banners/analytics",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "banners",
-                "analytics"
-              ]
-            },
-            "description": "استرداد إحصائيات الأداء للبانرات الإعلانية"
-          }
-        },
-        {
-          "name": "الحصول على بانر",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/banners/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "banners",
-                "{id}"
-              ]
-            },
-            "description": "استرداد بانر محدد بالمعرف"
-          }
-        },
-        {
-          "name": "تحديث بانر",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/banners/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "banners",
-                "{id}"
-              ]
-            },
-            "description": "تحديث بانر موجود"
-          }
-        },
-        {
-          "name": "حذف بانر",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/banners/{id}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "banners",
-                "{id}"
-              ]
-            },
-            "description": "حذف بانر من النظام"
-          }
-        },
-        {
-          "name": "تصدير بيانات الكوبونات",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/export",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "coupons",
-                "export"
-              ]
-            },
-            "description": "تصدير بيانات الكوبونات وتحليلاتها بصيغ مختلفة (CSV, Excel, JSON)"
-          }
-        },
-        {
-          "name": "إنشاء كوبون للمهندس",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/coupons/engineer",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "coupons",
-                "engineer"
-              ]
-            },
-            "description": "إنشاء كوبون مرتبط بمهندس مع نسبة عمولة"
-          }
-        },
-        {
-          "name": "كوبونات المهندس",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/engineers/{engineerId}/coupons",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "engineers",
-                "{engineerId}",
-                "coupons"
-              ]
-            },
-            "description": "جلب جميع كوبونات مهندس معين"
-          }
-        },
-        {
-          "name": "إحصائيات كوبونات المهندس",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/admin/marketing/engineers/{engineerId}/coupons/stats",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "admin",
-                "marketing",
-                "engineers",
-                "{engineerId}",
-                "coupons",
-                "stats"
-              ]
-            },
-            "description": "جلب إحصائيات شاملة لكوبونات مهندس معين"
-          }
-        }
-      ],
-      "description": "Endpoints for إدارة-التسويق functionality"
-    },
-    {
-      "name": "التسويق-العام",
-      "item": [
-        {
-          "name": "الحصول على سعر المتغير",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/marketing/pricing/variant",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "marketing",
-                "pricing",
-                "variant"
-              ]
-            },
-            "description": "استرداد السعر الفعال لمتغير منتج مع تطبيق قواعد التسعير"
-          }
-        },
-        {
-          "name": "التحقق من صحة كوبون",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/marketing/coupons/validate",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "marketing",
-                "coupons",
-                "validate"
-              ]
-            },
-            "description": "التحقق من صحة كوبون الخصم وإمكانية استخدامه"
-          }
-        },
-        {
-          "name": "الحصول على البانرات النشطة",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/marketing/banners",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "marketing",
-                "banners"
-              ]
-            },
-            "description": "استرداد قائمة البانرات الإعلانية النشطة حسب الموقع ونوع المستخدم. يتطلب توكن مصادقة لتحديد نوع المستخدم وعرض البانرات المناسبة له."
-          }
-        },
-        {
-          "name": "تتبع مشاهدة البانر",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/marketing/banners/{id}/view",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "marketing",
-                "banners",
-                "{id}",
-                "view"
-              ]
-            },
-            "description": "تسجيل مشاهدة لبانر معين (يستخدم للإحصائيات)"
-          }
-        },
-        {
-          "name": "تتبع نقر البانر",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/marketing/banners/{id}/click",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "marketing",
-                "banners",
-                "{id}",
-                "click"
-              ]
-            },
-            "description": "تسجيل نقرة لبانر معين (يستخدم للإحصائيات)"
-          }
-        }
-      ],
-      "description": "Endpoints for التسويق-العام functionality"
     },
     {
       "name": "العناوين",

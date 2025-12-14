@@ -20,6 +20,7 @@ import { Capabilities, CapabilitiesSchema } from '../capabilities/schemas/capabi
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 import { SharedModule } from '../../shared/shared.module';
+import { MarketingModule } from '../marketing/marketing.module';
 
 @Module({
   imports: [
@@ -36,11 +37,9 @@ import { SharedModule } from '../../shared/shared.module';
     NotificationsCompleteModule,
     forwardRef(() => AuthModule),
     SharedModule,
+    forwardRef(() => MarketingModule),
   ],
-  controllers: [
-    ProductsController,
-    PublicProductsController,
-  ],
+  controllers: [ProductsController, PublicProductsController],
   providers: [
     ProductService,
     VariantService,
@@ -58,8 +57,7 @@ import { SharedModule } from '../../shared/shared.module';
     InventoryService,
     StockAlertService,
     PublicProductsPresenter,
-    MongooseModule
+    MongooseModule,
   ],
 })
 export class ProductsModule {}
-
