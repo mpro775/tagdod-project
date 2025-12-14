@@ -1,4 +1,19 @@
-# ... (الجزء الأول build كما هو بدون تغيير) ...
+# -------- BUILD STAGE --------
+FROM node:22-slim AS build
+
+WORKDIR /app
+
+# نسخ ملفات package
+COPY package*.json ./
+
+# تثبيت جميع dependencies (بما في ذلك devDependencies للبناء)
+RUN npm ci
+
+# نسخ الكود المصدري
+COPY . .
+
+# بناء المشروع
+RUN npm run build
 
 # -------- RUNNER STAGE --------
 FROM node:22-slim AS runner
@@ -38,11 +53,17 @@ RUN apt-get update && apt-get install -y \
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-# انسخ كل شيء من build
-COPY --from=build /app ./
+# نسخ package.json و package-lock.json
+COPY --from=build /app/package*.json ./
 
-# انسخ الخطوط
-COPY assets/fonts /app/assets/fonts
+# تثبيت production dependencies فقط
+RUN npm ci --only=production && npm cache clean --force
+
+# نسخ الملفات المبنية من مرحلة build
+COPY --from=build /app/dist ./dist
+
+# نسخ الخطوط
+COPY --from=build /app/assets/fonts /app/assets/fonts || true
 
 EXPOSE 3000
 
