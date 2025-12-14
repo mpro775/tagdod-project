@@ -13,6 +13,7 @@ import {
   Logger,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import {
@@ -208,7 +209,8 @@ export class EngineerProfileAdminController {
     @Body() dto: ManageWalletDto,
     @Req() req: { user: { sub: string } } & Request,
   ) {
-    let profile = await this.engineerProfileService.getProfile(userId, false);
+    // جلب profile كـ document قابل للتعديل (بدون lean)
+    let profile = await this.engineerProfileService.getProfileDocument(userId);
     if (!profile) {
       profile = await this.engineerProfileService.createProfile(userId);
     }
@@ -222,13 +224,13 @@ export class EngineerProfileAdminController {
         break;
       case 'deduct':
         if (oldBalance < dto.amount) {
-          throw new Error('الرصيد غير كافي للخصم');
+          throw new BadRequestException('الرصيد غير كافي للخصم');
         }
         newBalance = oldBalance - dto.amount;
         break;
       case 'withdraw':
         if (oldBalance < dto.amount) {
-          throw new Error('الرصيد غير كافي للسحب');
+          throw new BadRequestException('الرصيد غير كافي للسحب');
         }
         newBalance = oldBalance - dto.amount;
         break;
@@ -307,7 +309,7 @@ export class EngineerProfileAdminController {
       return {
         usd: amountUSD,
         yer: Math.round(amountUSD * rates.usdToYer),
-        sar: Math.round((amountUSD * rates.usdToSar) * 100) / 100,
+        sar: Math.round(amountUSD * rates.usdToSar * 100) / 100,
       };
     } catch (error) {
       this.logger.warn('Failed to get exchange rates, using USD only', error);

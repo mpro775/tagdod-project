@@ -32,6 +32,15 @@ export class EngineerProfileService {
   ) {}
 
   /**
+   * جلب بروفايل المهندس كـ document قابل للتعديل (بدون lean)
+   */
+  async getProfileDocument(userId: string): Promise<EngineerProfileDocument | null> {
+    return await this.engineerProfileModel.findOne({
+      userId: new Types.ObjectId(userId),
+    });
+  }
+
+  /**
    * إنشاء بروفايل للمهندس (يُستدعى عند الموافقة على المهندس)
    */
   async createProfile(userId: string): Promise<EngineerProfileDocument> {

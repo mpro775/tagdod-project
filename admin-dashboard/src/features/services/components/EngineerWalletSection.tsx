@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -41,7 +41,10 @@ interface EngineerWalletSectionProps {
   userId: string;
 }
 
-export const EngineerWalletSection: React.FC<EngineerWalletSectionProps> = ({ profile, userId }) => {
+export const EngineerWalletSection: React.FC<EngineerWalletSectionProps> = ({
+  profile,
+  userId,
+}) => {
   const { t } = useTranslation(['services', 'common']);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
   const [transactionPage, setTransactionPage] = useState(1);
@@ -52,13 +55,23 @@ export const EngineerWalletSection: React.FC<EngineerWalletSectionProps> = ({ pr
   const { data: transactionsData, isLoading: transactionsLoading } = useEngineerTransactions(
     userId,
     transactionPage,
-    10,
+    10
   );
 
   const manageWalletMutation = useManageEngineerWallet();
 
+  // حساب القيم المطلوبة للـ disabled button
+  const isFormValid = useMemo(() => {
+    const amount = parseFloat(walletAmount);
+    const trimmedReason = walletReason.trim();
+    return walletAmount && !isNaN(amount) && amount > 0 && trimmedReason.length > 0;
+  }, [walletAmount, walletReason]);
+
   const handleWalletSubmit = async () => {
-    if (!walletAmount || !walletReason) {
+    const amount = parseFloat(walletAmount);
+    const trimmedReason = walletReason.trim();
+
+    if (!walletAmount || isNaN(amount) || amount <= 0 || !trimmedReason) {
       return;
     }
 
@@ -66,8 +79,8 @@ export const EngineerWalletSection: React.FC<EngineerWalletSectionProps> = ({ pr
       userId,
       dto: {
         type: walletType,
-        amount: parseFloat(walletAmount),
-        reason: walletReason,
+        amount,
+        reason: trimmedReason,
       },
     });
 
@@ -107,14 +120,14 @@ export const EngineerWalletSection: React.FC<EngineerWalletSectionProps> = ({ pr
       <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h6">
-              {t('services:engineers.wallet', 'المحفظة')}
-            </Typography>
+            <Typography variant="h6">{t('services:engineers.wallet', 'المحفظة')}</Typography>
             <Button
               variant="outlined"
               startIcon={<Add />}
               onClick={() => {
                 setWalletType('add');
+                setWalletAmount('');
+                setWalletReason('');
                 setWalletDialogOpen(true);
               }}
             >
@@ -166,9 +179,7 @@ export const EngineerWalletSection: React.FC<EngineerWalletSectionProps> = ({ pr
                   <TableBody>
                     {transactionsData.transactions.map((transaction, index) => (
                       <TableRow key={index}>
-                        <TableCell>
-                          {formatDate(transaction.createdAt)}
-                        </TableCell>
+                        <TableCell>{formatDate(transaction.createdAt)}</TableCell>
                         <TableCell>
                           <Chip
                             label={getTransactionTypeLabel(transaction.type)}
@@ -209,13 +220,24 @@ export const EngineerWalletSection: React.FC<EngineerWalletSectionProps> = ({ pr
               )}
             </>
           ) : (
-            <Alert severity="info">{t('services:engineers.noTransactions', 'لا توجد معاملات')}</Alert>
+            <Alert severity="info">
+              {t('services:engineers.noTransactions', 'لا توجد معاملات')}
+            </Alert>
           )}
         </CardContent>
       </Card>
 
       {/* Wallet Management Dialog */}
-      <Dialog open={walletDialogOpen} onClose={() => setWalletDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={walletDialogOpen}
+        onClose={() => {
+          setWalletDialogOpen(false);
+          setWalletAmount('');
+          setWalletReason('');
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>{t('services:engineers.manageWallet', 'إدارة الرصيد')}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -253,13 +275,19 @@ export const EngineerWalletSection: React.FC<EngineerWalletSectionProps> = ({ pr
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setWalletDialogOpen(false)}>
+          <Button
+            onClick={() => {
+              setWalletDialogOpen(false);
+              setWalletAmount('');
+              setWalletReason('');
+            }}
+          >
             {t('common:actions.cancel', 'إلغاء')}
           </Button>
           <Button
             onClick={handleWalletSubmit}
             variant="contained"
-            disabled={!walletAmount || !walletReason || manageWalletMutation.isPending}
+            disabled={!isFormValid || manageWalletMutation.isPending}
           >
             {manageWalletMutation.isPending ? (
               <CircularProgress size={20} />
@@ -272,4 +300,3 @@ export const EngineerWalletSection: React.FC<EngineerWalletSectionProps> = ({ pr
     </>
   );
 };
-

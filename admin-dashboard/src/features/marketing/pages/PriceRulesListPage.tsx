@@ -27,7 +27,7 @@ const PriceRulesListPage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('marketing');
   const { isMobile } = useBreakpoint();
-  
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState<any>(null);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -80,8 +80,8 @@ const PriceRulesListPage: React.FC = () => {
               {rule.metadata?.title || t('priceRules.noTitle')}
             </Typography>
             {rule.metadata?.description && (
-              <Typography 
-                variant="caption" 
+              <Typography
+                variant="caption"
                 color="text.secondary"
                 sx={{
                   overflow: 'hidden',
@@ -104,12 +104,7 @@ const PriceRulesListPage: React.FC = () => {
       width: 120,
       align: 'center',
       renderCell: (params) => (
-        <Chip 
-          label={params.row.priority} 
-          size="small" 
-          color="primary" 
-          variant="outlined" 
-        />
+        <Chip label={params.row.priority} size="small" color="primary" variant="outlined" />
       ),
     },
     {
@@ -128,16 +123,34 @@ const PriceRulesListPage: React.FC = () => {
       },
     },
     {
-      field: 'startDate',
+      field: 'startAt',
       headerName: t('table.columns.startDate'),
       width: 150,
-      valueFormatter: (value) => format(new Date(value as string), 'dd/MM/yyyy'),
+      valueFormatter: (value) => {
+        if (!value) return '-';
+        try {
+          const date = new Date(value as string);
+          if (isNaN(date.getTime())) return '-';
+          return format(date, 'dd/MM/yyyy');
+        } catch {
+          return '-';
+        }
+      },
     },
     {
-      field: 'endDate',
+      field: 'endAt',
       headerName: t('table.columns.endDate'),
       width: 150,
-      valueFormatter: (value) => format(new Date(value as string), 'dd/MM/yyyy'),
+      valueFormatter: (value) => {
+        if (!value) return '-';
+        try {
+          const date = new Date(value as string);
+          if (isNaN(date.getTime())) return '-';
+          return format(date, 'dd/MM/yyyy');
+        } catch {
+          return '-';
+        }
+      },
     },
     {
       field: 'stats',
@@ -248,9 +261,9 @@ const PriceRulesListPage: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box 
+      <Box
         mb={3}
-        display="flex" 
+        display="flex"
         flexDirection={{ xs: 'column', sm: 'row' }}
         alignItems={{ xs: 'flex-start', sm: 'center' }}
         justifyContent="space-between"
@@ -258,11 +271,7 @@ const PriceRulesListPage: React.FC = () => {
       >
         <Box display="flex" alignItems="center" gap={2}>
           <LocalOffer fontSize={isMobile ? 'medium' : 'large'} color="primary" />
-          <Typography 
-            variant="h4" 
-            component="h1"
-            sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
-          >
+          <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
             {t('priceRules.title')}
           </Typography>
         </Box>
@@ -363,8 +372,8 @@ const PriceRulesListPage: React.FC = () => {
       )}
 
       {/* Delete Dialog */}
-      <Dialog 
-        open={deleteDialogOpen} 
+      <Dialog
+        open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         fullWidth
         maxWidth="sm"
@@ -372,15 +381,13 @@ const PriceRulesListPage: React.FC = () => {
         <DialogTitle>{t('messages.deleteConfirmTitle')}</DialogTitle>
         <DialogContent>
           <Typography>
-            {t('messages.confirmDelete', { 
-              title: selectedRule?.metadata?.title || t('priceRules.noTitle')
+            {t('messages.confirmDelete', {
+              title: selectedRule?.metadata?.title || t('priceRules.noTitle'),
             })}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>
-            {t('dialogs.cancel')}
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>{t('dialogs.cancel')}</Button>
           <Button
             onClick={handleDelete}
             color="error"

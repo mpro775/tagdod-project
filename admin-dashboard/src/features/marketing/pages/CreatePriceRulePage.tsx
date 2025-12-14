@@ -94,10 +94,10 @@ const CreatePriceRulePage: React.FC = () => {
   const createPriceRule = useCreatePriceRule();
 
   const [discountType, setDiscountType] = useState<DiscountType>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(ALL_OPTION_CATEGORY);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(ALL_OPTION_PRODUCT);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
-  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(ALL_OPTION_BRAND);
   const [selectedGiftProduct, setSelectedGiftProduct] = useState<Product | null>(null);
   const [productSearchQuery, setProductSearchQuery] = useState('');
 
@@ -136,25 +136,45 @@ const CreatePriceRulePage: React.FC = () => {
   });
 
   // Fetch categories, products, brands
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories({ isActive: true });
+  // تثبيت كائن الفلاتر باستخدام useMemo لتجنب حلقة التحديثات اللانهائية
+  const categoriesQuery = useMemo(
+    () => ({
+      isActive: true,
+    }),
+    []
+  );
+
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories(categoriesQuery);
 
   // تصفية المنتجات حسب الفئة المختارة
-  const { data: productsResponse, isLoading: productsLoading } = useProducts({
-    page: 1,
-    limit: 100,
-    search: productSearchQuery || undefined,
-    status: ProductStatus.ACTIVE,
-    categoryId:
-      selectedCategory && selectedCategory._id !== ALL_OPTION_CATEGORY._id
-        ? selectedCategory._id
-        : undefined, // إضافة التصفية حسب الفئة
-  });
+  // تثبيت كائن فلاتر المنتجات - هذا هو السبب الرئيسي للخطأ
+  const productsQuery = useMemo(
+    () => ({
+      page: 1,
+      limit: 100,
+      search: productSearchQuery || undefined,
+      status: ProductStatus.ACTIVE,
+      categoryId:
+        selectedCategory && selectedCategory._id !== ALL_OPTION_CATEGORY._id
+          ? selectedCategory._id
+          : undefined,
+    }),
+    [productSearchQuery, selectedCategory] // لا يُعاد إنشاؤه إلا إذا تغير البحث أو الفئة
+  );
+
+  const { data: productsResponse, isLoading: productsLoading } = useProducts(productsQuery);
   const products = productsResponse?.data || [];
 
-  const { data: brandsResponse, isLoading: brandsLoading } = useBrands({
-    isActive: true,
-    limit: 100,
-  });
+  // تثبيت كائن فلاتر العلامات التجارية
+  const brandsQuery = useMemo(
+    () => ({
+      isActive: true,
+      limit: 100,
+    }),
+    []
+  );
+
+  const { data: brandsResponse, isLoading: brandsLoading } = useBrands(brandsQuery);
   const brands = brandsResponse?.data || [];
 
   // إضافة خيار "الكل" في بداية القوائم
@@ -162,20 +182,19 @@ const CreatePriceRulePage: React.FC = () => {
   const productsWithAll = useMemo(() => [ALL_OPTION_PRODUCT, ...products], [products]);
   const brandsWithAll = useMemo(() => [ALL_OPTION_BRAND, ...brands], [brands]);
 
-  // استخدام useRef لتخزين مراجع ثابتة لخيارات "الكل" لتجنب حلقة التحديثات
-  const allCategoryRef = React.useRef(ALL_OPTION_CATEGORY);
-  const allProductRef = React.useRef(ALL_OPTION_PRODUCT);
-  const allBrandRef = React.useRef(ALL_OPTION_BRAND);
-
   // Fetch variants when product is selected
   const [variants, setVariants] = useState<Variant[]>([]);
   const [variantsLoading, setVariantsLoading] = useState(false);
 
   React.useEffect(() => {
-    if (selectedProduct?._id) {
+    // نعتمد هنا على النص (ID) فقط لكسر أي حلقة تحديث بسبب تغير مراجع الكائنات
+    const productId = selectedProduct?._id;
+    const isAllOption = productId === ALL_OPTION_PRODUCT._id;
+
+    if (productId && !isAllOption) {
       setVariantsLoading(true);
       productsApi
-        .listVariants(selectedProduct._id)
+        .listVariants(productId)
         .then((data) => {
           setVariants(data);
           setVariantsLoading(false);
@@ -186,8 +205,10 @@ const CreatePriceRulePage: React.FC = () => {
         });
     } else {
       setVariants([]);
+      setVariantsLoading(false);
     }
-  }, [selectedProduct]);
+    // التغيير الجوهري هنا: نراقب الـ ID فقط وليس الكائن كاملاً
+  }, [selectedProduct?._id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -257,25 +278,34 @@ const CreatePriceRulePage: React.FC = () => {
   };
 
   const handleCategoryChange = (_event: any, value: Category | null) => {
-    if (!value) return;
-
-    // إذا تم اختيار "الكل"، تعيين null
-    const categoryValue = value._id === ALL_OPTION_CATEGORY._id ? null : value;
+    if (!value) {
+      // إذا تم إلغاء الاختيار، استخدم خيار "الكل"
+      setSelectedCategory(ALL_OPTION_CATEGORY);
+      handleNestedChange('conditions', 'categoryId', '');
+      return;
+    }
 
     // تجنب التحديث إذا كانت القيمة الجديدة نفس القيمة الحالية
-    const currentCategoryId = selectedCategory?._id || null;
-    const newCategoryId = categoryValue?._id || null;
+    const currentCategoryId = selectedCategory?._id;
+    const newCategoryId = value._id;
     if (currentCategoryId === newCategoryId) {
       return;
     }
 
+    // إذا تم اختيار "الكل"، استخدم كائن ALL_OPTION_CATEGORY
+    const categoryValue = value._id === ALL_OPTION_CATEGORY._id ? ALL_OPTION_CATEGORY : value;
+
     setSelectedCategory(categoryValue);
-    handleNestedChange('conditions', 'categoryId', categoryValue?._id || '');
+    handleNestedChange(
+      'conditions',
+      'categoryId',
+      categoryValue._id === ALL_OPTION_CATEGORY._id ? '' : categoryValue._id
+    );
 
     // إعادة تعيين المنتج والمتغير عند تغيير الفئة
-    if (!categoryValue || value?._id === ALL_OPTION_CATEGORY._id) {
-      // إذا تم إلغاء اختيار الفئة أو اختيار "الكل"، إعادة تعيين المنتج والمتغير
-      setSelectedProduct(null);
+    if (value._id === ALL_OPTION_CATEGORY._id) {
+      // إذا تم اختيار "الكل"، إعادة تعيين المنتج والمتغير
+      setSelectedProduct(ALL_OPTION_PRODUCT);
       setSelectedVariant(null);
       handleNestedChange('conditions', 'productId', '');
       handleNestedChange('conditions', 'variantId', '');
@@ -293,7 +323,7 @@ const CreatePriceRulePage: React.FC = () => {
 
         if (productCategoryId !== categoryValue._id) {
           // المنتج المختار لا ينتمي للفئة الجديدة، إعادة تعيينه
-          setSelectedProduct(null);
+          setSelectedProduct(ALL_OPTION_PRODUCT);
           setSelectedVariant(null);
           handleNestedChange('conditions', 'productId', '');
           handleNestedChange('conditions', 'variantId', '');
@@ -303,20 +333,31 @@ const CreatePriceRulePage: React.FC = () => {
   };
 
   const handleProductChange = (_event: any, value: Product | null) => {
-    if (!value) return;
-
-    // إذا تم اختيار "الكل"، تعيين null
-    const productValue = value._id === ALL_OPTION_PRODUCT._id ? null : value;
+    if (!value) {
+      // إذا تم إلغاء الاختيار، استخدم خيار "الكل"
+      setSelectedProduct(ALL_OPTION_PRODUCT);
+      handleNestedChange('conditions', 'productId', '');
+      setSelectedVariant(null);
+      handleNestedChange('conditions', 'variantId', '');
+      return;
+    }
 
     // تجنب التحديث إذا كانت القيمة الجديدة نفس القيمة الحالية
-    const currentProductId = selectedProduct?._id || null;
-    const newProductId = productValue?._id || null;
+    const currentProductId = selectedProduct?._id;
+    const newProductId = value._id;
     if (currentProductId === newProductId) {
       return;
     }
 
+    // إذا تم اختيار "الكل"، استخدم كائن ALL_OPTION_PRODUCT
+    const productValue = value._id === ALL_OPTION_PRODUCT._id ? ALL_OPTION_PRODUCT : value;
+
     // التحقق من أن المنتج ينتمي للفئة المختارة (إن وجدت)
-    if (productValue && selectedCategory && selectedCategory._id) {
+    if (
+      productValue._id !== ALL_OPTION_PRODUCT._id &&
+      selectedCategory &&
+      selectedCategory._id !== ALL_OPTION_CATEGORY._id
+    ) {
       const productCategoryId =
         typeof productValue.categoryId === 'string'
           ? productValue.categoryId
@@ -330,7 +371,11 @@ const CreatePriceRulePage: React.FC = () => {
 
     setSelectedProduct(productValue);
     setSelectedVariant(null);
-    handleNestedChange('conditions', 'productId', productValue?._id || '');
+    handleNestedChange(
+      'conditions',
+      'productId',
+      productValue._id === ALL_OPTION_PRODUCT._id ? '' : productValue._id
+    );
     handleNestedChange('conditions', 'variantId', '');
   };
 
@@ -340,20 +385,29 @@ const CreatePriceRulePage: React.FC = () => {
   };
 
   const handleBrandChange = (_event: any, value: Brand | null) => {
-    if (!value) return;
-
-    // إذا تم اختيار "الكل"، تعيين null
-    const brandValue = value._id === ALL_OPTION_BRAND._id ? null : value;
+    if (!value) {
+      // إذا تم إلغاء الاختيار، استخدم خيار "الكل"
+      setSelectedBrand(ALL_OPTION_BRAND);
+      handleNestedChange('conditions', 'brandId', '');
+      return;
+    }
 
     // تجنب التحديث إذا كانت القيمة الجديدة نفس القيمة الحالية
-    const currentBrandId = selectedBrand?._id || null;
-    const newBrandId = brandValue?._id || null;
+    const currentBrandId = selectedBrand?._id;
+    const newBrandId = value._id;
     if (currentBrandId === newBrandId) {
       return;
     }
 
+    // إذا تم اختيار "الكل"، استخدم كائن ALL_OPTION_BRAND
+    const brandValue = value._id === ALL_OPTION_BRAND._id ? ALL_OPTION_BRAND : value;
+
     setSelectedBrand(brandValue);
-    handleNestedChange('conditions', 'brandId', brandValue?._id || '');
+    handleNestedChange(
+      'conditions',
+      'brandId',
+      brandValue._id === ALL_OPTION_BRAND._id ? '' : brandValue._id
+    );
   };
 
   const handleGiftProductChange = (_event: any, value: Product | null) => {
@@ -492,7 +546,7 @@ const CreatePriceRulePage: React.FC = () => {
                     <Autocomplete
                       options={categoriesWithAll}
                       getOptionLabel={(option) => option.name || ''}
-                      value={selectedCategory || allCategoryRef.current}
+                      value={selectedCategory}
                       onChange={handleCategoryChange}
                       loading={categoriesLoading}
                       size={isMobile ? 'small' : 'medium'}
@@ -504,7 +558,7 @@ const CreatePriceRulePage: React.FC = () => {
                         />
                       )}
                       isOptionEqualToValue={(option, value) => {
-                        if (!value) return false;
+                        if (!value || !option) return false;
                         return option._id === value._id;
                       }}
                       noOptionsText="لا توجد فئات"
@@ -520,13 +574,17 @@ const CreatePriceRulePage: React.FC = () => {
                     <Autocomplete
                       options={productsWithAll}
                       getOptionLabel={(option) => option.name || ''}
-                      value={selectedProduct || allProductRef.current}
+                      value={selectedProduct}
                       onChange={handleProductChange}
                       loading={productsLoading}
                       size={isMobile ? 'small' : 'medium'}
                       inputValue={productSearchQuery}
-                      onInputChange={(_event, newInputValue) => {
-                        setProductSearchQuery(newInputValue);
+                      onInputChange={(_event, newInputValue, reason) => {
+                        // الحل السحري: نحدث البحث فقط إذا كان السبب هو كتابة المستخدم
+                        // ونتجاهل التحديث إذا كان السبب 'reset' (أي اختيار عنصر من القائمة)
+                        if (reason === 'input' || reason === 'clear') {
+                          setProductSearchQuery(newInputValue);
+                        }
                       }}
                       renderInput={(params) => (
                         <TextField
@@ -545,7 +603,7 @@ const CreatePriceRulePage: React.FC = () => {
                         />
                       )}
                       isOptionEqualToValue={(option, value) => {
-                        if (!value) return false;
+                        if (!value || !option) return false;
                         return option._id === value._id;
                       }}
                       noOptionsText={
@@ -605,7 +663,7 @@ const CreatePriceRulePage: React.FC = () => {
                     <Autocomplete
                       options={brandsWithAll}
                       getOptionLabel={(option) => option.name || ''}
-                      value={selectedBrand || allBrandRef.current}
+                      value={selectedBrand}
                       onChange={handleBrandChange}
                       loading={brandsLoading}
                       size={isMobile ? 'small' : 'medium'}
@@ -617,7 +675,7 @@ const CreatePriceRulePage: React.FC = () => {
                         />
                       )}
                       isOptionEqualToValue={(option, value) => {
-                        if (!value) return false;
+                        if (!value || !option) return false;
                         return option._id === value._id;
                       }}
                       noOptionsText="لا توجد علامات تجارية"
@@ -768,8 +826,11 @@ const CreatePriceRulePage: React.FC = () => {
                       loading={productsLoading}
                       size={isMobile ? 'small' : 'medium'}
                       inputValue={productSearchQuery}
-                      onInputChange={(_event, newInputValue) => {
-                        setProductSearchQuery(newInputValue);
+                      onInputChange={(_event, newInputValue, reason) => {
+                        // تحديث البحث فقط عند الكتابة أو المسح، وليس عند اختيار عنصر
+                        if (reason === 'input' || reason === 'clear') {
+                          setProductSearchQuery(newInputValue);
+                        }
                       }}
                       renderInput={(params) => (
                         <TextField
