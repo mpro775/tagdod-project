@@ -794,6 +794,9 @@ export class PublicProductsPresenter {
         const product = await this.productService.findById(productId);
         const productRecord = product as unknown as AnyRecord;
 
+        // حفظ نسبة الخصم المطبقة لكل variant لتطبيقها على جميع العملات
+        const variantDiscounts = new Map<string, number>();
+
         // إعداد inputs لـ previewBatch لكل عملة
         for (const currency of currenciesForPricing) {
           if (!pricesByCurrency[currency] || pricesByCurrency[currency].length === 0) {
@@ -851,8 +854,58 @@ export class PublicProductsPresenter {
                 const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
                 const roundedFinalPrice = Math.round(effectivePrice * 100) / 100;
 
+                // حفظ نسبة الخصم لهذا variant لتطبيقها على جميع العملات
+                if (!variantDiscounts.has(variantId)) {
+                  variantDiscounts.set(variantId, roundedDiscountPercent);
+                }
+
                 this.logger.debug(
                   `Applied price rule for variant ${variantId} in ${currency}: ${originalBasePrice} -> ${roundedFinalPrice} (${roundedDiscountPercent.toFixed(2)}%)`,
+                );
+
+                return {
+                  ...price,
+                  basePrice: originalBasePrice,
+                  finalPrice: roundedFinalPrice,
+                  discountAmount: roundedDiscountAmount,
+                  discountPercent: roundedDiscountPercent,
+                };
+              }
+
+              return price;
+            });
+          }
+        }
+
+        // إذا تم تطبيق قاعدة سعر على أي variant في أي عملة، قم بتطبيق نفس نسبة الخصم على جميع العملات الأخرى
+        if (variantDiscounts.size > 0) {
+          for (const currency of currenciesForPricing) {
+            if (!pricesByCurrency[currency] || pricesByCurrency[currency].length === 0) {
+              continue;
+            }
+
+            pricesByCurrency[currency] = pricesByCurrency[currency].map((price) => {
+              const variantId = price.variantId;
+              const appliedDiscountPercent = variantDiscounts.get(variantId);
+
+              // تخطي الـ variants التي تم تطبيق قاعدة السعر عليها بالفعل في هذه العملة
+              if (price.discountPercent > 0) {
+                return price;
+              }
+
+              // تطبيق نفس نسبة الخصم على هذه العملة إذا كان هناك خصم مطبق على هذا variant
+              if (appliedDiscountPercent !== undefined && appliedDiscountPercent > 0) {
+                const originalBasePrice = price.basePrice;
+                const discountAmount = (originalBasePrice * appliedDiscountPercent) / 100;
+                const finalPrice = originalBasePrice - discountAmount;
+
+                // تقريب القيم إلى منزلتين عشريتين
+                const roundedDiscountPercent = Math.round(appliedDiscountPercent * 100) / 100;
+                const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
+                const roundedFinalPrice = Math.round(finalPrice * 100) / 100;
+
+                this.logger.debug(
+                  `Applying same discount (${roundedDiscountPercent.toFixed(2)}%) to variant ${variantId} in ${currency}: ${originalBasePrice} -> ${roundedFinalPrice}`,
                 );
 
                 return {
@@ -1459,14 +1512,202 @@ export class PublicProductsPresenter {
     if (variantsWithPricing.length === 0 && this.hasSimplePricing(product)) {
       const derivedPricing = this.buildSimpleProductDerivedPricing(product);
 
-      productPricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
-        basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
-        compareAtPriceUSD,
-        costPriceUSD,
-        currenciesForPricing,
-        discountPercent,
-        derivedPricing,
-      );
+      let productPricingByCurrencyTemp =
+        await this.pricingService.getSimpleProductPricingByCurrencies(
+          basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
+          compareAtPriceUSD,
+          costPriceUSD,
+          currenciesForPricing,
+          discountPercent,
+          derivedPricing,
+        );
+
+      // تطبيق قواعد السعر (price rules) على المنتجات البسيطة
+      if (this.marketingService) {
+        this.logger.debug(`MarketingService is available for product details ${productId}`);
+        try {
+          // التأكد من أن product يحتوي على categoryId
+          // في buildProductDetailResponse، product يأتي من productService.findById مباشرة
+          // لذا يجب أن يحتوي على categoryId، لكن قد يكون ObjectId
+          let productForMarketing = product;
+
+          // إذا لم يكن categoryId موجوداً أو كان undefined، جلب المنتج من قاعدة البيانات
+          if (!product.categoryId) {
+            const fullProduct = await this.productService.findById(productId);
+            if (fullProduct) {
+              productForMarketing = fullProduct as unknown as AnyRecord;
+            }
+          }
+
+          // تحويل categoryId إلى string بشكل صحيح
+          // في buildProductDetailResponse، product يأتي من findById مباشرة، لذا categoryId قد يكون ObjectId
+          let categoryIdStr = 'none';
+          if (productForMarketing.categoryId) {
+            const catId = productForMarketing.categoryId;
+
+            // محاولة تحويل ObjectId إلى string
+            try {
+              if (typeof catId === 'string') {
+                categoryIdStr = catId;
+              } else if (catId instanceof Types.ObjectId) {
+                categoryIdStr = catId.toString();
+              } else if (catId && typeof (catId as any).toString === 'function') {
+                const converted = (catId as any).toString();
+                if (converted && converted !== '[object Object]' && converted.length === 24) {
+                  // ObjectId string عادة يكون 24 حرف
+                  categoryIdStr = converted;
+                } else if ((catId as any)._id) {
+                  categoryIdStr = String((catId as any)._id);
+                } else if ((catId as any).id) {
+                  categoryIdStr = String((catId as any).id);
+                } else {
+                  // محاولة استخدام toHexString()
+                  if (typeof (catId as any).toHexString === 'function') {
+                    categoryIdStr = (catId as any).toHexString();
+                  } else {
+                    // استخدام JSON.stringify ثم استخراج القيمة
+                    const jsonStr = JSON.stringify(catId);
+                    if (jsonStr && jsonStr !== '{}' && jsonStr !== 'null') {
+                      const parsed = JSON.parse(jsonStr);
+                      categoryIdStr = typeof parsed === 'string' ? parsed : String(parsed);
+                    } else {
+                      categoryIdStr = 'none';
+                    }
+                  }
+                }
+              } else {
+                // استخدام String() مباشرة
+                const str = String(catId);
+                if (str && str !== '[object Object]' && str.length === 24) {
+                  categoryIdStr = str;
+                } else {
+                  categoryIdStr = 'none';
+                }
+              }
+            } catch (error) {
+              this.logger.warn(`Error converting categoryId to string: ${error}`);
+              categoryIdStr = 'none';
+            }
+
+            // تحديث productForMarketing لاستخدام categoryId كـ string
+            if (categoryIdStr !== 'none') {
+              productForMarketing = {
+                ...productForMarketing,
+                categoryId: categoryIdStr,
+              };
+            }
+          }
+
+          const productsMap = new Map<string, unknown>();
+          productsMap.set(productId, productForMarketing);
+
+          this.logger.debug(
+            `Applying price rules for product details ${productId}, categoryId: ${categoryIdStr}`,
+          );
+
+          // تطبيق قواعد السعر لكل عملة
+          let appliedDiscountPercent: number | null = null;
+          let appliedRule: unknown = null;
+
+          for (const currency of currenciesForPricing) {
+            if (!productPricingByCurrencyTemp[currency]) {
+              continue;
+            }
+
+            const marketingInputs = [
+              {
+                productId: productId,
+                currency: currency,
+                qty: 1,
+                accountType: 'any' as const,
+              },
+            ];
+
+            this.logger.debug(
+              `Calling previewBatch for product details ${productId} in ${currency}`,
+            );
+
+            const marketingResults = await this.marketingService.previewBatch(marketingInputs, {
+              products: productsMap,
+            });
+
+            const marketingResult = marketingResults.get(productId);
+            this.logger.debug(
+              `Marketing result for product details ${productId} in ${currency}: ${JSON.stringify(marketingResult)}`,
+            );
+
+            if (marketingResult && marketingResult.appliedRule) {
+              const originalBasePrice = productPricingByCurrencyTemp[currency].basePrice;
+              const effectivePrice = marketingResult.finalPrice;
+              const discountAmount = originalBasePrice - effectivePrice;
+              const discountPercentFromRule =
+                originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
+
+              // تقريب القيم إلى منزلتين عشريتين
+              const roundedDiscountPercent = Math.round(discountPercentFromRule * 100) / 100;
+              const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
+              const roundedFinalPrice = Math.round(effectivePrice * 100) / 100;
+
+              // حفظ نسبة الخصم والقاعدة المطبقة لتطبيقها على جميع العملات
+              if (appliedDiscountPercent === null) {
+                appliedDiscountPercent = roundedDiscountPercent;
+                appliedRule = marketingResult.appliedRule;
+              }
+
+              productPricingByCurrencyTemp[currency] = {
+                ...productPricingByCurrencyTemp[currency],
+                basePrice: originalBasePrice,
+                finalPrice: roundedFinalPrice,
+                discountAmount: roundedDiscountAmount,
+                discountPercent: roundedDiscountPercent,
+              };
+            }
+          }
+
+          // إذا تم تطبيق قاعدة سعر على أي عملة، قم بتطبيق نفس نسبة الخصم على جميع العملات الأخرى
+          if (appliedDiscountPercent !== null && appliedRule) {
+            for (const currency of currenciesForPricing) {
+              if (!productPricingByCurrencyTemp[currency]) {
+                continue;
+              }
+
+              // تخطي العملات التي تم تطبيق قاعدة السعر عليها بالفعل
+              if (productPricingByCurrencyTemp[currency].discountPercent > 0) {
+                continue;
+              }
+
+              // تطبيق نفس نسبة الخصم على هذه العملة
+              const originalBasePrice = productPricingByCurrencyTemp[currency].basePrice;
+              const discountAmount = (originalBasePrice * appliedDiscountPercent) / 100;
+              const finalPrice = originalBasePrice - discountAmount;
+
+              // تقريب القيم إلى منزلتين عشريتين
+              const roundedDiscountPercent = Math.round(appliedDiscountPercent * 100) / 100;
+              const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
+              const roundedFinalPrice = Math.round(finalPrice * 100) / 100;
+
+              productPricingByCurrencyTemp[currency] = {
+                ...productPricingByCurrencyTemp[currency],
+                basePrice: originalBasePrice,
+                finalPrice: roundedFinalPrice,
+                discountAmount: roundedDiscountAmount,
+                discountPercent: roundedDiscountPercent,
+              };
+            }
+          }
+        } catch (error) {
+          this.logger.warn(
+            `Failed to apply price rules for simple product ${productId} in product details: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+            error instanceof Error ? error.stack : undefined,
+          );
+        }
+      } else {
+        this.logger.warn(`MarketingService is NOT available for product details ${productId}`);
+      }
+
+      productPricingByCurrency = productPricingByCurrencyTemp;
       defaultPricing =
         productPricingByCurrency[this.normalizeCurrency(selectedCurrencyInput)] ??
         productPricingByCurrency.USD;
