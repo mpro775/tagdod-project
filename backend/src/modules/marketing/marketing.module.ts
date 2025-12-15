@@ -6,6 +6,7 @@ import { MarketingPublicController } from './public.controller';
 import { MarketingCronService } from './marketing.cron';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
+import { CacheModule } from '../../shared/cache/cache.module';
 
 // Schemas
 import { PriceRule, PriceRuleSchema } from './schemas/price-rule.schema';
@@ -27,6 +28,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
     ]),
     forwardRef(() => AuthModule),
     SharedModule,
+    CacheModule,
   ],
   controllers: [MarketingAdminController, MarketingPublicController],
   providers: [MarketingService, MarketingCronService],

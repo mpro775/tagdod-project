@@ -298,6 +298,9 @@ UnifiedNotificationSchema.pre('save', function (next) {
       [NotificationType.CART_ABANDONMENT]: NotificationCategory.MARKETING,
       [NotificationType.PAYMENT_FAILED]: NotificationCategory.PAYMENT,
       [NotificationType.PAYMENT_SUCCESS]: NotificationCategory.PAYMENT,
+      [NotificationType.ENGINEER_WALLET_WITHDRAWN]: NotificationCategory.PAYMENT,
+      [NotificationType.ENGINEER_WALLET_DEPOSITED]: NotificationCategory.PAYMENT,
+      [NotificationType.ENGINEER_COMMISSION_ADDED]: NotificationCategory.PAYMENT,
       [NotificationType.INVOICE_CREATED]: NotificationCategory.ORDER,
       [NotificationType.COUPON_USED]: NotificationCategory.PROMOTION,
     };

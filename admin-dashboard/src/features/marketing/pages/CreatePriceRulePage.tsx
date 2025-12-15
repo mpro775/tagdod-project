@@ -18,9 +18,9 @@ import {
   FormLabel,
 } from '@mui/material';
 import { Save, Cancel, ArrowBack } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useCreatePriceRule } from '../hooks/useMarketing';
+import { useCreatePriceRule, useUpdatePriceRule, usePriceRule } from '../hooks/useMarketing';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useCategories } from '@/features/categories/hooks/useCategories';
 import { useProducts } from '@/features/products/hooks/useProducts';
@@ -89,19 +89,55 @@ const ALL_OPTION_BRAND: Brand = {
 
 const CreatePriceRulePage: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { t } = useTranslation('marketing');
   const { isMobile } = useBreakpoint();
+  const isEditMode = !!id;
   const createPriceRule = useCreatePriceRule();
+  const updatePriceRule = useUpdatePriceRule();
+  const { data: existingRule, isLoading: isLoadingRule } = usePriceRule(id || '');
 
   const [discountType, setDiscountType] = useState<DiscountType>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(ALL_OPTION_CATEGORY);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(ALL_OPTION_PRODUCT);
-  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
-  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(ALL_OPTION_BRAND);
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [selectedVariants, setSelectedVariants] = useState<Variant[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<Brand[]>([]);
   const [selectedGiftProduct, setSelectedGiftProduct] = useState<Product | null>(null);
   const [productSearchQuery, setProductSearchQuery] = useState('');
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    active: boolean;
+    priority: number;
+    startAt: string;
+    endAt: string;
+    conditions: {
+      categoryId: string | string[];
+      productId: string | string[];
+      variantId: string | string[];
+      brandId: string | string[];
+      currency: string;
+      minQty: number;
+      accountType: string;
+    };
+    effects: {
+      percentOff: number | undefined;
+      amountOff: number | undefined;
+      specialPrice: number | undefined;
+      badge: string;
+      giftSku: string;
+    };
+    usageLimits: {
+      maxUses: number;
+      maxUsesPerUser: number;
+      currentUses: number;
+    };
+    metadata: {
+      title: string;
+      description: string;
+      termsAndConditions: string;
+    };
+    couponCode: string;
+  }>({
     active: true,
     priority: 1,
     startAt: '',
@@ -146,7 +182,7 @@ const CreatePriceRulePage: React.FC = () => {
 
   const { data: categories = [], isLoading: categoriesLoading } = useCategories(categoriesQuery);
 
-  // تصفية المنتجات حسب الفئة المختارة
+  // تصفية المنتجات حسب الفئات المختارة
   // تثبيت كائن فلاتر المنتجات - هذا هو السبب الرئيسي للخطأ
   const productsQuery = useMemo(
     () => ({
@@ -155,11 +191,13 @@ const CreatePriceRulePage: React.FC = () => {
       search: productSearchQuery || undefined,
       status: ProductStatus.ACTIVE,
       categoryId:
-        selectedCategory && selectedCategory._id !== ALL_OPTION_CATEGORY._id
-          ? selectedCategory._id
+        selectedCategories.length > 0 && selectedCategories.length === 1
+          ? selectedCategories[0]._id !== ALL_OPTION_CATEGORY._id
+            ? selectedCategories[0]._id
+            : undefined
           : undefined,
     }),
-    [productSearchQuery, selectedCategory] // لا يُعاد إنشاؤه إلا إذا تغير البحث أو الفئة
+    [productSearchQuery, selectedCategories] // لا يُعاد إنشاؤه إلا إذا تغير البحث أو الفئات
   );
 
   const { data: productsResponse, isLoading: productsLoading } = useProducts(productsQuery);
@@ -177,26 +215,26 @@ const CreatePriceRulePage: React.FC = () => {
   const { data: brandsResponse, isLoading: brandsLoading } = useBrands(brandsQuery);
   const brands = brandsResponse?.data || [];
 
-  // إضافة خيار "الكل" في بداية القوائم
-  const categoriesWithAll = useMemo(() => [ALL_OPTION_CATEGORY, ...categories], [categories]);
-  const productsWithAll = useMemo(() => [ALL_OPTION_PRODUCT, ...products], [products]);
-  const brandsWithAll = useMemo(() => [ALL_OPTION_BRAND, ...brands], [brands]);
+  // إضافة خيار "الكل" في بداية القوائم (غير مستخدم حالياً، لكن قد نحتاجه لاحقاً)
+  // const categoriesWithAll = useMemo(() => [ALL_OPTION_CATEGORY, ...categories], [categories]);
+  // const productsWithAll = useMemo(() => [ALL_OPTION_PRODUCT, ...products], [products]);
+  // const brandsWithAll = useMemo(() => [ALL_OPTION_BRAND, ...brands], [brands]);
 
-  // Fetch variants when product is selected
+  // Fetch variants when products are selected
   const [variants, setVariants] = useState<Variant[]>([]);
   const [variantsLoading, setVariantsLoading] = useState(false);
 
   React.useEffect(() => {
-    // نعتمد هنا على النص (ID) فقط لكسر أي حلقة تحديث بسبب تغير مراجع الكائنات
-    const productId = selectedProduct?._id;
-    const isAllOption = productId === ALL_OPTION_PRODUCT._id;
+    // جلب variants لجميع المنتجات المختارة
+    const productIds = selectedProducts
+      .filter((p) => p._id !== ALL_OPTION_PRODUCT._id)
+      .map((p) => p._id);
 
-    if (productId && !isAllOption) {
+    if (productIds.length > 0) {
       setVariantsLoading(true);
-      productsApi
-        .listVariants(productId)
-        .then((data) => {
-          setVariants(data);
+      Promise.all(productIds.map((id) => productsApi.listVariants(id)))
+        .then((results) => {
+          setVariants(results.flat());
           setVariantsLoading(false);
         })
         .catch(() => {
@@ -207,8 +245,7 @@ const CreatePriceRulePage: React.FC = () => {
       setVariants([]);
       setVariantsLoading(false);
     }
-    // التغيير الجوهري هنا: نراقب الـ ID فقط وليس الكائن كاملاً
-  }, [selectedProduct?._id]);
+  }, [selectedProducts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,15 +257,26 @@ const CreatePriceRulePage: React.FC = () => {
     }
 
     // Clean up formData before submit - remove undefined values and ensure currency is USD
+    const categoryIds = selectedCategories
+      .filter((c) => c._id !== ALL_OPTION_CATEGORY._id)
+      .map((c) => c._id);
+    const productIds = selectedProducts
+      .filter((p) => p._id !== ALL_OPTION_PRODUCT._id)
+      .map((p) => p._id);
+    const variantIds = selectedVariants.map((v) => v._id);
+    const brandIds = selectedBrands
+      .filter((b) => b._id !== ALL_OPTION_BRAND._id)
+      .map((b) => b._id);
+
     const submitData = {
       ...formData,
       conditions: {
         ...formData.conditions,
         currency: 'USD',
-        categoryId: formData.conditions.categoryId || undefined,
-        productId: formData.conditions.productId || undefined,
-        variantId: formData.conditions.variantId || undefined,
-        brandId: formData.conditions.brandId || undefined,
+        categoryId: categoryIds.length > 0 ? (categoryIds.length === 1 ? categoryIds[0] : categoryIds) : undefined,
+        productId: productIds.length > 0 ? (productIds.length === 1 ? productIds[0] : productIds) : undefined,
+        variantId: variantIds.length > 0 ? (variantIds.length === 1 ? variantIds[0] : variantIds) : undefined,
+        brandId: brandIds.length > 0 ? (brandIds.length === 1 ? brandIds[0] : brandIds) : undefined,
       },
       effects: {
         percentOff: discountType === 'percent' ? formData.effects.percentOff : undefined,
@@ -239,7 +287,11 @@ const CreatePriceRulePage: React.FC = () => {
     };
 
     try {
-      await createPriceRule.mutateAsync(submitData);
+      if (isEditMode && id) {
+        await updatePriceRule.mutateAsync({ id, data: submitData });
+      } else {
+        await createPriceRule.mutateAsync(submitData);
+      }
       navigate('/marketing/price-rules');
     } catch (error) {
       // Error is handled by the hook with toast notification
@@ -277,136 +329,87 @@ const CreatePriceRulePage: React.FC = () => {
     }));
   };
 
-  const handleCategoryChange = (_event: any, value: Category | null) => {
-    if (!value) {
-      // إذا تم إلغاء الاختيار، استخدم خيار "الكل"
-      setSelectedCategory(ALL_OPTION_CATEGORY);
-      handleNestedChange('conditions', 'categoryId', '');
-      return;
-    }
-
-    // تجنب التحديث إذا كانت القيمة الجديدة نفس القيمة الحالية
-    const currentCategoryId = selectedCategory?._id;
-    const newCategoryId = value._id;
-    if (currentCategoryId === newCategoryId) {
-      return;
-    }
-
-    // إذا تم اختيار "الكل"، استخدم كائن ALL_OPTION_CATEGORY
-    const categoryValue = value._id === ALL_OPTION_CATEGORY._id ? ALL_OPTION_CATEGORY : value;
-
-    setSelectedCategory(categoryValue);
+  const handleCategoriesChange = (_event: any, value: Category[]) => {
+    // تحديث الفئات أولاً
+    setSelectedCategories(value);
+    
+    const categoryIds = value
+      .filter((c) => c._id !== ALL_OPTION_CATEGORY._id)
+      .map((c) => c._id);
+    
     handleNestedChange(
       'conditions',
       'categoryId',
-      categoryValue._id === ALL_OPTION_CATEGORY._id ? '' : categoryValue._id
+      categoryIds.length > 0 ? (categoryIds.length === 1 ? categoryIds[0] : categoryIds) : ''
     );
-
-    // إعادة تعيين المنتج والمتغير عند تغيير الفئة
-    if (value._id === ALL_OPTION_CATEGORY._id) {
-      // إذا تم اختيار "الكل"، إعادة تعيين المنتج والمتغير
-      setSelectedProduct(ALL_OPTION_PRODUCT);
-      setSelectedVariant(null);
-      handleNestedChange('conditions', 'productId', '');
-      handleNestedChange('conditions', 'variantId', '');
-    } else {
-      // إذا تم اختيار فئة جديدة، التحقق من أن المنتج المختار ينتمي لها
-      if (
-        selectedProduct &&
-        selectedProduct._id !== ALL_OPTION_PRODUCT._id &&
-        selectedProduct.categoryId
-      ) {
-        const productCategoryId =
-          typeof selectedProduct.categoryId === 'string'
-            ? selectedProduct.categoryId
-            : selectedProduct.categoryId._id;
-
-        if (productCategoryId !== categoryValue._id) {
-          // المنتج المختار لا ينتمي للفئة الجديدة، إعادة تعيينه
-          setSelectedProduct(ALL_OPTION_PRODUCT);
-          setSelectedVariant(null);
-          handleNestedChange('conditions', 'productId', '');
-          handleNestedChange('conditions', 'variantId', '');
-        }
-      }
+    
+    // إعادة تعيين المنتجات إذا تم إلغاء جميع الفئات أو اختيار "الكل"
+    if (value.length === 0 || value.some(c => c._id === ALL_OPTION_CATEGORY._id)) {
+      setSelectedProducts([]);
+      setSelectedVariants([]);
     }
+    // ملاحظة: تصفية المنتجات سيتم في useEffect منفصل لتجنب re-render متزامن
   };
 
-  const handleProductChange = (_event: any, value: Product | null) => {
-    if (!value) {
-      // إذا تم إلغاء الاختيار، استخدم خيار "الكل"
-      setSelectedProduct(ALL_OPTION_PRODUCT);
-      handleNestedChange('conditions', 'productId', '');
-      setSelectedVariant(null);
-      handleNestedChange('conditions', 'variantId', '');
-      return;
+  // useEffect لتصفية المنتجات عند تغيير الفئات
+  React.useEffect(() => {
+    if (selectedCategories.length > 0 && !selectedCategories.some(c => c._id === ALL_OPTION_CATEGORY._id)) {
+      const categoryIds = selectedCategories
+        .filter((c) => c._id !== ALL_OPTION_CATEGORY._id)
+        .map((c) => c._id);
+      const categoryIdsSet = new Set(categoryIds);
+      
+      setSelectedProducts((prevProducts) => {
+        const filtered = prevProducts.filter((p) => {
+          if (p._id === ALL_OPTION_PRODUCT._id) return false;
+          const productCategoryId = typeof p.categoryId === 'string' ? p.categoryId : p.categoryId?._id;
+          return categoryIdsSet.has(productCategoryId);
+        });
+        // فقط إذا تغيرت القائمة فعلياً
+        if (filtered.length !== prevProducts.length) {
+          return filtered;
+        }
+        return prevProducts;
+      });
     }
+  }, [selectedCategories]);
 
-    // تجنب التحديث إذا كانت القيمة الجديدة نفس القيمة الحالية
-    const currentProductId = selectedProduct?._id;
-    const newProductId = value._id;
-    if (currentProductId === newProductId) {
-      return;
-    }
-
-    // إذا تم اختيار "الكل"، استخدم كائن ALL_OPTION_PRODUCT
-    const productValue = value._id === ALL_OPTION_PRODUCT._id ? ALL_OPTION_PRODUCT : value;
-
-    // التحقق من أن المنتج ينتمي للفئة المختارة (إن وجدت)
-    if (
-      productValue._id !== ALL_OPTION_PRODUCT._id &&
-      selectedCategory &&
-      selectedCategory._id !== ALL_OPTION_CATEGORY._id
-    ) {
-      const productCategoryId =
-        typeof productValue.categoryId === 'string'
-          ? productValue.categoryId
-          : productValue.categoryId?._id;
-
-      if (productCategoryId !== selectedCategory._id) {
-        toast.error('المنتج المحدد لا ينتمي للفئة المختارة');
-        return; // منع اختيار المنتج
-      }
-    }
-
-    setSelectedProduct(productValue);
-    setSelectedVariant(null);
+  const handleProductsChange = (_event: any, value: Product[]) => {
+    setSelectedProducts(value);
+    const productIds = value
+      .filter((p) => p._id !== ALL_OPTION_PRODUCT._id)
+      .map((p) => p._id);
     handleNestedChange(
       'conditions',
       'productId',
-      productValue._id === ALL_OPTION_PRODUCT._id ? '' : productValue._id
+      productIds.length > 0 ? (productIds.length === 1 ? productIds[0] : productIds) : ''
     );
-    handleNestedChange('conditions', 'variantId', '');
+    
+    // إعادة تعيين المتغيرات إذا تم تغيير المنتجات
+    if (value.length === 0) {
+      setSelectedVariants([]);
+    }
   };
 
-  const handleVariantChange = (_event: any, value: Variant | null) => {
-    setSelectedVariant(value);
-    handleNestedChange('conditions', 'variantId', value?._id || '');
+  const handleVariantsChange = (_event: any, value: Variant[]) => {
+    setSelectedVariants(value);
+    const variantIds = value.map((v) => v._id);
+    handleNestedChange(
+      'conditions',
+      'variantId',
+      variantIds.length > 0 ? (variantIds.length === 1 ? variantIds[0] : variantIds) : ''
+    );
   };
 
-  const handleBrandChange = (_event: any, value: Brand | null) => {
-    if (!value) {
-      // إذا تم إلغاء الاختيار، استخدم خيار "الكل"
-      setSelectedBrand(ALL_OPTION_BRAND);
-      handleNestedChange('conditions', 'brandId', '');
-      return;
-    }
-
-    // تجنب التحديث إذا كانت القيمة الجديدة نفس القيمة الحالية
-    const currentBrandId = selectedBrand?._id;
-    const newBrandId = value._id;
-    if (currentBrandId === newBrandId) {
-      return;
-    }
-
-    // إذا تم اختيار "الكل"، استخدم كائن ALL_OPTION_BRAND
-    const brandValue = value._id === ALL_OPTION_BRAND._id ? ALL_OPTION_BRAND : value;
-
-    setSelectedBrand(brandValue);
+  const handleBrandsChange = (_event: any, value: Brand[]) => {
+    setSelectedBrands(value);
+    const brandIds = value
+      .filter((b) => b._id !== ALL_OPTION_BRAND._id)
+      .map((b) => b._id);
     handleNestedChange(
       'conditions',
       'brandId',
-      brandValue._id === ALL_OPTION_BRAND._id ? '' : brandValue._id
+      brandIds.length > 0 ? (brandIds.length === 1 ? brandIds[0] : brandIds) : ''
     );
   };
 
@@ -414,6 +417,132 @@ const CreatePriceRulePage: React.FC = () => {
     setSelectedGiftProduct(value);
     handleNestedChange('effects', 'giftSku', value?.sku || '');
   };
+
+  // Load existing rule data when editing
+  React.useEffect(() => {
+    if (isEditMode && existingRule) {
+      // Determine discount type
+      if (existingRule.effects?.percentOff) {
+        setDiscountType('percent');
+      } else if (existingRule.effects?.amountOff) {
+        setDiscountType('fixed');
+      } else if (existingRule.effects?.specialPrice) {
+        setDiscountType('special');
+      }
+
+      // Set form data
+      setFormData({
+        active: existingRule.active ?? true,
+        priority: existingRule.priority ?? 1,
+        startAt: existingRule.startAt
+          ? new Date(existingRule.startAt).toISOString().slice(0, 16)
+          : '',
+        endAt: existingRule.endAt
+          ? new Date(existingRule.endAt).toISOString().slice(0, 16)
+          : '',
+        conditions: {
+          categoryId: existingRule.conditions?.categoryId || '',
+          productId: existingRule.conditions?.productId || '',
+          variantId: existingRule.conditions?.variantId || '',
+          brandId: existingRule.conditions?.brandId || '',
+          currency: existingRule.conditions?.currency || 'USD',
+          minQty: existingRule.conditions?.minQty || 1,
+          accountType: existingRule.conditions?.accountType || '',
+        },
+        effects: {
+          percentOff: existingRule.effects?.percentOff,
+          amountOff: existingRule.effects?.amountOff,
+          specialPrice: existingRule.effects?.specialPrice,
+          badge: existingRule.effects?.badge || '',
+          giftSku: existingRule.effects?.giftSku || '',
+        },
+        usageLimits: {
+          maxUses: existingRule.usageLimits?.maxUses || 0,
+          maxUsesPerUser: existingRule.usageLimits?.maxUsesPerUser || 0,
+          currentUses: existingRule.usageLimits?.currentUses || 0,
+        },
+        metadata: {
+          title: existingRule.metadata?.title || '',
+          description: existingRule.metadata?.description || '',
+          termsAndConditions: existingRule.metadata?.termsAndConditions || '',
+        },
+        couponCode: existingRule.couponCode || '',
+      });
+
+      // Set selected categories, products, brands if they exist
+      if (existingRule.conditions?.categoryId) {
+        const categoryIds = Array.isArray(existingRule.conditions.categoryId)
+          ? existingRule.conditions.categoryId
+          : [existingRule.conditions.categoryId];
+        const foundCategories = categories.filter((c) => categoryIds.includes(c._id));
+        setSelectedCategories(foundCategories);
+      } else {
+        setSelectedCategories([]);
+      }
+
+      if (existingRule.conditions?.productId) {
+        const productIds = Array.isArray(existingRule.conditions.productId)
+          ? existingRule.conditions.productId
+          : [existingRule.conditions.productId];
+        const foundProducts = products.filter((p) => productIds.includes(p._id));
+        setSelectedProducts(foundProducts);
+        
+        // جلب variants للمنتجات المختارة
+        if (foundProducts.length > 0) {
+          const variantIds = Array.isArray(existingRule.conditions.variantId)
+            ? existingRule.conditions.variantId
+            : existingRule.conditions.variantId
+            ? [existingRule.conditions.variantId]
+            : [];
+          
+          Promise.all(foundProducts.map((p) => productsApi.listVariants(p._id)))
+            .then((results) => {
+              const allVariants = results.flat();
+              if (variantIds.length > 0) {
+                const foundVariants = allVariants.filter((v) => variantIds.includes(v._id));
+                setSelectedVariants(foundVariants);
+              } else {
+                setSelectedVariants([]);
+              }
+            })
+            .catch(() => {
+              setSelectedVariants([]);
+            });
+        } else {
+          setSelectedVariants([]);
+        }
+      } else {
+        setSelectedProducts([]);
+        setSelectedVariants([]);
+      }
+
+      if (existingRule.conditions?.brandId) {
+        const brandIds = Array.isArray(existingRule.conditions.brandId)
+          ? existingRule.conditions.brandId
+          : [existingRule.conditions.brandId];
+        const foundBrands = brands.filter((b) => brandIds.includes(b._id));
+        setSelectedBrands(foundBrands);
+      } else {
+        setSelectedBrands([]);
+      }
+
+      if (existingRule.effects?.giftSku) {
+        const giftProduct = products.find((p) => p.sku === existingRule.effects?.giftSku);
+        if (giftProduct) {
+          setSelectedGiftProduct(giftProduct);
+        }
+      }
+    }
+  }, [existingRule, isEditMode, categories, products, brands]);
+
+  // Show loading state while fetching rule data
+  if (isEditMode && isLoadingRule) {
+    return (
+      <Box sx={{ p: { xs: 2, sm: 3 }, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <Typography>{t('messages.loading') || 'جاري التحميل...'}</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
@@ -428,11 +557,11 @@ const CreatePriceRulePage: React.FC = () => {
           {t('form.cancel')}
         </Button>
         <Typography variant="h4" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-          {t('priceRules.createNew')}
+          {isEditMode ? t('priceRules.edit') || 'تعديل قاعدة السعر' : t('priceRules.createNew')}
         </Typography>
       </Box>
 
-      {createPriceRule.isError && (
+      {(createPriceRule.isError || updatePriceRule.isError) && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {t('messages.unknownError')}
         </Alert>
@@ -544,23 +673,22 @@ const CreatePriceRulePage: React.FC = () => {
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Autocomplete
-                      options={categoriesWithAll}
+                      multiple
+                      options={categories}
                       getOptionLabel={(option) => option.name || ''}
-                      value={selectedCategory}
-                      onChange={handleCategoryChange}
+                      value={selectedCategories}
+                      onChange={handleCategoriesChange}
                       loading={categoriesLoading}
                       size={isMobile ? 'small' : 'medium'}
+                      disableCloseOnSelect
                       renderInput={(params) => (
                         <TextField
                           {...params}
                           label={t('form.categoryId')}
-                          placeholder="اختر فئة أو الكل"
+                          placeholder="اختر فئات (يمكن اختيار أكثر من فئة)"
                         />
                       )}
-                      isOptionEqualToValue={(option, value) => {
-                        if (!value || !option) return false;
-                        return option._id === value._id;
-                      }}
+                      isOptionEqualToValue={(option, value) => option._id === value._id}
                       noOptionsText="لا توجد فئات"
                       loadingText="جاري التحميل..."
                       renderOption={(props, option) => (
@@ -572,16 +700,15 @@ const CreatePriceRulePage: React.FC = () => {
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Autocomplete
-                      options={productsWithAll}
+                      multiple
+                      options={products}
                       getOptionLabel={(option) => option.name || ''}
-                      value={selectedProduct}
-                      onChange={handleProductChange}
+                      value={selectedProducts}
+                      onChange={handleProductsChange}
                       loading={productsLoading}
                       size={isMobile ? 'small' : 'medium'}
                       inputValue={productSearchQuery}
                       onInputChange={(_event, newInputValue, reason) => {
-                        // الحل السحري: نحدث البحث فقط إذا كان السبب هو كتابة المستخدم
-                        // ونتجاهل التحديث إذا كان السبب 'reset' (أي اختيار عنصر من القائمة)
                         if (reason === 'input' || reason === 'clear') {
                           setProductSearchQuery(newInputValue);
                         }
@@ -591,26 +718,19 @@ const CreatePriceRulePage: React.FC = () => {
                           {...params}
                           label={t('form.productId')}
                           placeholder={
-                            selectedCategory && selectedCategory._id !== ALL_OPTION_CATEGORY._id
-                              ? `منتجات فئة: ${selectedCategory.name}`
-                              : 'اختر منتج أو الكل'
+                            selectedCategories.length > 0
+                              ? `منتجات من ${selectedCategories.length} فئة`
+                              : 'اختر منتجات (يمكن اختيار أكثر من منتج)'
                           }
                           helperText={
-                            selectedCategory && selectedCategory._id !== ALL_OPTION_CATEGORY._id
-                              ? `يتم عرض المنتجات من فئة "${selectedCategory.name}" فقط`
+                            selectedCategories.length > 0
+                              ? `يتم عرض المنتجات من الفئات المختارة فقط`
                               : undefined
                           }
                         />
                       )}
-                      isOptionEqualToValue={(option, value) => {
-                        if (!value || !option) return false;
-                        return option._id === value._id;
-                      }}
-                      noOptionsText={
-                        selectedCategory && selectedCategory._id !== ALL_OPTION_CATEGORY._id
-                          ? `لا توجد منتجات في فئة "${selectedCategory.name}"`
-                          : 'لا توجد منتجات'
-                      }
+                      isOptionEqualToValue={(option, value) => option._id === value._id}
+                      noOptionsText="لا توجد منتجات"
                       loadingText="جاري التحميل..."
                       renderOption={(props, option) => (
                         <li {...props} key={option._id}>
@@ -621,63 +741,60 @@ const CreatePriceRulePage: React.FC = () => {
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Autocomplete
+                      multiple
                       options={variants}
                       getOptionLabel={(option) => {
                         const attrs =
                           option.attributeValues?.map((av: any) => av.value).join(', ') || '';
-                        return `${selectedProduct?.name || ''} - ${
-                          attrs || option.sku || option._id
-                        }`;
+                        return `${attrs || option.sku || option._id}`;
                       }}
-                      value={selectedVariant}
-                      onChange={handleVariantChange}
+                      value={selectedVariants}
+                      onChange={handleVariantsChange}
                       loading={variantsLoading}
-                      disabled={!selectedProduct}
+                      disabled={selectedProducts.length === 0}
                       size={isMobile ? 'small' : 'medium'}
                       renderInput={(params) => (
                         <TextField
                           {...params}
                           label={t('form.variantId')}
                           placeholder={
-                            selectedProduct
-                              ? `متغيرات منتج: ${selectedProduct.name}`
-                              : 'اختر منتج أولاً'
+                            selectedProducts.length > 0
+                              ? `متغيرات من ${selectedProducts.length} منتج`
+                              : 'اختر منتجات أولاً'
                           }
                           helperText={
-                            selectedProduct
-                              ? `يتم عرض متغيرات "${selectedProduct.name}" فقط`
+                            selectedProducts.length > 0
+                              ? `يتم عرض متغيرات المنتجات المختارة`
                               : undefined
                           }
                         />
                       )}
                       isOptionEqualToValue={(option, value) => option._id === value._id}
                       noOptionsText={
-                        selectedProduct
-                          ? `لا توجد متغيرات للمنتج "${selectedProduct.name}"`
-                          : 'اختر منتج أولاً'
+                        selectedProducts.length > 0
+                          ? 'لا توجد متغيرات'
+                          : 'اختر منتجات أولاً'
                       }
                       loadingText="جاري التحميل..."
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Autocomplete
-                      options={brandsWithAll}
+                      multiple
+                      options={brands}
                       getOptionLabel={(option) => option.name || ''}
-                      value={selectedBrand}
-                      onChange={handleBrandChange}
+                      value={selectedBrands}
+                      onChange={handleBrandsChange}
                       loading={brandsLoading}
                       size={isMobile ? 'small' : 'medium'}
                       renderInput={(params) => (
                         <TextField
                           {...params}
                           label={t('form.brandId')}
-                          placeholder="اختر علامة تجارية أو الكل"
+                          placeholder="اختر علامات تجارية (يمكن اختيار أكثر من علامة)"
                         />
                       )}
-                      isOptionEqualToValue={(option, value) => {
-                        if (!value || !option) return false;
-                        return option._id === value._id;
-                      }}
+                      isOptionEqualToValue={(option, value) => option._id === value._id}
                       noOptionsText="لا توجد علامات تجارية"
                       loadingText="جاري التحميل..."
                       renderOption={(props, option) => (
@@ -924,11 +1041,13 @@ const CreatePriceRulePage: React.FC = () => {
                 type="submit"
                 variant="contained"
                 startIcon={<Save />}
-                disabled={createPriceRule.isPending}
+                disabled={createPriceRule.isPending || updatePriceRule.isPending}
                 fullWidth={isMobile}
                 size={isMobile ? 'medium' : 'large'}
               >
-                {createPriceRule.isPending ? t('dialogs.saving') : t('dialogs.save')}
+                {(createPriceRule.isPending || updatePriceRule.isPending)
+                  ? t('dialogs.saving')
+                  : t('dialogs.save')}
               </Button>
             </Stack>
           </Grid>

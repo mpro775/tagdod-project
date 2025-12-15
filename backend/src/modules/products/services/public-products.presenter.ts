@@ -172,10 +172,11 @@ export class PublicProductsPresenter {
       return null;
     }
 
-    const { variantId, formattedPrice, formattedFinalPrice, ...rest } = price;
+    const { variantId, formattedPrice, formattedFinalPrice, compareAtPrice, ...rest } = price;
     void variantId;
     void formattedPrice;
     void formattedFinalPrice;
+    void compareAtPrice;
     return rest;
   }
 
@@ -453,9 +454,10 @@ export class PublicProductsPresenter {
       return null;
     }
 
-    const { formattedPrice, formattedFinalPrice, ...rest } = price;
+    const { formattedPrice, formattedFinalPrice, compareAtPrice, ...rest } = price;
     void formattedPrice;
     void formattedFinalPrice;
+    void compareAtPrice;
 
     return rest;
   }
@@ -797,15 +799,15 @@ export class PublicProductsPresenter {
         // حفظ نسبة الخصم المطبقة لكل variant لتطبيقها على جميع العملات
         const variantDiscounts = new Map<string, number>();
 
-        // إعداد inputs لـ previewBatch لكل عملة
-        for (const currency of currenciesForPricing) {
-          if (!pricesByCurrency[currency] || pricesByCurrency[currency].length === 0) {
-            continue;
-          }
+        // ✅ تحسين الأداء: استدعاء previewBatch مرة واحدة فقط (لأول عملة - USD عادة)
+        // لأن قواعد الأسعار عادة لا تعتمد على العملة، فقط على المنتج/الفئة/العلامة التجارية
+        // إذا كانت القاعدة تعتمد على العملة، سيتم تطبيقها فقط على تلك العملة المحددة
+        const primaryCurrency = currenciesForPricing[0] || 'USD';
 
+        if (pricesByCurrency[primaryCurrency] && pricesByCurrency[primaryCurrency].length > 0) {
           const marketingInputs = filteredVariants.map((variant) => ({
             variantId: variant._id.toString(),
-            currency: currency,
+            currency: primaryCurrency, // استخدام عملة واحدة فقط لتحديد نسبة الخصم
             qty: 1, // القيمة الافتراضية للكمية
             accountType: 'any' as const, // القيمة الافتراضية لنوع الحساب
           }));
@@ -821,9 +823,9 @@ export class PublicProductsPresenter {
             productsMap.set(productId, productRecord);
           }
 
-          // استدعاء previewBatch لتطبيق قواعد السعر
+          // استدعاء previewBatch مرة واحدة فقط
           this.logger.debug(
-            `Calling previewBatch for product ${productId} in ${currency} with ${marketingInputs.length} inputs`,
+            `Calling previewBatch for product ${productId} in ${primaryCurrency} with ${marketingInputs.length} inputs`,
           );
 
           const marketingResults = await this.marketingService.previewBatch(marketingInputs, {
@@ -835,9 +837,9 @@ export class PublicProductsPresenter {
             `previewBatch returned ${marketingResults.size} results for product ${productId}`,
           );
 
-          // تطبيق نتائج قواعد السعر على الأسعار
-          if (pricesByCurrency[currency]) {
-            pricesByCurrency[currency] = pricesByCurrency[currency].map((price) => {
+          // تطبيق نتائج قواعد السعر على الأسعار في العملة الأساسية
+          if (pricesByCurrency[primaryCurrency]) {
+            pricesByCurrency[primaryCurrency] = pricesByCurrency[primaryCurrency].map((price) => {
               const variantId = price.variantId;
               const marketingResult = marketingResults.get(variantId);
 
@@ -845,22 +847,40 @@ export class PublicProductsPresenter {
                 // تطبيق السعر الفعلي من قاعدة السعر
                 const originalBasePrice = price.basePrice;
                 const effectivePrice = marketingResult.finalPrice;
-                const discountAmount = originalBasePrice - effectivePrice;
-                const discountPercentFromRule =
-                  originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
-
-                // تقريب القيم إلى منزلتين عشريتين
-                const roundedDiscountPercent = Math.round(discountPercentFromRule * 100) / 100;
-                const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
-                const roundedFinalPrice = Math.round(effectivePrice * 100) / 100;
-
-                // حفظ نسبة الخصم لهذا variant لتطبيقها على جميع العملات
-                if (!variantDiscounts.has(variantId)) {
-                  variantDiscounts.set(variantId, roundedDiscountPercent);
+                
+                // ✅ استخدام percentOff مباشرة من قاعدة السعر بدلاً من إعادة الحساب
+                const appliedRule = marketingResult.appliedRule as {
+                  effects?: { percentOff?: number; amountOff?: number; specialPrice?: number };
+                };
+                
+                let discountPercent: number;
+                let finalPrice: number;
+                let discountAmount: number;
+                
+                if (appliedRule.effects?.percentOff) {
+                  // استخدام النسبة مباشرة من قاعدة السعر (مثلاً 15%)
+                  discountPercent = appliedRule.effects.percentOff;
+                  // حساب discountAmount و finalPrice من percentOff مباشرة
+                  discountAmount = originalBasePrice * (discountPercent / 100);
+                  finalPrice = originalBasePrice - discountAmount;
+                } else {
+                  // فقط في حالة specialPrice أو amountOff، نستخدم effectivePrice
+                  discountAmount = originalBasePrice - effectivePrice;
+                  discountPercent =
+                    originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
+                  finalPrice = effectivePrice;
                 }
 
+                // تقريب القيم إلى منزلتين عشريتين
+                const roundedDiscountPercent = Math.round(discountPercent * 100) / 100;
+                const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
+                const roundedFinalPrice = Math.round(finalPrice * 100) / 100;
+
+                // حفظ نسبة الخصم لهذا variant لتطبيقها على جميع العملات
+                variantDiscounts.set(variantId, roundedDiscountPercent);
+
                 this.logger.debug(
-                  `Applied price rule for variant ${variantId} in ${currency}: ${originalBasePrice} -> ${roundedFinalPrice} (${roundedDiscountPercent.toFixed(2)}%)`,
+                  `Applied price rule for variant ${variantId} in ${primaryCurrency}: ${originalBasePrice} -> ${roundedFinalPrice} (${roundedDiscountPercent.toFixed(2)}%)`,
                 );
 
                 return {
@@ -877,10 +897,15 @@ export class PublicProductsPresenter {
           }
         }
 
-        // إذا تم تطبيق قاعدة سعر على أي variant في أي عملة، قم بتطبيق نفس نسبة الخصم على جميع العملات الأخرى
+        // ✅ تطبيق نفس نسبة الخصم على جميع العملات الأخرى
         if (variantDiscounts.size > 0) {
           for (const currency of currenciesForPricing) {
             if (!pricesByCurrency[currency] || pricesByCurrency[currency].length === 0) {
+              continue;
+            }
+
+            // تخطي العملة الأساسية (تم تطبيق القاعدة عليها بالفعل)
+            if (currency === primaryCurrency) {
               continue;
             }
 
@@ -888,36 +913,32 @@ export class PublicProductsPresenter {
               const variantId = price.variantId;
               const appliedDiscountPercent = variantDiscounts.get(variantId);
 
-              // تخطي الـ variants التي تم تطبيق قاعدة السعر عليها بالفعل في هذه العملة
-              if (price.discountPercent > 0) {
+              // تخطي الـ variants التي لا يوجد لها خصم
+              if (!appliedDiscountPercent || appliedDiscountPercent <= 0) {
                 return price;
               }
 
-              // تطبيق نفس نسبة الخصم على هذه العملة إذا كان هناك خصم مطبق على هذا variant
-              if (appliedDiscountPercent !== undefined && appliedDiscountPercent > 0) {
-                const originalBasePrice = price.basePrice;
-                const discountAmount = (originalBasePrice * appliedDiscountPercent) / 100;
-                const finalPrice = originalBasePrice - discountAmount;
+              // تطبيق نفس نسبة الخصم على هذه العملة
+              const originalBasePrice = price.basePrice;
+              const discountAmount = (originalBasePrice * appliedDiscountPercent) / 100;
+              const finalPrice = originalBasePrice - discountAmount;
 
-                // تقريب القيم إلى منزلتين عشريتين
-                const roundedDiscountPercent = Math.round(appliedDiscountPercent * 100) / 100;
-                const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
-                const roundedFinalPrice = Math.round(finalPrice * 100) / 100;
+              // تقريب القيم إلى منزلتين عشريتين
+              const roundedDiscountPercent = Math.round(appliedDiscountPercent * 100) / 100;
+              const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
+              const roundedFinalPrice = Math.round(finalPrice * 100) / 100;
 
-                this.logger.debug(
-                  `Applying same discount (${roundedDiscountPercent.toFixed(2)}%) to variant ${variantId} in ${currency}: ${originalBasePrice} -> ${roundedFinalPrice}`,
-                );
+              this.logger.debug(
+                `Applying same discount (${roundedDiscountPercent.toFixed(2)}%) to variant ${variantId} in ${currency}: ${originalBasePrice} -> ${roundedFinalPrice}`,
+              );
 
-                return {
-                  ...price,
-                  basePrice: originalBasePrice,
-                  finalPrice: roundedFinalPrice,
-                  discountAmount: roundedDiscountAmount,
-                  discountPercent: roundedDiscountPercent,
-                };
-              }
-
-              return price;
+              return {
+                ...price,
+                basePrice: originalBasePrice,
+                finalPrice: roundedFinalPrice,
+                discountAmount: roundedDiscountAmount,
+                discountPercent: roundedDiscountPercent,
+              };
             });
           }
         }
@@ -1179,14 +1200,34 @@ export class PublicProductsPresenter {
                 if (marketingResult && marketingResult.appliedRule) {
                   const originalBasePrice = pricingByCurrency[currency].basePrice;
                   const effectivePrice = marketingResult.finalPrice;
-                  const discountAmount = originalBasePrice - effectivePrice;
-                  const discountPercentFromRule =
-                    originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
+                  
+                  // ✅ استخدام percentOff مباشرة من قاعدة السعر بدلاً من إعادة الحساب
+                  const rule = marketingResult.appliedRule as {
+                    effects?: { percentOff?: number; amountOff?: number; specialPrice?: number };
+                  };
+                  
+                  let discountPercent: number;
+                  let finalPrice: number;
+                  let discountAmount: number;
+                  
+                  if (rule.effects?.percentOff) {
+                    // استخدام النسبة مباشرة من قاعدة السعر (مثلاً 15%)
+                    discountPercent = rule.effects.percentOff;
+                    // حساب discountAmount و finalPrice من percentOff مباشرة
+                    discountAmount = originalBasePrice * (discountPercent / 100);
+                    finalPrice = originalBasePrice - discountAmount;
+                  } else {
+                    // فقط في حالة specialPrice أو amountOff، نستخدم effectivePrice
+                    discountAmount = originalBasePrice - effectivePrice;
+                    discountPercent =
+                      originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
+                    finalPrice = effectivePrice;
+                  }
 
                   // تقريب القيم إلى منزلتين عشريتين
-                  const roundedDiscountPercent = Math.round(discountPercentFromRule * 100) / 100;
+                  const roundedDiscountPercent = Math.round(discountPercent * 100) / 100;
                   const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
-                  const roundedFinalPrice = Math.round(effectivePrice * 100) / 100;
+                  const roundedFinalPrice = Math.round(finalPrice * 100) / 100;
 
                   // حفظ نسبة الخصم والقاعدة المطبقة لتطبيقها على جميع العملات
                   if (appliedDiscountPercent === null) {
@@ -1198,8 +1239,9 @@ export class PublicProductsPresenter {
                     `Applied price rule for simple product ${productId} in ${currency}: ${originalBasePrice} -> ${roundedFinalPrice} (${roundedDiscountPercent.toFixed(2)}%)`,
                   );
 
+                  const { compareAtPrice, ...restPrice } = pricingByCurrency[currency];
                   pricingByCurrency[currency] = {
-                    ...pricingByCurrency[currency],
+                    ...restPrice,
                     basePrice: originalBasePrice,
                     finalPrice: roundedFinalPrice,
                     discountAmount: roundedDiscountAmount,
@@ -1238,8 +1280,9 @@ export class PublicProductsPresenter {
                     `Applying same discount (${roundedDiscountPercent.toFixed(2)}%) to ${currency} for product ${productId}: ${originalBasePrice} -> ${roundedFinalPrice}`,
                   );
 
+                  const { compareAtPrice, ...restPrice } = pricingByCurrency[currency];
                   pricingByCurrency[currency] = {
-                    ...pricingByCurrency[currency],
+                    ...restPrice,
                     basePrice: originalBasePrice,
                     finalPrice: roundedFinalPrice,
                     discountAmount: roundedDiscountAmount,
@@ -1639,14 +1682,34 @@ export class PublicProductsPresenter {
             if (marketingResult && marketingResult.appliedRule) {
               const originalBasePrice = productPricingByCurrencyTemp[currency].basePrice;
               const effectivePrice = marketingResult.finalPrice;
-              const discountAmount = originalBasePrice - effectivePrice;
-              const discountPercentFromRule =
-                originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
+              
+              // ✅ استخدام percentOff مباشرة من قاعدة السعر بدلاً من إعادة الحساب
+              const rule = marketingResult.appliedRule as {
+                effects?: { percentOff?: number; amountOff?: number; specialPrice?: number };
+              };
+              
+              let discountPercent: number;
+              let finalPrice: number;
+              let discountAmount: number;
+              
+              if (rule.effects?.percentOff) {
+                // استخدام النسبة مباشرة من قاعدة السعر (مثلاً 15%)
+                discountPercent = rule.effects.percentOff;
+                // حساب discountAmount و finalPrice من percentOff مباشرة
+                discountAmount = originalBasePrice * (discountPercent / 100);
+                finalPrice = originalBasePrice - discountAmount;
+              } else {
+                // فقط في حالة specialPrice أو amountOff، نستخدم effectivePrice
+                discountAmount = originalBasePrice - effectivePrice;
+                discountPercent =
+                  originalBasePrice > 0 ? (discountAmount / originalBasePrice) * 100 : 0;
+                finalPrice = effectivePrice;
+              }
 
               // تقريب القيم إلى منزلتين عشريتين
-              const roundedDiscountPercent = Math.round(discountPercentFromRule * 100) / 100;
+              const roundedDiscountPercent = Math.round(discountPercent * 100) / 100;
               const roundedDiscountAmount = Math.round(Math.max(0, discountAmount) * 100) / 100;
-              const roundedFinalPrice = Math.round(effectivePrice * 100) / 100;
+              const roundedFinalPrice = Math.round(finalPrice * 100) / 100;
 
               // حفظ نسبة الخصم والقاعدة المطبقة لتطبيقها على جميع العملات
               if (appliedDiscountPercent === null) {

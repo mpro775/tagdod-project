@@ -4941,6 +4941,41 @@ export class OrderService {
 
       await profile.save();
 
+      // إرسال إشعار للمهندس
+      try {
+        if (!this.notificationService) {
+          this.logger.warn('NotificationService not available, skipping commission notification');
+          return;
+        }
+
+        const order = await this.orderModel.findById(orderId).select('orderNumber').lean();
+        const orderNumber = order?.orderNumber || orderId;
+
+        await this.notificationService.createNotification({
+          type: NotificationType.ENGINEER_COMMISSION_ADDED,
+          recipientId: engineerId,
+          title: 'تم إضافة عمولة جديدة',
+          message: `تم إضافة ${amount} USD عمولة من الطلب ${orderNumber}. الرصيد الحالي: ${profile.walletBalance} USD`,
+          messageEn: `Added ${amount} USD commission from order ${orderNumber}. Current balance: ${profile.walletBalance} USD`,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+          category: NotificationCategory.PAYMENT,
+          data: {
+            amount,
+            orderId,
+            orderNumber,
+            couponCode,
+            newBalance: profile.walletBalance,
+          },
+          navigationType: NotificationNavigationType.ORDER,
+          navigationTarget: orderId,
+          isSystemGenerated: true,
+        });
+      } catch (notificationError) {
+        this.logger.error('Failed to send commission notification:', notificationError);
+        // لا نرمي خطأ هنا حتى لا نؤثر على العملية الأساسية
+      }
+
       this.logger.log(
         `Added commission ${amount} to engineer ${engineerId} from coupon ${couponCode}`,
       );

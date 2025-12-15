@@ -1760,6 +1760,7 @@ paths:
         - المنتجات التي كميتها صفر
         - المنتجات غير النشطة (إذا لم يتم تحديد isActive)
         - المنتجات المحذوفة (إذا includeDeleted=true)
+        - معلومات قواعد الأسعار المطبقة على كل منتج
       parameters: []
       responses:
         '200':
@@ -3806,6 +3807,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string
@@ -3865,6 +3869,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string
@@ -3930,6 +3937,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string
@@ -5100,6 +5110,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string
@@ -5198,6 +5211,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string
@@ -5309,6 +5325,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string
@@ -5407,6 +5426,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string
@@ -5518,6 +5540,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string
@@ -5616,6 +5641,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string
@@ -5727,6 +5755,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string
@@ -5825,6 +5856,9 @@ paths:
               - CART_ABANDONMENT
               - PAYMENT_FAILED
               - PAYMENT_SUCCESS
+              - ENGINEER_WALLET_WITHDRAWN
+              - ENGINEER_WALLET_DEPOSITED
+              - ENGINEER_COMMISSION_ADDED
               - INVOICE_CREATED
               - COUPON_USED
             type: string

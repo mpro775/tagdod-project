@@ -160,6 +160,32 @@ export interface Product extends BaseEntity {
     nameEn: string;
   };
   variants?: Variant[];
+
+  // قواعد الأسعار المطبقة على المنتج
+  appliedPriceRules?: Array<{
+    _id: string;
+    title?: string;
+    priority: number;
+    active: boolean;
+    startAt: Date | string;
+    endAt: Date | string;
+    effects?: {
+      percentOff?: number;
+      amountOff?: number;
+      specialPrice?: number;
+      badge?: string;
+      giftSku?: string;
+    };
+    conditions?: {
+      categoryId?: string | string[];
+      productId?: string | string[];
+      variantId?: string | string[];
+      brandId?: string | string[];
+      currency?: string;
+      minQty?: number;
+      accountType?: string;
+    };
+  }>;
 }
 
 // Variant Interface - متطابق تماماً مع Backend

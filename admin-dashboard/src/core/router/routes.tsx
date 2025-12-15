@@ -590,6 +590,10 @@ export const routes: RouteObject[] = [
         element: <CreatePriceRulePage />,
       },
       {
+        path: 'marketing/price-rules/:id/edit',
+        element: <CreatePriceRulePage />,
+      },
+      {
         path: 'marketing/price-rules/:id',
         element: <CreatePriceRulePage />,
       },

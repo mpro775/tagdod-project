@@ -20,6 +20,7 @@ import { Variant, VariantDocument } from '../products/schemas/variant.schema';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { Media } from '../upload/schemas/media.schema';
 import { User, UserDocument, UserRole, CapabilityStatus } from '../users/schemas/user.schema';
+import { CacheService } from '../../shared/cache/cache.service';
 
 // DTOs
 import {
@@ -70,6 +71,7 @@ export class MarketingService {
     @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private cacheService: CacheService,
   ) {}
 
   // ==================== PRICE RULES ====================
@@ -85,7 +87,7 @@ export class MarketingService {
       badge = 'عرض خاص';
     }
 
-    return this.priceRuleModel.create({
+    const rule = await this.priceRuleModel.create({
       ...dto,
       startAt: new Date(dto.startAt),
       endAt: new Date(dto.endAt),
@@ -102,6 +104,11 @@ export class MarketingService {
       metadata: dto.metadata || undefined,
       couponCode: dto.couponCode || undefined,
     });
+
+    // حذف كاش المنتجات لتطبيق القاعدة الجديدة مباشرة
+    await this.clearProductCache();
+
+    return rule;
   }
 
   async updatePriceRule(id: string, dto: UpdatePriceRuleDto): Promise<PriceRule | null> {
@@ -126,7 +133,14 @@ export class MarketingService {
       };
     }
 
-    return this.priceRuleModel.findByIdAndUpdate(id, updateData, { new: true });
+    const rule = await this.priceRuleModel.findByIdAndUpdate(id, updateData, { new: true });
+
+    // حذف كاش المنتجات لتطبيق التحديثات مباشرة
+    if (rule) {
+      await this.clearProductCache();
+    }
+
+    return rule;
   }
 
   async getPriceRule(id: string): Promise<PriceRule | null> {
@@ -141,11 +155,22 @@ export class MarketingService {
     const rule = await this.priceRuleModel.findById(id);
     if (!rule) return null;
     rule.active = !rule.active;
-    return rule.save();
+    const savedRule = await rule.save();
+    
+    // حذف كاش المنتجات عند تفعيل/إلغاء تفعيل قاعدة السعر
+    await this.clearProductCache();
+    
+    return savedRule;
   }
 
   async deletePriceRule(id: string): Promise<boolean> {
     const result = await this.priceRuleModel.findByIdAndDelete(id);
+    
+    // حذف كاش المنتجات عند حذف قاعدة السعر
+    if (result) {
+      await this.clearProductCache();
+    }
+    
     return !!result;
   }
 
@@ -362,44 +387,37 @@ export class MarketingService {
           continue;
         }
 
+        // دالة مساعدة للتحقق من القيمة في array أو string
+        const checkCondition = (conditionValue: string | string[] | undefined, actualValue: string): boolean => {
+          if (!conditionValue) return true;
+          const conditionArray = Array.isArray(conditionValue) ? conditionValue : [conditionValue];
+          return conditionArray.includes(actualValue);
+        };
+
         // البحث عن القواعد المطابقة
         const matchingRules = applicableRules.filter((rule) => {
           const cond = rule.conditions;
 
-          // Variant check
-          if (cond.variantId && variantIdStr && cond.variantId !== variantIdStr) return false;
+          // Variant check - دعم array
+          if (cond.variantId && variantIdStr && !checkCondition(cond.variantId, variantIdStr)) return false;
 
-          // Product check
-          if (cond.productId && productIdStr && cond.productId !== productIdStr) return false;
+          // Product check - دعم array
+          if (cond.productId && productIdStr && !checkCondition(cond.productId, productIdStr)) return false;
 
-          // Category check
+          // Category check - دعم array
           if (cond.categoryId && product) {
             const productRecord = product as Record<string, unknown>;
-            // تحويل categoryId إلى string بشكل صحيح (يدعم ObjectId و string)
-            let categoryId = '';
-            const catId = productRecord.categoryId as unknown;
-            if (catId) {
-              if (typeof catId === 'string') {
-                categoryId = catId;
-              } else if (
-                catId &&
-                typeof (catId as { toString?: () => string }).toString === 'function'
-              ) {
-                categoryId = (catId as { toString: () => string }).toString();
-              } else if (catId && typeof catId === 'object' && catId !== null && '_id' in catId) {
-                categoryId = String((catId as { _id?: unknown })._id || catId);
-              } else {
-                categoryId = String(catId);
-              }
+            const categoryId = this.normalizeCategoryId(productRecord.categoryId);
+            if (!categoryId || !checkCondition(cond.categoryId, categoryId)) {
+              return false;
             }
-            if (cond.categoryId !== categoryId) return false;
           }
 
-          // Brand check
+          // Brand check - دعم array
           if (cond.brandId && product) {
             const productRecord = product as Record<string, unknown>;
             const brandId = productRecord.brandId ? String(productRecord.brandId) : '';
-            if (cond.brandId !== brandId) return false;
+            if (!checkCondition(cond.brandId, brandId)) return false;
           }
 
           // Currency check
@@ -478,35 +496,33 @@ export class MarketingService {
       })
       .sort({ priority: -1 });
 
+    // دالة مساعدة للتحقق من القيمة في array أو string
+    const checkCondition = (conditionValue: string | string[] | undefined, actualValue: string): boolean => {
+      if (!conditionValue) return true;
+      const conditionArray = Array.isArray(conditionValue) ? conditionValue : [conditionValue];
+      return conditionArray.includes(actualValue);
+    };
+
     // Filter rules based on conditions
     const matchingRules = applicableRules.filter((rule) => {
       const cond = rule.conditions;
 
-      // Variant check
-      if (cond.variantId && cond.variantId !== variantId) return false;
+      // Variant check - دعم array
+      if (cond.variantId && !checkCondition(cond.variantId, variantId)) return false;
 
-      // Product check
-      if (cond.productId && cond.productId !== String(variant.productId)) return false;
+      // Product check - دعم array
+      if (cond.productId && !checkCondition(cond.productId, String(variant.productId))) return false;
 
-      // Category check
+      // Category check - دعم array
       if (cond.categoryId && product.categoryId) {
-        // تحويل categoryId إلى string بشكل صحيح (يدعم ObjectId و string)
-        let categoryId = '';
-        const catId = product.categoryId as unknown;
-        if (typeof catId === 'string') {
-          categoryId = catId;
-        } else if (catId && typeof (catId as { toString?: () => string }).toString === 'function') {
-          categoryId = (catId as { toString: () => string }).toString();
-        } else if (catId && typeof catId === 'object' && catId !== null && '_id' in catId) {
-          categoryId = String((catId as { _id?: unknown })._id || catId);
-        } else {
-          categoryId = String(catId);
+        const categoryId = this.normalizeCategoryId(product.categoryId);
+        if (!categoryId || !checkCondition(cond.categoryId, categoryId)) {
+          return false;
         }
-        if (cond.categoryId !== categoryId) return false;
       }
 
-      // Brand check
-      if (cond.brandId && product.brandId && cond.brandId !== String(product.brandId)) return false;
+      // Brand check - دعم array
+      if (cond.brandId && product.brandId && !checkCondition(cond.brandId, String(product.brandId))) return false;
 
       // Currency check
       if (cond.currency && cond.currency !== currency) return false;
@@ -536,6 +552,77 @@ export class MarketingService {
       badge: appliedRule.effects.badge,
       giftSku: appliedRule.effects.giftSku,
     };
+  }
+
+  /**
+   * إيجاد قواعد السعر المطبقة على منتج أو variant (للوحة التحكم)
+   * يعيد قائمة بقواعد السعر التي تطبق على المنتج/المتغير
+   */
+  async getApplicablePriceRules(params: {
+    productId?: string;
+    variantId?: string;
+    categoryId?: string;
+    brandId?: string;
+  }): Promise<PriceRule[]> {
+    const now = new Date();
+    
+    // جلب جميع القواعد النشطة في الوقت الحالي
+    const applicableRules = await this.priceRuleModel
+      .find({
+        active: true,
+        startAt: { $lte: now },
+        endAt: { $gte: now },
+      })
+      .sort({ priority: -1 })
+      .lean();
+
+    // استخدام نفس منطق checkCondition من previewBatch
+    const checkCondition = <T>(
+      ruleCondition: T | T[] | undefined,
+      itemValue: T | undefined,
+    ): boolean => {
+      if (ruleCondition === undefined) {
+        return true; // No condition specified, so it always matches
+      }
+      if (itemValue === undefined) {
+        return false; // Condition specified, but item has no value
+      }
+
+      if (Array.isArray(ruleCondition)) {
+        return ruleCondition.includes(itemValue);
+      } else {
+        return ruleCondition === itemValue;
+      }
+    };
+
+    // تصفية القواعد التي تطبق على المنتج/المتغير المحدد
+    const matchingRules = applicableRules.filter((rule) => {
+      const cond = rule.conditions;
+
+      // Variant check
+      if (!checkCondition(cond.variantId, params.variantId)) {
+        return false;
+      }
+
+      // Product check
+      if (!checkCondition(cond.productId, params.productId)) {
+        return false;
+      }
+
+      // Category check
+      if (!checkCondition(cond.categoryId, params.categoryId)) {
+        return false;
+      }
+
+      // Brand check
+      if (!checkCondition(cond.brandId, params.brandId)) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return matchingRules;
   }
 
   // ==================== COUPONS ====================
@@ -1371,20 +1458,130 @@ export class MarketingService {
   // ==================== Helper Methods ====================
 
   /**
+   * حذف كاش المنتجات عند تغيير قواعد الأسعار
+   */
+  private async clearProductCache(): Promise<void> {
+    try {
+      // حذف كاش المنتجات (product:, products:, response:)
+      await Promise.all([
+        this.cacheService.clear('product:'),
+        this.cacheService.clear('products:'),
+        this.cacheService.clear('response:'),
+      ]);
+      this.logger.log('Cleared product caches after price rule change');
+    } catch (error) {
+      this.logger.error('Error clearing product caches:', error);
+      // لا نرمي الخطأ حتى لا نؤثر على عملية إنشاء/تحديث قاعدة السعر
+    }
+  }
+
+  /**
+   * تطبيع categoryId إلى string بشكل موحد وآمن
+   */
+  private normalizeCategoryId(categoryId: unknown): string | null {
+    if (!categoryId) {
+      return null;
+    }
+
+    // إذا كان string بالفعل
+    if (typeof categoryId === 'string') {
+      // التحقق من أنه ليس string فارغ أو '[object Object]'
+      const trimmed = categoryId.trim();
+      if (trimmed.length > 0 && trimmed !== '[object Object]') {
+        return trimmed;
+      }
+      return null;
+    }
+
+    // إذا كان ObjectId من Mongoose
+    if (categoryId instanceof Types.ObjectId) {
+      return categoryId.toString();
+    }
+
+    // إذا كان object يحتوي على _id
+    if (typeof categoryId === 'object' && categoryId !== null) {
+      const record = categoryId as Record<string, unknown>;
+
+      // محاولة _id أولاً
+      if (record._id) {
+        if (typeof record._id === 'string') {
+          return record._id;
+        }
+        if (record._id instanceof Types.ObjectId) {
+          return record._id.toString();
+        }
+        if (typeof (record._id as { toString?: () => string }).toString === 'function') {
+          const converted = (record._id as { toString: () => string }).toString();
+          if (converted && converted !== '[object Object]' && converted.length === 24) {
+            return converted;
+          }
+        }
+      }
+
+      // محاولة id
+      if (record.id) {
+        if (typeof record.id === 'string') {
+          return record.id;
+        }
+        if (record.id instanceof Types.ObjectId) {
+          return record.id.toString();
+        }
+      }
+
+      // محاولة toHexString() إذا كان متاحاً
+      if (typeof (record as { toHexString?: () => string }).toHexString === 'function') {
+        return (record as { toHexString: () => string }).toHexString();
+      }
+
+      // محاولة toString() مباشرة
+      if (typeof (record as { toString?: () => string }).toString === 'function') {
+        const converted = (record as { toString: () => string }).toString();
+        if (converted && converted !== '[object Object]' && converted.length === 24) {
+          return converted;
+        }
+      }
+    }
+
+    // استخدام String() كحل أخير
+    try {
+      const str = String(categoryId);
+      if (str && str !== '[object Object]' && str !== 'null' && str !== 'undefined') {
+        // التحقق من أن النتيجة تبدو كـ ObjectId (24 حرف hex)
+        if (str.length === 24 && /^[0-9a-fA-F]{24}$/.test(str)) {
+          return str;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return null;
+  }
+
+  /**
    * Get base price for a variant in specific currency
    */
-  private async getBasePrice(variantId: string, _currency: string): Promise<number | null> {
+  private async getBasePrice(variantId: string, currency: string): Promise<number | null> {
     try {
       const variant = await this.variantModel.findById(variantId).lean();
 
-      void _currency;
       if (!variant || variant.deletedAt) {
         return null;
       }
 
-      // For now, return basePriceUSD regardless of currency
-      // In a real implementation, you would have currency conversion logic
-      return variant.basePriceUSD;
+      // استخدام العملة المحددة
+      const normalizedCurrency = currency?.toUpperCase() || 'USD';
+
+      if (normalizedCurrency === 'USD') {
+        return variant.basePriceUSD ?? null;
+      } else if (normalizedCurrency === 'SAR') {
+        return variant.basePriceSAR ?? null;
+      } else if (normalizedCurrency === 'YER') {
+        return variant.basePriceYER ?? null;
+      }
+
+      // Fallback إلى USD إذا كانت العملة غير معروفة
+      return variant.basePriceUSD ?? null;
     } catch (error) {
       this.logger.error(`Error getting base price for variant ${variantId}:`, error);
       return null;

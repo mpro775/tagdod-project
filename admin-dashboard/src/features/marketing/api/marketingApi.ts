@@ -56,10 +56,10 @@ export interface PriceRule {
   startAt: Date;
   endAt: Date;
   conditions: {
-    categoryId?: string;
-    productId?: string;
-    variantId?: string;
-    brandId?: string;
+    categoryId?: string | string[];
+    productId?: string | string[];
+    variantId?: string | string[];
+    brandId?: string | string[];
     currency?: string;
     minQty?: number;
     accountType?: string;
@@ -109,7 +109,15 @@ export interface UpdatePriceRuleDto {
   priority?: number;
   startAt?: string;
   endAt?: string;
-  conditions?: PriceRule['conditions'];
+  conditions?: {
+    categoryId?: string | string[];
+    productId?: string | string[];
+    variantId?: string | string[];
+    brandId?: string | string[];
+    currency?: string;
+    minQty?: number;
+    accountType?: string;
+  };
   effects?: PriceRule['effects'];
   usageLimits?: PriceRule['usageLimits'];
   metadata?: PriceRule['metadata'];

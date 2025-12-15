@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
 
 export type PriceRuleDocument = HydratedDocument<PriceRule>;
 
@@ -12,10 +12,10 @@ export class PriceRule {
 
   @Prop({
     type: {
-      categoryId: String,
-      productId: String,
-      variantId: String,
-      brandId: String,
+      categoryId: { type: MongooseSchema.Types.Mixed }, // يدعم string أو [string]
+      productId: { type: MongooseSchema.Types.Mixed }, // يدعم string أو [string]
+      variantId: { type: MongooseSchema.Types.Mixed }, // يدعم string أو [string]
+      brandId: { type: MongooseSchema.Types.Mixed }, // يدعم string أو [string]
       currency: String,
       minQty: Number,
       accountType: String,
@@ -23,10 +23,10 @@ export class PriceRule {
     default: {},
   })
   conditions!: {
-    categoryId?: string;
-    productId?: string;
-    variantId?: string;
-    brandId?: string;
+    categoryId?: string | string[];
+    productId?: string | string[];
+    variantId?: string | string[];
+    brandId?: string | string[];
     currency?: string;
     minQty?: number;
     accountType?: string;

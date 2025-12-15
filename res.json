@@ -1,0 +1,568 @@
+{
+    "success": true,
+    "data": {
+        "product": {
+            "_id": "6926b4219fd15abe3303fd9b",
+            "name": "لمبات احواش IP65 لطش 20W",
+            "nameEn": "IP65 Down Light Generation 5th Liper 20W",
+            "status": "active",
+            "description": "مصباح Liper IP65 Downlight الجيل الخامس هو إضاءة LED مقاومة للماء، مناسبة للاستخدام داخل وخارج المباني. متوفّر بقدرتين: 20 واط  بعمر تشغيل يصل إلى 50,000 ساعة، وتصنيف حماية IP65، مع هيكل من الألومنيوم المصبوب لفعالية تبديد الحرارة. يدعم درجات اللون 2700 كلفن، 4000 كلفن، 6500 كلفن، وتتوافر ملفات IES لتصميم الإضاءة. المواصفات النموذجية تشمل:  LP-DL20MF01-T: قدرة 20 واط، سطوع ~1,710 إلى 1,890 لومن، الأبعاد 224×56×138 مم  Liper Lighting  LP-DL30MF01-Y: قدرة 30 واط، سطوع ~2,570 إلى 2,840 لومن، الأبعاد 255×55×255 مم  Liper Lighting  ميزات أخرى تشمل تصميم حلقة مزدوجة (غطاء PC أبيض حليبي + غطاء دائري لنقل الضوء)، علبة تقاطع مقاومة للماء، جسم من الألومنيوم الجوي، غطاء PC مقاوم للأشعة فوق البنفسجية، وأشكال متعددة (دائري وبيضاوي) لتثبيت مرن.",
+            "descriptionEn": "The Liper IP65 Downlight Generation 5th is a robust waterproof LED downlight designed for both indoor and outdoor use. Available in 20W versions, it operates with a long life of 50,000 hours under protection rating IP65, featuring die-cast aluminum housing for efficient heat dissipation. It supports color temperatures 2700K, 4000K, 6500K and comes with IES files for lighting design. Typical model specifications include:  LP-DL20MF01-T: 20W, ~1,710–1,890 lm, dimensions 224×56×138 mm  Liper Lighting  LP-DL30MF01-Y: 30W, ~2,570–2,840 lm, dimensions 255×55×255 mm  Liper Lighting  Other features include a double-ring design (milk-white PC cover + circular light transmission cover), waterproof junction box, aviation aluminum body, UV-resistant PC cover, and multiple shapes (round & oval) for flexible installation.  Liper Lighting",
+            "category": {
+                "_id": "68ffac5255755bbf6210528f",
+                "name": "الإضاءة",
+                "nameEn": "LAMB"
+            },
+            "brand": {
+                "_id": "68ffa7df55755bbf6210519b",
+                "name": "Liper",
+                "nameEn": "Liper"
+            },
+            "mainImage": {
+                "_id": "693056778ca533609f2d6e90",
+                "url": "https://tagadod.b-cdn.net/media/product/2e6b1040-c800-4d9d-907c-8d278a0670a1-7c89b2c9-8836-41dd-8799-8a6936dd624f-IP65 Down Light Generation 5th Liper (1).png"
+            },
+            "images": [
+                {
+                    "_id": "691c7b476dcd46f8a5850e73",
+                    "url": "https://tagadod.b-cdn.net/media/product/55940e92-4f72-4942-8a95-b7c85ad62647-68c1652dac9ab_Liper-led-waterproofing-downlight-4.jpg"
+                },
+                {
+                    "_id": "691c7b746dcd46f8a5850e81",
+                    "url": "https://tagadod.b-cdn.net/media/product/47cc6d24-4e27-41f7-a5fe-e2484acfd704-68c1652dab467_Liper-led-waterproofing-downlight-2.jpg"
+                },
+                {
+                    "_id": "6926b2ae9fd15abe3303fca8",
+                    "url": "https://tagadod.b-cdn.net/media/product/ad41bf73-df38-4a65-bba3-d28915cd3c8f-IP65 Down Light Generation 5th Liper 1.jpg"
+                },
+                {
+                    "_id": "691c7b836dcd46f8a5850e89",
+                    "url": "https://tagadod.b-cdn.net/media/product/1d98253b-9113-47dd-a1c3-51283ef6ac2d-68c1652da6e8e_IMG-20250828-WA0022.jpg"
+                }
+            ],
+            "attributes": [
+                "691b562e9ff0cdeb68422a4b"
+            ],
+            "isActive": true,
+            "isFeatured": false,
+            "isNew": true,
+            "isBestseller": false,
+            "useManualRating": false,
+            "manualRating": 0,
+            "manualReviewsCount": 0,
+            "averageRating": 0,
+            "reviewsCount": 0,
+            "salesCount": 0,
+            "isAvailable": true,
+            "minOrderQuantity": 1,
+            "maxOrderQuantity": 0,
+            "stock": 50,
+            "pricingByCurrency": {
+                "USD": {
+                    "basePrice": 11.42,
+                    "discountPercent": 14.97,
+                    "discountAmount": 1.71,
+                    "finalPrice": 9.71,
+                    "currency": "USD"
+                },
+                "YER": {
+                    "basePrice": 6053,
+                    "discountPercent": 14.97,
+                    "discountAmount": 906.13,
+                    "finalPrice": 5146.87,
+                    "currency": "YER",
+                    "exchangeRate": 530.0350262697023
+                },
+                "SAR": {
+                    "basePrice": 42.83,
+                    "discountPercent": 14.97,
+                    "discountAmount": 6.41,
+                    "finalPrice": 36.42,
+                    "currency": "SAR",
+                    "exchangeRate": 3.7504378283712785
+                }
+            },
+            "variants": [
+                {
+                    "_id": "6926b5119fd15abe3303fe5f",
+                    "attributeValues": [
+                        {
+                            "attributeId": "691b562e9ff0cdeb68422a4b",
+                            "valueId": "6926b4fc9fd15abe3303fe4b",
+                            "name": "لون الاطار:",
+                            "nameEn": "Frame Color:",
+                            "value": "ابيض",
+                            "valueEn": "white"
+                        }
+                    ],
+                    "isActive": true,
+                    "isAvailable": true,
+                    "stockStatus": "in_stock",
+                    "stock": 50,
+                    "minOrderQuantity": 1,
+                    "maxOrderQuantity": 0,
+                    "salesCount": 0,
+                    "pricingByCurrency": {
+                        "USD": {
+                            "basePrice": 11.42,
+                            "discountPercent": 14.97,
+                            "discountAmount": 1.71,
+                            "finalPrice": 9.71,
+                            "currency": "USD"
+                        },
+                        "YER": {
+                            "basePrice": 6053,
+                            "discountPercent": 14.97,
+                            "discountAmount": 906.13,
+                            "finalPrice": 5146.87,
+                            "currency": "YER",
+                            "exchangeRate": 530.0350262697023
+                        },
+                        "SAR": {
+                            "basePrice": 42.83,
+                            "discountPercent": 14.97,
+                            "discountAmount": 6.41,
+                            "finalPrice": 36.42,
+                            "currency": "SAR",
+                            "exchangeRate": 3.7504378283712785
+                        }
+                    }
+                },
+                {
+                    "_id": "6926b5119fd15abe3303fe64",
+                    "attributeValues": [
+                        {
+                            "attributeId": "691b562e9ff0cdeb68422a4b",
+                            "valueId": "6926b4dc9fd15abe3303fe3a",
+                            "name": "لون الاطار:",
+                            "nameEn": "Frame Color:",
+                            "value": "اسود",
+                            "valueEn": "black"
+                        }
+                    ],
+                    "isActive": true,
+                    "isAvailable": true,
+                    "stockStatus": "in_stock",
+                    "stock": 50,
+                    "minOrderQuantity": 1,
+                    "maxOrderQuantity": 0,
+                    "salesCount": 0,
+                    "pricingByCurrency": {
+                        "USD": {
+                            "basePrice": 11.42,
+                            "discountPercent": 14.97,
+                            "discountAmount": 1.71,
+                            "finalPrice": 9.71,
+                            "currency": "USD"
+                        },
+                        "YER": {
+                            "basePrice": 6053,
+                            "discountPercent": 14.97,
+                            "discountAmount": 906.13,
+                            "finalPrice": 5146.87,
+                            "currency": "YER",
+                            "exchangeRate": 530.0350262697023
+                        },
+                        "SAR": {
+                            "basePrice": 42.83,
+                            "discountPercent": 14.97,
+                            "discountAmount": 6.41,
+                            "finalPrice": 36.42,
+                            "currency": "SAR",
+                            "exchangeRate": 3.7504378283712785
+                        }
+                    }
+                }
+            ],
+            "hasVariants": true,
+            "attributesDetails": [
+                {
+                    "id": "691b562e9ff0cdeb68422a4b",
+                    "name": "لون الاطار:",
+                    "nameEn": "Frame Color:",
+                    "values": [
+                        {
+                            "id": "6926b4fc9fd15abe3303fe4b",
+                            "value": "ابيض",
+                            "valueEn": "white",
+                            "hexCode": "#FAFAFA"
+                        },
+                        {
+                            "id": "6926b4dc9fd15abe3303fe3a",
+                            "value": "اسود",
+                            "valueEn": "black",
+                            "hexCode": "#030303"
+                        }
+                    ]
+                }
+            ]
+        },
+        "variants": [
+            {
+                "_id": "6926b5119fd15abe3303fe5f",
+                "attributeValues": [
+                    {
+                        "attributeId": "691b562e9ff0cdeb68422a4b",
+                        "valueId": "6926b4fc9fd15abe3303fe4b",
+                        "name": "لون الاطار:",
+                        "nameEn": "Frame Color:",
+                        "value": "ابيض",
+                        "valueEn": "white"
+                    }
+                ],
+                "isActive": true,
+                "isAvailable": true,
+                "stockStatus": "in_stock",
+                "stock": 50,
+                "minOrderQuantity": 1,
+                "maxOrderQuantity": 0,
+                "salesCount": 0,
+                "pricingByCurrency": {
+                    "USD": {
+                        "basePrice": 11.42,
+                        "discountPercent": 14.97,
+                        "discountAmount": 1.71,
+                        "finalPrice": 9.71,
+                        "currency": "USD"
+                    },
+                    "YER": {
+                        "basePrice": 6053,
+                        "discountPercent": 14.97,
+                        "discountAmount": 906.13,
+                        "finalPrice": 5146.87,
+                        "currency": "YER",
+                        "exchangeRate": 530.0350262697023
+                    },
+                    "SAR": {
+                        "basePrice": 42.83,
+                        "discountPercent": 14.97,
+                        "discountAmount": 6.41,
+                        "finalPrice": 36.42,
+                        "currency": "SAR",
+                        "exchangeRate": 3.7504378283712785
+                    }
+                }
+            },
+            {
+                "_id": "6926b5119fd15abe3303fe64",
+                "attributeValues": [
+                    {
+                        "attributeId": "691b562e9ff0cdeb68422a4b",
+                        "valueId": "6926b4dc9fd15abe3303fe3a",
+                        "name": "لون الاطار:",
+                        "nameEn": "Frame Color:",
+                        "value": "اسود",
+                        "valueEn": "black"
+                    }
+                ],
+                "isActive": true,
+                "isAvailable": true,
+                "stockStatus": "in_stock",
+                "stock": 50,
+                "minOrderQuantity": 1,
+                "maxOrderQuantity": 0,
+                "salesCount": 0,
+                "pricingByCurrency": {
+                    "USD": {
+                        "basePrice": 11.42,
+                        "discountPercent": 14.97,
+                        "discountAmount": 1.71,
+                        "finalPrice": 9.71,
+                        "currency": "USD"
+                    },
+                    "YER": {
+                        "basePrice": 6053,
+                        "discountPercent": 14.97,
+                        "discountAmount": 906.13,
+                        "finalPrice": 5146.87,
+                        "currency": "YER",
+                        "exchangeRate": 530.0350262697023
+                    },
+                    "SAR": {
+                        "basePrice": 42.83,
+                        "discountPercent": 14.97,
+                        "discountAmount": 6.41,
+                        "finalPrice": 36.42,
+                        "currency": "SAR",
+                        "exchangeRate": 3.7504378283712785
+                    }
+                }
+            }
+        ],
+        "relatedProducts": [
+            {
+                "_id": "6926b0849fd15abe3303fc45",
+                "name": "لمبات احواش دائري IP65 لطش 20W",
+                "nameEn": "MF Wall Light Wide Liper",
+                "status": "active",
+                "mainImage": {
+                    "_id": "693056bd8ca533609f2d6edc",
+                    "url": "https://tagadod.b-cdn.net/media/product/365f3964-f5eb-40c3-b27c-d16f3cc1d320-acf0a937-08e9-45f5-af19-22bb2dec42ef-MF Wall Light Wide Liper.png"
+                },
+                "images": [
+                    {
+                        "_id": "693679f9e30cfd0364c53e90",
+                        "url": "https://tagadod.b-cdn.net/media/product/314da17c-6cb1-434d-8832-467b5a23815e-Screenshot 2025-12-08 101311.png"
+                    },
+                    {
+                        "_id": "6926afe39fd15abe3303fbef",
+                        "url": "https://tagadod.b-cdn.net/media/product/d7978732-fc01-4249-866d-ac0a8640f93c-MF Wall Light Wide Liper.jpg"
+                    }
+                ],
+                "isActive": true,
+                "isFeatured": false,
+                "isNew": true,
+                "isBestseller": false,
+                "useManualRating": false,
+                "manualRating": 0,
+                "manualReviewsCount": 0,
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "salesCount": 1,
+                "minOrderQuantity": 1,
+                "maxOrderQuantity": 0,
+                "stock": 45,
+                "pricingByCurrency": {
+                    "USD": {
+                        "basePrice": 17.64,
+                        "discountPercent": 0,
+                        "discountAmount": 0,
+                        "finalPrice": 17.64,
+                        "currency": "USD"
+                    },
+                    "YER": {
+                        "basePrice": 9349,
+                        "discountPercent": 0,
+                        "discountAmount": 0,
+                        "finalPrice": 9349,
+                        "currency": "YER",
+                        "exchangeRate": 529.9886621315193
+                    },
+                    "SAR": {
+                        "basePrice": 66.15,
+                        "discountPercent": 0,
+                        "discountAmount": 0,
+                        "finalPrice": 66.15,
+                        "currency": "SAR",
+                        "exchangeRate": 3.75
+                    }
+                },
+                "hasVariants": false
+            },
+            {
+                "_id": "69256c1ff5f1dafe1462bc1f",
+                "name": "لمبات معتم خارجي IP65 20W",
+                "nameEn": "IP65 3rd Generation Downlight(matte cover) 20-W Liper",
+                "status": "active",
+                "mainImage": {
+                    "_id": "693054978ca533609f2d6d78",
+                    "url": "https://tagadod.b-cdn.net/media/product/3488f46b-d5e9-4a0d-a9b3-966ee44cb751-7aeb3762-b436-4d60-ae1f-bcc95455ac6d-68c8211e10042_Liper-led-waterproofing-light-3.png"
+                },
+                "images": [
+                    {
+                        "_id": "693532598ca533609f2de6f1",
+                        "url": "https://tagadod.b-cdn.net/media/product/748fe505-612b-4685-ad58-1ae8f153b4ec-827f59e4-8bb5-4c60-8154-eda3b9ebd202-Screenshot 2025-12-01 193233.png"
+                    },
+                    {
+                        "_id": "6919a85ca0c1c42fb3cf4d12",
+                        "url": "https://tagadod.b-cdn.net/media/product/5b85172f-ed03-4765-9295-df4bc6f552bb-68c8210693409_WhatsApp Image 2025-09-14 at 16.12.24_b2e1b509.jpg"
+                    },
+                    {
+                        "_id": "6919a867a0c1c42fb3cf4d1a",
+                        "url": "https://tagadod.b-cdn.net/media/product/39ae0b91-19e7-448c-a48e-1abe3d4edb79-68c8210694872_WhatsApp Image 2025-09-14 at 16.12.25_16a28192.jpg"
+                    }
+                ],
+                "isActive": true,
+                "isFeatured": false,
+                "isNew": false,
+                "isBestseller": false,
+                "useManualRating": false,
+                "manualRating": 0,
+                "manualReviewsCount": 0,
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "salesCount": 0,
+                "minOrderQuantity": 1,
+                "maxOrderQuantity": 0,
+                "stock": 50,
+                "pricingByCurrency": {
+                    "USD": {
+                        "basePrice": 5.18,
+                        "discountPercent": 15.06,
+                        "discountAmount": 0.78,
+                        "finalPrice": 4.4,
+                        "currency": "USD"
+                    },
+                    "YER": {
+                        "basePrice": 2745,
+                        "discountPercent": 15.06,
+                        "discountAmount": 413.4,
+                        "finalPrice": 2331.6,
+                        "currency": "YER",
+                        "exchangeRate": 529.9227799227799
+                    },
+                    "SAR": {
+                        "basePrice": 19.42,
+                        "discountPercent": 15.06,
+                        "discountAmount": 2.92,
+                        "finalPrice": 16.5,
+                        "currency": "SAR",
+                        "exchangeRate": 3.7490347490347498
+                    }
+                },
+                "hasVariants": true
+            },
+            {
+                "_id": "69248d3a7b3d74137b5bf5f2",
+                "name": "لمبات معتم خارجي حساس IP65 20W",
+                "nameEn": "IP65 3rd Generation Downlight(matte cover) 20-W Liper remote",
+                "status": "active",
+                "mainImage": {
+                    "_id": "693050778ca533609f2d6ae4",
+                    "url": "https://tagadod.b-cdn.net/media/product/60faa6a2-fc07-4016-89a4-916ae62dfe53-0d79827d-015f-4311-9123-3e6fe6072edf-IP65 3rd Generation Downlight(matte cover) 30-W Liper remote black.png"
+                },
+                "images": [
+                    {
+                        "_id": "69367ed0e30cfd0364c541c4",
+                        "url": "https://tagadod.b-cdn.net/media/product/78d82068-bba6-4c94-8e9b-fc83705040cb-IP65 3rd Generation Downlight(matte cover) 20-W Liper remote black.png"
+                    },
+                    {
+                        "_id": "69392fb2b52170382b7a2127",
+                        "url": "https://tagadod.b-cdn.net/media/product/6811b1f7-8f45-48c9-a763-82b8aa4d6a20-Screenshot 2025-12-10 113259.png"
+                    },
+                    {
+                        "_id": "69392fc2b52170382b7a2131",
+                        "url": "https://tagadod.b-cdn.net/media/product/4befbc97-c24e-4a08-b581-20d61847a39b-Screenshot 2025-12-10 113325.png"
+                    },
+                    {
+                        "_id": "693ac57858b491976fbe553e",
+                        "url": "https://tagadod.b-cdn.net/media/product/b1ebf3bf-242b-496d-b135-b39432240cfc-WhatsApp Image 2025-12-11 at 3.30.12 PM.jpeg"
+                    },
+                    {
+                        "_id": "693ac63e58b491976fbe564a",
+                        "url": "https://tagadod.b-cdn.net/media/product/6928502f-0faf-4ec5-a568-fbb8a44469a4-WhatsApp Image 2025-12-11 at 3.30.12 PM (1).jpeg"
+                    }
+                ],
+                "isActive": true,
+                "isFeatured": false,
+                "isNew": true,
+                "isBestseller": false,
+                "useManualRating": false,
+                "manualRating": 0,
+                "manualReviewsCount": 0,
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "salesCount": 0,
+                "minOrderQuantity": 1,
+                "maxOrderQuantity": 0,
+                "stock": 50,
+                "pricingByCurrency": {
+                    "USD": {
+                        "basePrice": 8.18,
+                        "discountPercent": 15.04,
+                        "discountAmount": 1.23,
+                        "finalPrice": 6.95,
+                        "currency": "USD"
+                    },
+                    "YER": {
+                        "basePrice": 4335,
+                        "discountPercent": 15.04,
+                        "discountAmount": 651.98,
+                        "finalPrice": 3683.02,
+                        "currency": "YER",
+                        "exchangeRate": 529.9511002444988
+                    },
+                    "SAR": {
+                        "basePrice": 30.67,
+                        "discountPercent": 15.04,
+                        "discountAmount": 4.61,
+                        "finalPrice": 26.06,
+                        "currency": "SAR",
+                        "exchangeRate": 3.749388753056235
+                    }
+                },
+                "hasVariants": true
+            },
+            {
+                "_id": "6925c303ea80a531382fbf31",
+                "name": "IP65 لمبات معتم اطار حديث لطش 25W متعددة الالوان",
+                "nameEn": "IP65 DOWNLIGHT GENERATION 6th 25-W multi color",
+                "status": "active",
+                "mainImage": {
+                    "_id": "6930540e8ca533609f2d6cd9",
+                    "url": "https://tagadod.b-cdn.net/media/product/1e1ff1bf-82bb-44d6-b48d-264e695f84f6-33f96147-590c-4493-a36c-c12b940cb4f8-IP65 DOWNLIGHT GENERATION 6th 35-W One Color 1.png"
+                },
+                "images": [
+                    {
+                        "_id": "69367ac8e30cfd0364c53f42",
+                        "url": "https://tagadod.b-cdn.net/media/product/739660ce-1150-45b9-924a-3ea4d48187a8-1e1ff1bf-82bb-44d6-b48d-264e695f84f6-33f96147-590c-4493-a36c-c12b940cb4f8-IP65 DOWNLIGHT GENERATION 6th 35-W One Color 1.png"
+                    },
+                    {
+                        "_id": "69367af8e30cfd0364c53f53",
+                        "url": "https://tagadod.b-cdn.net/media/product/51baaef6-3a35-435c-859d-2fb2d8a06d4c-badabce8-aa26-4bcf-97d8-d75b276b2e0e-68c560c6b10d1_153.png"
+                    },
+                    {
+                        "_id": "69367b05e30cfd0364c53f5a",
+                        "url": "https://tagadod.b-cdn.net/media/product/6ae48cef-107b-4998-aa8e-393a1608c4f9-1a490395-8dea-4c91-9b89-a43f95418abe-IP65 DOWNLIGHT GENERATION 6th 35-W One Color 2.png"
+                    },
+                    {
+                        "_id": "692598fff5f1dafe1462ca1b",
+                        "url": "https://tagadod.b-cdn.net/media/product/2d88602f-969f-44e8-895b-0bc5d96ea9e1-68c5607507eda_IMG-20250828-WA0015.jpg"
+                    },
+                    {
+                        "_id": "692598e1f5f1dafe1462ca13",
+                        "url": "https://tagadod.b-cdn.net/media/product/c5839969-80de-4a21-b890-7c9c175fcf97-68c560c6b6d3e_IMG-20250828-WA0019.jpg"
+                    },
+                    {
+                        "_id": "692598d1f5f1dafe1462ca0b",
+                        "url": "https://tagadod.b-cdn.net/media/product/72e9cac3-661c-49a7-a5e2-e214d75bfc35-68c560c6b2a2b_IMG-20250828-WA0010.jpg"
+                    }
+                ],
+                "isActive": true,
+                "isFeatured": false,
+                "isNew": false,
+                "isBestseller": false,
+                "useManualRating": false,
+                "manualRating": 0,
+                "manualReviewsCount": 0,
+                "averageRating": 0,
+                "reviewsCount": 0,
+                "salesCount": 0,
+                "minOrderQuantity": 1,
+                "maxOrderQuantity": 0,
+                "stock": 50,
+                "pricingByCurrency": {
+                    "USD": {
+                        "basePrice": 8.9,
+                        "discountPercent": 14.94,
+                        "discountAmount": 1.33,
+                        "finalPrice": 7.57,
+                        "currency": "USD"
+                    },
+                    "YER": {
+                        "basePrice": 4717,
+                        "discountPercent": 14.94,
+                        "discountAmount": 704.72,
+                        "finalPrice": 4012.28,
+                        "currency": "YER",
+                        "exchangeRate": 530
+                    },
+                    "SAR": {
+                        "basePrice": 33.38,
+                        "discountPercent": 14.94,
+                        "discountAmount": 4.99,
+                        "finalPrice": 28.39,
+                        "currency": "SAR",
+                        "exchangeRate": 3.750561797752809
+                    }
+                },
+                "hasVariants": true
+            }
+        ],
+        "userDiscount": {
+            "isMerchant": false,
+            "discountPercent": 0
+        }
+    },
+    "requestId": "c31be9aa-2f72-4045-b36e-bf813717b78a"
+}

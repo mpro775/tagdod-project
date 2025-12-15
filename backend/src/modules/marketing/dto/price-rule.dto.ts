@@ -1,4 +1,4 @@
-import { IsBoolean, IsDateString, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsDateString, IsNumber, IsObject, IsOptional, IsString, IsArray } from 'class-validator';
 
 export class CreatePriceRuleDto {
   @IsBoolean() @IsOptional() active?: boolean = true;
@@ -7,10 +7,10 @@ export class CreatePriceRuleDto {
   @IsDateString() endAt!: string;
 
   @IsObject() @IsOptional() conditions?: {
-    categoryId?: string;
-    productId?: string;
-    variantId?: string;
-    brandId?: string;
+    categoryId?: string | string[];
+    productId?: string | string[];
+    variantId?: string | string[];
+    brandId?: string | string[];
     currency?: string;
     minQty?: number;
     accountType?: string;
@@ -45,10 +45,10 @@ export class UpdatePriceRuleDto {
   @IsDateString() @IsOptional() endAt?: string;
 
   @IsObject() @IsOptional() conditions?: {
-    categoryId?: string;
-    productId?: string;
-    variantId?: string;
-    brandId?: string;
+    categoryId?: string | string[];
+    productId?: string | string[];
+    variantId?: string | string[];
+    brandId?: string | string[];
     currency?: string;
     minQty?: number;
     accountType?: string;

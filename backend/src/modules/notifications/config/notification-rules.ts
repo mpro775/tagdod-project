@@ -69,6 +69,11 @@ export const NOTIFICATION_TYPE_ROLES: Record<NotificationType, UserRole[]> = {
   // ===== Payment Notifications - للمستخدمين =====
   [NotificationType.PAYMENT_FAILED]: [UserRole.USER],
   [NotificationType.PAYMENT_SUCCESS]: [UserRole.USER],
+
+  // ===== Engineer Wallet Notifications - للمهندسين =====
+  [NotificationType.ENGINEER_WALLET_WITHDRAWN]: [UserRole.ENGINEER],
+  [NotificationType.ENGINEER_WALLET_DEPOSITED]: [UserRole.ENGINEER],
+  [NotificationType.ENGINEER_COMMISSION_ADDED]: [UserRole.ENGINEER],
 };
 
 /**
@@ -153,6 +158,11 @@ export const NOTIFICATION_TYPE_CHANNELS: Record<NotificationType, NotificationCh
   // ===== Payment Notifications =====
   [NotificationType.PAYMENT_FAILED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
   [NotificationType.PAYMENT_SUCCESS]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+
+  // ===== Engineer Wallet Notifications =====
+  [NotificationType.ENGINEER_WALLET_WITHDRAWN]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+  [NotificationType.ENGINEER_WALLET_DEPOSITED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+  [NotificationType.ENGINEER_COMMISSION_ADDED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
 };
 
 /**
@@ -214,6 +224,11 @@ export const NOTIFICATION_TYPE_DEFAULT_CHANNEL: Record<NotificationType, Notific
   // ===== Payment Notifications =====
   [NotificationType.PAYMENT_FAILED]: NotificationChannel.IN_APP,
   [NotificationType.PAYMENT_SUCCESS]: NotificationChannel.IN_APP,
+
+  // ===== Engineer Wallet Notifications =====
+  [NotificationType.ENGINEER_WALLET_WITHDRAWN]: NotificationChannel.IN_APP,
+  [NotificationType.ENGINEER_WALLET_DEPOSITED]: NotificationChannel.IN_APP,
+  [NotificationType.ENGINEER_COMMISSION_ADDED]: NotificationChannel.IN_APP,
 };
 
 /**

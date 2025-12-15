@@ -21,6 +21,8 @@ import {
   Badge,
   Breadcrumbs,
   Link,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
   Edit,
@@ -45,6 +47,8 @@ import {
   ArrowUpward,
   ArrowDownward,
   Cached,
+  Search,
+  LocalOffer,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -119,6 +123,7 @@ export const ProductsListPage: React.FC = () => {
   const [featuredFilter, setFeaturedFilter] = useState<boolean | 'all'>(() => getParamBoolean('isFeatured'));
   const [newFilter, setNewFilter] = useState<boolean | 'all'>(() => getParamBoolean('isNew'));
   const [bestsellerFilter, setBestsellerFilter] = useState<boolean | 'all'>(() => getParamBoolean('isBestseller'));
+  const [hasOfferFilter, setHasOfferFilter] = useState<boolean | 'all'>(() => getParamBoolean('hasOffer'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => {
@@ -152,10 +157,11 @@ export const ProductsListPage: React.FC = () => {
     if (featuredFilter !== 'all') params.set('isFeatured', featuredFilter.toString());
     if (newFilter !== 'all') params.set('isNew', newFilter.toString());
     if (bestsellerFilter !== 'all') params.set('isBestseller', bestsellerFilter.toString());
+    if (hasOfferFilter !== 'all') params.set('hasOffer', hasOfferFilter.toString());
 
     // Update URL without navigation (replace to avoid history pollution)
     setSearchParams(params, { replace: true });
-  }, [paginationModel, search, sortModel, statusFilter, featuredFilter, newFilter, bestsellerFilter, setSearchParams]);
+  }, [paginationModel, search, sortModel, statusFilter, featuredFilter, newFilter, bestsellerFilter, hasOfferFilter, setSearchParams]);
 
   // Count active filters
   const activeFiltersCount = React.useMemo(() => {
@@ -164,8 +170,9 @@ export const ProductsListPage: React.FC = () => {
     if (featuredFilter !== 'all') count++;
     if (newFilter !== 'all') count++;
     if (bestsellerFilter !== 'all') count++;
+    if (hasOfferFilter !== 'all') count++;
     return count;
-  }, [statusFilter, featuredFilter, newFilter, bestsellerFilter]);
+  }, [statusFilter, featuredFilter, newFilter, bestsellerFilter, hasOfferFilter]);
 
   // Clear all filters (also reset to first page)
   const clearAllFilters = () => {
@@ -173,11 +180,12 @@ export const ProductsListPage: React.FC = () => {
     setFeaturedFilter('all');
     setNewFilter('all');
     setBestsellerFilter('all');
+    setHasOfferFilter('all');
     setPaginationModel(prev => ({ ...prev, page: 0 }));
   };
 
-  // API
-  const { data, isLoading, refetch } = useProducts({
+  // Filter products by hasOffer client-side (since backend doesn't support this filter yet)
+  const { data: rawData, isLoading, refetch } = useProducts({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
     search,
@@ -188,6 +196,25 @@ export const ProductsListPage: React.FC = () => {
     isNew: newFilter !== 'all' ? newFilter : undefined,
     isBestseller: bestsellerFilter !== 'all' ? bestsellerFilter : undefined,
   });
+
+  // Apply hasOffer filter client-side
+  const data = React.useMemo(() => {
+    if (!rawData || hasOfferFilter === 'all') return rawData;
+    
+    const filteredProducts = rawData.data.filter((product: Product) => {
+      const hasOffer = product.appliedPriceRules && product.appliedPriceRules.length > 0;
+      return hasOfferFilter === true ? hasOffer : !hasOffer;
+    });
+
+    return {
+      ...rawData,
+      data: filteredProducts,
+      meta: {
+        ...rawData.meta,
+        total: filteredProducts.length,
+      },
+    };
+  }, [rawData, hasOfferFilter]);
 
   const { mutate: deleteProduct } = useDeleteProduct();
   const { mutate: restoreProduct } = useRestoreProduct();
@@ -330,6 +357,26 @@ export const ProductsListPage: React.FC = () => {
                   <Star sx={{ fontSize: 12, color: 'white' }} />
                 </Box>
               )}
+              {product.appliedPriceRules && product.appliedPriceRules.length > 0 && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: -4,
+                    left: -4,
+                    bgcolor: 'error.main',
+                    borderRadius: '50%',
+                    width: 18,
+                    height: 18,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                    zIndex: 1,
+                  }}
+                >
+                  <LocalOffer sx={{ fontSize: 12, color: 'white' }} />
+                </Box>
+              )}
             </Box>
             <Box sx={{ minWidth: 0 }}>
               <Typography
@@ -405,25 +452,55 @@ export const ProductsListPage: React.FC = () => {
       headerName: t('list.columns.badges'),
       width: 150,
       sortable: false,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          {params.row.isFeatured && (
-            <Tooltip title={t('badges.featured')}>
-              <Star sx={{ fontSize: { xs: 16, sm: 18 }, color: 'warning.main' }} />
-            </Tooltip>
-          )}
-          {params.row.isNew && (
-            <Tooltip title={t('badges.new')}>
-              <NewReleases sx={{ fontSize: { xs: 16, sm: 18 }, color: 'info.main' }} />
-            </Tooltip>
-          )}
-          {params.row.isBestseller && (
-            <Tooltip title={t('badges.bestseller')}>
-              <TrendingUp sx={{ fontSize: { xs: 16, sm: 18 }, color: 'success.main' }} />
-            </Tooltip>
-          )}
-        </Box>
-      ),
+      renderCell: (params) => {
+        const product = params.row as Product;
+        const hasPriceRules = product.appliedPriceRules && product.appliedPriceRules.length > 0;
+        const discountPercent = hasPriceRules && product.appliedPriceRules?.[0]?.effects?.percentOff;
+        
+        return (
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+            {hasPriceRules && (
+              <Tooltip 
+                title={
+                  discountPercent 
+                    ? `${t('badges.hasOffer', 'عرض')} ${discountPercent}%` 
+                    : t('badges.hasOffer', 'يحتوي على عرض')
+                }
+              >
+                <Chip
+                  icon={<LocalOffer sx={{ fontSize: 14 }} />}
+                  label={discountPercent ? `${discountPercent}%` : ''}
+                  size="small"
+                  color="error"
+                  sx={{
+                    height: 24,
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    '& .MuiChip-icon': {
+                      fontSize: 14,
+                    },
+                  }}
+                />
+              </Tooltip>
+            )}
+            {product.isFeatured && (
+              <Tooltip title={t('badges.featured')}>
+                <Star sx={{ fontSize: { xs: 16, sm: 18 }, color: 'warning.main' }} />
+              </Tooltip>
+            )}
+            {product.isNew && (
+              <Tooltip title={t('badges.new')}>
+                <NewReleases sx={{ fontSize: { xs: 16, sm: 18 }, color: 'info.main' }} />
+              </Tooltip>
+            )}
+            {product.isBestseller && (
+              <Tooltip title={t('badges.bestseller')}>
+                <TrendingUp sx={{ fontSize: { xs: 16, sm: 18 }, color: 'success.main' }} />
+              </Tooltip>
+            )}
+          </Box>
+        );
+      },
     },
     {
       field: 'salesCount',
@@ -435,8 +512,12 @@ export const ProductsListPage: React.FC = () => {
       field: 'createdAt',
       headerName: t('list.columns.createdAt'),
       width: 140,
-      valueGetter: (_value, row) => row.createdAt || null,
+      valueGetter: (_value, row) => {
+        // استخدام updatedAt إذا لم يكن createdAt موجوداً
+        return row.createdAt || row.updatedAt || null;
+      },
       valueFormatter: (value) => {
+        // value يأتي من valueGetter بالفعل (createdAt أو updatedAt)
         if (!value || value === null || value === undefined) return '-';
         return formatDate(value as Date | string);
       },
@@ -670,6 +751,14 @@ export const ProductsListPage: React.FC = () => {
               size="small"
               variant={bestsellerFilter === true ? 'filled' : 'outlined'}
               icon={<TrendingUp />}
+            />
+            <Chip
+              label={t('badges.hasOffer', 'عروض')}
+              onClick={() => setHasOfferFilter(hasOfferFilter === true ? 'all' : true)}
+              color={hasOfferFilter === true ? 'error' : 'default'}
+              size="small"
+              variant={hasOfferFilter === true ? 'filled' : 'outlined'}
+              icon={<LocalOffer />}
             />
           </Stack>
 
@@ -936,6 +1025,15 @@ export const ProductsListPage: React.FC = () => {
                   icon={<TrendingUp />}
                 />
               )}
+              {hasOfferFilter !== 'all' && (
+                <Chip
+                  label={t('badges.hasOffer', 'عروض')}
+                  size="small"
+                  onDelete={() => setHasOfferFilter('all')}
+                  color="error"
+                  icon={<LocalOffer />}
+                />
+              )}
             </Box>
           </Alert>
         </Box>
@@ -945,6 +1043,40 @@ export const ProductsListPage: React.FC = () => {
       {viewMode === 'grid' ? (
         /* Grid/Card Layout */
         <Box>
+          {/* Search Field for Grid View */}
+          <Paper
+            sx={{
+              p: { xs: 1.5, sm: 2 },
+              mb: 2,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 2, sm: 0 },
+            }}
+          >
+            <TextField
+              size="small"
+              placeholder={t('list.search', 'بحث...')}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPaginationModel((prev) => ({ ...prev, page: 0 }));
+              }}
+              sx={{
+                minWidth: { xs: '100%', sm: 250, md: 300 },
+                width: { xs: '100%', sm: 'auto' },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Paper>
+
           {!data?.data || data.data.length === 0 ? (
             /* Empty State */
             <Paper sx={{ p: 4, textAlign: 'center' }}>

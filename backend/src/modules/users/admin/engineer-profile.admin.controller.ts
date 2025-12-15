@@ -39,6 +39,14 @@ import { GetRatingsQueryDto } from '../dto/engineer-profile.dto';
 import { UserNotFoundException } from '../../../shared/exceptions';
 import { AuditService } from '../../../shared/services/audit.service';
 import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.service';
+import { NotificationService } from '../../notifications/services/notification.service';
+import {
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+  NotificationNavigationType,
+  NotificationCategory,
+} from '../../notifications/enums/notification.enums';
 
 @ApiTags('إدارة-بروفايل-المهندس')
 @ApiBearerAuth()
@@ -52,6 +60,7 @@ export class EngineerProfileAdminController {
     private readonly engineerProfileService: EngineerProfileService,
     private readonly auditService: AuditService,
     private readonly exchangeRatesService: ExchangeRatesService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   @RequirePermissions('users.read', 'admin.access')
@@ -249,6 +258,58 @@ export class EngineerProfileAdminController {
     });
 
     await profile.save();
+
+    // إرسال إشعار للمهندس
+    try {
+      const transactionId = profile.commissionTransactions[profile.commissionTransactions.length - 1].transactionId;
+
+      if (dto.type === 'withdraw') {
+        await this.notificationService.createNotification({
+          type: NotificationType.ENGINEER_WALLET_WITHDRAWN,
+          recipientId: userId,
+          title: 'تم سحب مبلغ من رصيدك',
+          message: `تم سحب ${dto.amount} USD من رصيدك. الرصيد الحالي: ${newBalance} USD`,
+          messageEn: `Withdrawn ${dto.amount} USD from your wallet. Current balance: ${newBalance} USD`,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+          category: NotificationCategory.PAYMENT,
+          data: {
+            amount: dto.amount,
+            oldBalance,
+            newBalance,
+            transactionId,
+            reason: dto.reason,
+          },
+          navigationType: NotificationNavigationType.SECTION,
+          navigationTarget: 'wallet',
+          isSystemGenerated: true,
+        });
+      } else if (dto.type === 'add') {
+        await this.notificationService.createNotification({
+          type: NotificationType.ENGINEER_WALLET_DEPOSITED,
+          recipientId: userId,
+          title: 'تم إضافة مبلغ إلى رصيدك',
+          message: `تم إضافة ${dto.amount} USD إلى رصيدك. الرصيد الحالي: ${newBalance} USD`,
+          messageEn: `Added ${dto.amount} USD to your wallet. Current balance: ${newBalance} USD`,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+          category: NotificationCategory.PAYMENT,
+          data: {
+            amount: dto.amount,
+            oldBalance,
+            newBalance,
+            transactionId,
+            reason: dto.reason,
+          },
+          navigationType: NotificationNavigationType.SECTION,
+          navigationTarget: 'wallet',
+          isSystemGenerated: true,
+        });
+      }
+    } catch (notificationError) {
+      this.logger.error('Failed to send wallet notification:', notificationError);
+      // لا نرمي خطأ هنا حتى لا نؤثر على العملية الأساسية
+    }
 
     // تحويل العملات
     const oldBalanceConverted = await this.convertAmountFromUSD(oldBalance);

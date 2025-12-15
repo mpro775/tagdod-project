@@ -21,6 +21,7 @@ import { VariantService } from '../services/variant.service';
 import { PricingService } from '../services/pricing.service';
 import { InventoryService } from '../services/inventory.service';
 import { CacheService } from '../../../shared/cache/cache.service';
+import { MarketingService } from '../../marketing/marketing.service';
 import { CreateProductDto, UpdateProductDto, ListProductsDto, CreateVariantDto, UpdateVariantDto, GenerateVariantsDto } from '../dto/product.dto';
 import { Product } from '../schemas/product.schema';
 
@@ -36,6 +37,7 @@ export class ProductsController {
     private pricingService: PricingService,
     private inventoryService: InventoryService,
     private cacheService: CacheService,
+    private marketingService: MarketingService,
   ) {}
 
   // ==================== Products CRUD ====================
@@ -56,7 +58,8 @@ export class ProductsController {
                  '- المنتجات التي نفذت (out of stock)\n' +
                  '- المنتجات التي كميتها صفر\n' +
                  '- المنتجات غير النشطة (إذا لم يتم تحديد isActive)\n' +
-                 '- المنتجات المحذوفة (إذا includeDeleted=true)'
+                 '- المنتجات المحذوفة (إذا includeDeleted=true)\n' +
+                 '- معلومات قواعد الأسعار المطبقة على كل منتج'
   })
   @ApiResponse({ status: 200, description: 'Products list retrieved successfully' })
   async listProducts(@Query() dto: ListProductsDto) {
@@ -64,7 +67,49 @@ export class ProductsController {
     // includeSubcategories افتراضي: true (يتم تضمين الفئات الفرعية)
     // includeDeleted افتراضي: false (يمكن تفعيله لعرض المحذوفة)
     // لا يتم فلترة المنتجات حسب المخزون - جميع المنتجات تظهر
-    return this.productService.list(dto);
+    const result = await this.productService.list(dto);
+    
+    // إضافة معلومات قواعد الأسعار المطبقة على كل منتج
+    const productsWithPriceRules = await Promise.all(
+      result.data.map(async (product) => {
+        // product من .lean() يحتوي على _id من نوع Types.ObjectId
+        const productAny = product as any;
+        const categoryId = typeof product.categoryId === 'string' 
+          ? product.categoryId 
+          : (product.categoryId as any)?._id?.toString() || (product.categoryId as any)?.toString();
+        const brandId = typeof product.brandId === 'string'
+          ? product.brandId
+          : (product.brandId as any)?._id?.toString() || (product.brandId as any)?.toString();
+        
+        const applicableRules = await this.marketingService.getApplicablePriceRules({
+          productId: productAny._id?.toString() || String(productAny._id),
+          categoryId: categoryId,
+          brandId: brandId,
+        });
+        
+        return {
+          ...product,
+          appliedPriceRules: applicableRules.map((rule) => {
+            const ruleAny = rule as any;
+            return {
+              _id: ruleAny._id?.toString() || String(ruleAny._id),
+              title: rule.metadata?.title || 'قاعدة سعر',
+              priority: rule.priority,
+              active: rule.active,
+              startAt: rule.startAt,
+              endAt: rule.endAt,
+              effects: rule.effects,
+              conditions: rule.conditions,
+            };
+          }),
+        };
+      })
+    );
+    
+    return {
+      ...result,
+      data: productsWithPriceRules,
+    };
   }
 
   @Get(':id')

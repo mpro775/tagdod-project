@@ -2638,7 +2638,7 @@
       "get": {
         "operationId": "listProducts",
         "summary": "قائمة المنتجات مع التصفية",
-        "description": "جلب قائمة المنتجات مع إمكانية التصفية. في لوحة التحكم، يتم عرض جميع المنتجات بما في ذلك:\n- المنتجات في الفئات الفرعية (افتراضي: includeSubcategories=true)\n- المنتجات التي نفذت (out of stock)\n- المنتجات التي كميتها صفر\n- المنتجات غير النشطة (إذا لم يتم تحديد isActive)\n- المنتجات المحذوفة (إذا includeDeleted=true)",
+        "description": "جلب قائمة المنتجات مع إمكانية التصفية. في لوحة التحكم، يتم عرض جميع المنتجات بما في ذلك:\n- المنتجات في الفئات الفرعية (افتراضي: includeSubcategories=true)\n- المنتجات التي نفذت (out of stock)\n- المنتجات التي كميتها صفر\n- المنتجات غير النشطة (إذا لم يتم تحديد isActive)\n- المنتجات المحذوفة (إذا includeDeleted=true)\n- معلومات قواعد الأسعار المطبقة على كل منتج",
         "parameters": [],
         "responses": {
           "200": {
@@ -5738,6 +5738,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],
@@ -5810,6 +5813,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],
@@ -5892,6 +5898,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],
@@ -7673,6 +7682,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],
@@ -7792,6 +7804,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],
@@ -7933,6 +7948,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],
@@ -8052,6 +8070,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],
@@ -8193,6 +8214,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],
@@ -8312,6 +8336,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],
@@ -8453,6 +8480,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],
@@ -8572,6 +8602,9 @@
                 "CART_ABANDONMENT",
                 "PAYMENT_FAILED",
                 "PAYMENT_SUCCESS",
+                "ENGINEER_WALLET_WITHDRAWN",
+                "ENGINEER_WALLET_DEPOSITED",
+                "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
                 "COUPON_USED"
               ],

@@ -20,6 +20,7 @@ import {
   Star,
   NewReleases,
   Restore,
+  LocalOffer,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { Product, ProductStatus } from '@/features/products/types/product.types';
@@ -194,6 +195,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             flexDirection: 'column',
           }}
         >
+          {product.appliedPriceRules && product.appliedPriceRules.length > 0 && (
+            <Tooltip 
+              title={
+                product.appliedPriceRules[0]?.effects?.percentOff 
+                  ? `${t('badges.hasOffer', 'عرض')} ${product.appliedPriceRules[0].effects.percentOff}%` 
+                  : t('badges.hasOffer', 'يحتوي على عرض')
+              }
+            >
+              <Box
+                sx={{
+                  bgcolor: 'error.main',
+                  borderRadius: '50%',
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                }}
+              >
+                <LocalOffer sx={{ fontSize: 18, color: 'white' }} />
+              </Box>
+            </Tooltip>
+          )}
           {product.isFeatured && (
             <Tooltip title={t('badges.featured')}>
               <Box
@@ -355,7 +380,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             size="small"
           />
           <Typography variant="caption" color="text.secondary">
-            {formatDate(product.createdAt)}
+            {formatDate(product.createdAt || product.updatedAt)}
           </Typography>
         </Box>
       </CardContent>
