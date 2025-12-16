@@ -49,6 +49,8 @@ import { GlobalExceptionFilter } from './shared/filters/global-exception.filter'
 import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-envelope.interceptor';
 import { SecurityLoggingInterceptor } from './modules/security/interceptors/security-logging.interceptor';
 import { ApiMetricsInterceptor } from './modules/system-monitoring/interceptors/api-metrics.interceptor';
+import { WellKnownController } from './deep-linking/well-known.controller';
+import { ShareProductController } from './deep-linking/share-product.controller';
 
 @Module({
   imports: [
@@ -130,6 +132,7 @@ import { ApiMetricsInterceptor } from './modules/system-monitoring/interceptors/
     // { provide: APP_GUARD, useClass: ThrottlerGuard },
     KeepAliveService,
   ],
+  controllers: [WellKnownController, ShareProductController],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

@@ -1,5 +1,31 @@
 openapi: 3.0.0
 paths:
+  /.well-known/assetlinks.json:
+    get:
+      operationId: getAndroidAssetLinks
+      parameters: []
+      responses:
+        '200':
+          description: ''
+  /.well-known/apple-app-site-association:
+    get:
+      operationId: getIosAppleAppSiteAssociation
+      parameters: []
+      responses:
+        '200':
+          description: ''
+  /p/{id}:
+    get:
+      operationId: redirectUser
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
   /api/v1/auth/send-otp:
     post:
       operationId: sendOtp
