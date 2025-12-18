@@ -1,0 +1,6 @@
+# This file ensures the ssl directory is tracked by git
+# Place your SSL certificates here:
+# - allawzi.net.crt
+# - allawzi.net.key
+# - api.allawzi.net.crt
+# - api.allawzi.net.key
