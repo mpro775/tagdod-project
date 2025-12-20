@@ -28,7 +28,7 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https: blob:",
-      "connect-src 'self' https://api.tagadodo.com wss://api.tagadodo.com",
+      "connect-src 'self' https://api.tagadodo.com wss://api.tagadodo.com https://api.allawzi.net wss://api.allawzi.net",
       "frame-src 'none'",
       "object-src 'none'",
       "base-uri 'self'",
