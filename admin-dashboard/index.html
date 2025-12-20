@@ -1,22 +1,30 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/src/assets/images/icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>تجدٌد - Tagadodo</title>
-    
-    <!-- Fonts are loaded locally from assets/fonts/ -->
-    
-    <!-- Initial font style to prevent FOUT (Flash of Unstyled Text) -->
-    <style>
-      html, body {
-        font-family: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/src/assets/images/icon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' http: https: data: blob: 'unsafe-inline';
+    connect-src 'self' http: https: ws: wss: https://api.allawzi.net wss://api.allawzi.net;
+">
+  <title>تجدٌد - Tagadodo</title>
+
+  <!-- Fonts are loaded locally from assets/fonts/ -->
+
+  <!-- Initial font style to prevent FOUT (Flash of Unstyled Text) -->
+  <style>
+    html,
+    body {
+      font-family: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
