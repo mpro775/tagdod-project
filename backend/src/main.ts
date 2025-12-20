@@ -55,8 +55,26 @@ async function bootstrap() {
     ],
   });
   // Security and performance middleware
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-  app.use(compression());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'", 'http:', 'https:', 'data:', 'blob:', "'unsafe-inline'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // قد تحتاجه أحياناً لبعض المكتبات
+          connectSrc: [
+            "'self'",
+            'http:',
+            'https:',
+            'ws:',
+            'wss:', // ضروري للويب سوكت
+            'https://api.allawzi.net',
+            'wss://api.allawzi.net',
+          ],
+        },
+      },
+    }),
+  ); app.use(compression());
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -77,12 +95,13 @@ async function bootstrap() {
   const corsOrigins = allowed.length
     ? allowed
     : [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:5173',
-        'http://localhost:8080',
-        /^https?:\/\/localhost(:\d+)?$/,
-      ];
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173',
+      'http://localhost:8080',
+      /^https?:\/\/localhost(:\d+)?$/,
+      'https://api.allawzi.net', // تأكد من إضافته هنا أيضاً
+    ];
 
   app.enableCors({
     origin: corsOrigins,
