@@ -12,42 +12,16 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
   }
 
   use(req: Request, res: Response, next: NextFunction) {
-    const isDevelopment = this.nodeEnv === 'development';
-
     // Security Headers
+    // ملاحظة: helmet يقوم بوضع معظم هذه الأشياء، لكن لا ضرر من وجودها هنا للتأكيد باستثناء CSP
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 
-    // Content Security Policy (CSP)
-    const cspDirectives = [
-      "default-src 'self'",
-      "script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net https://unpkg.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
-      "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: https: blob:",
-      "connect-src 'self' https://api.tagadodo.com wss://api.tagadodo.com https://api.allawzi.net wss://api.allawzi.net",
-      "frame-src 'none'",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-      "upgrade-insecure-requests",
-    ];
-
-    if (isDevelopment) {
-      // Relax CSP for development
-      cspDirectives.push(
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://localhost:*",
-      );
-      cspDirectives.push(
-        "connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:*",
-      );
-    }
-
-    res.setHeader('Content-Security-Policy', cspDirectives.join('; '));
+    // ❌❌❌ تم حذف قسم Content Security Policy (CSP) من هنا ❌❌❌
+    // السبب: أنت تستخدم helmet في main.ts وهذا يسبب تضارباً وأخطاء في الصياغة
 
     // HTTPS Only Headers (when HTTPS is enabled)
     if (req.secure || req.get('x-forwarded-proto') === 'https') {
@@ -65,11 +39,10 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
 
     // Request ID for tracing
     const requestId = req.headers['x-request-id'] || this.generateRequestId();
-    res.setHeader('X-Request-ID', requestId);
+    res.setHeader('X-Request-ID', (Array.isArray(requestId) ? requestId[0] : requestId) || this.generateRequestId());
 
     // Log security headers application (occasionally)
     if (Math.random() < 0.001) {
-      // 0.1% of requests
       this.logger.debug(`Security headers applied for ${req.method} ${req.path}`);
     }
 
