@@ -39,6 +39,7 @@ import { BiometricRegisterChallengeDto } from './dto/biometric-register-challeng
 import { BiometricRegisterVerifyDto } from './dto/biometric-register-verify.dto';
 import { BiometricLoginChallengeDto } from './dto/biometric-login-challenge.dto';
 import { BiometricLoginVerifyDto } from './dto/biometric-login-verify.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 import { UserSignupDto } from './dto/user-signup.dto';
 import { CheckPhoneDto } from './dto/check-phone.dto';
@@ -97,7 +98,7 @@ export class AuthController {
     private engineerProfileService: EngineerProfileService,
     @Inject(forwardRef(() => NotificationService))
     private notificationService?: NotificationService,
-  ) {}
+  ) { }
 
   /**
    * تحديد الأدوار بناءً على capabilityRequest أو roles المرسلة
@@ -705,6 +706,114 @@ export class AuthController {
       .catch((err) => this.logger.error('Failed to log auth event', err));
 
     return { updated: true };
+  }
+
+  @Post('refresh')
+  @ApiOperation({
+    summary: 'تجديد Access Token',
+    description: 'يجدد الـ Access Token باستخدام الـ Refresh Token الصالح',
+  })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiOkResponse({
+    description: 'تم تجديد الـ Token بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        tokens: {
+          type: 'object',
+          properties: {
+            access: {
+              type: 'string',
+              description: 'Access Token الجديد',
+              example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+            },
+            refresh: {
+              type: 'string',
+              description: 'Refresh Token الجديد',
+              example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'توكن التجديد غير صالح أو منتهي الصلاحية',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 401 },
+        message: { type: 'string', example: 'توكن التجديد غير صالح' },
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
+  })
+  async refresh(@Body() dto: RefreshTokenDto) {
+    this.logger.log('Refresh token request received');
+
+    try {
+      // التحقق من صحة الـ refresh token
+      const decoded = this.tokens.verifyRefresh(dto.refreshToken) as {
+        sub: string;
+        phone: string;
+        isAdmin: boolean;
+        roles?: string[];
+        permissions?: string[];
+      };
+
+      this.logger.log(`Refresh token verified for user: ${decoded.sub}`);
+
+      // جلب المستخدم من قاعدة البيانات
+      const user = await this.userModel.findById(decoded.sub);
+
+      if (!user) {
+        this.logger.warn(`Refresh failed - user not found: ${decoded.sub}`);
+        throw new UserNotFoundException({ userId: decoded.sub });
+      }
+
+      // التأكد من أن المستخدم نشط
+      if (user.status !== UserStatus.ACTIVE) {
+        this.logger.warn(
+          `Refresh failed - user not active: ${decoded.sub} (status: ${user.status})`,
+        );
+        throw new AuthException(ErrorCode.AUTH_USER_NOT_ACTIVE, {
+          userId: decoded.sub,
+          status: user.status,
+        });
+      }
+
+      // إصدار access token و refresh token جديدين
+      const payload = {
+        sub: String(user._id),
+        phone: user.phone,
+        isAdmin:
+          Array.isArray(user.roles) &&
+          (user.roles.includes(UserRole.ADMIN) || user.roles.includes(UserRole.SUPER_ADMIN)),
+        roles: user.roles || [],
+        permissions: user.permissions || [],
+        preferredCurrency: user.preferredCurrency || 'USD',
+      };
+
+      const access = this.tokens.signAccess(payload);
+      const refresh = this.tokens.signRefresh(payload);
+
+      this.logger.log(`New tokens generated for user: ${decoded.sub}`);
+
+      return {
+        tokens: { access, refresh },
+      };
+    } catch (error) {
+      // إذا فشل التحقق من التوكن أو حدث خطأ آخر
+      if (error instanceof Error && error.name === 'JsonWebTokenError') {
+        this.logger.warn('Invalid refresh token');
+        throw new AuthException(ErrorCode.AUTH_INVALID_TOKEN, { error: error.message });
+      } else if (error instanceof Error && error.name === 'TokenExpiredError') {
+        this.logger.warn('Refresh token expired');
+        throw new AuthException(ErrorCode.AUTH_TOKEN_EXPIRED, { error: error.message });
+      }
+      // إعادة رمي الاستثناءات الأخرى (مثل UserNotFoundException)
+      throw error;
+    }
   }
 
   @ApiBearerAuth()
