@@ -45,6 +45,10 @@ export const NOTIFICATION_TYPE_ROLES: Record<NotificationType, UserRole[]> = {
   [NotificationType.PASSWORD_CHANGED]: [UserRole.USER],
   [NotificationType.LOGIN_ATTEMPT]: [UserRole.USER],
   [NotificationType.NEW_USER_REGISTERED]: [UserRole.ADMIN, UserRole.SUPER_ADMIN],
+  
+  // ===== Verification Notifications - للمهندسين والتجار =====
+  [NotificationType.VERIFICATION_APPROVED]: [UserRole.ENGINEER, UserRole.MERCHANT],
+  [NotificationType.VERIFICATION_REJECTED]: [UserRole.ENGINEER, UserRole.MERCHANT],
 
   // ===== Support Notifications - للمستخدمين والإداريين =====
   [NotificationType.TICKET_CREATED]: [UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN],
@@ -122,6 +126,10 @@ export const NOTIFICATION_TYPE_CHANNELS: Record<NotificationType, NotificationCh
   [NotificationType.PASSWORD_CHANGED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
   [NotificationType.LOGIN_ATTEMPT]: [NotificationChannel.IN_APP],
   [NotificationType.NEW_USER_REGISTERED]: [NotificationChannel.DASHBOARD],
+  
+  // ===== Verification Notifications =====
+  [NotificationType.VERIFICATION_APPROVED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+  [NotificationType.VERIFICATION_REJECTED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
 
   // ===== Support Notifications =====
   [NotificationType.TICKET_CREATED]: [
@@ -204,6 +212,10 @@ export const NOTIFICATION_TYPE_DEFAULT_CHANNEL: Record<NotificationType, Notific
   [NotificationType.PASSWORD_CHANGED]: NotificationChannel.IN_APP,
   [NotificationType.LOGIN_ATTEMPT]: NotificationChannel.IN_APP,
   [NotificationType.NEW_USER_REGISTERED]: NotificationChannel.DASHBOARD,
+  
+  // ===== Verification Notifications =====
+  [NotificationType.VERIFICATION_APPROVED]: NotificationChannel.IN_APP,
+  [NotificationType.VERIFICATION_REJECTED]: NotificationChannel.IN_APP,
 
   // ===== Support Notifications =====
   [NotificationType.TICKET_CREATED]: NotificationChannel.IN_APP,

@@ -1865,7 +1865,12 @@ export class CartService {
         : Promise.resolve(undefined),
     ]);
 
-    if (caps && caps.merchant_capable && caps.merchant_discount_percent > 0) {
+    if (
+      caps &&
+      caps.merchant_capable &&
+      caps.merchant_status === 'approved' &&
+      caps.merchant_discount_percent > 0
+    ) {
       merchantDiscountPercent = caps.merchant_discount_percent;
     }
 

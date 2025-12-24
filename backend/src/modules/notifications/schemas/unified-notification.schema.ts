@@ -286,6 +286,8 @@ UnifiedNotificationSchema.pre('save', function (next) {
       [NotificationType.PASSWORD_CHANGED]: NotificationCategory.ACCOUNT,
       [NotificationType.LOGIN_ATTEMPT]: NotificationCategory.ACCOUNT,
       [NotificationType.NEW_USER_REGISTERED]: NotificationCategory.ACCOUNT,
+      [NotificationType.VERIFICATION_APPROVED]: NotificationCategory.ACCOUNT,
+      [NotificationType.VERIFICATION_REJECTED]: NotificationCategory.ACCOUNT,
       [NotificationType.TICKET_CREATED]: NotificationCategory.SUPPORT,
       [NotificationType.TICKET_UPDATED]: NotificationCategory.SUPPORT,
       [NotificationType.TICKET_RESOLVED]: NotificationCategory.SUPPORT,

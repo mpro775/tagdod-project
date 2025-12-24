@@ -265,6 +265,55 @@ paths:
           description: ''
       tags:
         - المصادقة
+  /api/v1/auth/refresh:
+    post:
+      operationId: refresh
+      summary: تجديد Access Token
+      description: يجدد الـ Access Token باستخدام الـ Refresh Token الصالح
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenDto'
+      responses:
+        '200':
+          description: تم تجديد الـ Token بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokens:
+                    type: object
+                    properties:
+                      access:
+                        type: string
+                        description: Access Token الجديد
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      refresh:
+                        type: string
+                        description: Refresh Token الجديد
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: توكن التجديد غير صالح أو منتهي الصلاحية
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 401
+                  message:
+                    type: string
+                    example: توكن التجديد غير صالح
+                  error:
+                    type: string
+                    example: Unauthorized
+      tags:
+        - المصادقة
   /api/v1/auth/me:
     get:
       operationId: me
@@ -3821,6 +3870,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -3883,6 +3934,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -3951,6 +4004,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5124,6 +5179,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5225,6 +5282,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5339,6 +5398,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5440,6 +5501,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5554,6 +5617,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5655,6 +5720,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5769,6 +5836,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5870,6 +5939,8 @@ paths:
               - PASSWORD_CHANGED
               - LOGIN_ATTEMPT
               - NEW_USER_REGISTERED
+              - VERIFICATION_APPROVED
+              - VERIFICATION_REJECTED
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -22194,6 +22265,15 @@ components:
         - phone
         - code
         - newPassword
+    RefreshTokenDto:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          description: رمز التجديد (Refresh Token)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      required:
+        - refreshToken
     UpdateProfileDto:
       type: object
       properties:

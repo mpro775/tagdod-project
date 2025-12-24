@@ -197,7 +197,7 @@ export class User {
   rejectEngineer(): void {
     this.engineer_capable = false;
     this.engineer_status = CapabilityStatus.REJECTED;
-    this.roles = this.roles.filter((role) => role !== UserRole.ENGINEER);
+    // لا نحذف الدور - المستخدم يبقى مهندساً لكن بحالة REJECTED
   }
 
   approveMerchant(discountPercent: number = 0): void {
@@ -213,7 +213,7 @@ export class User {
     this.merchant_capable = false;
     this.merchant_status = CapabilityStatus.REJECTED;
     this.merchant_discount_percent = 0;
-    this.roles = this.roles.filter((role) => role !== UserRole.MERCHANT);
+    // لا نحذف الدور - المستخدم يبقى تاجراً لكن بحالة REJECTED
   }
 
   approveAdmin(): void {

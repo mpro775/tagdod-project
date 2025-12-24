@@ -395,6 +395,32 @@
           }
         },
         {
+          "name": "تجديد Access Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "يجدد الـ Access Token باستخدام الـ Refresh Token الصالح"
+          }
+        },
+        {
           "name": "الحصول على ملف المستخدم الحالي",
           "request": {
             "method": "GET",

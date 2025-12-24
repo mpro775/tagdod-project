@@ -714,7 +714,7 @@ export class UsersAdminController {
 
     // تحديث jobTitle في بروفايل المهندس
     if (dto.jobTitle !== undefined && user.engineer_capable) {
-      let profile = await this.engineerProfileModel.findOne({ userId: user._id });
+      const profile = await this.engineerProfileModel.findOne({ userId: user._id });
       if (profile) {
         profile.jobTitle = dto.jobTitle;
         await profile.save();
@@ -737,7 +737,7 @@ export class UsersAdminController {
     if (dto.roles !== undefined) user.roles = dto.roles;
     if (dto.permissions !== undefined) {
       // التأكد من وجود admin.access للأدمن
-      let permissions = Array.isArray(dto.permissions) ? [...dto.permissions] : [];
+      const permissions = Array.isArray(dto.permissions) ? [...dto.permissions] : [];
       const mainRole = dto.roles?.[0] || user.roles?.[0];
 
       if (mainRole === UserRole.ADMIN || mainRole === UserRole.SUPER_ADMIN) {
@@ -1385,6 +1385,28 @@ export class UsersAdminController {
       })
       .catch((err) => this.logger?.error('Failed to log capability decision', err));
 
+    // إرسال إشعار للمستخدم بالموافقة
+    if (this.notificationService) {
+      const typeLabel = capabilityType === 'engineer' ? 'مهندس' : 'تاجر';
+      this.notificationService
+        .createNotification({
+          recipientId: userId,
+          type: NotificationType.VERIFICATION_APPROVED,
+          title: 'تم قبول طلب التوثيق',
+          message: `تم قبول طلب توثيقك كـ ${typeLabel}. يمكنك الآن الاستفادة من جميع المميزات.`,
+          messageEn: `Your verification request as ${capabilityType} has been approved. You can now enjoy all features.`,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+          data: {
+            verificationType: capabilityType,
+          },
+          isSystemGenerated: true,
+        })
+        .catch((err) =>
+          this.logger?.error('Failed to send verification approval notification', err),
+        );
+    }
+
     return {
       success: true,
       message: 'تمت الموافقة على التحقق بنجاح',
@@ -1440,7 +1462,7 @@ export class UsersAdminController {
       oldValues.engineer_status = user.engineer_status;
       user.engineer_status = CapabilityStatus.REJECTED;
       newValues.engineer_status = user.engineer_status;
-      user.roles = user.roles.filter((role) => role !== UserRole.ENGINEER);
+      // لا نحذف الدور - المستخدم يبقى مهندساً لكن بحالة REJECTED
       // مسح ملف السيرة الذاتية من بروفايل المهندس
       const profile = await this.engineerProfileModel.findOne({ userId: user._id });
       if (profile) {
@@ -1453,7 +1475,7 @@ export class UsersAdminController {
       oldValues.merchant_status = user.merchant_status;
       user.merchant_status = CapabilityStatus.REJECTED;
       newValues.merchant_status = user.merchant_status;
-      user.roles = user.roles.filter((role) => role !== UserRole.MERCHANT);
+      // لا نحذف الدور - المستخدم يبقى تاجراً لكن بحالة REJECTED
       // مسح صورة المحل واسم المحل
       user.storePhotoUrl = undefined;
       user.storeName = undefined;
@@ -1496,6 +1518,32 @@ export class UsersAdminController {
       })
       .catch((err) => this.logger?.error('Failed to log capability decision', err));
 
+    // إرسال إشعار للمستخدم بالرفض
+    if (this.notificationService) {
+      const typeLabel = capabilityType === 'engineer' ? 'مهندس' : 'تاجر';
+      const reasonText = dto.reason
+        ? `السبب: ${dto.reason}`
+        : 'يرجى مراجعة الوثائق المرفوعة وإعادة المحاولة.';
+      this.notificationService
+        .createNotification({
+          recipientId: userId,
+          type: NotificationType.VERIFICATION_REJECTED,
+          title: 'تم رفض طلب التوثيق',
+          message: `تم رفض طلب توثيقك كـ ${typeLabel}. ${reasonText}`,
+          messageEn: `Your verification request as ${capabilityType} has been rejected. ${dto.reason ? `Reason: ${dto.reason}` : 'Please review the uploaded documents and try again.'}`,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+          data: {
+            verificationType: capabilityType,
+            reason: dto.reason,
+          },
+          isSystemGenerated: true,
+        })
+        .catch((err) =>
+          this.logger?.error('Failed to send verification rejection notification', err),
+        );
+    }
+
     return {
       success: true,
       message: 'تم رفض التحقق بنجاح',
@@ -1532,17 +1580,19 @@ export class UsersAdminController {
       if (!user.roles.includes(UserRole.ENGINEER)) {
         user.roles.push(UserRole.ENGINEER);
       }
-    } else if (dto.status === CapabilityStatus.REJECTED || dto.status === CapabilityStatus.NONE) {
+    } else if (dto.status === CapabilityStatus.REJECTED) {
       user.engineer_capable = false;
-      user.roles = user.roles.filter((role) => role !== UserRole.ENGINEER);
+      // لا نحذف الدور - المستخدم يبقى مهندساً لكن بحالة REJECTED
       // مسح الملفات عند الرفض من بروفايل المهندس
-      if (dto.status === CapabilityStatus.REJECTED) {
-        const profile = await this.engineerProfileModel.findOne({ userId: user._id });
-        if (profile) {
-          profile.cvFileUrl = undefined;
-          await profile.save();
-        }
+      const profile = await this.engineerProfileModel.findOne({ userId: user._id });
+      if (profile) {
+        profile.cvFileUrl = undefined;
+        await profile.save();
       }
+    } else if (dto.status === CapabilityStatus.NONE) {
+      user.engineer_capable = false;
+      // في حالة NONE (لم يرفع وثائق)، يمكن حذف الدور
+      user.roles = user.roles.filter((role) => role !== UserRole.ENGINEER);
     } else if (
       dto.status === CapabilityStatus.UNVERIFIED ||
       dto.status === CapabilityStatus.PENDING
@@ -1607,14 +1657,17 @@ export class UsersAdminController {
       if (!user.roles.includes(UserRole.MERCHANT)) {
         user.roles.push(UserRole.MERCHANT);
       }
-    } else if (dto.status === CapabilityStatus.REJECTED || dto.status === CapabilityStatus.NONE) {
+    } else if (dto.status === CapabilityStatus.REJECTED) {
       user.merchant_capable = false;
-      user.roles = user.roles.filter((role) => role !== UserRole.MERCHANT);
+      // لا نحذف الدور - المستخدم يبقى تاجراً لكن بحالة REJECTED
       // مسح الملفات عند الرفض
-      if (dto.status === CapabilityStatus.REJECTED) {
-        user.storePhotoUrl = undefined;
-        user.storeName = undefined;
-      }
+      user.storePhotoUrl = undefined;
+      user.storeName = undefined;
+      user.merchant_discount_percent = 0;
+    } else if (dto.status === CapabilityStatus.NONE) {
+      user.merchant_capable = false;
+      // في حالة NONE (لم يرفع وثائق)، يمكن حذف الدور
+      user.roles = user.roles.filter((role) => role !== UserRole.MERCHANT);
       user.merchant_discount_percent = 0;
     } else if (
       dto.status === CapabilityStatus.UNVERIFIED ||

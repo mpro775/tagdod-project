@@ -181,7 +181,9 @@ export class ServicesService {
   /**
    * جلب جميع أرقام المهندسين من قاعدة البيانات
    */
-  private async getAllEngineersPhones(): Promise<Array<{ phone: string; normalizedPhone: string }>> {
+  private async getAllEngineersPhones(): Promise<
+    Array<{ phone: string; normalizedPhone: string }>
+  > {
     try {
       const engineers = await this.userModel
         .find({
@@ -224,7 +226,9 @@ export class ServicesService {
     try {
       // التحقق من تفعيل إرسال SMS للمهندسين من متغير البيئة
       if (!this.enableSMSToEngineers) {
-        this.logger.debug('SMS to engineers is disabled via ENABLE_SMS_TO_ENGINEERS environment variable. Skipping SMS notification.');
+        this.logger.debug(
+          'SMS to engineers is disabled via ENABLE_SMS_TO_ENGINEERS environment variable. Skipping SMS notification.',
+        );
         return;
       }
 
@@ -247,7 +251,9 @@ export class ServicesService {
         message,
       }));
 
-      this.logger.log(`Sending SMS to ${smsNotifications.length} engineers for request ${requestId}`);
+      this.logger.log(
+        `Sending SMS to ${smsNotifications.length} engineers for request ${requestId}`,
+      );
 
       const result = await this.smsAdapter.sendBulkSMS(smsNotifications);
 
@@ -354,7 +360,7 @@ export class ServicesService {
     );
 
     // إرسال SMS لجميع المهندسين - معطل مؤقتاً للتطوير
-    // await this.sendSMSToAllEngineers(String(doc._id), dto.title);
+    await this.sendSMSToAllEngineers(String(doc._id), dto.title);
 
     // تحديث استخدام العنوان
     await this.addressesService.markAsUsed(dto.addressId, userId);
@@ -502,12 +508,12 @@ export class ServicesService {
     }>
   > {
     const userObjectId = new Types.ObjectId(userId);
-    
+
     // بناء query للفلترة حسب الحالة
     // إذا تم تمرير status، نفلتر حسب الحالات المحددة + CANCELLED دائماً
     // إذا لم يتم تمرير status، نرجع جميع الطلبات (بما فيها CANCELLED)
     let statusFilter: string[] | undefined;
-    
+
     if (status) {
       const statuses = Array.isArray(status) ? status : [status];
       // إضافة CANCELLED دائماً إذا لم تكن موجودة
@@ -517,12 +523,12 @@ export class ServicesService {
         statusFilter = statuses;
       }
     }
-    
+
     const query: any = { userId: userObjectId };
     if (statusFilter) {
       query.status = { $in: statusFilter };
     }
-    
+
     const docs = (await this.requests
       .find(query)
       .populate('engineerId', 'firstName lastName phone')
@@ -1306,8 +1312,12 @@ export class ServicesService {
     // إذا كانت الفلترة تشمل فقط OPEN و OFFERS_COLLECTING، نضيف شرط engineerId: null
     // إذا كانت الفلترة تشمل ASSIGNED أو COMPLETED أو RATED فقط، نضيف شرط engineerId: engineerUserId
     // إذا كانت الفلترة تشمل كلا النوعين، نستخدم $or للجمع بين الحالتين
-    const hasAvailableStatuses = statusFilter.some((s) => ['OPEN', 'OFFERS_COLLECTING'].includes(s));
-    const hasAssignedStatuses = statusFilter.some((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s));
+    const hasAvailableStatuses = statusFilter.some((s) =>
+      ['OPEN', 'OFFERS_COLLECTING'].includes(s),
+    );
+    const hasAssignedStatuses = statusFilter.some((s) =>
+      ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s),
+    );
 
     if (hasAvailableStatuses && !hasAssignedStatuses) {
       // فقط حالات متاحة
@@ -1326,7 +1336,9 @@ export class ServicesService {
         },
         {
           engineerId: new Types.ObjectId(engineerUserId),
-          status: { $in: statusFilter.filter((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s)) },
+          status: {
+            $in: statusFilter.filter((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s)),
+          },
         },
       ];
     } else {
@@ -1363,8 +1375,12 @@ export class ServicesService {
     // إذا كانت الفلترة تشمل فقط OPEN و OFFERS_COLLECTING، نضيف شرط engineerId: null
     // إذا كانت الفلترة تشمل ASSIGNED أو COMPLETED أو RATED فقط، نضيف شرط engineerId: engineerUserId
     // إذا كانت الفلترة تشمل كلا النوعين، نستخدم $or للجمع بين الحالتين
-    const hasAvailableStatuses = statusFilter.some((s) => ['OPEN', 'OFFERS_COLLECTING'].includes(s));
-    const hasAssignedStatuses = statusFilter.some((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s));
+    const hasAvailableStatuses = statusFilter.some((s) =>
+      ['OPEN', 'OFFERS_COLLECTING'].includes(s),
+    );
+    const hasAssignedStatuses = statusFilter.some((s) =>
+      ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s),
+    );
 
     if (hasAvailableStatuses && !hasAssignedStatuses) {
       // فقط حالات متاحة
@@ -1375,10 +1391,15 @@ export class ServicesService {
     } else if (hasAvailableStatuses && hasAssignedStatuses) {
       // كلا النوعين - نستخدم $or
       query.$or = [
-        { engineerId: null, status: { $in: statusFilter.filter((s) => ['OPEN', 'OFFERS_COLLECTING'].includes(s)) } },
+        {
+          engineerId: null,
+          status: { $in: statusFilter.filter((s) => ['OPEN', 'OFFERS_COLLECTING'].includes(s)) },
+        },
         {
           engineerId: new Types.ObjectId(engineerUserId),
-          status: { $in: statusFilter.filter((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s)) },
+          status: {
+            $in: statusFilter.filter((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s)),
+          },
         },
       ];
       // نزيل status من query الرئيسي لأننا استخدمناها في $or
@@ -1408,7 +1429,9 @@ export class ServicesService {
     // إذا كانت الفلترة تشمل ASSIGNED أو COMPLETED أو RATED، نضيف شرط engineerId: engineerUserId
     // لكن في listAllAvailableRequests، لا نعرف engineerUserId، لذا نزيل شرط engineerId فقط إذا كانت الفلترة تشمل حالات متاحة
     const hasOnlyAvailableStatuses =
-      statusFilter.length === 2 && statusFilter.includes('OPEN') && statusFilter.includes('OFFERS_COLLECTING');
+      statusFilter.length === 2 &&
+      statusFilter.includes('OPEN') &&
+      statusFilter.includes('OFFERS_COLLECTING');
 
     if (hasOnlyAvailableStatuses) {
       query.engineerId = null;
@@ -1508,9 +1531,9 @@ export class ServicesService {
 
     // التحقق من صلاحية المهندس
     if (!engineer.engineer_capable) {
-      return { 
-        error: 'NOT_ENGINEER', 
-        message: 'يجب تفعيل صلاحية المهندس أولاً' 
+      return {
+        error: 'NOT_ENGINEER',
+        message: 'يجب تفعيل صلاحية المهندس أولاً',
       };
     }
 
@@ -1518,24 +1541,24 @@ export class ServicesService {
     if (engineer.engineer_status !== CapabilityStatus.APPROVED) {
       switch (engineer.engineer_status) {
         case CapabilityStatus.UNVERIFIED:
-          return { 
-            error: 'ENGINEER_UNVERIFIED', 
-            message: 'حسابك غير موثق. يرجى رفع وثائق التحقق أولاً' 
+          return {
+            error: 'ENGINEER_UNVERIFIED',
+            message: 'حسابك غير موثق. يرجى رفع وثائق التحقق أولاً',
           };
         case CapabilityStatus.PENDING:
-          return { 
-            error: 'ENGINEER_PENDING', 
-            message: 'طلب التحقق قيد المراجعة. يرجى الانتظار حتى يتم الموافقة على حسابك' 
+          return {
+            error: 'ENGINEER_PENDING',
+            message: 'طلب التحقق قيد المراجعة. يرجى الانتظار حتى يتم الموافقة على حسابك',
           };
         case CapabilityStatus.REJECTED:
-          return { 
-            error: 'ENGINEER_REJECTED', 
-            message: 'تم رفض طلب التحقق الخاص بك. يرجى التواصل مع الدعم' 
+          return {
+            error: 'ENGINEER_REJECTED',
+            message: 'تم رفض طلب التحقق الخاص بك. يرجى التواصل مع الدعم',
           };
         default:
-          return { 
-            error: 'ENGINEER_NOT_APPROVED', 
-            message: 'يجب تفعيل صلاحية المهندس أولاً' 
+          return {
+            error: 'ENGINEER_NOT_APPROVED',
+            message: 'يجب تفعيل صلاحية المهندس أولاً',
           };
       }
     }
@@ -1547,7 +1570,11 @@ export class ServicesService {
     });
 
     if (existingOffer) {
-      return { error: 'OFFER_ALREADY_EXISTS', message: 'لا يمكنك تقديم أكثر من عرض واحد لنفس الطلب. يمكنك تعديل عرضك الموجود بدلاً من ذلك.' };
+      return {
+        error: 'OFFER_ALREADY_EXISTS',
+        message:
+          'لا يمكنك تقديم أكثر من عرض واحد لنفس الطلب. يمكنك تعديل عرضك الموجود بدلاً من ذلك.',
+      };
     }
 
     // حساب المسافة بين المهندس والطلب
@@ -2509,7 +2536,7 @@ export class ServicesService {
     const couponsMap = new Map<string, { totalCoupons: number; activeCoupons: number }>();
     // جلب الرصيد من بروفايل المهندس
     const walletBalanceMap = new Map<string, number>();
-    
+
     if (engineerIds.length > 0) {
       // تحويل engineerIds إلى ObjectId إذا لزم الأمر
       const engineerObjectIds = engineerIds.map((id) => {
@@ -2519,7 +2546,7 @@ export class ServicesService {
         const idString = typeof id === 'string' ? id : String(id);
         return new Types.ObjectId(idString);
       });
-      
+
       // جلب الكوبونات
       const couponsStats = await this.couponModel.aggregate([
         {
@@ -2562,7 +2589,7 @@ export class ServicesService {
     // دمج البيانات
     const items = engineers.map((engineer) => {
       const engineerIdStr = engineer._id.toString();
-      
+
       const stats = statsMap.get(engineerIdStr) || {
         totalRequests: 0,
         completedRequests: 0,
