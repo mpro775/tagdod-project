@@ -47,6 +47,7 @@ import {
   NotificationType,
   NotificationChannel,
   NotificationPriority,
+  NotificationCategory,
 } from '../../notifications/enums/notification.enums';
 
 @ApiTags('إدارة-المستخدمين')
@@ -1388,8 +1389,8 @@ export class UsersAdminController {
     // إرسال إشعار للمستخدم بالموافقة
     if (this.notificationService) {
       const typeLabel = capabilityType === 'engineer' ? 'مهندس' : 'تاجر';
-      this.notificationService
-        .createNotification({
+      try {
+        await this.notificationService.createNotification({
           recipientId: userId,
           type: NotificationType.VERIFICATION_APPROVED,
           title: 'تم قبول طلب التوثيق',
@@ -1397,14 +1398,16 @@ export class UsersAdminController {
           messageEn: `Your verification request as ${capabilityType} has been approved. You can now enjoy all features.`,
           channel: NotificationChannel.IN_APP,
           priority: NotificationPriority.HIGH,
+          category: NotificationCategory.ACCOUNT,
           data: {
             verificationType: capabilityType,
           },
           isSystemGenerated: true,
-        })
-        .catch((err) =>
-          this.logger?.error('Failed to send verification approval notification', err),
-        );
+        });
+        this.logger.log(`Verification approval notification sent to user ${userId}`);
+      } catch (err) {
+        this.logger.error('Failed to send verification approval notification', err);
+      }
     }
 
     return {
@@ -1524,8 +1527,8 @@ export class UsersAdminController {
       const reasonText = dto.reason
         ? `السبب: ${dto.reason}`
         : 'يرجى مراجعة الوثائق المرفوعة وإعادة المحاولة.';
-      this.notificationService
-        .createNotification({
+      try {
+        await this.notificationService.createNotification({
           recipientId: userId,
           type: NotificationType.VERIFICATION_REJECTED,
           title: 'تم رفض طلب التوثيق',
@@ -1533,15 +1536,17 @@ export class UsersAdminController {
           messageEn: `Your verification request as ${capabilityType} has been rejected. ${dto.reason ? `Reason: ${dto.reason}` : 'Please review the uploaded documents and try again.'}`,
           channel: NotificationChannel.IN_APP,
           priority: NotificationPriority.HIGH,
+          category: NotificationCategory.ACCOUNT,
           data: {
             verificationType: capabilityType,
             reason: dto.reason,
           },
           isSystemGenerated: true,
-        })
-        .catch((err) =>
-          this.logger?.error('Failed to send verification rejection notification', err),
-        );
+        });
+        this.logger.log(`Verification rejection notification sent to user ${userId}`);
+      } catch (err) {
+        this.logger.error('Failed to send verification rejection notification', err);
+      }
     }
 
     return {
