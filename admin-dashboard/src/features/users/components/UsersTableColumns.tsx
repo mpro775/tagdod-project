@@ -143,10 +143,8 @@ export const useUsersTableColumns = ({
           if (!caps) return '-';
 
           const badges = [];
-          if (caps.engineer_capable)
-            badges.push(t('users:capabilities.engineer', 'مهندس'));
-          if (caps.merchant_capable)
-            badges.push(t('users:capabilities.merchant', 'تاجر'));
+          if (caps.engineer_capable) badges.push(t('users:capabilities.engineer', 'مهندس'));
+          if (caps.merchant_capable) badges.push(t('users:capabilities.merchant', 'تاجر'));
           if (badges.length === 0) badges.push(t('users:capabilities.customer', 'عميل'));
 
           return (
@@ -229,9 +227,10 @@ export const useUsersTableColumns = ({
                     sx={{
                       p: { xs: 0.5, sm: 0.75 },
                       '&:hover': {
-                        backgroundColor: theme.palette.mode === 'dark'
-                          ? 'rgba(144, 202, 249, 0.16)'
-                          : 'rgba(25, 118, 210, 0.08)',
+                        backgroundColor:
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(144, 202, 249, 0.16)'
+                            : 'rgba(25, 118, 210, 0.08)',
                       },
                     }}
                   >
@@ -265,9 +264,10 @@ export const useUsersTableColumns = ({
                   sx={{
                     p: { xs: 0.5, sm: 0.75 },
                     '&:hover': {
-                      backgroundColor: theme.palette.mode === 'dark'
-                        ? 'rgba(144, 202, 249, 0.16)'
-                        : 'rgba(25, 118, 210, 0.08)',
+                      backgroundColor:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(144, 202, 249, 0.16)'
+                          : 'rgba(25, 118, 210, 0.08)',
                     },
                   }}
                 >
@@ -306,9 +306,10 @@ export const useUsersTableColumns = ({
                         backgroundColor: 'success.main',
                       },
                       '& .MuiSwitch-track': {
-                        backgroundColor: theme.palette.mode === 'dark'
-                          ? 'rgba(255, 255, 255, 0.3)'
-                          : 'rgba(0, 0, 0, 0.26)',
+                        backgroundColor:
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(255, 255, 255, 0.3)'
+                            : 'rgba(0, 0, 0, 0.26)',
                       },
                     }}
                   />
@@ -326,9 +327,10 @@ export const useUsersTableColumns = ({
                   sx={{
                     p: { xs: 0.5, sm: 0.75 },
                     '&:hover': {
-                      backgroundColor: theme.palette.mode === 'dark'
-                        ? 'rgba(211, 47, 47, 0.16)'
-                        : 'rgba(211, 47, 47, 0.08)',
+                      backgroundColor:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(211, 47, 47, 0.16)'
+                          : 'rgba(211, 47, 47, 0.08)',
                     },
                   }}
                 >

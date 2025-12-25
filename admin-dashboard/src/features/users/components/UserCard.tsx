@@ -75,8 +75,7 @@ export const UserCard: React.FC<UserCardProps> = ({
   const theme = useTheme();
   const isDeleted = !!user.deletedAt;
   const fullName =
-    `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
-    t('users:card.unknown', 'غير محدد');
+    `${user.firstName || ''} ${user.lastName || ''}`.trim() || t('users:card.unknown', 'غير محدد');
   const primaryRole = getPrimaryRole(user.roles);
 
   const STATUS_LABELS: Record<UserStatus, string> = {
@@ -98,22 +97,14 @@ export const UserCard: React.FC<UserCardProps> = ({
     const icons = [];
     if (user.capabilities?.engineer_capable) {
       icons.push(
-        <EngineeringIcon
-          key="engineer"
-          color="success"
-          sx={{ fontSize: { xs: 16, sm: 20 } }}
-        />
+        <EngineeringIcon key="engineer" color="success" sx={{ fontSize: { xs: 16, sm: 20 } }} />
       );
     }
     if (user.capabilities?.merchant_capable) {
-      icons.push(
-        <StoreIcon key="merchant" color="info" sx={{ fontSize: { xs: 16, sm: 20 } }} />
-      );
+      icons.push(<StoreIcon key="merchant" color="info" sx={{ fontSize: { xs: 16, sm: 20 } }} />);
     }
     if (user.capabilities?.admin_capable) {
-      icons.push(
-        <AdminIcon key="admin" color="warning" sx={{ fontSize: { xs: 16, sm: 20 } }} />
-      );
+      icons.push(<AdminIcon key="admin" color="warning" sx={{ fontSize: { xs: 16, sm: 20 } }} />);
     }
     return icons;
   };
@@ -190,9 +181,12 @@ export const UserCard: React.FC<UserCardProps> = ({
             </Box>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {React.cloneElement(STATUS_ICONS[user.status] as React.ReactElement, {
-              sx: { fontSize: { xs: 20, sm: 24 } },
-            } as any)}
+            {React.cloneElement(
+              STATUS_ICONS[user.status] as React.ReactElement,
+              {
+                sx: { fontSize: { xs: 20, sm: 24 } },
+              } as any
+            )}
           </Box>
         </Box>
 
@@ -233,10 +227,7 @@ export const UserCard: React.FC<UserCardProps> = ({
               {t('users:card.capabilities', 'القدرات:')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <PersonIcon
-                color="primary"
-                sx={{ fontSize: { xs: 16, sm: 20 } }}
-              />
+              <PersonIcon color="primary" sx={{ fontSize: { xs: 16, sm: 20 } }} />
               {getCapabilityIcons()}
             </Box>
           </Box>
@@ -260,21 +251,21 @@ export const UserCard: React.FC<UserCardProps> = ({
           {((user.capabilities?.merchant_discount_percent &&
             user.capabilities.merchant_discount_percent > 0) ||
             (user as any).merchant_discount_percent > 0) && (
-              <Grid component="div" size={{ xs: 12 }}>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  }}
-                >
-                  <strong>{t('users:card.merchantDiscount', 'خصم التاجر:')}</strong>{' '}
-                  {user.capabilities?.merchant_discount_percent ??
-                    (user as any).merchant_discount_percent}
-                  %
-                </Typography>
-              </Grid>
-            )}
+            <Grid component="div" size={{ xs: 12 }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                }}
+              >
+                <strong>{t('users:card.merchantDiscount', 'خصم التاجر:')}</strong>{' '}
+                {user.capabilities?.merchant_discount_percent ??
+                  (user as any).merchant_discount_percent}
+                %
+              </Typography>
+            </Grid>
+          )}
           <Grid component="div" size={{ xs: 12 }}>
             <Typography
               variant="body2"

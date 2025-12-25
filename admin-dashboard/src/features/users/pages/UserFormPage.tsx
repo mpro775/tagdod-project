@@ -14,7 +14,14 @@ import {
   useTheme,
   Chip,
 } from '@mui/material';
-import { Save, Cancel, AdminPanelSettings, LockReset, VerifiedUser, Store } from '@mui/icons-material';
+import {
+  Save,
+  Cancel,
+  AdminPanelSettings,
+  LockReset,
+  VerifiedUser,
+  Store,
+} from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useUser, useCreateUser, useUpdateUser } from '../hooks/useUsers';
 import { UserRole, UserStatus, CapabilityStatus, getPrimaryRole } from '../types/user.types';
@@ -38,7 +45,7 @@ export const UserFormPage: React.FC = () => {
   const { hasPermission } = useAuthStore();
   const isEditMode = id !== 'new' && !!id;
   const [primaryRole, setPrimaryRole] = React.useState<UserRole>(UserRole.USER);
-  
+
   // Dialog states
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [engineerStatusOpen, setEngineerStatusOpen] = useState(false);
@@ -120,22 +127,22 @@ export const UserFormPage: React.FC = () => {
       const currentPermissions = methods.getValues('permissions') || [];
       const adminAccess = 'admin.access';
       const superAdminAccess = 'super_admin.access';
-      
+
       let newPermissions = [...currentPermissions];
-      
+
       // Ensure admin.access is present
       if (!newPermissions.includes(adminAccess)) {
         newPermissions.push(adminAccess);
       }
-      
+
       // Add super_admin.access for SUPER_ADMIN role
       if (role === UserRole.SUPER_ADMIN && !newPermissions.includes(superAdminAccess)) {
         newPermissions.push(superAdminAccess);
       } else if (role === UserRole.ADMIN && newPermissions.includes(superAdminAccess)) {
         // Remove super_admin.access if role changed from SUPER_ADMIN to ADMIN
-        newPermissions = newPermissions.filter(p => p !== superAdminAccess);
+        newPermissions = newPermissions.filter((p) => p !== superAdminAccess);
       }
-      
+
       methods.setValue('permissions', newPermissions);
     }
   };
@@ -165,8 +172,7 @@ export const UserFormPage: React.FC = () => {
         status: user.status || UserStatus.ACTIVE,
         roles: user.roles || [UserRole.USER],
         permissions: user.permissions || [],
-        merchantDiscountPercent:
-          userCapabilities?.merchant_discount_percent ?? undefined,
+        merchantDiscountPercent: userCapabilities?.merchant_discount_percent ?? undefined,
       };
 
       methods.reset(formData);
@@ -178,22 +184,22 @@ export const UserFormPage: React.FC = () => {
     // Ensure admin.access is present for admin roles
     let permissions = data.permissions || [];
     const currentPrimaryRole = data.roles[0];
-    
+
     if (currentPrimaryRole === UserRole.ADMIN || currentPrimaryRole === UserRole.SUPER_ADMIN) {
       const adminAccess = 'admin.access';
       const superAdminAccess = 'super_admin.access';
-      
+
       // Ensure admin.access is present
       if (!permissions.includes(adminAccess)) {
         permissions = [...permissions, adminAccess];
       }
-      
+
       // Add super_admin.access for SUPER_ADMIN role
       if (currentPrimaryRole === UserRole.SUPER_ADMIN && !permissions.includes(superAdminAccess)) {
         permissions = [...permissions, superAdminAccess];
       }
     }
-    
+
     const userData: Record<string, any> = {
       firstName: data.firstName || undefined,
       lastName: data.lastName || undefined,
@@ -216,10 +222,7 @@ export const UserFormPage: React.FC = () => {
       userData.capabilityRequest = 'engineer';
     } else if (currentPrimaryRole === UserRole.MERCHANT) {
       userData.capabilityRequest = 'merchant';
-      if (
-        data.merchantDiscountPercent !== undefined &&
-        data.merchantDiscountPercent !== null
-      ) {
+      if (data.merchantDiscountPercent !== undefined && data.merchantDiscountPercent !== null) {
         // Convert to number if it's a string
         userData.merchantDiscountPercent =
           typeof data.merchantDiscountPercent === 'string'
@@ -331,10 +334,7 @@ export const UserFormPage: React.FC = () => {
           severity="info"
           sx={{
             mb: { xs: 2, sm: 3 },
-            bgcolor:
-              theme.palette.mode === 'dark'
-                ? 'rgba(33, 150, 243, 0.1)'
-                : undefined,
+            bgcolor: theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.1)' : undefined,
           }}
         >
           {t(
@@ -372,9 +372,7 @@ export const UserFormPage: React.FC = () => {
               {primaryRole === UserRole.MERCHANT && <MerchantInfoSection />}
 
               {/* Verification Files Section - Only in Edit Mode when files exist */}
-              {isEditMode && user && (
-                <VerificationFilesSection user={user} />
-              )}
+              {isEditMode && user && <VerificationFilesSection user={user} />}
 
               {/* Status Control Section - Only in Edit Mode */}
               {isEditMode && user && (
@@ -383,7 +381,7 @@ export const UserFormPage: React.FC = () => {
                   <Typography variant="h6" gutterBottom>
                     {t('users:sections.statusControl', 'إدارة الحالات والصلاحيات')}
                   </Typography>
-                  
+
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
                     {/* Reset Password Button */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
@@ -400,7 +398,8 @@ export const UserFormPage: React.FC = () => {
 
                     {/* Engineer Status Control */}
                     {(userCapabilities?.engineer_capable ||
-                      (userCapabilities?.engineer_status ?? CapabilityStatus.NONE) !== CapabilityStatus.NONE) && (
+                      (userCapabilities?.engineer_status ?? CapabilityStatus.NONE) !==
+                        CapabilityStatus.NONE) && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                         <Button
                           variant="outlined"
@@ -412,8 +411,12 @@ export const UserFormPage: React.FC = () => {
                           {t('users:actions.manageEngineerStatus', 'إدارة حالة المهندس')}
                         </Button>
                         <Chip
-                          label={getStatusLabel(userCapabilities?.engineer_status || CapabilityStatus.NONE)}
-                          color={getStatusColor(userCapabilities?.engineer_status || CapabilityStatus.NONE)}
+                          label={getStatusLabel(
+                            userCapabilities?.engineer_status || CapabilityStatus.NONE
+                          )}
+                          color={getStatusColor(
+                            userCapabilities?.engineer_status || CapabilityStatus.NONE
+                          )}
                           size="small"
                         />
                       </Box>
@@ -421,7 +424,8 @@ export const UserFormPage: React.FC = () => {
 
                     {/* Merchant Status Control */}
                     {(userCapabilities?.merchant_capable ||
-                      (userCapabilities?.merchant_status ?? CapabilityStatus.NONE) !== CapabilityStatus.NONE) && (
+                      (userCapabilities?.merchant_status ?? CapabilityStatus.NONE) !==
+                        CapabilityStatus.NONE) && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                         <Button
                           variant="outlined"
@@ -433,18 +437,25 @@ export const UserFormPage: React.FC = () => {
                           {t('users:actions.manageMerchantStatus', 'إدارة حالة التاجر')}
                         </Button>
                         <Chip
-                          label={getStatusLabel(userCapabilities?.merchant_status || CapabilityStatus.NONE)}
-                          color={getStatusColor(userCapabilities?.merchant_status || CapabilityStatus.NONE)}
+                          label={getStatusLabel(
+                            userCapabilities?.merchant_status || CapabilityStatus.NONE
+                          )}
+                          color={getStatusColor(
+                            userCapabilities?.merchant_status || CapabilityStatus.NONE
+                          )}
                           size="small"
                         />
                         {userCapabilities?.merchant_discount_percent &&
                           userCapabilities.merchant_discount_percent > 0 && (
-                          <Chip
-                            label={`${userCapabilities.merchant_discount_percent}% ${t('users:labels.discount', 'خصم')}`}
-                            color="success"
-                            size="small"
-                          />
-                        )}
+                            <Chip
+                              label={`${userCapabilities.merchant_discount_percent}% ${t(
+                                'users:labels.discount',
+                                'خصم'
+                              )}`}
+                              color="success"
+                              size="small"
+                            />
+                          )}
                       </Box>
                     )}
                   </Box>

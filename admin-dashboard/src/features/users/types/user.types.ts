@@ -286,16 +286,16 @@ export function getPrimaryRole(roles?: UserRole[] | string[]): UserRole {
   }
 
   // البحث عن الدور الأساسي (engineer أو merchant) أولاً
-  if (roles.includes(UserRole.ENGINEER) || roles.includes('engineer')) {
+  if (roles.includes(UserRole.ENGINEER)) {
     return UserRole.ENGINEER;
   }
-  if (roles.includes(UserRole.MERCHANT) || roles.includes('merchant')) {
+  if (roles.includes(UserRole.MERCHANT)) {
     return UserRole.MERCHANT;
   }
-  if (roles.includes(UserRole.ADMIN) || roles.includes('admin')) {
+  if (roles.includes(UserRole.ADMIN)) {
     return UserRole.ADMIN;
   }
-  if (roles.includes(UserRole.SUPER_ADMIN) || roles.includes('super_admin')) {
+  if (roles.includes(UserRole.SUPER_ADMIN)) {
     return UserRole.SUPER_ADMIN;
   }
 
