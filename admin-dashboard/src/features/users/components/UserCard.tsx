@@ -25,7 +25,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
-import { User, UserStatus, UserRole } from '../types/user.types';
+import { User, UserStatus, UserRole, getPrimaryRole } from '../types/user.types';
 import { formatDate } from '@/shared/utils/formatters';
 import { useTranslation } from 'react-i18next';
 
@@ -77,7 +77,7 @@ export const UserCard: React.FC<UserCardProps> = ({
   const fullName =
     `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
     t('users:card.unknown', 'غير محدد');
-  const primaryRole = user.roles?.[0] || UserRole.USER;
+  const primaryRole = getPrimaryRole(user.roles);
 
   const STATUS_LABELS: Record<UserStatus, string> = {
     [UserStatus.ACTIVE]: t('users:status.active', 'نشط'),

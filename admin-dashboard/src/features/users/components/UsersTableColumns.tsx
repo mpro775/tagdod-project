@@ -5,6 +5,7 @@ import { Edit, Delete, Restore } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '@/shared/utils/formatters';
 import type { User, UserStatus } from '../types/user.types';
+import { getPrimaryRole } from '../types/user.types';
 
 interface UsersTableColumnsProps {
   onEdit: (user: User) => void;
@@ -68,7 +69,8 @@ export const useUsersTableColumns = ({
         minWidth: 90,
         flex: 0.8,
         renderCell: (params) => {
-          const role = params.row.roles?.[0] || 'user';
+          const primaryRole = getPrimaryRole(params.row.roles);
+          const role = primaryRole;
           const colorMap: Record<string, 'error' | 'warning' | 'info' | 'success' | 'default'> = {
             super_admin: 'error',
             admin: 'warning',

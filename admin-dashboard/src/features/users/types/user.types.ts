@@ -275,3 +275,30 @@ export interface GetRatingsQueryDto {
   sortBy?: 'recent' | 'top' | 'oldest';
   minScore?: number;
 }
+
+/**
+ * تحديد الدور الأساسي للمستخدم بناءً على مصفوفة الأدوار
+ * يعطي الأولوية للدور الأساسي (engineer, merchant, admin, super_admin) بدلاً من user
+ */
+export function getPrimaryRole(roles?: UserRole[] | string[]): UserRole {
+  if (!roles || roles.length === 0) {
+    return UserRole.USER;
+  }
+
+  // البحث عن الدور الأساسي (engineer أو merchant) أولاً
+  if (roles.includes(UserRole.ENGINEER) || roles.includes('engineer')) {
+    return UserRole.ENGINEER;
+  }
+  if (roles.includes(UserRole.MERCHANT) || roles.includes('merchant')) {
+    return UserRole.MERCHANT;
+  }
+  if (roles.includes(UserRole.ADMIN) || roles.includes('admin')) {
+    return UserRole.ADMIN;
+  }
+  if (roles.includes(UserRole.SUPER_ADMIN) || roles.includes('super_admin')) {
+    return UserRole.SUPER_ADMIN;
+  }
+
+  // إذا لم نجد دور أساسي، نستخدم الأول في المصفوفة
+  return (roles[0] as UserRole) || UserRole.USER;
+}

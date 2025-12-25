@@ -17,7 +17,7 @@ import {
 import { Save, Cancel, AdminPanelSettings, LockReset, VerifiedUser, Store } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useUser, useCreateUser, useUpdateUser } from '../hooks/useUsers';
-import { UserRole, UserStatus, CapabilityStatus } from '../types/user.types';
+import { UserRole, UserStatus, CapabilityStatus, getPrimaryRole } from '../types/user.types';
 import { useAuthStore } from '@/store/authStore';
 import { createUserFormSchema, type UserFormData } from '../schemas/userFormSchema';
 import { UserBasicInfoSection } from '../components/UserBasicInfoSection';
@@ -149,24 +149,8 @@ export const UserFormPage: React.FC = () => {
   // Load user data in edit mode
   useEffect(() => {
     if (isEditMode && user) {
-      // تحديد الدور الأساسي: نبحث عن engineer أو merchant أولاً، وإلا نستخدم user
-      const roles = user.roles || [];
-      let userPrimaryRole = UserRole.USER;
-      
-      // البحث عن الدور الأساسي (engineer أو merchant) أولاً
-      if (roles.includes(UserRole.ENGINEER)) {
-        userPrimaryRole = UserRole.ENGINEER;
-      } else if (roles.includes(UserRole.MERCHANT)) {
-        userPrimaryRole = UserRole.MERCHANT;
-      } else if (roles.includes(UserRole.ADMIN)) {
-        userPrimaryRole = UserRole.ADMIN;
-      } else if (roles.includes(UserRole.SUPER_ADMIN)) {
-        userPrimaryRole = UserRole.SUPER_ADMIN;
-      } else if (roles.length > 0) {
-        // إذا كان هناك أدوار أخرى، نستخدم الأول
-        userPrimaryRole = roles[0] as UserRole;
-      }
-      
+      // تحديد الدور الأساسي باستخدام الدالة المساعدة
+      const userPrimaryRole = getPrimaryRole(user.roles);
       setPrimaryRole(userPrimaryRole);
 
       const formData: UserFormData = {
