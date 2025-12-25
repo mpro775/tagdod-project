@@ -149,8 +149,25 @@ export const UserFormPage: React.FC = () => {
   // Load user data in edit mode
   useEffect(() => {
     if (isEditMode && user) {
-      const userPrimaryRole = user.roles?.[0] || UserRole.USER;
-      setPrimaryRole(userPrimaryRole as UserRole);
+      // تحديد الدور الأساسي: نبحث عن engineer أو merchant أولاً، وإلا نستخدم user
+      const roles = user.roles || [];
+      let userPrimaryRole = UserRole.USER;
+      
+      // البحث عن الدور الأساسي (engineer أو merchant) أولاً
+      if (roles.includes(UserRole.ENGINEER)) {
+        userPrimaryRole = UserRole.ENGINEER;
+      } else if (roles.includes(UserRole.MERCHANT)) {
+        userPrimaryRole = UserRole.MERCHANT;
+      } else if (roles.includes(UserRole.ADMIN)) {
+        userPrimaryRole = UserRole.ADMIN;
+      } else if (roles.includes(UserRole.SUPER_ADMIN)) {
+        userPrimaryRole = UserRole.SUPER_ADMIN;
+      } else if (roles.length > 0) {
+        // إذا كان هناك أدوار أخرى، نستخدم الأول
+        userPrimaryRole = roles[0] as UserRole;
+      }
+      
+      setPrimaryRole(userPrimaryRole);
 
       const formData: UserFormData = {
         phone: user.phone || '',
