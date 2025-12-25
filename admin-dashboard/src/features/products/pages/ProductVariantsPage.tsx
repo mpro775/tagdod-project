@@ -60,7 +60,7 @@ export const ProductVariantsPage: React.FC = () => {
   const { confirmDialog, dialogProps } = useConfirmDialog();
   const [variantDialogOpen, setVariantDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingData, setEditingData] = useState<{ price: number; stock: number }>({ price: 0, stock: 0 });
+  const [editingData, setEditingData] = useState<{ sku?: string; price: number; stock: number }>({ price: 0, stock: 0 });
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 20,
@@ -121,6 +121,7 @@ export const ProductVariantsPage: React.FC = () => {
   const handleStartEdit = (variant: Variant) => {
     setEditingId(variant._id);
     setEditingData({
+      sku: variant.sku || '',
       price: variant.price ?? variant.basePriceUSD ?? 0,
       stock: variant.stock || 0,
     });
@@ -128,7 +129,7 @@ export const ProductVariantsPage: React.FC = () => {
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setEditingData({ price: 0, stock: 0 });
+    setEditingData({ price: 0, stock: 0, sku: '' });
   };
 
   const handleSaveEdit = (variantId: string) => {
@@ -142,6 +143,7 @@ export const ProductVariantsPage: React.FC = () => {
         productId: id!, 
         variantId, 
         data: {
+          sku: editingData.sku?.trim() || undefined,
           price: editingData.price,
           stock: editingData.stock,
         } 
@@ -406,18 +408,33 @@ export const ProductVariantsPage: React.FC = () => {
       renderCell: (params) => (
         <Box sx={{ py: 0.5, width: '100%' }}>
           {getAttributeDisplay(params.row)}
-          {params.row.sku && (
-            <Typography 
-              variant="caption" 
-              color="text.secondary" 
-              display="block" 
-              sx={{ mt: 0.5 }}
-            >
-              SKU: {params.row.sku}
-            </Typography>
-          )}
         </Box>
       ),
+    },
+    {
+      field: 'sku',
+      headerName: t('products:variants.columns.sku', 'SKU'),
+      width: 150,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const isEditing = editingId === params.row._id;
+        return isEditing ? (
+          <TextField
+            type="text"
+            size="small"
+            value={editingData.sku || ''}
+            onChange={(e) => setEditingData({ ...editingData, sku: e.target.value })}
+            sx={{ width: 120 }}
+            onClick={(e) => e.stopPropagation()}
+            placeholder={t('products:variants.form.sku', 'SKU')}
+          />
+        ) : (
+          <Typography variant="body2" color={params.row.sku ? 'text.primary' : 'text.secondary'}>
+            {params.row.sku || '-'}
+          </Typography>
+        );
+      },
     },
     {
       field: 'price',
@@ -725,6 +742,15 @@ export const ProductVariantsPage: React.FC = () => {
                     {isEditing && (
                       <Card sx={{ mt: 2, p: 2 }}>
                         <Stack spacing={2}>
+                          <TextField
+                            label={t('products:variants.form.sku', 'SKU')}
+                            type="text"
+                            size="small"
+                            value={editingData.sku || ''}
+                            onChange={(e) => setEditingData({ ...editingData, sku: e.target.value })}
+                            fullWidth
+                            helperText={t('products:variants.form.skuHelp', 'رمز التخزين (اختياري)')}
+                          />
                           <TextField
                             label={t('products:variants.form.price', 'السعر')}
                             type="number"

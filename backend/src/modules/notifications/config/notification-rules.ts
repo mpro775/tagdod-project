@@ -49,6 +49,9 @@ export const NOTIFICATION_TYPE_ROLES: Record<NotificationType, UserRole[]> = {
   // ===== Verification Notifications - للمهندسين والتجار =====
   [NotificationType.VERIFICATION_APPROVED]: [UserRole.ENGINEER, UserRole.MERCHANT],
   [NotificationType.VERIFICATION_REJECTED]: [UserRole.ENGINEER, UserRole.MERCHANT],
+  
+  // ===== Verification Notifications - للإداريين =====
+  [NotificationType.VERIFICATION_REQUEST_PENDING]: [UserRole.ADMIN, UserRole.SUPER_ADMIN],
 
   // ===== Support Notifications - للمستخدمين والإداريين =====
   [NotificationType.TICKET_CREATED]: [UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN],
@@ -130,6 +133,7 @@ export const NOTIFICATION_TYPE_CHANNELS: Record<NotificationType, NotificationCh
   // ===== Verification Notifications =====
   [NotificationType.VERIFICATION_APPROVED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
   [NotificationType.VERIFICATION_REJECTED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+  [NotificationType.VERIFICATION_REQUEST_PENDING]: [NotificationChannel.DASHBOARD, NotificationChannel.IN_APP],
 
   // ===== Support Notifications =====
   [NotificationType.TICKET_CREATED]: [
@@ -216,6 +220,7 @@ export const NOTIFICATION_TYPE_DEFAULT_CHANNEL: Record<NotificationType, Notific
   // ===== Verification Notifications =====
   [NotificationType.VERIFICATION_APPROVED]: NotificationChannel.IN_APP,
   [NotificationType.VERIFICATION_REJECTED]: NotificationChannel.IN_APP,
+  [NotificationType.VERIFICATION_REQUEST_PENDING]: NotificationChannel.DASHBOARD,
 
   // ===== Support Notifications =====
   [NotificationType.TICKET_CREATED]: NotificationChannel.IN_APP,

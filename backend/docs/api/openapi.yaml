@@ -3872,6 +3872,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -3936,6 +3937,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -4006,6 +4008,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5181,6 +5184,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5284,6 +5288,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5400,6 +5405,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5503,6 +5509,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5619,6 +5626,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5722,6 +5730,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5838,6 +5847,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED
@@ -5941,6 +5951,7 @@ paths:
               - NEW_USER_REGISTERED
               - VERIFICATION_APPROVED
               - VERIFICATION_REJECTED
+              - VERIFICATION_REQUEST_PENDING
               - TICKET_CREATED
               - TICKET_UPDATED
               - TICKET_RESOLVED

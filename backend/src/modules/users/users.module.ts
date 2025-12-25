@@ -26,6 +26,7 @@ import { CapabilitiesModule } from '../capabilities/capabilities.module';
 import { UploadModule } from '../upload/upload.module';
 import { Coupon, CouponSchema } from '../marketing/schemas/coupon.schema';
 import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
+import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
     CapabilitiesModule,
     UploadModule,
     ExchangeRatesModule,
+    forwardRef(() => NotificationsCompleteModule),
   ],
   controllers: [UserAnalyticsController, UserVerificationController, EngineerProfileController],
   providers: [

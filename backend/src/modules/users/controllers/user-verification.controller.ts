@@ -20,8 +20,9 @@ import {
 } from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { Inject, forwardRef, Logger } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import { User, UserRole, CapabilityStatus } from '../schemas/user.schema';
+import { User, UserRole, CapabilityStatus, UserStatus } from '../schemas/user.schema';
 import { EngineerProfile } from '../schemas/engineer-profile.schema';
 import { UploadService } from '../../upload/upload.service';
 import {
@@ -29,16 +30,28 @@ import {
   SubmitMerchantVerificationDto,
 } from '../dto/submit-verification.dto';
 import { UserNotFoundException, InvalidFileTypeException } from '../../../shared/exceptions';
+import { NotificationService } from '../../notifications/services/notification.service';
+import {
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+  NotificationCategory,
+  NotificationNavigationType,
+} from '../../notifications/enums/notification.enums';
 
 @ApiTags('تحقق-المستخدمين')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('users/verification')
 export class UserVerificationController {
+  private readonly logger = new Logger(UserVerificationController.name);
+
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(EngineerProfile.name) private engineerProfileModel: Model<EngineerProfile>,
     private uploadService: UploadService,
+    @Inject(forwardRef(() => NotificationService))
+    private notificationService?: NotificationService,
   ) {}
 
   @Post('submit')
@@ -237,6 +250,52 @@ export class UserVerificationController {
     }
 
     await user.save();
+
+    // إرسال إشعار للأدمن بوجود طلب توثيق جديد
+    if (this.notificationService) {
+      const verificationType = isEngineer ? 'engineer' : 'merchant';
+      const typeLabel = isEngineer ? 'مهندس' : 'تاجر';
+      const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.phone;
+
+      try {
+        // جلب جميع الأدمن النشطين
+        const admins = await this.userModel
+          .find({
+            roles: { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+            status: UserStatus.ACTIVE,
+          })
+          .select('_id')
+          .lean();
+
+        // إرسال إشعار لكل أدمن
+        const notificationPromises = admins.map((admin) =>
+          this.notificationService!.createNotification({
+            recipientId: admin._id.toString(),
+            type: NotificationType.VERIFICATION_REQUEST_PENDING,
+            title: `طلب توثيق جديد - ${typeLabel}`,
+            message: `تم رفع طلب توثيق جديد من ${userName} (${typeLabel}). يرجى مراجعته.`,
+            messageEn: `New verification request from ${userName} (${verificationType}). Please review.`,
+            channel: NotificationChannel.DASHBOARD,
+            priority: NotificationPriority.HIGH,
+            category: NotificationCategory.ACCOUNT,
+            data: {
+              userId: userId,
+              verificationType: verificationType,
+              userName: userName,
+              userPhone: user.phone,
+            },
+            navigationType: NotificationNavigationType.SECTION,
+            navigationTarget: '/users/verification-requests',
+            isSystemGenerated: true,
+          }),
+        );
+
+        await Promise.all(notificationPromises);
+        this.logger.log(`Sent verification request notification to ${admins.length} admin(s)`);
+      } catch (err) {
+        this.logger.error('Failed to send verification request notification to admins', err);
+      }
+    }
 
     return {
       success: true,
