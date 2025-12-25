@@ -116,6 +116,27 @@ export class ProductService {
         }
       }
 
+      // التحقق من SKU المكرر قبل الإنشاء
+      if (dto.sku && dto.sku.trim()) {
+        const existingProduct = await this.productModel.findOne({
+          sku: dto.sku.trim(),
+          deletedAt: null,
+        });
+        
+        if (existingProduct) {
+          this.logger.warn(`Duplicate SKU detected: ${dto.sku}`, {
+            existingProductId: existingProduct._id,
+            nameEn: dto.nameEn,
+          });
+          throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
+            sku: dto.sku,
+            existingProductId: existingProduct._id.toString(),
+            reason: 'duplicate_sku',
+            message: 'رمز SKU موجود مسبقاً',
+          });
+        }
+      }
+
       const product = await this.productModel.create({
         ...dto,
         ...pricingFields,
@@ -163,6 +184,17 @@ export class ProductService {
       if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
         const mongoError = error as { keyPattern?: Record<string, unknown> };
         const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
+        
+        // معالجة خاصة لـ SKU المكرر
+        if (field === 'sku') {
+          throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
+            reason: 'duplicate_sku',
+            field: 'sku',
+            sku: dto.sku,
+            message: 'رمز SKU موجود مسبقاً',
+          });
+        }
+        
         throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
           reason: 'duplicate_field',
           field,
@@ -317,6 +349,29 @@ export class ProductService {
         relatedProducts: updatePayload.relatedProducts,
         count: updatePayload.relatedProducts.length,
       });
+    }
+
+    // التحقق من SKU المكرر قبل التحديث
+    if (productUpdateDto.sku && productUpdateDto.sku.trim() && productUpdateDto.sku !== product.sku) {
+      const existingProduct = await this.productModel.findOne({
+        sku: productUpdateDto.sku.trim(),
+        deletedAt: null,
+        _id: { $ne: new Types.ObjectId(id) },
+      });
+      
+      if (existingProduct) {
+        this.logger.warn(`Duplicate SKU detected: ${productUpdateDto.sku}`, {
+          existingProductId: existingProduct._id,
+          productId: id,
+        });
+        throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
+          sku: productUpdateDto.sku,
+          productId: id,
+          existingProductId: existingProduct._id.toString(),
+          reason: 'duplicate_sku',
+          message: 'رمز SKU موجود مسبقاً',
+        });
+      }
     }
 
     await this.productModel.updateOne(

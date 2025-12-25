@@ -154,6 +154,32 @@ export const ProductVariantsPage: React.FC = () => {
           refetch();
           handleCancelEdit();
         },
+        onError: (error: any) => {
+          // معالجة أخطاء SKU المكرر
+          const errorCode = error?.response?.data?.error?.code;
+          const errorMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
+          const lowerErrorMessage = errorMessage?.toLowerCase() || '';
+          
+          // التحقق من كود الخطأ أو وجود كلمات مفتاحية في الرسالة
+          if (
+            errorCode === 'PRODUCT_314' || 
+            lowerErrorMessage.includes('sku') || 
+            lowerErrorMessage.includes('مكرر') ||
+            lowerErrorMessage.includes('موجود مسبقاً') ||
+            lowerErrorMessage.includes('duplicate')
+          ) {
+            toast.error(
+              t('products:messages.duplicateSku', 'رمز SKU موجود مسبقاً. الرجاء استخدام رمز آخر'),
+              { duration: 5000 }
+            );
+          } else {
+            // عرض رسالة الخطأ العامة
+            const message = errorMessage || 
+                          error?.message || 
+                          t('products:messages.updateError', 'حدث خطأ أثناء تحديث المتغير');
+            toast.error(message, { duration: 5000 });
+          }
+        },
       }
     );
   };
@@ -250,13 +276,33 @@ export const ProductVariantsPage: React.FC = () => {
         toast.success(t('products:messages.createSuccess', 'تم الإنشاء بنجاح'));
         refetch();
         setVariantDialogOpen(false);
+        methods.reset();
       },
       onError: (error: any) => {
-        // معالجة أفضل للأخطاء
-        const errorMessage = error?.response?.data?.message || 
-                            error?.message || 
-                            t('products:messages.createError', 'حدث خطأ أثناء إضافة المتغير');
-        toast.error(errorMessage);
+        // معالجة أخطاء SKU المكرر
+        const errorCode = error?.response?.data?.error?.code;
+        const errorMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
+        const lowerErrorMessage = errorMessage?.toLowerCase() || '';
+        
+        // التحقق من كود الخطأ أو وجود كلمات مفتاحية في الرسالة
+        if (
+          errorCode === 'PRODUCT_314' || 
+          lowerErrorMessage.includes('sku') || 
+          lowerErrorMessage.includes('مكرر') ||
+          lowerErrorMessage.includes('موجود مسبقاً') ||
+          lowerErrorMessage.includes('duplicate')
+        ) {
+          toast.error(
+            t('products:messages.duplicateSku', 'رمز SKU موجود مسبقاً. الرجاء استخدام رمز آخر'),
+            { duration: 5000 }
+          );
+        } else {
+          // عرض رسالة الخطأ العامة
+          const message = errorMessage || 
+                        error?.message || 
+                        t('products:messages.createError', 'حدث خطأ أثناء إضافة المتغير');
+          toast.error(message, { duration: 5000 });
+        }
       },
     });
   };

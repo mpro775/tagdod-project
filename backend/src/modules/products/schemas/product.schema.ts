@@ -24,6 +24,9 @@ export class Product {
   @Prop({ required: true, unique: true })
   slug!: string;
 
+  @Prop({ unique: true, sparse: true })
+  sku?: string; // Stock Keeping Unit فريد
+
   @Prop({ required: true })
   description!: string; // الوصف بالعربية
 
@@ -182,6 +185,7 @@ ProductSchema.index({ name: 'text', description: 'text' });
 ProductSchema.index({ categoryId: 1, status: 1, isActive: 1 });
 ProductSchema.index({ brandId: 1, status: 1 });
 ProductSchema.index({ slug: 1 });
+ProductSchema.index({ sku: 1 }, { unique: true, sparse: true });
 ProductSchema.index({ status: 1, isActive: 1, order: -1 });
 ProductSchema.index({ isFeatured: 1, status: 1 });
 ProductSchema.index({ isNew: 1, status: 1 });
