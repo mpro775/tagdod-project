@@ -13,6 +13,7 @@ import { CacheService } from '../../../shared/cache/cache.service';
 import { CategoriesService } from '../../categories/categories.service';
 import { ProductPricingCalculatorService } from './product-pricing-calculator.service';
 import { VariantService } from './variant.service';
+import { SyncStockDto } from '../dto/sync-stock.dto';
 
 @Injectable()
 export class ProductService {
@@ -902,6 +903,64 @@ export class ProductService {
     this.logger.debug(`Incremented salesCount for product ${productId} by ${quantity}`);
   }
 
+  async syncStockFromOnyx(dto: SyncStockDto): Promise<any> {
+  const { items } = dto;
+  this.logger.log(`Received stock sync request for ${items.length} items`);
+
+  if (items.length === 0) return { updated: 0 };
+
+  // إعداد عمليات الكتابة المجمعة (Bulk Operations) للأداء العالي
+  const productWrites = [];
+  const variantWrites = [];
+
+  for (const item of items) {
+    // تجهيز تحديث للمنتجات البسيطة
+    productWrites.push({
+      updateOne: {
+        filter: { sku: item.sku }, // البحث بالـ SKU
+        update: { 
+          $set: { 
+            stock: item.stock,
+            // إذا كان المخزون > 0 اجعله متاحاً، غير ذلك غير متاح (اختياري)
+            // isAvailable: item.stock > 0 
+          } 
+        }
+      }
+    });
+
+    // تجهيز تحديث للمتغيرات (Variants)
+    variantWrites.push({
+      updateOne: {
+        filter: { sku: item.sku }, // البحث بالـ SKU
+        update: { 
+          $set: { 
+            stock: item.stock,
+            // تحديث حالة التوفر للمتغير أيضاً
+            // isAvailable: item.stock > 0 
+          } 
+        }
+      }
+    });
+  }
+
+  // تنفيذ العمليات في قاعدة البيانات
+  // نستخدم Promise.all لتنفيذ التحديث في جدول المنتجات وجدول المتغيرات في نفس الوقت
+  const [productRes, variantRes] = await Promise.all([
+    this.productModel.bulkWrite(productWrites, { ordered: false }),
+    this.variantModel.bulkWrite(variantWrites, { ordered: false })
+  ]);
+
+  this.logger.log(`Sync Stats: Matched Products: ${productRes.matchedCount}, Matched Variants: ${variantRes.matchedCount}`);
+
+  // بعد تحديث المتغيرات، يجب تحديث مجموع المخزون في المنتج الأب (للمنتجات التي لها variants)
+  // هذه خطوة متقدمة، لكن مبدئياً التحديث المباشر أعلاه كافٍ ليعمل النظام
+  
+  return {
+    processed: items.length,
+    productsUpdated: productRes.modifiedCount,
+    variantsUpdated: variantRes.modifiedCount
+  };
+}
   /**
    * التحقق من توفر المنتج
    */

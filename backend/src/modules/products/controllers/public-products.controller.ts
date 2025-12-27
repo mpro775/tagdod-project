@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseInterceptors, Req } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseInterceptors, Req, Post, Body } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -19,6 +19,7 @@ import {
 } from '../../../shared/interceptors/response-cache.interceptor';
 import { ProductStatus } from '../schemas/product.schema';
 import { PublicProductsPresenter, WithId } from '../services/public-products.presenter';
+import { SyncStockDto } from '../dto/sync-stock.dto';
 
 interface RequestWithUser {
   user?: {
@@ -39,7 +40,7 @@ export class PublicProductsController {
     private pricingService: PricingService,
     private inventoryService: InventoryService,
     private publicProductsPresenter: PublicProductsPresenter,
-  ) {}
+  ) { }
 
   // ==================== Products List ====================
 
@@ -466,6 +467,11 @@ export class PublicProductsController {
   }
 
   // ==================== Related Products ====================
+
+  @Post('sync/stock')
+  async syncStock(@Body() dto: SyncStockDto) {
+    return this.productService.syncStockFromOnyx(dto);
+  }
 
   @Get(':id/related')
   @ApiOperation({

@@ -24,6 +24,7 @@ import { CacheService } from '../../../shared/cache/cache.service';
 import { MarketingService } from '../../marketing/marketing.service';
 import { CreateProductDto, UpdateProductDto, ListProductsDto, CreateVariantDto, UpdateVariantDto, GenerateVariantsDto } from '../dto/product.dto';
 import { Product } from '../schemas/product.schema';
+import { SyncStockDto } from '../dto/sync-stock.dto';
 
 @ApiTags('إدارة-المنتجات')
 @ApiBearerAuth()
@@ -111,6 +112,8 @@ export class ProductsController {
       data: productsWithPriceRules,
     };
   }
+
+
 
   @Get(':id')
   @ApiOperation({ summary: 'الحصول على منتج بالمعرف' })
