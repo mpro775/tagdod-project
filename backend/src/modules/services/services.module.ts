@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CustomerServicesController } from './customer.controller';
 import { EngineerServicesController } from './engineer.controller';
@@ -33,7 +33,7 @@ import { UploadModule } from '../upload/upload.module';
     AuthModule,
     NotificationsCompleteModule,
     AddressesModule,
-    forwardRef(() => UsersModule),
+    UsersModule,
     SharedModule,
     UploadModule,
   ],
@@ -41,4 +41,4 @@ import { UploadModule } from '../upload/upload.module';
   providers: [ServicesService, ServicesCronService, DistanceService, ServicesPermissionGuard, EngineerGuard],
   exports: [MongooseModule, ServicesService],
 })
-export class ServicesModule {}
+export class ServicesModule { }

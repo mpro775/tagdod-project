@@ -2267,6 +2267,33 @@
           }
         },
         {
+          "name": "POST /api/v1/products/sync/stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/sync/stock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "sync",
+                "stock"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
           "name": "الحصول على المنتجات الشبيهة",
           "request": {
             "method": "GET",

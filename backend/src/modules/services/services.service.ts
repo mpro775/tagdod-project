@@ -120,11 +120,10 @@ export class ServicesService {
     private addressesService: AddressesService,
     private uploadService: UploadService,
     private configService: ConfigService,
+    private engineerProfileService: EngineerProfileService, @Inject(forwardRef(() => SMSAdapter))
+
     @Optional() private notificationService?: NotificationService,
     @Inject(forwardRef(() => EngineerProfileService))
-    @Optional()
-    private engineerProfileService?: EngineerProfileService,
-    @Inject(forwardRef(() => SMSAdapter))
     @Optional()
     private smsAdapter?: SMSAdapter,
   ) {
@@ -567,24 +566,24 @@ export class ServicesService {
         updatedAt: doc.updatedAt,
         address: addressData
           ? {
-              label: addressData.label ?? null,
-              line1: addressData.line1 ?? null,
-              city: addressData.city ?? null,
-            }
+            label: addressData.label ?? null,
+            line1: addressData.line1 ?? null,
+            city: addressData.city ?? null,
+          }
           : null,
         engineer: engineerData
           ? {
-              id: engineerId ?? String(engineerData._id),
-              name: engineerName,
-              phone: engineerPhone,
-              whatsapp,
-            }
+            id: engineerId ?? String(engineerData._id),
+            name: engineerName,
+            phone: engineerPhone,
+            whatsapp,
+          }
           : null,
         acceptedOffer: doc.acceptedOffer
           ? {
-              ...doc.acceptedOffer,
-              currency: doc.acceptedOffer.currency || 'YER',
-            }
+            ...doc.acceptedOffer,
+            currency: doc.acceptedOffer.currency || 'YER',
+          }
           : null,
         rating: doc.rating,
       };
@@ -695,12 +694,12 @@ export class ServicesService {
         createdAt: offer.createdAt,
         engineer: engineerData
           ? {
-              id: String(engineerData._id),
-              name: engineerName,
-              jobTitle: profile?.jobTitle ?? null,
-              phone: engineerPhone,
-              whatsapp,
-            }
+            id: String(engineerData._id),
+            name: engineerName,
+            jobTitle: profile?.jobTitle ?? null,
+            phone: engineerPhone,
+            whatsapp,
+          }
           : null,
       };
 
@@ -729,10 +728,10 @@ export class ServicesService {
           updatedAt: req.updatedAt,
           address: addressData
             ? {
-                label: addressData.label ?? null,
-                line1: addressData.line1 ?? null,
-                city: addressData.city ?? null,
-              }
+              label: addressData.label ?? null,
+              line1: addressData.line1 ?? null,
+              city: addressData.city ?? null,
+            }
             : null,
           offers: offersByRequest.get(String(req._id)) ?? [],
         };
@@ -825,24 +824,24 @@ export class ServicesService {
         updatedAt: doc.updatedAt,
         address: addressData
           ? {
-              label: addressData.label ?? null,
-              line1: addressData.line1 ?? null,
-              city: addressData.city ?? null,
-            }
+            label: addressData.label ?? null,
+            line1: addressData.line1 ?? null,
+            city: addressData.city ?? null,
+          }
           : null,
         engineer: engineerData
           ? {
-              id: engineerId ?? String(engineerData._id),
-              name: engineerName,
-              phone: engineerPhone,
-              whatsapp,
-            }
+            id: engineerId ?? String(engineerData._id),
+            name: engineerName,
+            phone: engineerPhone,
+            whatsapp,
+          }
           : null,
         acceptedOffer: doc.acceptedOffer
           ? {
-              ...doc.acceptedOffer,
-              currency: doc.acceptedOffer.currency || 'YER',
-            }
+            ...doc.acceptedOffer,
+            currency: doc.acceptedOffer.currency || 'YER',
+          }
           : null,
       };
     });
@@ -1083,20 +1082,27 @@ export class ServicesService {
     await r.save();
 
     // إضافة التقييم إلى بروفايل المهندس تلقائياً
-    if (r.engineerId && this.engineerProfileService) {
-      try {
-        await this.engineerProfileService.addRatingFromServiceRequest(
-          r.engineerId.toString(),
-          r._id.toString(),
-          userId,
-          score,
-          comment.trim(),
-        );
-      } catch (error) {
-        this.logger.warn(`Failed to add rating to engineer profile: ${error}`);
-        // لا نوقف العملية إذا فشل تحديث البروفايل
-      }
-    }
+ // في دالة rate
+if (r.engineerId) {
+  try {
+    // 👇 أضف هذا السطر
+    this.logger.log(`Attempting to sync rating for engineer: ${r.engineerId}`);
+
+    await this.engineerProfileService.addRatingFromServiceRequest(
+      r.engineerId.toString(),
+      r._id.toString(),
+      userId,
+      score,
+      comment.trim(),
+    );
+    
+    // 👇 وأضف هذا السطر
+    this.logger.log('✅ Rating synced successfully to Engineer Profile!');
+
+  } catch (error) {
+    this.logger.error(`Failed to add rating to engineer profile: ${error}`);
+  }
+}
 
     await this.safeNotify(
       userId,
@@ -1118,27 +1124,27 @@ export class ServicesService {
   ): Promise<
     | { error: string }
     | Array<{
+      _id: Types.ObjectId;
+      requestId: string | Types.ObjectId;
+      amount: number;
+      currency: string;
+      note?: string | null;
+      distanceKm?: number;
+      status: string;
+      statusLabel: string;
+      createdAt: Date;
+      updatedAt: Date;
+      engineerId?:
+      | {
         _id: Types.ObjectId;
-        requestId: string | Types.ObjectId;
-        amount: number;
-        currency: string;
-        note?: string | null;
-        distanceKm?: number;
-        status: string;
-        statusLabel: string;
-        createdAt: Date;
-        updatedAt: Date;
-        engineerId?:
-          | {
-              _id: Types.ObjectId;
-              firstName?: string;
-              lastName?: string;
-              phone?: string;
-              jobTitle?: string | null;
-            }
-          | Types.ObjectId
-          | null;
-      }>
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+        jobTitle?: string | null;
+      }
+      | Types.ObjectId
+      | null;
+    }>
   > {
     const userObjectId = new Types.ObjectId(userId);
     const requestObjectId = new Types.ObjectId(requestId);
@@ -1236,12 +1242,12 @@ export class ServicesService {
       createdAt: offer.createdAt,
       engineer: engineerData
         ? {
-            id: String(engineerData._id),
-            name: engineerName,
-            jobTitle,
-            phone: engineerPhone,
-            whatsapp,
-          }
+          id: String(engineerData._id),
+          name: engineerName,
+          jobTitle,
+          phone: engineerPhone,
+          whatsapp,
+        }
         : null,
     };
 
@@ -1260,10 +1266,10 @@ export class ServicesService {
         city: request.city,
         address: addressData
           ? {
-              label: addressData.label ?? null,
-              line1: addressData.line1 ?? null,
-              city: addressData.city ?? null,
-            }
+            label: addressData.label ?? null,
+            line1: addressData.line1 ?? null,
+            city: addressData.city ?? null,
+          }
           : null,
       },
     };
@@ -1741,22 +1747,22 @@ export class ServicesService {
       location: request.location,
       address: addressData
         ? {
-            label: addressData.label ?? null,
-            line1: addressData.line1 ?? null,
-            city: addressData.city ?? null,
-            coords: addressData.coords ?? null,
-          }
+          label: addressData.label ?? null,
+          line1: addressData.line1 ?? null,
+          city: addressData.city ?? null,
+          coords: addressData.coords ?? null,
+        }
         : null,
       customer: customerData
         ? {
-            id: String(customerData._id),
-            name:
-              customerData.firstName && customerData.lastName
-                ? `${customerData.firstName} ${customerData.lastName}`.trim()
-                : null,
-            phone: customerData.phone ?? null,
-            whatsapp: customerData.phone ? this.makeWhatsappLink(customerData.phone) : null,
-          }
+          id: String(customerData._id),
+          name:
+            customerData.firstName && customerData.lastName
+              ? `${customerData.firstName} ${customerData.lastName}`.trim()
+              : null,
+          phone: customerData.phone ?? null,
+          whatsapp: customerData.phone ? this.makeWhatsappLink(customerData.phone) : null,
+        }
         : null,
       engineerId: request.engineerId ? String(request.engineerId) : null,
       acceptedOffer: request.acceptedOffer ?? null,
@@ -1764,15 +1770,15 @@ export class ServicesService {
       distanceKm: engineerOffer?.distanceKm ?? null,
       myOffer: engineerOffer
         ? {
-            _id: engineerOffer._id,
-            amount: engineerOffer.amount,
-            currency: engineerOffer.currency || 'YER',
-            note: engineerOffer.note ?? null,
-            status: engineerOffer.status,
-            statusLabel: this.offerStatusLabel(engineerOffer.status),
-            distanceKm: engineerOffer.distanceKm ?? null,
-            createdAt: engineerOffer.createdAt,
-          }
+          _id: engineerOffer._id,
+          amount: engineerOffer.amount,
+          currency: engineerOffer.currency || 'YER',
+          note: engineerOffer.note ?? null,
+          status: engineerOffer.status,
+          statusLabel: this.offerStatusLabel(engineerOffer.status),
+          distanceKm: engineerOffer.distanceKm ?? null,
+          createdAt: engineerOffer.createdAt,
+        }
         : null,
     };
   }
@@ -1862,29 +1868,29 @@ export class ServicesService {
   async adminGetRequest(id: string): Promise<null | {
     _id: Types.ObjectId;
     userId?:
-      | Types.ObjectId
-      | {
-          _id: Types.ObjectId;
-          firstName?: string;
-          lastName?: string;
-          phone?: string;
-          email?: string;
-        }
-      | null;
+    | Types.ObjectId
+    | {
+      _id: Types.ObjectId;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      email?: string;
+    }
+    | null;
     engineerId?:
-      | Types.ObjectId
-      | {
-          _id: Types.ObjectId;
-          firstName?: string;
-          lastName?: string;
-          phone?: string;
-          jobTitle?: string | null;
-        }
-      | null;
+    | Types.ObjectId
+    | {
+      _id: Types.ObjectId;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      jobTitle?: string | null;
+    }
+    | null;
     addressId?:
-      | Types.ObjectId
-      | { _id: Types.ObjectId; label?: string; line1?: string; city?: string }
-      | null;
+    | Types.ObjectId
+    | { _id: Types.ObjectId; label?: string; line1?: string; city?: string }
+    | null;
     title: string;
     type?: string;
     description?: string;
@@ -1910,15 +1916,15 @@ export class ServicesService {
       createdAt: Date;
       updatedAt: Date;
       engineerId?:
-        | Types.ObjectId
-        | {
-            _id: Types.ObjectId;
-            firstName?: string;
-            lastName?: string;
-            phone?: string;
-            jobTitle?: string | null;
-          }
-        | null;
+      | Types.ObjectId
+      | {
+        _id: Types.ObjectId;
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+        jobTitle?: string | null;
+      }
+      | null;
     }>;
   }> {
     const request = (await this.requests
@@ -1983,15 +1989,15 @@ export class ServicesService {
       createdAt: Date;
       updatedAt: Date;
       engineerId?:
-        | Types.ObjectId
-        | {
-            _id: Types.ObjectId;
-            firstName?: string;
-            lastName?: string;
-            phone?: string;
-            jobTitle?: string | null;
-          }
-        | null;
+      | Types.ObjectId
+      | {
+        _id: Types.ObjectId;
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+        jobTitle?: string | null;
+      }
+      | null;
     }>
   > {
     const offers = (await this.offers
@@ -2625,17 +2631,17 @@ export class ServicesService {
 
   async getEngineerStatistics(engineerId: string): Promise<{
     engineer:
-      | Types.ObjectId
-      | {
-          _id: Types.ObjectId;
-          firstName?: string;
-          lastName?: string;
-          phone?: string;
-          email?: string;
-          jobTitle?: string | null;
-        }
-      | null
-      | undefined;
+    | Types.ObjectId
+    | {
+      _id: Types.ObjectId;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      email?: string;
+      jobTitle?: string | null;
+    }
+    | null
+    | undefined;
     statistics: {
       _id?: Types.ObjectId;
       totalRequests?: number;

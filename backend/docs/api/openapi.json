@@ -4064,6 +4064,30 @@
         ]
       }
     },
+    "/api/v1/products/sync/stock": {
+      "post": {
+        "operationId": "syncStock",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncStockDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "المنتجات"
+        ]
+      }
+    },
     "/api/v1/products/{id}/related": {
       "get": {
         "operationId": "getRelatedProducts",
@@ -33838,6 +33862,10 @@
         "properties": {}
       },
       "UpdateVariantDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SyncStockDto": {
         "type": "object",
         "properties": {}
       },
