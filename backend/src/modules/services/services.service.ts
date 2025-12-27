@@ -1,4 +1,5 @@
 import { Injectable, Logger, Optional, Inject, forwardRef } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
@@ -120,13 +121,10 @@ export class ServicesService {
     private addressesService: AddressesService,
     private uploadService: UploadService,
     private configService: ConfigService,
-    private engineerProfileService: EngineerProfileService, @Inject(forwardRef(() => SMSAdapter))
-
-// ✅ التعديل هنا: استخدم forwardRef مع NotificationService
-    @Inject(forwardRef(() => NotificationService))
-    @Optional() 
-    private notificationService?: NotificationService,  
-    @Inject(forwardRef(() => EngineerProfileService))
+    private engineerProfileService: EngineerProfileService,
+    // 👇 استخدام ModuleRef بدلاً من NotificationService المباشر لكسر الاعتماد الدائري
+    private moduleRef: ModuleRef,
+    @Inject(forwardRef(() => SMSAdapter))
     @Optional()
     private smsAdapter?: SMSAdapter,
   ) {
@@ -145,8 +143,12 @@ export class ServicesService {
     navigationTarget?: string,
   ) {
     try {
-      if (this.notificationService) {
-        await this.notificationService.createNotification({
+      // 👇 جلب NotificationService وقت التشغيل فقط (Lazy Loading)
+      // هذا يكسر الاعتماد الدائري تماماً
+      const notificationService = this.moduleRef.get(NotificationService, { strict: false });
+
+      if (notificationService) {
+        await notificationService.createNotification({
           recipientId: userId,
           type,
           title,
@@ -160,8 +162,8 @@ export class ServicesService {
         });
       }
     } catch (error) {
-      console.warn(`Notification failed for user ${userId}:`, error);
-      // Don't throw error - notifications are not critical for core functionality
+      // لن يوقف النظام، مجرد تحذير
+      this.logger.warn(`Notification failed for user ${userId}:`, error);
     }
   }
 
@@ -1085,27 +1087,27 @@ export class ServicesService {
     await r.save();
 
     // إضافة التقييم إلى بروفايل المهندس تلقائياً
- // في دالة rate
-if (r.engineerId) {
-  try {
-    // 👇 أضف هذا السطر
-    this.logger.log(`Attempting to sync rating for engineer: ${r.engineerId}`);
+    // في دالة rate
+    if (r.engineerId) {
+      try {
+        // 👇 أضف هذا السطر
+        this.logger.log(`Attempting to sync rating for engineer: ${r.engineerId}`);
 
-    await this.engineerProfileService.addRatingFromServiceRequest(
-      r.engineerId.toString(),
-      r._id.toString(),
-      userId,
-      score,
-      comment.trim(),
-    );
-    
-    // 👇 وأضف هذا السطر
-    this.logger.log('✅ Rating synced successfully to Engineer Profile!');
+        await this.engineerProfileService.addRatingFromServiceRequest(
+          r.engineerId.toString(),
+          r._id.toString(),
+          userId,
+          score,
+          comment.trim(),
+        );
 
-  } catch (error) {
-    this.logger.error(`Failed to add rating to engineer profile: ${error}`);
-  }
-}
+        // 👇 وأضف هذا السطر
+        this.logger.log('✅ Rating synced successfully to Engineer Profile!');
+
+      } catch (error) {
+        this.logger.error(`Failed to add rating to engineer profile: ${error}`);
+      }
+    }
 
     await this.safeNotify(
       userId,
