@@ -122,7 +122,10 @@ export class ServicesService {
     private configService: ConfigService,
     private engineerProfileService: EngineerProfileService, @Inject(forwardRef(() => SMSAdapter))
 
-    @Optional() private notificationService?: NotificationService,
+// ✅ التعديل هنا: استخدم forwardRef مع NotificationService
+    @Inject(forwardRef(() => NotificationService))
+    @Optional() 
+    private notificationService?: NotificationService,  
     @Inject(forwardRef(() => EngineerProfileService))
     @Optional()
     private smsAdapter?: SMSAdapter,

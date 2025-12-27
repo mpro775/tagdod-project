@@ -365,6 +365,9 @@ export class EngineerProfileService {
    * إذا كان التقييم موجوداً لنفس serviceRequestId، يتم تحديثه
    * وإلا يتم إضافة تقييم جديد
    */
+/**
+   * إضافة أو تحديث تقييم من طلب خدمة
+   */
   async addRatingFromServiceRequest(
     engineerId: string,
     serviceRequestId: string,
@@ -427,12 +430,21 @@ export class EngineerProfileService {
       profile.addRating(newRating);
     }
 
-    // تحديث الإحصائيات
+    // ✅ الخطوة 1: احفظ التقييم أولاً لتجنب VersionError
+    await profile.save();
+
+    // ✅ الخطوة 2: حدث الإحصائيات (هذه الدالة ستقوم بجلب البروفايل المحدث وحساب المتوسط وحفظه مرة أخرى)
     await this.updateStatistics(engineerId);
 
-    return await profile.save();
-  }
+    // ✅ الخطوة 3: أعد جلب البروفايل النهائي لإرجاعه (لضمان أنك ترجع أحدث نسخة بها التقييم + الإحصائيات الجديدة)
+    const finalProfile = await this.engineerProfileModel.findById(profile._id);
+    
+    if (!finalProfile) {
+        throw new NotFoundException('حدث خطأ أثناء استرجاع البروفايل المحدث');
+    }
 
+    return finalProfile;
+  }
   /**
    * حذف تقييم من طلب خدمة
    */

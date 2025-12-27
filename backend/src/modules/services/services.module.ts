@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CustomerServicesController } from './customer.controller';
 import { EngineerServicesController } from './engineer.controller';
@@ -31,7 +31,7 @@ import { UploadModule } from '../upload/upload.module';
       { name: User.name, schema: UserSchema }, // Required for EngineerGuard
     ]),
     AuthModule,
-    NotificationsCompleteModule,
+    forwardRef(() => NotificationsCompleteModule), // تأكد أنها هكذا   
     AddressesModule,
     UsersModule,
     SharedModule,
