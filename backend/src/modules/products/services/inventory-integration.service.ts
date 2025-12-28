@@ -147,13 +147,22 @@ export class InventoryIntegrationService {
         const skip = (page - 1) * limit;
 
         const pipeline = [
-            // دمج مع المنتجات
+            // 1. البحث عن المنتج الرئيسي (إذا كان الرابط منتجاً)
             {
                 $lookup: { from: 'products', localField: 'sku', foreignField: 'sku', as: 'p' },
             },
-            // دمج مع المتغيرات
+            // 2. البحث عن المتغير (إذا كان الرابط متغيراً)
             {
                 $lookup: { from: 'variants', localField: 'sku', foreignField: 'sku', as: 'v' },
+            },
+            // 3. (خطوة جديدة) البحث عن "أب" المتغير لجلب الاسم
+            {
+                $lookup: {
+                    from: 'products',
+                    localField: 'v.productId', // نأخذ آيدي الأب من المتغير
+                    foreignField: '_id',
+                    as: 'vParent' // هنا سيتم تخزين بيانات الأب
+                }
             },
             // شرط: يجب أن يكون موجوداً في Products أو Variants
             {
@@ -167,28 +176,51 @@ export class InventoryIntegrationService {
                 $project: {
                     sku: 1,
                     onyxStock: '$quantity',
-                    itemNameAr: 1, // اسم أونكس
+                    itemNameAr: 1,
                     lastSyncedAt: 1,
-                    // بيانات من تطبيقنا
-                    appProduct: { $arrayElemAt: ['$p', 0] },
-                    appVariant: { $arrayElemAt: ['$v', 0] },
+                    // نجهز البيانات للاستخدام
+                    productDoc: { $arrayElemAt: ['$p', 0] },
+                    variantDoc: { $arrayElemAt: ['$v', 0] },
+                    variantParentDoc: { $arrayElemAt: ['$vParent', 0] } // بيانات الأب
                 },
             },
         ];
 
         const items = await this.externalStockModel.aggregate(pipeline);
 
-        // تنسيق النتيجة
         return items.map((item) => {
-            const appItem = item.appProduct || item.appVariant;
+            // المنطق الذكي لتحديد الاسم
+            let appName = 'N/A';
+            let appStock = 0;
+            let isVariant = false;
+
+            if (item.productDoc) {
+                // الحالة الأولى: الربط مع منتج مباشر
+                appName = item.productDoc.name || item.productDoc.nameEn;
+                appStock = item.productDoc.stock;
+            } else if (item.variantDoc) {
+                // الحالة الثانية: الربط مع متغير (نأخذ الاسم من الأب)
+                isVariant = true;
+                appStock = item.variantDoc.stock;
+
+                if (item.variantParentDoc) {
+                    // دمج اسم الأب مع سمات المتغير (اختياري)
+                    const parentName = item.variantParentDoc.name || item.variantParentDoc.nameEn;
+                    // يمكن هنا إضافة تفاصيل المتغير لو أردت، مثلاً: قميص (أحمر)
+                    appName = `${parentName} (Variant)`;
+                } else {
+                    appName = 'Variant (Orphan)'; // متغير بدون أب (حالة نادرة)
+                }
+            }
+
             return {
                 sku: item.sku,
                 onyxName: item.itemNameAr,
-                appName: appItem?.name || appItem?.nameEn || 'N/A', // اسم المنتج في تطبيقنا
+                appName: appName,
                 onyxStock: item.onyxStock,
-                appStock: appItem?.stock, // للمقارنة
+                appStock: appStock,
                 lastSynced: item.lastSyncedAt,
-                isVariant: !!item.appVariant
+                isVariant: isVariant
             };
         });
     }
