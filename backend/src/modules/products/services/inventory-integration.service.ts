@@ -22,33 +22,30 @@ export class InventoryIntegrationService {
      * 1. استقبال البيانات من السكربت المحلي
      * هذه الدالة تقوم بتحديث "مخزون الظل" وتزامن المنتجات المربوطة
      */
-    async processBatchPayload(items: Array<{ sku: string; stock: number }>) {
-        this.logger.log(`Processing batch of ${items.length} items from Onyx...`);
+async processBatchPayload(items: Array<{ sku: string; stock: number; name?: string }>) {
+    this.logger.log(`Processing batch of ${items.length} items from Onyx...`);
 
-        // أ. تحديث مخزون الظل (ExternalStock) أولاً
-        const bulkOps = items.map((item) => ({
-            updateOne: {
-                filter: { sku: item.sku },
-                update: {
-                    $set: {
-                        quantity: item.stock,
-                        lastSyncedAt: new Date(),
-                    },
-                },
-                upsert: true, // إنشاء المستند إذا لم يكن موجوداً (منتج جديد في أونكس)
-            },
-        }));
+    const bulkOps = items.map((item) => ({
+      updateOne: {
+        filter: { sku: item.sku },
+        update: {
+          $set: {
+            quantity: item.stock,
+            itemNameAr: item.name, // ✅ حفظ الاسم العربي
+            lastSyncedAt: new Date(),
+          },
+        },
+        upsert: true,
+      },
+    }));
 
-        if (bulkOps.length > 0) {
-            await this.externalStockModel.bulkWrite(bulkOps);
-        }
-
-        // ب. عكس التحديث على النظام الفعلي (Products & Variants)
-        // هنا نستدعي منطق التحديث الجماعي للمنتجات المربوطة فقط
-        await this.syncLinkedProducts(items);
-
-        return { success: true, count: items.length };
+    if (bulkOps.length > 0) {
+      await this.externalStockModel.bulkWrite(bulkOps);
     }
+
+    await this.syncLinkedProducts(items);
+    return { success: true, count: items.length };
+  }
 
     /**
      * تحديث المخزون الفعلي في التطبيق بناءً على البيانات القادمة
@@ -146,6 +143,55 @@ export class InventoryIntegrationService {
         };
     }
 
+    async getLinkedProducts(limit = 50, page = 1) {
+    const skip = (page - 1) * limit;
+
+    const pipeline = [
+      // دمج مع المنتجات
+      {
+        $lookup: { from: 'products', localField: 'sku', foreignField: 'sku', as: 'p' },
+      },
+      // دمج مع المتغيرات
+      {
+        $lookup: { from: 'variants', localField: 'sku', foreignField: 'sku', as: 'v' },
+      },
+      // شرط: يجب أن يكون موجوداً في Products أو Variants
+      {
+        $match: {
+          $or: [{ 'p.0': { $exists: true } }, { 'v.0': { $exists: true } }],
+        },
+      },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $project: {
+          sku: 1,
+          onyxStock: '$quantity',
+          itemNameAr: 1, // اسم أونكس
+          lastSyncedAt: 1,
+          // بيانات من تطبيقنا
+          appProduct: { $arrayElemAt: ['$p', 0] },
+          appVariant: { $arrayElemAt: ['$v', 0] },
+        },
+      },
+    ];
+
+    const items = await this.externalStockModel.aggregate(pipeline);
+
+    // تنسيق النتيجة
+    return items.map((item) => {
+        const appItem = item.appProduct || item.appVariant;
+        return {
+            sku: item.sku,
+            onyxName: item.itemNameAr,
+            appName: appItem?.name || appItem?.nameEn || 'N/A', // اسم المنتج في تطبيقنا
+            onyxStock: item.onyxStock,
+            appStock: appItem?.stock, // للمقارنة
+            lastSynced: item.lastSyncedAt,
+            isVariant: !!item.appVariant
+        };
+    });
+  }
     /**
      * 3. جلب الفرص (منتجات في أونكس وغير موجودة عندنا)
      * يساعد المدير في إضافة المنتجات الناقصة

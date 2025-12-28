@@ -23,7 +23,10 @@ export class InventoryIntegrationController {
   async getUnlinkedItems(@Query('limit') limit: number) {
     return this.integrationService.getUnlinkedOpportunities(Number(limit) || 20);
   }
-
+  @Get('linked')
+  async getLinkedProducts(@Query('limit') limit: number, @Query('page') page: number) {
+    return this.integrationService.getLinkedProducts(Number(limit) || 50, Number(page) || 1);
+  }
   // 4. فحص SKU سريع (عند تعبئة الفورم)
   @Get('check-sku/:sku')
   async checkSku(@Param('sku') sku: string) {

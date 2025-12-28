@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -56,6 +56,7 @@ import { AttributeSelector } from '../components/AttributeSelector';
 import { MultipleImagesSelector } from '../components/MultipleImagesSelector';
 import { RelatedProductsSelector } from '../components/RelatedProductsSelector';
 import { GenerateVariantsDialog } from '../components/GenerateVariantsDialog';
+import { SmartSkuInput } from '../components/SmartSkuInput';
 import { ProductStatus } from '../types/product.types';
 import type { CreateProductDto, UpdateProductDto } from '../types/product.types';
 
@@ -102,8 +103,16 @@ export const ProductFormPage: React.FC = () => {
   const { t } = useTranslation(['products', 'common']);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isMobile } = useBreakpoint();
   const isEditMode = id !== 'new' && !!id;
+
+  // Prefill data from navigation state (from UnlinkedProductsPage)
+  const prefillData = location.state as {
+    prefillSku?: string;
+    prefillStock?: number;
+    prefillName?: string;
+  } | null;
 
   const [activeStep, setActiveStep] = React.useState(0);
   const [completedSteps, setCompletedSteps] = React.useState<Set<number>>(new Set());
@@ -131,6 +140,10 @@ export const ProductFormPage: React.FC = () => {
   const [manualRating, setManualRating] = React.useState<number>(0);
   const [manualReviewsCount, setManualReviewsCount] = React.useState<number>(0);
   const [generateVariantsDialogOpen, setGenerateVariantsDialogOpen] = React.useState(false);
+
+  // State for Onyx integration
+  const [isLinkedToOnyx, setIsLinkedToOnyx] = React.useState(false);
+  const [onyxStockValue, setOnyxStockValue] = React.useState<number | undefined>(undefined);
 
   const parseOptionalNumber = React.useCallback((value: string): number | undefined => {
     if (!value) {
@@ -274,6 +287,21 @@ export const ProductFormPage: React.FC = () => {
       });
     }
   }, [selectedImage]);
+
+  // Handle prefill from navigation state (from UnlinkedProductsPage)
+  React.useEffect(() => {
+    if (!isEditMode && prefillData) {
+      if (prefillData.prefillSku) {
+        methods.setValue('sku', prefillData.prefillSku);
+      }
+      if (prefillData.prefillStock !== undefined) {
+        setDefaultStock(prefillData.prefillStock);
+      }
+      if (prefillData.prefillName) {
+        methods.setValue('name', prefillData.prefillName);
+      }
+    }
+  }, [isEditMode, prefillData, methods]);
 
   // Open generate variants dialog
   const handleOpenGenerateDialog = () => {
@@ -576,8 +604,8 @@ export const ProductFormPage: React.FC = () => {
         typeof (product as any).basePriceUSD === 'number'
           ? (product as any).basePriceUSD
           : typeof (product as any).basePrice === 'number'
-          ? (product as any).basePrice
-          : undefined;
+            ? (product as any).basePrice
+            : undefined;
       if (typeof productBasePrice === 'number' && !Number.isNaN(productBasePrice)) {
         setDefaultPrice(productBasePrice);
       }
@@ -878,7 +906,23 @@ export const ProductFormPage: React.FC = () => {
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <FormInput name="sku" label={t('products:form.sku', 'SKU')} />
+                <SmartSkuInput
+                  value={methods.watch('sku') || ''}
+                  onChange={(value) => {
+                    methods.setValue('sku', value);
+                  }}
+                  onSkuValidated={(result) => {
+                    setIsLinkedToOnyx(result.existsInOnyx);
+                    if (result.existsInOnyx && result.onyxStock !== undefined) {
+                      setOnyxStockValue(result.onyxStock);
+                      // Auto-fill stock when linked to Onyx
+                      setDefaultStock(result.onyxStock);
+                    } else {
+                      setOnyxStockValue(undefined);
+                    }
+                  }}
+                  label={t('products:form.sku', 'رمز الصنف (SKU)')}
+                />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <FormSelect
@@ -926,13 +970,24 @@ export const ProductFormPage: React.FC = () => {
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
-                  label={t('products:form.defaultStock', 'المخزون الافتراضي') + ' *'}
+                  label={t('products:form.defaultStock', 'المخزون الافتراضي') + (isLinkedToOnyx ? '' : ' *')}
                   type="number"
                   value={defaultStock}
-                  onChange={(e) => setDefaultStock(Number(e.target.value))}
+                  onChange={(e) => !isLinkedToOnyx && setDefaultStock(Number(e.target.value))}
                   placeholder="0"
                   fullWidth
                   inputProps={{ min: 0 }}
+                  disabled={isLinkedToOnyx}
+                  helperText={
+                    isLinkedToOnyx
+                      ? t('products:integration.skuCheck.stockManaged', 'المخزون يدار آلياً من نظام أونكس')
+                      : undefined
+                  }
+                  sx={{
+                    '& .MuiInputBase-input.Mui-disabled': {
+                      WebkitTextFillColor: isLinkedToOnyx ? 'green' : undefined,
+                    },
+                  }}
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>
@@ -982,13 +1037,13 @@ export const ProductFormPage: React.FC = () => {
                           <Typography variant="body2" color="text.secondary">
                             {isEditMode
                               ? t(
-                                  'products:form.generateVariantsDescription',
-                                  'سيتم إنشاء متغيرات بحسب السمات المختارة'
-                                )
+                                'products:form.generateVariantsDescription',
+                                'سيتم إنشاء متغيرات بحسب السمات المختارة'
+                              )
                               : t(
-                                  'products:form.generateVariantsNew',
-                                  'سيتم حفظ المنتج أولاً ثم توليد المتغيرات'
-                                )}
+                                'products:form.generateVariantsNew',
+                                'سيتم حفظ المنتج أولاً ثم توليد المتغيرات'
+                              )}
                           </Typography>
                         </Box>
                         <Button
@@ -1389,13 +1444,13 @@ export const ProductFormPage: React.FC = () => {
                   >
                     {product.useManualRating
                       ? `${product.manualReviewsCount || 0} ${t(
-                          'products:stats.reviewsManual',
-                          'تقييم (يدوي)'
-                        )}`
+                        'products:stats.reviewsManual',
+                        'تقييم (يدوي)'
+                      )}`
                       : `${product.reviewsCount || 0} ${t(
-                          'products:stats.reviewsReal',
-                          'تقييم (حقيقي)'
-                        )}`}
+                        'products:stats.reviewsReal',
+                        'تقييم (حقيقي)'
+                      )}`}
                   </Typography>
                 </CardContent>
               </Card>
@@ -1500,8 +1555,8 @@ export const ProductFormPage: React.FC = () => {
                       bgcolor: completed
                         ? 'success.main'
                         : active
-                        ? 'primary.main'
-                        : 'action.disabledBackground',
+                          ? 'primary.main'
+                          : 'action.disabledBackground',
                       color: completed || active ? 'white' : 'action.disabled',
                       fontWeight: 'bold',
                       fontSize: '0.875rem',

@@ -185,6 +185,33 @@
           }
         },
         {
+          "name": "GET /api/v1/inventory/integration/linked",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/inventory/integration/linked",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "inventory",
+                "integration",
+                "linked"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
           "name": "GET /api/v1/inventory/integration/check-sku/{sku}",
           "request": {
             "method": "GET",

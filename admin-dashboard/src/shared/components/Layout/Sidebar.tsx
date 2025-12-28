@@ -46,6 +46,8 @@ import {
   DeleteForever,
   VerifiedUser,
   Info,
+  Sync,
+  AddCircleOutline,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -153,6 +155,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
                 label: t('navigation.productsInventory', 'إدارة المخزون'),
                 icon: <ViewModule />,
                 path: '/products/inventory',
+              },
+              {
+                id: 'products-integration',
+                label: t('navigation.productsIntegration', 'ربط المخزون'),
+                icon: <Sync />,
+                path: '/products/integration',
+              },
+              {
+                id: 'products-unlinked',
+                label: t('navigation.productsUnlinked', 'فرص الإضافة'),
+                icon: <AddCircleOutline />,
+                path: '/products/unlinked',
               },
             ],
           },

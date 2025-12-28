@@ -82,6 +82,21 @@ const ProductViewPage = lazy(() =>
     default: m.ProductViewPage,
   }))
 );
+const IntegrationDashboardPage = lazy(() =>
+  import('@/features/products/pages/IntegrationDashboardPage').then((m) => ({
+    default: m.IntegrationDashboardPage,
+  }))
+);
+const UnlinkedProductsPage = lazy(() =>
+  import('@/features/products/pages/UnlinkedProductsPage').then((m) => ({
+    default: m.UnlinkedProductsPage,
+  }))
+);
+const LinkedProductsPage = lazy(() =>
+  import('@/features/products/pages/LinkedProductsPage').then((m) => ({
+    default: m.LinkedProductsPage,
+  }))
+);
 const CategoriesListPage = lazy(() =>
   import('@/features/categories/pages/CategoriesListPage').then((m) => ({
     default: m.CategoriesListPage,
@@ -481,6 +496,18 @@ export const routes: RouteObject[] = [
       {
         path: 'products/inventory',
         element: <InventoryPage />,
+      },
+      {
+        path: 'products/integration',
+        element: <IntegrationDashboardPage />,
+      },
+      {
+        path: 'products/unlinked',
+        element: <UnlinkedProductsPage />,
+      },
+      {
+        path: 'products/linked',
+        element: <LinkedProductsPage />,
       },
 
       // Categories
