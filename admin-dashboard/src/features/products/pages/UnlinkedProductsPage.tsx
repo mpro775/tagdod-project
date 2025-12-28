@@ -13,6 +13,12 @@ import {
     Alert,
     Chip,
     Tooltip,
+    Card,
+    CardContent,
+    Grid,
+    CircularProgress,
+    TextField,
+    InputAdornment,
 } from '@mui/material';
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import {
@@ -22,15 +28,18 @@ import {
     ChevronRight,
     Inventory,
     ArrowBack,
+    Search,
 } from '@mui/icons-material';
 import { Breadcrumbs, Link } from '@mui/material';
 import { DataTable } from '@/shared/components';
 import { useUnlinkedItems } from '../hooks/useInventoryIntegration';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import type { UnlinkedItem } from '../types/inventory-integration.types';
 
 export const UnlinkedProductsPage: React.FC = () => {
     const { t } = useTranslation(['products', 'common']);
     const navigate = useNavigate();
+    const { isMobile } = useBreakpoint();
     const [searchQuery, setSearchQuery] = React.useState('');
     const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 25 });
 
@@ -134,8 +143,71 @@ export const UnlinkedProductsPage: React.FC = () => {
         },
     ];
 
+    // Mobile Card Component
+    const UnlinkedItemCard = ({ item }: { item: UnlinkedItem }) => {
+        return (
+            <Card
+                variant="outlined"
+                sx={{
+                    height: '100%',
+                    borderColor: 'warning.light',
+                    borderWidth: 2,
+                }}
+            >
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                    {/* SKU */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                        <Chip
+                            label={item.sku}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
+                        />
+                        <Chip
+                            label={item.quantity?.toLocaleString('en-US') ?? 0}
+                            color={item.quantity > 0 ? 'success' : 'default'}
+                            size="small"
+                        />
+                    </Box>
+
+                    {/* Name */}
+                    <Typography variant="body2" fontWeight="bold" noWrap sx={{ mb: 1 }}>
+                        {item.itemNameAr || (
+                            <Typography component="span" variant="body2" color="text.secondary" fontStyle="italic">
+                                {t('products:integration.unlinked.noName', 'بدون اسم')}
+                            </Typography>
+                        )}
+                    </Typography>
+
+                    {/* Quantity Label */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                        <Inventory sx={{ fontSize: 18, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">
+                            {t('products:integration.unlinked.columns.quantity', 'الكمية')}:
+                            <Typography component="span" fontWeight="bold" color="text.primary" sx={{ ml: 0.5 }}>
+                                {item.quantity?.toLocaleString('ar-SA') ?? 0}
+                            </Typography>
+                        </Typography>
+                    </Box>
+
+                    {/* Action Button */}
+                    <Button
+                        variant="contained"
+                        size="small"
+                        color="primary"
+                        startIcon={<Add />}
+                        onClick={() => handleCreateProduct(item)}
+                        fullWidth
+                    >
+                        {t('products:integration.unlinked.createProduct', 'إضافة كمنتج')}
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    };
+
     return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
             {/* Breadcrumbs */}
             <Breadcrumbs separator={<ChevronRight fontSize="small" />} sx={{ mb: 3 }}>
                 <Link
@@ -179,7 +251,7 @@ export const UnlinkedProductsPage: React.FC = () => {
                     >
                         {t('common:actions.back', 'رجوع')}
                     </Button>
-                    <Typography variant="h4" fontWeight="bold" gutterBottom>
+                    <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight="bold" gutterBottom>
                         <Inventory sx={{ mr: 1, verticalAlign: 'middle', color: 'warning.main' }} />
                         {t('products:integration.unlinked.title', 'المنتجات غير المربوطة')}
                     </Typography>
@@ -200,8 +272,8 @@ export const UnlinkedProductsPage: React.FC = () => {
                 </Button>
             </Box>
 
-            {/* Summary Stats - استخدام العداد الحقيقي من الباك إند */}
-            <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            {/* Summary Stats */}
+            <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Chip
                     label={`${t('products:integration.unlinked.totalLabel', 'إجمالي')}: ${totalCount.toLocaleString('ar-SA')} ${t('products:integration.unlinked.itemUnit', 'صنف')}`}
                     color="warning"
@@ -221,6 +293,25 @@ export const UnlinkedProductsPage: React.FC = () => {
                 )}
             </Box>
 
+            {/* Mobile Search */}
+            {isMobile && (
+                <TextField
+                    fullWidth
+                    size="small"
+                    placeholder={t('products:integration.unlinked.search', 'بحث برمز الصنف...')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    sx={{ mb: 2 }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <Search />
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+            )}
+
             {/* Error Alert */}
             {error && (
                 <Alert severity="error" sx={{ mb: 3 }}>
@@ -228,18 +319,42 @@ export const UnlinkedProductsPage: React.FC = () => {
                 </Alert>
             )}
 
-            {/* DataTable */}
-            <DataTable
-                columns={columns}
-                rows={filteredItems}
-                loading={isLoading}
-                paginationModel={paginationModel}
-                onPaginationModelChange={setPaginationModel}
-                getRowId={(row) => (row as UnlinkedItem)._id || (row as UnlinkedItem).sku}
-                onSearch={setSearchQuery}
-                searchPlaceholder={t('products:integration.unlinked.search', 'بحث برمز الصنف...')}
-                height={600}
-            />
+            {/* Content - Cards for Mobile, DataTable for Desktop */}
+            {isLoading ? (
+                <Box display="flex" justifyContent="center" p={4}>
+                    <CircularProgress />
+                </Box>
+            ) : isMobile ? (
+                /* Mobile Card Layout */
+                <Grid container spacing={2}>
+                    {filteredItems.length > 0 ? (
+                        filteredItems.map((item) => (
+                            <Grid size={{ xs: 12 }} key={item._id || item.sku}>
+                                <UnlinkedItemCard item={item} />
+                            </Grid>
+                        ))
+                    ) : (
+                        <Grid size={{ xs: 12 }}>
+                            <Alert severity="info">
+                                {t('products:integration.unlinked.noResults', 'لا توجد نتائج')}
+                            </Alert>
+                        </Grid>
+                    )}
+                </Grid>
+            ) : (
+                /* Desktop DataTable */
+                <DataTable
+                    columns={columns}
+                    rows={filteredItems}
+                    loading={isLoading}
+                    paginationModel={paginationModel}
+                    onPaginationModelChange={setPaginationModel}
+                    getRowId={(row) => (row as UnlinkedItem)._id || (row as UnlinkedItem).sku}
+                    onSearch={setSearchQuery}
+                    searchPlaceholder={t('products:integration.unlinked.search', 'بحث برمز الصنف...')}
+                    height={600}
+                />
+            )}
 
             {/* Info Alert */}
             <Alert severity="info" sx={{ mt: 3 }}>

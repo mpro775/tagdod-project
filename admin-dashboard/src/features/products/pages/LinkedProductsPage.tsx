@@ -14,6 +14,12 @@ import {
     Breadcrumbs,
     Link,
     Alert,
+    Card,
+    CardContent,
+    Grid,
+    CircularProgress,
+    TextField,
+    InputAdornment,
 } from '@mui/material';
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import {
@@ -22,14 +28,19 @@ import {
     Link as LinkIcon,
     Refresh,
     ArrowBack,
+    Search,
+    CheckCircle,
+    Warning,
 } from '@mui/icons-material';
 import { DataTable } from '@/shared/components';
 import { useLinkedProducts } from '../hooks/useInventoryIntegration';
+import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import type { LinkedItem } from '../types/inventory-integration.types';
 
 export const LinkedProductsPage: React.FC = () => {
     const { t } = useTranslation(['products', 'common']);
     const navigate = useNavigate();
+    const { isMobile } = useBreakpoint();
     const [searchQuery, setSearchQuery] = useState('');
     const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
 
@@ -143,8 +154,71 @@ export const LinkedProductsPage: React.FC = () => {
         },
     ];
 
+    // Mobile Card Component
+    const LinkedItemCard = ({ item }: { item: LinkedItem }) => {
+        const isMatch = item.appStock === item.onyxStock;
+        return (
+            <Card
+                variant="outlined"
+                sx={{
+                    height: '100%',
+                    borderColor: isMatch ? 'success.light' : 'warning.light',
+                    borderWidth: 2,
+                }}
+            >
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                    {/* SKU & Status */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                        <Chip
+                            label={item.sku}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
+                        />
+                        <Chip
+                            icon={isMatch ? <CheckCircle sx={{ fontSize: 16 }} /> : <Warning sx={{ fontSize: 16 }} />}
+                            label={isMatch ? 'متطابق' : 'اختلاف'}
+                            color={isMatch ? 'success' : 'warning'}
+                            size="small"
+                        />
+                    </Box>
+
+                    {/* Names */}
+                    <Typography variant="body2" fontWeight="bold" noWrap sx={{ mb: 0.5 }}>
+                        {item.appName || item.onyxName || '-'}
+                    </Typography>
+                    {item.onyxName && item.appName && item.onyxName !== item.appName && (
+                        <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ mb: 1 }}>
+                            أونكس: {item.onyxName}
+                        </Typography>
+                    )}
+
+                    {/* Stock Comparison */}
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: 1, bgcolor: 'grey.100', borderRadius: 1 }}>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                                أونكس
+                            </Typography>
+                            <Typography variant="h6" color="primary.main">
+                                {item.onyxStock?.toLocaleString('en-US') ?? 0}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: 1, bgcolor: isMatch ? 'success.light' : 'error.light', borderRadius: 1 }}>
+                            <Typography variant="caption" color={isMatch ? 'success.dark' : 'error.dark'} display="block">
+                                التطبيق
+                            </Typography>
+                            <Typography variant="h6" color={isMatch ? 'success.dark' : 'error.dark'}>
+                                {item.appStock?.toLocaleString('en-US') ?? 0}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </CardContent>
+            </Card>
+        );
+    };
+
     return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
             {/* Breadcrumbs */}
             <Breadcrumbs separator={<ChevronRight fontSize="small" />} sx={{ mb: 3 }}>
                 <Link
@@ -180,7 +254,7 @@ export const LinkedProductsPage: React.FC = () => {
                     >
                         {t('common:actions.back', 'رجوع')}
                     </Button>
-                    <Typography variant="h4" fontWeight="bold" gutterBottom>
+                    <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight="bold" gutterBottom>
                         <LinkIcon sx={{ mr: 1, verticalAlign: 'middle', color: 'success.main' }} />
                         {t('products:integration.linked.title', 'المنتجات المربوطة')}
                     </Typography>
@@ -198,8 +272,8 @@ export const LinkedProductsPage: React.FC = () => {
                 </Button>
             </Box>
 
-            {/* Summary Stats - استخدام العداد الحقيقي من الباك إند */}
-            <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            {/* Summary Stats */}
+            <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Chip
                     label={`${t('products:integration.linked.totalLabel', 'إجمالي')}: ${totalCount.toLocaleString('ar-SA')} ${t('products:integration.linked.productUnit', 'منتج')}`}
                     color="success"
@@ -222,18 +296,61 @@ export const LinkedProductsPage: React.FC = () => {
                 />
             </Box>
 
-            {/* DataTable */}
-            <DataTable
-                columns={columns}
-                rows={filteredItems}
-                loading={isLoading}
-                paginationModel={paginationModel}
-                onPaginationModelChange={setPaginationModel}
-                getRowId={(row) => (row as LinkedItem).sku}
-                onSearch={setSearchQuery}
-                searchPlaceholder={t('products:integration.linked.search', 'بحث برمز SKU أو اسم المنتج...')}
-                height={600}
-            />
+            {/* Mobile Search */}
+            {isMobile && (
+                <TextField
+                    fullWidth
+                    size="small"
+                    placeholder={t('products:integration.linked.search', 'بحث برمز SKU أو اسم المنتج...')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    sx={{ mb: 2 }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <Search />
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+            )}
+
+            {/* Content - Cards for Mobile, DataTable for Desktop */}
+            {isLoading ? (
+                <Box display="flex" justifyContent="center" p={4}>
+                    <CircularProgress />
+                </Box>
+            ) : isMobile ? (
+                /* Mobile Card Layout */
+                <Grid container spacing={2}>
+                    {filteredItems.length > 0 ? (
+                        filteredItems.map((item) => (
+                            <Grid size={{ xs: 12 }} key={item.sku}>
+                                <LinkedItemCard item={item} />
+                            </Grid>
+                        ))
+                    ) : (
+                        <Grid size={{ xs: 12 }}>
+                            <Alert severity="info">
+                                {t('products:integration.linked.noResults', 'لا توجد نتائج')}
+                            </Alert>
+                        </Grid>
+                    )}
+                </Grid>
+            ) : (
+                /* Desktop DataTable */
+                <DataTable
+                    columns={columns}
+                    rows={filteredItems}
+                    loading={isLoading}
+                    paginationModel={paginationModel}
+                    onPaginationModelChange={setPaginationModel}
+                    getRowId={(row) => (row as LinkedItem).sku}
+                    onSearch={setSearchQuery}
+                    searchPlaceholder={t('products:integration.linked.search', 'بحث برمز SKU أو اسم المنتج...')}
+                    height={600}
+                />
+            )}
 
             {/* Info Alert */}
             <Alert severity="info" sx={{ mt: 3 }}>
