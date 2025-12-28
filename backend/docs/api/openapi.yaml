@@ -2722,6 +2722,44 @@ paths:
           description: Product not found
       tags:
         - المنتجات
+  /api/v1/inventory/integration/sync-batch:
+    post:
+      operationId: syncBatch
+      parameters: []
+      responses:
+        '201':
+          description: ''
+  /api/v1/inventory/integration/dashboard:
+    get:
+      operationId: getDashboard
+      parameters: []
+      responses:
+        '200':
+          description: ''
+  /api/v1/inventory/integration/unlinked:
+    get:
+      operationId: getUnlinkedItems
+      parameters:
+        - name: limit
+          required: true
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ''
+  /api/v1/inventory/integration/check-sku/{sku}:
+    get:
+      operationId: checkSku
+      parameters:
+        - name: sku
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
   /api/v1/admin/attributes:
     post:
       operationId: createAttribute

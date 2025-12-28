@@ -6,11 +6,17 @@ import { PricingService } from './services/pricing.service';
 import { ProductPricingCalculatorService } from './services/product-pricing-calculator.service';
 import { InventoryService } from './services/inventory.service';
 import { StockAlertService } from './services/stock-alert.service';
+// 1. استيراد السيرفس الجديد
+import { InventoryIntegrationService } from './services/inventory-integration.service';
 import { PublicProductsPresenter } from './services/public-products.presenter';
 import { ProductsController } from './controllers/products.controller';
 import { PublicProductsController } from './controllers/public-products.controller';
+// 2. استيراد الكنترولر الجديد
+import { InventoryIntegrationController } from './controllers/inventory-integration.controller';
 import { Product, ProductSchema } from './schemas/product.schema';
 import { Variant, VariantSchema } from './schemas/variant.schema';
+// 3. استيراد سكيما المخزون الخارجي
+import { ExternalStock, ExternalStockSchema } from './schemas/external-stock.schema';
 import { CacheModule } from '../../shared/cache/cache.module';
 import { AttributesModule } from '../attributes/attributes.module';
 import { CategoriesModule } from '../categories/categories.module';
@@ -29,6 +35,8 @@ import { MarketingModule } from '../marketing/marketing.module';
       { name: Variant.name, schema: VariantSchema },
       { name: User.name, schema: UserSchema },
       { name: Capabilities.name, schema: CapabilitiesSchema },
+      // 4. تسجيل السكيما الجديدة هنا
+      { name: ExternalStock.name, schema: ExternalStockSchema },
     ]),
     CacheModule,
     AttributesModule,
@@ -39,7 +47,12 @@ import { MarketingModule } from '../marketing/marketing.module';
     SharedModule,
     forwardRef(() => MarketingModule),
   ],
-  controllers: [ProductsController, PublicProductsController],
+  controllers: [
+    ProductsController,
+    PublicProductsController,
+    // 5. إضافة الكنترولر الجديد
+    InventoryIntegrationController
+  ],
   providers: [
     ProductService,
     VariantService,
@@ -48,6 +61,8 @@ import { MarketingModule } from '../marketing/marketing.module';
     InventoryService,
     StockAlertService,
     PublicProductsPresenter,
+    // 6. إضافة السيرفس الجديد
+    InventoryIntegrationService,
   ],
   exports: [
     ProductService,
@@ -57,7 +72,9 @@ import { MarketingModule } from '../marketing/marketing.module';
     InventoryService,
     StockAlertService,
     PublicProductsPresenter,
+    // 7. تصديره في حال احتجت استخدامه خارج الموديول
+    InventoryIntegrationService,
     MongooseModule,
   ],
 })
-export class ProductsModule {}
+export class ProductsModule { }
