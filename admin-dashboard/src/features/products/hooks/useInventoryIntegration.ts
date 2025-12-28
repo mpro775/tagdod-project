@@ -19,20 +19,26 @@ export const useIntegrationStats = () => {
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
 };
+
+/**
+ * Hook for fetching linked products
+ * المنتجات المربوطة
+ */
 export const useLinkedProducts = (limit = 50, page = 1) => {
     return useQuery({
-        queryKey: ['inventory-integration', 'linked', limit, page],
+        queryKey: [INTEGRATION_KEY, 'linked', limit, page],
         queryFn: () => inventoryIntegrationApi.getLinkedProducts(limit, page),
     });
 };
+
 /**
  * Hook for fetching unlinked items
  * المنتجات غير المربوطة
  */
-export const useUnlinkedItems = (limit = 50) => {
+export const useUnlinkedItems = (limit = 50, page = 1) => {
     return useQuery({
-        queryKey: [INTEGRATION_KEY, 'unlinked', limit],
-        queryFn: () => inventoryIntegrationApi.getUnlinkedItems(limit),
+        queryKey: [INTEGRATION_KEY, 'unlinked', limit, page],
+        queryFn: () => inventoryIntegrationApi.getUnlinkedItems(limit, page),
     });
 };
 

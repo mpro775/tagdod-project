@@ -905,25 +905,52 @@ export const ProductFormPage: React.FC = () => {
                   disabled={dataLoading}
                 />
               </Grid>
+
+              {/* ✅ قسم SKU المحسن */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <SmartSkuInput
                   value={methods.watch('sku') || ''}
                   onChange={(value) => {
                     methods.setValue('sku', value);
+                    // إذا قام المستخدم بتغيير الـ SKU، نعيد تعيين حالة الربط مؤقتاً حتى يتم التحقق
+                    if (value.length < 3) {
+                      setIsLinkedToOnyx(false);
+                      setOnyxStockValue(undefined);
+                    }
                   }}
                   onSkuValidated={(result) => {
                     setIsLinkedToOnyx(result.existsInOnyx);
+
                     if (result.existsInOnyx && result.onyxStock !== undefined) {
+                      // ✅ حالة النجاح: تعبئة المخزون ومنع التعديل
                       setOnyxStockValue(result.onyxStock);
-                      // Auto-fill stock when linked to Onyx
                       setDefaultStock(result.onyxStock);
+                      toast.success(t('products:integration.linkedSuccess', 'تم الربط مع أونكس بنجاح'));
                     } else {
+                      // ⚠️ حالة عدم الوجود: السماح بالتعديل اليدوي
                       setOnyxStockValue(undefined);
                     }
                   }}
                   label={t('products:form.sku', 'رمز الصنف (SKU)')}
                 />
+
+                {/* رسائل توضيحية بناءً على حالة الربط */}
+                {(methods.watch('sku') || '').length >= 3 && (
+                  <Box mt={1}>
+                    {isLinkedToOnyx ? (
+                      <Alert severity="success" icon={<CheckCircle fontSize="inherit" />}>
+                        {t('products:integration.foundMsg', 'المنتج موجود في أونكس. سيتم إدارة المخزون تلقائياً.')}
+                        <strong> ({t('products:stock', 'المتوفر')}: {onyxStockValue?.toLocaleString('ar-SA')})</strong>
+                      </Alert>
+                    ) : (
+                      <Alert severity="warning">
+                        {t('products:integration.notFoundMsg', 'هذا الرمز غير موجود في أونكس. يجب إدارة المخزون يدوياً.')}
+                      </Alert>
+                    )}
+                  </Box>
+                )}
               </Grid>
+
               <Grid size={{ xs: 12, md: 6 }}>
                 <FormSelect
                   name="status"
@@ -968,26 +995,45 @@ export const ProductFormPage: React.FC = () => {
                   )}
                 />
               </Grid>
+              {/* ✅ حقل المخزون المحسن */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
                   label={t('products:form.defaultStock', 'المخزون الافتراضي') + (isLinkedToOnyx ? '' : ' *')}
                   type="number"
-                  value={defaultStock}
-                  onChange={(e) => !isLinkedToOnyx && setDefaultStock(Number(e.target.value))}
+                  // إذا كان مربوطاً، نستخدم قيمة أونكس، وإلا نستخدم القيمة المدخلة يدوياً
+                  value={isLinkedToOnyx ? onyxStockValue : defaultStock}
+                  onChange={(e) => {
+                    // نمنع التغيير إذا كان مربوطاً
+                    if (!isLinkedToOnyx) {
+                      setDefaultStock(Number(e.target.value));
+                    }
+                  }}
                   placeholder="0"
                   fullWidth
                   inputProps={{ min: 0 }}
+                  // تعطيل الحقل إذا كان مربوطاً
                   disabled={isLinkedToOnyx}
-                  helperText={
-                    isLinkedToOnyx
-                      ? `${t('products:integration.skuCheck.stockManaged', 'المخزون يدار آلياً من نظام أونكس')} (${onyxStockValue?.toLocaleString('en-US') ?? 0})`
-                      : undefined
-                  }
+                  // تلوين الخلفية إذا كان معطلاً لتمييزه
                   sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      backgroundColor: isLinkedToOnyx ? 'action.hover' : 'inherit',
+                    },
                     '& .MuiInputBase-input.Mui-disabled': {
-                      WebkitTextFillColor: isLinkedToOnyx ? 'green' : undefined,
+                      WebkitTextFillColor: isLinkedToOnyx ? '#2e7d32' : undefined, // لون أخضر غامق للقيمة
+                      fontWeight: isLinkedToOnyx ? 'bold' : 'normal',
                     },
                   }}
+                  // رسالة مساعدة توضح السبب
+                  helperText={
+                    isLinkedToOnyx ? (
+                      <Box component="span" sx={{ display: 'flex', alignItems: 'center', color: 'success.main' }}>
+                        <CheckCircle sx={{ fontSize: 14, mr: 0.5 }} />
+                        {t('products:integration.stockSynced', 'يتم جلب الكمية تلقائياً من نظام أونكس')}
+                      </Box>
+                    ) : (
+                      t('products:form.stockManualHelp', 'أدخل الكمية المتوفرة يدوياً')
+                    )
+                  }
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>

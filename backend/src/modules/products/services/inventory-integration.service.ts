@@ -147,69 +147,72 @@ export class InventoryIntegrationService {
         const skip = (page - 1) * limit;
 
         const pipeline = [
-            // 1. البحث عن المنتج الرئيسي (إذا كان الرابط منتجاً)
-            {
-                $lookup: { from: 'products', localField: 'sku', foreignField: 'sku', as: 'p' },
-            },
-            // 2. البحث عن المتغير (إذا كان الرابط متغيراً)
-            {
-                $lookup: { from: 'variants', localField: 'sku', foreignField: 'sku', as: 'v' },
-            },
-            // 3. (خطوة جديدة) البحث عن "أب" المتغير لجلب الاسم
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'v.productId', // نأخذ آيدي الأب من المتغير
-                    foreignField: '_id',
-                    as: 'vParent' // هنا سيتم تخزين بيانات الأب
-                }
-            },
-            // شرط: يجب أن يكون موجوداً في Products أو Variants
+            // 1. مراحل البحث والدمج (كما هي سابقاً)
+            { $lookup: { from: 'products', localField: 'sku', foreignField: 'sku', as: 'p' } },
+            { $lookup: { from: 'variants', localField: 'sku', foreignField: 'sku', as: 'v' } },
+            { $lookup: { from: 'products', localField: 'v.productId', foreignField: '_id', as: 'vParent' } },
+
+            // 2. الفلترة (المربوط فقط)
             {
                 $match: {
                     $or: [{ 'p.0': { $exists: true } }, { 'v.0': { $exists: true } }],
                 },
             },
-            { $skip: skip },
-            { $limit: limit },
+
+            // 3. ✅ التغيير الجوهري: استخدام $facet لفصل العد عن البيانات
             {
-                $project: {
-                    sku: 1,
-                    onyxStock: '$quantity',
-                    itemNameAr: 1,
-                    lastSyncedAt: 1,
-                    // نجهز البيانات للاستخدام
-                    productDoc: { $arrayElemAt: ['$p', 0] },
-                    variantDoc: { $arrayElemAt: ['$v', 0] },
-                    variantParentDoc: { $arrayElemAt: ['$vParent', 0] } // بيانات الأب
-                },
-            },
+                $facet: {
+                    metadata: [{ $count: 'total' }], // حساب العدد الكلي
+                    data: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        {
+                            $project: { // نفس الـ Project السابق
+                                sku: 1,
+                                onyxStock: '$quantity',
+                                itemNameAr: 1,
+                                lastSyncedAt: 1,
+                                productDoc: { $arrayElemAt: ['$p', 0] },
+                                variantDoc: { $arrayElemAt: ['$v', 0] },
+                                variantParentDoc: { $arrayElemAt: ['$vParent', 0] }
+                            },
+                        }
+                    ]
+                }
+            }
         ];
 
-        const items = await this.externalStockModel.aggregate(pipeline);
+        const result = await this.externalStockModel.aggregate(pipeline);
 
-        return items.map((item) => {
-            // المنطق الذكي لتحديد الاسم
+        // استخراج النتائج
+        const total = result[0].metadata[0]?.total || 0;
+        const items = result[0].data;
+
+        // تنسيق البيانات (Map)
+        const formattedItems = items.map((item: {
+            sku: string;
+            onyxStock: number;
+            itemNameAr?: string;
+            lastSyncedAt?: Date;
+            productDoc?: { name?: string; nameEn?: string; stock: number };
+            variantDoc?: { stock: number };
+            variantParentDoc?: { name?: string; nameEn?: string };
+        }) => {
             let appName = 'N/A';
             let appStock = 0;
             let isVariant = false;
 
             if (item.productDoc) {
-                // الحالة الأولى: الربط مع منتج مباشر
-                appName = item.productDoc.name || item.productDoc.nameEn;
+                appName = item.productDoc.name || item.productDoc.nameEn || 'N/A';
                 appStock = item.productDoc.stock;
             } else if (item.variantDoc) {
-                // الحالة الثانية: الربط مع متغير (نأخذ الاسم من الأب)
                 isVariant = true;
                 appStock = item.variantDoc.stock;
-
                 if (item.variantParentDoc) {
-                    // دمج اسم الأب مع سمات المتغير (اختياري)
                     const parentName = item.variantParentDoc.name || item.variantParentDoc.nameEn;
-                    // يمكن هنا إضافة تفاصيل المتغير لو أردت، مثلاً: قميص (أحمر)
                     appName = `${parentName} (Variant)`;
                 } else {
-                    appName = 'Variant (Orphan)'; // متغير بدون أب (حالة نادرة)
+                    appName = 'Variant (Orphan)';
                 }
             }
 
@@ -223,35 +226,53 @@ export class InventoryIntegrationService {
                 isVariant: isVariant
             };
         });
+
+        // إرجاع كائن يحتوي على القائمة + العدد الكلي
+        return {
+            data: formattedItems,
+            total: total,
+            page: page,
+            limit: limit
+        };
     }
     /**
      * 3. جلب الفرص (منتجات في أونكس وغير موجودة عندنا)
      * يساعد المدير في إضافة المنتجات الناقصة
      */
-    async getUnlinkedOpportunities(limit = 50) {
-        return this.externalStockModel.aggregate([
-            {
-                $lookup: { from: 'products', localField: 'sku', foreignField: 'sku', as: 'p' },
-            },
-            {
-                $lookup: { from: 'variants', localField: 'sku', foreignField: 'sku', as: 'v' },
-            },
-            {
-                $match: { p: { $size: 0 }, v: { $size: 0 } },
-            },
-            { $limit: limit },
-            {
-                // 👇 هنا المشكلة: يجب إضافة itemNameAr للقائمة
-                $project: {
-                    sku: 1,
-                    quantity: 1,
-                    itemNameAr: 1, // ✅ تمت إضافته (تأكد أن هذا هو نفس الاسم في السكيما)
-                    suggestion: { $literal: 'موجود في أونكس وغير مضاف للتطبيق' }, // أو استخدام Literal
-                },
-            },
-        ]);
-    }
+    async getUnlinkedOpportunities(limit = 50, page = 1) { // أضفنا Page هنا أيضاً
+        const skip = (page - 1) * limit;
 
+        const result = await this.externalStockModel.aggregate([
+            { $lookup: { from: 'products', localField: 'sku', foreignField: 'sku', as: 'p' } },
+            { $lookup: { from: 'variants', localField: 'sku', foreignField: 'sku', as: 'v' } },
+            { $match: { p: { $size: 0 }, v: { $size: 0 } } },
+            {
+                $facet: {
+                    metadata: [{ $count: 'total' }],
+                    data: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        {
+                            $project: {
+                                sku: 1,
+                                quantity: 1,
+                                itemNameAr: 1,
+                                suggestion: { $literal: 'موجود في أونكس وغير مضاف للتطبيق' },
+                            },
+                        }
+                    ]
+                }
+            }
+        ]);
+
+        const total = result[0].metadata[0]?.total || 0;
+        const items = result[0].data;
+
+        return {
+            data: items,
+            total: total
+        };
+    }
     /**
      * 4. فحص الـ SKU الفوري (عند إنشاء منتج)
      * يستخدمه الفرونت اند لإظهار تلميح للمدير

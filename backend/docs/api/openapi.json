@@ -4222,6 +4222,14 @@
             "schema": {
               "type": "number"
             }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "responses": {

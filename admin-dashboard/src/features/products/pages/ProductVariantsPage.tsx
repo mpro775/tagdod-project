@@ -22,7 +22,7 @@ import {
 import { ArrowBack, Add, Save, Cancel, Edit, Delete, Check, Close, SelectAll, Deselect, Clear, Home, ChevronRight } from '@mui/icons-material';
 import { Breadcrumbs, Link } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
@@ -41,6 +41,8 @@ import { VariantCard } from '../components/VariantCard';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import { ConfirmDialog } from '@/shared/components';
+import { SmartSkuInput } from '../components/SmartSkuInput';
+import { inventoryIntegrationApi } from '../api/inventoryIntegrationApi';
 import type { Variant, CreateVariantDto } from '../types/product.types';
 
 // Validation Schema for Variant (مبسط - فقط الأساسيات)
@@ -70,6 +72,9 @@ export const ProductVariantsPage: React.FC = () => {
   const [bulkEditDialogOpen, setBulkEditDialogOpen] = useState(false);
   const [bulkEditData, setBulkEditData] = useState<{ price?: number; stock?: number }>({});
 
+  // ✅ State لتتبع حالة أونكس (للنافذة وللتعديل السريع)
+  const [onyxData, setOnyxData] = useState<{ isLinked: boolean; stock?: number }>({ isLinked: false });
+
   // Form
   const methods = useForm<VariantFormData>({
     resolver: zodResolver(variantSchema),
@@ -88,6 +93,7 @@ export const ProductVariantsPage: React.FC = () => {
   const { mutate: deleteVariant } = useDeleteVariant();
 
   const handleAddVariant = () => {
+    setOnyxData({ isLinked: false }); // تصفير حالة أونكس
     methods.reset({
       sku: '',
       price: 0,
@@ -96,12 +102,46 @@ export const ProductVariantsPage: React.FC = () => {
     setVariantDialogOpen(true);
   };
 
+  // ✅ دالة للتعامل مع نتيجة التحقق من أونكس في النافذة المنبثقة
+  const handleOnyxValidationInDialog = (result: { existsInOnyx: boolean; onyxStock?: number }) => {
+    setOnyxData({ isLinked: result.existsInOnyx, stock: result.onyxStock });
+
+    if (result.existsInOnyx && result.onyxStock !== undefined) {
+      // تعبئة المخزون تلقائياً في الفورم
+      methods.setValue('stock', result.onyxStock);
+      toast.success(t('products:integration.linkedSuccess', 'تم الربط مع أونكس'));
+    }
+  };
+
+  // ✅ useEffect للتعديل السريع (Inline Edit) مع Debounce
+  React.useEffect(() => {
+    if (!editingId || !editingData.sku || editingData.sku.length < 3) {
+      setOnyxData({ isLinked: false });
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const result = await inventoryIntegrationApi.checkSku(editingData.sku!);
+        setOnyxData({ isLinked: result.existsInOnyx, stock: result.onyxStock });
+
+        // إذا وجدنا المنتج في أونكس، نحدث المخزون فوراً
+        if (result.existsInOnyx && result.onyxStock !== undefined) {
+          setEditingData(prev => ({ ...prev, stock: result.onyxStock! }));
+        }
+      } catch (error) {
+        console.error('Error checking SKU:', error);
+      }
+    }, 500); // 500ms Debounce
+
+    return () => clearTimeout(timer);
+  }, [editingData.sku, editingId]);
+
   const handleDeleteVariant = async (variant: Variant) => {
     const confirmed = await confirmDialog({
       title: t('products:variants.deleteTitle', 'تأكيد حذف المتغير'),
-      message: `${t('products:variants.deleteConfirm', 'هل أنت متأكد من حذف المتغير')} "${
-        variant.sku || variant._id
-      }"؟`,
+      message: `${t('products:variants.deleteConfirm', 'هل أنت متأكد من حذف المتغير')} "${variant.sku || variant._id
+        }"؟`,
       type: 'warning',
       confirmColor: 'error',
     });
@@ -119,6 +159,7 @@ export const ProductVariantsPage: React.FC = () => {
   };
 
   const handleStartEdit = (variant: Variant) => {
+    setOnyxData({ isLinked: false }); // تصفير حالة أونكس مؤقتاً (الـ useEffect سيعمل بعدها)
     setEditingId(variant._id);
     setEditingData({
       sku: variant.sku || '',
@@ -128,6 +169,7 @@ export const ProductVariantsPage: React.FC = () => {
   };
 
   const handleCancelEdit = () => {
+    setOnyxData({ isLinked: false }); // تصفير حالة أونكس
     setEditingId(null);
     setEditingData({ price: 0, stock: 0, sku: '' });
   };
@@ -139,14 +181,14 @@ export const ProductVariantsPage: React.FC = () => {
     }
 
     updateVariant(
-      { 
-        productId: id!, 
-        variantId, 
+      {
+        productId: id!,
+        variantId,
         data: {
           sku: editingData.sku?.trim() || undefined,
           price: editingData.price,
           stock: editingData.stock,
-        } 
+        }
       },
       {
         onSuccess: () => {
@@ -159,11 +201,11 @@ export const ProductVariantsPage: React.FC = () => {
           const errorCode = error?.response?.data?.error?.code;
           const errorMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
           const lowerErrorMessage = errorMessage?.toLowerCase() || '';
-          
+
           // التحقق من كود الخطأ أو وجود كلمات مفتاحية في الرسالة
           if (
-            errorCode === 'PRODUCT_314' || 
-            lowerErrorMessage.includes('sku') || 
+            errorCode === 'PRODUCT_314' ||
+            lowerErrorMessage.includes('sku') ||
             lowerErrorMessage.includes('مكرر') ||
             lowerErrorMessage.includes('موجود مسبقاً') ||
             lowerErrorMessage.includes('duplicate')
@@ -174,9 +216,9 @@ export const ProductVariantsPage: React.FC = () => {
             );
           } else {
             // عرض رسالة الخطأ العامة
-            const message = errorMessage || 
-                          error?.message || 
-                          t('products:messages.updateError', 'حدث خطأ أثناء تحديث المتغير');
+            const message = errorMessage ||
+              error?.message ||
+              t('products:messages.updateError', 'حدث خطأ أثناء تحديث المتغير');
             toast.error(message, { duration: 5000 });
           }
         },
@@ -194,7 +236,7 @@ export const ProductVariantsPage: React.FC = () => {
       confirmColor: 'error',
     });
     if (confirmed) {
-      Promise.all(selectedVariants.map(variantId => 
+      Promise.all(selectedVariants.map(variantId =>
         new Promise((resolve) => {
           deleteVariant(
             { productId: id!, variantId },
@@ -219,13 +261,13 @@ export const ProductVariantsPage: React.FC = () => {
 
   const handleBulkEditSave = () => {
     if (selectedVariants.length === 0) return;
-    
-    Promise.all(selectedVariants.map(variantId => 
+
+    Promise.all(selectedVariants.map(variantId =>
       new Promise((resolve) => {
         const updateData: any = {};
         if (bulkEditData.price !== undefined) updateData.price = bulkEditData.price;
         if (bulkEditData.stock !== undefined) updateData.stock = bulkEditData.stock;
-        
+
         updateVariant(
           { productId: id!, variantId, data: updateData },
           {
@@ -257,7 +299,7 @@ export const ProductVariantsPage: React.FC = () => {
       toast.error(t('products:messages.invalidPrice', 'السعر غير صحيح'));
       return;
     }
-    
+
     if (isNaN(data.stock) || data.stock < 0) {
       toast.error(t('products:messages.invalidStock', 'المخزون غير صحيح'));
       return;
@@ -283,11 +325,11 @@ export const ProductVariantsPage: React.FC = () => {
         const errorCode = error?.response?.data?.error?.code;
         const errorMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
         const lowerErrorMessage = errorMessage?.toLowerCase() || '';
-        
+
         // التحقق من كود الخطأ أو وجود كلمات مفتاحية في الرسالة
         if (
-          errorCode === 'PRODUCT_314' || 
-          lowerErrorMessage.includes('sku') || 
+          errorCode === 'PRODUCT_314' ||
+          lowerErrorMessage.includes('sku') ||
           lowerErrorMessage.includes('مكرر') ||
           lowerErrorMessage.includes('موجود مسبقاً') ||
           lowerErrorMessage.includes('duplicate')
@@ -298,9 +340,9 @@ export const ProductVariantsPage: React.FC = () => {
           );
         } else {
           // عرض رسالة الخطأ العامة
-          const message = errorMessage || 
-                        error?.message || 
-                        t('products:messages.createError', 'حدث خطأ أثناء إضافة المتغير');
+          const message = errorMessage ||
+            error?.message ||
+            t('products:messages.createError', 'حدث خطأ أثناء إضافة المتغير');
           toast.error(message, { duration: 5000 });
         }
       },
@@ -323,7 +365,7 @@ export const ProductVariantsPage: React.FC = () => {
   // Helper function to convert Arabic color names to hex
   const getColorValue = (colorName: string): string | null => {
     if (!colorName) return null;
-    
+
     const colorMap: Record<string, string> = {
       'اسود': '#000000',
       'أسود': '#000000',
@@ -349,7 +391,7 @@ export const ProductVariantsPage: React.FC = () => {
       'green': '#00FF00',
       'yellow': '#FFFF00',
     };
-    
+
     const normalized = colorName.toLowerCase().trim();
     return colorMap[normalized] || (normalized.startsWith('#') ? normalized : null);
   };
@@ -363,43 +405,43 @@ export const ProductVariantsPage: React.FC = () => {
         </Typography>
       );
     }
-    
+
     return (
       <Stack spacing={0.5} direction="column">
         {variant.attributeValues.map((attr, index) => {
-          const isColorAttribute = attr.name?.toLowerCase().includes('لون') || 
-                                   attr.name?.toLowerCase().includes('color');
+          const isColorAttribute = attr.name?.toLowerCase().includes('لون') ||
+            attr.name?.toLowerCase().includes('color');
           const colorValue = isColorAttribute ? getColorValue(attr.value || '') : null;
           const hasValidColor = colorValue !== null;
           const key = attr.valueId || `${attr.attributeId}-${index}`;
-          
+
           return (
-            <Box 
-              key={key} 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+            <Box
+              key={key}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
                 gap: 1,
                 flexWrap: 'nowrap'
               }}
             >
               {isColorAttribute && hasValidColor && (
-                <Box 
-                  sx={{ 
-                    width: 18, 
-                    height: 18, 
-                    borderRadius: '50%', 
+                <Box
+                  sx={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: '50%',
                     bgcolor: colorValue,
                     border: '1px solid',
                     borderColor: 'divider',
                     flexShrink: 0
-                  }} 
+                  }}
                 />
               )}
-              <Typography 
-                variant="body2" 
+              <Typography
+                variant="body2"
                 component="span"
-                sx={{ 
+                sx={{
                   fontSize: '0.875rem',
                   lineHeight: 1.4,
                   whiteSpace: 'nowrap',
@@ -460,7 +502,7 @@ export const ProductVariantsPage: React.FC = () => {
     {
       field: 'sku',
       headerName: t('products:variants.columns.sku', 'SKU'),
-      width: 150,
+      width: 180,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -471,9 +513,11 @@ export const ProductVariantsPage: React.FC = () => {
             size="small"
             value={editingData.sku || ''}
             onChange={(e) => setEditingData({ ...editingData, sku: e.target.value })}
-            sx={{ width: 120 }}
+            sx={{ width: 140 }}
             onClick={(e) => e.stopPropagation()}
             placeholder={t('products:variants.form.sku', 'SKU')}
+            color={onyxData.isLinked ? 'success' : 'primary'}
+            focused={onyxData.isLinked}
           />
         ) : (
           <Typography variant="body2" color={params.row.sku ? 'text.primary' : 'text.secondary'}>
@@ -517,15 +561,27 @@ export const ProductVariantsPage: React.FC = () => {
       renderCell: (params) => {
         const isEditing = editingId === params.row._id;
         return isEditing ? (
-          <TextField
-            type="number"
-            size="small"
-            value={editingData.stock}
-            onChange={(e) => setEditingData({ ...editingData, stock: Number(e.target.value) })}
-            sx={{ width: 100 }}
-            inputProps={{ min: 0 }}
-            onClick={(e) => e.stopPropagation()}
-          />
+          <Tooltip title={onyxData.isLinked ? t('products:integration.stockManagedByOnyx', 'يتم إدارة المخزون من أونكس') : ''}>
+            <TextField
+              type="number"
+              size="small"
+              value={editingData.stock}
+              disabled={onyxData.isLinked}
+              onChange={(e) => setEditingData({ ...editingData, stock: Number(e.target.value) })}
+              sx={{
+                width: 100,
+                '& .MuiInputBase-root.Mui-disabled': {
+                  backgroundColor: onyxData.isLinked ? '#e8f5e9' : 'inherit',
+                },
+                '& .MuiInputBase-input.Mui-disabled': {
+                  WebkitTextFillColor: onyxData.isLinked ? '#2e7d32' : undefined,
+                  fontWeight: onyxData.isLinked ? 'bold' : 'normal',
+                },
+              }}
+              inputProps={{ min: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Tooltip>
         ) : (
           <Typography variant="body1">{params.row.stock}</Typography>
         );
@@ -552,8 +608,8 @@ export const ProductVariantsPage: React.FC = () => {
         return isEditing ? (
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
             <Tooltip title={t('common:actions.save', 'حفظ')}>
-              <IconButton 
-                color="success" 
+              <IconButton
+                color="success"
                 size="small"
                 onClick={() => handleSaveEdit(variant._id)}
                 disabled={updatingVariant}
@@ -562,8 +618,8 @@ export const ProductVariantsPage: React.FC = () => {
               </IconButton>
             </Tooltip>
             <Tooltip title={t('common:actions.cancel', 'إلغاء')}>
-              <IconButton 
-                color="error" 
+              <IconButton
+                color="error"
                 size="small"
                 onClick={handleCancelEdit}
               >
@@ -574,8 +630,8 @@ export const ProductVariantsPage: React.FC = () => {
         ) : (
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
             <Tooltip title={t('products:variants.form.quickEdit', 'تعديل سريع')}>
-              <IconButton 
-                color="primary" 
+              <IconButton
+                color="primary"
                 size="small"
                 onClick={() => handleStartEdit(variant)}
               >
@@ -583,8 +639,8 @@ export const ProductVariantsPage: React.FC = () => {
               </IconButton>
             </Tooltip>
             <Tooltip title={t('common:actions.delete', 'حذف')}>
-              <IconButton 
-                color="error" 
+              <IconButton
+                color="error"
                 size="small"
                 onClick={() => handleDeleteVariant(variant)}
               >
@@ -603,8 +659,8 @@ export const ProductVariantsPage: React.FC = () => {
   return (
     <Box>
       {/* Breadcrumbs */}
-      <Breadcrumbs 
-        separator={<ChevronRight fontSize="small" />} 
+      <Breadcrumbs
+        separator={<ChevronRight fontSize="small" />}
         sx={{ mb: 2 }}
         aria-label="breadcrumb"
       >
@@ -707,9 +763,9 @@ export const ProductVariantsPage: React.FC = () => {
 
       {/* Bulk Actions Toolbar */}
       {selectedVariants.length > 0 && (
-        <Paper 
-          sx={{ 
-            p: { xs: 1.5, sm: 2 }, 
+        <Paper
+          sx={{
+            p: { xs: 1.5, sm: 2 },
             mb: 2,
             bgcolor: 'primary.light',
             border: '1px solid',
@@ -748,7 +804,7 @@ export const ProductVariantsPage: React.FC = () => {
                 onClick={handleSelectAll}
                 sx={{ width: { xs: '100%', sm: 'auto' } }}
               >
-                {selectedVariants.length === (variants?.length || 0) 
+                {selectedVariants.length === (variants?.length || 0)
                   ? t('products:variants.deselectAll', 'إلغاء تحديد الكل')
                   : t('products:variants.selectAll', 'تحديد الكل')}
               </Button>
@@ -895,14 +951,47 @@ export const ProductVariantsPage: React.FC = () => {
                 </Alert>
 
                 <Grid container spacing={2}>
+                  {/* استبدال TextField العادي بـ SmartSkuInput عبر Controller */}
                   <Grid size={{ xs: 12 }}>
-                    <FormInput
+                    <Controller
                       name="sku"
-                      label={t('products:variants.form.sku', 'SKU')}
-                      helperText={t('products:variants.form.skuHelp', 'رمز التخزين (اختياري)')}
+                      control={methods.control}
+                      render={({ field }) => (
+                        <SmartSkuInput
+                          value={field.value || ''}
+                          onChange={(val) => {
+                            field.onChange(val);
+                            // إذا تم مسح الـ SKU، نلغي الربط
+                            if (val.length < 3) setOnyxData({ isLinked: false });
+                          }}
+                          onSkuValidated={handleOnyxValidationInDialog}
+                          label={t('products:variants.form.sku', 'SKU')}
+                          error={!!methods.formState.errors.sku}
+                          helperText={methods.formState.errors.sku?.message as string | undefined}
+                        />
+                      )}
                     />
+
+                    {/* رسالة حالة الربط في النافذة */}
+                    {(methods.watch('sku') || '').length >= 3 && (
+                      <Box mt={1}>
+                        {onyxData.isLinked ? (
+                          <Alert severity="success" sx={{ py: 0 }}>
+                            <Typography variant="caption">
+                              {t('products:integration.foundMsg', 'تم الربط مع أونكس. الكمية المتوفرة')}: <strong>{onyxData.stock}</strong>
+                            </Typography>
+                          </Alert>
+                        ) : (
+                          <Alert severity="warning" sx={{ py: 0 }}>
+                            <Typography variant="caption">
+                              {t('products:integration.notFoundMsg', 'غير موجود في أونكس. سيتم تعيين المخزون يدوياً.')}
+                            </Typography>
+                          </Alert>
+                        )}
+                      </Box>
+                    )}
                   </Grid>
-                  
+
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <FormInput
                       name="price"
@@ -911,13 +1000,34 @@ export const ProductVariantsPage: React.FC = () => {
                       helperText={t('products:variants.form.priceHelp', 'أدخل السعر')}
                     />
                   </Grid>
-                  
+
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <FormInput 
-                      name="stock" 
-                      label={t('products:variants.form.stock', 'المخزون') + ' *'}
-                      type="number"
-                      helperText={t('products:variants.form.stockHelp', 'أدخل الكمية المتاحة')}
+                    {/* حقل المخزون: يتم تعطيله إذا كان مربوطاً */}
+                    <Controller
+                      name="stock"
+                      control={methods.control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label={t('products:variants.form.stock', 'المخزون') + ' *'}
+                          type="number"
+                          fullWidth
+                          disabled={onyxData.isLinked}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          sx={{
+                            '& .MuiInputBase-root.Mui-disabled': {
+                              backgroundColor: onyxData.isLinked ? 'action.hover' : 'inherit',
+                            },
+                            '& .MuiInputBase-input.Mui-disabled': {
+                              WebkitTextFillColor: onyxData.isLinked ? '#2e7d32' : undefined,
+                              fontWeight: onyxData.isLinked ? 'bold' : 'normal',
+                            },
+                          }}
+                          helperText={onyxData.isLinked
+                            ? t('products:integration.stockSynced', 'يتم جلب الكمية من أونكس تلقائياً')
+                            : t('products:variants.form.stockHelp', 'أدخل الكمية المتاحة')}
+                        />
+                      )}
                     />
                   </Grid>
                 </Grid>

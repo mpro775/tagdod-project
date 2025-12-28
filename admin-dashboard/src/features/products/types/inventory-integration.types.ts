@@ -13,6 +13,12 @@ export interface IntegrationStats {
     } | null;
 }
 
+// رد API مُرقَّم (Paginated)
+export interface PaginatedResponse<T> {
+    data: T[];
+    total: number;
+}
+
 // نتيجة فحص SKU
 export interface SkuCheckResult {
     existsInOnyx: boolean;

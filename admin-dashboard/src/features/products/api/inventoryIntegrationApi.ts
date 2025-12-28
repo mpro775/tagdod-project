@@ -4,7 +4,7 @@
  */
 
 import { apiClient } from '@/core/api/client';
-import type { IntegrationStats, LinkedItem, SkuCheckResult, UnlinkedItem } from '../types/inventory-integration.types';
+import type { IntegrationStats, LinkedItem, PaginatedResponse, SkuCheckResult, UnlinkedItem } from '../types/inventory-integration.types';
 
 export const inventoryIntegrationApi = {
     /**
@@ -16,27 +16,36 @@ export const inventoryIntegrationApi = {
         // Handle both wrapped and unwrapped responses
         return response.data?.data ?? response.data;
     },
-/**
+
+    /**
      * جلب المنتجات المربوطة
      */
-    getLinkedProducts: async (limit = 50, page = 1): Promise<LinkedItem[]> => {
+    getLinkedProducts: async (limit = 50, page = 1): Promise<PaginatedResponse<LinkedItem>> => {
         const response = await apiClient.get('/inventory/integration/linked', {
             params: { limit, page }
         });
-        const data = response.data?.data ?? response.data;
-        return Array.isArray(data) ? data : [];
+        // التعامل مع الرد الجديد { data: [], total: number }
+        const result = response.data?.data ?? response.data;
+        return {
+            data: Array.isArray(result?.data) ? result.data : [],
+            total: result?.total ?? 0
+        };
     },
+
     /**
      * Get unlinked items (opportunities)
      * جلب المنتجات غير المربوطة
      */
-    getUnlinkedItems: async (limit = 50): Promise<UnlinkedItem[]> => {
+    getUnlinkedItems: async (limit = 50, page = 1): Promise<PaginatedResponse<UnlinkedItem>> => {
         const response = await apiClient.get('/inventory/integration/unlinked', {
-            params: { limit }
+            params: { limit, page }
         });
-        // Handle wrapped response - ensure we always return an array
-        const data = response.data?.data ?? response.data;
-        return Array.isArray(data) ? data : [];
+        // التعامل مع الرد الجديد { data: [], total: number }
+        const result = response.data?.data ?? response.data;
+        return {
+            data: Array.isArray(result?.data) ? result.data : [],
+            total: result?.total ?? 0
+        };
     },
 
     /**

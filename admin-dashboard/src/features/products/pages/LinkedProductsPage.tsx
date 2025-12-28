@@ -33,22 +33,24 @@ export const LinkedProductsPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
 
-    const { data: items, isLoading, refetch } = useLinkedProducts(100);
+    // استدعاء الـ Hook سيعيد الآن كائناً فيه data و total
+    const { data: response, isLoading, refetch } = useLinkedProducts(100);
 
-    // Ensure items is always an array
-    const itemsArray = Array.isArray(items) ? items : [];
+    // استخراج البيانات من الاستجابة الجديدة
+    const items = response?.data || [];
+    const totalCount = response?.total || 0;
 
     // Filter items based on search
     const filteredItems = React.useMemo(() => {
-        if (!searchQuery.trim()) return itemsArray;
+        if (!searchQuery.trim()) return items;
         const query = searchQuery.toLowerCase();
-        return itemsArray.filter(
+        return items.filter(
             (item) =>
                 item.sku.toLowerCase().includes(query) ||
                 item.appName?.toLowerCase().includes(query) ||
                 item.onyxName?.toLowerCase().includes(query)
         );
-    }, [itemsArray, searchQuery]);
+    }, [items, searchQuery]);
 
     // Define columns for DataTable
     const columns: GridColDef[] = [
@@ -196,26 +198,25 @@ export const LinkedProductsPage: React.FC = () => {
                 </Button>
             </Box>
 
-            {/* Summary Stats */}
+            {/* Summary Stats - استخدام العداد الحقيقي من الباك إند */}
             <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Chip
-                    label={t('products:integration.linked.totalCount', 'إجمالي: {{count}} منتج', {
-                        count: itemsArray.length,
-                    })}
+                    label={`${t('products:integration.linked.totalLabel', 'إجمالي')}: ${totalCount.toLocaleString('ar-SA')} ${t('products:integration.linked.productUnit', 'منتج')}`}
                     color="success"
                     variant="outlined"
                 />
                 <Chip
-                    label={t('products:integration.linked.matchedCount', 'متطابق: {{count}}', {
-                        count: itemsArray.filter((i) => i.appStock === i.onyxStock).length,
-                    })}
+                    label={`${t('products:integration.linked.displayedLabel', 'معروض')}: ${items.length}`}
+                    variant="outlined"
+                    size="small"
+                />
+                <Chip
+                    label={`${t('products:integration.linked.matchedLabel', 'متطابق')}: ${items.filter((i) => i.appStock === i.onyxStock).length}`}
                     color="success"
                     size="small"
                 />
                 <Chip
-                    label={t('products:integration.linked.mismatchedCount', 'اختلاف: {{count}}', {
-                        count: itemsArray.filter((i) => i.appStock !== i.onyxStock).length,
-                    })}
+                    label={`${t('products:integration.linked.mismatchedLabel', 'اختلاف')}: ${items.filter((i) => i.appStock !== i.onyxStock).length}`}
                     color="warning"
                     size="small"
                 />

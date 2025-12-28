@@ -34,23 +34,23 @@ export const UnlinkedProductsPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = React.useState('');
     const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 25 });
 
-    const { data: items, isLoading, error, refetch } = useUnlinkedItems(200);
+    // استدعاء الـ Hook سيعيد الآن كائناً فيه data و total
+    const { data: response, isLoading, error, refetch } = useUnlinkedItems(200);
 
-    // Ensure items is always an array
-    const itemsArray = React.useMemo(() => {
-        return Array.isArray(items) ? items : [];
-    }, [items]);
+    // استخراج البيانات من الاستجابة الجديدة
+    const items = response?.data || [];
+    const totalCount = response?.total || 0;
 
     // Filter items based on search
     const filteredItems = React.useMemo(() => {
-        if (!searchQuery.trim()) return itemsArray;
+        if (!searchQuery.trim()) return items;
         const query = searchQuery.toLowerCase();
-        return itemsArray.filter(
+        return items.filter(
             (item) =>
                 item.sku.toLowerCase().includes(query) ||
                 item.itemNameAr?.toLowerCase().includes(query)
         );
-    }, [itemsArray, searchQuery]);
+    }, [items, searchQuery]);
 
     // Handle create product action
     const handleCreateProduct = (item: UnlinkedItem) => {
@@ -200,20 +200,21 @@ export const UnlinkedProductsPage: React.FC = () => {
                 </Button>
             </Box>
 
-            {/* Summary Stats */}
+            {/* Summary Stats - استخدام العداد الحقيقي من الباك إند */}
             <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Chip
-                    label={t('products:integration.unlinked.totalCount', 'إجمالي: {{count}} صنف', {
-                        count: itemsArray.length,
-                    })}
+                    label={`${t('products:integration.unlinked.totalLabel', 'إجمالي')}: ${totalCount.toLocaleString('ar-SA')} ${t('products:integration.unlinked.itemUnit', 'صنف')}`}
                     color="warning"
                     variant="outlined"
                 />
+                <Chip
+                    label={`${t('products:integration.unlinked.displayedLabel', 'معروض')}: ${items.length}`}
+                    variant="outlined"
+                    size="small"
+                />
                 {searchQuery && (
                     <Chip
-                        label={t('products:integration.unlinked.filteredCount', 'نتائج البحث: {{count}}', {
-                            count: filteredItems.length,
-                        })}
+                        label={`${t('products:integration.unlinked.filteredLabel', 'نتائج البحث')}: ${filteredItems.length}`}
                         color="primary"
                         variant="outlined"
                     />
