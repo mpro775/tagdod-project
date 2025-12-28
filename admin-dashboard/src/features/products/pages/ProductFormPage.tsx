@@ -980,7 +980,7 @@ export const ProductFormPage: React.FC = () => {
                   disabled={isLinkedToOnyx}
                   helperText={
                     isLinkedToOnyx
-                      ? t('products:integration.skuCheck.stockManaged', 'المخزون يدار آلياً من نظام أونكس')
+                      ? `${t('products:integration.skuCheck.stockManaged', 'المخزون يدار آلياً من نظام أونكس')} (${onyxStockValue?.toLocaleString('en-US') ?? 0})`
                       : undefined
                   }
                   sx={{
