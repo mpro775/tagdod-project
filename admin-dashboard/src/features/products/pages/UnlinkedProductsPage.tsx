@@ -102,7 +102,7 @@ export const UnlinkedProductsPage: React.FC = () => {
             headerAlign: 'center',
             renderCell: (params: GridRenderCellParams<UnlinkedItem>) => (
                 <Chip
-                    label={params.value?.toLocaleString('ar-SA') ?? 0}
+                    label={params.value?.toLocaleString('en-US') ?? 0}
                     color={params.value > 0 ? 'success' : 'default'}
                     size="small"
                 />

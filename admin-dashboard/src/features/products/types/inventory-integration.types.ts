@@ -26,7 +26,7 @@ export interface UnlinkedItem {
     _id: string;
     sku: string;
     quantity: number;
-    itemNameAr?: string;
+    itemNameAr?: string; // ✅ تأكد من وجود هذا السطر ومطابقته للباك إند
     suggestion: string;
 }
 export interface LinkedItem {

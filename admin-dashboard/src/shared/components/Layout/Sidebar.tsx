@@ -168,6 +168,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
                 icon: <AddCircleOutline />,
                 path: '/products/unlinked',
               },
+              {
+                id: 'products-linked',
+                label: t('navigation.productsLinked', 'المربوطة'),
+                icon: <Sync />,
+                path: '/products/linked',
+              },
             ],
           },
           {

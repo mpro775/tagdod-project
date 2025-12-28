@@ -96,7 +96,7 @@ export const LinkedProductsPage: React.FC = () => {
             headerAlign: 'center',
             renderCell: (params: GridRenderCellParams<LinkedItem>) => (
                 <Chip
-                    label={params.value?.toLocaleString('ar-SA') ?? 0}
+                    label={params.value?.toLocaleString('en-US') ?? 0}
                     color="primary"
                     variant="outlined"
                     size="small"
@@ -114,7 +114,7 @@ export const LinkedProductsPage: React.FC = () => {
                 const isMatch = row.appStock === row.onyxStock;
                 return (
                     <Chip
-                        label={params.value?.toLocaleString('ar-SA') ?? 0}
+                        label={params.value?.toLocaleString('en-US') ?? 0}
                         color={isMatch ? 'success' : 'error'}
                         size="small"
                     />

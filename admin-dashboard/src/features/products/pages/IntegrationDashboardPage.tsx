@@ -73,7 +73,7 @@ const StatCard: React.FC<StatCardProps> = ({
                         <Skeleton variant="text" width={80} height={48} />
                     ) : (
                         <Typography variant="h3" fontWeight="bold" color={color}>
-                            {typeof value === 'number' ? value.toLocaleString('ar-SA') : value}
+                            {typeof value === 'number' ? value.toLocaleString('en-US') : value}
                         </Typography>
                     )}
                     {subtitle && (
