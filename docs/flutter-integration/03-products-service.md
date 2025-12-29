@@ -167,7 +167,7 @@ GET /products?sortBy=name&sortOrder=asc
 > - `salesCount`: عدد المبيعات (number)
 > - `minOrderQuantity`: الحد الأدنى للطلب (number، افتراضي: 1)
 > - `maxOrderQuantity`: الحد الأقصى للطلب (number، 0 يعني لا يوجد حد)
-> - `stock`: المخزون (number، للمنتجات البسيطة بدون variants)
+> - `stock`: المخزون (number) - للمنتجات البسيطة: stock من المنتج مباشرة، للمنتجات مع variants: مجموع stock جميع variants النشطة
 > - `pricingByCurrency`: أسعار المنتج بجميع العملات (USD, YER, SAR)
 > - `defaultPricing`: السعر الافتراضي (بالعملة المطلوبة)
 > - `priceRangeByCurrency`: نطاق الأسعار لكل عملة (للمنتجات ذات variants متعددة)
@@ -435,6 +435,8 @@ GET /products/64prod123?currency=YER
         },
         "isFeatured": true,
         "hasVariants": true,
+        "isAvailable": true,
+        "stock": 150,
         "pricingByCurrency": {
           "USD": {
             "basePrice": 700,
@@ -455,9 +457,9 @@ GET /products/64prod123?currency=YER
 
 > **ملاحظة:**
 >
-> - `product`: يحتوي على جميع تفاصيل المنتج مع `attributesDetails`, `pricingByCurrency`, `priceRangeByCurrency`
+> - `product`: يحتوي على جميع تفاصيل المنتج مع `attributesDetails`, `pricingByCurrency`, `priceRangeByCurrency`, `stock` (مجموع stock جميع variants للمنتجات مع variants، أو stock المنتج مباشرة للمنتجات البسيطة)، و `isAvailable`
 > - `variants`: قائمة variants مع `pricing` (بالعملة المطلوبة) و `pricingByCurrency` (بجميع العملات). **جميع المتغيرات تظهر حتى لو كانت الكمية 0**، مع `isAvailable: false` و `stockStatus: 'out_of_stock'` للمتغيرات غير المتوفرة
-> - `relatedProducts`: منتجات شبيهة (بنية مبسطة)
+> - `relatedProducts`: منتجات شبيهة (بنية مبسطة) - تحتوي على `stock` و `isAvailable` أيضاً
 > - `userDiscount`: معلومات خصم التاجر (إذا كان المستخدم تاجر معتمد)
 
 > **ملاحظة:** يتم زيادة عداد المشاهدات تلقائياً عند استدعاء هذا الـ endpoint.
@@ -1216,6 +1218,8 @@ Future<PriceRange> getProductPriceRange(
         },
         "isFeatured": true,
         "hasVariants": true,
+        "isAvailable": true,
+        "stock": 150,
         "pricingByCurrency": {
           "USD": {
             "basePrice": 700,
@@ -1897,12 +1901,18 @@ class PaginationMeta {
 
 7. **التوفر والحدود:**
 
-   - `isAvailable`: متاح للبيع أم لا (يتم حسابه تلقائياً بناءً على المخزون والحالة)
+   - `isAvailable`: متاح للبيع أم لا (يتم حسابه تلقائياً بناءً على المخزون والحالة) - متاح في جميع الإرجاعات (قوائم المنتجات، تفاصيل المنتج، المنتجات ذات الصلة، السلة)
    - `stockStatus`: حالة المخزون - `'in_stock'` للمتغيرات المتوفرة، `'out_of_stock'` للمتغيرات غير المتوفرة
    - `salesCount`: عدد المبيعات (يتم تحديثه تلقائياً عند إكمال الطلب)
    - `minOrderQuantity`: الحد الأدنى للطلب (افتراضي: 1)
    - `maxOrderQuantity`: الحد الأقصى للطلب (0 يعني لا يوجد حد)
-   - `stock`: المخزون المتاح (للمنتجات البسيطة بدون variants أو للمتغيرات)
+   - `stock`: المخزون المتاح - **متاح الآن في جميع الإرجاعات:**
+     - **للمنتجات البسيطة (بدون variants):** stock من المنتج مباشرة
+     - **للمنتجات مع variants:** مجموع stock جميع variants النشطة وغير المحذوفة
+     - **في تفاصيل المنتج:** `product.stock` يحتوي على المجموع الكلي
+     - **في قوائم المنتجات:** `stock` موجود لكل منتج
+     - **في المنتجات ذات الصلة:** `stock` موجود لكل منتج
+     - **في عناصر السلة:** `stock` موجود لكل عنصر (من variant أو product)
 
 8. **خصم التاجر (Merchant Discount):**
 
@@ -1933,7 +1943,17 @@ class PaginationMeta {
 
 ### التحديثات المضافة في هذه النسخة (آخر تحديث):
 
-1. ✅ **إضافة دعم قواعد السعر (Price Rules):**
+1. ✅ **إضافة `stock` و `isAvailable` في جميع الإرجاعات:**
+
+   - **للمنتجات مع variants:** يتم حساب `stock` كمجموع stock جميع variants النشطة وغير المحذوفة
+   - **للمنتجات البسيطة:** يتم استخدام `product.stock` مباشرة
+   - **في تفاصيل المنتج:** `product` يحتوي الآن على `stock` و `isAvailable`
+   - **في المنتجات ذات الصلة:** كل منتج يحتوي على `stock` و `isAvailable`
+   - **في قوائم المنتجات:** `stock` موجود لكل منتج (المجموع الكلي للمنتجات مع variants)
+   - **في عناصر السلة:** `stock` و `isAvailable` متاحان لكل عنصر (من variant أو product)
+   - هذا يضمن توفر معلومات المخزون في جميع الإرجاعات لتحسين تجربة المستخدم
+
+2. ✅ **إضافة دعم قواعد السعر (Price Rules):**
 
    - يتم تطبيق قواعد السعر تلقائياً على جميع المنتجات في جميع الـ endpoints
    - إذا تم تطبيق قاعدة سعر على أي عملة، يتم تطبيق نفس نسبة الخصم على جميع العملات الأخرى
@@ -1942,31 +1962,31 @@ class PaginationMeta {
    - يتم تطبيق قواعد السعر على: قائمة المنتجات، تفاصيل المنتج، المنتجات المميزة، المنتجات الجديدة، البحث، منتجات الفئة، والمنتجات ذات الصلة
    - قواعد السعر لها أولوية أعلى من خصم التاجر
 
-2. ✅ **إضافة حقول جديدة للمنتجات والـ Variants:**
-   - `isAvailable`: متاح للبيع أم لا (boolean)
+3. ✅ **إضافة حقول جديدة للمنتجات والـ Variants:**
+   - `isAvailable`: متاح للبيع أم لا (boolean) - متاح في جميع الإرجاعات
    - `stockStatus`: حالة المخزون - `'in_stock'` أو `'out_of_stock'` (string)
    - `salesCount`: عدد المبيعات (number) - يتم تحديثه تلقائياً عند إكمال الطلب
    - `minOrderQuantity`: الحد الأدنى للطلب (number، افتراضي: 1)
    - `maxOrderQuantity`: الحد الأقصى للطلب (number، 0 يعني لا يوجد حد)
-   - `stock`: المخزون (number، للمنتجات البسيطة بدون variants)
-3. ✅ **تحديث سلوك المتغيرات:**
+   - `stock`: المخزون (number) - متاح الآن في جميع الإرجاعات: للمنتجات البسيطة مباشرة من product.stock، للمنتجات مع variants كمجموع stock جميع variants
+4. ✅ **تحديث سلوك المتغيرات:**
    - **في تفاصيل المنتج (`/products/:id`) وقائمة المتغيرات (`/products/:id/variants`): جميع المتغيرات تظهر حتى لو كانت الكمية 0**، مع `isAvailable: false` و `stockStatus: 'out_of_stock'` للمتغيرات غير المتوفرة
    - **في قائمة المنتجات (`/products`): يتم تصفية variants التي لا تحتوي على مخزون تلقائياً (السلوك القديم)**
-4. ✅ **تحديث بنية Response:**
+5. ✅ **تحديث بنية Response:**
    - استخدام `name` و `nameEn` بدلاً من `nameAr` و `nameEn`
    - `category` و `brand` ككائنات مبسطة (فقط `_id`, `name`, `nameEn`)
    - `mainImage` و `images` ككائنات مبسطة (فقط `_id`, `url`)
    - إضافة `pricingByCurrency`, `defaultPricing`, `priceRangeByCurrency`
    - إضافة `hasVariants` boolean
-5. ✅ **تحديث تفاصيل المنتج:**
+6. ✅ **تحديث تفاصيل المنتج:**
    - `product` يحتوي على `attributesDetails`, `pricingByCurrency`, `priceRangeByCurrency`
    - `variants` تحتوي على `pricing` و `pricingByCurrency`
    - إضافة `relatedProducts` و `userDiscount`
-6. ✅ **إضافة parameters جديدة:**
+7. ✅ **إضافة parameters جديدة:**
    - `includeSubcategories` - تضمين المنتجات من الفئات الفرعية (افتراضي: `true`)
    - `sortBy` و `sortOrder` - للترتيب المخصص
    - `currency` - لتحديد العملة المطلوبة
-7. ✅ **تحديث الترتيب الافتراضي:**
+8. ✅ **تحديث الترتيب الافتراضي:**
    - الأحدث أولاً (`createdAt: desc`) تلقائياً
 
 ### التحديثات السابقة:

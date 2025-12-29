@@ -1427,7 +1427,7 @@ export class PublicProductsPresenter {
               true,
             );
 
-          void (await this.getAttributeSummaries(productRecord.attributes as unknown[]));
+          const attributesDetails = await this.getAttributeSummaries(productRecord.attributes as unknown[]);
 
           let pricingByCurrency: Record<string, PriceWithDiscount> | undefined;
           let priceRangeByCurrency:
@@ -1483,6 +1483,33 @@ export class PublicProductsPresenter {
             defaultPricing = this.stripVariantId(selectedVariantPrice);
           }
 
+          // حساب stock و isAvailable للمنتج
+          let relatedProductStock: number;
+          let relatedProductIsAvailable: boolean;
+          
+          if (variantsWithPricing.length > 0) {
+            // للمنتجات مع variants: حساب مجموع stock من جميع variants النشطة وغير المحذوفة
+            relatedProductStock = variantsWithPricing.reduce((sum, variant) => {
+              const stock = this.normalizePrice(variant.stock) ?? 0;
+              const isActive = variant.isActive !== false;
+              const isNotDeleted = !variant.deletedAt;
+              return sum + (isActive && isNotDeleted ? stock : 0);
+            }, 0);
+            
+            // المنتج متاح إذا كان هناك variant واحد على الأقل متاح
+            relatedProductIsAvailable = variantsWithPricing.some((variant) => {
+              const stock = this.normalizePrice(variant.stock) ?? 0;
+              const isActive = variant.isActive !== false;
+              const isNotDeleted = !variant.deletedAt;
+              return stock > 0 && isActive && isNotDeleted;
+            });
+          } else {
+            // للمنتجات البسيطة: استخدام stock من المنتج مباشرة
+            relatedProductStock = this.normalizePrice(productRecord.stock) ?? 0;
+            const productIsActive = productRecord.isActive !== false;
+            relatedProductIsAvailable = relatedProductStock > 0 && productIsActive;
+          }
+
           const simplifiedProduct = this.buildSimplifiedProduct(productRecord, {
             variants: [],
             hasVariants: variantsWithPricing.length > 0,
@@ -1498,7 +1525,16 @@ export class PublicProductsPresenter {
             includeDefaultPricing: false,
           });
 
-          return simplifiedProduct as RelatedProductPayload;
+          // إضافة stock و isAvailable للنتيجة
+          const productWithStock: RelatedProductPayload = {
+            ...simplifiedProduct,
+            attributesDetails,
+            variants: variantsWithPricing,
+            stock: relatedProductStock,
+            isAvailable: relatedProductIsAvailable,
+          };
+
+          return productWithStock;
         } catch (error) {
           this.logger.warn(
             `Failed to build related product ${id}: ${
@@ -1790,6 +1826,33 @@ export class PublicProductsPresenter {
       defaultPricing = this.stripVariantId(selectedVariantPrice);
     }
 
+    // حساب stock و isAvailable للمنتج
+    let productStock: number;
+    let productIsAvailable: boolean;
+    
+    if (variantsWithPricing.length > 0) {
+      // للمنتجات مع variants: حساب مجموع stock من جميع variants النشطة وغير المحذوفة
+      productStock = variantsWithPricing.reduce((sum, variant) => {
+        const stock = this.normalizePrice(variant.stock) ?? 0;
+        const isActive = variant.isActive !== false;
+        const isNotDeleted = !variant.deletedAt;
+        return sum + (isActive && isNotDeleted ? stock : 0);
+      }, 0);
+      
+      // المنتج متاح إذا كان هناك variant واحد على الأقل متاح
+      productIsAvailable = variantsWithPricing.some((variant) => {
+        const stock = this.normalizePrice(variant.stock) ?? 0;
+        const isActive = variant.isActive !== false;
+        const isNotDeleted = !variant.deletedAt;
+        return stock > 0 && isActive && isNotDeleted;
+      });
+    } else {
+      // للمنتجات البسيطة: استخدام stock من المنتج مباشرة
+      productStock = this.normalizePrice(product.stock) ?? 0;
+      const productIsActive = product.isActive !== false;
+      productIsAvailable = productStock > 0 && productIsActive;
+    }
+
     const simplifiedProduct = this.buildSimplifiedProduct(product, {
       variants: variantsWithPricing,
       hasVariants: variantsWithPricing.length > 0,
@@ -1805,6 +1868,8 @@ export class PublicProductsPresenter {
     const productWithAttributes: AnyRecord = {
       ...simplifiedProduct,
       attributesDetails,
+      stock: productStock,
+      isAvailable: productIsAvailable,
     };
 
     const relatedProducts = await this.buildRelatedProducts(

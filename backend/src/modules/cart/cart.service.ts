@@ -46,6 +46,8 @@ type CartLine = {
   lineTotal: number;
   pricing?: CartItemPricingView;
   snapshot?: CartItem['productSnapshot'];
+  stock?: number;
+  isAvailable?: boolean;
 };
 
 type PriceSnapshot = {
@@ -658,18 +660,84 @@ export class CartService {
       ...(cart.appliedCouponCode ? [cart.appliedCouponCode] : []),
     ].filter((code): code is string => Boolean(code));
 
+    // جلب stock للمنتجات والمتغيرات في batch واحد
+    const variantIds: string[] = [];
+    const productIds: string[] = [];
+    
+    for (const item of cart.items) {
+      if (item.variantId) {
+        const variantIdStr = this.toStringId(item.variantId);
+        if (variantIdStr) {
+          variantIds.push(variantIdStr);
+        }
+      }
+      if (item.productId) {
+        const productIdStr = this.toStringId(item.productId);
+        if (productIdStr) {
+          productIds.push(productIdStr);
+        }
+      }
+    }
+
+    // جلب المتغيرات والمنتجات في batch
+    const [variants, products] = await Promise.all([
+      variantIds.length > 0
+        ? this.variantModel.find({ _id: { $in: variantIds } }).lean().exec()
+        : Promise.resolve([]),
+      productIds.length > 0
+        ? this.productModel.find({ _id: { $in: productIds } }).lean().exec()
+        : Promise.resolve([]),
+    ]);
+
+    // إنشاء Maps للوصول السريع
+    const variantMap = new Map(
+      variants.map((v) => [String(v._id), v]),
+    );
+    const productMap = new Map(
+      products.map((p) => [String(p._id), p]),
+    );
+
     // إرجاع بيانات بسيطة بدون previewByCart - Frontend سيجلب preview من checkout/session
     // نفس الشكل الذي يعيده previewByCart لكن بدون حسابات معقدة
     return {
       currency: preferredCurrency,
-      items: cart.items.map((item) => ({
-        itemId: item._id?.toString() || new Types.ObjectId().toString(),
-        variantId: item.variantId?.toString(),
-        productId: item.productId?.toString(),
-        qty: item.qty,
-        snapshot: item.productSnapshot,
-        pricing: item.pricing,
-      })),
+      items: cart.items.map((item) => {
+        const variantIdStr = item.variantId ? this.toStringId(item.variantId) : undefined;
+        const productIdStr = item.productId ? this.toStringId(item.productId) : undefined;
+        
+        // حساب stock و isAvailable
+        let itemStock: number | undefined;
+        let itemIsAvailable: boolean | undefined;
+        
+        if (variantIdStr && variantMap.has(variantIdStr)) {
+          const variant = variantMap.get(variantIdStr);
+          if (variant) {
+            const variantStock = this.normalizeNumber((variant as unknown as { stock?: unknown }).stock);
+            const variantIsActive = (variant as unknown as { isActive?: unknown }).isActive !== false;
+            itemStock = variantStock ?? 0;
+            itemIsAvailable = (itemStock > 0) && variantIsActive;
+          }
+        } else if (productIdStr && productMap.has(productIdStr)) {
+          const product = productMap.get(productIdStr);
+          if (product) {
+            const productStock = this.normalizeNumber((product as unknown as { stock?: unknown }).stock);
+            const productIsActive = (product as unknown as { isActive?: unknown }).isActive !== false;
+            itemStock = productStock ?? 0;
+            itemIsAvailable = (itemStock > 0) && productIsActive;
+          }
+        }
+
+        return {
+          itemId: item._id?.toString() || new Types.ObjectId().toString(),
+          variantId: variantIdStr,
+          productId: productIdStr,
+          qty: item.qty,
+          snapshot: item.productSnapshot,
+          pricing: item.pricing,
+          stock: itemStock,
+          isAvailable: itemIsAvailable,
+        };
+      }),
       appliedCoupons: Array.from(new Set(appliedCoupons)),
       meta: {
         count: cart.items.length,
@@ -2262,6 +2330,24 @@ export class CartService {
         pricingDetails.currency = normalizedCurrency;
       }
 
+      // حساب stock و isAvailable
+      let itemStock: number | undefined;
+      let itemIsAvailable: boolean | undefined;
+      
+      if (variant) {
+        // إذا كان هناك variant، استخدم stock من variant
+        const variantStock = this.normalizeNumber((variant as unknown as { stock?: unknown }).stock);
+        const variantIsActive = (variant as unknown as { isActive?: unknown }).isActive !== false;
+        itemStock = variantStock ?? 0;
+        itemIsAvailable = (itemStock > 0) && variantIsActive;
+      } else if (product) {
+        // إذا كان هناك product فقط (منتج بسيط بدون variant)
+        const productStock = this.normalizeNumber((product as unknown as { stock?: unknown }).stock);
+        const productIsActive = (product as unknown as { isActive?: unknown }).isActive !== false;
+        itemStock = productStock ?? 0;
+        itemIsAvailable = (itemStock > 0) && productIsActive;
+      }
+
       lines.push({
         itemId,
         variantId: variantIdStr,
@@ -2279,6 +2365,8 @@ export class CartService {
         lineTotal,
         pricing: pricingForView,
         snapshot,
+        stock: itemStock,
+        isAvailable: itemIsAvailable,
       });
 
       lineContexts.push({
