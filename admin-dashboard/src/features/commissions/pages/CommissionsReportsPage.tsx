@@ -38,10 +38,14 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ar } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { commissionsApi } from '../api/commissionsApi';
-import { ReportPeriod, CommissionsReportParams } from '../types/commissions.types';
+import {
+  ReportPeriod,
+  CommissionsReportParams,
+  EngineerCommissionData,
+} from '../types/commissions.types';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
 import { useNavigate } from 'react-router-dom';
-import { exportCommissionsReportToPDF, exportCommissionsReportToPDFFromHTML } from '../utils/exportUtils';
+import { exportCommissionsReportToPDFFromHTML } from '../utils/exportUtils';
 import { CommissionsReportTemplate } from '../components/CommissionsReportTemplate';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { useEngineers } from '../../services/hooks/useServices';
@@ -66,10 +70,9 @@ export const CommissionsReportsPage: React.FC = () => {
   });
 
   // جلب قائمة المهندسين للبحث
-  const {
-    data: engineersData,
-    isLoading: isEngineersLoading,
-  } = useEngineers({ search: engineerSearchTerm });
+  const { data: engineersData, isLoading: isEngineersLoading } = useEngineers({
+    search: engineerSearchTerm,
+  });
   const engineers = engineersData?.data || [];
 
   const {
@@ -283,9 +286,7 @@ export const CommissionsReportsPage: React.FC = () => {
             >
               <Box display="flex" alignItems="center" gap={1}>
                 <FilterList />
-                <Typography variant="h6">
-                  {t('commissions:reports.filters', 'الفلاتر')}
-                </Typography>
+                <Typography variant="h6">{t('commissions:reports.filters', 'الفلاتر')}</Typography>
               </Box>
               <IconButton size="small">
                 {filterExpanded ? <ExpandLess /> : <ExpandMore />}
@@ -344,11 +345,15 @@ export const CommissionsReportsPage: React.FC = () => {
 
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('commissions:reports.engineerSelection', 'اختيار المهندس')}</InputLabel>
+                    <InputLabel>
+                      {t('commissions:reports.engineerSelection', 'اختيار المهندس')}
+                    </InputLabel>
                     <Select
                       value={engineerSelectionMode}
                       label={t('commissions:reports.engineerSelection', 'اختيار المهندس')}
-                      onChange={(e) => handleEngineerSelectionModeChange(e.target.value as 'all' | 'specific')}
+                      onChange={(e) =>
+                        handleEngineerSelectionModeChange(e.target.value as 'all' | 'specific')
+                      }
                     >
                       <MenuItem value="all">
                         {t('commissions:reports.engineerSelectionAll', 'الكل')}
@@ -376,8 +381,14 @@ export const CommissionsReportsPage: React.FC = () => {
                       renderInput={(params) => (
                         <TextField
                           {...params}
-                          label={t('commissions:reports.engineerSearchPlaceholder', 'ابحث عن مهندس...')}
-                          placeholder={t('commissions:reports.engineerSearchPlaceholder', 'ابحث عن مهندس...')}
+                          label={t(
+                            'commissions:reports.engineerSearchPlaceholder',
+                            'ابحث عن مهندس...'
+                          )}
+                          placeholder={t(
+                            'commissions:reports.engineerSearchPlaceholder',
+                            'ابحث عن مهندس...'
+                          )}
                           InputProps={{
                             ...params.InputProps,
                             endAdornment: (
@@ -516,7 +527,7 @@ export const CommissionsReportsPage: React.FC = () => {
                 paginationMode="client"
                 paginationModel={paginationModel}
                 onPaginationModelChange={setPaginationModel}
-                getRowId={(row) => row.engineerId}
+                getRowId={(row: unknown) => (row as EngineerCommissionData).engineerId}
                 height={600}
               />
             </Box>
@@ -538,14 +549,10 @@ export const CommissionsReportsPage: React.FC = () => {
           }}
         >
           {report && report.summary && (
-            <CommissionsReportTemplate
-              id="commissions-report-template-container"
-              report={report}
-            />
+            <CommissionsReportTemplate id="commissions-report-template-container" report={report} />
           )}
         </div>
       </Box>
     </LocalizationProvider>
   );
 };
-
