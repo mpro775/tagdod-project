@@ -1,14 +1,4 @@
-import { 
-  Body, 
-  Controller, 
-  Get, 
-  Param, 
-  Post, 
-  Patch,
-  Query, 
-  Req, 
-  UseGuards 
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -16,7 +6,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
-  ApiBody
+  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
@@ -39,7 +29,7 @@ import {
   BulkOrderUpdateDto,
   VerifyPaymentDto,
 } from '../dto/order.dto';
-import { PaymentStatus } from '../schemas/order.schema';
+import { PaymentStatus, OrderStatus } from '../schemas/order.schema';
 
 /**
  * Controller للطلبات - للإدارة
@@ -67,44 +57,40 @@ export class AdminOrderController {
   @Get()
   @ApiOperation({
     summary: 'جميع الطلبات (للإدارة)',
-    description: 'الحصول على جميع الطلبات مع إمكانية الفلترة والبحث'
+    description: 'الحصول على جميع الطلبات مع إمكانية الفلترة والبحث',
   })
   @ApiResponse({ status: 200, description: 'تم الحصول على الطلبات بنجاح' })
-  async getAllOrders(
-    @Query() query: ListOrdersDto
-  ) {
+  async getAllOrders(@Query() query: ListOrdersDto) {
     const result = await this.orderService.getAllOrders(query);
 
     return {
       orders: result.orders,
       pagination: result.pagination,
-      message: 'تم الحصول على الطلبات بنجاح'
+      message: 'تم الحصول على الطلبات بنجاح',
     };
   }
 
   @Get(':id([0-9a-fA-F]{24})')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تفاصيل الطلب (للإدارة)',
-    description: 'الحصول على تفاصيل طلب محدد مع جميع المعلومات'
+    description: 'الحصول على تفاصيل طلب محدد مع جميع المعلومات',
   })
   @ApiParam({ name: 'id', description: 'معرف الطلب' })
   @ApiResponse({ status: 200, description: 'تم الحصول على تفاصيل الطلب' })
   @ApiResponse({ status: 404, description: 'الطلب غير موجود' })
-  async getOrderDetails(
-    @Param('id') orderId: string
-  ) {
+  async getOrderDetails(@Param('id') orderId: string) {
     const order = await this.orderService.getOrderDetails(orderId);
 
     return {
       order,
-      message: 'تم الحصول على تفاصيل الطلب'
+      message: 'تم الحصول على تفاصيل الطلب',
     };
   }
 
   @Patch(':id([0-9a-fA-F]{24})/status')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تحديث حالة الطلب',
-    description: 'تحديث حالة طلب محدد من قبل الإدارة'
+    description: 'تحديث حالة طلب محدد من قبل الإدارة',
   })
   @ApiParam({ name: 'id', description: 'معرف الطلب' })
   @ApiResponse({ status: 200, description: 'تم تحديث حالة الطلب بنجاح' })
@@ -112,41 +98,39 @@ export class AdminOrderController {
   async updateOrderStatus(
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
-    @Body() dto: UpdateOrderStatusDto
+    @Body() dto: UpdateOrderStatusDto,
   ) {
     const adminId = this.getUserId(req);
-    const order = await this.orderService.adminUpdateOrderStatus(
-      orderId,
-      dto,
-      adminId
-    );
+    const order = await this.orderService.adminUpdateOrderStatus(orderId, dto, adminId);
 
     // تسجيل تحديث الطلب من الأدمن في audit
-    this.auditService.logOrderEvent({
-      userId: String(order.userId),
-      orderId,
-      action: 'updated_by_admin',
-      orderNumber: order.orderNumber,
-      oldStatus: order.statusHistory[order.statusHistory.length - 2]?.status,
-      newStatus: dto.status,
-      totalAmount: order.total,
-      currency: order.currency,
-      performedBy: adminId,
-      reason: dto.notes,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    }).catch(err => this.logger.error('Failed to log admin order update', err));
+    this.auditService
+      .logOrderEvent({
+        userId: String(order.userId),
+        orderId,
+        action: 'updated_by_admin',
+        orderNumber: order.orderNumber,
+        oldStatus: order.statusHistory[order.statusHistory.length - 2]?.status,
+        newStatus: dto.status,
+        totalAmount: order.total,
+        currency: order.currency,
+        performedBy: adminId,
+        reason: dto.notes,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger.error('Failed to log admin order update', err));
 
     return {
       order,
-      message: `تم تحديث حالة الطلب إلى ${dto.status}`
+      message: `تم تحديث حالة الطلب إلى ${dto.status}`,
     };
   }
 
   @Post(':id([0-9a-fA-F]{24})/ship')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تحديث معلومات الشحن',
-    description: 'تسجيل بيانات الشحن للطلب مع بقاء الحالة الحالية'
+    description: 'تسجيل بيانات الشحن للطلب مع بقاء الحالة الحالية',
   })
   @ApiParam({ name: 'id', description: 'معرف الطلب' })
   @ApiResponse({ status: 200, description: 'تم شحن الطلب بنجاح' })
@@ -154,27 +138,23 @@ export class AdminOrderController {
   async shipOrder(
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
-    @Body() dto: ShipOrderDto
+    @Body() dto: ShipOrderDto,
   ) {
-    const order = await this.orderService.shipOrder(
-      orderId,
-      dto,
-      this.getUserId(req)
-    );
+    const order = await this.orderService.shipOrder(orderId, dto, this.getUserId(req));
 
     return {
       orderNumber: order.orderNumber,
       trackingNumber: order.trackingNumber,
       trackingUrl: order.trackingUrl,
       estimatedDelivery: order.estimatedDeliveryDate,
-      message: 'تم تحديث معلومات الشحن'
+      message: 'تم تحديث معلومات الشحن',
     };
   }
 
   @Post(':id([0-9a-fA-F]{24})/refund')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'معالجة الاسترداد',
-    description: 'معالجة استرداد مبلغ الطلب'
+    description: 'معالجة استرداد مبلغ الطلب',
   })
   @ApiParam({ name: 'id', description: 'معرف الطلب' })
   @ApiResponse({ status: 200, description: 'تم معالجة الاسترداد بنجاح' })
@@ -182,52 +162,48 @@ export class AdminOrderController {
   async processRefund(
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
-    @Body() dto: RefundOrderDto
+    @Body() dto: RefundOrderDto,
   ) {
-    const order = await this.orderService.processRefund(
-      orderId,
-      dto,
-      this.getUserId(req)
-    );
+    const order = await this.orderService.processRefund(orderId, dto, this.getUserId(req));
 
     return {
       orderNumber: order.orderNumber,
       refundAmount: order.returnInfo.returnAmount,
       refundReason: order.returnInfo.returnReason,
       refundedAt: order.returnInfo.returnedAt,
-      message: `تم استرداد ${dto.amount} بنجاح`
+      message: `تم استرداد ${dto.amount} بنجاح`,
     };
   }
 
   @Post(':id([0-9a-fA-F]{24})/notes')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'إضافة ملاحظات إدارية',
-    description: 'إضافة ملاحظات إدارية للطلب'
+    description: 'إضافة ملاحظات إدارية للطلب',
   })
   @ApiParam({ name: 'id', description: 'معرف الطلب' })
   @ApiResponse({ status: 200, description: 'تم إضافة الملاحظات بنجاح' })
   async addAdminNotes(
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
-    @Body() dto: AddOrderNotesDto
+    @Body() dto: AddOrderNotesDto,
   ) {
     const order = await this.orderService.addOrderNotes(
       orderId,
       { ...dto, type: 'admin' },
       this.getUserId(req),
-      true
+      true,
     );
 
     return {
       order,
-      message: 'تم إضافة الملاحظات الإدارية'
+      message: 'تم إضافة الملاحظات الإدارية',
     };
   }
 
   @Post(':id([0-9a-fA-F]{24})/verify-payment')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'مطابقة الدفع المحلي',
-    description: 'مطابقة الدفع للطلبات المحلية (إدخال المبلغ والعملة)'
+    description: 'مطابقة الدفع للطلبات المحلية (إدخال المبلغ والعملة)',
   })
   @ApiParam({ name: 'id', description: 'معرف الطلب' })
   @ApiBody({ type: VerifyPaymentDto })
@@ -236,57 +212,53 @@ export class AdminOrderController {
   async verifyPayment(
     @Req() req: ExpressRequest,
     @Param('id') orderId: string,
-    @Body() dto: VerifyPaymentDto
+    @Body() dto: VerifyPaymentDto,
   ) {
-    const order = await this.orderService.verifyLocalPayment(
-      orderId,
-      dto,
-      this.getUserId(req)
-    );
+    const order = await this.orderService.verifyLocalPayment(orderId, dto, this.getUserId(req));
 
     return {
       order,
-      message: order.paymentStatus === PaymentStatus.PAID 
-        ? 'تم قبول الدفع بنجاح' 
-        : 'تم رفض الدفع - المبلغ غير كافٍ',
+      message:
+        order.paymentStatus === PaymentStatus.PAID
+          ? 'تم قبول الدفع بنجاح'
+          : 'تم رفض الدفع - المبلغ غير كافٍ',
       paymentStatus: order.paymentStatus,
       verifiedAmount: order.verifiedPaymentAmount,
       orderAmount: order.total,
-      currency: order.currency
+      currency: order.currency,
     };
   }
 
   @Post(':id([0-9a-fA-F]{24})/send-invoice')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'توليد وإرسال الفاتورة يدوياً',
-    description: 'توليد وإرسال الفاتورة إلى إيميل المبيعات يدوياً (في حال لم يصل الإيميل تلقائياً)'
+    description: 'توليد وإرسال الفاتورة إلى إيميل المبيعات يدوياً (في حال لم يصل الإيميل تلقائياً)',
   })
   @ApiParam({ name: 'id', description: 'معرف الطلب' })
   @ApiResponse({ status: 200, description: 'تم إرسال الفاتورة بنجاح' })
   @ApiResponse({ status: 404, description: 'الطلب غير موجود' })
   @ApiResponse({ status: 500, description: 'فشل في إرسال الفاتورة' })
-  async sendInvoiceManually(
-    @Req() req: ExpressRequest,
-    @Param('id') orderId: string
-  ) {
+  async sendInvoiceManually(@Req() req: ExpressRequest, @Param('id') orderId: string) {
     const adminId = this.getUserId(req);
     const result = await this.orderService.manuallySendInvoiceToSales(orderId);
 
     // تسجيل العملية في audit
     if (result.success) {
       const order = await this.orderService.getOrderDetails(orderId);
-      this.auditService.logOrderEvent({
-        userId: String(order.userId),
-        orderId,
-        action: 'invoice_sent_manually',
-        orderNumber: order.orderNumber,
-        totalAmount: order.total,
-        currency: order.currency,
-        performedBy: adminId,
-        reason: 'إرسال يدوي للفاتورة من لوحة التحكم',
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent'],
-      }).catch(err => this.logger.error('Failed to log manual invoice send', err));
+      this.auditService
+        .logOrderEvent({
+          userId: String(order.userId),
+          orderId,
+          action: 'invoice_sent_manually',
+          orderNumber: order.orderNumber,
+          totalAmount: order.total,
+          currency: order.currency,
+          performedBy: adminId,
+          reason: 'إرسال يدوي للفاتورة من لوحة التحكم',
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+        })
+        .catch((err) => this.logger.error('Failed to log manual invoice send', err));
     }
 
     if (!result.success) {
@@ -310,16 +282,13 @@ export class AdminOrderController {
   // ===== Bulk Operations =====
 
   @Post('bulk/update-status')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تحديث حالة عدة طلبات',
-    description: 'تحديث حالة عدة طلبات في عملية واحدة'
+    description: 'تحديث حالة عدة طلبات في عملية واحدة',
   })
   @ApiResponse({ status: 200, description: 'تم تحديث الطلبات بنجاح' })
   @ApiResponse({ status: 400, description: 'فشل في تحديث بعض الطلبات' })
-  async bulkUpdateStatus(
-    @Req() req: ExpressRequest,
-    @Body() dto: BulkOrderUpdateDto
-  ) {
+  async bulkUpdateStatus(@Req() req: ExpressRequest, @Body() dto: BulkOrderUpdateDto) {
     const results = [];
     const errors = [];
 
@@ -328,7 +297,7 @@ export class AdminOrderController {
         const order = await this.orderService.adminUpdateOrderStatus(
           orderId,
           { status: dto.status, notes: dto.notes },
-          this.getUserId(req)
+          this.getUserId(req),
         );
         results.push({ orderId, success: true, order });
       } catch (error) {
@@ -339,7 +308,7 @@ export class AdminOrderController {
     return {
       results,
       errors,
-      message: `تم تحديث ${results.length} طلب، فشل ${errors.length} طلب`
+      message: `تم تحديث ${results.length} طلب، فشل ${errors.length} طلب`,
     };
   }
 
@@ -349,7 +318,7 @@ export class AdminOrderController {
   @Get('stats')
   @ApiOperation({
     summary: 'إحصائيات الطلبات الأساسية',
-    description: 'الحصول على إحصائيات أساسية للطلبات'
+    description: 'الحصول على إحصائيات أساسية للطلبات',
   })
   @ApiResponse({ status: 200, description: 'تم الحصول على الإحصائيات' })
   async getOrderStats() {
@@ -357,7 +326,7 @@ export class AdminOrderController {
 
     return {
       stats,
-      message: 'تم الحصول على إحصائيات الطلبات'
+      message: 'تم الحصول على إحصائيات الطلبات',
     };
   }
 
@@ -367,7 +336,7 @@ export class AdminOrderController {
   @Get('ratings')
   @ApiOperation({
     summary: 'قائمة تقييمات الطلبات',
-    description: 'الحصول على جميع تقييمات الطلبات مع إمكانية الفلترة والبحث'
+    description: 'الحصول على جميع تقييمات الطلبات مع إمكانية الفلترة والبحث',
   })
   @ApiResponse({
     status: 200,
@@ -390,9 +359,9 @@ export class AdminOrderController {
               orderStatus: { type: 'string' },
               orderTotal: { type: 'number' },
               orderCurrency: { type: 'string' },
-              createdAt: { type: 'string', format: 'date-time' }
-            }
-          }
+              createdAt: { type: 'string', format: 'date-time' },
+            },
+          },
         },
         pagination: {
           type: 'object',
@@ -400,11 +369,11 @@ export class AdminOrderController {
             total: { type: 'number' },
             page: { type: 'number' },
             limit: { type: 'number' },
-            totalPages: { type: 'number' }
-          }
-        }
-      }
-    }
+            totalPages: { type: 'number' },
+          },
+        },
+      },
+    },
   })
   async getRatings(@Query() query: ListRatingsDto) {
     const result = await this.orderService.getRatings(query);
@@ -412,7 +381,7 @@ export class AdminOrderController {
     return {
       ratings: result.ratings,
       pagination: result.pagination,
-      message: 'تم الحصول على التقييمات بنجاح'
+      message: 'تم الحصول على التقييمات بنجاح',
     };
   }
 
@@ -420,7 +389,7 @@ export class AdminOrderController {
   @Get('ratings/stats')
   @ApiOperation({
     summary: 'إحصائيات التقييمات',
-    description: 'الحصول على إحصائيات شاملة لتقييمات الطلبات'
+    description: 'الحصول على إحصائيات شاملة لتقييمات الطلبات',
   })
   @ApiResponse({
     status: 200,
@@ -437,8 +406,8 @@ export class AdminOrderController {
             4: { type: 'number', description: 'عدد التقييمات 4 نجوم' },
             3: { type: 'number', description: 'عدد التقييمات 3 نجوم' },
             2: { type: 'number', description: 'عدد التقييمات نجمتين' },
-            1: { type: 'number', description: 'عدد التقييمات نجمة واحدة' }
-          }
+            1: { type: 'number', description: 'عدد التقييمات نجمة واحدة' },
+          },
         },
         ratingsWithReviews: { type: 'number', description: 'عدد التقييمات مع مراجعات نصية' },
         recentRatings: {
@@ -449,72 +418,70 @@ export class AdminOrderController {
               orderNumber: { type: 'string' },
               rating: { type: 'number' },
               review: { type: 'string' },
-              ratedAt: { type: 'string', format: 'date-time' }
-            }
-          }
-        }
-      }
-    }
+              ratedAt: { type: 'string', format: 'date-time' },
+            },
+          },
+        },
+      },
+    },
   })
   async getRatingsStats() {
     const stats = await this.orderService.getRatingsStats();
 
     return {
       stats,
-      message: 'تم الحصول على إحصائيات التقييمات'
+      message: 'تم الحصول على إحصائيات التقييمات',
     };
   }
 
   // ===== Analytics =====
 
   @Get('analytics/summary')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'التحليلات الإدارية',
-    description: 'الحصول على تحليلات شاملة للطلبات'
+    description: 'الحصول على تحليلات شاملة للطلبات',
   })
   @ApiQuery({ name: 'days', required: false, type: Number, description: 'عدد الأيام' })
   @ApiQuery({ name: 'groupBy', required: false, type: String, description: 'تجميع البيانات' })
   @ApiQuery({ name: 'status', required: false, type: String, description: 'فلترة حسب الحالة' })
   @ApiResponse({ status: 200, description: 'تم الحصول على التحليلات' })
-  async getAnalytics(
-    @Query() query: OrderAnalyticsDto
-  ) {
+  async getAnalytics(@Query() query: OrderAnalyticsDto) {
     const analytics = await this.orderService.getAdminAnalytics(query);
 
     return {
       analytics,
-      message: 'تم الحصول على التحليلات'
+      message: 'تم الحصول على التحليلات',
     };
   }
 
   @Get('analytics/revenue')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تحليل الإيرادات',
-    description: 'تحليل مفصل للإيرادات والأرباح'
+    description: 'تحليل مفصل للإيرادات والأرباح',
   })
   @ApiQuery({ name: 'fromDate', required: false, type: String, description: 'تاريخ البداية' })
   @ApiQuery({ name: 'toDate', required: false, type: String, description: 'تاريخ النهاية' })
   @ApiResponse({ status: 200, description: 'تم الحصول على تحليل الإيرادات' })
   async getRevenueAnalytics(
     @Query('fromDate') fromDate?: string,
-    @Query('toDate') toDate?: string
+    @Query('toDate') toDate?: string,
   ) {
     // تطبيق تحليل الإيرادات المفصل
     const analytics = await this.orderService.getRevenueAnalytics({
       fromDate: fromDate ? new Date(fromDate) : undefined,
-      toDate: toDate ? new Date(toDate) : undefined
+      toDate: toDate ? new Date(toDate) : undefined,
     });
 
     return {
       analytics,
-      message: 'تم الحصول على تحليل الإيرادات'
+      message: 'تم الحصول على تحليل الإيرادات',
     };
   }
 
   @Get('analytics/performance')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تحليل الأداء',
-    description: 'تحليل أداء النظام والطلبات'
+    description: 'تحليل أداء النظام والطلبات',
   })
   @ApiResponse({ status: 200, description: 'تم الحصول على تحليل الأداء' })
   async getPerformanceAnalytics() {
@@ -523,22 +490,27 @@ export class AdminOrderController {
 
     return {
       analytics,
-      message: 'تم الحصول على تحليل الأداء'
+      message: 'تم الحصول على تحليل الأداء',
     };
   }
 
   // ===== Reports =====
 
   @Get('reports/orders')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'تقرير الطلبات',
-    description: 'تقرير مفصل للطلبات'
+    description: 'تقرير مفصل للطلبات',
   })
-  @ApiQuery({ name: 'format', required: false, type: String, description: 'تنسيق التقرير (pdf, excel)' })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    type: String,
+    description: 'تنسيق التقرير (pdf, excel)',
+  })
   @ApiResponse({ status: 200, description: 'تم إنشاء التقرير' })
   async generateOrdersReport(
     @Query() query: ListOrdersDto,
-    @Query('format') format: string = 'json'
+    @Query('format') format: string = 'json',
   ) {
     const result = await this.orderService.getAllOrders(query);
 
@@ -547,7 +519,7 @@ export class AdminOrderController {
       const pdfUrl = await this.orderService.generateOrdersPDF(result.orders);
       return {
         url: pdfUrl,
-        message: 'تم إنشاء تقرير PDF'
+        message: 'تم إنشاء تقرير PDF',
       };
     }
 
@@ -556,20 +528,20 @@ export class AdminOrderController {
       const excelUrl = await this.orderService.generateOrdersExcel(result.orders);
       return {
         url: excelUrl,
-        message: 'تم إنشاء ملف Excel'
+        message: 'تم إنشاء ملف Excel',
       };
     }
 
     return {
       result,
-      message: 'تم إنشاء التقرير'
+      message: 'تم إنشاء التقرير',
     };
   }
 
   @Get('reports/financial')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'التقرير المالي',
-    description: 'تقرير مالي مفصل للطلبات'
+    description: 'تقرير مالي مفصل للطلبات',
   })
   @ApiResponse({ status: 200, description: 'تم إنشاء التقرير المالي' })
   async generateFinancialReport() {
@@ -578,16 +550,22 @@ export class AdminOrderController {
 
     return {
       report,
-      message: 'تم إنشاء التقرير المالي'
+      message: 'تم إنشاء التقرير المالي',
     };
   }
 
   @Post('analytics/export')
   @ApiOperation({
     summary: 'تصدير تحليلات الطلبات',
-    description: 'تصدير بيانات تحليلات الطلبات بصيغ مختلفة (CSV, Excel, JSON)'
+    description: 'تصدير بيانات تحليلات الطلبات بصيغ مختلفة (CSV, Excel, JSON)',
   })
-  @ApiQuery({ name: 'format', required: false, type: String, description: 'صيغة الملف (csv, xlsx, json)', example: 'csv' })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    type: String,
+    description: 'صيغة الملف (csv, xlsx, json)',
+    example: 'csv',
+  })
   @ApiQuery({ name: 'days', required: false, type: Number, description: 'عدد الأيام', example: 30 })
   @ApiQuery({ name: 'fromDate', required: false, type: String, description: 'من تاريخ' })
   @ApiQuery({ name: 'toDate', required: false, type: String, description: 'إلى تاريخ' })
@@ -606,17 +584,17 @@ export class AdminOrderController {
             exportedAt: { type: 'string' },
             fileName: { type: 'string' },
             recordCount: { type: 'number' },
-            summary: { type: 'object' }
-          }
-        }
-      }
-    }
+            summary: { type: 'object' },
+          },
+        },
+      },
+    },
   })
   async exportOrderAnalytics(
     @Query('format') format?: string,
     @Query('days') days?: number,
     @Query('fromDate') fromDate?: string,
-    @Query('toDate') toDate?: string
+    @Query('toDate') toDate?: string,
   ) {
     const exportFormat = format || 'csv';
     const analyticsParams: OrderAnalyticsDto = {
@@ -627,25 +605,48 @@ export class AdminOrderController {
       exportFormat,
       analyticsParams,
       fromDate,
-      toDate
+      toDate,
     );
   }
 
   @Post('export')
   @ApiOperation({
     summary: 'تصدير قائمة الطلبات',
-    description: 'تصدير قائمة الطلبات مع التصفية بصيغ مختلفة (CSV, Excel, JSON)'
+    description: 'تصدير قائمة الطلبات مع التصفية بصيغ مختلفة (CSV, Excel, JSON)',
   })
-  @ApiQuery({ name: 'format', required: false, type: String, description: 'صيغة الملف', example: 'csv' })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    type: String,
+    description: 'صيغة الملف',
+    example: 'csv',
+  })
   @ApiResponse({
     status: 200,
-    description: 'تم تصدير القائمة بنجاح'
+    description: 'تم تصدير القائمة بنجاح',
   })
-  async exportOrders(
-    @Query() query: ListOrdersDto,
-    @Query('format') format?: string
-  ) {
+  async exportOrders(@Query() query: ListOrdersDto, @Query('format') format?: string) {
     const exportFormat = format || 'csv';
     return await this.orderService.exportOrders(exportFormat, query);
+  }
+
+  @RequirePermissions(AdminPermission.ORDERS_READ, AdminPermission.ADMIN_ACCESS)
+  @Get('out-of-stock')
+  @ApiOperation({
+    summary: 'الطلبات غير المتوفرة',
+    description: 'قائمة بجميع الطلبات التي فشلت بسبب عدم توفر المخزون',
+  })
+  @ApiResponse({ status: 200, description: 'قائمة الطلبات غير المتوفرة' })
+  async getOutOfStockOrders(@Query() query: ListOrdersDto) {
+    const result = await this.orderService.getAllOrders({
+      ...query,
+      status: OrderStatus.OUT_OF_STOCK,
+    });
+
+    return {
+      orders: result.orders,
+      pagination: result.pagination,
+      message: 'تم الحصول على الطلبات غير المتوفرة بنجاح',
+    };
   }
 }

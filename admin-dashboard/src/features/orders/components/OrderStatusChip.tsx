@@ -21,6 +21,7 @@ const orderStatusColors: Record<
   cancelled: 'error',
   returned: 'info',
   refunded: 'error',
+  out_of_stock: 'error',
 };
 
 const getStatusIcon = (status: OrderStatus) => {
@@ -34,6 +35,7 @@ const getStatusIcon = (status: OrderStatus) => {
     case 'cancelled':
     case 'refunded':
     case 'returned':
+    case 'out_of_stock':
       return <Error />;
     default:
       return <Info />;

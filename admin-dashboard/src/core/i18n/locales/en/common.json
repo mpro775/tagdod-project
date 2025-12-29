@@ -21,6 +21,7 @@
     "sales": "Sales",
     "orders": "Orders",
     "ordersList": "Orders List",
+    "ordersOutOfStock": "Out of Stock Orders",
     "ordersAnalytics": "Orders Analytics",
     "cartsManagement": "Cart Management",
     "cartsList": "Cart List",

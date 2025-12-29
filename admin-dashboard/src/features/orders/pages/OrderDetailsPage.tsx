@@ -189,7 +189,7 @@ export const OrderDetailsPage: React.FC = () => {
 
     // State machine transitions from backend
     const transitions: Record<OrderStatus, OrderStatus[]> = {
-      [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED, OrderStatus.OUT_OF_STOCK],
       [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
       [OrderStatus.PROCESSING]: [
         OrderStatus.COMPLETED,
@@ -202,6 +202,7 @@ export const OrderDetailsPage: React.FC = () => {
       [OrderStatus.CANCELLED]: [],
       [OrderStatus.RETURNED]: [OrderStatus.REFUNDED],
       [OrderStatus.REFUNDED]: [],
+      [OrderStatus.OUT_OF_STOCK]: [OrderStatus.PENDING_PAYMENT, OrderStatus.CANCELLED],
     };
 
     // Get valid next states from state machine

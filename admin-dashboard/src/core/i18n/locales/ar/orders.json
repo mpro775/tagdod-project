@@ -40,7 +40,8 @@
     "cancelled": "ملغي",
     "refunded": "مسترد",
     "partially_refunded": "مسترد جزئياً",
-    "returned": "مرتجع"
+    "returned": "مرتجع",
+    "out_of_stock": "غير متوفر"
   },
   "statusLabels": {
     "draft": "تم إنشاء الطلب",
@@ -66,7 +67,8 @@
     "cancelled": "error",
     "refunded": "error",
     "partially_refunded": "warning",
-    "returned": "error"
+    "returned": "error",
+    "out_of_stock": "error"
   },
   "payment": {
     "status": {
@@ -136,7 +138,29 @@
     "onHold": "طلبات معلقة",
     "cancelled": "طلبات ملغية",
     "returned": "طلبات مرتجعة",
-    "refunded": "طلبات مستردة"
+    "refunded": "طلبات مستردة",
+    "out_of_stock": "طلبات غير متوفرة"
+  },
+  "outOfStock": {
+    "title": "الطلبات غير المتوفرة",
+    "description": "قائمة الطلبات التي فشلت بسبب عدم توفر المخزون",
+    "orderNumber": "رقم الطلب",
+    "customer": "العميل",
+    "items": "المنتجات",
+    "inventoryError": "خطأ المخزون",
+    "requestedQty": "الكمية المطلوبة",
+    "availableStock": "الكمية المتوفرة",
+    "total": "الإجمالي",
+    "date": "التاريخ",
+    "actions": "الإجراءات",
+    "view": "عرض التفاصيل",
+    "moveToPending": "نقل إلى قائمة المعلقة",
+    "cancel": "إلغاء",
+    "search": "بحث",
+    "searchPlaceholder": "البحث برقم الطلب أو اسم العميل...",
+    "refresh": "تحديث",
+    "noOrders": "لا توجد طلبات غير متوفرة",
+    "errorLoading": "حدث خطأ أثناء تحميل الطلبات"
   },
   "analytics": {
     "title": "تحليلات الطلبات",

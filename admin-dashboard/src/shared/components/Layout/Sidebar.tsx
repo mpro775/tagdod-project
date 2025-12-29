@@ -16,6 +16,7 @@ import {
   Dashboard,
   People,
   Inventory,
+  Inventory2,
   Category,
   Tune,
   LocalOffer,
@@ -211,6 +212,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
                 label: t('navigation.ordersList', 'قائمة الطلبات'),
                 icon: <Receipt />,
                 path: '/orders',
+              },
+              {
+                id: 'orders-out-of-stock',
+                label: t('navigation.ordersOutOfStock', 'الطلبات غير المتوفرة'),
+                icon: <Inventory2 />,
+                path: '/orders/out-of-stock',
               },
               {
                 id: 'orders-analytics',

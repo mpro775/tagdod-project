@@ -20,6 +20,8 @@ export enum OrderStatus {
   RETURNED = 'returned',
   // eslint-disable-next-line no-unused-vars
   REFUNDED = 'refunded',
+  // eslint-disable-next-line no-unused-vars
+  OUT_OF_STOCK = 'out_of_stock',
 }
 
 export enum PaymentStatus {
@@ -95,6 +97,15 @@ export interface OrderItem {
   returnedAt?: Date;
 }
 
+// Inventory Error
+export interface InventoryError {
+  variantId?: string;
+  productId?: string;
+  requestedQty: number;
+  availableStock: number;
+  reason: string;
+}
+
 // Status History Entry
 export interface StatusHistoryEntry {
   status: OrderStatus;
@@ -102,6 +113,10 @@ export interface StatusHistoryEntry {
   changedBy: string;
   changedByRole: 'customer' | 'admin' | 'system';
   notes?: string;
+  metadata?: {
+    inventoryErrors?: InventoryError[];
+    [key: string]: unknown;
+  };
 }
 
 // Delivery Address
@@ -173,6 +188,9 @@ export interface Order extends BaseEntity {
 
   // Status History
   statusHistory: StatusHistoryEntry[];
+
+  // Inventory Errors (for OUT_OF_STOCK orders)
+  inventoryErrors?: InventoryError[];
 
   // Delivery Address
   deliveryAddress: DeliveryAddress;

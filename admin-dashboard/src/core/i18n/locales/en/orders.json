@@ -39,7 +39,8 @@
     "cancelled": "Cancelled",
     "refunded": "Refunded",
     "partially_refunded": "Partially Refunded",
-    "returned": "Returned"
+    "returned": "Returned",
+    "out_of_stock": "Out of Stock"
   },
   "statusLabels": {
     "draft": "Order Created",
@@ -65,7 +66,8 @@
     "cancelled": "error",
     "refunded": "error",
     "partially_refunded": "warning",
-    "returned": "error"
+    "returned": "error",
+    "out_of_stock": "error"
   },
   "payment": {
     "status": {
@@ -135,7 +137,29 @@
     "onHold": "On Hold",
     "cancelled": "Cancelled",
     "returned": "Returned",
-    "refunded": "Refunded"
+    "refunded": "Refunded",
+    "out_of_stock": "Out of Stock"
+  },
+  "outOfStock": {
+    "title": "Out of Stock Orders",
+    "description": "List of orders that failed due to insufficient stock",
+    "orderNumber": "Order Number",
+    "customer": "Customer",
+    "items": "Items",
+    "inventoryError": "Inventory Error",
+    "requestedQty": "Requested Quantity",
+    "availableStock": "Available Stock",
+    "total": "Total",
+    "date": "Date",
+    "actions": "Actions",
+    "view": "View Details",
+    "moveToPending": "Move to Pending",
+    "cancel": "Cancel",
+    "search": "Search",
+    "searchPlaceholder": "Search by order number or customer name...",
+    "refresh": "Refresh",
+    "noOrders": "No out of stock orders",
+    "errorLoading": "Error loading orders"
   },
   "analytics": {
     "title": "Order Analytics",

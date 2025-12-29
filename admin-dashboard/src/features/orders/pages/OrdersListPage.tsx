@@ -75,6 +75,7 @@ const orderStatusColors: Record<
   cancelled: 'error',
   returned: 'info',
   refunded: 'error',
+  out_of_stock: 'error',
 };
 
 export const OrdersListPage: React.FC = () => {

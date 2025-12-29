@@ -152,6 +152,11 @@ const OrdersListPage = lazy(() =>
     default: m.OrdersListPage,
   }))
 );
+const OutOfStockOrdersPage = lazy(() =>
+  import('@/features/orders/pages/OutOfStockOrdersPage').then((m) => ({
+    default: m.OutOfStockOrdersPage,
+  }))
+);
 const OrderDetailsPage = lazy(() =>
   import('@/features/orders/pages/OrderDetailsPage').then((m) => ({
     default: m.OrderDetailsPage,
@@ -563,6 +568,10 @@ export const routes: RouteObject[] = [
       {
         path: 'orders',
         element: <OrdersListPage />,
+      },
+      {
+        path: 'orders/out-of-stock',
+        element: <OutOfStockOrdersPage />,
       },
       {
         path: 'orders/analytics',

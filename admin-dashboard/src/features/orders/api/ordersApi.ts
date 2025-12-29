@@ -407,4 +407,40 @@ export const ordersApi = {
 
     return payload as RatingsStats;
   },
+
+  /**
+   * Get out of stock orders
+   */
+  getOutOfStockOrders: async (params: ListOrdersParams): Promise<PaginatedResponse<Order>> => {
+    const response = await apiClient.get<ApiResponse<{
+      orders: Order[];
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+    }>>('/admin/orders/out-of-stock', {
+      params: sanitizePaginationParams(params),
+    });
+
+    const payload = response.data.data;
+    const orders = Array.isArray(payload.orders) ? payload.orders : [];
+    const pagination = payload.pagination ?? {
+      page: params.page ?? 1,
+      limit: params.limit ?? orders.length ?? 0,
+      total: orders.length ?? 0,
+      totalPages: 1,
+    };
+
+    return {
+      data: orders,
+      meta: {
+        page: pagination.page ?? 1,
+        limit: pagination.limit ?? orders.length ?? 0,
+        total: pagination.total ?? orders.length ?? 0,
+        totalPages: pagination.totalPages ?? 1,
+      },
+    };
+  },
 };

@@ -1170,6 +1170,98 @@ export class OrderService {
     }
   }
 
+  /**
+   * التحقق من المخزون قبل إنشاء الطلب
+   */
+  private async validateOrderInventory(items: Array<{
+    productId?: Types.ObjectId;
+    variantId?: Types.ObjectId;
+    qty: number;
+  }>): Promise<{
+    isValid: boolean;
+    errors: Array<{
+      variantId?: string;
+      productId?: string;
+      requestedQty: number;
+      availableStock: number;
+      reason: string;
+    }>;
+  }> {
+    const errors: Array<{
+      variantId?: string;
+      productId?: string;
+      requestedQty: number;
+      availableStock: number;
+      reason: string;
+    }> = [];
+
+    for (const item of items) {
+      const variantId = item.variantId?.toString();
+      const productId = item.productId?.toString();
+      const qty = item.qty;
+
+      if (!variantId && !productId) {
+        continue;
+      }
+
+      try {
+        if (variantId) {
+          const variantDetails = await this.variantService.findById(variantId);
+          
+          // التحقق من المخزون إذا كان trackInventory = true
+          if (variantDetails.trackInventory) {
+            const availability = await this.productsInventoryService.checkAvailability(variantId, qty);
+            
+            if (!availability.available && !availability.canBackorder) {
+              errors.push({
+                variantId,
+                requestedQty: qty,
+                availableStock: availability.availableStock ?? 0,
+                reason: availability.reason || 'INSUFFICIENT_STOCK',
+              });
+            }
+          }
+          // إذا كان trackInventory = false، نعتبره متوفراً (لا يحتاج متابعة مخزون)
+        } else if (productId) {
+          const productDetails = await this.productService.findById(productId);
+          
+          // التحقق من المخزون إذا كان trackStock = true
+          if (productDetails.trackStock) {
+            const availability = await this.productsInventoryService.checkProductAvailability(productId, qty);
+            
+            if (!availability.available && !availability.canBackorder) {
+              errors.push({
+                productId,
+                requestedQty: qty,
+                availableStock: availability.availableStock ?? 0,
+                reason: availability.reason || 'INSUFFICIENT_STOCK',
+              });
+            }
+          }
+          // إذا كان trackStock = false، نعتبره متوفراً (لا يحتاج متابعة مخزون)
+        }
+      } catch (error) {
+        this.logger.error(
+          `Error validating inventory for item ${variantId || productId}:`,
+          error as Error,
+        );
+        // في حالة الخطأ، نعتبر العنصر غير متوفر
+        errors.push({
+          variantId,
+          productId,
+          requestedQty: qty,
+          availableStock: 0,
+          reason: 'VALIDATION_ERROR',
+        });
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
   private async rollbackInventoryReservations(
     orderId: string,
     entries: Array<{
@@ -2092,11 +2184,23 @@ export class OrderService {
         }
       }
 
+      // 🔥 التحقق من المخزون قبل إنشاء الطلب
+      const itemsToValidate = quote.data.items.map((item: CartLine) => ({
+        productId: item.productId ? new Types.ObjectId(item.productId) : undefined,
+        variantId: item.variantId ? new Types.ObjectId(item.variantId) : undefined,
+        qty: item.qty,
+      }));
+
+      const inventoryValidation = await this.validateOrderInventory(itemsToValidate);
+
       // إنشاء الطلب
       const order = new this.orderModel({
         orderNumber: this.generateOrderNumber(),
         userId: new Types.ObjectId(userId),
-        status: OrderStatus.PENDING_PAYMENT,
+        // 🔥 تعيين الحالة بناءً على نتيجة التحقق
+        status: inventoryValidation.isValid 
+          ? OrderStatus.PENDING_PAYMENT 
+          : OrderStatus.OUT_OF_STOCK,
         paymentStatus: PaymentStatus.PENDING,
         deliveryAddress: {
           addressId: address._id,
@@ -2174,34 +2278,121 @@ export class OrderService {
 
       await order.save();
 
-      try {
-        await this.reserveOrderInventory(order);
-      } catch (inventoryError) {
-        this.logger.error(
-          `Inventory reservation failed for order ${order.orderNumber}`,
-          inventoryError as Error,
-        );
-        await this.orderModel.deleteOne({ _id: order._id });
-        if (inventoryError instanceof DomainException) {
-          throw inventoryError;
+      // 🔥 إذا كان المخزون متوفر، احجز المخزون
+      if (inventoryValidation.isValid) {
+        try {
+          await this.reserveOrderInventory(order);
+        } catch (inventoryError) {
+          this.logger.error(
+            `Inventory reservation failed for order ${order.orderNumber}`,
+            inventoryError as Error,
+          );
+          // تحديث حالة الطلب إلى OUT_OF_STOCK بدلاً من حذفه
+          order.status = OrderStatus.OUT_OF_STOCK;
+          await order.save();
+          
+          // إضافة سجل الحالة
+          await this.addStatusHistory(
+            order,
+            OrderStatus.OUT_OF_STOCK,
+            new Types.ObjectId(userId),
+            'system',
+            'فشل حجز المخزون',
+            { inventoryErrors: [{ reason: 'RESERVATION_FAILED' }] },
+          );
+
+          // إرسال إشعار للعميل
+          await this.safeNotify(
+            userId,
+            NotificationType.ORDER_CREATED,
+            'طلب غير متوفر',
+            `تم إنشاء طلبك رقم ${order.orderNumber} ولكن المخزون غير متوفر حالياً`,
+            `Your order ${order.orderNumber} has been created but is currently out of stock`,
+            {
+              orderId: order._id.toString(),
+              orderNumber: order.orderNumber,
+              status: OrderStatus.OUT_OF_STOCK,
+            },
+            NotificationNavigationType.ORDER,
+            order._id.toString(),
+          );
+
+          // إرسال إشعار للمدراء
+          await this.notifyAdmins(
+            NotificationType.ORDER_CREATED,
+            'طلب غير متوفر - يتطلب متابعة',
+            `تم إنشاء طلب جديد بدون مخزون: ${order.orderNumber}`,
+            `New order created without stock: ${order.orderNumber}`,
+            {
+              orderId: order._id.toString(),
+              orderNumber: order.orderNumber,
+              customerId: userId,
+              status: OrderStatus.OUT_OF_STOCK,
+            },
+            NotificationNavigationType.ORDER,
+            order._id.toString(),
+          );
         }
-        throw new DomainException(ErrorCode.ORDER_CONFIRM_FAILED, {
-          reason: 'inventory_reservation_failed',
-          message: (inventoryError as Error).message,
-        });
+      } else {
+        // 🔥 إذا كان المخزون غير متوفر، أضف سجل الحالة وإشعار
+        await this.addStatusHistory(
+          order,
+          OrderStatus.OUT_OF_STOCK,
+          new Types.ObjectId(userId),
+          'system',
+          `المخزون غير متوفر: ${inventoryValidation.errors.map(e => 
+            e.variantId ? `Variant ${e.variantId}` : `Product ${e.productId}`
+          ).join(', ')}`,
+          { inventoryErrors: inventoryValidation.errors },
+        );
+
+        // إرسال إشعار للعميل
+        await this.safeNotify(
+          userId,
+          NotificationType.ORDER_CREATED,
+          'طلب غير متوفر',
+          `تم إنشاء طلبك رقم ${order.orderNumber} ولكن المخزون غير متوفر حالياً`,
+          `Your order ${order.orderNumber} has been created but is currently out of stock`,
+          {
+            orderId: order._id.toString(),
+            orderNumber: order.orderNumber,
+            status: OrderStatus.OUT_OF_STOCK,
+          },
+          NotificationNavigationType.ORDER,
+          order._id.toString(),
+        );
+
+        // إرسال إشعار للمدراء
+        await this.notifyAdmins(
+          NotificationType.ORDER_CREATED,
+          'طلب غير متوفر - يتطلب متابعة',
+          `تم إنشاء طلب جديد بدون مخزون: ${order.orderNumber}`,
+          `New order created without stock: ${order.orderNumber}`,
+          {
+            orderId: order._id.toString(),
+            orderNumber: order.orderNumber,
+            customerId: userId,
+            status: OrderStatus.OUT_OF_STOCK,
+            inventoryErrors: inventoryValidation.errors,
+          },
+          NotificationNavigationType.ORDER,
+          order._id.toString(),
+        );
       }
 
-      // إضافة سجل الحالة
-      await this.addStatusHistory(
-        order,
-        OrderStatus.PENDING_PAYMENT,
-        new Types.ObjectId(userId),
-        'customer',
-        'تم إنشاء الطلب',
-      );
+      // إضافة سجل الحالة للطلبات العادية (إذا كانت الحالة PENDING_PAYMENT)
+      if (order.status === OrderStatus.PENDING_PAYMENT) {
+        await this.addStatusHistory(
+          order,
+          OrderStatus.PENDING_PAYMENT,
+          new Types.ObjectId(userId),
+          'customer',
+          'تم إنشاء الطلب',
+        );
+      }
 
-      // إذا كان الدفع عند الاستلام، تأكيد فوري وتحديث حالة الدفع
-      if (dto.paymentMethod === PaymentMethod.COD) {
+      // إذا كان الدفع عند الاستلام وتوفر المخزون، تأكيد فوري وتحديث حالة الدفع
+      if (dto.paymentMethod === PaymentMethod.COD && inventoryValidation.isValid && order.status === OrderStatus.PENDING_PAYMENT) {
         // تحديث حالة الدفع أولاً
         const oldPaymentStatus = order.paymentStatus;
         const newPaymentStatus = PaymentStatus.PAID;

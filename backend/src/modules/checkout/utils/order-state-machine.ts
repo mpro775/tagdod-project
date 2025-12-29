@@ -27,7 +27,7 @@ export interface StateValidation {
  */
 export class OrderStateMachine {
   private static readonly TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-    [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+    [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED, OrderStatus.OUT_OF_STOCK],
     [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
     [OrderStatus.PROCESSING]: [OrderStatus.COMPLETED, OrderStatus.RETURNED, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
     [OrderStatus.COMPLETED]: [],
@@ -35,6 +35,7 @@ export class OrderStateMachine {
     [OrderStatus.CANCELLED]: [],
     [OrderStatus.RETURNED]: [OrderStatus.REFUNDED],
     [OrderStatus.REFUNDED]: [],
+    [OrderStatus.OUT_OF_STOCK]: [OrderStatus.PENDING_PAYMENT, OrderStatus.CANCELLED],
   };
 
   private static readonly TERMINAL_STATES: OrderStatus[] = [
@@ -109,6 +110,7 @@ export class OrderStateMachine {
       OrderStatus.CONFIRMED,
       OrderStatus.PROCESSING,
       OrderStatus.ON_HOLD,
+      OrderStatus.OUT_OF_STOCK,
     ].includes(status);
   }
 
@@ -174,6 +176,7 @@ export class OrderStateMachine {
       [OrderStatus.CANCELLED]: [],
       [OrderStatus.RETURNED]: [OrderStatus.REFUNDED],
       [OrderStatus.REFUNDED]: [],
+      [OrderStatus.OUT_OF_STOCK]: [OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.COMPLETED],
     };
 
     return paths[current] || [];
@@ -192,6 +195,7 @@ export class OrderStateMachine {
       [OrderStatus.CANCELLED]: { title: 'ملغي', description: 'تم إلغاء الطلب', icon: '❌', color: 'red' },
       [OrderStatus.RETURNED]: { title: 'مرتجع', description: 'تم إرجاع الطلب', icon: '↩️', color: 'orange' },
       [OrderStatus.REFUNDED]: { title: 'مسترد', description: 'تم استرداد المبلغ', icon: '💰', color: 'yellow' },
+      [OrderStatus.OUT_OF_STOCK]: { title: 'غير متوفر', description: 'المخزون غير متوفر', icon: '📭', color: 'red' },
     };
 
     return stateInfo[status];

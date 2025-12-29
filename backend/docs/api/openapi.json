@@ -13655,7 +13655,8 @@
                 "on_hold",
                 "cancelled",
                 "returned",
-                "refunded"
+                "refunded",
+                "out_of_stock"
               ],
               "type": "string"
             }
@@ -13778,7 +13779,8 @@
                 "on_hold",
                 "cancelled",
                 "returned",
-                "refunded"
+                "refunded",
+                "out_of_stock"
               ],
               "type": "string"
             }
@@ -14105,7 +14107,8 @@
                 "on_hold",
                 "cancelled",
                 "returned",
-                "refunded"
+                "refunded",
+                "out_of_stock"
               ],
               "type": "string"
             }
@@ -14957,7 +14960,8 @@
                 "on_hold",
                 "cancelled",
                 "returned",
-                "refunded"
+                "refunded",
+                "out_of_stock"
               ],
               "type": "string"
             }
@@ -15223,7 +15227,8 @@
                 "on_hold",
                 "cancelled",
                 "returned",
-                "refunded"
+                "refunded",
+                "out_of_stock"
               ],
               "type": "string"
             }
@@ -15324,6 +15329,147 @@
         "responses": {
           "200": {
             "description": "تم تصدير القائمة بنجاح"
+          }
+        },
+        "tags": [
+          "إدارة-الطلبات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/orders/out-of-stock": {
+      "get": {
+        "operationId": "getOutOfStockOrders",
+        "summary": "الطلبات غير المتوفرة",
+        "description": "قائمة بجميع الطلبات التي فشلت بسبب عدم توفر المخزون",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "pending_payment",
+                "confirmed",
+                "processing",
+                "completed",
+                "on_hold",
+                "cancelled",
+                "returned",
+                "refunded",
+                "out_of_stock"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "pending",
+                "authorized",
+                "paid",
+                "failed",
+                "refunded",
+                "partially_refunded",
+                "cancelled"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "fromDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasRating",
+            "required": false,
+            "in": "query",
+            "description": "فلترة الطلبات التي لديها تقييم",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "minRating",
+            "required": false,
+            "in": "query",
+            "description": "الحد الأدنى للتقييم (1-5)",
+            "schema": {
+              "minimum": 1,
+              "maximum": 5,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "قائمة الطلبات غير المتوفرة"
           }
         },
         "tags": [
@@ -35502,7 +35648,8 @@
               "on_hold",
               "cancelled",
               "returned",
-              "refunded"
+              "refunded",
+              "out_of_stock"
             ]
           },
           "notes": {
@@ -35642,7 +35789,8 @@
               "on_hold",
               "cancelled",
               "returned",
-              "refunded"
+              "refunded",
+              "out_of_stock"
             ]
           },
           "notes": {

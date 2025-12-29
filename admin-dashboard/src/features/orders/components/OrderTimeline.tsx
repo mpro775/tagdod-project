@@ -138,6 +138,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ order, showHistory
     cancelled: 2,
     returned: 3,
     refunded: 3,
+    out_of_stock: 0,
   };
 
   const baseStatuses: OrderStatus[] = [

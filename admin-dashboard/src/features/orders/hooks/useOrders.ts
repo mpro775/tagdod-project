@@ -25,6 +25,15 @@ export const useOrders = (params: ListOrdersParams) => {
   });
 };
 
+// List out of stock orders
+export const useOutOfStockOrders = (params: ListOrdersParams) => {
+  return useQuery({
+    queryKey: [ORDERS_KEY, 'out-of-stock', params],
+    queryFn: () => ordersApi.getOutOfStockOrders(params),
+    placeholderData: (previousData) => previousData,
+  });
+};
+
 // Get single order
 export const useOrder = (id: string) => {
   return useQuery({

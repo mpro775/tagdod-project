@@ -12,12 +12,13 @@ export enum OrderStatus {
   CONFIRMED = 'confirmed', // مؤكد ومدفوع
   PROCESSING = 'processing', // قيد التجهيز
   COMPLETED = 'completed', // مكتمل
-  
+
   // حالات استثنائية
   ON_HOLD = 'on_hold', // معلق
   CANCELLED = 'cancelled', // ملغي
   RETURNED = 'returned', // مرتجع
   REFUNDED = 'refunded', // مسترد
+  OUT_OF_STOCK = 'out_of_stock', // غير متوفر (مخزون غير كافٍ)
 }
 
 /**
@@ -55,14 +56,24 @@ export enum PaymentMethod {
  * State Machine للطلبات - مبسط
  */
 export const ORDER_STATE_MACHINE = {
-  [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+  [OrderStatus.PENDING_PAYMENT]: [
+    OrderStatus.CONFIRMED,
+    OrderStatus.CANCELLED,
+    OrderStatus.OUT_OF_STOCK,
+  ],
   [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
-  [OrderStatus.PROCESSING]: [OrderStatus.COMPLETED, OrderStatus.RETURNED, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
+  [OrderStatus.PROCESSING]: [
+    OrderStatus.COMPLETED,
+    OrderStatus.RETURNED,
+    OrderStatus.ON_HOLD,
+    OrderStatus.CANCELLED,
+  ],
   [OrderStatus.COMPLETED]: [],
   [OrderStatus.ON_HOLD]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
   [OrderStatus.CANCELLED]: [],
   [OrderStatus.RETURNED]: [OrderStatus.REFUNDED],
   [OrderStatus.REFUNDED]: [],
+  [OrderStatus.OUT_OF_STOCK]: [OrderStatus.PENDING_PAYMENT, OrderStatus.CANCELLED],
 };
 
 /**
@@ -309,7 +320,12 @@ export class Order {
   source!: string; // web/mobile/app
 
   // ===== الحالة =====
-  @Prop({ type: String, enum: Object.values(OrderStatus), default: OrderStatus.PENDING_PAYMENT, index: true })
+  @Prop({
+    type: String,
+    enum: Object.values(OrderStatus),
+    default: OrderStatus.PENDING_PAYMENT,
+    index: true,
+  })
   status!: OrderStatus;
 
   @Prop({ type: String, enum: Object.values(PaymentStatus), default: PaymentStatus.PENDING })

@@ -7205,6 +7205,33 @@
             },
             "description": "تصدير قائمة الطلبات مع التصفية بصيغ مختلفة (CSV, Excel, JSON)"
           }
+        },
+        {
+          "name": "الطلبات غير المتوفرة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/out-of-stock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "out-of-stock"
+              ]
+            },
+            "description": "قائمة بجميع الطلبات التي فشلت بسبب عدم توفر المخزون"
+          }
         }
       ],
       "description": "Endpoints for إدارة-الطلبات functionality"
