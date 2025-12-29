@@ -322,6 +322,16 @@ const ServicesAnalyticsPage = lazy(() =>
     default: m.ServicesAnalyticsPage,
   }))
 );
+const CommissionsReportsPage = lazy(() =>
+  import('@/features/commissions/pages/CommissionsReportsPage').then((m) => ({
+    default: m.CommissionsReportsPage,
+  }))
+);
+const EngineerAccountStatementPage = lazy(() =>
+  import('@/features/commissions/pages/EngineerAccountStatementPage').then((m) => ({
+    default: m.EngineerAccountStatementPage,
+  }))
+);
 const CartManagementPage = lazy(() =>
   import('@/features/cart/pages/CartManagementPage').then((m) => ({
     default: m.CartManagementPage,
@@ -703,6 +713,18 @@ export const routes: RouteObject[] = [
       {
         path: 'services/engineers/:engineerId/coupons',
         element: <EngineerCouponsPage />,
+      },
+
+      // ===========================================
+      // COMMISSIONS REPORTS
+      // ===========================================
+      {
+        path: 'commissions/reports',
+        element: <CommissionsReportsPage />,
+      },
+      {
+        path: 'commissions/statements/:engineerId',
+        element: <EngineerAccountStatementPage />,
       },
 
       // ===========================================

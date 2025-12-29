@@ -249,9 +249,15 @@ export const localPaymentAccountsApi = {
    * Update payment account provider
    */
   updateAccount: async (id: string, data: UpdatePaymentAccountDto): Promise<LocalPaymentAccount> => {
+    // Remove 'id' property from accounts array as it's not allowed in the update request
+    const sanitizedData = { ...data };
+    if (sanitizedData.accounts && Array.isArray(sanitizedData.accounts)) {
+      sanitizedData.accounts = sanitizedData.accounts.map(({ id, ...account }) => account);
+    }
+    
     const response = await apiClient.put<ApiResponse<LocalPaymentAccount>>(
       `/system-settings/payment-accounts/${id}`,
-      data
+      sanitizedData
     );
     return response.data.data;
   },

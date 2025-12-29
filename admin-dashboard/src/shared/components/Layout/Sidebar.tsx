@@ -340,6 +340,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             icon: <LocalOffer />,
             path: '/services/engineers/coupons',
           },
+          {
+            id: 'engineers-commissions',
+            label: t('navigation.engineersCommissions', 'تقرير عمولات المهندسين'),
+            icon: <Receipt />,
+            path: '/commissions/reports',
+          },
         ],
       },
       {

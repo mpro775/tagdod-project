@@ -15276,6 +15276,95 @@
         }
       ],
       "description": "Endpoints for من-نحن-العام functionality"
+    },
+    {
+      "name": "تقارير-العمولات",
+      "item": [
+        {
+          "name": "جلب تقرير العمولات الشامل",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/commissions/reports",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "commissions",
+                "reports"
+              ]
+            },
+            "description": "جلب تقرير شامل لعمولات المهندسين حسب الفترة الزمنية المحددة"
+          }
+        },
+        {
+          "name": "جلب تقرير عمولات مهندس محدد",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/commissions/reports/{engineerId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "commissions",
+                "reports",
+                "{engineerId}"
+              ]
+            },
+            "description": "جلب تقرير عمولات لمهندس محدد حسب الفترة الزمنية المحددة"
+          }
+        },
+        {
+          "name": "جلب كشف حساب مهندس",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/commissions/statements/{engineerId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "commissions",
+                "statements",
+                "{engineerId}"
+              ]
+            },
+            "description": "جلب كشف حساب تفصيلي لمهندس محدد مع جميع المعاملات"
+          }
+        }
+      ],
+      "description": "Endpoints for تقارير-العمولات functionality"
     }
   ]
 }

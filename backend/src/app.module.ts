@@ -32,6 +32,7 @@ import { I18nModule } from './modules/i18n/i18n.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
 import { PoliciesModule } from './modules/policies/policies.module';
 import { AboutModule } from './modules/about/about.module';
+import { CommissionsModule } from './modules/commissions/commissions.module';
 import { HealthModule } from './health/health.module';
 
 // Shared modules
@@ -115,6 +116,7 @@ import { ShareProductController } from './deep-linking/share-product.controller'
     SystemSettingsModule,
     PoliciesModule,
     AboutModule,
+    CommissionsModule,
 
     // Health module
     HealthModule,

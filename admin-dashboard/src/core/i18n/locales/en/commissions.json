@@ -1,0 +1,71 @@
+{
+  "reports": {
+    "title": "Commissions Reports",
+    "filters": "Filters",
+    "period": "Period",
+    "periods": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "custom": "Custom"
+    },
+    "dateFrom": "From Date",
+    "dateTo": "To Date",
+    "engineerId": "Engineer ID (Optional)",
+    "engineerIdPlaceholder": "Leave empty for all engineers",
+    "engineerSelection": "Engineer Selection",
+    "engineerSelectionAll": "All",
+    "engineerSelectionSpecific": "Specific Engineer",
+    "engineerSearchPlaceholder": "Search for engineer...",
+    "noEngineersFound": "No engineers found",
+    "exportPdf": "Export PDF",
+    "error": "Error loading report",
+    "noData": "No data available",
+    "engineers": "Engineers",
+    "engineerName": "Engineer Name",
+    "engineerPhone": "Phone Number",
+    "totalCommission": "Total Commission",
+    "totalSales": "Total Sales",
+    "totalRevenue": "Total Revenue",
+    "summary": {
+      "totalEngineers": "Total Engineers",
+      "totalCommissions": "Total Commissions",
+      "totalSales": "Total Sales",
+      "totalRevenue": "Total Revenue"
+    }
+  },
+  "statement": {
+    "title": "Engineer Account Statement",
+    "error": "Error loading account statement",
+    "dateFrom": "From Date",
+    "dateTo": "To Date",
+    "engineerInfo": "Engineer Information",
+    "engineerName": "Engineer Name",
+    "engineerPhone": "Phone Number",
+    "openingBalance": "Opening Balance",
+    "closingBalance": "Closing Balance",
+    "totalCommissions": "Total Commissions",
+    "totalWithdrawals": "Total Withdrawals",
+    "totalRefunds": "Total Refunds",
+    "transactions": "Transactions",
+    "transactionId": "Transaction ID",
+    "type": "Type",
+    "amount": "Amount",
+    "orderId": "Order ID",
+    "couponCode": "Coupon Code",
+    "description": "Description",
+    "date": "Date",
+    "noTransactions": "No transactions",
+    "couponBreakdown": "Coupon Breakdown",
+    "couponName": "Coupon Name",
+    "commissionRate": "Commission Rate",
+    "transactionCount": "Transaction Count",
+    "transactionTypes": {
+      "commission": "Commission",
+      "withdrawal": "Withdrawal",
+      "refund": "Refund"
+    }
+  }
+}
+

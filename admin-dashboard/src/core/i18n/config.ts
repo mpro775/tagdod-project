@@ -58,6 +58,8 @@ import arPolicies from './locales/ar/policies.json';
 import enPolicies from './locales/en/policies.json';
 import arAbout from './locales/ar/about.json';
 import enAbout from './locales/en/about.json';
+import arCommissions from './locales/ar/commissions.json';
+import enCommissions from './locales/en/commissions.json';
 
 // الترجمات المحلية
 const resources = {
@@ -89,6 +91,7 @@ const resources = {
     support: arSupport,
     policies: arPolicies,
     about: arAbout,
+    commissions: arCommissions,
   },
   en: {
     common: enCommon,
@@ -118,6 +121,7 @@ const resources = {
     support: enSupport,
     policies: enPolicies,
     about: enAbout,
+    commissions: enCommissions,
   },
 };
 
@@ -132,7 +136,7 @@ if (!i18n.isInitialized) {
       
       fallbackLng: DEFAULT_LANGUAGE,
       defaultNS: 'common',
-      ns: ['common', 'auth', 'orders', 'services', 'users', 'dashboard', 'attributes', 'categories', 'banners', 'brands', 'media', 'errorLogs', 'addresses', 'audit', 'cart', 'coupons', 'exchangeRates', 'marketing', 'analytics', 'notifications', 'systemSettings', 'search', 'system-monitoring', 'products', 'support', 'policies', 'about'],
+      ns: ['common', 'auth', 'orders', 'services', 'users', 'dashboard', 'attributes', 'categories', 'banners', 'brands', 'media', 'errorLogs', 'addresses', 'audit', 'cart', 'coupons', 'exchangeRates', 'marketing', 'analytics', 'notifications', 'systemSettings', 'search', 'system-monitoring', 'products', 'support', 'policies', 'about', 'commissions'],
       
       interpolation: {
         escapeValue: false, // React already escapes

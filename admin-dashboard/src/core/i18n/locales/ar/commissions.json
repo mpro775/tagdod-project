@@ -1,0 +1,71 @@
+{
+  "reports": {
+    "title": "تقارير العمولات",
+    "filters": "الفلاتر",
+    "period": "الفترة",
+    "periods": {
+      "daily": "يومي",
+      "weekly": "أسبوعي",
+      "monthly": "شهري",
+      "yearly": "سنوي",
+      "custom": "مخصص"
+    },
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "engineerId": "معرف المهندس (اختياري)",
+    "engineerIdPlaceholder": "اتركه فارغاً لجميع المهندسين",
+    "engineerSelection": "اختيار المهندس",
+    "engineerSelectionAll": "الكل",
+    "engineerSelectionSpecific": "مهندس معين",
+    "engineerSearchPlaceholder": "ابحث عن مهندس...",
+    "noEngineersFound": "لا يوجد مهندسون",
+    "exportPdf": "تصدير PDF",
+    "error": "حدث خطأ أثناء جلب التقرير",
+    "noData": "لا توجد بيانات",
+    "engineers": "المهندسين",
+    "engineerName": "اسم المهندس",
+    "engineerPhone": "رقم الهاتف",
+    "totalCommission": "إجمالي العمولة",
+    "totalSales": "إجمالي المبيعات",
+    "totalRevenue": "إجمالي الإيرادات",
+    "summary": {
+      "totalEngineers": "إجمالي المهندسين",
+      "totalCommissions": "إجمالي العمولات",
+      "totalSales": "إجمالي المبيعات",
+      "totalRevenue": "إجمالي الإيرادات"
+    }
+  },
+  "statement": {
+    "title": "كشف حساب المهندس",
+    "error": "حدث خطأ أثناء جلب كشف الحساب",
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "engineerInfo": "معلومات المهندس",
+    "engineerName": "اسم المهندس",
+    "engineerPhone": "رقم الهاتف",
+    "openingBalance": "الرصيد الافتتاحي",
+    "closingBalance": "الرصيد الختامي",
+    "totalCommissions": "إجمالي العمولات",
+    "totalWithdrawals": "إجمالي السحوبات",
+    "totalRefunds": "إجمالي الاستردادات",
+    "transactions": "المعاملات",
+    "transactionId": "رقم المعاملة",
+    "type": "النوع",
+    "amount": "المبلغ",
+    "orderId": "رقم الطلب",
+    "couponCode": "كود الكوبون",
+    "description": "الوصف",
+    "date": "التاريخ",
+    "noTransactions": "لا توجد معاملات",
+    "couponBreakdown": "تفصيل حسب الكوبون",
+    "couponName": "اسم الكوبون",
+    "commissionRate": "نسبة العمولة",
+    "transactionCount": "عدد المعاملات",
+    "transactionTypes": {
+      "commission": "عمولة",
+      "withdrawal": "سحب",
+      "refund": "استرداد"
+    }
+  }
+}
+

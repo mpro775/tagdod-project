@@ -33095,6 +33095,235 @@
         ]
       }
     },
+    "/api/v1/admin/commissions/reports": {
+      "get": {
+        "operationId": "getCommissionsReport",
+        "summary": "جلب تقرير العمولات الشامل",
+        "description": "جلب تقرير شامل لعمولات المهندسين حسب الفترة الزمنية المحددة",
+        "parameters": [
+          {
+            "name": "period",
+            "required": true,
+            "in": "query",
+            "description": "نوع الفترة الزمنية",
+            "schema": {
+              "example": "monthly",
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly",
+                "custom"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية (مطلوب للفترة المخصصة)",
+            "schema": {
+              "example": "2025-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية (مطلوب للفترة المخصصة)",
+            "schema": {
+              "example": "2025-01-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "engineerId",
+            "required": false,
+            "in": "query",
+            "description": "معرف المهندس (اختياري - للفلترة)",
+            "schema": {
+              "example": "64user123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب التقرير بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "بيانات غير صحيحة"
+          },
+          "401": {
+            "description": "غير مصرح"
+          }
+        },
+        "tags": [
+          "تقارير-العمولات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/commissions/reports/{engineerId}": {
+      "get": {
+        "operationId": "getEngineerCommissionsReport",
+        "summary": "جلب تقرير عمولات مهندس محدد",
+        "description": "جلب تقرير عمولات لمهندس محدد حسب الفترة الزمنية المحددة",
+        "parameters": [
+          {
+            "name": "engineerId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المهندس",
+            "schema": {
+              "example": "64user123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "required": true,
+            "in": "query",
+            "description": "نوع الفترة الزمنية",
+            "schema": {
+              "example": "monthly",
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly",
+                "custom"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ البداية (مطلوب للفترة المخصصة)",
+            "schema": {
+              "example": "2025-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "تاريخ النهاية (مطلوب للفترة المخصصة)",
+            "schema": {
+              "example": "2025-01-31",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب التقرير بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "غير مصرح"
+          },
+          "404": {
+            "description": "المهندس غير موجود"
+          }
+        },
+        "tags": [
+          "تقارير-العمولات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/commissions/statements/{engineerId}": {
+      "get": {
+        "operationId": "getAccountStatement",
+        "summary": "جلب كشف حساب مهندس",
+        "description": "جلب كشف حساب تفصيلي لمهندس محدد مع جميع المعاملات",
+        "parameters": [
+          {
+            "name": "engineerId",
+            "required": true,
+            "in": "path",
+            "description": "معرف المهندس",
+            "schema": {
+              "example": "64user123",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": true,
+            "in": "query",
+            "description": "تاريخ البداية",
+            "schema": {
+              "example": "2025-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": true,
+            "in": "query",
+            "description": "تاريخ النهاية",
+            "schema": {
+              "example": "2025-01-31",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب كشف الحساب بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "غير مصرح"
+          },
+          "404": {
+            "description": "المهندس غير موجود"
+          }
+        },
+        "tags": [
+          "تقارير-العمولات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "check",
