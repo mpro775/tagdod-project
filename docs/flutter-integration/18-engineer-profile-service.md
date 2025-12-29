@@ -12,6 +12,7 @@
 > - تحديث `totalCompletedServices` ليعرض العدد الصحيح من قاعدة البيانات
 > - **🆕 إضافة تحويل العملات**: جميع المبالغ تُرجع الآن بثلاث عملات (USD, YER, SAR) بناءً على أسعار الصرف في النظام
 > - **🆕 إضافة أسعار الصرف**: إضافة حقل `exchangeRates` يحتوي على أسعار الصرف اليمني والسعودي الحالية
+> - **🆕 إضافة `completionRate`**: نسبة إتمام الخدمات (0-100) - يتم حسابها تلقائياً من قاعدة البيانات
 
 خدمة بروفايل المهندس توفر endpoints لإدارة بروفايل المهندس، التقييمات، الرصيد، والعمولات.
 
@@ -112,6 +113,7 @@
     "averageRating": 4.8,
     "ratingDistribution": [15, 5, 3, 1, 1],
     "totalCompletedServices": 50,
+    "completionRate": 85.5,
     "totalEarnings": 50000,
     "walletBalance": 2500,
     "walletBalanceUSD": 2500,
@@ -319,6 +321,7 @@ Future<EngineerProfile> updateMyProfile({
     "averageRating": 4.8,
     "ratingDistribution": [15, 5, 3, 1, 1],
     "totalCompletedServices": 50,
+    "completionRate": 85.5,
     "joinedAt": "2025-01-01T00:00:00.000Z",
     "exchangeRates": {
       "usdToYer": 250,
@@ -545,6 +548,7 @@ class EngineerProfile {
   final double averageRating;
   final List<int> ratingDistribution; // [5نجوم, 4نجوم, 3نجوم, 2نجوم, 1نجمة]
   final int totalCompletedServices;
+  final double completionRate; // نسبة إتمام الخدمات (0-100)
   final double totalEarnings;
   final double walletBalance; // فقط في /me (USD - للتوافق مع الكود القديم)
   final double? walletBalanceUSD; // فقط في /me
@@ -576,8 +580,9 @@ class EngineerProfile {
     required this.ratings,
     required this.totalRatings,
     required this.averageRating,
-    required this.ratingDistribution,
+      required this.ratingDistribution,
       required this.totalCompletedServices,
+      required this.completionRate,
       required this.totalEarnings,
       this.walletBalance = 0,
       this.walletBalanceUSD,
@@ -629,6 +634,7 @@ class EngineerProfile {
           ? List<int>.from(json['ratingDistribution'])
           : [0, 0, 0, 0, 0],
       totalCompletedServices: json['totalCompletedServices'] ?? 0,
+      completionRate: (json['completionRate'] ?? 0).toDouble(),
       totalEarnings: (json['totalEarnings'] ?? 0).toDouble(),
       walletBalance: (json['walletBalance'] ?? 0).toDouble(),
       walletBalanceUSD: json['walletBalanceUSD'] != null
@@ -683,6 +689,7 @@ class EngineerProfile {
       'averageRating': averageRating,
       'ratingDistribution': ratingDistribution,
       'totalCompletedServices': totalCompletedServices,
+      'completionRate': completionRate,
       'totalEarnings': totalEarnings,
       'walletBalance': walletBalance,
       'walletBalanceUSD': walletBalanceUSD,
@@ -1109,7 +1116,8 @@ class RatingsResponse {
 6. **التعليق مطلوب** عند إضافة تقييم (لا يمكن إضافة تقييم بدون نص)
 7. **النجوم من 1-5** فقط
 8. **`totalCompletedServices`** يتم تحديثه تلقائياً من قاعدة البيانات عند جلب البروفايل
-9. **أسعار الصرف**: في حالة فشل جلب أسعار الصرف، يتم إرجاع القيم بالدولار فقط
+9. **`completionRate`** يتم حسابه تلقائياً من قاعدة البيانات عند جلب البروفايل (نسبة الخدمات المكتملة من إجمالي الطلبات)
+10. **أسعار الصرف**: في حالة فشل جلب أسعار الصرف، يتم إرجاع القيم بالدولار فقط
 
 ---
 
@@ -1337,6 +1345,15 @@ Future<void> updateProfile() async {
 - **التقييمات تتزامن تلقائياً**: عند تقييم خدمة، يتم إضافة التقييم تلقائياً إلى بروفايل المهندس
 - **منع التكرار**: إذا تم تعديل التقييم، يتم تحديثه بدلاً من إضافة جديد
 - **الحساب التلقائي**: يتم حساب `averageRating` و `ratingDistribution` تلقائياً
+
+### نظام الإحصائيات
+
+- **`totalCompletedServices`**: عدد الخدمات المكتملة (status = `COMPLETED` أو `RATED`)
+- **`completionRate`**: نسبة إتمام الخدمات (0-100) - يتم حسابها تلقائياً من قاعدة البيانات
+  - **الصيغة**: `(completedServices / totalRequests) × 100`
+  - **التحديث**: يتم تحديثه تلقائياً عند جلب البروفايل عبر `updateStatistics()`
+  - **القيمة**: رقم عشري واحد (مثال: 85.5%)
+- **`totalEarnings`**: إجمالي الأرباح من العروض المقبولة (بالدولار - USD)
 
 ### نظام الرصيد والعمولات
 

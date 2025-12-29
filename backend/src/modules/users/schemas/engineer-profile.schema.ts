@@ -93,6 +93,9 @@ export class EngineerProfile {
   @Prop({ default: 0 })
   totalEarnings!: number; // إجمالي الأرباح
 
+  @Prop({ default: 0, min: 0, max: 100 })
+  completionRate!: number; // نسبة إتمام الخدمات (0-100)
+
   // === حقول قابلة للتطوير ===
   @Prop({ type: [String], default: [] })
   specialties?: string[]; // التخصصات (مثل: ["ميكانيك", "كهرباء", "سباكة"])

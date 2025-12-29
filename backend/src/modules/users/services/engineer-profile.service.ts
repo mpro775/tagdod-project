@@ -608,6 +608,11 @@ export class EngineerProfileService {
       return;
     }
 
+    // حساب إجمالي الطلبات
+    const totalRequests = await this.serviceRequestModel.countDocuments({
+      engineerId: new Types.ObjectId(engineerId),
+    });
+
     // حساب الخدمات المكتملة (تشمل COMPLETED و RATED)
     const completedServices = await this.serviceRequestModel.countDocuments({
       engineerId: new Types.ObjectId(engineerId),
@@ -633,6 +638,12 @@ export class EngineerProfileService {
 
     profile.totalCompletedServices = completedServices;
     profile.totalEarnings = earningsResult[0]?.total || 0;
+
+    // حساب نسبة الإتمام
+    profile.completionRate =
+      totalRequests > 0
+        ? Math.round((completedServices / totalRequests) * 100 * 10) / 10
+        : 0;
 
     // إعادة حساب التقييمات
     profile.calculateRatings();
