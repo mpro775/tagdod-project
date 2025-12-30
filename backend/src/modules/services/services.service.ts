@@ -5,7 +5,7 @@ import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
 import { ServiceRequest, ServiceRating } from './schemas/service-request.schema';
 import { EngineerOffer } from './schemas/engineer-offer.schema';
-import { User, CapabilityStatus } from '../users/schemas/user.schema';
+import { User, CapabilityStatus, UserStatus } from '../users/schemas/user.schema';
 import { EngineerProfile } from '../users/schemas/engineer-profile.schema';
 import { Coupon, CouponDocument } from '../marketing/schemas/coupon.schema';
 import { AddressesService } from '../addresses/addresses.service';
@@ -16,6 +16,7 @@ import {
   NotificationChannel,
   NotificationPriority,
   NotificationNavigationType,
+  NotificationCategory,
 } from '../notifications/enums/notification.enums';
 import { CreateServiceRequestDto, UpdateServiceRequestDto } from './dto/requests.dto';
 import { CreateOfferDto, UpdateOfferDto } from './dto/offers.dto';
@@ -23,6 +24,7 @@ import { DistanceService } from './services/distance.service';
 import { UploadService } from '../upload/upload.service';
 import { SMSAdapter } from '../notifications/adapters/sms.adapter';
 import { normalizeYemeniPhone } from '../../shared/utils/phone.util';
+import { WebSocketService } from '../../shared/websocket/websocket.service';
 
 type ServiceRequestLean = ServiceRequest & {
   _id: Types.ObjectId;
@@ -147,20 +149,46 @@ export class ServicesService {
       // هذا يكسر الاعتماد الدائري تماماً
       const notificationService = this.moduleRef.get(NotificationService, { strict: false });
 
-      if (notificationService) {
-        await notificationService.createNotification({
-          recipientId: userId,
-          type,
-          title,
-          message,
-          messageEn: message, // Using same message for English
-          data,
-          channel: NotificationChannel.IN_APP,
-          priority: NotificationPriority.MEDIUM,
-          navigationType,
-          navigationTarget,
-        });
+      if (!notificationService) {
+        this.logger.warn(`NotificationService not available for user ${userId}`);
+        return;
       }
+
+      // التحقق من حالة الاتصال لتحديد نوع القناة
+      let isUserOnline = false;
+      try {
+        const webSocketService = this.moduleRef.get(WebSocketService, { strict: false });
+        if (webSocketService && typeof webSocketService.isUserOnline === 'function') {
+          isUserOnline = webSocketService.isUserOnline(userId);
+        }
+      } catch (wsError) {
+        // إذا فشل، نعتبر المستخدم غير متصل ونرسل push
+        this.logger.debug(`Could not check online status for user ${userId}, defaulting to push`);
+      }
+
+      // اختيار القناة بناءً على حالة الاتصال
+      // إذا كان المستخدم متصل → IN_APP، وإلا → PUSH
+      const channel = isUserOnline 
+        ? NotificationChannel.IN_APP 
+        : NotificationChannel.PUSH;
+
+      this.logger.debug(
+        `Sending ${channel} notification to user ${userId} (online: ${isUserOnline})`,
+      );
+
+      await notificationService.createNotification({
+        recipientId: userId,
+        type,
+        title,
+        message,
+        messageEn: message, // Using same message for English
+        data,
+        channel,
+        priority: NotificationPriority.MEDIUM,
+        category: NotificationCategory.SERVICE,
+        navigationType,
+        navigationTarget,
+      });
     } catch (error) {
       // لن يوقف النظام، مجرد تحذير
       this.logger.warn(`Notification failed for user ${userId}:`, error);
@@ -179,6 +207,58 @@ export class ServicesService {
     } catch (error) {
       this.logger.warn(`Failed to normalize phone number ${phone}:`, error);
       return null;
+    }
+  }
+
+  /**
+   * إرسال إشعارات لجميع المهندسين في مدينة معينة
+   */
+  private async notifyEngineersInCity(
+    city: string,
+    type: NotificationType,
+    title: string,
+    message: string,
+    data?: Record<string, unknown>,
+    navigationType?: NotificationNavigationType,
+    navigationTarget?: string,
+  ): Promise<void> {
+    try {
+      // جلب جميع المهندسين في المدينة
+      const engineers = await this.userModel
+        .find({
+          city: city,
+          engineer_capable: true,
+          engineer_status: CapabilityStatus.APPROVED,
+          status: UserStatus.ACTIVE,
+        })
+        .select('_id')
+        .lean();
+
+      if (engineers.length === 0) {
+        this.logger.debug(`No engineers found in city ${city}`);
+        return;
+      }
+
+      this.logger.log(`Notifying ${engineers.length} engineers in city ${city}`);
+
+      // إرسال إشعار لكل مهندس بشكل متوازي لتحسين الأداء
+      const notificationPromises = engineers.map((engineer) =>
+        this.safeNotify(
+          String(engineer._id),
+          type,
+          title,
+          message,
+          data,
+          navigationType,
+          navigationTarget,
+        ),
+      );
+
+      await Promise.all(notificationPromises);
+      this.logger.log(`Successfully sent notifications to ${engineers.length} engineers in city ${city}`);
+    } catch (error) {
+      this.logger.error(`Failed to notify engineers in city ${city}:`, error);
+      // لا نرمي الخطأ حتى لا يؤثر على العملية الأساسية
     }
   }
 
@@ -353,12 +433,24 @@ export class ServicesService {
       engineerId: null,
     });
 
+    // إشعار للعميل بتأكيد إنشاء الطلب
     await this.safeNotify(
       userId,
       NotificationType.SERVICE_REQUEST_OPENED,
       'تم استلام طلب خدمة',
-      `تم إنشاء طلب خدمة جديد: ${String(doc._id)}`,
-      { requestId: String(doc._id) },
+      `تم إنشاء طلب خدمة جديد: ${dto.title}`,
+      { requestId: String(doc._id), title: dto.title },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(doc._id),
+    );
+
+    // إرسال إشعار لجميع المهندسين في نفس المدينة
+    await this.notifyEngineersInCity(
+      addr.city,
+      NotificationType.SERVICE_REQUEST_OPENED,
+      'طلب خدمة جديد في مدينتك',
+      `طلب خدمة جديد: ${dto.title}`,
+      { requestId: String(doc._id), title: dto.title, city: addr.city },
       NotificationNavigationType.SERVICE_REQUEST,
       String(doc._id),
     );
@@ -1109,15 +1201,30 @@ export class ServicesService {
       }
     }
 
+    // إشعار للعميل بتأكيد التقييم
     await this.safeNotify(
       userId,
       NotificationType.SERVICE_RATED,
       'تم تقييم الخدمة',
       `تم تقييم الخدمة بنتيجة ${score} نجوم`,
-      { requestId: String(r._id), score },
+      { requestId: String(r._id), score, comment: comment.trim() },
       NotificationNavigationType.SERVICE_REQUEST,
       String(r._id),
     );
+
+    // إشعار للمهندس بالتقييم
+    if (r.engineerId) {
+      await this.safeNotify(
+        String(r.engineerId),
+        NotificationType.SERVICE_RATED,
+        'تم تقييمك من قبل العميل',
+        `تم تقييمك بنتيجة ${score} نجوم: ${comment.trim()}`,
+        { requestId: String(r._id), score, comment: comment.trim() },
+        NotificationNavigationType.SERVICE_REQUEST,
+        String(r._id),
+      );
+    }
+
     return { ok: true };
   }
 
