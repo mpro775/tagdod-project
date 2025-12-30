@@ -2,6 +2,7 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nes
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { YEMEN_TIMEZONE } from '../utils/date.util';
+import { Types } from 'mongoose';
 
 /**
  * Interceptor to convert all Date fields from UTC to Yemen timezone (Asia/Aden)
@@ -56,42 +57,87 @@ export class DateTimezoneInterceptor implements NestInterceptor {
 
   /**
    * Recursively convert all Date objects in an object to Yemen timezone strings
+   * Uses WeakSet to track visited objects and prevent infinite recursion
    */
-  private convertDatesInObject(obj: any): any {
+  private convertDatesInObject(obj: any, visited: WeakSet<object> = new WeakSet()): any {
     if (obj === null || obj === undefined) {
       return obj;
     }
 
-    // If it's a Date object, convert it
+    // Handle primitives
+    if (typeof obj !== 'object') {
+      return obj;
+    }
+
+    // Handle Date objects
     if (obj instanceof Date) {
       return this.convertDateToYemenTime(obj);
     }
 
-    // If it's an array, process each element
-    if (Array.isArray(obj)) {
-      return obj.map(item => this.convertDatesInObject(item));
+    // Handle Mongoose ObjectId - convert to string
+    if (obj instanceof Types.ObjectId || (obj.constructor && obj.constructor.name === 'ObjectId')) {
+      return obj.toString();
     }
 
-    // If it's an object (but not Date), process each property
-    if (typeof obj === 'object') {
+    // Prevent infinite recursion by tracking visited objects
+    if (visited.has(obj)) {
+      return obj; // Return as-is if already visited (circular reference)
+    }
+
+    // Mark object as visited
+    visited.add(obj);
+
+    // Handle arrays
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.convertDatesInObject(item, visited));
+    }
+
+    // Handle Buffer (from Mongoose)
+    if (Buffer.isBuffer(obj)) {
+      return obj;
+    }
+
+    // Handle RegExp
+    if (obj instanceof RegExp) {
+      return obj;
+    }
+
+    // Handle plain objects
+    try {
       const converted: any = {};
       for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          converted[key] = this.convertDatesInObject(obj[key]);
+          // Skip internal Mongoose properties that might cause issues
+          if (key.startsWith('$') || key === '__v' || key === '__parentArray') {
+            continue;
+          }
+          
+          try {
+            converted[key] = this.convertDatesInObject(obj[key], visited);
+          } catch (error) {
+            // If conversion fails for a property, skip it
+            converted[key] = obj[key];
+          }
         }
       }
       return converted;
+    } catch (error) {
+      // If conversion fails entirely, return original object
+      return obj;
     }
-
-    // For primitives, return as is
-    return obj;
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       map((data) => {
-        // Convert all dates in the response to Yemen timezone
-        return this.convertDatesInObject(data);
+        try {
+          // Convert all dates in the response to Yemen timezone
+          return this.convertDatesInObject(data);
+        } catch (error) {
+          // If conversion fails, return original data to prevent breaking the API
+          console.error('DateTimezoneInterceptor error:', error);
+          return data;
+        }
       }),
     );
   }
