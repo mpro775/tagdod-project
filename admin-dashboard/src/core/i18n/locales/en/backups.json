@@ -1,0 +1,62 @@
+{
+  "backups": {
+    "title": "Backups",
+    "subtitle": "Manage database backups",
+    "stats": {
+      "total": "Total Backups",
+      "completed": "Completed",
+      "failed": "Failed",
+      "totalSize": "Total Size",
+      "lastBackup": "Last Backup"
+    },
+    "table": {
+      "title": "Backups List",
+      "name": "Name",
+      "createdAt": "Created At",
+      "size": "Size",
+      "status": "Status",
+      "type": "Type"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "type": {
+      "automatic": "Automatic",
+      "manual": "Manual"
+    },
+    "actions": {
+      "create": "Create Backup",
+      "download": "Download",
+      "restore": "Restore",
+      "delete": "Delete",
+      "refresh": "Refresh"
+    },
+    "restore": {
+      "title": "Restore Database",
+      "message": "Are you sure you want to restore the database from this backup? All current data will be deleted.",
+      "backupName": "Backup",
+      "size": "Size",
+      "confirm": "Confirm Restore"
+    },
+    "delete": {
+      "title": "Delete Backup",
+      "message": "Are you sure you want to delete this backup? This action cannot be undone.",
+      "backupName": "Backup",
+      "confirm": "Confirm Delete"
+    },
+    "messages": {
+      "createSuccess": "Backup created successfully",
+      "createError": "Failed to create backup",
+      "deleteSuccess": "Backup deleted successfully",
+      "deleteError": "Failed to delete backup",
+      "restoreSuccess": "Database restored successfully",
+      "restoreError": "Failed to restore database",
+      "downloadSuccess": "Backup downloaded successfully",
+      "downloadError": "Failed to download backup"
+    }
+  }
+}
+

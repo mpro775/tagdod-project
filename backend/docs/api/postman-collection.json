@@ -15365,6 +15365,194 @@
         }
       ],
       "description": "Endpoints for تقارير-العمولات functionality"
+    },
+    {
+      "name": "النسخ الاحتياطي",
+      "item": [
+        {
+          "name": "إنشاء نسخة احتياطية يدوياً",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/backups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "backups"
+              ]
+            },
+            "description": "إنشاء نسخة احتياطية كاملة لقاعدة البيانات"
+          }
+        },
+        {
+          "name": "الحصول على جميع النسخ الاحتياطية",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/backups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "backups"
+              ]
+            },
+            "description": "استرداد قائمة بجميع النسخ الاحتياطية مع إمكانية التصفح"
+          }
+        },
+        {
+          "name": "إحصائيات النسخ الاحتياطي",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/backups/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "backups",
+                "stats"
+              ]
+            },
+            "description": "الحصول على إحصائيات النسخ الاحتياطي"
+          }
+        },
+        {
+          "name": "الحصول على نسخة احتياطية واحدة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/backups/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "backups",
+                "{id}"
+              ]
+            },
+            "description": "استرداد تفاصيل نسخة احتياطية معينة"
+          }
+        },
+        {
+          "name": "حذف نسخة احتياطية",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/backups/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "backups",
+                "{id}"
+              ]
+            },
+            "description": "حذف نسخة احتياطية معينة من Bunny Storage وقاعدة البيانات"
+          }
+        },
+        {
+          "name": "تحميل نسخة احتياطية",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/backups/{id}/download",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "backups",
+                "{id}",
+                "download"
+              ]
+            },
+            "description": "تحميل ملف النسخة الاحتياطية من Bunny Storage"
+          }
+        },
+        {
+          "name": "استعادة قاعدة البيانات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/backups/{id}/restore",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "backups",
+                "{id}",
+                "restore"
+              ]
+            },
+            "description": "استعادة قاعدة البيانات من نسخة احتياطية (تحذير: سيتم حذف البيانات الحالية)"
+          }
+        }
+      ],
+      "description": "Endpoints for النسخ الاحتياطي functionality"
     }
   ]
 }

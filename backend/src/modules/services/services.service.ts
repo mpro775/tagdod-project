@@ -358,6 +358,101 @@ export class ServicesService {
     }
   }
 
+  /**
+   * إرسال SMS للمهندسين في مدينة معينة عند إنشاء طلب خدمة جديد
+   */
+  private async sendSMSToEngineersInCity(
+    city: string,
+    requestId: string,
+    requestTitle: string,
+  ): Promise<void> {
+    try {
+      // التحقق من تفعيل إرسال SMS للمهندسين من متغير البيئة
+      if (!this.enableSMSToEngineers) {
+        this.logger.debug(
+          'SMS to engineers is disabled via ENABLE_SMS_TO_ENGINEERS environment variable. Skipping SMS notification.',
+        );
+        return;
+      }
+
+      if (!this.smsAdapter) {
+        this.logger.warn('SMS adapter not available. Skipping SMS notification to engineers.');
+        return;
+      }
+
+      // جلب جميع المهندسين في المدينة
+      const engineers = await this.userModel
+        .find({
+          city: city,
+          engineer_capable: true,
+          engineer_status: CapabilityStatus.APPROVED,
+          status: UserStatus.ACTIVE,
+          phone: { $exists: true, $nin: [null, ''] },
+        })
+        .select('_id phone firstName lastName')
+        .lean();
+
+      if (engineers.length === 0) {
+        this.logger.debug(`No engineers found in city ${city} for SMS notification.`);
+        return;
+      }
+
+      const validPhones: Array<{ phone: string; normalizedPhone: string }> = [];
+
+      for (const engineer of engineers) {
+        if (engineer.phone) {
+          const normalized = this.normalizePhoneNumber(engineer.phone);
+          if (normalized) {
+            validPhones.push({
+              phone: engineer.phone,
+              normalizedPhone: normalized,
+            });
+          } else {
+            this.logger.warn(
+              `Skipping invalid phone number for engineer ${engineer._id}: ${engineer.phone}`,
+            );
+          }
+        }
+      }
+
+      if (validPhones.length === 0) {
+        this.logger.warn(`No valid engineer phone numbers found in city ${city}. Skipping SMS notification.`);
+        return;
+      }
+
+      const message = `تم إنشاء طلب خدمة جديد: ${requestTitle}. يمكنك عرض التفاصيل والتقدم بعرض في التطبيق.`;
+
+      const smsNotifications = validPhones.map(({ normalizedPhone }) => ({
+        to: normalizedPhone,
+        message,
+      }));
+
+      this.logger.log(
+        `Sending SMS to ${smsNotifications.length} engineers in city ${city} for request ${requestId}`,
+      );
+
+      const result = await this.smsAdapter.sendBulkSMS(smsNotifications);
+
+      if (result.successCount > 0) {
+        this.logger.log(
+          `Successfully sent SMS to ${result.successCount} engineers in city ${city} for request ${requestId}`,
+        );
+      }
+
+      if (result.failureCount > 0) {
+        this.logger.warn(
+          `Failed to send SMS to ${result.failureCount} engineers in city ${city} for request ${requestId}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send SMS to engineers in city ${city} for request ${requestId}:`,
+        error,
+      );
+      // Don't throw error - SMS sending should not fail the request creation
+    }
+  }
+
   // ---- Customer flows
   async createRequest(
     userId: string,
@@ -433,8 +528,8 @@ export class ServicesService {
       engineerId: null,
     });
 
-    // إشعار للعميل بتأكيد إنشاء الطلب
-    await this.safeNotify(
+    // إشعار للعميل بتأكيد إنشاء الطلب (في الخلفية)
+    this.safeNotify(
       userId,
       NotificationType.SERVICE_REQUEST_OPENED,
       'تم استلام طلب خدمة',
@@ -442,10 +537,13 @@ export class ServicesService {
       { requestId: String(doc._id), title: dto.title },
       NotificationNavigationType.SERVICE_REQUEST,
       String(doc._id),
-    );
+    ).catch((error) => {
+      this.logger.error(`Failed to notify customer about request creation: ${String(doc._id)}`, error);
+    });
 
-    // إرسال إشعار لجميع المهندسين في نفس المدينة
-    await this.notifyEngineersInCity(
+    // تشغيل العمليات غير الحرجة في الخلفية بدون انتظار
+    // إرسال إشعار لجميع المهندسين في نفس المدينة (في الخلفية)
+    this.notifyEngineersInCity(
       addr.city,
       NotificationType.SERVICE_REQUEST_OPENED,
       'طلب خدمة جديد في مدينتك',
@@ -453,14 +551,30 @@ export class ServicesService {
       { requestId: String(doc._id), title: dto.title, city: addr.city },
       NotificationNavigationType.SERVICE_REQUEST,
       String(doc._id),
-    );
+    ).catch((error) => {
+      this.logger.error(
+        `Failed to notify engineers in city ${addr.city} about request ${String(doc._id)}`,
+        error,
+      );
+    });
 
-    // إرسال SMS لجميع المهندسين - معطل مؤقتاً للتطوير
-    await this.sendSMSToAllEngineers(String(doc._id), dto.title);
+    // إرسال SMS للمهندسين في نفس المدينة فقط (في الخلفية)
+    this.sendSMSToEngineersInCity(addr.city, String(doc._id), dto.title).catch((error) => {
+      this.logger.error(
+        `Failed to send SMS to engineers in city ${addr.city} for request ${String(doc._id)}`,
+        error,
+      );
+    });
 
-    // تحديث استخدام العنوان
-    await this.addressesService.markAsUsed(dto.addressId, userId);
+    // تحديث استخدام العنوان (في الخلفية)
+    this.addressesService.markAsUsed(dto.addressId, userId).catch((error) => {
+      this.logger.error(
+        `Failed to mark address ${dto.addressId} as used for user ${userId}`,
+        error,
+      );
+    });
 
+    // إرجاع الطلب فوراً بدون انتظار العمليات الخلفية
     return doc;
   }
 

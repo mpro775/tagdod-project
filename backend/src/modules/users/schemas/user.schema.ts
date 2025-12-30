@@ -242,3 +242,6 @@ UserSchema.index({ status: 1, deletedAt: 1, createdAt: -1 });
 UserSchema.index({ lastActivityAt: -1 });
 UserSchema.index({ status: 1, lastActivityAt: -1 });
 UserSchema.index({ roles: 1, status: 1 }); // فهرس محسن للأدوار والحالة
+UserSchema.index({ city: 1, engineer_capable: 1, engineer_status: 1, status: 1 }); // فهرس محسن لاستعلام notifyEngineersInCity
+UserSchema.index({ engineer_capable: 1, status: 1, phone: 1 }); // فهرس محسن لاستعلام getAllEngineersPhones
+UserSchema.index({ roles: 1, status: 1, phone: 1 }); // فهرس مركب إضافي للأدوار والحالة ورقم الهاتف

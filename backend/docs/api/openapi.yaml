@@ -22138,6 +22138,141 @@ paths:
         - تقارير-العمولات
       security:
         - bearer: []
+  /api/v1/backups:
+    post:
+      operationId: createBackup
+      summary: إنشاء نسخة احتياطية يدوياً
+      description: إنشاء نسخة احتياطية كاملة لقاعدة البيانات
+      parameters: []
+      responses:
+        '201':
+          description: تم إنشاء النسخة الاحتياطية بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupResponseDto'
+      tags:
+        - النسخ الاحتياطي
+      security:
+        - bearer: []
+    get:
+      operationId: getAllBackups
+      summary: الحصول على جميع النسخ الاحتياطية
+      description: استرداد قائمة بجميع النسخ الاحتياطية مع إمكانية التصفح
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          schema:
+            type: number
+        - name: skip
+          required: false
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: تم استرداد النسخ الاحتياطية بنجاح
+      tags:
+        - النسخ الاحتياطي
+      security:
+        - bearer: []
+  /api/v1/backups/stats:
+    get:
+      operationId: getStats
+      summary: إحصائيات النسخ الاحتياطي
+      description: الحصول على إحصائيات النسخ الاحتياطي
+      parameters: []
+      responses:
+        '200':
+          description: تم استرداد الإحصائيات بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupStatsDto'
+      tags:
+        - النسخ الاحتياطي
+      security:
+        - bearer: []
+  /api/v1/backups/{id}:
+    get:
+      operationId: getBackup
+      summary: الحصول على نسخة احتياطية واحدة
+      description: استرداد تفاصيل نسخة احتياطية معينة
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف النسخة الاحتياطية
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم استرداد النسخة الاحتياطية بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupResponseDto'
+      tags:
+        - النسخ الاحتياطي
+      security:
+        - bearer: []
+    delete:
+      operationId: deleteBackup
+      summary: حذف نسخة احتياطية
+      description: حذف نسخة احتياطية معينة من Bunny Storage وقاعدة البيانات
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف النسخة الاحتياطية
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم حذف النسخة الاحتياطية بنجاح
+      tags:
+        - النسخ الاحتياطي
+      security:
+        - bearer: []
+  /api/v1/backups/{id}/download:
+    get:
+      operationId: downloadBackup
+      summary: تحميل نسخة احتياطية
+      description: تحميل ملف النسخة الاحتياطية من Bunny Storage
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف النسخة الاحتياطية
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم تحميل الملف بنجاح
+      tags:
+        - النسخ الاحتياطي
+      security:
+        - bearer: []
+  /api/v1/backups/{id}/restore:
+    post:
+      operationId: restoreBackup
+      summary: استعادة قاعدة البيانات
+      description: 'استعادة قاعدة البيانات من نسخة احتياطية (تحذير: سيتم حذف البيانات الحالية)'
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: معرف النسخة الاحتياطية
+          schema:
+            type: string
+      responses:
+        '200':
+          description: تم استعادة قاعدة البيانات بنجاح
+      tags:
+        - النسخ الاحتياطي
+      security:
+        - bearer: []
   /api/v1/health:
     get:
       operationId: check
@@ -26730,3 +26865,81 @@ components:
           description: حالة النشر
       required:
         - isActive
+    BackupResponseDto:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        filename:
+          type: string
+        localPath:
+          type: string
+        bunnyPath:
+          type: string
+        bunnyUrl:
+          type: string
+        size:
+          type: number
+        status:
+          type: string
+          enum:
+            - pending
+            - in_progress
+            - completed
+            - failed
+        type:
+          type: string
+          enum:
+            - full
+            - incremental
+        errorMessage:
+          type: string
+        createdBy:
+          type: string
+        isAutomatic:
+          type: boolean
+        scheduledAt:
+          format: date-time
+          type: string
+        completedAt:
+          format: date-time
+          type: string
+        metadata:
+          type: object
+        createdAt:
+          format: date-time
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+      required:
+        - _id
+        - name
+        - filename
+        - size
+        - status
+        - type
+        - isAutomatic
+        - createdAt
+        - updatedAt
+    BackupStatsDto:
+      type: object
+      properties:
+        total:
+          type: number
+        completed:
+          type: number
+        failed:
+          type: number
+        totalSize:
+          type: number
+        lastBackup:
+          format: date-time
+          type: string
+      required:
+        - total
+        - completed
+        - failed
+        - totalSize

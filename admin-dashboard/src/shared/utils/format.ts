@@ -58,18 +58,42 @@ export function formatPercentage(value: number, decimals: number = 1): string {
 
 /**
  * Format date
+ * Converts UTC date to Yemen timezone (Asia/Aden) for display
  */
 export function formatDate(date: Date | string): string {
+  if (!date) return '-';
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('ar-YE');
+  if (!(d instanceof Date) || isNaN(d.getTime())) return '-';
+  
+  // Use Intl.DateTimeFormat with Yemen timezone (Asia/Aden)
+  return new Intl.DateTimeFormat('ar-YE', {
+    timeZone: 'Asia/Aden',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
 }
 
 /**
  * Format date and time
+ * Converts UTC date to Yemen timezone (Asia/Aden) for display
  */
 export function formatDateTime(date: Date | string): string {
+  if (!date) return '-';
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleString('ar-YE');
+  if (!(d instanceof Date) || isNaN(d.getTime())) return '-';
+  
+  // Use Intl.DateTimeFormat with Yemen timezone (Asia/Aden)
+  return new Intl.DateTimeFormat('ar-YE', {
+    timeZone: 'Asia/Aden',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(d);
 }
 
 /**

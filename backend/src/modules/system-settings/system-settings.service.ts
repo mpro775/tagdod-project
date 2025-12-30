@@ -178,6 +178,12 @@ export class SystemSettingsService {
       // Payment
       { key: 'cod_enabled', value: true, category: SettingCategory.PAYMENT, isPublic: true, description: 'تفعيل الدفع عند الاستلام' },
       { key: 'card_enabled', value: false, category: SettingCategory.PAYMENT, isPublic: true, description: 'تفعيل البطاقات' },
+
+      // Backup Settings
+      { key: 'backup_daily_enabled', value: true, category: SettingCategory.ADVANCED, isPublic: false, description: 'تفعيل النسخ اليومي' },
+      { key: 'backup_weekly_enabled', value: true, category: SettingCategory.ADVANCED, isPublic: false, description: 'تفعيل النسخ الأسبوعي' },
+      { key: 'backup_monthly_enabled', value: true, category: SettingCategory.ADVANCED, isPublic: false, description: 'تفعيل النسخ الشهري' },
+      { key: 'backup_retention_count', value: 30, category: SettingCategory.ADVANCED, isPublic: false, description: 'عدد النسخ المطلوب الاحتفاظ به' },
     ];
 
     for (const defaultSetting of defaults) {

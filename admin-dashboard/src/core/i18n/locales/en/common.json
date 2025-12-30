@@ -69,6 +69,7 @@
     "systemMonitoring": "Performance Monitoring",
     "errorLogs": "Error Logs",
     "systemSettings": "System Settings",
+    "backups": "Backups",
     "policies": "Policies",
     "exchangeRates": "Exchange Rates",
     "adminManagement": "Admin Management",

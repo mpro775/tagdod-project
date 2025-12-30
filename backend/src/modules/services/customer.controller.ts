@@ -13,6 +13,7 @@ import {
   UploadedFiles,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { DateTimezoneInterceptor } from '../../shared/interceptors/date-timezone.interceptor';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -58,6 +59,7 @@ interface RequestWithUser {
 @ApiTags('خدمات-العملاء')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, ServicesPermissionGuard)
+@UseInterceptors(DateTimezoneInterceptor)
 @Controller('services/customer')
 export class CustomerServicesController {
   constructor(private svc: ServicesService) {}

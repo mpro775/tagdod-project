@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Post, Query, UseGuards, Patch, Body } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, UseGuards, Patch, Body, UseInterceptors } from '@nestjs/common';
+import { DateTimezoneInterceptor } from '../../shared/interceptors/date-timezone.interceptor';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -23,6 +24,7 @@ import { OffersStatisticsDto, OffersManagementResponseDto, EngineersOverviewStat
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, ServicesPermissionGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.ENGINEER)
+@UseInterceptors(DateTimezoneInterceptor)
 @Controller('services/admin')
 export class AdminServicesController {
   constructor(private svc: ServicesService) {}

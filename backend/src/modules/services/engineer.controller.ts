@@ -9,7 +9,9 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { DateTimezoneInterceptor } from '../../shared/interceptors/date-timezone.interceptor';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -44,6 +46,7 @@ interface RequestWithUser {
 @ApiTags('خدمات-الفنيين')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, ServicesPermissionGuard)
+@UseInterceptors(DateTimezoneInterceptor)
 @Controller('services/engineer')
 export class EngineerServicesController {
   constructor(private svc: ServicesService) {}

@@ -371,6 +371,11 @@ const SystemSettingsPage = lazy(() =>
     default: m.SystemSettingsPage,
   }))
 );
+const BackupsPage = lazy(() =>
+  import('@/features/backups/pages/BackupsPage').then((m) => ({
+    default: m.BackupsPage,
+  }))
+);
 
 // Policies
 const PoliciesManagementPage = lazy(() =>
@@ -849,6 +854,12 @@ export const routes: RouteObject[] = [
       {
         path: 'system/settings',
         element: <SystemSettingsPage />,
+      },
+
+      // Backups
+      {
+        path: 'system/backups',
+        element: <BackupsPage />,
       },
       {
         path: 'policies',

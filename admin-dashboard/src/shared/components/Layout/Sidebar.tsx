@@ -49,6 +49,7 @@ import {
   Info,
   Sync,
   AddCircleOutline,
+  Backup as BackupIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -508,6 +509,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             label: t('navigation.systemSettings', 'إعدادات النظام'),
             icon: <Settings />,
             path: '/system/settings',
+          },
+          {
+            id: 'backups',
+            label: t('navigation.backups', 'النسخ الاحتياطي'),
+            icon: <BackupIcon />,
+            path: '/system/backups',
           },
           {
             id: 'policies',

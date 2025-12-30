@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { Star, Delete } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { formatNumber } from '@/shared/utils/formatters';
+import { formatNumber, formatDate } from '@/shared/utils/formatters';
 import { useEngineerRatingsAdmin, useDeleteEngineerRating } from '@/features/users/hooks/useEngineerProfileAdmin';
 import type { EngineerProfileAdmin } from '@/features/users/types/user.types';
 
@@ -173,7 +173,7 @@ export const EngineerRatingsSection: React.FC<EngineerRatingsSectionProps> = ({ 
                     {rating.comment}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    {new Date(rating.ratedAt).toLocaleDateString('ar-YE')}
+                    {formatDate(rating.ratedAt)}
                   </Typography>
                 </Box>
               ))}

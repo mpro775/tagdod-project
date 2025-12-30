@@ -33,6 +33,7 @@ import { SystemSettingsModule } from './modules/system-settings/system-settings.
 import { PoliciesModule } from './modules/policies/policies.module';
 import { AboutModule } from './modules/about/about.module';
 import { CommissionsModule } from './modules/commissions/commissions.module';
+import { BackupsModule } from './modules/backups/backups.module';
 import { HealthModule } from './health/health.module';
 
 // Shared modules
@@ -117,6 +118,7 @@ import { ShareProductController } from './deep-linking/share-product.controller'
     PoliciesModule,
     AboutModule,
     CommissionsModule,
+    BackupsModule,
 
     // Health module
     HealthModule,

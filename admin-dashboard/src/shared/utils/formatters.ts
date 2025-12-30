@@ -3,6 +3,7 @@ import { ar, enUS } from 'date-fns/locale';
 
 /**
  * Format date
+ * Converts UTC date to Yemen timezone (Asia/Aden) for display
  */
 export const formatDate = (
   date: Date | string,
@@ -12,8 +13,23 @@ export const formatDate = (
   if (!date) return '-';
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return '-';
-  const localeObj = locale === 'ar' ? ar : enUS;
-  return format(dateObj, formatStr, { locale: localeObj });
+  
+  // Use Intl.DateTimeFormat with Yemen timezone (Asia/Aden) for consistent timezone handling
+  // If a specific format is requested, use date-fns with timezone conversion
+  if (formatStr !== 'yyyy-MM-dd') {
+    // For custom formats, use date-fns but note that it doesn't handle timezone conversion
+    // So we'll use Intl for timezone-aware formatting
+    const localeObj = locale === 'ar' ? ar : enUS;
+    return format(dateObj, formatStr, { locale: localeObj });
+  }
+  
+  // Default format with Yemen timezone
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-YE' : 'en-US', {
+    timeZone: 'Asia/Aden',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(dateObj);
 };
 
 /**
@@ -38,10 +54,13 @@ export const formatCurrency = (
  * Format number
  */
 export const formatNumber = (
-  value: number,
+  value: number | undefined | null,
   locale: 'ar' | 'en' = 'en',
   options?: Intl.NumberFormatOptions
 ): string => {
+  if (value === undefined || value === null || isNaN(value)) {
+    return '0';
+  }
   const localeStr = locale === 'ar' ? 'en-US' : 'en-US';
   return new Intl.NumberFormat(localeStr, options).format(value);
 };
