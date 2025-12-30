@@ -6,8 +6,7 @@ WORKDIR /app
 # نسخ ملفات package
 COPY package*.json ./
 
-# تثبيت جميع dependencies (بما في ذلك devDependencies للبناء)
-# استخدام npm install بدلاً من npm ci إذا لم يكن package-lock.json موجوداً
+# تثبيت جميع dependencies
 RUN npm install
 
 # نسخ الكود المصدري
@@ -21,8 +20,10 @@ FROM node:22-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# أضفنا tzdata هنا لكي يفهم النظام التوقيت
+# 1. تحديث الحزم وتثبيت الأدوات الأساسية + wget (مهم لتحميل مونجو)
 RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
     tzdata \
     libvips-dev \
     chromium \
@@ -50,6 +51,12 @@ RUN apt-get update && apt-get install -y \
     fonts-noto-unhinted \
     && rm -rf /var/lib/apt/lists/*
 
+# 2. 🔥 إضافة أدوات MongoDB Database Tools (mongodump/mongorestore) 🔥
+# نستخدم نسخة Debian 12 لأن صورة node:22 مبنية عليها
+RUN wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-debian12-x86_64-100.9.4.deb && \
+    apt-get install -y ./mongodb-database-tools-debian12-x86_64-100.9.4.deb && \
+    rm mongodb-database-tools-debian12-x86_64-100.9.4.deb
+
 # تعيين متغيرات البيئة للـ Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
@@ -63,8 +70,7 @@ RUN npm install --only=production && npm cache clean --force
 # نسخ الملفات المبنية من مرحلة build
 COPY --from=build /app/dist ./dist
 
-# نسخ assets (الخطوط وغيرها) إذا كانت موجودة
-# إنشاء المجلد أولاً ثم نسخ الملفات
+# نسخ assets
 RUN mkdir -p /app/assets
 COPY --from=build /app/assets /app/assets
 
