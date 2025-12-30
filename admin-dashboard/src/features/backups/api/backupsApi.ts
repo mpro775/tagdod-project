@@ -60,10 +60,11 @@ export const backupsApi = {
       { params: { limit, skip } }
     );
     // Backend يرجع { message, data, pagination } داخل response.data.data
+    // response.data = { success: true, data: { message, data, pagination } }
     const backendResponse = response.data.data;
     return {
-      backups: backendResponse.data || [],
-      pagination: backendResponse.pagination || { total: 0, limit, skip },
+      backups: Array.isArray(backendResponse?.data) ? backendResponse.data : [],
+      pagination: backendResponse?.pagination || { total: 0, limit, skip },
     };
   },
 
@@ -76,8 +77,14 @@ export const backupsApi = {
       data: BackupStats;
     }>>('/backups/stats');
     // Backend يرجع { message, data } داخل response.data.data
+    // response.data = { success: true, data: { message, data } }
     const backendResponse = response.data.data;
-    return backendResponse.data;
+    return backendResponse?.data || {
+      total: 0,
+      completed: 0,
+      failed: 0,
+      totalSize: 0,
+    };
   },
 
   /**
