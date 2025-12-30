@@ -51,19 +51,33 @@ export const backupsApi = {
    * الحصول على جميع النسخ الاحتياطية
    */
   getAllBackups: async (limit = 50, skip = 0): Promise<BackupsResponse> => {
-    const response = await apiClient.get<ApiResponse<BackupsResponse>>(
+    const response = await apiClient.get<ApiResponse<{
+      message: string;
+      data: Backup[];
+      pagination: { total: number; limit: number; skip: number };
+    }>>(
       '/backups',
       { params: { limit, skip } }
     );
-    return response.data.data;
+    // Backend يرجع { message, data, pagination } داخل response.data.data
+    const backendResponse = response.data.data;
+    return {
+      backups: backendResponse.data || [],
+      pagination: backendResponse.pagination || { total: 0, limit, skip },
+    };
   },
 
   /**
    * الحصول على إحصائيات النسخ الاحتياطي
    */
   getStats: async (): Promise<BackupStats> => {
-    const response = await apiClient.get<ApiResponse<BackupStats>>('/backups/stats');
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<{
+      message: string;
+      data: BackupStats;
+    }>>('/backups/stats');
+    // Backend يرجع { message, data } داخل response.data.data
+    const backendResponse = response.data.data;
+    return backendResponse.data;
   },
 
   /**
