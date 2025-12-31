@@ -1173,11 +1173,13 @@ export class OrderService {
   /**
    * التحقق من المخزون قبل إنشاء الطلب
    */
-  private async validateOrderInventory(items: Array<{
-    productId?: Types.ObjectId;
-    variantId?: Types.ObjectId;
-    qty: number;
-  }>): Promise<{
+  private async validateOrderInventory(
+    items: Array<{
+      productId?: Types.ObjectId;
+      variantId?: Types.ObjectId;
+      qty: number;
+    }>,
+  ): Promise<{
     isValid: boolean;
     errors: Array<{
       variantId?: string;
@@ -1207,11 +1209,14 @@ export class OrderService {
       try {
         if (variantId) {
           const variantDetails = await this.variantService.findById(variantId);
-          
+
           // التحقق من المخزون إذا كان trackInventory = true
           if (variantDetails.trackInventory) {
-            const availability = await this.productsInventoryService.checkAvailability(variantId, qty);
-            
+            const availability = await this.productsInventoryService.checkAvailability(
+              variantId,
+              qty,
+            );
+
             if (!availability.available && !availability.canBackorder) {
               errors.push({
                 variantId,
@@ -1224,11 +1229,14 @@ export class OrderService {
           // إذا كان trackInventory = false، نعتبره متوفراً (لا يحتاج متابعة مخزون)
         } else if (productId) {
           const productDetails = await this.productService.findById(productId);
-          
+
           // التحقق من المخزون إذا كان trackStock = true
           if (productDetails.trackStock) {
-            const availability = await this.productsInventoryService.checkProductAvailability(productId, qty);
-            
+            const availability = await this.productsInventoryService.checkProductAvailability(
+              productId,
+              qty,
+            );
+
             if (!availability.available && !availability.canBackorder) {
               errors.push({
                 productId,
@@ -2198,8 +2206,8 @@ export class OrderService {
         orderNumber: this.generateOrderNumber(),
         userId: new Types.ObjectId(userId),
         // 🔥 تعيين الحالة بناءً على نتيجة التحقق
-        status: inventoryValidation.isValid 
-          ? OrderStatus.PENDING_PAYMENT 
+        status: inventoryValidation.isValid
+          ? OrderStatus.PENDING_PAYMENT
           : OrderStatus.OUT_OF_STOCK,
         paymentStatus: PaymentStatus.PENDING,
         deliveryAddress: {
@@ -2290,7 +2298,7 @@ export class OrderService {
           // تحديث حالة الطلب إلى OUT_OF_STOCK بدلاً من حذفه
           order.status = OrderStatus.OUT_OF_STOCK;
           await order.save();
-          
+
           // إضافة سجل الحالة
           await this.addStatusHistory(
             order,
@@ -2340,9 +2348,9 @@ export class OrderService {
           OrderStatus.OUT_OF_STOCK,
           new Types.ObjectId(userId),
           'system',
-          `المخزون غير متوفر: ${inventoryValidation.errors.map(e => 
-            e.variantId ? `Variant ${e.variantId}` : `Product ${e.productId}`
-          ).join(', ')}`,
+          `المخزون غير متوفر: ${inventoryValidation.errors
+            .map((e) => (e.variantId ? `Variant ${e.variantId}` : `Product ${e.productId}`))
+            .join(', ')}`,
           { inventoryErrors: inventoryValidation.errors },
         );
 
@@ -2392,7 +2400,11 @@ export class OrderService {
       }
 
       // إذا كان الدفع عند الاستلام وتوفر المخزون، تأكيد فوري وتحديث حالة الدفع
-      if (dto.paymentMethod === PaymentMethod.COD && inventoryValidation.isValid && order.status === OrderStatus.PENDING_PAYMENT) {
+      if (
+        dto.paymentMethod === PaymentMethod.COD &&
+        inventoryValidation.isValid &&
+        order.status === OrderStatus.PENDING_PAYMENT
+      ) {
         // تحديث حالة الدفع أولاً
         const oldPaymentStatus = order.paymentStatus;
         const newPaymentStatus = PaymentStatus.PAID;
