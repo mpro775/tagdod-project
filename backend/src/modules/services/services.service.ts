@@ -1,4 +1,11 @@
-import { Injectable, Logger, Optional, Inject, forwardRef, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  Optional,
+  Inject,
+  forwardRef,
+  BadRequestException,
+} from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
@@ -168,9 +175,7 @@ export class ServicesService {
 
       // اختيار القناة بناءً على حالة الاتصال
       // إذا كان المستخدم متصل → IN_APP، وإلا → PUSH
-      const channel = isUserOnline 
-        ? NotificationChannel.IN_APP 
-        : NotificationChannel.PUSH;
+      const channel = isUserOnline ? NotificationChannel.IN_APP : NotificationChannel.PUSH;
 
       this.logger.debug(
         `Sending ${channel} notification to user ${userId} (online: ${isUserOnline})`,
@@ -317,7 +322,9 @@ export class ServicesService {
       );
 
       await Promise.all(notificationPromises);
-      this.logger.log(`Successfully sent notifications to ${engineers.length} engineers in city ${city}`);
+      this.logger.log(
+        `Successfully sent notifications to ${engineers.length} engineers in city ${city}`,
+      );
     } catch (error) {
       this.logger.error(`Failed to notify engineers in city ${city}:`, error);
       // لا نرمي الخطأ حتى لا يؤثر على العملية الأساسية
@@ -478,7 +485,9 @@ export class ServicesService {
       }
 
       if (validPhones.length === 0) {
-        this.logger.warn(`No valid engineer phone numbers found in city ${city}. Skipping SMS notification.`);
+        this.logger.warn(
+          `No valid engineer phone numbers found in city ${city}. Skipping SMS notification.`,
+        );
         return;
       }
 
@@ -553,7 +562,7 @@ export class ServicesService {
         ];
         throw new BadRequestException({
           error: 'MONTHLY_CANCELLATION_LIMIT_REACHED',
-          message: `لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل حسابك في 1 ${monthNames[nextMonth.getMonth()]}.`,
+          message: `لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل هذه الخدمة في 1 ${monthNames[nextMonth.getMonth()]}.`,
         });
       }
       // إذا كان العدد الفعلي أقل، نحدث العدد المخزن
@@ -640,7 +649,10 @@ export class ServicesService {
       NotificationNavigationType.SERVICE_REQUEST,
       String(doc._id),
     ).catch((error) => {
-      this.logger.error(`Failed to notify customer about request creation: ${String(doc._id)}`, error);
+      this.logger.error(
+        `Failed to notify customer about request creation: ${String(doc._id)}`,
+        error,
+      );
     });
 
     // تشغيل العمليات غير الحرجة في الخلفية بدون انتظار
@@ -879,24 +891,24 @@ export class ServicesService {
         updatedAt: doc.updatedAt,
         address: addressData
           ? {
-            label: addressData.label ?? null,
-            line1: addressData.line1 ?? null,
-            city: addressData.city ?? null,
-          }
+              label: addressData.label ?? null,
+              line1: addressData.line1 ?? null,
+              city: addressData.city ?? null,
+            }
           : null,
         engineer: engineerData
           ? {
-            id: engineerId ?? String(engineerData._id),
-            name: engineerName,
-            phone: engineerPhone,
-            whatsapp,
-          }
+              id: engineerId ?? String(engineerData._id),
+              name: engineerName,
+              phone: engineerPhone,
+              whatsapp,
+            }
           : null,
         acceptedOffer: doc.acceptedOffer
           ? {
-            ...doc.acceptedOffer,
-            currency: doc.acceptedOffer.currency || 'YER',
-          }
+              ...doc.acceptedOffer,
+              currency: doc.acceptedOffer.currency || 'YER',
+            }
           : null,
         rating: doc.rating,
       };
@@ -1007,12 +1019,12 @@ export class ServicesService {
         createdAt: offer.createdAt,
         engineer: engineerData
           ? {
-            id: String(engineerData._id),
-            name: engineerName,
-            jobTitle: profile?.jobTitle ?? null,
-            phone: engineerPhone,
-            whatsapp,
-          }
+              id: String(engineerData._id),
+              name: engineerName,
+              jobTitle: profile?.jobTitle ?? null,
+              phone: engineerPhone,
+              whatsapp,
+            }
           : null,
       };
 
@@ -1041,10 +1053,10 @@ export class ServicesService {
           updatedAt: req.updatedAt,
           address: addressData
             ? {
-              label: addressData.label ?? null,
-              line1: addressData.line1 ?? null,
-              city: addressData.city ?? null,
-            }
+                label: addressData.label ?? null,
+                line1: addressData.line1 ?? null,
+                city: addressData.city ?? null,
+              }
             : null,
           offers: offersByRequest.get(String(req._id)) ?? [],
         };
@@ -1137,24 +1149,24 @@ export class ServicesService {
         updatedAt: doc.updatedAt,
         address: addressData
           ? {
-            label: addressData.label ?? null,
-            line1: addressData.line1 ?? null,
-            city: addressData.city ?? null,
-          }
+              label: addressData.label ?? null,
+              line1: addressData.line1 ?? null,
+              city: addressData.city ?? null,
+            }
           : null,
         engineer: engineerData
           ? {
-            id: engineerId ?? String(engineerData._id),
-            name: engineerName,
-            phone: engineerPhone,
-            whatsapp,
-          }
+              id: engineerId ?? String(engineerData._id),
+              name: engineerName,
+              phone: engineerPhone,
+              whatsapp,
+            }
           : null,
         acceptedOffer: doc.acceptedOffer
           ? {
-            ...doc.acceptedOffer,
-            currency: doc.acceptedOffer.currency || 'YER',
-          }
+              ...doc.acceptedOffer,
+              currency: doc.acceptedOffer.currency || 'YER',
+            }
           : null,
       };
     });
@@ -1212,7 +1224,7 @@ export class ServicesService {
         ];
         return {
           error: 'CANCELLATION_LIMIT_REACHED',
-          message: `لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل حسابك في 1 ${monthNames[nextMonth.getMonth()]}.`,
+          message: `لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل هذه الخدمة في 1 ${monthNames[nextMonth.getMonth()]}.`,
         };
       }
       // إذا كان العدد الفعلي أقل، نحدث العدد المخزن
@@ -1441,7 +1453,6 @@ export class ServicesService {
 
         // 👇 وأضف هذا السطر
         this.logger.log('✅ Rating synced successfully to Engineer Profile!');
-
       } catch (error) {
         this.logger.error(`Failed to add rating to engineer profile: ${error}`);
       }
@@ -1482,27 +1493,27 @@ export class ServicesService {
   ): Promise<
     | { error: string }
     | Array<{
-      _id: Types.ObjectId;
-      requestId: string | Types.ObjectId;
-      amount: number;
-      currency: string;
-      note?: string | null;
-      distanceKm?: number;
-      status: string;
-      statusLabel: string;
-      createdAt: Date;
-      updatedAt: Date;
-      engineerId?:
-      | {
         _id: Types.ObjectId;
-        firstName?: string;
-        lastName?: string;
-        phone?: string;
-        jobTitle?: string | null;
-      }
-      | Types.ObjectId
-      | null;
-    }>
+        requestId: string | Types.ObjectId;
+        amount: number;
+        currency: string;
+        note?: string | null;
+        distanceKm?: number;
+        status: string;
+        statusLabel: string;
+        createdAt: Date;
+        updatedAt: Date;
+        engineerId?:
+          | {
+              _id: Types.ObjectId;
+              firstName?: string;
+              lastName?: string;
+              phone?: string;
+              jobTitle?: string | null;
+            }
+          | Types.ObjectId
+          | null;
+      }>
   > {
     const userObjectId = new Types.ObjectId(userId);
     const requestObjectId = new Types.ObjectId(requestId);
@@ -1600,12 +1611,12 @@ export class ServicesService {
       createdAt: offer.createdAt,
       engineer: engineerData
         ? {
-          id: String(engineerData._id),
-          name: engineerName,
-          jobTitle,
-          phone: engineerPhone,
-          whatsapp,
-        }
+            id: String(engineerData._id),
+            name: engineerName,
+            jobTitle,
+            phone: engineerPhone,
+            whatsapp,
+          }
         : null,
     };
 
@@ -1624,10 +1635,10 @@ export class ServicesService {
         city: request.city,
         address: addressData
           ? {
-            label: addressData.label ?? null,
-            line1: addressData.line1 ?? null,
-            city: addressData.city ?? null,
-          }
+              label: addressData.label ?? null,
+              line1: addressData.line1 ?? null,
+              city: addressData.city ?? null,
+            }
           : null,
       },
     };
@@ -2105,22 +2116,22 @@ export class ServicesService {
       location: request.location,
       address: addressData
         ? {
-          label: addressData.label ?? null,
-          line1: addressData.line1 ?? null,
-          city: addressData.city ?? null,
-          coords: addressData.coords ?? null,
-        }
+            label: addressData.label ?? null,
+            line1: addressData.line1 ?? null,
+            city: addressData.city ?? null,
+            coords: addressData.coords ?? null,
+          }
         : null,
       customer: customerData
         ? {
-          id: String(customerData._id),
-          name:
-            customerData.firstName && customerData.lastName
-              ? `${customerData.firstName} ${customerData.lastName}`.trim()
-              : null,
-          phone: customerData.phone ?? null,
-          whatsapp: customerData.phone ? this.makeWhatsappLink(customerData.phone) : null,
-        }
+            id: String(customerData._id),
+            name:
+              customerData.firstName && customerData.lastName
+                ? `${customerData.firstName} ${customerData.lastName}`.trim()
+                : null,
+            phone: customerData.phone ?? null,
+            whatsapp: customerData.phone ? this.makeWhatsappLink(customerData.phone) : null,
+          }
         : null,
       engineerId: request.engineerId ? String(request.engineerId) : null,
       acceptedOffer: request.acceptedOffer ?? null,
@@ -2128,15 +2139,15 @@ export class ServicesService {
       distanceKm: engineerOffer?.distanceKm ?? null,
       myOffer: engineerOffer
         ? {
-          _id: engineerOffer._id,
-          amount: engineerOffer.amount,
-          currency: engineerOffer.currency || 'YER',
-          note: engineerOffer.note ?? null,
-          status: engineerOffer.status,
-          statusLabel: this.offerStatusLabel(engineerOffer.status),
-          distanceKm: engineerOffer.distanceKm ?? null,
-          createdAt: engineerOffer.createdAt,
-        }
+            _id: engineerOffer._id,
+            amount: engineerOffer.amount,
+            currency: engineerOffer.currency || 'YER',
+            note: engineerOffer.note ?? null,
+            status: engineerOffer.status,
+            statusLabel: this.offerStatusLabel(engineerOffer.status),
+            distanceKm: engineerOffer.distanceKm ?? null,
+            createdAt: engineerOffer.createdAt,
+          }
         : null,
     };
   }
@@ -2226,29 +2237,29 @@ export class ServicesService {
   async adminGetRequest(id: string): Promise<null | {
     _id: Types.ObjectId;
     userId?:
-    | Types.ObjectId
-    | {
-      _id: Types.ObjectId;
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
-      email?: string;
-    }
-    | null;
+      | Types.ObjectId
+      | {
+          _id: Types.ObjectId;
+          firstName?: string;
+          lastName?: string;
+          phone?: string;
+          email?: string;
+        }
+      | null;
     engineerId?:
-    | Types.ObjectId
-    | {
-      _id: Types.ObjectId;
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
-      jobTitle?: string | null;
-    }
-    | null;
+      | Types.ObjectId
+      | {
+          _id: Types.ObjectId;
+          firstName?: string;
+          lastName?: string;
+          phone?: string;
+          jobTitle?: string | null;
+        }
+      | null;
     addressId?:
-    | Types.ObjectId
-    | { _id: Types.ObjectId; label?: string; line1?: string; city?: string }
-    | null;
+      | Types.ObjectId
+      | { _id: Types.ObjectId; label?: string; line1?: string; city?: string }
+      | null;
     title: string;
     type?: string;
     description?: string;
@@ -2274,15 +2285,15 @@ export class ServicesService {
       createdAt: Date;
       updatedAt: Date;
       engineerId?:
-      | Types.ObjectId
-      | {
-        _id: Types.ObjectId;
-        firstName?: string;
-        lastName?: string;
-        phone?: string;
-        jobTitle?: string | null;
-      }
-      | null;
+        | Types.ObjectId
+        | {
+            _id: Types.ObjectId;
+            firstName?: string;
+            lastName?: string;
+            phone?: string;
+            jobTitle?: string | null;
+          }
+        | null;
     }>;
   }> {
     const request = (await this.requests
@@ -2347,15 +2358,15 @@ export class ServicesService {
       createdAt: Date;
       updatedAt: Date;
       engineerId?:
-      | Types.ObjectId
-      | {
-        _id: Types.ObjectId;
-        firstName?: string;
-        lastName?: string;
-        phone?: string;
-        jobTitle?: string | null;
-      }
-      | null;
+        | Types.ObjectId
+        | {
+            _id: Types.ObjectId;
+            firstName?: string;
+            lastName?: string;
+            phone?: string;
+            jobTitle?: string | null;
+          }
+        | null;
     }>
   > {
     const offers = (await this.offers
@@ -2989,17 +3000,17 @@ export class ServicesService {
 
   async getEngineerStatistics(engineerId: string): Promise<{
     engineer:
-    | Types.ObjectId
-    | {
-      _id: Types.ObjectId;
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
-      email?: string;
-      jobTitle?: string | null;
-    }
-    | null
-    | undefined;
+      | Types.ObjectId
+      | {
+          _id: Types.ObjectId;
+          firstName?: string;
+          lastName?: string;
+          phone?: string;
+          email?: string;
+          jobTitle?: string | null;
+        }
+      | null
+      | undefined;
     statistics: {
       _id?: Types.ObjectId;
       totalRequests?: number;
@@ -3477,7 +3488,10 @@ export class ServicesService {
 
       return { resetCount: result.modifiedCount || 0 };
     } catch (error) {
-      this.logger.error('[Reset Monthly Cancellations] Error resetting cancellation counts:', error);
+      this.logger.error(
+        '[Reset Monthly Cancellations] Error resetting cancellation counts:',
+        error,
+      );
       throw error;
     }
   }
