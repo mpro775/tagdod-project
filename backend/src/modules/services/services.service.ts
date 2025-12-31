@@ -1,4 +1,4 @@
-import { Injectable, Logger, Optional, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, Optional, Inject, forwardRef, BadRequestException } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
@@ -207,6 +207,68 @@ export class ServicesService {
     } catch (error) {
       this.logger.warn(`Failed to normalize phone number ${phone}:`, error);
       return null;
+    }
+  }
+
+  /**
+   * التحقق من تغيير الشهر وتصفير عدد الإلغاءات الشهرية تلقائياً
+   */
+  private async checkAndResetMonthlyCount(userId: string): Promise<void> {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) return;
+
+      const now = new Date();
+      // استخدام type assertion للوصول إلى createdAt (يتم إضافتها تلقائياً من Mongoose timestamps)
+      const userWithTimestamps = user as unknown as User & { createdAt: Date };
+      const lastReset = user.lastCancellationResetDate || userWithTimestamps.createdAt;
+
+      // التحقق إذا كان الشهر تغير
+      if (
+        now.getMonth() !== lastReset.getMonth() ||
+        now.getFullYear() !== lastReset.getFullYear()
+      ) {
+        // تصفير العدد
+        user.monthlyCancellationCount = 0;
+        user.lastCancellationResetDate = now;
+        await user.save();
+        this.logger.debug(`Reset monthly cancellation count for user ${userId}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to check and reset monthly count for user ${userId}:`, error);
+      // لا نرمي الخطأ حتى لا يؤثر على العملية الأساسية
+    }
+  }
+
+  /**
+   * حساب عدد الإلغاءات في الشهر الحالي (fallback للتأكد من الدقة)
+   * يستبعد الإلغاءات الإدارية والتلقائية
+   */
+  private async getMonthlyCancellationCount(userId: string): Promise<number> {
+    try {
+      const userObjectId = new Types.ObjectId(userId);
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      const count = await this.requests.countDocuments({
+        userId: userObjectId,
+        status: 'CANCELLED',
+        cancelledAt: { $gte: startOfMonth, $lte: endOfMonth },
+        // استبعاد الإلغاءات الإدارية والتلقائية
+        // الإلغاءات الإدارية: cancellationReason = 'إلغاء إداري' أو يبدأ بـ 'إلغاء إداري:'
+        // الإلغاءات التلقائية: cancellationReason = 'انتهت صلاحية الطلب (5 أيام بدون قبول عرض)'
+        cancellationReason: {
+          $exists: true,
+          $nin: ['إلغاء إداري', 'انتهت صلاحية الطلب (5 أيام بدون قبول عرض)'],
+          $not: { $regex: /^إلغاء إداري:/ }, // استبعاد الإلغاءات الإدارية التي تبدأ بـ 'إلغاء إداري:'
+        },
+      });
+
+      return count;
+    } catch (error) {
+      this.logger.error(`Failed to get monthly cancellation count for user ${userId}:`, error);
+      return 0;
     }
   }
 
@@ -459,10 +521,50 @@ export class ServicesService {
     dto: CreateServiceRequestDto,
     uploadedFiles?: Array<{ buffer: Buffer; originalname: string; mimetype: string; size: number }>,
   ) {
+    // التحقق من تغيير الشهر وتصفير العدد تلقائياً
+    await this.checkAndResetMonthlyCount(userId);
+
+    // جلب المستخدم للتحقق من عدد الإلغاءات الشهرية
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new BadRequestException('USER_NOT_FOUND');
+    }
+
+    // التحقق من عدد الإلغاءات الشهرية (حد أقصى 3 في الشهر)
+    if (user.monthlyCancellationCount >= 3) {
+      // حساب العدد ديناميكياً كـ fallback للتأكد من الدقة
+      const actualCount = await this.getMonthlyCancellationCount(userId);
+      if (actualCount >= 3) {
+        const now = new Date();
+        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const monthNames = [
+          'يناير',
+          'فبراير',
+          'مارس',
+          'أبريل',
+          'مايو',
+          'يونيو',
+          'يوليو',
+          'أغسطس',
+          'سبتمبر',
+          'أكتوبر',
+          'نوفمبر',
+          'ديسمبر',
+        ];
+        throw new BadRequestException({
+          error: 'MONTHLY_CANCELLATION_LIMIT_REACHED',
+          message: `لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل حسابك في 1 ${monthNames[nextMonth.getMonth()]}.`,
+        });
+      }
+      // إذا كان العدد الفعلي أقل، نحدث العدد المخزن
+      user.monthlyCancellationCount = actualCount;
+      await user.save();
+    }
+
     // التحقق من ملكية العنوان
     const isValid = await this.addressesService.validateAddressOwnership(dto.addressId, userId);
     if (!isValid) {
-      throw new Error('ADDRESS_NOT_FOUND');
+      throw new BadRequestException('ADDRESS_NOT_FOUND');
     }
 
     // جلب تفاصيل العنوان
@@ -1080,19 +1182,42 @@ export class ServicesService {
       return { error: 'CANNOT_CANCEL', message: 'يمكن إلغاء الطلب فقط بعد قبول عرض من مهندس' };
     }
 
-    // التحقق من عدد الإلغاءات (حد أقصى 3)
-    const cancellationCount = await this.requests.countDocuments({
-      userId: userObjectId,
-      status: 'CANCELLED',
-      cancelledAt: { $exists: true },
-    });
+    // التحقق من تغيير الشهر وتصفير العدد تلقائياً
+    await this.checkAndResetMonthlyCount(userId);
 
-    if (cancellationCount >= 3) {
-      return {
-        error: 'CANCELLATION_LIMIT_REACHED',
-        message:
-          'لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات (3). يرجى الانتظار حتى يتم التعامل مع الخدمات الحالية.',
-      };
+    // جلب المستخدم للتحقق من عدد الإلغاءات الشهرية
+    const user = await this.userModel.findById(userId);
+    if (!user) return { error: 'USER_NOT_FOUND' };
+
+    // التحقق من عدد الإلغاءات الشهرية (حد أقصى 3 في الشهر)
+    if (user.monthlyCancellationCount >= 3) {
+      // حساب العدد ديناميكياً كـ fallback للتأكد من الدقة
+      const actualCount = await this.getMonthlyCancellationCount(userId);
+      if (actualCount >= 3) {
+        const now = new Date();
+        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const monthNames = [
+          'يناير',
+          'فبراير',
+          'مارس',
+          'أبريل',
+          'مايو',
+          'يونيو',
+          'يوليو',
+          'أغسطس',
+          'سبتمبر',
+          'أكتوبر',
+          'نوفمبر',
+          'ديسمبر',
+        ];
+        return {
+          error: 'CANCELLATION_LIMIT_REACHED',
+          message: `لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل حسابك في 1 ${monthNames[nextMonth.getMonth()]}.`,
+        };
+      }
+      // إذا كان العدد الفعلي أقل، نحدث العدد المخزن
+      user.monthlyCancellationCount = actualCount;
+      await user.save();
     }
 
     // تحديث حالة الطلب
@@ -1100,6 +1225,13 @@ export class ServicesService {
     r.cancellationReason = reason.trim();
     r.cancelledAt = new Date();
     await r.save();
+
+    // زيادة عدد الإلغاءات الشهرية
+    user.monthlyCancellationCount = (user.monthlyCancellationCount || 0) + 1;
+    if (!user.lastCancellationResetDate) {
+      user.lastCancellationResetDate = new Date();
+    }
+    await user.save();
 
     // تحديث حالة العروض المرتبطة
     await this.offers.updateMany(
@@ -3323,6 +3455,31 @@ export class ServicesService {
 
     this.logger.log(`Admin rejected offer ${offerId}. Reason: ${reason || 'No reason provided'}`);
     return { ok: true };
+  }
+
+  // === تصفير العدادات الشهرية للإلغاءات ===
+  async resetMonthlyCancellationCounts(): Promise<{ resetCount: number }> {
+    try {
+      const now = new Date();
+      const result = await this.userModel.updateMany(
+        {},
+        {
+          $set: {
+            monthlyCancellationCount: 0,
+            lastCancellationResetDate: now,
+          },
+        },
+      );
+
+      this.logger.log(
+        `[Reset Monthly Cancellations] Reset cancellation counts for ${result.modifiedCount} users`,
+      );
+
+      return { resetCount: result.modifiedCount || 0 };
+    } catch (error) {
+      this.logger.error('[Reset Monthly Cancellations] Error resetting cancellation counts:', error);
+      throw error;
+    }
   }
 
   // === إلغاء عرض من الأدمن ===

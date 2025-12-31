@@ -116,12 +116,23 @@ export class CustomerServicesController {
     },
   })
   @ApiBadRequestResponse({
-    description: 'بيانات غير صحيحة',
+    description: 'بيانات غير صحيحة أو وصلت للحد الأقصى من الإلغاءات',
     schema: {
-      example: {
-        statusCode: 400,
-        message: ['addressId must be a mongodb id'],
-        error: 'Bad Request',
+      examples: {
+        invalidData: {
+          value: {
+            statusCode: 400,
+            message: ['addressId must be a mongodb id'],
+            error: 'Bad Request',
+          },
+        },
+        cancellationLimitReached: {
+          value: {
+            statusCode: 400,
+            error: 'MONTHLY_CANCELLATION_LIMIT_REACHED',
+            message: 'لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل حسابك في 1 [الشهر القادم].',
+          },
+        },
       },
     },
   })
@@ -489,7 +500,7 @@ export class CustomerServicesController {
   @Post(':id/cancel')
   @ApiOperation({
     summary: 'إلغاء طلب خدمة',
-    description: 'إلغاء طلب خدمة من قبل العميل (يسمح فقط من حالة ASSIGNED، ويطلب سبب إجباري، وحد أقصى 3 إلغاءات)',
+    description: 'إلغاء طلب خدمة من قبل العميل (يسمح فقط من حالة ASSIGNED، ويطلب سبب إجباري، وحد أقصى 3 إلغاءات في الشهر)',
   })
   @ApiBody({
     type: CancelServiceRequestDto,
@@ -517,7 +528,7 @@ export class CustomerServicesController {
           value: {
             data: {
               error: 'CANCELLATION_LIMIT_REACHED',
-              message: 'لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات (3)',
+              message: 'لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل حسابك في بداية الشهر القادم.',
             },
           },
         },

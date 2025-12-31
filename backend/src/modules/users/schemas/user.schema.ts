@@ -119,6 +119,13 @@ export class User {
   @Prop() storeName?: string; // اسم المحل للتاجر
   @Prop() verificationNote?: string; // ملاحظة التحقق (اختياري)
 
+  // تتبع الإلغاءات الشهرية لطلبات الصيانة
+  @Prop({ default: 0, min: 0 })
+  monthlyCancellationCount!: number; // عدد الإلغاءات في الشهر الحالي
+
+  @Prop({ type: Date })
+  lastCancellationResetDate?: Date; // تاريخ آخر تصفير (للتأكد من تغيير الشهر)
+
   // Helper methods
   isAdmin(): boolean {
     return this.roles?.includes(UserRole.ADMIN) || this.roles?.includes(UserRole.SUPER_ADMIN);

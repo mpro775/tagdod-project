@@ -26,5 +26,20 @@ export class ServicesCronService {
       this.logger.error('[Cron] Error expiring old requests and offers:', error);
     }
   }
+
+  /**
+   * تصفير العدادات الشهرية للإلغاءات في أول كل شهر في منتصف الليل
+   */
+  @Cron('0 0 1 * *')
+  async resetMonthlyCancellationCounts() {
+    this.logger.log('[Cron] Resetting monthly cancellation counts...');
+
+    try {
+      const result = await this.servicesService.resetMonthlyCancellationCounts();
+      this.logger.log(`[Cron] Reset cancellation counts for ${result.resetCount} users`);
+    } catch (error) {
+      this.logger.error('[Cron] Error resetting monthly cancellation counts:', error);
+    }
+  }
 }
 
