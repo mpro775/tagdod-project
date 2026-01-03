@@ -505,7 +505,72 @@ export class ProductService {
     }
 
     if (search) {
-      filter.$text = { $search: search };
+      // بناء شروط البحث: البحث النصي + البحث في SKU (المنتجات والمتغيرات)
+      // Note: MongoDB لا يسمح باستخدام $text داخل $or
+      // الحل: استخدام regex للبحث النصي بدلاً من $text، ثم استخدام $or لدمج جميع الشروط
+      // هذا يعطي OR behavior: (text match) OR (SKU match in product) OR (SKU match in variants)
+      
+      const skuSearchConditions: Array<Record<string, unknown>> = [];
+      
+      // 1. البحث في SKU الخاص بالمنتج (regex - case insensitive)
+      skuSearchConditions.push({
+        sku: { $regex: search, $options: 'i' }
+      });
+      
+      // 2. البحث في SKU الخاص بالمتغيرات (Variants)
+      // جلب جميع المتغيرات التي SKU الخاص بها يطابق البحث
+      try {
+        const matchingVariants = await this.variantModel.find({
+          sku: { $regex: search, $options: 'i' },
+          deletedAt: null
+        }).select('productId').lean();
+        
+        if (matchingVariants && matchingVariants.length > 0) {
+          // استخراج productIds الفريدة
+          const productIds = [...new Set(
+            matchingVariants
+              .map((v: { productId?: string | Types.ObjectId }) => {
+                const pid = v.productId;
+                if (pid instanceof Types.ObjectId) {
+                  return pid.toString();
+                }
+                return String(pid);
+              })
+              .filter(Boolean)
+          )].map(id => {
+            if (Types.ObjectId.isValid(id)) {
+              return new Types.ObjectId(id);
+            }
+            return id;
+          });
+          
+          if (productIds.length > 0) {
+            // إضافة شرط البحث في productIds
+            skuSearchConditions.push({
+              _id: { $in: productIds }
+            });
+          }
+        }
+      } catch (error) {
+        this.logger.warn(`Error searching variants by SKU: ${error instanceof Error ? error.message : String(error)}`);
+        // في حالة الخطأ، نتابع بدون البحث في المتغيرات
+      }
+      
+      // الجمع بين البحث النصي والبحث في SKU
+      // استخدام regex للبحث النصي بدلاً من $text للسماح بدمجه مع SKU في $or
+      // هذا يعطي OR behavior صحيح: المنتج يطابق إذا طابق النص أو SKU (في المنتج أو المتغيرات)
+      
+      // إضافة شروط البحث النصي باستخدام regex (case-insensitive)
+      const textSearchConditions = [
+        { name: { $regex: search, $options: 'i' } },
+        { nameEn: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { descriptionEn: { $regex: search, $options: 'i' } }
+      ];
+      
+      // دمج شروط البحث النصي مع شروط SKU في $or واحد
+      // هذا يعطي OR behavior: المنتج يطابق إذا طابق النص أو SKU
+      filter.$or = [...textSearchConditions, ...skuSearchConditions];
     }
 
     if (categoryId) {

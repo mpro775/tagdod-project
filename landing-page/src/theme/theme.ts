@@ -37,42 +37,35 @@ const getBaseTheme = (mode: 'light' | 'dark'): ThemeOptions => ({
     ...themeColors,
     ...(mode === 'light'
       ? {
-          background: {
-            default: colors.background.light,
-            paper: colors.background.paper,
-          },
-          text: {
-            primary: colors.text.primary,
-            secondary: colors.text.secondary,
-          },
-        }
+        background: {
+          default: colors.background.light,
+          paper: colors.background.paper,
+        },
+        text: {
+          primary: colors.text.primary,
+          secondary: colors.text.secondary,
+        },
+      }
       : {
-          background: {
-            default: '#121212',
-            paper: '#1e1e1e',
-          },
-          text: {
-            primary: colors.text.light,
-            secondary: colors.text.muted,
-          },
-        }),
+        background: {
+          default: '#121212',
+          paper: '#1e1e1e',
+        },
+        text: {
+          primary: colors.text.light,
+          secondary: colors.text.muted,
+        },
+      }),
   },
   typography: {
     fontFamily: [
+      '"Graphik Arabic"',
       '"Cairo"',
       '"Tajawal"',
-      '"Amiri"',
-      '"Scheherazade New"',
-      '"Noto Sans Arabic"',
-      '"Arial Unicode MS"',
-      'system-ui',
+      '"Segoe UI Arabic"',
       '-apple-system',
       'BlinkMacSystemFont',
-      '"Segoe UI"',
-      '"Segoe UI Arabic"',
-      'Roboto',
-      '"Helvetica Neue"',
-      'Arial',
+      'system-ui',
       'sans-serif',
     ].join(','),
     button: {
