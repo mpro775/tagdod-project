@@ -17,7 +17,15 @@ import {
   Breadcrumbs,
   Link,
 } from '@mui/material';
-import { ArrowBack, Edit, Inventory, Star, NewReleases, Home, ChevronRight } from '@mui/icons-material';
+import {
+  ArrowBack,
+  Edit,
+  Inventory,
+  Star,
+  NewReleases,
+  Home,
+  ChevronRight,
+} from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useProduct, useProductVariants } from '../hooks/useProducts';
@@ -97,8 +105,8 @@ export const ProductViewPage: React.FC = () => {
   return (
     <Box>
       {/* Breadcrumbs */}
-      <Breadcrumbs 
-        separator={<ChevronRight fontSize="small" />} 
+      <Breadcrumbs
+        separator={<ChevronRight fontSize="small" />}
         sx={{ mb: 2 }}
         aria-label="breadcrumb"
       >
@@ -114,9 +122,7 @@ export const ProductViewPage: React.FC = () => {
           <Home sx={{ mr: 0.5 }} fontSize="inherit" />
           {t('products:list.title', 'المنتجات')}
         </Link>
-        <Typography color="text.primary">
-          {product.name}
-        </Typography>
+        <Typography color="text.primary">{product.name}</Typography>
       </Breadcrumbs>
 
       {/* Header */}
@@ -228,7 +234,32 @@ export const ProductViewPage: React.FC = () => {
                   <Typography variant="body2" color="text.secondary">
                     {t('view.sku')}
                   </Typography>
-                  <Typography variant="body1">{product.sku || t('view.skuNotSpecified')}</Typography>
+                  <Typography variant="body1">
+                    {product.sku || t('view.skuNotSpecified')}
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('view.price')}
+                  </Typography>
+                  <Typography variant="body1">
+                    {product.basePriceUSD
+                      ? `$${product.basePriceUSD.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`
+                      : t('view.priceNotSpecified')}
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('view.stock')}
+                  </Typography>
+                  <Typography variant="body1">
+                    {typeof product.stock === 'number'
+                      ? product.stock.toLocaleString('ar-SA')
+                      : t('view.stockNotSpecified')}
+                  </Typography>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
@@ -264,13 +295,20 @@ export const ProductViewPage: React.FC = () => {
                   </Typography>
                   <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                     <Rating
-                      value={product.useManualRating ? (product.manualRating || 0) : (product.averageRating || 0)}
+                      value={
+                        product.useManualRating
+                          ? product.manualRating || 0
+                          : product.averageRating || 0
+                      }
                       precision={0.1}
                       readOnly
                       size={isMobile ? 'small' : 'medium'}
                     />
                     <Typography variant="body1" fontWeight="bold">
-                      {(product.useManualRating ? (product.manualRating || 0) : (product.averageRating || 0)).toFixed(1)}
+                      {(product.useManualRating
+                        ? product.manualRating || 0
+                        : product.averageRating || 0
+                      ).toFixed(1)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {product.useManualRating
@@ -403,7 +441,9 @@ export const ProductViewPage: React.FC = () => {
               <Typography variant="body2" color="text.secondary">
                 {t('view.seo.metaTitle')}
               </Typography>
-              <Typography variant="body1">{product.metaTitle || t('view.seo.notSpecified')}</Typography>
+              <Typography variant="body1">
+                {product.metaTitle || t('view.seo.notSpecified')}
+              </Typography>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary">
