@@ -142,17 +142,14 @@ export class MarketingPublicController {
     status: 401,
     description: 'توكن غير صالح أو منتهي الصلاحية'
   })
+  // في MarketingPublicController
   async getActiveBanners(
     @Query('location') location?: BannerLocation,
     @Req() req?: { user?: { roles?: string[] } }
   ) {
-    // تعديل: بدلاً من عمل return، نقوم بتعريف الأدوار كقائمة فارغة في حال عدم وجود مستخدم
+    // لا تقم بعمل return [] هنا، بل مرر مصفوفة فارغة
     const userRoles = req?.user?.roles || [];
-
-    // الان نقوم بجلب البانرات سواء كان هناك مستخدم أم لا
-    // يجب أن تتأكد أن الدالة getActiveBanners في السيرفس تقبل roles فارغة
-    const banners = await this.svc.getActiveBanners(location, userRoles);
-    return banners;
+    return await this.svc.getActiveBanners(location, userRoles);
   }
 
   @Get('banners/:id/view')

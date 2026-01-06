@@ -72,7 +72,7 @@ export class MarketingService {
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private cacheService: CacheService,
-  ) {}
+  ) { }
 
   // ==================== PRICE RULES ====================
 
@@ -97,9 +97,9 @@ export class MarketingService {
       },
       usageLimits: dto.usageLimits
         ? {
-            ...dto.usageLimits,
-            currentUses: 0,
-          }
+          ...dto.usageLimits,
+          currentUses: 0,
+        }
         : undefined,
       metadata: dto.metadata || undefined,
       couponCode: dto.couponCode || undefined,
@@ -156,21 +156,21 @@ export class MarketingService {
     if (!rule) return null;
     rule.active = !rule.active;
     const savedRule = await rule.save();
-    
+
     // حذف كاش المنتجات عند تفعيل/إلغاء تفعيل قاعدة السعر
     await this.clearProductCache();
-    
+
     return savedRule;
   }
 
   async deletePriceRule(id: string): Promise<boolean> {
     const result = await this.priceRuleModel.findByIdAndDelete(id);
-    
+
     // حذف كاش المنتجات عند حذف قاعدة السعر
     if (result) {
       await this.clearProductCache();
     }
-    
+
     return !!result;
   }
 
@@ -565,7 +565,7 @@ export class MarketingService {
     brandId?: string;
   }): Promise<PriceRule[]> {
     const now = new Date();
-    
+
     // جلب جميع القواعد النشطة في الوقت الحالي
     const applicableRules = await this.priceRuleModel
       .find({
@@ -1292,10 +1292,10 @@ export class MarketingService {
     location?: BannerLocation,
     userRoles?: string[],
   ): Promise<PublicBannerResponse[]> {
-    if (!userRoles || userRoles.length === 0) {
-      // No user roles provided - return empty array (authentication required)
-      return [];
-    }
+    // هنا التعديل: إذا لم يكن هناك أدوار (زائر)، نعتبره 'user' بناءً على الـ Schema
+    const currentRoles = (!userRoles || userRoles.length === 0)
+      ? ['user']
+      : userRoles;
 
     const now = new Date();
     const query: Record<string, unknown> = {
@@ -1321,8 +1321,6 @@ export class MarketingService {
       .lean<BannerWithPopulatedImage[]>();
 
     // Filter by user types
-    // If banner has no targetUserTypes (empty array), it's visible to everyone
-    // If banner has targetUserTypes, it's visible only if user has one of the target roles
     const visibleBanners = allBanners.filter((banner) => {
       // Banner with no targeting is visible to everyone
       if (!banner.targetUserTypes || banner.targetUserTypes.length === 0) {
@@ -1330,7 +1328,8 @@ export class MarketingService {
       }
 
       // Check if user has matching roles
-      return banner.targetUserTypes.some((targetType) => userRoles.includes(targetType));
+      // سيتم الآن مقارنة 'user' مع الفئات المستهدفة للبانر
+      return banner.targetUserTypes.some((targetType) => currentRoles.includes(targetType));
     });
 
     return visibleBanners.map((banner) => this.mapPublicBannerResponse(banner));
@@ -1369,9 +1368,9 @@ export class MarketingService {
 
     const image = imageRecord?.url
       ? {
-          ...(imageIdValue ? { id: imageIdValue.toString() } : {}),
-          url: imageRecord.url,
-        }
+        ...(imageIdValue ? { id: imageIdValue.toString() } : {}),
+        url: imageRecord.url,
+      }
       : null;
 
     const navigationParams =
