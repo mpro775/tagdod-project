@@ -16,7 +16,7 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 @ApiTags('التسويق-العام')
 @Controller('marketing')
 export class MarketingPublicController {
-  constructor(private svc: MarketingService) {}
+  constructor(private svc: MarketingService) { }
 
   @Get('pricing/variant')
   @ApiOperation({
@@ -117,7 +117,7 @@ export class MarketingPublicController {
             type: 'object',
             properties: {
               id: { type: 'string', example: 'banner123', description: 'معرف البانر' },
-              image: { 
+              image: {
                 type: 'object',
                 properties: {
                   id: { type: 'string', example: 'img123' },
@@ -146,10 +146,11 @@ export class MarketingPublicController {
     @Query('location') location?: BannerLocation,
     @Req() req?: { user?: { roles?: string[] } }
   ) {
-    if (!req?.user) {
-      return [];
-    }
-    const userRoles = req.user.roles;
+    // تعديل: بدلاً من عمل return، نقوم بتعريف الأدوار كقائمة فارغة في حال عدم وجود مستخدم
+    const userRoles = req?.user?.roles || [];
+
+    // الان نقوم بجلب البانرات سواء كان هناك مستخدم أم لا
+    // يجب أن تتأكد أن الدالة getActiveBanners في السيرفس تقبل roles فارغة
     const banners = await this.svc.getActiveBanners(location, userRoles);
     return banners;
   }
