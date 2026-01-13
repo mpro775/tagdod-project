@@ -673,12 +673,16 @@ export class ServicesService {
     });
 
     // إرسال SMS للمهندسين في نفس المدينة فقط (في الخلفية)
+    // ⚠️ معلق مؤقتاً: تم تعطيل إرسال SMS للمهندسين عند إنشاء طلب صيانة مؤقتاً
+    // TODO: لإعادة تفعيل الميزة، قم بإلغاء التعليق من الأسطر التالية
+    /*
     this.sendSMSToEngineersInCity(addr.city, String(doc._id), dto.title).catch((error) => {
       this.logger.error(
         `Failed to send SMS to engineers in city ${addr.city} for request ${String(doc._id)}`,
         error,
       );
     });
+    */
 
     // تحديث استخدام العنوان (في الخلفية)
     this.addressesService.markAsUsed(dto.addressId, userId).catch((error) => {
