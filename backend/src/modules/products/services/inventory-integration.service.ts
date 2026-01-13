@@ -19,10 +19,10 @@ export class InventoryIntegrationService {
     ) { }
 
     /**
-     * 1. استقبال البيانات من السكربت المحلي
+     * 1. استقبال البيانات من السكربت المحلي (مع السعر)
      * هذه الدالة تقوم بتحديث "مخزون الظل" وتزامن المنتجات المربوطة
      */
-    async processBatchPayload(items: Array<{ sku: string; stock: number; name?: string }>) {
+    async processBatchPayload(items: Array<{ sku: string; stock: number; name?: string; price?: number }>) {
         this.logger.log(`Processing batch of ${items.length} items from Onyx...`);
 
         const bulkOps = items.map((item) => ({
@@ -32,6 +32,7 @@ export class InventoryIntegrationService {
                     $set: {
                         quantity: item.stock,
                         itemNameAr: item.name, // ✅ حفظ الاسم العربي
+                        price: item.price, // ✅ حفظ السعر في جدول الظل
                         lastSyncedAt: new Date(),
                     },
                 },
@@ -48,27 +49,42 @@ export class InventoryIntegrationService {
     }
 
     /**
-     * تحديث المخزون الفعلي في التطبيق بناءً على البيانات القادمة
+     * 2. عكس التحديثات على المنتجات والمتغيرات (مخزون + أسعار)
      */
-    private async syncLinkedProducts(items: Array<{ sku: string; stock: number }>) {
+    private async syncLinkedProducts(items: Array<{ sku: string; stock: number; price?: number }>) {
         // نستخدم bulkWrite للأداء العالي كما فعلنا سابقاً
         const productWrites = [];
         const variantWrites = [];
 
         for (const item of items) {
+            // تجهيز كائن التحديث للمنتجات
+            const updateData: Record<string, number> = { stock: item.stock };
+
+            // ✅ تحديث السعر فقط إذا كانت القيمة صالحة (أكبر من 0)
+            if (item.price !== undefined && item.price > 0) {
+                updateData.basePriceUSD = item.price; // تحديث السعر الأساسي بالدولار
+            }
+
             // تحديث المنتجات البسيطة
             productWrites.push({
                 updateOne: {
                     filter: { sku: item.sku },
-                    update: { $set: { stock: item.stock } },
+                    update: { $set: updateData },
                 },
             });
+
+            // تجهيز كائن تحديث المتغيرات (لاحظ اختلاف اسم حقل السعر في سكيما المتغيرات)
+            const variantUpdateData: Record<string, number> = { stock: item.stock };
+            if (item.price !== undefined && item.price > 0) {
+                variantUpdateData.price = item.price;       // للمتغيرات التي تستخدم price
+                variantUpdateData.basePriceUSD = item.price; // للمتغيرات التي تستخدم basePriceUSD
+            }
 
             // تحديث المتغيرات
             variantWrites.push({
                 updateOne: {
                     filter: { sku: item.sku },
-                    update: { $set: { stock: item.stock } },
+                    update: { $set: variantUpdateData },
                 },
             });
         }

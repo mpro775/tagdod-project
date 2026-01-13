@@ -12,6 +12,10 @@ export class ExternalStock {
     @Prop({ required: true, default: 0 })
     quantity!: number; // (ITEM_STOCK)
 
+    // ✅ حقل السعر القادم من أونكس
+    @Prop({ default: 0 })
+    price!: number;
+
     @Prop()
     itemNameAr?: string; // (للعرض فقط في التقارير)
 
