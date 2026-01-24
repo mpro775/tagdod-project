@@ -353,33 +353,65 @@ export class ProductService {
     }
 
     // التحقق من SKU المكرر قبل التحديث
-    if (productUpdateDto.sku && productUpdateDto.sku.trim() && productUpdateDto.sku !== product.sku) {
-      const existingProduct = await this.productModel.findOne({
-        sku: productUpdateDto.sku.trim(),
-        deletedAt: null,
-        _id: { $ne: new Types.ObjectId(id) },
-      });
+    // السماح بحذف SKU (تعيينه إلى null أو undefined أو string فارغ)
+    if (Object.prototype.hasOwnProperty.call(productUpdateDto, 'sku')) {
+      const newSku = productUpdateDto.sku?.trim() || null;
+      const currentSku = product.sku?.trim() || null;
       
-      if (existingProduct) {
-        this.logger.warn(`Duplicate SKU detected: ${productUpdateDto.sku}`, {
-          existingProductId: existingProduct._id,
-          productId: id,
+      // إذا كان SKU الجديد مختلف عن الحالي، تحقق من التكرار
+      if (newSku && newSku !== currentSku) {
+        const existingProduct = await this.productModel.findOne({
+          sku: newSku,
+          deletedAt: null,
+          _id: { $ne: new Types.ObjectId(id) },
         });
-        throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
-          sku: productUpdateDto.sku,
-          productId: id,
-          existingProductId: existingProduct._id.toString(),
-          reason: 'duplicate_sku',
-          message: 'رمز SKU موجود مسبقاً',
-        });
+        
+        if (existingProduct) {
+          this.logger.warn(`Duplicate SKU detected: ${newSku}`, {
+            existingProductId: existingProduct._id,
+            productId: id,
+          });
+          throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
+            sku: newSku,
+            productId: id,
+            existingProductId: existingProduct._id.toString(),
+            reason: 'duplicate_sku',
+            message: 'رمز SKU موجود مسبقاً',
+          });
+        }
       }
+      
+      // معالجة SKU: إذا كان فارغاً أو null، قم بتعيينه إلى null
+      updatePayload.sku = newSku;
     }
 
-    await this.productModel.updateOne(
-      { _id: id },
-      { $set: updatePayload },
-    );
-    await this.clearCache();
+    try {
+      await this.productModel.updateOne(
+        { _id: id },
+        { $set: updatePayload },
+      );
+      await this.clearCache();
+    } catch (error) {
+      // معالجة أخطاء MongoDB (مثل unique constraint)
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        const mongoError = error as { keyPattern?: Record<string, unknown> };
+        const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
+        if (field === 'sku') {
+          throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
+            sku: productUpdateDto.sku,
+            productId: id,
+            reason: 'duplicate_sku',
+            message: 'رمز SKU موجود مسبقاً',
+          });
+        }
+        throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
+          field,
+          reason: 'duplicate_field',
+          message: `${field} موجود مسبقاً`,
+        });
+      }
+      throw error;
+    }
 
     // توليد المتغيرات تلقائياً إذا تم تحديث السمات
     const finalAttributes = productUpdateDto.attributes || product.attributes || [];

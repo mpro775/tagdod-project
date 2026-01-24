@@ -238,6 +238,34 @@ export interface BulkSendNotificationDto extends CreateNotificationDto {
   targetUserIds: string[];
 }
 
+export interface NotificationDeliveryLog {
+  _id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  status: NotificationStatus;
+  channel: NotificationChannel;
+  sentAt?: Date;
+  deliveredAt?: Date;
+  failedAt?: Date;
+  errorMessage?: string;
+  errorCode?: string;
+  deviceToken?: string;
+  platform?: string;
+  createdAt: Date;
+}
+
+export interface NotificationDeliveryDetails {
+  notification: Notification | null;
+  logs: NotificationDeliveryLog[];
+  summary: {
+    total: number;
+    sent: number;
+    failed: number;
+    pending: number;
+  };
+}
+
 export interface ListNotificationsParams extends ListParams {
   recipientId?: string;
   type?: NotificationType;

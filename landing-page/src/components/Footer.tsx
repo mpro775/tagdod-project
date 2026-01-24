@@ -4,8 +4,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import InstagramIcon from '@mui/icons-material/Instagram';
-import LinkedInIcon from '@mui/icons-material/LinkedIn';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import YouTubeIcon from '@mui/icons-material/YouTube';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -30,11 +29,10 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: <FacebookIcon />, url: '#', label: 'Facebook' },
-  { icon: <TwitterIcon />, url: '#', label: 'Twitter' },
-  { icon: <InstagramIcon />, url: '#', label: 'Instagram' },
-  { icon: <LinkedInIcon />, url: '#', label: 'LinkedIn' },
-  { icon: <WhatsAppIcon />, url: '#', label: 'WhatsApp' },
+  { icon: <FacebookIcon />, url: 'https://www.facebook.com/tagadod.yemen', label: 'Facebook' },
+  { icon: <TwitterIcon />, url: 'https://x.com/TagadodE', label: 'Twitter' },
+  { icon: <InstagramIcon />, url: 'https://www.instagram.com/tagadodelectric', label: 'Instagram' },
+  { icon: <YouTubeIcon />, url: 'https://www.youtube.com/watch?v=qmtrNS4joeU&t=360s', label: 'YouTube' },
 ];
 
 const Footer: React.FC = () => {
@@ -70,7 +68,7 @@ const Footer: React.FC = () => {
                 maxWidth: 300,
               }}
             >
-              منصتك الأولى للطاقة الشمسية. نوفر لك أفضل المنتجات والخدمات لتجربة طاقة مستدامة ونظيفة.
+              منصتك الأولى للطاقة الشمسية والكهربائيات. نوفر لك أفضل المنتجات والخدمات لتجربة طاقة مستدامة ونظيفة.
             </Typography>
 
             {/* Contact Info */}
@@ -84,13 +82,13 @@ const Footer: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <PhoneIcon sx={{ color: '#90EE90', fontSize: 20 }} />
                 <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  +966 50 000 0000
+                  771250000
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <LocationOnIcon sx={{ color: '#90EE90', fontSize: 20 }} />
                 <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                  المملكة العربية السعودية
+                  صنعاء، اليمن
                 </Typography>
               </Box>
             </Stack>
@@ -220,6 +218,8 @@ const Footer: React.FC = () => {
                 <IconButton
                   key={social.label}
                   href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={social.label}
                   sx={{
                     color: 'rgba(255, 255, 255, 0.7)',
@@ -267,7 +267,7 @@ const Footer: React.FC = () => {
             variant="body2"
             sx={{ color: 'rgba(255, 255, 255, 0.5)' }}
           >
-            صُنع بـ ❤️ في المملكة العربية السعودية
+            صُنع بـ ❤️ في صنعاء، اليمن
           </Typography>
         </Box>
       </Container>

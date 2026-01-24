@@ -1259,6 +1259,20 @@ export class UnifiedNotificationController {
     };
   }
 
+  @Get('admin/notification/:id/delivery-details')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: تفاصيل إرسال الإشعار',
+    description: 'استرداد تفاصيل الإرسال لكل مستخدم (للإداريين فقط)',
+  })
+  @ApiParam({ name: 'id', description: 'معرف الإشعار' })
+  @ApiResponse({ status: 200, description: 'Delivery details retrieved successfully' })
+  async adminGetDeliveryDetails(@Param('id') id: string) {
+    const details = await this.notificationService.getNotificationDeliveryDetails(id);
+    return { success: true, data: details };
+  }
+
   // ===== Frequency Limit Admin Endpoints =====
 
   @Get('admin/users/:userId/frequency-stats')

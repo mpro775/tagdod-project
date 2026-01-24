@@ -41,6 +41,14 @@ export const useNotification = (id: string) => {
   });
 };
 
+export const useNotificationDeliveryDetails = (id: string) => {
+  return useQuery({
+    queryKey: ['notification-delivery-details', id],
+    queryFn: () => notificationsApi.getDeliveryDetails(id),
+    enabled: !!id,
+  });
+};
+
 export const useNotificationLogs = (params: ListNotificationsParams = {}) => {
   return useQuery({
     queryKey: [NOTIFICATION_LOGS_KEY, params],

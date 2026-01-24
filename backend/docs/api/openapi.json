@@ -7775,6 +7775,37 @@
         ]
       }
     },
+    "/api/v1/notifications/admin/notification/{id}/delivery-details": {
+      "get": {
+        "operationId": "adminGetDeliveryDetails",
+        "summary": "الإدارة: تفاصيل إرسال الإشعار",
+        "description": "استرداد تفاصيل الإرسال لكل مستخدم (للإداريين فقط)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف الإشعار",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Delivery details retrieved successfully"
+          }
+        },
+        "tags": [
+          "الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/notifications/admin/users/{userId}/frequency-stats": {
       "get": {
         "operationId": "adminGetUserFrequencyStats",

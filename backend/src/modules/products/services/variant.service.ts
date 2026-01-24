@@ -329,8 +329,46 @@ export class VariantService {
       throw new VariantNotFoundException({ variantId: id });
     }
 
+    // التحقق من SKU المكرر قبل التحديث
+    // السماح بحذف SKU (تعيينه إلى null أو undefined أو string فارغ)
+    if (Object.prototype.hasOwnProperty.call(dto, 'sku')) {
+      const newSku = dto.sku?.trim() || null;
+      const currentSku = variant.sku?.trim() || null;
+      
+      // إذا كان SKU الجديد مختلف عن الحالي، تحقق من التكرار
+      if (newSku && newSku !== currentSku) {
+        const existingVariant = await this.variantModel.findOne({
+          sku: newSku,
+          deletedAt: null,
+          _id: { $ne: new Types.ObjectId(id) },
+        });
+        
+        if (existingVariant) {
+          this.logger.warn(`Duplicate SKU detected: ${newSku}`, {
+            existingVariantId: existingVariant._id,
+            variantId: id,
+            productId: variant.productId,
+          });
+          throw new ProductException(ErrorCode.VARIANT_DUPLICATE_SKU, {
+            sku: newSku,
+            variantId: id,
+            productId: variant.productId,
+            existingVariantId: existingVariant._id.toString(),
+            reason: 'duplicate_sku',
+            message: 'رمز SKU موجود مسبقاً',
+          });
+        }
+      }
+    }
+
     // تحويل price إلى basePriceUSD إذا كان موجوداً
     const updateData: Record<string, unknown> = { ...dto };
+    
+    // معالجة SKU: إذا كان فارغاً أو null، قم بتعيينه إلى null
+    if (Object.prototype.hasOwnProperty.call(dto, 'sku')) {
+      const newSku = dto.sku?.trim() || null;
+      updateData.sku = newSku;
+    }
     
     if (Object.prototype.hasOwnProperty.call(dto, 'price') && dto.price !== undefined) {
       updateData.basePriceUSD = dto.price;
@@ -370,8 +408,31 @@ export class VariantService {
       Object.assign(updateData, pricingFields);
     }
 
-    await this.variantModel.updateOne({ _id: id }, { $set: updateData });
-    return this.findById(id);
+    try {
+      await this.variantModel.updateOne({ _id: id }, { $set: updateData });
+      return this.findById(id);
+    } catch (error) {
+      // معالجة أخطاء MongoDB (مثل unique constraint)
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        const mongoError = error as { keyPattern?: Record<string, unknown> };
+        const field = Object.keys(mongoError.keyPattern || {})[0] || 'field';
+        if (field === 'sku') {
+          throw new ProductException(ErrorCode.VARIANT_DUPLICATE_SKU, {
+            sku: dto.sku,
+            variantId: id,
+            productId: variant.productId,
+            reason: 'duplicate_sku',
+            message: 'رمز SKU موجود مسبقاً',
+          });
+        }
+        throw new ProductException(ErrorCode.PRODUCT_INVALID_DATA, {
+          field,
+          reason: 'duplicate_field',
+          message: `${field} موجود مسبقاً`,
+        });
+      }
+      throw error;
+    }
   }
 
   async delete(id: string, userId: string): Promise<Variant> {

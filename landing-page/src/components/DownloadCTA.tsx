@@ -131,7 +131,9 @@ const DownloadCTA: React.FC = () => {
                             variant="contained"
                             size="large"
                             startIcon={<AppleIcon />}
-                            href="#"
+                            href="https://apps.apple.com/ng/app/%D8%AA%D8%AC%D8%AF%D8%AF/id6756541667"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             sx={{
                                 py: 1.75,
                                 px: 4,

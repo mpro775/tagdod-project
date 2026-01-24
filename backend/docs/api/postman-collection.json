@@ -3843,6 +3843,35 @@
           }
         },
         {
+          "name": "الإدارة: تفاصيل إرسال الإشعار",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/notification/{id}/delivery-details",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "notification",
+                "{id}",
+                "delivery-details"
+              ]
+            },
+            "description": "استرداد تفاصيل الإرسال لكل مستخدم (للإداريين فقط)"
+          }
+        },
+        {
           "name": "الإدارة: إحصائيات تكرار الإشعارات للمستخدم",
           "request": {
             "method": "GET",

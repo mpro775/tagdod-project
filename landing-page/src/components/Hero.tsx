@@ -200,7 +200,7 @@ const Hero: React.FC = () => {
                   fontSize: { xs: "1rem", md: "1.15rem" },
                 }}
               >
-                اكتشف أحدث حلول الطاقة الشمسية مع تطبيق تجدد. تسوق من أفضل
+                اكتشف أحدث حلول الطاقة الشمسية والكهربائيات مع تطبيق تجدد. تسوق من أفضل
                 المنتجات، قارن الأسعار، واحصل على توصيل سريع لباب منزلك.
               </Typography>
 
@@ -218,7 +218,9 @@ const Hero: React.FC = () => {
                   variant="contained"
                   size="large"
                   startIcon={<AppleIcon />}
-                  href="#"
+                  href="https://apps.apple.com/ng/app/%D8%AA%D8%AC%D8%AF%D8%AF/id6756541667"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   sx={{
                     py: 1.75,
                     px: 4,
@@ -399,7 +401,7 @@ const Hero: React.FC = () => {
                       px: 4,
                     }}
                   >
-                    منصتك الأولى للطاقة الشمسية
+                    منصتك الأولى للطاقة الشمسية والكهربائيات
                   </Typography>
 
                   {/* Decorative Elements */}

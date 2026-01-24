@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,17 +17,30 @@ import {
   AccordionSummary,
   AccordionDetails,
   useTheme,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  TextField,
+  CircularProgress,
+  Tooltip,
 } from '@mui/material';
-import { Visibility, ExpandMore } from '@mui/icons-material';
+import { Visibility, ExpandMore, CheckCircle, Error, Schedule, Search } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
-import { Notification } from '../types/notification.types';
+import { Notification, NotificationStatus } from '../types/notification.types';
 import { formatDate } from '@/shared/utils/formatters';
 import { getChannelIcon } from './notificationHelpers';
 import { NotificationStatusChip } from './NotificationStatusChip';
 import { NotificationChannelChip } from './NotificationChannelChip';
 import { NotificationPriorityChip } from './NotificationPriorityChip';
 import { NotificationCategoryChip } from './NotificationCategoryChip';
+import { useNotificationDeliveryDetails } from '../hooks/useNotifications';
 
 interface NotificationViewDialogProps {
   open: boolean;
@@ -43,6 +56,28 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
   const { t } = useTranslation('notifications');
   const { isMobile } = useBreakpoint();
   const theme = useTheme();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // جلب تفاصيل الإرسال
+  const {
+    data: deliveryDetails,
+    isLoading: isLoadingDetails,
+    error: deliveryError,
+  } = useNotificationDeliveryDetails(notification?._id || '');
+
+  // فلترة السجلات حسب البحث
+  const filteredLogs = useMemo(() => {
+    if (!deliveryDetails?.logs) return [];
+    if (!searchQuery.trim()) return deliveryDetails.logs;
+
+    const query = searchQuery.toLowerCase();
+    return deliveryDetails.logs.filter(
+      (log) =>
+        log.userName?.toLowerCase().includes(query) ||
+        log.userEmail?.toLowerCase().includes(query) ||
+        log.errorMessage?.toLowerCase().includes(query)
+    );
+  }, [deliveryDetails?.logs, searchQuery]);
 
   if (!notification) return null;
 
@@ -320,6 +355,240 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
               </AccordionDetails>
             </Accordion>
           )}
+
+          {/* Delivery Details */}
+          <Accordion defaultExpanded={!!deliveryDetails?.logs.length}>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}>
+                {t('dialogs.deliveryDetails', 'تفاصيل الإرسال')}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {isLoadingDetails ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                  <CircularProgress size={40} />
+                </Box>
+              ) : deliveryError ? (
+                <Alert severity="error">
+                  {t('messages.loadingError', 'حدث خطأ أثناء تحميل التفاصيل')}
+                </Alert>
+              ) : deliveryDetails ? (
+                <Stack spacing={3}>
+                  {/* Summary Cards */}
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 6, sm: 3 }}>
+                      <Card>
+                        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                          <Typography variant="h4" color="text.secondary" sx={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>
+                            {deliveryDetails.summary.total}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                            {t('dialogs.total', 'إجمالي')}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid size={{ xs: 6, sm: 3 }}>
+                      <Card sx={{ bgcolor: 'success.light', color: 'success.contrastText' }}>
+                        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                          <Typography variant="h4" sx={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>
+                            {deliveryDetails.summary.sent}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                            {t('dialogs.sent', 'نجح')}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid size={{ xs: 6, sm: 3 }}>
+                      <Card sx={{ bgcolor: 'error.light', color: 'error.contrastText' }}>
+                        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                          <Typography variant="h4" sx={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>
+                            {deliveryDetails.summary.failed}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                            {t('dialogs.failed', 'فشل')}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid size={{ xs: 6, sm: 3 }}>
+                      <Card sx={{ bgcolor: 'warning.light', color: 'warning.contrastText' }}>
+                        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                          <Typography variant="h4" sx={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>
+                            {deliveryDetails.summary.pending}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                            {t('dialogs.pending', 'قيد الانتظار')}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </Grid>
+
+                  {/* Search */}
+                  {deliveryDetails.logs.length > 0 && (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder={t('dialogs.searchUsers', 'البحث في المستخدمين...')}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      InputProps={{
+                        startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                      }}
+                    />
+                  )}
+
+                  {/* Logs Table */}
+                  {filteredLogs.length > 0 ? (
+                    <TableContainer component={Paper} variant="outlined">
+                      <Table size={isMobile ? 'small' : 'medium'}>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                              {t('dialogs.user', 'المستخدم')}
+                            </TableCell>
+                            <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                              {t('dialogs.status', 'الحالة')}
+                            </TableCell>
+                            <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                              {t('dialogs.channel', 'القناة')}
+                            </TableCell>
+                            <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                              {t('dialogs.time', 'الوقت')}
+                            </TableCell>
+                            <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                              {t('dialogs.error', 'الخطأ')}
+                            </TableCell>
+                            {!isMobile && (
+                              <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                                {t('dialogs.device', 'الجهاز')}
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {filteredLogs.map((log) => (
+                            <TableRow key={log._id} hover>
+                              <TableCell>
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.75rem' : undefined }}>
+                                    {log.userName}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: isMobile ? '0.7rem' : undefined }}>
+                                    {log.userEmail}
+                                  </Typography>
+                                </Box>
+                              </TableCell>
+                              <TableCell>
+                                {log.status === NotificationStatus.SENT ? (
+                                  <Chip
+                                    icon={<CheckCircle />}
+                                    label={t('dialogs.sent', 'نجح')}
+                                    color="success"
+                                    size="small"
+                                    sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
+                                  />
+                                ) : log.status === NotificationStatus.FAILED ? (
+                                  <Chip
+                                    icon={<Error />}
+                                    label={t('dialogs.failed', 'فشل')}
+                                    color="error"
+                                    size="small"
+                                    sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
+                                  />
+                                ) : (
+                                  <Chip
+                                    icon={<Schedule />}
+                                    label={t('dialogs.pending', 'قيد الانتظار')}
+                                    color="warning"
+                                    size="small"
+                                    sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
+                                  />
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <NotificationChannelChip channel={log.channel} />
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                                  {log.sentAt
+                                    ? formatDate(log.sentAt)
+                                    : log.failedAt
+                                    ? formatDate(log.failedAt)
+                                    : formatDate(log.createdAt)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                {log.errorMessage ? (
+                                  <Tooltip title={log.errorMessage}>
+                                    <Typography
+                                      variant="caption"
+                                      color="error"
+                                      sx={{
+                                        fontSize: isMobile ? '0.7rem' : undefined,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        display: 'block',
+                                        maxWidth: isMobile ? 100 : 200,
+                                      }}
+                                    >
+                                      {log.errorCode || log.errorMessage}
+                                    </Typography>
+                                  </Tooltip>
+                                ) : (
+                                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: isMobile ? '0.7rem' : undefined }}>
+                                    -
+                                  </Typography>
+                                )}
+                              </TableCell>
+                              {!isMobile && (
+                                <TableCell>
+                                  {log.deviceToken ? (
+                                    <Box>
+                                      <Typography variant="caption" sx={{ fontSize: '0.7rem', display: 'block' }}>
+                                        {log.platform || 'Unknown'}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{
+                                          fontSize: '0.65rem',
+                                          fontFamily: 'monospace',
+                                          wordBreak: 'break-all',
+                                          display: 'block',
+                                          maxWidth: 150,
+                                        }}
+                                      >
+                                        {log.deviceToken.substring(0, 20)}...
+                                      </Typography>
+                                    </Box>
+                                  ) : (
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                                      -
+                                    </Typography>
+                                  )}
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  ) : deliveryDetails.logs.length === 0 ? (
+                    <Alert severity="info">
+                      {t('dialogs.noDeliveryLogs', 'لا توجد سجلات إرسال لهذا الإشعار')}
+                    </Alert>
+                  ) : (
+                    <Alert severity="info">
+                      {t('dialogs.noMatchingLogs', 'لا توجد نتائج مطابقة للبحث')}
+                    </Alert>
+                  )}
+                </Stack>
+              ) : null}
+            </AccordionDetails>
+          </Accordion>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: isMobile ? 2 : 3, pb: isMobile ? 2 : 3 }}>

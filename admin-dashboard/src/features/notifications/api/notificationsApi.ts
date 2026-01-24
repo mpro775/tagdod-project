@@ -18,6 +18,7 @@ import type {
   UpdateChannelConfigDto,
   InitializeChannelConfigsResponse,
   NotificationType,
+  NotificationDeliveryDetails,
 } from '../types/notification.types';
 
 export const notificationsApi = {
@@ -59,6 +60,14 @@ export const notificationsApi = {
       `/notifications/admin/notification/${id}`
     );
     // Backend returns: { success: true, data: notification }
+    return response.data.data || response.data;
+  },
+
+  getDeliveryDetails: async (id: string): Promise<NotificationDeliveryDetails> => {
+    const response = await apiClient.get<ApiResponse<NotificationDeliveryDetails>>(
+      `/notifications/admin/notification/${id}/delivery-details`
+    );
+    // Backend returns: { success: true, data: details }
     return response.data.data || response.data;
   },
 

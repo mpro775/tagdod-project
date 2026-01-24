@@ -13,7 +13,8 @@ import {
   UnifiedNotification,
   UnifiedNotificationDocument,
 } from '../schemas/unified-notification.schema';
-import { NotificationStatus, NotificationChannel } from '../enums/notification.enums';
+import { NotificationLog, NotificationLogDocument } from '../schemas/notification-log.schema';
+import { NotificationStatus, NotificationChannel, DevicePlatform } from '../enums/notification.enums';
 import { WebSocketService } from '../../../shared/websocket/websocket.service';
 import { PushNotificationAdapter } from '../adapters/notification.adapters';
 import { DeviceToken, DeviceTokenDocument } from '../schemas/device-token.schema';
@@ -25,6 +26,8 @@ export class NotificationProcessor {
   constructor(
     @InjectModel(UnifiedNotification.name)
     private readonly notificationModel: Model<UnifiedNotificationDocument>,
+    @InjectModel(NotificationLog.name)
+    private readonly notificationLogModel: Model<NotificationLogDocument>,
     @InjectModel(DeviceToken.name)
     private readonly deviceTokenModel: Model<DeviceTokenDocument>,
     private readonly webSocketService: WebSocketService,
@@ -32,6 +35,68 @@ export class NotificationProcessor {
     @Inject(forwardRef(() => NotificationQueueService))
     private readonly queueService: NotificationQueueService,
   ) {}
+
+  /**
+   * إنشاء سجل إشعار لكل مستخدم
+   */
+  private async createNotificationLog(
+    notificationId: string,
+    userId: string,
+    data: NotificationJobData,
+    status: NotificationStatus,
+    errorMessage?: string,
+    errorCode?: string,
+    deviceToken?: string,
+    platform?: DevicePlatform,
+  ): Promise<NotificationLogDocument> {
+    const log = new this.notificationLogModel({
+      userId: new Types.ObjectId(userId),
+      notificationId: new Types.ObjectId(notificationId),
+      templateKey: (data as any).templateKey || 'manual',
+      channel: data.channel,
+      status,
+      title: data.title,
+      body: data.message,
+      messageEn: data.messageEn,
+      data: data.data || {},
+      actionUrl: data.actionUrl,
+      priority: data.priority,
+      deviceToken: deviceToken ? deviceToken.substring(0, 500) : undefined,
+      platform,
+      errorMessage: errorMessage ? errorMessage.substring(0, 500) : undefined,
+      errorCode: errorCode ? errorCode.substring(0, 50) : undefined,
+      sentAt: status === NotificationStatus.SENT ? new Date() : undefined,
+      failedAt: status === NotificationStatus.FAILED ? new Date() : undefined,
+      trackingId: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      metadata: {
+        provider: data.channel === NotificationChannel.PUSH ? 'FCM' : undefined,
+      },
+    });
+
+    return await log.save();
+  }
+
+  /**
+   * تحديث سجل إشعار
+   */
+  private async updateNotificationLog(
+    logId: string,
+    status: NotificationStatus,
+    errorMessage?: string,
+    errorCode?: string,
+  ): Promise<void> {
+    const updateData: any = { status };
+
+    if (status === NotificationStatus.SENT) {
+      updateData.sentAt = new Date();
+    } else if (status === NotificationStatus.FAILED) {
+      updateData.failedAt = new Date();
+      if (errorMessage) updateData.errorMessage = errorMessage.substring(0, 500);
+      if (errorCode) updateData.errorCode = errorCode.substring(0, 50);
+    }
+
+    await this.notificationLogModel.updateOne({ _id: logId }, { $set: updateData });
+  }
 
   @Process('send')
   async handleSend(job: Job<NotificationJobData>): Promise<void> {
@@ -45,25 +110,58 @@ export class NotificationProcessor {
         { $set: { status: NotificationStatus.SENDING } },
       );
 
+      // إنشاء سجل إشعار إذا كان هناك recipientId
+      let notificationLog: NotificationLogDocument | null = null;
+      if (data.recipientId) {
+        notificationLog = await this.createNotificationLog(
+          data.notificationId,
+          data.recipientId,
+          data,
+          NotificationStatus.SENDING,
+        );
+      }
+
       // Process based on channel
       let success = false;
       let errorMessage: string | undefined;
+      let errorCode: string | undefined;
 
       switch (data.channel) {
         case NotificationChannel.IN_APP:
         case NotificationChannel.DASHBOARD:
-          success = await this.sendInApp(data);
+          const inAppResult = await this.sendInApp(data, notificationLog?._id.toString());
+          success = inAppResult.success;
+          errorMessage = inAppResult.error;
+          errorCode = inAppResult.errorCode;
           break;
 
         case NotificationChannel.PUSH:
-          const result = await this.sendPush(data);
-          success = result.success;
-          errorMessage = result.error;
+          const pushResult = await this.sendPush(data, notificationLog?._id.toString());
+          success = pushResult.success;
+          errorMessage = pushResult.error;
+          errorCode = pushResult.errorCode;
           break;
 
         // EMAIL and SMS channels can be added here when needed
         default:
-          success = await this.sendInApp(data);
+          const defaultResult = await this.sendInApp(data, notificationLog?._id.toString());
+          success = defaultResult.success;
+          errorMessage = defaultResult.error;
+          errorCode = defaultResult.errorCode;
+      }
+
+      // تحديث سجل الإشعار
+      if (notificationLog) {
+        if (success) {
+          await this.updateNotificationLog(notificationLog._id.toString(), NotificationStatus.SENT);
+        } else {
+          await this.updateNotificationLog(
+            notificationLog._id.toString(),
+            NotificationStatus.FAILED,
+            errorMessage,
+            errorCode,
+          );
+        }
       }
 
       if (success) {
@@ -105,21 +203,21 @@ export class NotificationProcessor {
   /**
    * Send in-app notification via WebSocket
    */
-  private async sendInApp(data: NotificationJobData): Promise<boolean> {
+  private async sendInApp(
+    data: NotificationJobData,
+    logId?: string,
+  ): Promise<{ success: boolean; error?: string; errorCode?: string }> {
     if (!data.recipientId) {
-      // تحديث حالة الإشعار في قاعدة البيانات بدلاً من مجرد التحذير
-      await this.notificationModel.updateOne(
-        { _id: data.notificationId },
-        {
-          $set: {
-            status: NotificationStatus.FAILED,
-            errorMessage: 'No recipientId provided',
-            failedAt: new Date(),
-          },
-        },
-      );
+      if (logId) {
+        await this.updateNotificationLog(
+          logId,
+          NotificationStatus.FAILED,
+          'No recipientId provided',
+          'NO_RECIPIENT',
+        );
+      }
       this.logger.debug(`Skipping notification ${data.notificationId} - no recipientId`);
-      return true; // Consider it successful to avoid retry
+      return { success: false, error: 'No recipientId provided', errorCode: 'NO_RECIPIENT' };
     }
 
     const isUserOnline = this.webSocketService.isUserOnline(data.recipientId);
@@ -144,26 +242,36 @@ export class NotificationProcessor {
 
       if (sent) {
         this.logger.log(`IN_APP notification sent via WebSocket to user: ${data.recipientId}`);
-        return true;
+        return { success: true };
       }
     }
 
     // If user is offline for IN_APP, try push as fallback
     if (data.channel === NotificationChannel.IN_APP) {
       this.logger.log(`User ${data.recipientId} is offline, attempting push notification fallback`);
-      const pushResult = await this.sendPush(data);
-      return pushResult.success;
+      return await this.sendPush(data, logId);
     }
 
-    return true; // Dashboard notifications don't need push fallback
+    return { success: true }; // Dashboard notifications don't need push fallback
   }
 
   /**
    * Send push notification via FCM
    */
-  private async sendPush(data: NotificationJobData): Promise<{ success: boolean; error?: string }> {
+  private async sendPush(
+    data: NotificationJobData,
+    logId?: string,
+  ): Promise<{ success: boolean; error?: string; errorCode?: string }> {
     if (!data.recipientId) {
-      return { success: false, error: 'No recipientId for push notification' };
+      if (logId) {
+        await this.updateNotificationLog(
+          logId,
+          NotificationStatus.FAILED,
+          'No recipientId for push notification',
+          'NO_RECIPIENT',
+        );
+      }
+      return { success: false, error: 'No recipientId for push notification', errorCode: 'NO_RECIPIENT' };
     }
 
     // Get device tokens for user
@@ -176,11 +284,20 @@ export class NotificationProcessor {
 
     if (deviceTokens.length === 0) {
       this.logger.debug(`No active device tokens for user ${data.recipientId}`);
-      return { success: true }; // Consider it successful if no devices
+      if (logId) {
+        await this.updateNotificationLog(
+          logId,
+          NotificationStatus.FAILED,
+          'No active device tokens found',
+          'NO_DEVICE_TOKEN',
+        );
+      }
+      return { success: false, error: 'No active device tokens found', errorCode: 'NO_DEVICE_TOKEN' };
     }
 
     let successCount = 0;
     let lastError: string | undefined;
+    let lastErrorCode: string | undefined;
 
     for (const deviceToken of deviceTokens) {
       try {
@@ -199,6 +316,17 @@ export class NotificationProcessor {
 
         if (result.success) {
           successCount++;
+          // إنشاء سجل منفصل لكل جهاز ناجح
+          await this.createNotificationLog(
+            data.notificationId,
+            data.recipientId,
+            data,
+            NotificationStatus.SENT,
+            undefined,
+            undefined,
+            deviceToken.token,
+            deviceToken.platform as DevicePlatform,
+          );
           // Update last used timestamp
           await this.deviceTokenModel.updateOne(
             { _id: deviceToken._id },
@@ -206,12 +334,25 @@ export class NotificationProcessor {
           );
         } else {
           lastError = result.error;
-          // Disable invalid tokens
           const errorCode =
             result.metadata && typeof result.metadata === 'object' && 'errorCode' in result.metadata
               ? String(result.metadata.errorCode)
-              : '';
+              : 'UNKNOWN_ERROR';
+          lastErrorCode = errorCode;
 
+          // إنشاء سجل فشل لكل جهاز
+          await this.createNotificationLog(
+            data.notificationId,
+            data.recipientId,
+            data,
+            NotificationStatus.FAILED,
+            result.error,
+            errorCode,
+            deviceToken.token,
+            deviceToken.platform as DevicePlatform,
+          );
+
+          // Disable invalid tokens
           if (
             errorCode.includes('invalid') ||
             errorCode.includes('unregistered') ||
@@ -226,6 +367,7 @@ export class NotificationProcessor {
         }
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error);
+        lastErrorCode = 'EXCEPTION';
         this.logger.error(`Error sending to device ${deviceToken._id}: ${lastError}`);
       }
     }
@@ -234,10 +376,22 @@ export class NotificationProcessor {
       this.logger.log(
         `Push notification sent to ${successCount}/${deviceTokens.length} devices for user ${data.recipientId}`,
       );
+      if (logId) {
+        await this.updateNotificationLog(logId, NotificationStatus.SENT);
+      }
       return { success: true };
     }
 
-    return { success: false, error: lastError || 'All device tokens failed' };
+    if (logId) {
+      await this.updateNotificationLog(
+        logId,
+        NotificationStatus.FAILED,
+        lastError || 'All device tokens failed',
+        lastErrorCode,
+      );
+    }
+
+    return { success: false, error: lastError || 'All device tokens failed', errorCode: lastErrorCode };
   }
 
   // ===== Event Handlers =====

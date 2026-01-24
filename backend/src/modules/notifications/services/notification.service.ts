@@ -5,6 +5,7 @@ import {
   UnifiedNotification,
   UnifiedNotificationDocument,
 } from '../schemas/unified-notification.schema';
+import { NotificationLog, NotificationLogDocument } from '../schemas/notification-log.schema';
 import {
   CreateNotificationDto,
   UpdateNotificationDto,
@@ -44,6 +45,8 @@ export class NotificationService implements OnModuleInit {
   constructor(
     @InjectModel(UnifiedNotification.name)
     private notificationModel: Model<UnifiedNotificationDocument>,
+    @InjectModel(NotificationLog.name)
+    private notificationLogModel: Model<NotificationLogDocument>,
     @InjectModel(DeviceToken.name)
     private deviceTokenModel: Model<DeviceTokenDocument>,
     @InjectModel(User.name)
@@ -1799,6 +1802,80 @@ export class NotificationService implements OnModuleInit {
       this.logger.log(`Cleaned up ${cleanedCount} invalid notifications (missing recipientId)`);
     }
     return cleanedCount;
+  }
+
+  /**
+   * الحصول على تفاصيل الإرسال لإشعار محدد
+   */
+  async getNotificationDeliveryDetails(notificationId: string): Promise<{
+    notification: UnifiedNotificationDocument | null;
+    logs: Array<{
+      _id: string;
+      userId: string;
+      userName?: string;
+      userEmail?: string;
+      status: NotificationStatus;
+      channel: NotificationChannel;
+      sentAt?: Date;
+      deliveredAt?: Date;
+      failedAt?: Date;
+      errorMessage?: string;
+      errorCode?: string;
+      deviceToken?: string;
+      platform?: string;
+      createdAt: Date;
+    }>;
+    summary: {
+      total: number;
+      sent: number;
+      failed: number;
+      pending: number;
+    };
+  }> {
+    // جلب الإشعار
+    const notification = await this.notificationModel.findById(notificationId).lean();
+
+    // جلب جميع السجلات للإشعار
+    const logs = await this.notificationLogModel
+      .find({ notificationId: new Types.ObjectId(notificationId) })
+      .populate('userId', 'name email phone')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // تحضير البيانات
+    const logsWithUserInfo = logs.map((log) => {
+      const user = log.userId as any;
+      return {
+        _id: log._id.toString(),
+        userId: log.userId.toString(),
+        userName: user?.name || 'غير معروف',
+        userEmail: user?.email || 'غير معروف',
+        status: log.status,
+        channel: log.channel,
+        sentAt: log.sentAt,
+        deliveredAt: log.deliveredAt,
+        failedAt: log.failedAt,
+        errorMessage: log.errorMessage,
+        errorCode: log.errorCode,
+        deviceToken: log.deviceToken,
+        platform: log.platform,
+        createdAt: log.createdAt || new Date(),
+      };
+    });
+
+    // حساب الملخص
+    const summary = {
+      total: logsWithUserInfo.length,
+      sent: logsWithUserInfo.filter((log) => log.status === NotificationStatus.SENT).length,
+      failed: logsWithUserInfo.filter((log) => log.status === NotificationStatus.FAILED).length,
+      pending: logsWithUserInfo.filter((log) => log.status === NotificationStatus.PENDING).length,
+    };
+
+    return {
+      notification: notification as UnifiedNotificationDocument,
+      logs: logsWithUserInfo,
+      summary,
+    };
   }
 
   /**
