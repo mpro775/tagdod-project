@@ -121,7 +121,9 @@ services:
       - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
       # إعدادات قاعدة البيانات و Redis تبقى كما هي لضمان الاحترافية
       - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql # السطر الناقص الذي يسبب الخطأ
       - DATABASE_CONNECTION_URI=postgresql://tagdod_user:tagdod_pass@evolution-db:5432/evolution_db?sslmode=disable
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_api
       - CACHE_REDIS_ENABLED=true
       - CACHE_REDIS_URI=redis://redis:6379
     volumes:
