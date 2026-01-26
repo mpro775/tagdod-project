@@ -109,7 +109,7 @@ services:
   # EVOLUTION API - WHATSAPP SERVICE
   # ========================================
   evolution-api:
-    image: atendare/evolution-api:latest
+    image: evolutionapi/evolution-api:lates
     container_name: tagdod-evolution
     restart: unless-stopped
     environment:
