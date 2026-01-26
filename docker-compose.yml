@@ -115,6 +115,11 @@ services:
     environment:
       - TZ=Asia/Aden
       - SERVER_URL=https://whatsapp.tagadod.app
+      # --- السطور المطلوبة لحل المشكلة ---
+      - WA_MODULE_DEFAULT_INTEGRATION=baileys
+      - WA_MODULE_ENABLED=true
+      - WHATSAPP_ENABLED=true 
+      # ---------------------------------
       - SERVER_TYPE=http
       - AUTHENTICATION_TYPE=apikey
       - AUTHENTICATION_API_KEY=Your_Super_Secret_Key_Change_Me
