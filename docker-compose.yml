@@ -114,7 +114,7 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Asia/Aden
-      - SERVER_URL=https://whatsapp.tagdod.app
+      - SERVER_URL=https://whatsapp.tagadod.app
       - SERVER_TYPE=http
       - AUTHENTICATION_TYPE=apikey
       - AUTHENTICATION_API_KEY=Your_Super_Secret_Key_Change_Me
