@@ -105,12 +105,65 @@ services:
       timeout: 10s
       retries: 3
 
+  # ========================================
+  # EVOLUTION API - WHATSAPP SERVICE
+  # ========================================
+  evolution-api:
+    image: atendare/evolution-api:latest
+    container_name: tagdod-evolution
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Aden
+      - SERVER_URL=https://whatsapp.tagdod.com # استبدله بدومينك لاحقاً في NPM
+      - SERVER_TYPE=http
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=Your_Super_Secret_Key_Change_Me # مفتاح الأمان لـ NestJS
+      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
+      # إعدادات قاعدة البيانات (للحفاظ على الجلسات)
+      - DATABASE_ENABLED=true
+      - DATABASE_CONNECTION_URI=postgresql://tagdod_user:tagdod_pass@evolution-db:5432/evolution_db?sslmode=disable
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_api
+      # ربطها بـ Redis الموجود لديك للتخزين المؤقت
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      # إعدادات إضافية للمطورين
+      - DELAY_MESSAGES=true
+    depends_on:
+      evolution-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tagdod-network
+
+  # قاعدة بيانات خاصة بـ Evolution API لضمان استقلال البيانات
+  evolution-db:
+    image: postgres:15-alpine
+    container_name: tagdod-evolution-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=tagdod_user
+      - POSTGRES_PASSWORD=tagdod_pass
+      - POSTGRES_DB=evolution_db
+    volumes:
+      - evolution-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tagdod_user -d evolution_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tagdod-network
+
 volumes:
   redis-data:
     driver: local
   npm-data:
     driver: local
   npm-letsencrypt:
+    driver: local
+  evolution-db-data: # المجلد الجديد
     driver: local
 
 networks:
