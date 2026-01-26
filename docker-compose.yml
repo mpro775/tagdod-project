@@ -109,26 +109,24 @@ services:
   # EVOLUTION API - WHATSAPP SERVICE
   # ========================================
   evolution-api:
-    image: evolutionapi/evolution-api:lates
+    image: atendai/evolution-api:latest # الاسم الصحيح حسب التوثيق الرسمي
     container_name: tagdod-evolution
     restart: unless-stopped
     environment:
       - TZ=Asia/Aden
-      - SERVER_URL=https://whatsapp.tagdod.com # استبدله بدومينك لاحقاً في NPM
+      - SERVER_URL=https://whatsapp.tagdod.app
       - SERVER_TYPE=http
       - AUTHENTICATION_TYPE=apikey
-      - AUTHENTICATION_API_KEY=Your_Super_Secret_Key_Change_Me # مفتاح الأمان لـ NestJS
+      - AUTHENTICATION_API_KEY=Your_Super_Secret_Key_Change_Me
       - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
-      # إعدادات قاعدة البيانات (للحفاظ على الجلسات)
+      # إعدادات قاعدة البيانات و Redis تبقى كما هي لضمان الاحترافية
       - DATABASE_ENABLED=true
       - DATABASE_CONNECTION_URI=postgresql://tagdod_user:tagdod_pass@evolution-db:5432/evolution_db?sslmode=disable
-      - DATABASE_CONNECTION_CLIENT_NAME=evolution_api
-      # ربطها بـ Redis الموجود لديك للتخزين المؤقت
       - CACHE_REDIS_ENABLED=true
       - CACHE_REDIS_URI=redis://redis:6379
-      - CACHE_REDIS_PREFIX_KEY=evolution
-      # إعدادات إضافية للمطورين
-      - DELAY_MESSAGES=true
+    volumes:
+      - evolution_store:/evolution/store       # حسب التوثيق الرسمي
+      - evolution_instances:/evolution/instances # حسب التوثيق الرسمي
     depends_on:
       evolution-db:
         condition: service_healthy
@@ -163,7 +161,11 @@ volumes:
     driver: local
   npm-letsencrypt:
     driver: local
-  evolution-db-data: # المجلد الجديد
+  evolution-db-data:
+    driver: local
+  evolution_store:     # إضافة مخرن البيانات
+    driver: local
+  evolution_instances: # إضافة مخزن الجلسات
     driver: local
 
 networks:
