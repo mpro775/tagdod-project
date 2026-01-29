@@ -106,62 +106,22 @@ services:
       retries: 3
 
   # ========================================
-  # EVOLUTION API - WHATSAPP SERVICE
+  # WAHA - WHATSAPP SERVICE
   # ========================================
-  evolution-api:
-    image: atendai/evolution-api:v2.1.1 # الاسم الصحيح حسب التوثيق الرسمي
-    container_name: tagdod-evolution
-    restart: unless-stopped
-    shm_size: "2gb"
-    environment:
-      - TZ=Asia/Aden
-      - SERVER_URL=https://whatsapp.tagadod.app
-      # --- السطور المطلوبة لحل المشكلة ---
-      - WA_MODULE_DEFAULT_INTEGRATION=baileys
-      - WA_MODULE_ENABLED=true
-      - WHATSAPP_ENABLED=true
-      # ---------------------------------
-      - SERVER_TYPE=http
-      - AUTHENTICATION_TYPE=apikey
-      - AUTHENTICATION_API_KEY=Your_Super_Secret_Key_Change_Me
-      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
-      # إعدادات قاعدة البيانات و Redis تبقى كما هي لضمان الاحترافية
-      - DATABASE_ENABLED=true
-      - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://tagdod_user:tagdod_pass@evolution-db:5432/evolution_db?sslmode=disable
-      - DATABASE_CONNECTION_CLIENT_NAME=evolution_api
-      # أضف السطرين التاليين للـ Environment
-      - DEFAULT_PROV_WA_INTEGRATION=baileys
-      - DEFAULT_PROV_WA_VNET_ENABLED=false
-      - CACHE_REDIS_ENABLED=true
-      - CACHE_REDIS_URI=redis://redis:6379
-    volumes:
-      - evolution_store:/evolution/store # حسب التوثيق الرسمي
-      - evolution_instances:/evolution/instances # حسب التوثيق الرسمي
-    depends_on:
-      evolution-db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - tagdod-network
-
-  # قاعدة بيانات خاصة بـ Evolution API لضمان استقلال البيانات
-  evolution-db:
-    image: postgres:15-alpine
-    container_name: tagdod-evolution-db
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: tagdod-waha
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=tagdod_user
-      - POSTGRES_PASSWORD=tagdod_pass
-      - POSTGRES_DB=evolution_db
+      - WHATSAPP_DEFAULT_ENGINE=WEBJS
+      - WAHA_ZIPKIN_ENABLED=false
+      - WAHA_API_KEY=Your_Super_Secret_Key_Change_Me
+      - WAHA_DASHBOARD_USERNAME=admin
+      - WAHA_DASHBOARD_PASSWORD=admin
+    ports:
+      - "3001:3000"
     volumes:
-      - evolution-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tagdod_user -d evolution_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - ./waha-sessions:/app/.waha/sessions
     networks:
       - tagdod-network
 
@@ -172,13 +132,7 @@ volumes:
     driver: local
   npm-letsencrypt:
     driver: local
-  evolution-db-data:
-    driver: local
-  evolution_store: # إضافة مخرن البيانات
-    driver: local
-  evolution_instances: # إضافة مخزن الجلسات
-    driver: local
 
 networks:
   tagdod-network:
-    driver: bridge
+    external: true
