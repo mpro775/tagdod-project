@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
   UnifiedNotification,
@@ -49,6 +50,7 @@ import { EmailAdapter } from './adapters/email.adapter';
 import { SMSAdapter } from './adapters/sms.adapter';
 import { AlawaelSMSAdapter } from './adapters/alawael-sms.adapter';
 import { WhatsAppAdapter } from './adapters/whatsapp.adapter';
+import { EvolutionWhatsAppAdapter } from './adapters/evolution-whatsapp.adapter';
 
 // Ports
 import {} from './ports/notification.ports';
@@ -74,6 +76,7 @@ import {
 
 @Module({
   imports: [
+    HttpModule.register({ timeout: 15000, maxRedirects: 3 }),
     MongooseModule.forFeature([
       { name: UnifiedNotification.name, schema: UnifiedNotificationSchema },
       { name: NotificationTemplate.name, schema: NotificationTemplateSchema },
@@ -104,6 +107,7 @@ import {
     AlawaelSMSAdapter, // Alawael SMS Adapter for SMS notifications
     SMSAdapter, // SMS Adapter for SMS notifications (supports multiple providers)
     WhatsAppAdapter, // WhatsApp Adapter for WhatsApp messages (Twilio)
+    EvolutionWhatsAppAdapter, // Evolution API WhatsApp for OTP (optional, WhatsApp-first then SMS fallback)
     {
       provide: InAppNotificationAdapter,
       useFactory: (webSocketService: WebSocketService) => {
@@ -166,6 +170,7 @@ import {
     AlawaelSMSAdapter, // Export AlawaelSMSAdapter for direct use if needed
     SMSAdapter, // Export SMSAdapter for direct use if needed
     WhatsAppAdapter, // Export WhatsAppAdapter for direct use if needed
+    EvolutionWhatsAppAdapter, // Export for OTP (AuthModule)
     InAppNotificationAdapter,
     PushNotificationAdapter,
     EmailNotificationAdapter,

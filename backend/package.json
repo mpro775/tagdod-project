@@ -43,6 +43,7 @@
     "notifications:delete-all": "ts-node scripts/delete-all-notifications.ts"
   },
   "dependencies": {
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/bull": "^11.0.4",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.0.0",

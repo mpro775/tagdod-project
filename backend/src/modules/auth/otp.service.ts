@@ -2,6 +2,10 @@ import { Injectable, Logger, Optional, Inject } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as crypto from 'crypto';
 import { SMSAdapter } from '../notifications/adapters/sms.adapter';
+import {
+  EvolutionWhatsAppAdapter,
+  EvolutionWhatsAppResult,
+} from '../notifications/adapters/evolution-whatsapp.adapter';
 import { normalizeYemeniPhone } from '../../shared/utils/phone.util';
 import { InvalidPhoneException, AuthException, ErrorCode } from '../../shared/exceptions';
 
@@ -16,6 +20,7 @@ export class OtpService {
   constructor(
     @Inject('REDIS_CLIENT') redisClient: Redis,
     @Optional() private readonly smsAdapter?: SMSAdapter,
+    @Optional() private readonly whatsAppAdapter?: EvolutionWhatsAppAdapter,
   ) {
     this.redis = redisClient;
     this.ttl = Number(process.env.OTP_TTL_SECONDS || 300);
@@ -106,30 +111,45 @@ export class OtpService {
     // Store OTP in Redis using normalized phone with retry logic
     await this.setWithRetry(this.key(normalizedPhone, ctx), hashed, this.ttl);
 
-    // Send OTP via SMS if SMS adapter is available
-    if (this.smsAdapter) {
+    const message =
+      ctx === 'reset'
+        ? `رمز التحقق لإعادة تعيين كلمة المرور في تطبيق تجدد هو: ${code}`
+        : `رمز التحقق الخاص بك في تطبيق تجدد هو: ${code}`;
+
+    // 1. Try WhatsApp first (Evolution API) if adapter is available
+    let waResult: EvolutionWhatsAppResult | null = null;
+    if (this.whatsAppAdapter?.isReady()) {
+      this.logger.log(`Attempting to send OTP via WhatsApp to ${normalizedPhone}`);
+      waResult = await this.whatsAppAdapter.sendMessage(normalizedPhone, message);
+      if (waResult.success) {
+        this.logger.log(`OTP sent via WhatsApp successfully to ${normalizedPhone}`);
+      } else {
+        this.logger.warn(
+          `WhatsApp failed for ${normalizedPhone}: ${waResult.error}. Falling back to SMS.`,
+        );
+      }
+    } else {
+      this.logger.debug('WhatsApp adapter not configured or not ready, skipping.');
+    }
+
+    // 2. Fallback to SMS if WhatsApp failed or wasn't used
+    if (!waResult?.success && this.smsAdapter) {
       try {
-        const smsMessage = ctx === 'reset' 
-          ? `رمز التحقق لإعادة تعيين كلمة المرور: ${code}`
-          : `رمز التحقق لتسجيل الدخول: ${code}`;
-        
+        this.logger.log(`Sending OTP via SMS to ${normalizedPhone}`);
         const smsResult = await this.smsAdapter.sendSMS({
           to: normalizedPhone,
-          message: smsMessage,
+          message,
         });
-
         if (smsResult.success) {
           this.logger.log(`OTP SMS sent successfully to ${normalizedPhone}`);
         } else {
           this.logger.warn(`Failed to send OTP SMS to ${normalizedPhone}: ${smsResult.error}`);
-          // Continue anyway - OTP is stored in Redis, user can still verify
         }
       } catch (error) {
         this.logger.error(`Error sending OTP SMS to ${normalizedPhone}:`, error);
-        // Continue anyway - OTP is stored in Redis, user can still verify
       }
-    } else {
-      this.logger.warn('SMS adapter not available, OTP not sent via SMS');
+    } else if (!waResult?.success && !this.smsAdapter) {
+      this.logger.warn('Neither WhatsApp nor SMS adapter available, OTP not sent.');
     }
 
     return { sent: true, devCode: this.devEcho ? code : undefined };
