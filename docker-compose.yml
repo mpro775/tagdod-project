@@ -117,7 +117,7 @@ services:
       - WAHA_ZIPKIN_ENABLED=false
       - WAHA_API_KEY=Your_Super_Secret_Key_Change_Me
       - WAHA_DASHBOARD_USERNAME=admin
-      - WAHA_DASHBOARD_PASSWORD=admin
+      - WAHA_DASHBOARD_PASSWORD=Tagdod_Secret_2026
     ports:
       - "3001:3000"
     volumes:
