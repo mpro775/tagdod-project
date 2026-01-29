@@ -2,10 +2,7 @@ import { Injectable, Logger, Optional, Inject } from '@nestjs/common';
 import Redis from 'ioredis';
 import * as crypto from 'crypto';
 import { SMSAdapter } from '../notifications/adapters/sms.adapter';
-import {
-  EvolutionWhatsAppAdapter,
-  EvolutionWhatsAppResult,
-} from '../notifications/adapters/evolution-whatsapp.adapter';
+import { WahaWhatsAppAdapter, WhatsAppResult } from '../notifications/adapters/waha-whatsapp.adapter';
 import { normalizeYemeniPhone } from '../../shared/utils/phone.util';
 import { InvalidPhoneException, AuthException, ErrorCode } from '../../shared/exceptions';
 
@@ -20,7 +17,7 @@ export class OtpService {
   constructor(
     @Inject('REDIS_CLIENT') redisClient: Redis,
     @Optional() private readonly smsAdapter?: SMSAdapter,
-    @Optional() private readonly whatsAppAdapter?: EvolutionWhatsAppAdapter,
+    @Optional() private readonly whatsAppAdapter?: WahaWhatsAppAdapter,
   ) {
     this.redis = redisClient;
     this.ttl = Number(process.env.OTP_TTL_SECONDS || 300);
@@ -116,8 +113,8 @@ export class OtpService {
         ? `رمز التحقق لإعادة تعيين كلمة المرور في تطبيق تجدد هو: ${code}`
         : `رمز التحقق الخاص بك في تطبيق تجدد هو: ${code}`;
 
-    // 1. Try WhatsApp first (Evolution API) if adapter is available
-    let waResult: EvolutionWhatsAppResult | null = null;
+    // 1. Try WhatsApp first (WAHA) if adapter is available
+    let waResult: WhatsAppResult | null = null;
     if (this.whatsAppAdapter?.isReady()) {
       this.logger.log(`Attempting to send OTP via WhatsApp to ${normalizedPhone}`);
       waResult = await this.whatsAppAdapter.sendMessage(normalizedPhone, message);
