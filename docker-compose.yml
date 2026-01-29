@@ -112,6 +112,7 @@ services:
     image: atendai/evolution-api:v2.1.1 # الاسم الصحيح حسب التوثيق الرسمي
     container_name: tagdod-evolution
     restart: unless-stopped
+    shm_size: "2gb"
     environment:
       - TZ=Asia/Aden
       - SERVER_URL=https://whatsapp.tagadod.app
