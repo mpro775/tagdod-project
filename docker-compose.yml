@@ -135,4 +135,4 @@ volumes:
 
 networks:
   tagdod-network:
-    external: true
+    driver: bridge
