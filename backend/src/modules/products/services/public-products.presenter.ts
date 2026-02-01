@@ -788,15 +788,24 @@ export class PublicProductsPresenter {
     discountPercent: number,
     selectedCurrencyInput: string,
     filterZeroStock = true,
+    options?: {
+      /** عند التوفير: طلب عملة واحدة فقط (مثلاً USD) → لا استدعاء مصارفة */
+      currenciesOverride?: string[];
+      /** عند true: عدم استدعاء previewBatch (تسريع المنتجات الشبيهة) */
+      skipMarketingRules?: boolean;
+    },
   ): Promise<{
     variantsWithPricing: Array<AnyRecord>;
     currenciesForPricing: string[];
     pricesByCurrency: Record<string, PriceWithDiscountAndVariantId[]>;
   }> {
     const normalizedCurrency = this.normalizeCurrency(selectedCurrencyInput);
-    const currenciesForPricing = Array.from(
-      new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
-    );
+    const currenciesForPricing =
+      (options?.currenciesOverride?.length ?? 0) > 0
+        ? options!.currenciesOverride!
+        : Array.from(
+            new Set([...this.BASE_PRICING_CURRENCIES, normalizedCurrency]),
+          );
 
     // عند filterZeroStock = true: تصفية المتغيرات ذات الكمية صفر
     // عند filterZeroStock = false: إرجاع جميع المتغيرات مع إضافة isAvailable و stockStatus
@@ -826,8 +835,12 @@ export class PublicProductsPresenter {
       { variants: variantSnapshots },
     );
 
-    // تطبيق قواعد السعر (price rules) إذا كان marketingService متاحاً
-    if (this.marketingService && filteredVariants.length > 0) {
+    // تطبيق قواعد السعر (price rules) إذا كان marketingService متاحاً ولم يُطلب تخطيه (مثلاً للمنتجات الشبيهة)
+    if (
+      this.marketingService &&
+      filteredVariants.length > 0 &&
+      !options?.skipMarketingRules
+    ) {
       this.logger.debug(
         `MarketingService is available for product ${productId} with ${filteredVariants.length} variants`,
       );
@@ -1709,6 +1722,7 @@ export class PublicProductsPresenter {
       discountPercent,
       'USD',
       false,
+      { currenciesOverride: ['USD'] }, // USD فقط → لا استدعاء مصارفة
     );
 
     const variantsSanitized = variantsWithPricing.map((v) => this.sanitizeVariantUsdFx(v));
@@ -1880,6 +1894,7 @@ export class PublicProductsPresenter {
             discountPercent,
             'USD',
             true,
+            { currenciesOverride: ['USD'], skipMarketingRules: true }, // تسريع: لا previewBatch ولا مصارفة
           );
           const usdPrices = pricesByCurrency?.USD ?? [];
           for (const p of usdPrices) {

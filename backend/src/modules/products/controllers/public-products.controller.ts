@@ -197,8 +197,8 @@ export class PublicProductsController {
   @ApiQuery({
     name: 'pricingMode',
     required: false,
-    enum: ['usd_fx'],
-    description: 'Opt-in to new format: USD-only pricing, fx/rounding at top level (default: legacy)',
+    enum: ['usd_fx', 'legacy'],
+    description: 'Default: usd_fx (USD-only + fx/rounding). Use legacy for old pricingByCurrency format.',
   })
   @ApiOkResponse({
     description: 'Product details retrieved successfully',
@@ -258,23 +258,25 @@ export class PublicProductsController {
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
     const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    if (pricingMode === 'usd_fx') {
-      const result = await this.publicProductsPresenter.buildProductDetailResponseUsdFx(
+    // الشكل الجديد افتراضي: fx + pricing USD فقط. استخدم pricingMode=legacy للشكل القديم
+    if (pricingMode === 'legacy') {
+      return this.publicProductsPresenter.buildProductDetailResponse(
         id,
         product as unknown as Record<string, unknown>,
         variants as unknown as Array<WithId & Record<string, unknown>>,
         discountPercent,
+        requestedCurrency,
       );
-      return result;
     }
 
-    return this.publicProductsPresenter.buildProductDetailResponse(
+    const result = await this.publicProductsPresenter.buildProductDetailResponseUsdFx(
       id,
       product as unknown as Record<string, unknown>,
       variants as unknown as Array<WithId & Record<string, unknown>>,
       discountPercent,
-      requestedCurrency,
     );
+    // إرجاع result.data فقط لأن ResponseEnvelopeInterceptor يغلّف الاستجابة بـ { success, data }
+    return result.data;
   }
 
   @Get('slug/:slug')
@@ -286,8 +288,8 @@ export class PublicProductsController {
   @ApiQuery({
     name: 'pricingMode',
     required: false,
-    enum: ['usd_fx'],
-    description: 'Opt-in to new format: USD-only pricing, fx/rounding at top level (default: legacy)',
+    enum: ['usd_fx', 'legacy'],
+    description: 'Default: usd_fx. Use legacy for old pricingByCurrency format.',
   })
   @ApiBearerAuth()
   @CacheResponse({ ttl: 120 }) // 2 minutes
@@ -308,23 +310,23 @@ export class PublicProductsController {
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
     const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    if (pricingMode === 'usd_fx') {
-      const result = await this.publicProductsPresenter.buildProductDetailResponseUsdFx(
+    if (pricingMode === 'legacy') {
+      return this.publicProductsPresenter.buildProductDetailResponse(
         productId,
         product as unknown as Record<string, unknown>,
         variants as unknown as Array<WithId & Record<string, unknown>>,
         discountPercent,
+        requestedCurrency,
       );
-      return result;
     }
 
-    return this.publicProductsPresenter.buildProductDetailResponse(
+    const result = await this.publicProductsPresenter.buildProductDetailResponseUsdFx(
       productId,
       product as unknown as Record<string, unknown>,
       variants as unknown as Array<WithId & Record<string, unknown>>,
       discountPercent,
-      requestedCurrency,
     );
+    return result.data;
   }
 
   // ==================== Featured & New Products ====================

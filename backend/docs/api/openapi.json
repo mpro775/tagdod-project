@@ -3736,10 +3736,11 @@
             "name": "pricingMode",
             "required": false,
             "in": "query",
-            "description": "Opt-in to new format: USD-only pricing, fx/rounding at top level (default: legacy)",
+            "description": "Default: usd_fx (USD-only + fx/rounding). Use legacy for old pricingByCurrency format.",
             "schema": {
               "enum": [
-                "usd_fx"
+                "usd_fx",
+                "legacy"
               ],
               "type": "string"
             }
@@ -3863,10 +3864,11 @@
             "name": "pricingMode",
             "required": false,
             "in": "query",
-            "description": "Opt-in to new format: USD-only pricing, fx/rounding at top level (default: legacy)",
+            "description": "Default: usd_fx. Use legacy for old pricingByCurrency format.",
             "schema": {
               "enum": [
-                "usd_fx"
+                "usd_fx",
+                "legacy"
               ],
               "type": "string"
             }
