@@ -13,8 +13,45 @@ import { ProductService } from './product.service';
 import { User } from '../../users/schemas/user.schema';
 import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
 import { MarketingService } from '../../marketing/marketing.service';
+import { ExchangeRatesService } from '../../exchange-rates/exchange-rates.service';
 
 export type WithId = { _id: Types.ObjectId | string };
+
+/** USD-only pricing for product/variant (new format when pricingMode=usd_fx) */
+export type PricingUsd = {
+  basePriceUSD: number;
+  discountPercent: number;
+  discountAmountUSD: number;
+  finalPriceUSD: number;
+};
+
+/** FX payload at top level (pricingMode=usd_fx) */
+export type FxPayload = {
+  base: 'USD';
+  rates: { YER: number; SAR: number };
+  version: string; // ISO date
+};
+
+/** Rounding rules per currency (pricingMode=usd_fx) */
+export type RoundingPayload = {
+  USD: { decimals: number };
+  SAR: { decimals: number };
+  YER: { decimals: number };
+};
+
+/** Lightweight related product (pricingMode=usd_fx) */
+export type RelatedProductUsdFxPayload = {
+  _id: string;
+  name: string;
+  nameEn: string;
+  status: string;
+  mainImage?: AnyRecord;
+  hasVariants: boolean;
+  stock: number;
+  isAvailable: boolean;
+  pricing: { minPriceUSD: number; maxPriceUSD: number };
+  priceStatus?: 'ok' | 'partial';
+};
 
 export type AttributeSummary = {
   id: string;
@@ -81,6 +118,9 @@ export class PublicProductsPresenter {
     @Optional()
     @Inject(forwardRef(() => MarketingService))
     private marketingService?: MarketingService,
+    @Optional()
+    @Inject(forwardRef(() => ExchangeRatesService))
+    private exchangeRatesService?: ExchangeRatesService,
   ) {}
 
   get basePricingCurrencies(): readonly string[] {
@@ -1547,6 +1587,353 @@ export class PublicProductsPresenter {
     );
 
     return relatedProducts.filter((item): item is RelatedProductPayload => Boolean(item));
+  }
+
+  /** Map PriceWithDiscount (USD) to PricingUsd for usd_fx response */
+  private priceToPricingUsd(price: PriceWithDiscount | null | undefined): PricingUsd | undefined {
+    if (!price || price.currency !== 'USD') {
+      return undefined;
+    }
+    const basePriceUSD = this.normalizePrice(price.basePrice) ?? 0;
+    const discountPercent = this.normalizePrice(price.discountPercent) ?? 0;
+    const discountAmountUSD = this.normalizePrice(price.discountAmount) ?? 0;
+    const finalPriceUSD = this.normalizePrice(price.finalPrice) ?? basePriceUSD;
+    return {
+      basePriceUSD,
+      discountPercent,
+      discountAmountUSD,
+      finalPriceUSD,
+    };
+  }
+
+  /** Variant payload for usd_fx: no pricingByCurrency, pricing (USD only) + stock */
+  private sanitizeVariantUsdFx(variant: AnyRecord): AnyRecord {
+    const variantId =
+      this.extractIdString(variant._id) ??
+      this.extractIdString(variant.id) ??
+      variant._id ??
+      variant.id;
+    const price = variant.pricing as PriceWithDiscount | undefined;
+    const pricingUsd = this.priceToPricingUsd(price ?? null);
+    const stock = this.normalizePrice(variant.stock) ?? 0;
+    const isAvailable = variant.isAvailable === true;
+
+    const attributeValues = Array.isArray(variant.attributeValues)
+      ? variant.attributeValues.map((value: AnyRecord) => ({
+          ...(this.extractIdString(value.attributeId) ? { attributeId: this.extractIdString(value.attributeId) } : value.attributeId ? { attributeId: value.attributeId } : {}),
+          ...(this.extractIdString(value.valueId) ? { valueId: this.extractIdString(value.valueId) } : value.valueId ? { valueId: value.valueId } : {}),
+          ...(value.name ? { name: value.name } : {}),
+          ...(value.nameEn ? { nameEn: value.nameEn } : {}),
+          ...(value.value ? { value: value.value } : {}),
+          ...(value.valueEn ? { valueEn: value.valueEn } : {}),
+        }))
+      : [];
+
+    const out: AnyRecord = {
+      ...(variantId ? { _id: variantId } : {}),
+      ...(attributeValues.length > 0 ? { attributeValues } : {}),
+      ...(typeof variant.isActive === 'boolean' ? { isActive: variant.isActive } : {}),
+      isAvailable,
+      ...(variant.stockStatus ? { stockStatus: variant.stockStatus } : {}),
+      stock,
+      minOrderQuantity:
+        typeof variant.minOrderQuantity === 'number' && !isNaN(variant.minOrderQuantity)
+          ? variant.minOrderQuantity
+          : 1,
+      maxOrderQuantity:
+        typeof variant.maxOrderQuantity === 'number' && !isNaN(variant.maxOrderQuantity)
+          ? variant.maxOrderQuantity
+          : 0,
+      ...(typeof variant.salesCount === 'number' ? { salesCount: variant.salesCount } : {}),
+    };
+    if (pricingUsd) {
+      out.pricing = pricingUsd;
+    }
+    return out;
+  }
+
+  /**
+   * Product detail response when pricingMode=usd_fx: USD-only pricing, FX once at top level.
+   * Requires ExchangeRatesService; if missing, FX uses fallback rates and version = now.
+   */
+  async buildProductDetailResponseUsdFx(
+    productId: string,
+    product: AnyRecord,
+    variants: Array<WithId & AnyRecord>,
+    discountPercent: number,
+  ): Promise<{
+    data: {
+      fx: FxPayload;
+      rounding: RoundingPayload;
+      userDiscount: { isMerchant: boolean; discountPercent: number };
+      product: AnyRecord;
+      variants: AnyRecord[];
+      relatedProducts: RelatedProductUsdFxPayload[];
+    };
+  }> {
+    const rounding: RoundingPayload = {
+      USD: { decimals: 2 },
+      SAR: { decimals: 2 },
+      YER: { decimals: 0 },
+    };
+
+    let fx: FxPayload;
+    if (this.exchangeRatesService) {
+      const rates = await this.exchangeRatesService.getCurrentRates();
+      const version =
+        rates.lastUpdatedAt != null
+          ? new Date(rates.lastUpdatedAt).toISOString()
+          : new Date().toISOString();
+      fx = {
+        base: 'USD',
+        rates: { YER: rates.usdToYer, SAR: rates.usdToSar },
+        version,
+      };
+    } else {
+      fx = {
+        base: 'USD',
+        rates: { YER: 250, SAR: 3.75 },
+        version: new Date().toISOString(),
+      };
+    }
+
+    const userDiscount = {
+      isMerchant: discountPercent > 0,
+      discountPercent,
+    };
+
+    const allVariants = this.filterVariantsWithStock(variants);
+    const { variantsWithPricing, pricesByCurrency } = await this.enrichVariantsPricing(
+      productId,
+      allVariants,
+      discountPercent,
+      'USD',
+      false,
+    );
+
+    const variantsSanitized = variantsWithPricing.map((v) => this.sanitizeVariantUsdFx(v));
+
+    let productPricingUsd: PricingUsd | undefined;
+    if (variantsWithPricing.length === 0 && this.hasSimplePricing(product)) {
+      const basePriceUSD =
+        this.normalizePrice(product.basePriceUSD ?? product.basePrice) ??
+        this.normalizePrice(product.compareAtPriceUSD ?? product.compareAtPrice) ??
+        this.normalizePrice(product.costPriceUSD ?? product.costPrice) ??
+        0;
+      const compareAtPriceUSD = this.normalizePrice(
+        product.compareAtPriceUSD ?? product.compareAtPrice,
+      );
+      const costPriceUSD = this.normalizePrice(product.costPriceUSD ?? product.costPrice);
+      const derivedPricing = this.buildSimpleProductDerivedPricing(product);
+      const simpleUsd = await this.pricingService.getSimpleProductPricingByCurrencies(
+        basePriceUSD,
+        compareAtPriceUSD,
+        costPriceUSD,
+        ['USD'],
+        discountPercent,
+        derivedPricing,
+      );
+      const usdPrice = simpleUsd?.USD ?? null;
+      productPricingUsd = this.priceToPricingUsd(usdPrice ?? null) ?? undefined;
+    } else if (variantsWithPricing.length > 0 && pricesByCurrency?.USD?.length) {
+      const usdPrices = pricesByCurrency.USD;
+      const best = usdPrices.reduce((a, b) =>
+        (a.finalPrice ?? a.basePrice) <= (b.finalPrice ?? b.basePrice) ? a : b,
+      );
+      productPricingUsd = this.priceToPricingUsd(this.stripVariantId(best)) ?? undefined;
+    }
+
+    const simplifiedProduct = this.buildSimplifiedProduct(product, {
+      variants: [],
+      hasVariants: variantsWithPricing.length > 0,
+      includeImages: true,
+      includeCategory: true,
+      includeBrand: true,
+      includeAttributes: true,
+      includeVariants: false,
+      includePricingByCurrency: false,
+      includePriceRange: false,
+      includeDefaultPricing: false,
+      includeDescriptions: true,
+    });
+
+    const productStock =
+      variantsWithPricing.length > 0
+        ? variantsWithPricing.reduce((sum, v) => sum + (this.normalizePrice(v.stock) ?? 0), 0)
+        : this.normalizePrice(product.stock) ?? 0;
+    const productIsAvailable =
+      variantsWithPricing.length > 0
+        ? variantsWithPricing.some(
+            (v) => (this.normalizePrice(v.stock) ?? 0) > 0 && v.isActive !== false,
+          )
+        : (productStock > 0 && product.isActive !== false) as boolean;
+
+    const productPayload: AnyRecord = {
+      ...simplifiedProduct,
+      attributesDetails: await this.getAttributeSummaries(product.attributes as unknown[]),
+      stock: productStock,
+      isAvailable: productIsAvailable,
+    };
+    if (productPricingUsd) {
+      productPayload.pricing = productPricingUsd;
+    }
+
+    const relatedProducts = await this.buildRelatedProductsUsdFx(
+      product.relatedProducts as unknown[],
+      discountPercent,
+    );
+
+    return {
+      data: {
+        fx,
+        rounding,
+        userDiscount,
+        product: productPayload,
+        variants: variantsSanitized,
+        relatedProducts,
+      },
+    };
+  }
+
+  /**
+   * Lightweight related products for usd_fx: min/max USD, priceStatus.
+   */
+  async buildRelatedProductsUsdFx(
+    relatedProductsRaw: unknown,
+    discountPercent: number,
+  ): Promise<RelatedProductUsdFxPayload[]> {
+    if (!Array.isArray(relatedProductsRaw) || relatedProductsRaw.length === 0) {
+      return [];
+    }
+
+    const relatedIds = Array.from(
+      new Set(
+        relatedProductsRaw
+          .map((id) => this.extractIdString(id))
+          .filter((id): id is string => Boolean(id)),
+      ),
+    );
+
+    if (relatedIds.length === 0) {
+      return [];
+    }
+
+    const [relatedProductsRawData, variantsByProductId] = await Promise.all([
+      this.productService.findByIds(relatedIds),
+      this.variantService.findByProductIds(relatedIds),
+    ]);
+
+    const relatedProductsMap = new Map<string, AnyRecord>();
+    relatedProductsRawData.forEach((p) => {
+      const rec = p as unknown as AnyRecord;
+      const id = this.extractIdString(rec._id) ?? '';
+      if (id) relatedProductsMap.set(id, rec);
+    });
+
+    const results: RelatedProductUsdFxPayload[] = [];
+
+    for (const id of relatedIds) {
+      const productRecord = relatedProductsMap.get(id);
+      if (!productRecord) continue;
+
+      try {
+        const allVariants =
+          (variantsByProductId[id] as unknown as Array<WithId & AnyRecord>)?.map((v) => v) ?? [];
+        const variantsFiltered = this.filterVariantsWithStock(allVariants);
+        const hasVariants = variantsFiltered.length > 0;
+
+        let minPriceUSD = Number.POSITIVE_INFINITY;
+        let maxPriceUSD = Number.NEGATIVE_INFINITY;
+        let anyZeroOrMissing = false;
+
+        if (variantsFiltered.length === 0 && this.hasSimplePricing(productRecord)) {
+          const basePriceUSD =
+            this.normalizePrice(productRecord.basePriceUSD ?? productRecord.basePrice) ?? 0;
+          const compareAtPriceUSD = this.normalizePrice(
+            productRecord.compareAtPriceUSD ?? productRecord.compareAtPrice,
+          );
+          const costPriceUSD = this.normalizePrice(
+            productRecord.costPriceUSD ?? productRecord.costPrice,
+          );
+          const derivedPricing = this.buildSimpleProductDerivedPricing(productRecord);
+          const simpleUsd = await this.pricingService.getSimpleProductPricingByCurrencies(
+            basePriceUSD || 0,
+            compareAtPriceUSD,
+            costPriceUSD,
+            ['USD'],
+            discountPercent,
+            derivedPricing,
+          );
+          const usdPrice = simpleUsd?.USD;
+          if (usdPrice) {
+            const finalPrice = usdPrice.finalPrice ?? usdPrice.basePrice ?? 0;
+            minPriceUSD = finalPrice;
+            maxPriceUSD = finalPrice;
+            if (finalPrice <= 0 || usdPrice.basePrice == null) anyZeroOrMissing = true;
+          } else {
+            anyZeroOrMissing = true;
+          }
+        } else if (variantsFiltered.length > 0) {
+          const { pricesByCurrency } = await this.enrichVariantsPricing(
+            id,
+            variantsFiltered,
+            discountPercent,
+            'USD',
+            true,
+          );
+          const usdPrices = pricesByCurrency?.USD ?? [];
+          for (const p of usdPrices) {
+            const finalPrice = p.finalPrice ?? p.basePrice ?? 0;
+            const basePrice = p.basePrice ?? 0;
+            if (finalPrice < minPriceUSD) minPriceUSD = finalPrice;
+            if (finalPrice > maxPriceUSD) maxPriceUSD = finalPrice;
+            if (finalPrice <= 0 || basePrice <= 0) anyZeroOrMissing = true;
+          }
+          if (usdPrices.length === 0) anyZeroOrMissing = true;
+        } else {
+          anyZeroOrMissing = true;
+        }
+
+        const stock =
+          hasVariants
+            ? variantsFiltered.reduce((s, v) => s + (this.normalizePrice(v.stock) ?? 0), 0)
+            : this.normalizePrice(productRecord.stock) ?? 0;
+        const isAvailable =
+          hasVariants
+            ? variantsFiltered.some(
+                (v) => (this.normalizePrice(v.stock) ?? 0) > 0 && v.isActive !== false,
+              )
+            : (stock > 0 && productRecord.isActive !== false) as boolean;
+
+        const mainImage = this.simplifyMedia(
+          productRecord.mainImage ?? productRecord.mainImageId,
+        );
+
+        results.push({
+          _id: id,
+          name: (productRecord.name as string) ?? '',
+          nameEn: (productRecord.nameEn as string) ?? '',
+          status: (productRecord.status as string) ?? 'active',
+          ...(mainImage ? { mainImage } : {}),
+          hasVariants,
+          stock,
+          isAvailable,
+          pricing: {
+            minPriceUSD: Number.isFinite(minPriceUSD) ? minPriceUSD : 0,
+            maxPriceUSD: Number.isFinite(maxPriceUSD) ? maxPriceUSD : 0,
+          },
+          priceStatus: anyZeroOrMissing ? 'partial' : 'ok',
+        });
+      } catch (err) {
+        this.logger.warn(
+          `Failed to build related product usd_fx ${id}: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
+    }
+
+    return results;
   }
 
   async buildProductDetailResponse(

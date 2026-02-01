@@ -191,9 +191,15 @@ export class PublicProductsController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get product details',
-    description: 'Retrieves detailed information about a specific product',
+    description: 'Retrieves detailed information about a specific product. Use pricingMode=usd_fx for USD-only pricing with FX at top level.',
   })
   @ApiParam({ name: 'id', description: 'Product ID', example: '507f1f77bcf86cd799439011' })
+  @ApiQuery({
+    name: 'pricingMode',
+    required: false,
+    enum: ['usd_fx'],
+    description: 'Opt-in to new format: USD-only pricing, fx/rounding at top level (default: legacy)',
+  })
   @ApiOkResponse({
     description: 'Product details retrieved successfully',
     schema: {
@@ -239,6 +245,7 @@ export class PublicProductsController {
   async getProduct(
     @Param('id') id: string,
     @Query('currency') currency?: string,
+    @Query('pricingMode') pricingMode?: string,
     @Req() req?: RequestWithUser,
   ) {
     const product = await this.productService.findById(id);
@@ -247,10 +254,19 @@ export class PublicProductsController {
     // زيادة المشاهدات
     await this.productService.incrementViews(id);
 
-    // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
     const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    if (pricingMode === 'usd_fx') {
+      const result = await this.publicProductsPresenter.buildProductDetailResponseUsdFx(
+        id,
+        product as unknown as Record<string, unknown>,
+        variants as unknown as Array<WithId & Record<string, unknown>>,
+        discountPercent,
+      );
+      return result;
+    }
 
     return this.publicProductsPresenter.buildProductDetailResponse(
       id,
@@ -264,14 +280,21 @@ export class PublicProductsController {
   @Get('slug/:slug')
   @ApiOperation({
     summary: 'Get product by slug',
-    description: 'Retrieves product information using URL slug',
+    description: 'Retrieves product information using URL slug. Use pricingMode=usd_fx for USD-only pricing with FX at top level.',
   })
   @ApiParam({ name: 'slug', description: 'Product slug', example: 'solar-panel-300w' })
+  @ApiQuery({
+    name: 'pricingMode',
+    required: false,
+    enum: ['usd_fx'],
+    description: 'Opt-in to new format: USD-only pricing, fx/rounding at top level (default: legacy)',
+  })
   @ApiBearerAuth()
   @CacheResponse({ ttl: 120 }) // 2 minutes
   async getProductBySlug(
     @Param('slug') slug: string,
     @Query('currency') currency?: string,
+    @Query('pricingMode') pricingMode?: string,
     @Req() req?: RequestWithUser,
   ) {
     const product = await this.productService.findBySlug(slug);
@@ -279,13 +302,21 @@ export class PublicProductsController {
     const productId = productWithId._id.toString();
     const variants = await this.variantService.findByProductId(productId);
 
-    // زيادة المشاهدات
     await this.productService.incrementViews(productId);
 
-    // جلب نسبة خصم التاجر إذا كان المستخدم مسجل
     const userId = req?.user?.sub;
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(userId);
     const requestedCurrency = currency || req?.user?.preferredCurrency || 'USD';
+
+    if (pricingMode === 'usd_fx') {
+      const result = await this.publicProductsPresenter.buildProductDetailResponseUsdFx(
+        productId,
+        product as unknown as Record<string, unknown>,
+        variants as unknown as Array<WithId & Record<string, unknown>>,
+        discountPercent,
+      );
+      return result;
+    }
 
     return this.publicProductsPresenter.buildProductDetailResponse(
       productId,

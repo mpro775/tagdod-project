@@ -3712,7 +3712,7 @@
       "get": {
         "operationId": "getProduct",
         "summary": "Get product details",
-        "description": "Retrieves detailed information about a specific product",
+        "description": "Retrieves detailed information about a specific product. Use pricingMode=usd_fx for USD-only pricing with FX at top level.",
         "parameters": [
           {
             "name": "id",
@@ -3729,6 +3729,18 @@
             "required": true,
             "in": "query",
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pricingMode",
+            "required": false,
+            "in": "query",
+            "description": "Opt-in to new format: USD-only pricing, fx/rounding at top level (default: legacy)",
+            "schema": {
+              "enum": [
+                "usd_fx"
+              ],
               "type": "string"
             }
           }
@@ -3827,7 +3839,7 @@
       "get": {
         "operationId": "getProductBySlug",
         "summary": "Get product by slug",
-        "description": "Retrieves product information using URL slug",
+        "description": "Retrieves product information using URL slug. Use pricingMode=usd_fx for USD-only pricing with FX at top level.",
         "parameters": [
           {
             "name": "slug",
@@ -3844,6 +3856,18 @@
             "required": true,
             "in": "query",
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pricingMode",
+            "required": false,
+            "in": "query",
+            "description": "Opt-in to new format: USD-only pricing, fx/rounding at top level (default: legacy)",
+            "schema": {
+              "enum": [
+                "usd_fx"
+              ],
               "type": "string"
             }
           }

@@ -2181,7 +2181,7 @@
                 "{id}"
               ]
             },
-            "description": "Retrieves detailed information about a specific product"
+            "description": "Retrieves detailed information about a specific product. Use pricingMode=usd_fx for USD-only pricing with FX at top level."
           }
         },
         {
@@ -2208,7 +2208,7 @@
                 "{slug}"
               ]
             },
-            "description": "Retrieves product information using URL slug"
+            "description": "Retrieves product information using URL slug. Use pricingMode=usd_fx for USD-only pricing with FX at top level."
           }
         },
         {
