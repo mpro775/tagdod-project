@@ -1421,6 +1421,161 @@ export class PublicProductsPresenter {
     );
   }
 
+  /**
+   * قائمة منتجات بالشكل الجديد: سعر دولار فقط + fx/rounding في أعلى الاستجابة.
+   * يستخدم USD فقط ولا يستدعي previewBatch لتسريع القوائم.
+   */
+  async buildProductsCollectionResponseUsdFx(
+    products: Array<AnyRecord>,
+    discountPercent: number,
+  ): Promise<{
+    fx: FxPayload;
+    rounding: RoundingPayload;
+    userDiscount: { isMerchant: boolean; discountPercent: number };
+    data: Array<AnyRecord>;
+  }> {
+    if (!products || products.length === 0) {
+      let fx: FxPayload;
+      if (this.exchangeRatesService) {
+        const rates = await this.exchangeRatesService.getCurrentRates();
+        fx = {
+          base: 'USD',
+          rates: { YER: rates.usdToYer, SAR: rates.usdToSar },
+          version:
+            rates.lastUpdatedAt != null
+              ? new Date(rates.lastUpdatedAt).toISOString()
+              : new Date().toISOString(),
+        };
+      } else {
+        fx = {
+          base: 'USD',
+          rates: { YER: 250, SAR: 3.75 },
+          version: new Date().toISOString(),
+        };
+      }
+      return {
+        fx,
+        rounding: { USD: { decimals: 2 }, SAR: { decimals: 2 }, YER: { decimals: 0 } },
+        userDiscount: { isMerchant: discountPercent > 0, discountPercent },
+        data: [],
+      };
+    }
+
+    let fx: FxPayload;
+    if (this.exchangeRatesService) {
+      const rates = await this.exchangeRatesService.getCurrentRates();
+      fx = {
+        base: 'USD',
+        rates: { YER: rates.usdToYer, SAR: rates.usdToSar },
+        version:
+          rates.lastUpdatedAt != null
+            ? new Date(rates.lastUpdatedAt).toISOString()
+            : new Date().toISOString(),
+      };
+    } else {
+      fx = {
+        base: 'USD',
+        rates: { YER: 250, SAR: 3.75 },
+        version: new Date().toISOString(),
+      };
+    }
+
+    const rounding: RoundingPayload = {
+      USD: { decimals: 2 },
+      SAR: { decimals: 2 },
+      YER: { decimals: 0 },
+    };
+    const userDiscount = { isMerchant: discountPercent > 0, discountPercent };
+
+    const data = await Promise.all(
+      products.map(async (productRaw) => {
+        const productRecord = productRaw as AnyRecord;
+        const productId = this.extractIdString(productRecord._id) ?? String(productRecord._id);
+        const allVariants = (await this.variantService.findByProductId(productId)) as unknown as Array<WithId & AnyRecord>;
+        const totalStock = allVariants.reduce((sum, v) => sum + (this.normalizePrice(v.stock) ?? 0), 0);
+        const productIsAvailable =
+          allVariants.length > 0
+            ? allVariants.some(
+                (v) => (this.normalizePrice(v.stock) ?? 0) > 0 && v.isActive !== false && !v.deletedAt,
+              )
+            : ((this.normalizePrice(productRecord.stock) ?? 0) > 0 && productRecord.isActive !== false) as boolean;
+
+        const variants = this.filterVariantsWithStockOnly(allVariants);
+
+        const simplifiedProduct = this.buildSimplifiedProduct(productRecord, {
+          variants: [],
+          hasVariants: allVariants.length > 0,
+          includeImages: false,
+          includeCategory: false,
+          includeBrand: false,
+          includeAttributes: false,
+          includeVariants: false,
+          includePricingByCurrency: false,
+          includePriceRange: false,
+          includeDefaultPricing: false,
+        });
+
+        let pricing: { minPriceUSD: number; maxPriceUSD: number } | PricingUsd | undefined;
+
+        if (variants.length === 0 && this.hasSimplePricing(productRecord)) {
+          const basePriceUSD =
+            this.normalizePrice(productRecord.basePriceUSD ?? productRecord.basePrice) ??
+            this.normalizePrice(productRecord.compareAtPriceUSD ?? productRecord.compareAtPrice) ??
+            this.normalizePrice(productRecord.costPriceUSD ?? productRecord.costPrice) ??
+            0;
+          const compareAtPriceUSD = this.normalizePrice(
+            productRecord.compareAtPriceUSD ?? productRecord.compareAtPrice,
+          );
+          const costPriceUSD = this.normalizePrice(productRecord.costPriceUSD ?? productRecord.costPrice);
+          const derivedPricing = this.buildSimpleProductDerivedPricing(productRecord);
+          const simpleUsd = await this.pricingService.getSimpleProductPricingByCurrencies(
+            basePriceUSD,
+            compareAtPriceUSD,
+            costPriceUSD,
+            ['USD'],
+            discountPercent,
+            derivedPricing,
+          );
+          const usdPrice = simpleUsd?.USD ?? null;
+          pricing = this.priceToPricingUsd(usdPrice ?? null) ?? undefined;
+        } else if (variants.length > 0) {
+          const { pricesByCurrency } = await this.enrichVariantsPricing(
+            productId,
+            variants,
+            discountPercent,
+            'USD',
+            true,
+            { currenciesOverride: ['USD'], skipMarketingRules: true },
+          );
+          const usdPrices = pricesByCurrency?.USD ?? [];
+          if (usdPrices.length > 0) {
+            let minP = Number.POSITIVE_INFINITY;
+            let maxP = Number.NEGATIVE_INFINITY;
+            usdPrices.forEach((p) => {
+              const finalPrice = p.finalPrice ?? p.basePrice ?? 0;
+              if (finalPrice < minP) minP = finalPrice;
+              if (finalPrice > maxP) maxP = finalPrice;
+            });
+            pricing = {
+              minPriceUSD: Number.isFinite(minP) ? minP : 0,
+              maxPriceUSD: Number.isFinite(maxP) ? maxP : 0,
+            };
+          }
+        }
+
+        const out: AnyRecord = {
+          ...simplifiedProduct,
+          stock: allVariants.length > 0 ? totalStock : (this.normalizePrice(productRecord.stock) ?? 0),
+          isAvailable: productIsAvailable,
+        };
+        if (pricing) out.pricing = pricing;
+        return out;
+      }),
+    );
+
+    return { fx, rounding, userDiscount, data };
+  }
+
   async buildRelatedProducts(
     relatedProductsRaw: unknown,
     discountPercent: number,

@@ -151,9 +151,7 @@ export class PublicProductsController {
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(
       req?.user?.sub,
     );
-    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
-    // تحديد ما إذا كان يجب تضمين الفئات الفرعية (افتراضي: true)
     const includeSubcats = includeSubcategories === 'false' ? false : true;
 
     const result = await this.productService.list({
@@ -174,15 +172,18 @@ export class PublicProductsController {
       ? (result.data as unknown as Array<Record<string, unknown>>)
       : [];
 
-    const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
-      rawData,
-      discountPercent,
-      selectedCurrency,
-    );
+    const { fx, rounding, userDiscount, data } =
+      await this.publicProductsPresenter.buildProductsCollectionResponseUsdFx(
+        rawData,
+        discountPercent,
+      );
 
     return {
-      ...result,
-      data: productsWithPricing,
+      fx,
+      rounding,
+      userDiscount,
+      data,
+      meta: result.meta,
     };
   }
 
@@ -339,7 +340,6 @@ export class PublicProductsController {
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(
       req?.user?.sub,
     );
-    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
     const result = await this.productService.list({
       isFeatured: true,
@@ -351,16 +351,13 @@ export class PublicProductsController {
       ? (result.data as unknown as Array<Record<string, unknown>>)
       : [];
 
-    const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
-      rawData,
-      discountPercent,
-      selectedCurrency,
-    );
+    const { fx, rounding, userDiscount, data } =
+      await this.publicProductsPresenter.buildProductsCollectionResponseUsdFx(
+        rawData,
+        discountPercent,
+      );
 
-    return {
-      ...result,
-      data: productsWithPricing,
-    };
+    return { fx, rounding, userDiscount, data, meta: result.meta };
   }
 
   @Get('new/list')
@@ -371,7 +368,6 @@ export class PublicProductsController {
     const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(
       req?.user?.sub,
     );
-    const selectedCurrency = currency || req?.user?.preferredCurrency || 'USD';
 
     const result = await this.productService.list({
       isNew: true,
@@ -383,16 +379,13 @@ export class PublicProductsController {
       ? (result.data as unknown as Array<Record<string, unknown>>)
       : [];
 
-    const productsWithPricing = await this.publicProductsPresenter.buildProductsCollectionResponse(
-      rawData,
-      discountPercent,
-      selectedCurrency,
-    );
+    const { fx, rounding, userDiscount, data } =
+      await this.publicProductsPresenter.buildProductsCollectionResponseUsdFx(
+        rawData,
+        discountPercent,
+      );
 
-    return {
-      ...result,
-      data: productsWithPricing,
-    };
+    return { fx, rounding, userDiscount, data, meta: result.meta };
   }
 
   // ==================== Variants ====================
