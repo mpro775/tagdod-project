@@ -10,9 +10,11 @@
 ## 📋 جدول المحتويات
 
 ### نظرة عامة
+
 - [**نظرة عامة على تكامل Flutter**](./نظرة_عامة_Flutter.md) – ملخص سريع لفريق Flutter
 
 ### الأساسيات
+
 1. [**هيكل الاستجابة الموحدة والأخطاء**](./01-response-structure.md) - **ابدأ من هنا**
    - شكل الاستجابة الناجحة
    - شكل الاستجابة عند حدوث خطأ
@@ -20,35 +22,42 @@
    - معالجة الأخطاء في Flutter
 
 ### الخدمات الرئيسية
+
 2. [**خدمة المصادقة (Authentication)**](./02-auth-service.md)
+
    - تسجيل الدخول بواسطة OTP
    - إدارة الحساب
    - التوكنات (Access & Refresh)
 
 3. [**خدمة المنتجات (Products)**](./03-products-service.md)
+
    - قائمة المنتجات
    - تفاصيل المنتج
    - المنتجات المميزة والجديدة
    - الفلاتر والترتيب
 
 4. [**خدمة السلة (Cart)**](./04-cart-service.md)
+
    - إضافة منتجات للسلة
    - تحديث الكميات
    - حساب الإجمالي
    - دمج سلة الزائر مع المستخدم
 
 5. [**خدمة الدفع والطلبات (Checkout & Orders)**](./05-checkout-service.md)
+
    - معاينة الطلب
    - تأكيد الطلب
    - إدارة الطلبات
    - حالات الطلب
 
 6. [**خدمة التصنيفات (Categories)**](./06-categories-service.md)
+
    - قائمة التصنيفات
    - شجرة التصنيفات
    - التصنيفات المميزة
 
 7. [**خدمة المفضلات (Favorites)**](./07-favorites-service.md)
+
    - إضافة وحذف المفضلات
    - قائمة المفضلات
    - مزامنة المفضلات
@@ -59,44 +68,54 @@
    - التحقق من صحة العناوين
 
 ### الخدمات المساعدة
+
 9. [**خدمة البنرات (Banners)**](./09-banners-service.md)
+
    - عرض البنرات
    - تتبع المشاهدات والنقرات
 
 10. [**خدمة العلامات التجارية (Brands)**](./10-brands-service.md)
+
     - قائمة البراندات
     - تفاصيل البراند
 
 11. [**خدمة البحث (Search)**](./11-search-service.md)
+
     - البحث الشامل
     - البحث المتقدم
     - الاقتراحات التلقائية
 
 12. [**خدمة الكوبونات (Coupons)**](./12-coupons-service.md)
+
     - التحقق من الكوبونات
     - أنواع الخصومات المختلفة
 
 13. [**خدمة الإشعارات (Notifications)**](./13-notifications-service.md)
+
     - قائمة الإشعارات
     - تسجيل الأجهزة للإشعارات
     - إدارة الإشعارات
 
 14. [**خدمة الطلبات الهندسية (Services)**](./14-services-service.md)
+
     - إنشاء طلب خدمة (للعملاء)
     - الطلبات القريبة (للمهندسين)
     - إدارة العروض والتقييم
 
 15. [**خدمة السمات (Attributes)**](./15-attributes-service.md)
+
     - قائمة السمات النشطة
     - السمات القابلة للفلترة
     - تفاصيل السمة ومجموعاتها
 
 16. [**خدمة الدعم (Support)**](./16-support-service.md)
+
     - إنشاء تذكرة دعم
     - إدارة الرسائل
     - تتبع حالة التذكرة وتقييمها
 
 17. [**خدمة بروفايل المهندس (Engineer Profile)**](./18-engineer-profile-service.md)
+
     - إدارة بروفايل المهندس
     - التقييمات والإحصائيات
     - الرصيد والعمولات
@@ -112,14 +131,17 @@
 ## 🌐 معلومات عامة
 
 ### Base URL
+
 ```
 http://localhost:3000
 ```
+
 > **ملاحظة:** استبدل هذا الرابط بالرابط الفعلي للـ Production عند النشر
 
 ### الهيدرات (Headers) المطلوبة
 
 #### للطلبات العامة (Public):
+
 ```dart
 {
   'Content-Type': 'application/json',
@@ -127,6 +149,7 @@ http://localhost:3000
 ```
 
 #### للطلبات المحمية (Protected):
+
 ```dart
 {
   'Content-Type': 'application/json',
@@ -139,6 +162,7 @@ http://localhost:3000
 ## 🔑 المصادقة (Authentication)
 
 API يستخدم **JWT (JSON Web Tokens)** للمصادقة:
+
 - **Access Token**: صالح لمدة قصيرة (15 دقيقة)
 - **Refresh Token**: صالح لمدة طويلة (7 أيام)
 
@@ -149,16 +173,22 @@ API يستخدم **JWT (JSON Web Tokens)** للمصادقة:
 ## 📦 هيكل الاستجابة الموحدة
 
 ### الاستجابة الناجحة
+
 ```json
 {
   "success": true,
-  "data": { /* البيانات */ },
-  "meta": { /* معلومات إضافية مثل pagination */ },
+  "data": {
+    /* البيانات */
+  },
+  "meta": {
+    /* معلومات إضافية مثل pagination */
+  },
   "requestId": "uuid-string"
 }
 ```
 
 ### الاستجابة عند الخطأ
+
 ```json
 {
   "success": false,
@@ -191,12 +221,12 @@ import 'package:dio/dio.dart';
 class ApiClient {
   final Dio _dio;
   final String baseUrl = 'http://localhost:3000';
-  
+
   ApiClient() : _dio = Dio() {
     _dio.options.baseUrl = baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 30);
     _dio.options.receiveTimeout = const Duration(seconds: 30);
-    
+
     // إضافة Interceptor للتوكن
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -223,7 +253,7 @@ class ApiClient {
       ),
     );
   }
-  
+
   Dio get dio => _dio;
 }
 ```
@@ -237,7 +267,7 @@ class ApiResponse<T> {
   final ApiError? error;
   final Map<String, dynamic>? meta;
   final String? requestId;
-  
+
   ApiResponse({
     required this.success,
     this.data,
@@ -245,18 +275,18 @@ class ApiResponse<T> {
     this.meta,
     this.requestId,
   });
-  
+
   factory ApiResponse.fromJson(
     Map<String, dynamic> json,
     T Function(dynamic)? fromJsonT,
   ) {
     return ApiResponse(
       success: json['success'] ?? false,
-      data: json['data'] != null && fromJsonT != null 
-          ? fromJsonT(json['data']) 
+      data: json['data'] != null && fromJsonT != null
+          ? fromJsonT(json['data'])
           : json['data'],
-      error: json['error'] != null 
-          ? ApiError.fromJson(json['error']) 
+      error: json['error'] != null
+          ? ApiError.fromJson(json['error'])
           : null,
       meta: json['meta'],
       requestId: json['requestId'],
@@ -269,14 +299,14 @@ class ApiError {
   final String message;
   final dynamic details;
   final List<FieldError>? fieldErrors;
-  
+
   ApiError({
     required this.code,
     required this.message,
     this.details,
     this.fieldErrors,
   });
-  
+
   factory ApiError.fromJson(Map<String, dynamic> json) {
     return ApiError(
       code: json['code'] ?? 'UNKNOWN_ERROR',
@@ -294,9 +324,9 @@ class ApiError {
 class FieldError {
   final String field;
   final String message;
-  
+
   FieldError({required this.field, required this.message});
-  
+
   factory FieldError.fromJson(Map<String, dynamic> json) {
     return FieldError(
       field: json['field'] ?? '',
@@ -321,12 +351,12 @@ Future<void> login() async {
         'context': 'register',
       },
     );
-    
+
     final apiResponse = ApiResponse.fromJson(
       response.data,
       (data) => data,
     );
-    
+
     if (apiResponse.success) {
       print('تم إرسال الكود: ${apiResponse.data}');
     } else {
@@ -370,6 +400,7 @@ Future<void> login() async {
 ## 🆘 الدعم
 
 في حالة وجود أي استفسارات أو مشاكل:
+
 1. راجع الملف المناسب للخدمة
 2. تحقق من أكواد الأخطاء في [هيكل الاستجابة](./01-response-structure.md)
 3. تواصل مع فريق الـ Backend
@@ -384,6 +415,7 @@ Future<void> login() async {
 **النسخة:** 2.1.0
 
 ### الخدمات المتحققة:
+
 - ✅ Response Structure - هيكل الاستجابة الموحدة
 - ✅ Auth - المصادقة والتوثيق
 - ✅ Products - المنتجات والمتغيرات
@@ -407,4 +439,3 @@ Future<void> login() async {
 
 **آخر تحديث:** نوفمبر 2025  
 **النسخة:** 2.1.0
-

@@ -10,6 +10,7 @@ import {
   Box,
   Typography,
   Collapse,
+  Badge,
 } from '@mui/material';
 import logoImage from '../../../assets/images/logo.png';
 import {
@@ -55,6 +56,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { filterMenuByPermissions } from '@/shared/constants/permissions';
+import { useUnreadSupportCount } from '@/features/support/hooks/useSupport';
 
 interface MenuItem {
   id: string;
@@ -78,6 +80,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const activeItemRef = useRef<HTMLDivElement | null>(null);
+  const { data: unreadSupport } = useUnreadSupportCount(60000);
+  const unreadSupportCount = unreadSupport?.unreadTicketsCount ?? 0;
 
   const menuItems: MenuItem[] = React.useMemo(
     () => [
@@ -661,7 +665,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             }}
           >
             {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
-            <ListItemText primary={item.label} />
+            <ListItemText
+              primary={
+                item.id === 'support' && unreadSupportCount > 0 ? (
+                  <Badge badgeContent={unreadSupportCount} color="error" max={99}>
+                    <span>{item.label}</span>
+                  </Badge>
+                ) : (
+                  item.label
+                )
+              }
+            />
             {hasChildren && (isExpanded ? <ExpandLess /> : <ExpandMore />)}
           </ListItemButton>
         </ListItem>

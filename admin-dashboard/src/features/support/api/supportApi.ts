@@ -85,6 +85,23 @@ export const supportApi = {
     return response.data.data;
   },
 
+  /**
+   * Get unread support count (Admin only) - for sidebar badge
+   */
+  getUnreadSupportCount: async (): Promise<{ unreadTicketsCount: number; unreadMessagesCount: number }> => {
+    const response = await apiClient.get<ApiResponse<{ unreadTicketsCount: number; unreadMessagesCount: number }>>(
+      '/admin/support/unread-count'
+    );
+    return response.data.data ?? response.data;
+  },
+
+  /**
+   * Mark ticket messages as read by admin (Admin only)
+   */
+  markTicketMessagesAsRead: async (ticketId: string): Promise<void> => {
+    await apiClient.patch(`/admin/support/tickets/${ticketId}/messages/mark-read`);
+  },
+
   // ==================== Support Messages ====================
   
   /**

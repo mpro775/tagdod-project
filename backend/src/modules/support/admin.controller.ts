@@ -303,6 +303,41 @@ export class AdminSupportController {
     return message;
   }
 
+  @Patch('tickets/:id/messages/mark-read')
+  @RequirePermissions(AdminPermission.SUPPORT_READ, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({
+    summary: 'تحديد رسائل التذكرة كمقروءة من الأدمن',
+    description: 'تحديث readByAdminAt لجميع رسائل المستخدم في التذكرة',
+  })
+  @ApiParam({ name: 'id', description: 'معرف التذكرة' })
+  @ApiResponse({ status: 200, description: 'تم التحديث بنجاح' })
+  @ApiResponse({ status: 404, description: 'لم يتم العثور على التذكرة' })
+  async markTicketMessagesAsRead(@Param('id') ticketId: string) {
+    await this.supportService.markTicketMessagesAsReadByAdmin(ticketId);
+    return { success: true };
+  }
+
+  @Get('unread-count')
+  @RequirePermissions(AdminPermission.SUPPORT_READ, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({
+    summary: 'عدد التذاكر/الرسائل غير المقروءة',
+    description: 'عدد التذاكر التي تحتوي على رسائل من المستخدم لم يراجعها الأدمن، وعدد الرسائل غير المقروءة',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد العدد بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        unreadTicketsCount: { type: 'number', example: 5 },
+        unreadMessagesCount: { type: 'number', example: 12 },
+      },
+    },
+  })
+  async getUnreadSupportCount() {
+    return this.supportService.getUnreadSupportCount();
+  }
+
   @Get('stats')
   @ApiOperation({
     summary: 'إحصائيات الدعم',

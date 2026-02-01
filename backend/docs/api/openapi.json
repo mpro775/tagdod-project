@@ -22186,6 +22186,78 @@
         ]
       }
     },
+    "/api/v1/admin/support/tickets/{id}/messages/mark-read": {
+      "patch": {
+        "operationId": "markTicketMessagesAsRead",
+        "summary": "تحديد رسائل التذكرة كمقروءة من الأدمن",
+        "description": "تحديث readByAdminAt لجميع رسائل المستخدم في التذكرة",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف التذكرة",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم التحديث بنجاح"
+          },
+          "404": {
+            "description": "لم يتم العثور على التذكرة"
+          }
+        },
+        "tags": [
+          "إدارة-الدعم"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/support/unread-count": {
+      "get": {
+        "operationId": "getUnreadSupportCount",
+        "summary": "عدد التذاكر/الرسائل غير المقروءة",
+        "description": "عدد التذاكر التي تحتوي على رسائل من المستخدم لم يراجعها الأدمن، وعدد الرسائل غير المقروءة",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد العدد بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "unreadTicketsCount": {
+                      "type": "number",
+                      "example": 5
+                    },
+                    "unreadMessagesCount": {
+                      "type": "number",
+                      "example": 12
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-الدعم"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/admin/support/stats": {
       "get": {
         "operationId": "getStats",

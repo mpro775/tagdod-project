@@ -34,6 +34,26 @@ export const useSupportTickets = (params: ListTicketsParams) => {
   });
 };
 
+export const useUnreadSupportCount = (refetchInterval = 60000) => {
+  return useQuery({
+    queryKey: [SUPPORT_KEY, 'unread-count'],
+    queryFn: () => supportApi.getUnreadSupportCount(),
+    refetchInterval,
+  });
+};
+
+export const useMarkTicketMessagesAsRead = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ticketId: string) => supportApi.markTicketMessagesAsRead(ticketId),
+    onSuccess: (_, ticketId) => {
+      queryClient.invalidateQueries({ queryKey: [SUPPORT_KEY, 'unread-count'] });
+      queryClient.invalidateQueries({ queryKey: [SUPPORT_KEY, 'messages', ticketId] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 export const useSupportTicket = (id: string) => {
   return useQuery({
     queryKey: [SUPPORT_KEY, 'tickets', id],

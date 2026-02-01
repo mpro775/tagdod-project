@@ -76,7 +76,7 @@ export class SupportService {
           message,
           messageEn,
           data,
-          channel: NotificationChannel.IN_APP,
+          channel: NotificationChannel.DASHBOARD,
           priority: NotificationPriority.HIGH,
         }),
       );
@@ -113,26 +113,40 @@ export class SupportService {
     const savedTicket = await ticket.save();
 
     // Create initial message with the ticket description
-    await this.createMessage(savedTicket._id.toString(), userId, {
-      content: dto.description,
-      attachments: dto.attachments,
-      messageType: MessageType.USER_MESSAGE,
-    });
+    try {
+      await this.createMessage(savedTicket._id.toString(), userId, {
+        content: dto.description,
+        attachments: dto.attachments,
+        messageType: MessageType.USER_MESSAGE,
+      });
+    } catch (msgError) {
+      this.logger.warn(
+        'Failed to create initial ticket message, continuing with ticket creation',
+        msgError instanceof Error ? msgError.stack : String(msgError),
+      );
+    }
 
-    // إرسال إشعار TICKET_CREATED للمدراء
-    await this.notifyAdmins(
-      NotificationType.TICKET_CREATED,
-      'تذكرة دعم فني جديدة',
-      `تم إنشاء تذكرة دعم فني جديدة: ${savedTicket.title}`,
-      `New support ticket created: ${savedTicket.title}`,
-      {
-        ticketId: savedTicket._id.toString(),
-        ticketTitle: savedTicket.title,
-        category: savedTicket.category,
-        priority: savedTicket.priority,
-        customerId: userId,
-      },
-    );
+    // إرسال إشعار TICKET_CREATED للمدراء (يعمل حتى لو فشل إنشاء الرسالة الأولى)
+    try {
+      await this.notifyAdmins(
+        NotificationType.TICKET_CREATED,
+        'تذكرة دعم فني جديدة',
+        `تم إنشاء تذكرة دعم فني جديدة: ${savedTicket.title}`,
+        `New support ticket created: ${savedTicket.title}`,
+        {
+          ticketId: savedTicket._id.toString(),
+          ticketTitle: savedTicket.title,
+          category: savedTicket.category,
+          priority: savedTicket.priority,
+          customerId: userId,
+        },
+      );
+    } catch (notifError) {
+      this.logger.warn(
+        'Failed to notify admins of new ticket',
+        notifError instanceof Error ? notifError.stack : String(notifError),
+      );
+    }
 
     return savedTicket;
   }
@@ -167,7 +181,7 @@ export class SupportService {
             isArchived: false,
           },
         },
-        { $sort: { createdAt: -1 } },
+        { $sort: { lastMessageAt: -1, createdAt: -1 } },
         { $skip: skip },
         { $limit: limitNum },
         // Lookup to get the last message for each ticket
@@ -337,7 +351,7 @@ export class SupportService {
     const [ticketsWithLastMessage, total] = await Promise.all([
       this.ticketModel.aggregate([
         { $match: matchQuery },
-        { $sort: { createdAt: -1 } },
+        { $sort: { lastMessageAt: -1, createdAt: -1 } },
         { $skip: skip },
         { $limit: limitNum },
         // Convert userId to ObjectId if it's a string (for backward compatibility)
@@ -618,6 +632,43 @@ export class SupportService {
       page,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  /**
+   * Mark all user messages in a ticket as read by admin (for unread badge)
+   */
+  async markTicketMessagesAsReadByAdmin(ticketId: string): Promise<void> {
+    const ticket = await this.ticketModel.findById(ticketId);
+    if (!ticket) {
+      throw new TicketNotFoundException({ ticketId });
+    }
+    await this.messageModel.updateMany(
+      { ticketId, messageType: MessageType.USER_MESSAGE },
+      { $set: { readByAdminAt: new Date() } },
+    );
+  }
+
+  /**
+   * Get count of tickets that have at least one user message not read by admin (for sidebar badge)
+   */
+  async getUnreadSupportCount(): Promise<{ unreadTicketsCount: number; unreadMessagesCount: number }> {
+    const unreadMessages = await this.messageModel
+      .find({
+        messageType: MessageType.USER_MESSAGE,
+        $or: [{ readByAdminAt: { $exists: false } }, { readByAdminAt: null }],
+      })
+      .select('ticketId')
+      .lean();
+    const ticketIds = [...new Set(unreadMessages.map((m) => m.ticketId.toString()))];
+    const unreadMessagesCount = unreadMessages.length;
+    if (ticketIds.length === 0) {
+      return { unreadTicketsCount: 0, unreadMessagesCount: 0 };
+    }
+    const unreadTicketsCount = await this.ticketModel.countDocuments({
+      _id: { $in: ticketIds.map((id) => new mongoose.Types.ObjectId(id)) },
+      isArchived: false,
+    });
+    return { unreadTicketsCount, unreadMessagesCount };
   }
 
   /**
@@ -1003,6 +1054,14 @@ export class SupportService {
     });
 
     const savedMessage = await message.save();
+
+    // تحديث lastMessageAt على التذكرة لترتيب التذاكر حسب آخر نشاط
+    const messageCreatedAt =
+      (savedMessage as unknown as { createdAt?: Date }).createdAt ?? new Date();
+    await this.ticketModel.updateOne(
+      { _id: ticketId },
+      { $set: { lastMessageAt: messageCreatedAt } },
+    );
 
     // إرسال الرسالة عبر WebSocket إلى جميع المشتركين في التذكرة
     if (!data.isInternal) {

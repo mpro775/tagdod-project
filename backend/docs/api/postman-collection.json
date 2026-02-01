@@ -10128,6 +10128,63 @@
           }
         },
         {
+          "name": "تحديد رسائل التذكرة كمقروءة من الأدمن",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/support/tickets/{id}/messages/mark-read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "tickets",
+                "{id}",
+                "messages",
+                "mark-read"
+              ]
+            },
+            "description": "تحديث readByAdminAt لجميع رسائل المستخدم في التذكرة"
+          }
+        },
+        {
+          "name": "عدد التذاكر/الرسائل غير المقروءة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/support/unread-count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "support",
+                "unread-count"
+              ]
+            },
+            "description": "عدد التذاكر التي تحتوي على رسائل من المستخدم لم يراجعها الأدمن، وعدد الرسائل غير المقروءة"
+          }
+        },
+        {
           "name": "إحصائيات الدعم",
           "request": {
             "method": "GET",

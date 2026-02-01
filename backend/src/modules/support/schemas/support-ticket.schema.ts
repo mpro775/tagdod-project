@@ -79,6 +79,9 @@ export class SupportTicket {
   firstResponseAt?: Date; // أول رد من الدعم
 
   @Prop()
+  lastMessageAt?: Date; // تاريخ آخر رسالة (لترتيب التذاكر حسب آخر نشاط)
+
+  @Prop()
   resolvedAt?: Date;
 
   @Prop()
@@ -113,6 +116,7 @@ export const SupportTicketSchema = SchemaFactory.createForClass(SupportTicket);
 // Indexes for better query performance
 SupportTicketSchema.index({ userId: 1, createdAt: -1 });
 SupportTicketSchema.index({ status: 1, priority: 1, createdAt: -1 });
+SupportTicketSchema.index({ lastMessageAt: -1 });
 SupportTicketSchema.index({ assignedTo: 1, status: 1 });
 SupportTicketSchema.index({ category: 1, status: 1 });
 SupportTicketSchema.index({ title: 'text', description: 'text' });

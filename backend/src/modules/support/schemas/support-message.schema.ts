@@ -34,6 +34,10 @@ export class SupportMessage {
   @Prop({ default: false })
   isInternal!: boolean; // For admin-only messages
 
+  /** تاريخ قراءة الرسالة من الأدمن (لحساب غير المقروءة في لوحة التحكم) */
+  @Prop({ type: Date, default: null })
+  readByAdminAt?: Date | null;
+
   @Prop({ type: Object, default: {} })
   metadata?: Record<string, unknown>;
 }

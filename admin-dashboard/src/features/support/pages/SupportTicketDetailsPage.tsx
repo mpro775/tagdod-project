@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -30,6 +30,7 @@ import {
   useAddMessageToTicket,
   useUpdateSupportTicket,
   useCheckSLAStatus,
+  useMarkTicketMessagesAsRead,
 } from '../hooks/useSupport';
 import { SupportMessageBubble } from '../components';
 import { format } from 'date-fns';
@@ -50,6 +51,14 @@ export const SupportTicketDetailsPage: React.FC = () => {
   const { mutate: addMessage, isPending: isSending } = useAddMessageToTicket();
   const { mutate: updateTicket } = useUpdateSupportTicket();
   const { mutate: checkSLA } = useCheckSLAStatus();
+  const { mutate: markAsRead } = useMarkTicketMessagesAsRead();
+
+  // Mark ticket messages as read by admin when opening the ticket
+  useEffect(() => {
+    if (id) {
+      markAsRead(id);
+    }
+  }, [id, markAsRead]);
 
   const handleSendMessage = () => {
     if (!message.trim() || !id) return;
