@@ -40,6 +40,7 @@
     "migrate:stock": "ts-node scripts/migrate-add-socket-quantity.ts",
     "migrate:inventory-objectid": "ts-node scripts/migrate-inventory-to-objectid.ts",
     "fix:commissions": "ts-node src/scripts/fix-engineer-commissions.ts",
+    "fix:product-attributes": "ts-node src/scripts/fix-product-attributes-from-variants.ts",
     "notifications:delete-all": "ts-node scripts/delete-all-notifications.ts"
   },
   "dependencies": {

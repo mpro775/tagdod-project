@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   TicketNotFoundException,
@@ -6,7 +6,7 @@ import {
   ForbiddenException,
   ErrorCode,
 } from '../../shared/exceptions';
-import { FilterQuery, Model } from 'mongoose';
+import mongoose, { FilterQuery, Model } from 'mongoose';
 import {
   SupportTicket,
   SupportTicketDocument,
@@ -31,11 +31,14 @@ import {
   NotificationType,
   NotificationChannel,
   NotificationPriority,
+  NotificationCategory,
 } from '../notifications/enums/notification.enums';
 import { User, UserRole, UserStatus } from '../users/schemas/user.schema';
 
 @Injectable()
 export class SupportService {
+  private readonly logger = new Logger(SupportService.name);
+
   constructor(
     @InjectModel(SupportTicket.name) private ticketModel: Model<SupportTicketDocument>,
     @InjectModel(SupportMessage.name) private messageModel: Model<SupportMessageDocument>,
@@ -80,7 +83,10 @@ export class SupportService {
 
       await Promise.all(notificationPromises);
     } catch (error) {
-      // Don't throw - notifications are not critical
+      this.logger.warn(
+        `Failed to notify admins: ${type}`,
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 
@@ -149,7 +155,7 @@ export class SupportService {
     const limitNum = Number(limit) || 10;
     const skip = (pageNum - 1) * limitNum;
 
-    const Types = require('mongoose').Types;
+    const Types = mongoose.Types;
     const userObjectId = new Types.ObjectId(userId);
 
     const [ticketsWithLastMessage, total] = await Promise.all([
@@ -326,9 +332,7 @@ export class SupportService {
     if (filters.priority) matchQuery.priority = filters.priority;
     if (filters.category) matchQuery.category = filters.category;
     if (filters.assignedTo)
-      matchQuery.assignedTo = new (require('mongoose').Types.ObjectId)(filters.assignedTo);
-
-    const Types = require('mongoose').Types;
+      matchQuery.assignedTo = new (mongoose.Types.ObjectId)(filters.assignedTo);
 
     const [ticketsWithLastMessage, total] = await Promise.all([
       this.ticketModel.aggregate([
@@ -1025,6 +1029,33 @@ export class SupportService {
             ticketTitle: ticket.title,
             message: messageData,
           });
+        }
+
+        // إرسال إشعار موحد للمستخدم عند رد الأدمن (يعمل حتى لو التطبيق مغلق)
+        if (data.messageType === MessageType.ADMIN_REPLY && this.notificationService) {
+          try {
+            await this.notificationService.createNotification({
+              recipientId: ticket.userId.toString(),
+              type: NotificationType.SUPPORT_MESSAGE_RECEIVED,
+              title: 'رد على تذكرتك',
+              message: `لديك رد جديد في التذكرة: ${ticket.title}`,
+              messageEn: `New reply on your ticket: ${ticket.title}`,
+              data: {
+                ticketId,
+                ticketTitle: ticket.title,
+                messageId: savedMessage._id.toString(),
+              },
+              channel: NotificationChannel.IN_APP,
+              priority: NotificationPriority.HIGH,
+              category: NotificationCategory.SUPPORT,
+              actionUrl: `/support/tickets/${ticketId}`,
+            });
+          } catch (error) {
+            this.logger.warn(
+              `Failed to send admin reply notification to user ${ticket.userId} for ticket ${ticketId}`,
+              error instanceof Error ? error.stack : String(error),
+            );
+          }
         }
 
         // إرسال إشعار SUPPORT_MESSAGE_RECEIVED للمدراء إذا كانت الرسالة من العميل

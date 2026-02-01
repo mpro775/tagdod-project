@@ -252,6 +252,35 @@ export class PublicProductsPresenter {
     return null;
   }
 
+  /**
+   * يستخرج معرفات السمات للاستخدام في getAttributeSummaries.
+   * إذا كان product.attributes فارغاً لكن variants تحتوي attributeValues، يستمد IDs من variants.
+   */
+  private resolveAttributeIdsForSummaries(
+    product: AnyRecord,
+    variants: Array<WithId & AnyRecord>,
+  ): string[] {
+    const productAttrs = product.attributes as unknown;
+    if (Array.isArray(productAttrs) && productAttrs.length > 0) {
+      const ids = productAttrs
+        .map((id) => this.extractIdString(id))
+        .filter((id): id is string => Boolean(id));
+      if (ids.length > 0) return ids;
+    }
+
+    const idsFromVariants = new Set<string>();
+    for (const v of variants) {
+      const avs = v.attributeValues as Array<{ attributeId?: unknown }> | undefined;
+      if (Array.isArray(avs)) {
+        for (const av of avs) {
+          const id = av.attributeId ? this.extractIdString(av.attributeId) : null;
+          if (id) idsFromVariants.add(id);
+        }
+      }
+    }
+    return Array.from(idsFromVariants);
+  }
+
   private async getAttributeSummaries(attributeIds: unknown[]): Promise<AttributeSummary[]> {
     if (!Array.isArray(attributeIds) || attributeIds.length === 0) {
       return [];
@@ -1635,7 +1664,8 @@ export class PublicProductsPresenter {
               true,
             );
 
-          const attributesDetails = await this.getAttributeSummaries(productRecord.attributes as unknown[]);
+          const attributeIds = this.resolveAttributeIdsForSummaries(productRecord, allVariantsForProduct);
+          const attributesDetails = await this.getAttributeSummaries(attributeIds);
 
           let pricingByCurrency: Record<string, PriceWithDiscount> | undefined;
           let priceRangeByCurrency:
@@ -1937,12 +1967,16 @@ export class PublicProductsPresenter {
           )
         : (productStock > 0 && product.isActive !== false) as boolean;
 
+    const attributeIds = this.resolveAttributeIdsForSummaries(product, allVariants);
     const productPayload: AnyRecord = {
       ...simplifiedProduct,
-      attributesDetails: await this.getAttributeSummaries(product.attributes as unknown[]),
+      attributesDetails: await this.getAttributeSummaries(attributeIds),
       stock: productStock,
       isAvailable: productIsAvailable,
     };
+    if (attributeIds.length > 0 && !(Array.isArray(product.attributes) && product.attributes.length > 0)) {
+      productPayload.attributes = attributeIds;
+    }
     if (productPricingUsd) {
       productPayload.pricing = productPricingUsd;
     }
@@ -2124,7 +2158,8 @@ export class PublicProductsPresenter {
         false, // filterZeroStock = false لإرجاع جميع المتغيرات
       );
 
-    const attributesDetails = await this.getAttributeSummaries(product.attributes as unknown[]);
+    const attributeIds = this.resolveAttributeIdsForSummaries(product, allVariants);
+    const attributesDetails = await this.getAttributeSummaries(attributeIds);
 
     let productPricingByCurrency: Record<string, PriceWithDiscount> | undefined;
     let productPriceRangeByCurrency:
@@ -2428,6 +2463,9 @@ export class PublicProductsPresenter {
       stock: productStock,
       isAvailable: productIsAvailable,
     };
+    if (attributeIds.length > 0 && !(Array.isArray(product.attributes) && product.attributes.length > 0)) {
+      productWithAttributes.attributes = attributeIds;
+    }
 
     const relatedProducts = await this.buildRelatedProducts(
       product.relatedProducts as unknown[],
