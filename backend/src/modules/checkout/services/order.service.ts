@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef, Optional } from '@nestjs/common';
 import {
   OrderNotFoundException,
   OrderPreviewFailedException,
@@ -53,6 +53,7 @@ import { EmailAdapter } from '../../notifications/adapters/email.adapter';
 import { ConfigService } from '@nestjs/config';
 import { UploadService } from '../../upload/upload.service';
 import { WhatsAppAdapter } from '../../notifications/adapters/whatsapp.adapter';
+import { WahaWhatsAppAdapter } from '../../notifications/adapters/waha-whatsapp.adapter';
 import { SMSAdapter } from '../../notifications/adapters/sms.adapter';
 import * as crypto from 'crypto';
 import {
@@ -166,6 +167,7 @@ export class OrderService {
     private uploadService?: UploadService,
     @Inject(forwardRef(() => WhatsAppAdapter))
     private whatsappAdapter?: WhatsAppAdapter,
+    @Optional() private wahaWhatsAppAdapter?: WahaWhatsAppAdapter,
     @Inject(forwardRef(() => SMSAdapter))
     private smsAdapter?: SMSAdapter,
   ) {}
@@ -6448,11 +6450,18 @@ export class OrderService {
         }
       }
 
-      // إرسال الفاتورة عبر البريد الإلكتروني فقط
+      // إرسال الفاتورة عبر البريد الإلكتروني
       const emailSent = await this.sendOrderInvoiceEmail(order, pdfBuffer).catch((err) => {
         this.logger.warn(`Email sending failed for order ${order.orderNumber}:`, err);
         return false;
       });
+
+      // إرسال الفاتورة إلى واتساب المبيعات (نفس مزود OTP - WAHA)
+      if (order.invoiceUrl) {
+        this.sendOrderInvoiceWhatsApp(order).catch((err) => {
+          this.logger.warn(`WhatsApp invoice send failed for order ${order.orderNumber}:`, err);
+        });
+      }
 
       // تحديث invoiceSentAt بعد الإرسال الناجح
       if (emailSent !== false) {
@@ -6616,6 +6625,56 @@ export class OrderService {
     } catch (error) {
       this.logger.error(`Error sending invoice email for order ${order.orderNumber}:`, error);
       return false;
+    }
+  }
+
+  /**
+   * إرسال الفاتورة إلى واتساب المبيعات (نفس مزود OTP - WAHA)
+   * يُستدعى بعد رفع الفاتورة (order.invoiceUrl متوفر)
+   */
+  private async sendOrderInvoiceWhatsApp(order: OrderDocument): Promise<void> {
+    const salesManagerWhatsApp = this.configService?.get('SALES_MANAGER_WHATSAPP');
+    if (!salesManagerWhatsApp?.trim()) {
+      this.logger.debug('SALES_MANAGER_WHATSAPP not set, skipping invoice WhatsApp send.');
+      return;
+    }
+    if (!this.wahaWhatsAppAdapter?.isReady()) {
+      this.logger.debug('Waha WhatsApp adapter not ready, skipping invoice WhatsApp send.');
+      return;
+    }
+    if (!order.invoiceUrl) {
+      this.logger.warn(
+        `Order ${order.orderNumber} has no invoiceUrl, cannot send invoice via WhatsApp.`,
+      );
+      return;
+    }
+
+    const invoiceNumber = order.invoiceNumber || order.orderNumber;
+    const fileName = `invoice-${invoiceNumber}.pdf`;
+    const caption = `فاتورة جديدة - طلب ${order.orderNumber}\nInvoice: ${invoiceNumber}`;
+
+    try {
+      const result = await this.wahaWhatsAppAdapter.sendFile(
+        salesManagerWhatsApp.trim(),
+        order.invoiceUrl,
+        caption,
+        fileName,
+        'application/pdf',
+      );
+      if (result.success) {
+        this.logger.log(
+          `Invoice sent via WhatsApp to sales for order ${order.orderNumber}`,
+        );
+      } else {
+        this.logger.warn(
+          `Failed to send invoice via WhatsApp for order ${order.orderNumber}: ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error sending invoice via WhatsApp for order ${order.orderNumber}:`,
+        error,
+      );
     }
   }
 
@@ -6800,6 +6859,13 @@ export class OrderService {
       // إرسال الفاتورة إلى إيميل المبيعات
       const emailSent = await this.sendOrderInvoiceEmail(order, pdfBuffer);
 
+      // إرسال الفاتورة إلى واتساب المبيعات (نفس مزود OTP - WAHA)
+      if (order.invoiceUrl) {
+        this.sendOrderInvoiceWhatsApp(order).catch((err) => {
+          this.logger.warn(`WhatsApp invoice send failed for order ${order.orderNumber}:`, err);
+        });
+      }
+
       // تحديث invoiceSentAt بعد الإرسال الناجح
       if (emailSent) {
         order.invoiceSentAt = new Date();
@@ -6809,7 +6875,7 @@ export class OrderService {
       return {
         success: emailSent,
         message: emailSent
-          ? `تم توليد وإرسال الفاتورة بنجاح إلى إيميل المبيعات`
+          ? `تم توليد وإرسال الفاتورة بنجاح إلى إيميل المبيعات وإلى واتساب المبيعات (إن وُجد)`
           : `تم توليد الفاتورة ولكن فشل إرسال الإيميل`,
         invoiceNumber: order.invoiceNumber,
         emailSent: emailSent,

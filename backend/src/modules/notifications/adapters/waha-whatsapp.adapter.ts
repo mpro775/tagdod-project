@@ -75,4 +75,64 @@ export class WahaWhatsAppAdapter {
       return { success: false, error: errorMsg };
     }
   }
+
+  /**
+   * إرسال ملف (مثل PDF فاتورة) عبر WAHA
+   * @param to رقم الواتساب (مثل 967775019485 أو +967775019485)
+   * @param fileUrl رابط عام للملف (يجب أن يكون WAHA قادراً على تحميله)
+   * @param caption نص اختياري مع الملف
+   * @param filename اسم الملف (مثل invoice-123.pdf)
+   * @param mimetype نوع الملف (مثل application/pdf)
+   */
+  async sendFile(
+    to: string,
+    fileUrl: string,
+    caption?: string,
+    filename?: string,
+    mimetype: string = 'application/pdf',
+  ): Promise<WhatsAppResult> {
+    if (!this.isReady()) {
+      this.logger.warn('WAHA adapter not configured (WAHA_BASE_URL, WAHA_API_KEY)');
+      return { success: false, error: 'Configuration missing' };
+    }
+
+    const cleanPhone = to.startsWith('+') ? to.replace('+', '') : to;
+    const chatId = `${cleanPhone}@c.us`;
+
+    const url = `${this.baseUrl}/api/sendFile`;
+
+    const payload = {
+      session: this.sessionName,
+      chatId,
+      file: {
+        mimetype,
+        url: fileUrl,
+        filename: filename || `document-${Date.now()}.pdf`,
+      },
+      ...(caption && { caption }),
+    };
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(url, payload, {
+          headers: {
+            'X-Api-Key': this.apiKey,
+            'Content-Type': 'application/json',
+          },
+          timeout: 15000,
+        }),
+      );
+
+      const messageId = response.data?.id || 'sent';
+      this.logger.log(`WAHA file sent to ${cleanPhone}: ${messageId}`);
+      return { success: true, messageId };
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.description || error.message;
+      this.logger.error(`WAHA sendFile error for ${cleanPhone}: ${errorMsg}`);
+      if (error.response?.status === 404) {
+        return { success: false, error: 'Session not found or disconnected' };
+      }
+      return { success: false, error: errorMsg };
+    }
+  }
 }
