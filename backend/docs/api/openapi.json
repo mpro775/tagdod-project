@@ -33685,6 +33685,111 @@
         ]
       }
     },
+    "/api/v1/app/config": {
+      "get": {
+        "operationId": "getConfig",
+        "summary": "سياسة إصدار التطبيق",
+        "description": "إرجاع سياسة النسخ (minVersion, blockedVersions, maintenanceMode, updateUrl) مع shouldUpdate و canUse عند إرسال X-App-Version",
+        "parameters": [
+          {
+            "name": "x-app-version",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-App-Version",
+            "in": "header",
+            "description": "نسخة التطبيق الحالية (مثلاً 1.0.5) لمقارنة semver",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "سياسة النسخ مع الحقول المحسوبة عند توفر النسخة",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppConfigClientResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إعداد التطبيق (عام)"
+        ]
+      }
+    },
+    "/api/v1/admin/app-config": {
+      "get": {
+        "operationId": "get",
+        "summary": "جلب سياسة إصدار التطبيق",
+        "description": "الحصول على سياسة النسخ (للأدمن)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم جلب السياسة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppVersionPolicyDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-إعداد-التطبيق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "update",
+        "summary": "تحديث سياسة إصدار التطبيق",
+        "description": "تحديث minVersion, blockedVersions, maintenanceMode, updateUrl، إلخ",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAppVersionPolicyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تم تحديث السياسة بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppVersionPolicyDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-إعداد-التطبيق"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "check",
@@ -39926,6 +40031,152 @@
           "failed",
           "totalSize"
         ]
+      },
+      "AppConfigClientResponseDto": {
+        "type": "object",
+        "properties": {
+          "minVersion": {
+            "type": "string",
+            "description": "أقل نسخة مسموح بها",
+            "example": "1.0.5"
+          },
+          "latestVersion": {
+            "type": "string",
+            "description": "أحدث نسخة",
+            "example": "1.0.6"
+          },
+          "blockedVersions": {
+            "description": "نسخ محظورة",
+            "example": [
+              "1.0.3",
+              "1.0.4"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "forceUpdate": {
+            "type": "boolean",
+            "description": "إجبار التحديث",
+            "example": false
+          },
+          "maintenanceMode": {
+            "type": "boolean",
+            "description": "وضع الصيانة",
+            "example": false
+          },
+          "updateUrl": {
+            "type": "string",
+            "description": "رابط التحديث (متجر)",
+            "example": "https://..."
+          },
+          "shouldUpdate": {
+            "type": "boolean",
+            "description": "يجب تحديث التطبيق (نسخة قديمة أو محظورة)",
+            "example": false
+          },
+          "canUse": {
+            "type": "boolean",
+            "description": "يمكن استخدام التطبيق (لا حظر ولا صيانة)",
+            "example": true
+          }
+        },
+        "required": [
+          "minVersion",
+          "latestVersion",
+          "blockedVersions",
+          "forceUpdate",
+          "maintenanceMode",
+          "updateUrl"
+        ]
+      },
+      "AppVersionPolicyDto": {
+        "type": "object",
+        "properties": {
+          "minVersion": {
+            "type": "string",
+            "description": "أقل نسخة مسموح بها",
+            "example": "1.0.5"
+          },
+          "latestVersion": {
+            "type": "string",
+            "description": "أحدث نسخة",
+            "example": "1.0.6"
+          },
+          "blockedVersions": {
+            "description": "نسخ محظورة",
+            "example": [
+              "1.0.3",
+              "1.0.4"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "forceUpdate": {
+            "type": "boolean",
+            "description": "إجبار التحديث",
+            "example": false
+          },
+          "maintenanceMode": {
+            "type": "boolean",
+            "description": "وضع الصيانة",
+            "example": false
+          },
+          "updateUrl": {
+            "type": "string",
+            "description": "رابط التحديث (متجر)",
+            "example": "https://..."
+          }
+        },
+        "required": [
+          "minVersion",
+          "latestVersion",
+          "blockedVersions",
+          "forceUpdate",
+          "maintenanceMode",
+          "updateUrl"
+        ]
+      },
+      "UpdateAppVersionPolicyDto": {
+        "type": "object",
+        "properties": {
+          "minVersion": {
+            "type": "string",
+            "description": "أقل نسخة مسموح بها",
+            "example": "1.0.5"
+          },
+          "latestVersion": {
+            "type": "string",
+            "description": "أحدث نسخة",
+            "example": "1.0.6"
+          },
+          "blockedVersions": {
+            "description": "نسخ محظورة",
+            "example": [
+              "1.0.3",
+              "1.0.4"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "forceUpdate": {
+            "type": "boolean",
+            "description": "إجبار التحديث"
+          },
+          "maintenanceMode": {
+            "type": "boolean",
+            "description": "وضع الصيانة"
+          },
+          "updateUrl": {
+            "type": "string",
+            "description": "رابط التحديث (متجر)"
+          }
+        }
       }
     }
   }

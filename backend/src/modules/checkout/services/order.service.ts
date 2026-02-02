@@ -5327,12 +5327,28 @@ export class OrderService {
       let displayTax = order.tax ?? 0;
       let displayTotal = order.total;
       let displayReturnAmount = order.returnInfo?.returnAmount ?? 0;
-      let displayItems: Array<{ finalPrice: number; discount: number; lineTotal: number }> =
-        order.items.map((item) => ({
+      // إجمالي قبل الخصم (مجموع المنتجات بالسعر الطبيعي) وقيمة الخصم الكلي
+      let displaySubtotalBeforeDiscount =
+        order.subtotal + (order.itemsDiscount ?? 0);
+      let displayTotalDiscount = order.totalDiscount ?? 0;
+      let displayItems: Array<{
+        basePrice: number;
+        finalPrice: number;
+        discount: number;
+        lineTotalBeforeDiscount: number;
+        lineTotal: number;
+      }> = order.items.map((item) => {
+        const lineDiscount =
+          item.discount ?? (item.basePrice - item.finalPrice) * item.qty;
+        const lineTotalBefore = item.basePrice * item.qty;
+        return {
+          basePrice: item.basePrice,
           finalPrice: item.finalPrice,
-          discount: item.discount ?? 0,
+          discount: lineDiscount,
+          lineTotalBeforeDiscount: lineTotalBefore,
           lineTotal: item.lineTotal ?? 0,
-        }));
+        };
+      });
       let displayPromotionDiscounts: number[] = itemsWithPromotions.map((p) => p.discount);
       let displayAppliedCouponDiscounts: number[] = (order.appliedCoupons || []).map(
         (c: { discount?: number }) => c.discount ?? 0,
@@ -5358,6 +5374,8 @@ export class OrderService {
             convTax,
             convTotal,
             convReturnAmount,
+            convSubtotalBeforeDiscount,
+            convTotalDiscount,
             ...convItems
           ] = await Promise.all([
             convert(order.subtotal),
@@ -5371,11 +5389,19 @@ export class OrderService {
             convert(order.tax ?? 0),
             convert(order.total),
             convert(order.returnInfo?.returnAmount ?? 0),
-            ...order.items.flatMap((item) => [
-              convert(item.finalPrice),
-              convert(item.discount ?? 0),
-              convert(item.lineTotal ?? 0),
-            ]),
+            convert(order.subtotal + (order.itemsDiscount ?? 0)),
+            convert(order.totalDiscount ?? 0),
+            ...order.items.flatMap((item) => {
+              const lineDisc =
+                item.discount ?? (item.basePrice - item.finalPrice) * item.qty;
+              return [
+                convert(item.basePrice),
+                convert(item.finalPrice),
+                convert(lineDisc),
+                convert(item.basePrice * item.qty),
+                convert(item.lineTotal ?? 0),
+              ];
+            }),
           ]);
           displaySubtotal = convSubtotal;
           displayTotalMerchantDiscount = convTotalMerchant;
@@ -5388,12 +5414,16 @@ export class OrderService {
           displayTax = convTax;
           displayTotal = convTotal;
           displayReturnAmount = convReturnAmount;
+          displaySubtotalBeforeDiscount = convSubtotalBeforeDiscount;
+          displayTotalDiscount = convTotalDiscount;
           displayItems = [];
           for (let i = 0; i < order.items.length; i++) {
             displayItems.push({
-              finalPrice: convItems[i * 3]!,
-              discount: convItems[i * 3 + 1]!,
-              lineTotal: convItems[i * 3 + 2]!,
+              basePrice: convItems[i * 5]!,
+              finalPrice: convItems[i * 5 + 1]!,
+              discount: convItems[i * 5 + 2]!,
+              lineTotalBeforeDiscount: convItems[i * 5 + 3]!,
+              lineTotal: convItems[i * 5 + 4]!,
             });
           }
           displayPromotionDiscounts = await Promise.all(
@@ -5703,9 +5733,9 @@ export class OrderService {
                 <th>المنتج</th>
                 <th>الكمية</th>
                 ${hasReturnedItems ? '<th>الحالة</th>' : ''}
-                <th>السعر الوحدة</th>
+                <th>السعر الطبيعي (الوحدة)</th>
                 <th>الخصم</th>
-                <th>المجموع</th>
+                <th>المجموع (بعد الخصم)</th>
               </tr>
             </thead>
             <tbody>
@@ -5785,7 +5815,7 @@ export class OrderService {
                   </td>
                   <td>${qtyDisplay}</td>
                   ${hasReturnedItems ? `<td>${returnBadge}</td>` : ''}
-                  <td>${formatCurrency(displayItems[index].finalPrice, displayCurrency)}</td>
+                  <td>${formatCurrency(displayItems[index].basePrice, displayCurrency)}</td>
                   <td>${displayItems[index].discount > 0 ? formatCurrency(displayItems[index].discount, displayCurrency) : '-'}</td>
                   <td><strong>${formatCurrency(displayItems[index].lineTotal, displayCurrency)}</strong></td>
                 </tr>
@@ -5916,14 +5946,21 @@ export class OrderService {
           <div class="totals-section">
             <div class="totals-box">
               <div class="total-row">
-                <span>المجموع الفرعي:</span>
-                <span>${formatCurrency(displayOrderSubtotal, displayCurrency)}</span>
+                <span>الإجمالي قبل الخصم:</span>
+                <span>${formatCurrency(displaySubtotalBeforeDiscount, displayCurrency)}</span>
+              </div>
+              ${
+                displayTotalDiscount > 0
+                  ? `
+              <div class="total-row">
+                <span>قيمة الخصم:</span>
+                <span>- ${formatCurrency(displayTotalDiscount, displayCurrency)}</span>
               </div>
               ${
                 displayTotalMerchantDiscount > 0
                   ? `
-              <div class="total-row">
-                <span>خصم التاجر:</span>
+              <div class="total-row" style="padding-right: 15px;">
+                <span>منها خصم التاجر:</span>
                 <span>- ${formatCurrency(displayTotalMerchantDiscount, displayCurrency)}</span>
               </div>
               `
@@ -5932,8 +5969,8 @@ export class OrderService {
               ${
                 displayTotalPromotionDiscount > 0
                   ? `
-              <div class="total-row">
-                <span>خصم العروض:</span>
+              <div class="total-row" style="padding-right: 15px;">
+                <span>منها خصم العروض:</span>
                 <span>- ${formatCurrency(displayTotalPromotionDiscount, displayCurrency)}</span>
               </div>
               `
@@ -5942,8 +5979,8 @@ export class OrderService {
               ${
                 displayOrderItemsDiscount > 0 && displayExtraItemsDiscount !== 0
                   ? `
-              <div class="total-row">
-                <span>خصم إضافي على المنتجات:</span>
+              <div class="total-row" style="padding-right: 15px;">
+                <span>منها خصم إضافي على المنتجات:</span>
                 <span>- ${formatCurrency(displayExtraItemsDiscount, displayCurrency)}</span>
               </div>
               `
@@ -5952,10 +5989,13 @@ export class OrderService {
               ${
                 displayCouponAndAuto > 0
                   ? `
-              <div class="total-row">
-                <span>خصم الكوبونات:</span>
+              <div class="total-row" style="padding-right: 15px;">
+                <span>منها خصم الكوبونات:</span>
                 <span>- ${formatCurrency(displayCouponAndAuto, displayCurrency)}</span>
               </div>
+              `
+                  : ''
+              }
               `
                   : ''
               }
@@ -5980,7 +6020,7 @@ export class OrderService {
                   : ''
               }
               <div class="total-row">
-                <span>المجموع الكلي:</span>
+                <span>الإجمالي بعد الخصم:</span>
                 <span>${formatCurrency(displayTotal, displayCurrency)}</span>
               </div>
             </div>

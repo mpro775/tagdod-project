@@ -15639,6 +15639,96 @@
         }
       ],
       "description": "Endpoints for النسخ الاحتياطي functionality"
+    },
+    {
+      "name": "إعداد التطبيق (عام)",
+      "item": [
+        {
+          "name": "سياسة إصدار التطبيق",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/app/config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "app",
+                "config"
+              ]
+            },
+            "description": "إرجاع سياسة النسخ (minVersion, blockedVersions, maintenanceMode, updateUrl) مع shouldUpdate و canUse عند إرسال X-App-Version"
+          }
+        }
+      ],
+      "description": "Endpoints for إعداد التطبيق (عام) functionality"
+    },
+    {
+      "name": "إدارة-إعداد-التطبيق",
+      "item": [
+        {
+          "name": "جلب سياسة إصدار التطبيق",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/app-config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "app-config"
+              ]
+            },
+            "description": "الحصول على سياسة النسخ (للأدمن)"
+          }
+        },
+        {
+          "name": "تحديث سياسة إصدار التطبيق",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/app-config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "app-config"
+              ]
+            },
+            "description": "تحديث minVersion, blockedVersions, maintenanceMode, updateUrl، إلخ"
+          }
+        }
+      ],
+      "description": "Endpoints for إدارة-إعداد-التطبيق functionality"
     }
   ]
 }
