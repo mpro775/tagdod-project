@@ -1464,10 +1464,19 @@ export class CartService {
 
   private buildProductSnapshot(
     product?: Product | null,
+    variant?: Record<string, unknown> | null,
   ): CartItem['productSnapshot'] | undefined {
     if (!product) return undefined;
 
     const productRecord = product as unknown as Record<string, unknown>;
+    // رقم الصنف: نفضّل متغير المنتج إن وُجد، وإلا منتج
+    const sku =
+      (variant && typeof variant['sku'] === 'string' && variant['sku'].trim() !== ''
+        ? String(variant['sku']).trim()
+        : undefined) ??
+      (typeof productRecord['sku'] === 'string' && (productRecord['sku'] as string).trim() !== ''
+        ? String(productRecord['sku']).trim()
+        : undefined);
 
     let image: string | undefined;
     const mainImageCandidate =
@@ -1521,6 +1530,7 @@ export class CartService {
     return {
       name: (productRecord['name'] as string) ?? '',
       slug: (productRecord['slug'] as string) ?? '',
+      ...(sku && { sku }),
       image,
       brandId: this.toStringId(brand),
       brandName:
@@ -1696,7 +1706,10 @@ export class CartService {
         variantId: new Types.ObjectId(String(variant._id)),
         productId: new Types.ObjectId(String(variant.productId)),
         itemType: 'variant',
-        productSnapshot: this.buildProductSnapshot(product),
+        productSnapshot: this.buildProductSnapshot(
+          product,
+          variant as unknown as Record<string, unknown>,
+        ),
         basePriceUSD,
         pricing,
       };
@@ -1839,7 +1852,10 @@ export class CartService {
         variantId: new Types.ObjectId(String(variantRecord['_id'])),
         productId: new Types.ObjectId(productIdStr),
         itemType: 'variant',
-        productSnapshot: this.buildProductSnapshot(product as unknown as Product),
+        productSnapshot: this.buildProductSnapshot(
+          product as unknown as Product,
+          variantRecord,
+        ),
         basePriceUSD,
         pricing: {
           currency: targetCurrency,
@@ -2068,7 +2084,10 @@ export class CartService {
       }
 
       const refreshedSnapshot =
-          this.buildProductSnapshot(product ?? undefined) ?? snapshot ?? {
+          this.buildProductSnapshot(
+            product ?? undefined,
+            variant ? (variant as unknown as Record<string, unknown>) : undefined,
+          ) ?? snapshot ?? {
           name: (product as unknown as { name?: string })?.name ?? '',
           slug: (product as unknown as { slug?: string })?.slug ?? '',
         };

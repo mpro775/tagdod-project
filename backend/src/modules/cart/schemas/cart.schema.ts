@@ -34,6 +34,7 @@ export class CartItem {
   productSnapshot?: {
     name: string;
     slug: string;
+    sku?: string; // رقم الصنف (من المنتج أو المتغير)
     image?: string;
     brandId?: string;
     brandName?: string;

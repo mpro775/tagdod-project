@@ -5587,6 +5587,7 @@ export class OrderService {
             <thead>
               <tr>
                 <th>#</th>
+                <th>رقم الصنف / SKU</th>
                 <th>المنتج</th>
                 <th>الكمية</th>
                 ${hasReturnedItems ? '<th>الحالة</th>' : ''}
@@ -5598,6 +5599,13 @@ export class OrderService {
             <tbody>
               ${order.items
                 .map((item, index) => {
+                  // رقم الصنف: من المنتج أو المتغير (snapshot.sku أو snapshot.variantSku)
+                  const itemSku =
+                    item.snapshot?.sku ??
+                    (item.snapshot as any)?.variantSku ??
+                    (item.snapshot as any)?.variantSkuCode ??
+                    '-';
+
                   // تجميع السمات
                   const attributes: string[] = [];
 
@@ -5649,9 +5657,9 @@ export class OrderService {
                   return `
                 <tr ${rowStyle}>
                   <td>${index + 1}</td>
+                  <td><code style="font-size: 11px;">${itemSku}</code></td>
                   <td>
                     <strong>${item.snapshot?.name || 'منتج'}${hasPromotion}${isReturned ? ' ↩️' : ''}</strong><br/>
-                    ${item.snapshot?.sku ? `<small>SKU: ${item.snapshot.sku}</small><br/>` : ''}
                     ${item.snapshot?.brandName ? `<small>العلامة: ${item.snapshot.brandName}</small><br/>` : ''}
                     ${
                       attributes.length > 0
@@ -6241,6 +6249,7 @@ export class OrderService {
             <thead>
               <tr>
                 <th>#</th>
+                <th>رقم الصنف / SKU</th>
                 <th>المنتج</th>
                 <th>الكمية المرتجعة</th>
                 <th>السعر الوحدة</th>
@@ -6254,6 +6263,11 @@ export class OrderService {
                   const returnRatio = returnQty / item.qty;
                   const itemReturnAmount = Math.round(item.lineTotal * returnRatio * 100) / 100;
 
+                  // رقم الصنف: من المنتج أو المتغير
+                  const snapshotAny = item.snapshot as any;
+                  const itemSku =
+                    item.snapshot?.sku ?? snapshotAny?.variantSku ?? snapshotAny?.variantSkuCode ?? '-';
+
                   // تجميع السمات
                   const attributes: string[] = [];
                   if (item.snapshot?.attributes) {
@@ -6262,7 +6276,6 @@ export class OrderService {
                     });
                   }
 
-                  const snapshotAny = item.snapshot as any;
                   if (
                     snapshotAny?.variantAttributes &&
                     Array.isArray(snapshotAny.variantAttributes)
@@ -6277,9 +6290,9 @@ export class OrderService {
                   return `
                 <tr>
                   <td>${index + 1}</td>
+                  <td><code style="font-size: 11px;">${itemSku}</code></td>
                   <td>
                     <strong>${item.snapshot?.name || 'منتج'}</strong><br/>
-                    ${item.snapshot?.sku ? `<small>SKU: ${item.snapshot.sku}</small><br/>` : ''}
                     ${item.snapshot?.brandName ? `<small>العلامة: ${item.snapshot.brandName}</small><br/>` : ''}
                     ${
                       attributes.length > 0
