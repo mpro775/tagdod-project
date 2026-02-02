@@ -113,24 +113,25 @@ export class OtpService {
         ? `رمز التحقق لإعادة تعيين كلمة المرور في تطبيق تجدد هو: ${code}`
         : `رمز التحقق الخاص بك في تطبيق تجدد هو: ${code}`;
 
-    // 1. Try WhatsApp first (WAHA) if adapter is available
-    let waResult: WhatsAppResult | null = null;
+    // 1. Send via WhatsApp (WAHA) if adapter is available — independent of SMS
     if (this.whatsAppAdapter?.isReady()) {
-      this.logger.log(`Attempting to send OTP via WhatsApp to ${normalizedPhone}`);
-      waResult = await this.whatsAppAdapter.sendMessage(normalizedPhone, message);
-      if (waResult.success) {
-        this.logger.log(`OTP sent via WhatsApp successfully to ${normalizedPhone}`);
-      } else {
-        this.logger.warn(
-          `WhatsApp failed for ${normalizedPhone}: ${waResult.error}. Falling back to SMS.`,
-        );
+      try {
+        this.logger.log(`Attempting to send OTP via WhatsApp to ${normalizedPhone}`);
+        const waResult = await this.whatsAppAdapter.sendMessage(normalizedPhone, message);
+        if (waResult.success) {
+          this.logger.log(`OTP sent via WhatsApp successfully to ${normalizedPhone}`);
+        } else {
+          this.logger.warn(`WhatsApp failed for ${normalizedPhone}: ${waResult.error}`);
+        }
+      } catch (error) {
+        this.logger.error(`Error sending OTP via WhatsApp to ${normalizedPhone}:`, error);
       }
     } else {
       this.logger.debug('WhatsApp adapter not configured or not ready, skipping.');
     }
 
-    // 2. Fallback to SMS if WhatsApp failed or wasn't used
-    if (!waResult?.success && this.smsAdapter) {
+    // 2. Send via SMS if adapter is available — independent of WhatsApp (both can run)
+    if (this.smsAdapter) {
       try {
         this.logger.log(`Sending OTP via SMS to ${normalizedPhone}`);
         const smsResult = await this.smsAdapter.sendSMS({
@@ -145,7 +146,11 @@ export class OtpService {
       } catch (error) {
         this.logger.error(`Error sending OTP SMS to ${normalizedPhone}:`, error);
       }
-    } else if (!waResult?.success && !this.smsAdapter) {
+    } else {
+      this.logger.debug('SMS adapter not configured, skipping.');
+    }
+
+    if (!this.whatsAppAdapter?.isReady() && !this.smsAdapter) {
       this.logger.warn('Neither WhatsApp nor SMS adapter available, OTP not sent.');
     }
 

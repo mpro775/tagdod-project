@@ -196,10 +196,7 @@ export class UnifiedNotificationController {
     const userId = req.user.id;
     const count = await this.notificationService.getUnreadCount(userId);
 
-    return {
-      success: true,
-      data: { count },
-    };
+    return { count };
   }
 
   @Post('mark-read')
@@ -387,17 +384,15 @@ export class UnifiedNotificationController {
     return {
       success: result.success,
       message: result.message,
-      data: result.deviceToken
+      deviceToken: result.deviceToken
         ? {
-          deviceToken: {
             _id: result.deviceToken._id,
             userId: result.deviceToken.userId,
             token: result.deviceToken.token.substring(0, 20) + '...', // إخفاء جزء من Token للأمان
             platform: result.deviceToken.platform,
             isActive: result.deviceToken.isActive,
             lastUsedAt: result.deviceToken.lastUsedAt,
-          },
-        }
+          }
         : undefined,
     };
   }
@@ -484,18 +479,15 @@ export class UnifiedNotificationController {
     const devices = await this.notificationService.getUserDeviceTokens(userId);
 
     return {
-      success: true,
-      data: {
-        devices: devices.map((device) => ({
-          _id: device._id,
-          platform: device.platform,
-          userAgent: device.userAgent,
-          appVersion: device.appVersion,
-          isActive: device.isActive,
-          lastUsedAt: device.lastUsedAt,
-          createdAt: device.createdAt,
-        })),
-      },
+      devices: devices.map((device) => ({
+        _id: device._id,
+        platform: device.platform,
+        userAgent: device.userAgent,
+        appVersion: device.appVersion,
+        isActive: device.isActive,
+        lastUsedAt: device.lastUsedAt,
+        createdAt: device.createdAt,
+      })),
     };
   }
 
@@ -620,20 +612,17 @@ export class UnifiedNotificationController {
   async adminGetStats(@Query('userId') userId?: string) {
     try {
       const stats = await this.notificationService.getNotificationStats(userId);
-      return { success: true, data: stats };
+      return stats;
     } catch (error) {
       return {
-        success: false,
-        data: {
-          total: 0,
-          byType: {},
-          byStatus: {},
-          byChannel: {},
-          byCategory: {},
-          unreadCount: 0,
-          readRate: 0,
-          deliveryRate: 0,
-        },
+        total: 0,
+        byType: {},
+        byStatus: {},
+        byChannel: {},
+        byCategory: {},
+        unreadCount: 0,
+        readRate: 0,
+        deliveryRate: 0,
       };
     }
   }
@@ -686,7 +675,7 @@ export class UnifiedNotificationController {
       },
     ];
 
-    return { success: true, data: templates };
+    return templates;
   }
 
   @Post('admin/cleanup')
@@ -723,7 +712,7 @@ export class UnifiedNotificationController {
       throw new BadRequestException('Invalid notification ID format');
     }
     const notification = await this.notificationService.getNotificationById(id);
-    return { success: true, data: notification };
+    return notification;
   }
 
   @Put('admin/notification/:id')
@@ -744,7 +733,7 @@ export class UnifiedNotificationController {
       throw new BadRequestException('Invalid notification ID format');
     }
     const notification = await this.notificationService.updateNotification(id, dto);
-    return { success: true, data: notification };
+    return notification;
   }
 
   @Delete('admin/notification/:id')
@@ -765,7 +754,7 @@ export class UnifiedNotificationController {
     }
     const deleted = await this.notificationService.deleteNotification(id);
     return {
-      success: deleted,
+      deleted,
       message: deleted ? 'Notification deleted successfully' : 'Notification not found',
     };
   }
@@ -802,7 +791,6 @@ export class UnifiedNotificationController {
       );
 
       return {
-        success: true,
         message: `Notification sent successfully to ${copiesCount} user(s)`,
         copiesCreated: copiesCount,
       };
@@ -829,7 +817,7 @@ export class UnifiedNotificationController {
         : notification.status,
     );
 
-    return { success: true, message: 'Notification sent successfully' };
+    return { message: 'Notification sent successfully' };
   }
 
   @Get('admin/users-list')
@@ -847,7 +835,7 @@ export class UnifiedNotificationController {
       search,
       limit ? parseInt(limit.toString(), 10) : 100,
     );
-    return { success: true, data: users };
+    return users;
   }
 
   @Get('admin/users/:userId/devices')
@@ -1092,7 +1080,7 @@ export class UnifiedNotificationController {
   @ApiResponse({ status: 200, description: 'Bulk send completed' })
   async adminBulkSend(@Body() dto: BulkSendNotificationDto) {
     const result = await this.notificationService.bulkSendNotifications(dto);
-    return { success: true, data: result };
+    return result;
   }
 
   @Post('admin/test')
@@ -1132,7 +1120,7 @@ export class UnifiedNotificationController {
       isSystemGenerated: true,
     });
 
-    return { success: true, data: notification, message: 'Test notification sent successfully' };
+    return { ...notification, message: 'Test notification sent successfully' };
   }
 
   @Post('admin/templates')
@@ -1146,7 +1134,7 @@ export class UnifiedNotificationController {
   @ApiResponse({ status: 201, description: 'Template created successfully' })
   async adminCreateTemplate(@Body() dto: CreateTemplateDto) {
     const template = await this.templateService.createTemplate(dto);
-    return { success: true, data: template };
+    return template;
   }
 
   @Put('admin/templates/:key')
@@ -1162,7 +1150,7 @@ export class UnifiedNotificationController {
   @ApiResponse({ status: 404, description: 'Template not found' })
   async adminUpdateTemplate(@Param('key') key: string, @Body() dto: UpdateTemplateDto) {
     const updated = await this.templateService.updateTemplateByKey(key, dto);
-    return { success: true, data: updated };
+    return updated;
   }
 
   @Delete('admin/templates/:key')
@@ -1178,7 +1166,7 @@ export class UnifiedNotificationController {
   async adminDeleteTemplate(@Param('key') key: string) {
     const deleted = await this.templateService.deleteTemplateByKey(key);
     return {
-      success: deleted,
+      deleted,
       message: deleted ? 'Template deleted successfully' : 'Template not found',
     };
   }
@@ -1208,7 +1196,7 @@ export class UnifiedNotificationController {
       updatedAt: template.updatedAt,
     };
 
-    return { success: true, data: stats };
+    return stats;
   }
 
   @Get('admin/stats/overview')
@@ -1236,7 +1224,7 @@ export class UnifiedNotificationController {
         .map(([type, count]) => ({ type, count })),
     };
 
-    return { success: true, data: overview };
+    return overview;
   }
 
   @Get('admin/logs')
@@ -1270,7 +1258,7 @@ export class UnifiedNotificationController {
   @ApiResponse({ status: 200, description: 'Delivery details retrieved successfully' })
   async adminGetDeliveryDetails(@Param('id') id: string) {
     const details = await this.notificationService.getNotificationDeliveryDetails(id);
-    return { success: true, data: details };
+    return details;
   }
 
   // ===== Frequency Limit Admin Endpoints =====
@@ -1293,11 +1281,8 @@ export class UnifiedNotificationController {
     const history = await this.frequencyLimitService.getFrequencyStats(userId, 30);
 
     return {
-      success: true,
-      data: {
-        currentStatus: status,
-        history,
-      },
+      currentStatus: status,
+      history,
     };
   }
 
@@ -1318,7 +1303,6 @@ export class UnifiedNotificationController {
     await this.preferenceService.resetUserFrequencyCounters(userId);
 
     return {
-      success: true,
       message: 'Frequency counters reset successfully',
     };
   }
@@ -1334,10 +1318,7 @@ export class UnifiedNotificationController {
   async adminGetQueueStats() {
     const stats = await this.notificationService.getQueueStats();
 
-    return {
-      success: true,
-      data: stats,
-    };
+    return stats;
   }
 
   // ===== Analytics Admin Endpoints =====
@@ -1354,10 +1335,7 @@ export class UnifiedNotificationController {
   async adminGetCTR(@Query() filter: AnalyticsFilterDto) {
     const ctr = await this.analyticsService.getClickThroughRate(filter);
 
-    return {
-      success: true,
-      data: ctr,
-    };
+    return ctr;
   }
 
   @Get('admin/analytics/conversion')
@@ -1372,10 +1350,7 @@ export class UnifiedNotificationController {
   async adminGetConversionRate(@Query() filter: AnalyticsFilterDto) {
     const conversion = await this.analyticsService.getConversionRate(filter);
 
-    return {
-      success: true,
-      data: conversion,
-    };
+    return conversion;
   }
 
   @Get('admin/analytics/performance')
@@ -1394,11 +1369,8 @@ export class UnifiedNotificationController {
     ]);
 
     return {
-      success: true,
-      data: {
-        byType,
-        byChannel,
-      },
+      byType,
+      byChannel,
     };
   }
 
@@ -1414,9 +1386,6 @@ export class UnifiedNotificationController {
   async adminGetAdvancedAnalytics(@Query() filter: AnalyticsFilterDto) {
     const analytics = await this.analyticsService.getAdvancedStats(filter);
 
-    return {
-      success: true,
-      data: analytics,
-    };
+    return analytics;
   }
 }
