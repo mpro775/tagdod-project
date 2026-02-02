@@ -16,7 +16,8 @@
     "localPaymentAccounts": "Local Payment Accounts",
     "shipping": "Shipping",
     "security": "Security",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "appVersion": "App Version Control"
   },
   "sections": {
     "general": {
@@ -142,6 +143,24 @@
         "accountsRequired": "Add at least one account",
         "accountNumberRequired": "Every account must include an account number"
       }
+    },
+    "appVersion": {
+      "title": "App Version Control",
+      "subtitle": "Minimum allowed version, blocked versions, maintenance mode, and update URL",
+      "minVersion": "Minimum allowed version",
+      "latestVersion": "Latest version",
+      "updateUrl": "Update URL (store link)",
+      "blockedVersions": "Blocked versions",
+      "blockedVersionsHint": "Add versions that are not allowed (e.g. 1.0.3, 1.0.4)",
+      "forceUpdate": "Force update",
+      "forceUpdateDesc": "Show mandatory update screen for versions below minimum",
+      "maintenanceMode": "Maintenance mode",
+      "maintenanceModeDesc": "Show maintenance screen and block usage",
+      "addVersion": "Add version",
+      "versionPlaceholder": "e.g. 1.0.3",
+      "saved": "Version policy saved successfully",
+      "saveFailed": "Failed to save version policy",
+      "loadFailed": "Failed to load version policy"
     }
   },
   "placeholders": {

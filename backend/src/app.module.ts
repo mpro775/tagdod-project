@@ -34,6 +34,7 @@ import { PoliciesModule } from './modules/policies/policies.module';
 import { AboutModule } from './modules/about/about.module';
 import { CommissionsModule } from './modules/commissions/commissions.module';
 import { BackupsModule } from './modules/backups/backups.module';
+import { AppConfigModule } from './modules/app-config/app-config.module';
 import { HealthModule } from './health/health.module';
 
 // Shared modules
@@ -119,6 +120,7 @@ import { ShareProductController } from './deep-linking/share-product.controller'
     AboutModule,
     CommissionsModule,
     BackupsModule,
+    AppConfigModule,
 
     // Health module
     HealthModule,

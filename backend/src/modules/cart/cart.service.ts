@@ -2556,12 +2556,10 @@ export class CartService {
         return this.exchangeRatesService!.convertToUSD(amount, normalizedCurrency);
       };
 
-      const usdSubtotal =
-        normalizedCurrency === 'USD' ? roundedSubtotal : await convertComponentToUSD(roundedSubtotal);
-      const usdSubtotalBeforeDiscount =
-        normalizedCurrency === 'USD'
-          ? roundedSubtotalBeforeDiscount
-          : await convertComponentToUSD(roundedSubtotalBeforeDiscount);
+      // When exchange rates exist, the loop already accumulated subtotalUSD in USD (converted from normalizedCurrency).
+      // So roundedSubtotal and roundedSubtotalBeforeDiscount are already in USD - do not convert again.
+      const usdSubtotal = roundedSubtotal;
+      const usdSubtotalBeforeDiscount = roundedSubtotalBeforeDiscount;
       const usdMerchantDiscount =
         normalizedCurrency === 'USD'
           ? roundedMerchantDiscount

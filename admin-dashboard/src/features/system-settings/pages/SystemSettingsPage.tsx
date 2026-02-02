@@ -45,9 +45,12 @@ import {
   Add,
   Edit,
   Delete,
+  SystemUpdate,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { systemSettingsApi, localPaymentAccountsApi } from '../api/systemSettingsApi';
+import { appConfigApi } from '../api/appConfigApi';
+import type { AppVersionPolicy, UpdateAppVersionPolicyDto } from '../api/appConfigApi';
 import type {
   SystemSetting,
   LocalPaymentAccount,
@@ -88,6 +91,12 @@ export function SystemSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+
+  // App Version Policy State
+  const [appVersionPolicy, setAppVersionPolicy] = useState<AppVersionPolicy | null>(null);
+  const [appVersionLoading, setAppVersionLoading] = useState(false);
+  const [appVersionSaving, setAppVersionSaving] = useState(false);
+  const [newBlockedVersion, setNewBlockedVersion] = useState('');
 
   // Payment Accounts State
   const [paymentAccounts, setPaymentAccounts] = useState<GroupedPaymentAccount[]>([]);
@@ -163,6 +172,12 @@ type PaymentProviderRow = GridValidRowModel & {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab === 7) {
+      fetchAppConfig();
+    }
+  }, [activeTab]);
+
   const fetchPaymentAccounts = async () => {
     try {
       setAccountsLoading(true);
@@ -177,6 +192,60 @@ type PaymentProviderRow = GridValidRowModel & {
     } finally {
       setAccountsLoading(false);
     }
+  };
+
+  const fetchAppConfig = async () => {
+    try {
+      setAppVersionLoading(true);
+      const policy = await appConfigApi.getAppConfig();
+      setAppVersionPolicy(policy);
+    } catch {
+      toast.error(t('sections.appVersion.loadFailed'));
+      setAppVersionPolicy(null);
+    } finally {
+      setAppVersionLoading(false);
+    }
+  };
+
+  const handleSaveAppVersion = async () => {
+    if (!appVersionPolicy) return;
+    try {
+      setAppVersionSaving(true);
+      const payload: UpdateAppVersionPolicyDto = {
+        minVersion: appVersionPolicy.minVersion,
+        latestVersion: appVersionPolicy.latestVersion,
+        updateUrl: appVersionPolicy.updateUrl,
+        blockedVersions: appVersionPolicy.blockedVersions,
+        forceUpdate: appVersionPolicy.forceUpdate,
+        maintenanceMode: appVersionPolicy.maintenanceMode,
+      };
+      const updated = await appConfigApi.updateAppConfig(payload);
+      setAppVersionPolicy(updated);
+      toast.success(t('sections.appVersion.saved'));
+    } catch {
+      toast.error(t('sections.appVersion.saveFailed'));
+    } finally {
+      setAppVersionSaving(false);
+    }
+  };
+
+  const handleAddBlockedVersion = () => {
+    const v = newBlockedVersion.trim();
+    if (!v || !appVersionPolicy) return;
+    if (appVersionPolicy.blockedVersions.includes(v)) return;
+    setAppVersionPolicy({
+      ...appVersionPolicy,
+      blockedVersions: [...appVersionPolicy.blockedVersions, v],
+    });
+    setNewBlockedVersion('');
+  };
+
+  const handleRemoveBlockedVersion = (version: string) => {
+    if (!appVersionPolicy) return;
+    setAppVersionPolicy({
+      ...appVersionPolicy,
+      blockedVersions: appVersionPolicy.blockedVersions.filter((x) => x !== version),
+    });
   };
 
   const handleOpenAccountDialog = (provider?: LocalPaymentAccount) => {
@@ -833,6 +902,12 @@ type PaymentProviderRow = GridValidRowModel & {
             icon={<Notifications />} 
             iconPosition={isMobile ? 'top' : 'start'} 
             label={t('tabs.notifications')}
+            sx={{ minHeight: isMobile ? 72 : 48 }}
+          />
+          <Tab 
+            icon={<SystemUpdate />} 
+            iconPosition={isMobile ? 'top' : 'start'} 
+            label={t('tabs.appVersion')}
             sx={{ minHeight: isMobile ? 72 : 48 }}
           />
         </Tabs>
@@ -1620,6 +1695,194 @@ type PaymentProviderRow = GridValidRowModel & {
                 {saving ? t('messages.saving') : t('buttons.save')}
               </Button>
             </Stack>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* App Version Control */}
+      {activeTab === 7 && (
+        <Card sx={{ bgcolor: 'background.paper' }}>
+          <CardHeader>
+            <Typography variant="h6" fontWeight="bold">
+              {t('sections.appVersion.title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('sections.appVersion.subtitle')}
+            </Typography>
+          </CardHeader>
+          <CardContent>
+            {appVersionLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : appVersionPolicy ? (
+              <Stack spacing={3}>
+                <Grid container spacing={2}>
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label={t('sections.appVersion.minVersion')}
+                      value={appVersionPolicy.minVersion}
+                      onChange={(e) =>
+                        setAppVersionPolicy({
+                          ...appVersionPolicy,
+                          minVersion: e.target.value,
+                        })
+                      }
+                      placeholder="1.0.5"
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label={t('sections.appVersion.latestVersion')}
+                      value={appVersionPolicy.latestVersion}
+                      onChange={(e) =>
+                        setAppVersionPolicy({
+                          ...appVersionPolicy,
+                          latestVersion: e.target.value,
+                        })
+                      }
+                      placeholder="1.0.6"
+                      fullWidth
+                    />
+                  </Grid>
+                </Grid>
+                <TextField
+                  label={t('sections.appVersion.updateUrl')}
+                  value={appVersionPolicy.updateUrl}
+                  onChange={(e) =>
+                    setAppVersionPolicy({
+                      ...appVersionPolicy,
+                      updateUrl: e.target.value,
+                    })
+                  }
+                  placeholder="https://play.google.com/store/apps/..."
+                  fullWidth
+                />
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {t('sections.appVersion.blockedVersions')}
+                  </Typography>
+                  <FormHelperText sx={{ mb: 1 }}>
+                    {t('sections.appVersion.blockedVersionsHint')}
+                  </FormHelperText>
+                  <Stack direction="row" spacing={1} sx={{ mb: 1 }} flexWrap="wrap" useFlexGap>
+                    <TextField
+                      size="small"
+                      placeholder={t('sections.appVersion.versionPlaceholder')}
+                      value={newBlockedVersion}
+                      onChange={(e) => setNewBlockedVersion(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddBlockedVersion())}
+                      sx={{ minWidth: 120 }}
+                    />
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Add />}
+                      onClick={handleAddBlockedVersion}
+                    >
+                      {t('sections.appVersion.addVersion')}
+                    </Button>
+                  </Stack>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {appVersionPolicy.blockedVersions.map((v) => (
+                      <Chip
+                        key={v}
+                        label={v}
+                        onDelete={() => handleRemoveBlockedVersion(v)}
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    border: 1,
+                    borderColor: 'divider',
+                    bgcolor:
+                      theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.primary.main, 0.05)
+                        : alpha(theme.palette.primary.main, 0.02),
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={appVersionPolicy.forceUpdate}
+                        onChange={(e) =>
+                          setAppVersionPolicy({
+                            ...appVersionPolicy,
+                            forceUpdate: e.target.checked,
+                          })
+                        }
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1" fontWeight="medium">
+                          {t('sections.appVersion.forceUpdate')}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {t('sections.appVersion.forceUpdateDesc')}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </Paper>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    border: 1,
+                    borderColor: 'divider',
+                    bgcolor:
+                      theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.primary.main, 0.05)
+                        : alpha(theme.palette.primary.main, 0.02),
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={appVersionPolicy.maintenanceMode}
+                        onChange={(e) =>
+                          setAppVersionPolicy({
+                            ...appVersionPolicy,
+                            maintenanceMode: e.target.checked,
+                          })
+                        }
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1" fontWeight="medium">
+                          {t('sections.appVersion.maintenanceMode')}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {t('sections.appVersion.maintenanceModeDesc')}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </Paper>
+                <Button
+                  variant="contained"
+                  onClick={handleSaveAppVersion}
+                  disabled={appVersionSaving}
+                  startIcon={<Save />}
+                  fullWidth={isMobile}
+                  size="large"
+                >
+                  {appVersionSaving ? t('messages.saving') : t('buttons.save')}
+                </Button>
+              </Stack>
+            ) : (
+              <Alert severity="error">{t('sections.appVersion.loadFailed')}</Alert>
+            )}
           </CardContent>
         </Card>
       )}

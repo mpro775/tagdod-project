@@ -16,7 +16,8 @@
     "localPaymentAccounts": "حسابات الدفع المحلية",
     "shipping": "الشحن",
     "security": "الأمان",
-    "notifications": "الإشعارات"
+    "notifications": "الإشعارات",
+    "appVersion": "تحكم إصدار التطبيق"
   },
   "sections": {
     "general": {
@@ -142,6 +143,24 @@
         "accountsRequired": "أضف حسابًا واحدًا على الأقل",
         "accountNumberRequired": "جميع الحسابات يجب أن تحتوي رقم حساب"
       }
+    },
+    "appVersion": {
+      "title": "تحكم إصدار التطبيق",
+      "subtitle": "أقل نسخة مسموح بها، النسخ المحظورة، وضع الصيانة، ورابط التحديث",
+      "minVersion": "أقل نسخة مسموح بها",
+      "latestVersion": "أحدث نسخة",
+      "updateUrl": "رابط التحديث (متجر)",
+      "blockedVersions": "نسخ محظورة",
+      "blockedVersionsHint": "إضافة نسخ يُمنع استخدامها (مثلاً 1.0.3، 1.0.4)",
+      "forceUpdate": "إجبار التحديث",
+      "forceUpdateDesc": "إظهار شاشة تحديث إجبارية للنسخ الأقدم من الحد الأدنى",
+      "maintenanceMode": "وضع الصيانة",
+      "maintenanceModeDesc": "إظهار شاشة الصيانة ومنع الاستخدام",
+      "addVersion": "إضافة نسخة",
+      "versionPlaceholder": "مثال: 1.0.3",
+      "saved": "تم حفظ سياسة النسخ بنجاح",
+      "saveFailed": "فشل حفظ سياسة النسخ",
+      "loadFailed": "فشل تحميل سياسة النسخ"
     }
   },
   "placeholders": {
