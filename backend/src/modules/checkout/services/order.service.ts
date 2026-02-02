@@ -49,6 +49,7 @@ import {
   NotificationCategory,
 } from '../../notifications/enums/notification.enums';
 import { AuditService } from '../../../shared/services/audit.service';
+import { normalizeYemeniPhone } from '../../../shared/utils/phone.util';
 import { EmailAdapter } from '../../notifications/adapters/email.adapter';
 import { ConfigService } from '@nestjs/config';
 import { UploadService } from '../../upload/upload.service';
@@ -5275,9 +5276,10 @@ export class OrderService {
         });
       };
 
-      // تنسيق المبلغ
+      // تنسيق المبلغ (منزلتان عشريتان ثابتتان للعرض الموحد)
       const formatCurrency = (amount: number, currency: string) => {
-        return `${amount.toLocaleString('en-US')} ${currency}`;
+        const n = Number.isFinite(amount) ? amount : 0;
+        return `${Number(n).toFixed(2)} ${currency}`;
       };
 
       // حساب خصم التاجر (الفرق بين basePrice و finalPrice لكل منتج)
@@ -5305,6 +5307,116 @@ export class OrderService {
           totalMerchantDiscount += itemDiscount;
         }
       });
+
+      // عملة العرض: اليمني يُحوّل إلى دولار؛ السعودي والدولار كما هما
+      const orderCurrency = this.normalizeCurrency(order.currency);
+      const displayInUSD = orderCurrency === 'YER';
+      let displayCurrency = displayInUSD ? 'USD' : orderCurrency;
+
+      // قيم للعرض (محوّلة عند YER أو أصلية)
+      let displaySubtotal = order.subtotal;
+      let displayTotalMerchantDiscount = totalMerchantDiscount;
+      let displayTotalPromotionDiscount = totalPromotionDiscount;
+      let displayOrderSubtotal = order.subtotal;
+      let displayOrderItemsDiscount = order.itemsDiscount ?? 0;
+      let displayExtraItemsDiscount =
+        (order.itemsDiscount ?? 0) - totalMerchantDiscount - totalPromotionDiscount;
+      let displayCouponAndAuto =
+        (order.couponDiscount || 0) + (order.autoDiscountsTotal || 0);
+      let displayShippingCost = order.shippingCost ?? 0;
+      let displayTax = order.tax ?? 0;
+      let displayTotal = order.total;
+      let displayReturnAmount = order.returnInfo?.returnAmount ?? 0;
+      let displayItems: Array<{ finalPrice: number; discount: number; lineTotal: number }> =
+        order.items.map((item) => ({
+          finalPrice: item.finalPrice,
+          discount: item.discount ?? 0,
+          lineTotal: item.lineTotal ?? 0,
+        }));
+      let displayPromotionDiscounts: number[] = itemsWithPromotions.map((p) => p.discount);
+      let displayAppliedCouponDiscounts: number[] = (order.appliedCoupons || []).map(
+        (c: { discount?: number }) => c.discount ?? 0,
+      );
+      let displayAutoCouponDiscounts: number[] = (order.autoAppliedCoupons || []).map(
+        (c: { discount?: number }) => c.discount ?? 0,
+      );
+
+      if (displayInUSD && this.exchangeRatesService) {
+        try {
+          const fromCur = orderCurrency;
+          const convert = (amount: number) =>
+            this.exchangeRatesService!.convertToUSD(amount, fromCur);
+          const [
+            convSubtotal,
+            convTotalMerchant,
+            convTotalPromo,
+            convOrderSubtotal,
+            convOrderItemsDiscount,
+            convExtraItems,
+            convCouponAuto,
+            convShipping,
+            convTax,
+            convTotal,
+            convReturnAmount,
+            ...convItems
+          ] = await Promise.all([
+            convert(order.subtotal),
+            convert(totalMerchantDiscount),
+            convert(totalPromotionDiscount),
+            convert(order.subtotal),
+            convert(order.itemsDiscount ?? 0),
+            convert((order.itemsDiscount ?? 0) - totalMerchantDiscount - totalPromotionDiscount),
+            convert((order.couponDiscount || 0) + (order.autoDiscountsTotal || 0)),
+            convert(order.shippingCost ?? 0),
+            convert(order.tax ?? 0),
+            convert(order.total),
+            convert(order.returnInfo?.returnAmount ?? 0),
+            ...order.items.flatMap((item) => [
+              convert(item.finalPrice),
+              convert(item.discount ?? 0),
+              convert(item.lineTotal ?? 0),
+            ]),
+          ]);
+          displaySubtotal = convSubtotal;
+          displayTotalMerchantDiscount = convTotalMerchant;
+          displayTotalPromotionDiscount = convTotalPromo;
+          displayOrderSubtotal = convOrderSubtotal;
+          displayOrderItemsDiscount = convOrderItemsDiscount;
+          displayExtraItemsDiscount = convExtraItems;
+          displayCouponAndAuto = convCouponAuto;
+          displayShippingCost = convShipping;
+          displayTax = convTax;
+          displayTotal = convTotal;
+          displayReturnAmount = convReturnAmount;
+          displayItems = [];
+          for (let i = 0; i < order.items.length; i++) {
+            displayItems.push({
+              finalPrice: convItems[i * 3]!,
+              discount: convItems[i * 3 + 1]!,
+              lineTotal: convItems[i * 3 + 2]!,
+            });
+          }
+          displayPromotionDiscounts = await Promise.all(
+            itemsWithPromotions.map((p) => convert(p.discount)),
+          );
+          displayAppliedCouponDiscounts = await Promise.all(
+            (order.appliedCoupons || []).map((c: { discount?: number }) =>
+              convert(c.discount ?? 0),
+            ),
+          );
+          displayAutoCouponDiscounts = await Promise.all(
+            (order.autoAppliedCoupons || []).map((c: { discount?: number }) =>
+              convert(c.discount ?? 0),
+            ),
+          );
+        } catch (err) {
+          this.logger.warn(
+            `Invoice YER→USD conversion failed for order ${order.orderNumber}, showing original currency`,
+            err instanceof Error ? err.message : err,
+          );
+          displayCurrency = orderCurrency;
+        }
+      }
 
       // إنشاء محتوى HTML للفاتورة
       const htmlContent = `
@@ -5673,9 +5785,9 @@ export class OrderService {
                   </td>
                   <td>${qtyDisplay}</td>
                   ${hasReturnedItems ? `<td>${returnBadge}</td>` : ''}
-                  <td>${formatCurrency(item.finalPrice, order.currency)}</td>
-                  <td>${item.discount > 0 ? formatCurrency(item.discount, order.currency) : '-'}</td>
-                  <td><strong>${formatCurrency(item.lineTotal, order.currency)}</strong></td>
+                  <td>${formatCurrency(displayItems[index].finalPrice, displayCurrency)}</td>
+                  <td>${displayItems[index].discount > 0 ? formatCurrency(displayItems[index].discount, displayCurrency) : '-'}</td>
+                  <td><strong>${formatCurrency(displayItems[index].lineTotal, displayCurrency)}</strong></td>
                 </tr>
               `;
                 })
@@ -5707,7 +5819,7 @@ export class OrderService {
             <h3 style="color: #721c24; margin-bottom: 15px;">↩️ ملخص الإرجاع / Return Summary</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
               <div>
-                <p><strong>المبلغ المرتجع:</strong> <span style="color: #dc3545; font-size: 18px; font-weight: bold;">${formatCurrency(returnAmount, order.currency)}</span></p>
+                <p><strong>المبلغ المرتجع:</strong> <span style="color: #dc3545; font-size: 18px; font-weight: bold;">${formatCurrency(displayReturnAmount, displayCurrency)}</span></p>
                 <p><strong>عدد الأصناف المرتجعة:</strong> ${returnedItemsCount}</p>
               </div>
               <div>
@@ -5735,9 +5847,9 @@ export class OrderService {
               <strong style="color: #1976d2;">العروض المطبقة على المنتجات:</strong>
               ${itemsWithPromotions
                 .map(
-                  (promo) => `
+                  (promo, pi) => `
                 <div class="discount-item">
-                  ${promo.name}: خصم ${formatCurrency(promo.discount, order.currency)}
+                  ${promo.name}: خصم ${formatCurrency(displayPromotionDiscounts[pi], displayCurrency)}
                 </div>
               `,
                 )
@@ -5753,16 +5865,16 @@ export class OrderService {
             <div style="margin-bottom: 15px;">
               <strong style="color: #1976d2;">الكوبونات المطبقة:</strong>
               ${order.appliedCoupons
-                .map((coupon: any) => {
+                .map((coupon: any, ci: number) => {
                   const couponType =
                     coupon.details?.type === 'percentage' ? 'نسبة مئوية' : 'مبلغ ثابت';
                   const couponValue =
                     coupon.details?.type === 'percentage'
                       ? `${coupon.details?.discountPercentage || 0}%`
-                      : formatCurrency(coupon.details?.discountAmount || 0, order.currency);
+                      : formatCurrency(displayAppliedCouponDiscounts[ci], displayCurrency);
                   return `
                 <div class="discount-item">
-                  <strong>${coupon.details?.title || coupon.code || 'كوبون'}</strong> (${couponType}: ${couponValue}) - خصم ${formatCurrency(coupon.discount, order.currency)}
+                  <strong>${coupon.details?.title || coupon.code || 'كوبون'}</strong> (${couponType}: ${couponValue}) - خصم ${formatCurrency(displayAppliedCouponDiscounts[ci], displayCurrency)}
                 </div>
               `;
                 })
@@ -5779,9 +5891,9 @@ export class OrderService {
               <strong style="color: #1976d2;">الكوبونات التلقائية:</strong>
               ${order.autoAppliedCoupons
                 .map(
-                  (coupon: any) => `
+                  (coupon: any, ai: number) => `
                 <div class="discount-item">
-                  ${coupon.code || 'كوبون تلقائي'}: خصم ${formatCurrency(coupon.discount || 0, order.currency)}
+                  ${coupon.code || 'كوبون تلقائي'}: خصم ${formatCurrency(displayAutoCouponDiscounts[ai], displayCurrency)}
                 </div>
               `,
                 )
@@ -5795,77 +5907,81 @@ export class OrderService {
               : ''
           }
 
+          ${displayInUSD ? `
+          <div style="margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-radius: 5px; border-right: 4px solid #1976d2;">
+            <p style="margin: 0; font-size: 12px; color: #1565c0;"><strong>ملاحظة:</strong> المبالغ معروضة بالدولار الأمريكي (USD) محولة من الريال اليمني (YER) حسب سعر الصرف المعتمد.</p>
+          </div>
+          ` : ''}
+
           <div class="totals-section">
             <div class="totals-box">
               <div class="total-row">
                 <span>المجموع الفرعي:</span>
-                <span>${formatCurrency(order.subtotal, order.currency)}</span>
+                <span>${formatCurrency(displayOrderSubtotal, displayCurrency)}</span>
               </div>
               ${
-                totalMerchantDiscount > 0
+                displayTotalMerchantDiscount > 0
                   ? `
               <div class="total-row">
                 <span>خصم التاجر:</span>
-                <span>- ${formatCurrency(totalMerchantDiscount, order.currency)}</span>
+                <span>- ${formatCurrency(displayTotalMerchantDiscount, displayCurrency)}</span>
               </div>
               `
                   : ''
               }
               ${
-                totalPromotionDiscount > 0
+                displayTotalPromotionDiscount > 0
                   ? `
               <div class="total-row">
                 <span>خصم العروض:</span>
-                <span>- ${formatCurrency(totalPromotionDiscount, order.currency)}</span>
+                <span>- ${formatCurrency(displayTotalPromotionDiscount, displayCurrency)}</span>
               </div>
               `
                   : ''
               }
               ${
-                order.itemsDiscount > 0 &&
-                totalMerchantDiscount + totalPromotionDiscount !== order.itemsDiscount
+                displayOrderItemsDiscount > 0 && displayExtraItemsDiscount !== 0
                   ? `
               <div class="total-row">
                 <span>خصم إضافي على المنتجات:</span>
-                <span>- ${formatCurrency(order.itemsDiscount - totalMerchantDiscount - totalPromotionDiscount, order.currency)}</span>
+                <span>- ${formatCurrency(displayExtraItemsDiscount, displayCurrency)}</span>
               </div>
               `
                   : ''
               }
               ${
-                order.couponDiscount > 0 ||
-                (order.autoDiscountsTotal && order.autoDiscountsTotal > 0)
+                displayCouponAndAuto > 0
                   ? `
               <div class="total-row">
                 <span>خصم الكوبونات:</span>
-                <span>- ${formatCurrency((order.couponDiscount || 0) + (order.autoDiscountsTotal || 0), order.currency)}</span>
+                <span>- ${formatCurrency(displayCouponAndAuto, displayCurrency)}</span>
               </div>
               `
                   : ''
               }
               ${
-                order.shippingCost > 0
+                displayShippingCost > 0
                   ? `
               <div class="total-row">
                 <span>تكلفة الشحن:</span>
-                <span>${formatCurrency(order.shippingCost, order.currency)}</span>
+                <span>${formatCurrency(displayShippingCost, displayCurrency)}</span>
               </div>
               `
                   : ''
               }
               ${
-                order.tax > 0
+                displayTax > 0
                   ? `
               <div class="total-row">
                 <span>الضريبة (${order.taxRate}%):</span>
-                <span>${formatCurrency(order.tax, order.currency)}</span>
+                <span>${formatCurrency(displayTax, displayCurrency)}</span>
               </div>
               `
                   : ''
               }
               <div class="total-row">
                 <span>المجموع الكلي:</span>
-                <span>${formatCurrency(order.total, order.currency)}</span>
+                <span>${formatCurrency(displayTotal, displayCurrency)}</span>
               </div>
             </div>
           </div>
@@ -6042,9 +6158,10 @@ export class OrderService {
         });
       };
 
-      // تنسيق المبلغ
+      // تنسيق المبلغ (منزلتان عشريتان ثابتتان للعرض الموحد)
       const formatCurrency = (amount: number, currency: string) => {
-        return `${amount.toLocaleString('en-US')} ${currency}`;
+        const n = Number.isFinite(amount) ? amount : 0;
+        return `${Number(n).toFixed(2)} ${currency}`;
       };
 
       // جمع الأصناف المرتجعة فقط
@@ -6056,15 +6173,61 @@ export class OrderService {
         throw new Error('لا توجد أصناف مرتجعة');
       }
 
-      // حساب المبلغ المرتجع الإجمالي
+      // حساب المبلغ المرتجع الإجمالي وحساب مبلغ كل صنف مرتجع
       let totalReturnAmount = 0;
+      const returnedItemAmounts: Array<{ finalPrice: number; itemReturnAmount: number }> = [];
       returnedItems.forEach((item) => {
         const returnQty = item.returnQty || 0;
         const returnRatio = returnQty / item.qty;
-        const itemReturnAmount = item.lineTotal * returnRatio;
+        const itemReturnAmount = Math.round(item.lineTotal * returnRatio * 100) / 100;
         totalReturnAmount += itemReturnAmount;
+        returnedItemAmounts.push({
+          finalPrice: item.finalPrice,
+          itemReturnAmount,
+        });
       });
       totalReturnAmount = Math.round(totalReturnAmount * 100) / 100;
+
+      // عملة العرض: اليمني يُحوّل إلى دولار؛ السعودي والدولار كما هما
+      const orderCurrency = this.normalizeCurrency(order.currency);
+      const displayInUSD = orderCurrency === 'YER';
+      let displayCurrency = displayInUSD ? 'USD' : orderCurrency;
+
+      let displayTotalReturnAmount = totalReturnAmount;
+      let displayOrderTotal = order.total;
+      let displayReturnedItems: Array<{ finalPrice: number; itemReturnAmount: number }> =
+        returnedItemAmounts.map((r) => ({ ...r }));
+
+      if (displayInUSD && this.exchangeRatesService) {
+        try {
+          const fromCur = orderCurrency;
+          const convert = (amount: number) =>
+            this.exchangeRatesService!.convertToUSD(amount, fromCur);
+          const [convTotalReturn, convOrderTotal, ...convItemPairs] = await Promise.all([
+            convert(totalReturnAmount),
+            convert(order.total),
+            ...returnedItemAmounts.flatMap((r) => [
+              convert(r.finalPrice),
+              convert(r.itemReturnAmount),
+            ]),
+          ]);
+          displayTotalReturnAmount = convTotalReturn;
+          displayOrderTotal = convOrderTotal;
+          displayReturnedItems = [];
+          for (let i = 0; i < returnedItemAmounts.length; i++) {
+            displayReturnedItems.push({
+              finalPrice: convItemPairs[i * 2]!,
+              itemReturnAmount: convItemPairs[i * 2 + 1]!,
+            });
+          }
+        } catch (err) {
+          this.logger.warn(
+            `Return invoice YER→USD conversion failed for order ${order.orderNumber}, showing original currency`,
+            err instanceof Error ? err.message : err,
+          );
+          displayCurrency = orderCurrency;
+        }
+      }
 
       // رقم فاتورة الإرجاع
       const returnInvoiceNumber =
@@ -6227,6 +6390,12 @@ export class OrderService {
             <p style="font-size: 16px; color: #721c24;"><strong>Credit Note</strong></p>
           </div>
 
+          ${displayInUSD ? `
+          <div style="margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-radius: 5px; border-right: 4px solid #1976d2;">
+            <p style="margin: 0; font-size: 12px; color: #1565c0;"><strong>ملاحظة:</strong> المبالغ معروضة بالدولار الأمريكي (USD) محولة من الريال اليمني (YER) حسب سعر الصرف المعتمد.</p>
+          </div>
+          ` : ''}
+
           <div class="invoice-info">
             <div class="info-box">
               <h3>معلومات فاتورة الإرجاع</h3>
@@ -6260,8 +6429,6 @@ export class OrderService {
               ${returnedItems
                 .map((item, index) => {
                   const returnQty = item.returnQty || 0;
-                  const returnRatio = returnQty / item.qty;
-                  const itemReturnAmount = Math.round(item.lineTotal * returnRatio * 100) / 100;
 
                   // رقم الصنف: من المنتج أو المتغير
                   const snapshotAny = item.snapshot as any;
@@ -6287,6 +6454,7 @@ export class OrderService {
                     });
                   }
 
+                  const displayItem = displayReturnedItems[index];
                   return `
                 <tr>
                   <td>${index + 1}</td>
@@ -6305,8 +6473,8 @@ export class OrderService {
                     }
                   </td>
                   <td>${returnQty} من ${item.qty}</td>
-                  <td>${formatCurrency(item.finalPrice, order.currency)}</td>
-                  <td><strong style="color: #dc3545;">${formatCurrency(itemReturnAmount, order.currency)}</strong></td>
+                  <td>${formatCurrency(displayItem.finalPrice, displayCurrency)}</td>
+                  <td><strong style="color: #dc3545;">${formatCurrency(displayItem.itemReturnAmount, displayCurrency)}</strong></td>
                 </tr>
               `;
                 })
@@ -6318,7 +6486,7 @@ export class OrderService {
             <div class="totals-box">
               <div class="total-row">
                 <span>المبلغ المرتجع الإجمالي:</span>
-                <span style="color: #dc3545; font-size: 20px; font-weight: bold;">${formatCurrency(totalReturnAmount, order.currency)}</span>
+                <span style="color: #dc3545; font-size: 20px; font-weight: bold;">${formatCurrency(displayTotalReturnAmount, displayCurrency)}</span>
               </div>
             </div>
           </div>
@@ -6327,7 +6495,7 @@ export class OrderService {
             <h3 style="color: #856404; margin-bottom: 10px;">معلومات الطلب الأصلي</h3>
             <p><strong>رقم الطلب:</strong> ${order.orderNumber}</p>
             <p><strong>تاريخ الطلب:</strong> ${formatDate(order.createdAt)}</p>
-            <p><strong>المبلغ الأصلي:</strong> ${formatCurrency(order.total, order.currency)}</p>
+            <p><strong>المبلغ الأصلي:</strong> ${formatCurrency(displayOrderTotal, displayCurrency)}</p>
             <p><strong>طريقة الدفع:</strong> ${order.paymentMethod === PaymentMethod.COD ? 'الدفع عند الاستلام' : order.paymentMethod === PaymentMethod.BANK_TRANSFER ? 'تحويل بنكي' : order.paymentMethod}</p>
           </div>
 
@@ -6666,9 +6834,19 @@ export class OrderService {
     const fileName = `invoice-${invoiceNumber}.pdf`;
     const caption = `فاتورة جديدة - طلب ${order.orderNumber}\nInvoice: ${invoiceNumber}`;
 
+    let toPhone: string;
+    try {
+      toPhone = normalizeYemeniPhone(salesManagerWhatsApp.trim());
+    } catch (e) {
+      this.logger.warn(
+        `SALES_MANAGER_WHATSAPP invalid format, skipping invoice WhatsApp: ${salesManagerWhatsApp}`,
+      );
+      return;
+    }
+
     try {
       const result = await this.wahaWhatsAppAdapter.sendFile(
-        salesManagerWhatsApp.trim(),
+        toPhone,
         order.invoiceUrl,
         caption,
         fileName,
