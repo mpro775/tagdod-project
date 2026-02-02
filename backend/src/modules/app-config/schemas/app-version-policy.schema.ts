@@ -3,6 +3,13 @@ import { Document } from 'mongoose';
 
 export type AppVersionPolicyDocument = AppVersionPolicy & Document;
 
+const PlatformPolicySchemaDefinition = {
+  minVersion: { type: String, required: true, default: '1.0.0' },
+  latestVersion: { type: String, required: true, default: '1.0.0' },
+  updateUrl: { type: String, default: '' },
+  blockedVersions: { type: [String], default: [] },
+};
+
 @Schema({ timestamps: true })
 export class AppVersionPolicy {
   @Prop({ required: true, unique: true, default: 'default', index: true })
@@ -25,6 +32,22 @@ export class AppVersionPolicy {
 
   @Prop({ default: '' })
   updateUrl!: string;
+
+  @Prop({ type: PlatformPolicySchemaDefinition, required: false })
+  android?: {
+    minVersion: string;
+    latestVersion: string;
+    updateUrl: string;
+    blockedVersions: string[];
+  };
+
+  @Prop({ type: PlatformPolicySchemaDefinition, required: false })
+  ios?: {
+    minVersion: string;
+    latestVersion: string;
+    updateUrl: string;
+    blockedVersions: string[];
+  };
 }
 
 export const AppVersionPolicySchema = SchemaFactory.createForClass(AppVersionPolicy);

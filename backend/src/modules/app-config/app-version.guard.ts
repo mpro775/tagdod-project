@@ -31,6 +31,11 @@ export class AppVersionGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const appVersion = request.headers['x-app-version'] as string | undefined;
+    const platformRaw = request.headers['x-platform'] as string | undefined;
+    const platform =
+      platformRaw?.toLowerCase() === 'android' || platformRaw?.toLowerCase() === 'ios'
+        ? (platformRaw.toLowerCase() as 'android' | 'ios')
+        : undefined;
 
     if (!appVersion || !appVersion.trim()) {
       return true;
@@ -38,6 +43,7 @@ export class AppVersionGuard implements CanActivate {
 
     const blocked = await this.appConfigService.isVersionBlockedOrOutdated(
       appVersion.trim(),
+      platform,
     );
     if (blocked) {
       throw new HttpException(

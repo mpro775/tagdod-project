@@ -146,7 +146,9 @@
     },
     "appVersion": {
       "title": "App Version Control",
-      "subtitle": "Minimum allowed version, blocked versions, maintenance mode, and update URL",
+      "subtitle": "Minimum allowed version, blocked versions, maintenance mode, and update URL (Android / iOS)",
+      "androidTitle": "Android (Play Store)",
+      "iosTitle": "iOS (App Store)",
       "minVersion": "Minimum allowed version",
       "latestVersion": "Latest version",
       "updateUrl": "Update URL (store link)",

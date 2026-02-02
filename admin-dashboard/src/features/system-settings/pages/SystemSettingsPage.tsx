@@ -50,7 +50,11 @@ import {
 import { useTranslation } from 'react-i18next';
 import { systemSettingsApi, localPaymentAccountsApi } from '../api/systemSettingsApi';
 import { appConfigApi } from '../api/appConfigApi';
-import type { AppVersionPolicy, UpdateAppVersionPolicyDto } from '../api/appConfigApi';
+import type {
+  AppVersionPolicy,
+  UpdateAppVersionPolicyDto,
+  PlatformPolicy,
+} from '../api/appConfigApi';
 import type {
   SystemSetting,
   LocalPaymentAccount,
@@ -96,7 +100,8 @@ export function SystemSettingsPage() {
   const [appVersionPolicy, setAppVersionPolicy] = useState<AppVersionPolicy | null>(null);
   const [appVersionLoading, setAppVersionLoading] = useState(false);
   const [appVersionSaving, setAppVersionSaving] = useState(false);
-  const [newBlockedVersion, setNewBlockedVersion] = useState('');
+  const [newBlockedVersionAndroid, setNewBlockedVersionAndroid] = useState('');
+  const [newBlockedVersionIos, setNewBlockedVersionIos] = useState('');
 
   // Payment Accounts State
   const [paymentAccounts, setPaymentAccounts] = useState<GroupedPaymentAccount[]>([]);
@@ -194,11 +199,26 @@ type PaymentProviderRow = GridValidRowModel & {
     }
   };
 
+  const normalizePolicyWithPlatforms = (policy: AppVersionPolicy): AppVersionPolicy => {
+    const root: PlatformPolicy = {
+      minVersion: policy.minVersion,
+      latestVersion: policy.latestVersion,
+      updateUrl: policy.updateUrl,
+      blockedVersions: policy.blockedVersions ?? [],
+    };
+    return {
+      ...policy,
+      blockedVersions: policy.blockedVersions ?? [],
+      android: policy.android ?? root,
+      ios: policy.ios ?? root,
+    };
+  };
+
   const fetchAppConfig = async () => {
     try {
       setAppVersionLoading(true);
       const policy = await appConfigApi.getAppConfig();
-      setAppVersionPolicy(policy);
+      setAppVersionPolicy(normalizePolicyWithPlatforms(policy));
     } catch {
       toast.error(t('sections.appVersion.loadFailed'));
       setAppVersionPolicy(null);
@@ -212,15 +232,23 @@ type PaymentProviderRow = GridValidRowModel & {
     try {
       setAppVersionSaving(true);
       const payload: UpdateAppVersionPolicyDto = {
-        minVersion: appVersionPolicy.minVersion,
-        latestVersion: appVersionPolicy.latestVersion,
-        updateUrl: appVersionPolicy.updateUrl,
-        blockedVersions: appVersionPolicy.blockedVersions,
         forceUpdate: appVersionPolicy.forceUpdate,
         maintenanceMode: appVersionPolicy.maintenanceMode,
+        android: {
+          minVersion: appVersionPolicy.android!.minVersion,
+          latestVersion: appVersionPolicy.android!.latestVersion,
+          updateUrl: appVersionPolicy.android!.updateUrl,
+          blockedVersions: appVersionPolicy.android!.blockedVersions,
+        },
+        ios: {
+          minVersion: appVersionPolicy.ios!.minVersion,
+          latestVersion: appVersionPolicy.ios!.latestVersion,
+          updateUrl: appVersionPolicy.ios!.updateUrl,
+          blockedVersions: appVersionPolicy.ios!.blockedVersions,
+        },
       };
       const updated = await appConfigApi.updateAppConfig(payload);
-      setAppVersionPolicy(updated);
+      setAppVersionPolicy(normalizePolicyWithPlatforms(updated));
       toast.success(t('sections.appVersion.saved'));
     } catch {
       toast.error(t('sections.appVersion.saveFailed'));
@@ -229,22 +257,47 @@ type PaymentProviderRow = GridValidRowModel & {
     }
   };
 
-  const handleAddBlockedVersion = () => {
-    const v = newBlockedVersion.trim();
+  type AppPlatformKey = 'android' | 'ios';
+
+  const handleAddBlockedVersion = (platform: AppPlatformKey) => {
+    const value = platform === 'android' ? newBlockedVersionAndroid : newBlockedVersionIos;
+    const v = value.trim();
     if (!v || !appVersionPolicy) return;
-    if (appVersionPolicy.blockedVersions.includes(v)) return;
+    const plat = appVersionPolicy[platform]!;
+    if (plat.blockedVersions.includes(v)) return;
     setAppVersionPolicy({
       ...appVersionPolicy,
-      blockedVersions: [...appVersionPolicy.blockedVersions, v],
+      [platform]: {
+        ...plat,
+        blockedVersions: [...plat.blockedVersions, v],
+      },
     });
-    setNewBlockedVersion('');
+    if (platform === 'android') setNewBlockedVersionAndroid('');
+    else setNewBlockedVersionIos('');
   };
 
-  const handleRemoveBlockedVersion = (version: string) => {
+  const handleRemoveBlockedVersion = (platform: AppPlatformKey, version: string) => {
     if (!appVersionPolicy) return;
+    const plat = appVersionPolicy[platform]!;
     setAppVersionPolicy({
       ...appVersionPolicy,
-      blockedVersions: appVersionPolicy.blockedVersions.filter((x) => x !== version),
+      [platform]: {
+        ...plat,
+        blockedVersions: plat.blockedVersions.filter((x) => x !== version),
+      },
+    });
+  };
+
+  const updatePlatformPolicy = (
+    platform: AppPlatformKey,
+    field: keyof PlatformPolicy,
+    value: string | string[],
+  ) => {
+    if (!appVersionPolicy) return;
+    const plat = appVersionPolicy[platform]!;
+    setAppVersionPolicy({
+      ...appVersionPolicy,
+      [platform]: { ...plat, [field]: value },
     });
   };
 
@@ -1717,86 +1770,6 @@ type PaymentProviderRow = GridValidRowModel & {
               </Box>
             ) : appVersionPolicy ? (
               <Stack spacing={3}>
-                <Grid container spacing={2}>
-                  <Grid component="div" size={{ xs: 12, md: 6 }}>
-                    <TextField
-                      label={t('sections.appVersion.minVersion')}
-                      value={appVersionPolicy.minVersion}
-                      onChange={(e) =>
-                        setAppVersionPolicy({
-                          ...appVersionPolicy,
-                          minVersion: e.target.value,
-                        })
-                      }
-                      placeholder="1.0.5"
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid component="div" size={{ xs: 12, md: 6 }}>
-                    <TextField
-                      label={t('sections.appVersion.latestVersion')}
-                      value={appVersionPolicy.latestVersion}
-                      onChange={(e) =>
-                        setAppVersionPolicy({
-                          ...appVersionPolicy,
-                          latestVersion: e.target.value,
-                        })
-                      }
-                      placeholder="1.0.6"
-                      fullWidth
-                    />
-                  </Grid>
-                </Grid>
-                <TextField
-                  label={t('sections.appVersion.updateUrl')}
-                  value={appVersionPolicy.updateUrl}
-                  onChange={(e) =>
-                    setAppVersionPolicy({
-                      ...appVersionPolicy,
-                      updateUrl: e.target.value,
-                    })
-                  }
-                  placeholder="https://play.google.com/store/apps/..."
-                  fullWidth
-                />
-                <Box>
-                  <Typography variant="subtitle2" gutterBottom>
-                    {t('sections.appVersion.blockedVersions')}
-                  </Typography>
-                  <FormHelperText sx={{ mb: 1 }}>
-                    {t('sections.appVersion.blockedVersionsHint')}
-                  </FormHelperText>
-                  <Stack direction="row" spacing={1} sx={{ mb: 1 }} flexWrap="wrap" useFlexGap>
-                    <TextField
-                      size="small"
-                      placeholder={t('sections.appVersion.versionPlaceholder')}
-                      value={newBlockedVersion}
-                      onChange={(e) => setNewBlockedVersion(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddBlockedVersion())}
-                      sx={{ minWidth: 120 }}
-                    />
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<Add />}
-                      onClick={handleAddBlockedVersion}
-                    >
-                      {t('sections.appVersion.addVersion')}
-                    </Button>
-                  </Stack>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    {appVersionPolicy.blockedVersions.map((v) => (
-                      <Chip
-                        key={v}
-                        label={v}
-                        onDelete={() => handleRemoveBlockedVersion(v)}
-                        size="small"
-                        color="secondary"
-                        variant="outlined"
-                      />
-                    ))}
-                  </Stack>
-                </Box>
                 <Paper
                   elevation={0}
                   sx={{
@@ -1869,6 +1842,144 @@ type PaymentProviderRow = GridValidRowModel & {
                     }
                   />
                 </Paper>
+                <Divider />
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {t('sections.appVersion.androidTitle')}
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label={t('sections.appVersion.minVersion')}
+                      value={appVersionPolicy.android!.minVersion}
+                      onChange={(e) => updatePlatformPolicy('android', 'minVersion', e.target.value)}
+                      placeholder="1.0.5"
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label={t('sections.appVersion.latestVersion')}
+                      value={appVersionPolicy.android!.latestVersion}
+                      onChange={(e) => updatePlatformPolicy('android', 'latestVersion', e.target.value)}
+                      placeholder="1.0.6"
+                      fullWidth
+                    />
+                  </Grid>
+                </Grid>
+                <TextField
+                  label={t('sections.appVersion.updateUrl')}
+                  value={appVersionPolicy.android!.updateUrl}
+                  onChange={(e) => updatePlatformPolicy('android', 'updateUrl', e.target.value)}
+                  placeholder="https://play.google.com/store/apps/..."
+                  fullWidth
+                />
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {t('sections.appVersion.blockedVersions')}
+                  </Typography>
+                  <FormHelperText sx={{ mb: 1 }}>
+                    {t('sections.appVersion.blockedVersionsHint')}
+                  </FormHelperText>
+                  <Stack direction="row" spacing={1} sx={{ mb: 1 }} flexWrap="wrap" useFlexGap>
+                    <TextField
+                      size="small"
+                      placeholder={t('sections.appVersion.versionPlaceholder')}
+                      value={newBlockedVersionAndroid}
+                      onChange={(e) => setNewBlockedVersionAndroid(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddBlockedVersion('android'))}
+                      sx={{ minWidth: 120 }}
+                    />
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Add />}
+                      onClick={() => handleAddBlockedVersion('android')}
+                    >
+                      {t('sections.appVersion.addVersion')}
+                    </Button>
+                  </Stack>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {appVersionPolicy.android!.blockedVersions.map((v) => (
+                      <Chip
+                        key={`android-${v}`}
+                        label={v}
+                        onDelete={() => handleRemoveBlockedVersion('android', v)}
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+                <Divider />
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {t('sections.appVersion.iosTitle')}
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label={t('sections.appVersion.minVersion')}
+                      value={appVersionPolicy.ios!.minVersion}
+                      onChange={(e) => updatePlatformPolicy('ios', 'minVersion', e.target.value)}
+                      placeholder="1.0.5"
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label={t('sections.appVersion.latestVersion')}
+                      value={appVersionPolicy.ios!.latestVersion}
+                      onChange={(e) => updatePlatformPolicy('ios', 'latestVersion', e.target.value)}
+                      placeholder="1.0.6"
+                      fullWidth
+                    />
+                  </Grid>
+                </Grid>
+                <TextField
+                  label={t('sections.appVersion.updateUrl')}
+                  value={appVersionPolicy.ios!.updateUrl}
+                  onChange={(e) => updatePlatformPolicy('ios', 'updateUrl', e.target.value)}
+                  placeholder="https://apps.apple.com/app/..."
+                  fullWidth
+                />
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {t('sections.appVersion.blockedVersions')}
+                  </Typography>
+                  <FormHelperText sx={{ mb: 1 }}>
+                    {t('sections.appVersion.blockedVersionsHint')}
+                  </FormHelperText>
+                  <Stack direction="row" spacing={1} sx={{ mb: 1 }} flexWrap="wrap" useFlexGap>
+                    <TextField
+                      size="small"
+                      placeholder={t('sections.appVersion.versionPlaceholder')}
+                      value={newBlockedVersionIos}
+                      onChange={(e) => setNewBlockedVersionIos(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddBlockedVersion('ios'))}
+                      sx={{ minWidth: 120 }}
+                    />
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Add />}
+                      onClick={() => handleAddBlockedVersion('ios')}
+                    >
+                      {t('sections.appVersion.addVersion')}
+                    </Button>
+                  </Stack>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {appVersionPolicy.ios!.blockedVersions.map((v) => (
+                      <Chip
+                        key={`ios-${v}`}
+                        label={v}
+                        onDelete={() => handleRemoveBlockedVersion('ios', v)}
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Stack>
+                </Box>
                 <Button
                   variant="contained"
                   onClick={handleSaveAppVersion}

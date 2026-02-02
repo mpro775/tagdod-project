@@ -4,10 +4,30 @@ import {
   IsOptional,
   IsArray,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 const POLICY_ID = 'default';
+
+export class PlatformPolicyDto {
+  @ApiProperty({ description: 'أقل نسخة مسموح بها', example: '1.0.5' })
+  minVersion!: string;
+
+  @ApiProperty({ description: 'أحدث نسخة', example: '1.0.6' })
+  latestVersion!: string;
+
+  @ApiProperty({
+    description: 'نسخ محظورة',
+    type: [String],
+    example: ['1.0.3', '1.0.4'],
+  })
+  blockedVersions!: string[];
+
+  @ApiProperty({ description: 'رابط التحديث (متجر)', example: 'https://...' })
+  updateUrl!: string;
+}
 
 export class AppVersionPolicyDto {
   @ApiProperty({ description: 'أقل نسخة مسموح بها', example: '1.0.5' })
@@ -31,6 +51,12 @@ export class AppVersionPolicyDto {
 
   @ApiProperty({ description: 'رابط التحديث (متجر)', example: 'https://...' })
   updateUrl!: string;
+
+  @ApiPropertyOptional({ description: 'إعداد أندرويد', type: PlatformPolicyDto })
+  android?: PlatformPolicyDto;
+
+  @ApiPropertyOptional({ description: 'إعداد آيفون', type: PlatformPolicyDto })
+  ios?: PlatformPolicyDto;
 }
 
 export class AppConfigClientResponseDto extends AppVersionPolicyDto {
@@ -45,6 +71,35 @@ export class AppConfigClientResponseDto extends AppVersionPolicyDto {
     example: true,
   })
   canUse?: boolean;
+}
+
+class UpdatePlatformPolicyDto {
+  @ApiPropertyOptional({ description: 'أقل نسخة مسموح بها', example: '1.0.5' })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  minVersion?: string;
+
+  @ApiPropertyOptional({ description: 'أحدث نسخة', example: '1.0.6' })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  latestVersion?: string;
+
+  @ApiPropertyOptional({
+    description: 'نسخ محظورة',
+    type: [String],
+    example: ['1.0.3', '1.0.4'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  blockedVersions?: string[];
+
+  @ApiPropertyOptional({ description: 'رابط التحديث (متجر)' })
+  @IsOptional()
+  @IsString()
+  updateUrl?: string;
 }
 
 export class UpdateAppVersionPolicyDto {
@@ -84,6 +139,18 @@ export class UpdateAppVersionPolicyDto {
   @IsOptional()
   @IsString()
   updateUrl?: string;
+
+  @ApiPropertyOptional({ description: 'إعداد أندرويد', type: UpdatePlatformPolicyDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UpdatePlatformPolicyDto)
+  android?: UpdatePlatformPolicyDto;
+
+  @ApiPropertyOptional({ description: 'إعداد آيفون', type: UpdatePlatformPolicyDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UpdatePlatformPolicyDto)
+  ios?: UpdatePlatformPolicyDto;
 }
 
 export { POLICY_ID };

@@ -1,6 +1,13 @@
 import { apiClient } from '@/core/api/client';
 import type { ApiResponse } from '@/shared/types/common.types';
 
+export interface PlatformPolicy {
+  minVersion: string;
+  latestVersion: string;
+  updateUrl: string;
+  blockedVersions: string[];
+}
+
 export interface AppVersionPolicy {
   minVersion: string;
   latestVersion: string;
@@ -8,6 +15,15 @@ export interface AppVersionPolicy {
   forceUpdate: boolean;
   maintenanceMode: boolean;
   updateUrl: string;
+  android?: PlatformPolicy;
+  ios?: PlatformPolicy;
+}
+
+export interface UpdatePlatformPolicyDto {
+  minVersion?: string;
+  latestVersion?: string;
+  updateUrl?: string;
+  blockedVersions?: string[];
 }
 
 export interface UpdateAppVersionPolicyDto {
@@ -17,6 +33,8 @@ export interface UpdateAppVersionPolicyDto {
   forceUpdate?: boolean;
   maintenanceMode?: boolean;
   updateUrl?: string;
+  android?: UpdatePlatformPolicyDto;
+  ios?: UpdatePlatformPolicyDto;
 }
 
 export const appConfigApi = {

@@ -38,9 +38,10 @@ app-config/
 | ------- | ------------- | ------------------------------------------------------------------------ |
 | `GET`   | `/app/config` | إرجاع سياسة النسخ مع `shouldUpdate` و `canUse` عند إرسال `X-App-Version` |
 
-**الرأس الاختياري:**
+**الرؤوس الاختيارية:**
 
 - `X-App-Version`: نسخة التطبيق الحالية (مثلاً `1.0.5`) لمقارنة semver.
+- `X-Platform`: منصة التطبيق — `android` أو `ios`. عند إرساله يُرجَع إعداد تلك المنصة (رابط التحديث والأصدارات الخاصة بها). إن لم يُرسَل أو كانت القيمة غير صالحة تُستخدم الحقول الافتراضية (جذر السياسة).
 
 **نموذج الاستجابة (200):**
 
@@ -67,13 +68,17 @@ app-config/
 | الطريقة | المسار              | الوصف                                                                                                     |
 | ------- | ------------------- | --------------------------------------------------------------------------------------------------------- |
 | `GET`   | `/admin/app-config` | جلب سياسة إصدار التطبيق الحالية                                                                           |
-| `PUT`   | `/admin/app-config` | تحديث السياسة (جزئي: minVersion, latestVersion, blockedVersions, forceUpdate, maintenanceMode, updateUrl) |
+| `PUT`   | `/admin/app-config` | تحديث السياسة (جزئي: الحقول الجذرية و/أو `android` و/أو `ios` لكل منصة) |
 
 يتطلب: `Authorization: Bearer <token>` وحساب أدمن.
 
 ---
 
 ## حقل السياسة (Policy)
+
+- **الحقول الجذرية:** تُستخدم كافتراضي وعند عدم إرسال `X-Platform` أو عند غياب إعداد المنصة.
+- **الحقول لكل منصة:** `android` و `ios` (اختياريان) — كل منهما: `minVersion`, `latestVersion`, `updateUrl`, `blockedVersions`.
+- **مشتركة لجميع المنصات:** `forceUpdate`, `maintenanceMode`.
 
 | الحقل             | النوع    | الوصف                              |
 | ----------------- | -------- | ---------------------------------- |
@@ -83,12 +88,14 @@ app-config/
 | `forceUpdate`     | boolean  | إجبار التحديث لجميع المستخدمين     |
 | `maintenanceMode` | boolean  | وضع الصيانة (منع الاستخدام)        |
 | `updateUrl`       | string   | رابط التحديث (متجر التطبيق)        |
+| `android`         | object?  | إعداد أندرويد (نفس الحقول أعلاه ما عدا force/maintenance) |
+| `ios`             | object?  | إعداد آيفون (نفس الحقول أعلاه ما عدا force/maintenance)  |
 
 ---
 
 ## AppVersionGuard
 
-- **الوظيفة:** يقرأ `X-App-Version` من الـ request، ويستدعي `AppConfigService.isVersionBlockedOrOutdated()`.
+- **الوظيفة:** يقرأ `X-App-Version` و `X-Platform` (اختياري) من الـ request، ويستدعي `AppConfigService.isVersionBlockedOrOutdated(appVersion, platform)`.
 - إذا كانت النسخة قديمة أو محظورة أو في وضع صيانة، يرمي `HttpException` برمز **426 Upgrade Required** ورسالة مناسبة.
 - **تخطي الفحص:** استخدم الـ metadata `SKIP_APP_VERSION_CHECK` على الـ controller أو الـ handler:
   - `@SetMetadata(SKIP_APP_VERSION_CHECK, true)`
@@ -117,7 +124,7 @@ app-config/
 
 ## تكامل العميل (موبايل/ويب)
 
-1. عند بدء التطبيق أو قبل استدعاءات الـ API المحمية، استدعِ `GET /app/config` مع الهيدر `X-App-Version: <نسخة التطبيق>`.
+1. عند بدء التطبيق أو قبل استدعاءات الـ API المحمية، استدعِ `GET /app/config` مع الهيدر `X-App-Version: <نسخة التطبيق>` و (مُفضّل) `X-Platform: android` أو `X-Platform: ios` حسب منصة التطبيق؛ لاستلام رابط التحديث والأصدارات الخاصة بكل منصة.
 2. إذا كان `shouldUpdate === true`: اعرض شاشة تحديث واربط الزر بـ `updateUrl`.
 3. إذا كان `canUse === false` بسبب `maintenanceMode`: اعرض رسالة صيانة.
 4. احتفظ بـ `minVersion` و `latestVersion` لعرضها في واجهة "حول التطبيق" أو التحديث.
