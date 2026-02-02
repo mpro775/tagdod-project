@@ -6831,8 +6831,7 @@ export class OrderService {
     }
 
     const invoiceNumber = order.invoiceNumber || order.orderNumber;
-    const fileName = `invoice-${invoiceNumber}.pdf`;
-    const caption = `فاتورة جديدة - طلب ${order.orderNumber}\nInvoice: ${invoiceNumber}`;
+    const message = `فاتورة جديدة 📄\n\nرقم الطلب: ${order.orderNumber}\nرقم الفاتورة: ${invoiceNumber}\n\nتحميل الفاتورة:\n${order.invoiceUrl}`;
 
     let toPhone: string;
     try {
@@ -6845,13 +6844,7 @@ export class OrderService {
     }
 
     try {
-      const result = await this.wahaWhatsAppAdapter.sendFile(
-        toPhone,
-        order.invoiceUrl,
-        caption,
-        fileName,
-        'application/pdf',
-      );
+      const result = await this.wahaWhatsAppAdapter.sendMessage(toPhone, message);
       if (result.success) {
         this.logger.log(
           `Invoice sent via WhatsApp to sales for order ${order.orderNumber}`,
