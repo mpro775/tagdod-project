@@ -104,6 +104,18 @@ export class NotificationProcessor {
     this.logger.log(`Processing notification job ${job.id} for notification ${data.notificationId}`);
 
     try {
+      // تجنّب إرسال مزدوج: إذا كان الإشعار مُرسَلاً مسبقاً (مثلاً من محاولة سابقة أو WebSocket) لا نُرسله مرة ثانية
+      const existing = await this.notificationModel
+        .findById(data.notificationId)
+        .select('status')
+        .lean();
+      if (existing?.status === NotificationStatus.SENT) {
+        this.logger.log(
+          `Notification ${data.notificationId} already sent, skipping to avoid duplicate`,
+        );
+        return;
+      }
+
       // Update status to SENDING
       await this.notificationModel.updateOne(
         { _id: data.notificationId },
@@ -150,6 +162,19 @@ export class NotificationProcessor {
           errorCode = defaultResult.errorCode;
       }
 
+      if (success) {
+        // تحديث حالة الإشعار إلى SENT فوراً بعد نجاح الإرسال حتى لو فشل تحديث السجل لاحقاً (لتجنب إعادة الإرسال عند الـ retry)
+        await this.notificationModel.updateOne(
+          { _id: data.notificationId },
+          {
+            $set: {
+              status: NotificationStatus.SENT,
+              sentAt: new Date(),
+            },
+          },
+        );
+      }
+
       // تحديث سجل الإشعار
       if (notificationLog) {
         if (success) {
@@ -165,16 +190,6 @@ export class NotificationProcessor {
       }
 
       if (success) {
-        // Update status to SENT
-        await this.notificationModel.updateOne(
-          { _id: data.notificationId },
-          {
-            $set: {
-              status: NotificationStatus.SENT,
-              sentAt: new Date(),
-            },
-          },
-        );
         this.logger.log(`Notification ${data.notificationId} sent successfully`);
       } else {
         throw new Error(errorMessage || 'Failed to send notification');
@@ -183,9 +198,12 @@ export class NotificationProcessor {
       const errorMsg = error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to process notification ${data.notificationId}: ${errorMsg}`);
 
-      // Update status to FAILED
+      // عدم الكتابة فوق SENT إذا كان الإرسال قد نجح وتأخر تحديث DB (لتجنب إعادة الإرسال عند الـ retry)
       await this.notificationModel.updateOne(
-        { _id: data.notificationId },
+        {
+          _id: data.notificationId,
+          status: { $ne: NotificationStatus.SENT },
+        },
         {
           $set: {
             status: NotificationStatus.FAILED,
@@ -411,6 +429,18 @@ export class NotificationProcessor {
     this.logger.error(
       `Job ${job.id} failed for notification ${job.data.notificationId}: ${error.message}`,
     );
+
+    // إذا كان الإشعار مُرسَلاً مسبقاً (الإرسال نجح لكن تحديث DB فشل لاحقاً) لا نعيد المحاولة لتجنب تكرار الإشعار
+    const existing = await this.notificationModel
+      .findById(job.data.notificationId)
+      .select('status')
+      .lean();
+    if (existing?.status === NotificationStatus.SENT) {
+      this.logger.log(
+        `Notification ${job.data.notificationId} already sent, skipping retry to avoid duplicate`,
+      );
+      return;
+    }
 
     // Add to retry queue if attempts remaining
     const attempt = job.data.attempt || 1;
