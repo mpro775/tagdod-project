@@ -4865,6 +4865,8 @@ export class OrderService {
     order.paymentVerifiedBy = new Types.ObjectId(adminId);
     order.paymentVerificationNotes = dto.notes;
 
+    let transitionedViaUpdateOrderStatus = false;
+
     if (isAmountSufficient) {
       const oldPaymentStatus = order.paymentStatus;
       const newPaymentStatus = PaymentStatus.PAID;
@@ -4890,20 +4892,28 @@ export class OrderService {
           .catch((err) => this.logger.error('Failed to log local payment verification', err));
       }
 
-      // تحديث حالة الطلب إذا كان في انتظار الدفع
+      // عند الانتقال من انتظار الدفع: حفظ حالة الدفع ثم استدعاء updateOrderStatus لإرسال إشعار العميل والفاتورة
       if (order.status === OrderStatus.PENDING_PAYMENT) {
-        order.status = OrderStatus.CONFIRMED;
-        order.confirmedAt = new Date();
+        await order.save();
+        const confirmNotes = `تم قبول الدفع - المبلغ: ${dto.verifiedAmount} ${dto.verifiedCurrency}${dto.notes ? ` - ${dto.notes}` : ''}`;
+        await this.updateOrderStatus(
+          order._id.toString(),
+          OrderStatus.CONFIRMED,
+          new Types.ObjectId(adminId),
+          'admin',
+          confirmNotes,
+        );
+        transitionedViaUpdateOrderStatus = true;
+      } else {
+        // إضافة إلى سجل الحالات عندما تكون الحالة ليست PENDING_PAYMENT
+        await this.addStatusHistory(
+          order,
+          order.status,
+          new Types.ObjectId(adminId),
+          'admin',
+          `تم قبول الدفع - المبلغ: ${dto.verifiedAmount} ${dto.verifiedCurrency}${dto.notes ? ` - ${dto.notes}` : ''}`,
+        );
       }
-
-      // إضافة إلى سجل الحالات
-      await this.addStatusHistory(
-        order,
-        order.status,
-        new Types.ObjectId(adminId),
-        'admin',
-        `تم قبول الدفع - المبلغ: ${dto.verifiedAmount} ${dto.verifiedCurrency}${dto.notes ? ` - ${dto.notes}` : ''}`,
-      );
     } else {
       const oldPaymentStatus = order.paymentStatus;
       const newPaymentStatus = PaymentStatus.FAILED;
@@ -4962,13 +4972,19 @@ export class OrderService {
       );
     }
 
-    await order.save();
+    if (!transitionedViaUpdateOrderStatus) {
+      await order.save();
+    }
     this.logger.log(
       `Payment verification for order ${order.orderNumber}: ${isAmountSufficient ? 'APPROVED' : 'REJECTED'}`,
     );
 
-    // إرسال الفاتورة عند تأكيد الطلب بعد مطابقة الدفع
-    if (isAmountSufficient && order.status === OrderStatus.CONFIRMED) {
+    // إرسال الفاتورة عند تأكيد الطلب بعد مطابقة الدفع (فقط عندما لم نمرّ عبر updateOrderStatus لتجنب الإرسال المزدوج)
+    if (
+      isAmountSufficient &&
+      order.status === OrderStatus.CONFIRMED &&
+      !transitionedViaUpdateOrderStatus
+    ) {
       this.sendOrderInvoiceForStatus(order._id.toString()).catch((err: any) => {
         this.logger.error(`Failed to send invoice for order ${order.orderNumber}:`, err);
       });
