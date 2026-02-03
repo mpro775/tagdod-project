@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Patch, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -9,6 +9,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { DateTimezoneInterceptor } from '../../../shared/interceptors/date-timezone.interceptor';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
@@ -38,6 +39,7 @@ import { PaymentStatus, OrderStatus } from '../schemas/order.schema';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+@UseInterceptors(DateTimezoneInterceptor)
 @Controller('admin/orders')
 export class AdminOrderController {
   private readonly logger = new Logger(AdminOrderController.name);

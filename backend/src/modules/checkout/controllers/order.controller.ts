@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -8,6 +8,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { DateTimezoneInterceptor } from '../../shared/interceptors/date-timezone.interceptor';
 import { Request as ExpressRequest } from 'express';
 import { OrderService } from '../services/order.service';
 import { AuditService } from '../../../shared/services/audit.service';
@@ -32,6 +33,7 @@ import { DomainException, ErrorCode } from '../../../shared/exceptions';
 @ApiTags('الطلبات')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@UseInterceptors(DateTimezoneInterceptor)
 @Controller('orders')
 export class OrderController {
   private readonly logger = new Logger(OrderController.name);
