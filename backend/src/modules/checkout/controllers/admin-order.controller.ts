@@ -79,7 +79,11 @@ export class AdminOrderController {
   @ApiResponse({ status: 200, description: 'تم الحصول على تفاصيل الطلب' })
   @ApiResponse({ status: 404, description: 'الطلب غير موجود' })
   async getOrderDetails(@Param('id') orderId: string) {
-    const order = await this.orderService.getOrderDetails(orderId);
+    const orderDoc = await this.orderService.getOrderDetails(orderId);
+    const order =
+      typeof (orderDoc as any).toObject === 'function'
+        ? (orderDoc as any).toObject()
+        : orderDoc;
 
     return {
       order,

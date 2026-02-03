@@ -38,7 +38,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { t } = useTranslation('orders');
-  
+
   const getPaymentStatusColor = (status: PaymentStatus) => {
     switch (status) {
       case 'paid':
@@ -81,7 +81,15 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
         <Grid container spacing={{ xs: 1.5, sm: 2 }}>
           {/* Order Status */}
           <Grid size={{ xs: 12, sm: 6 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                mb: 1,
+                flexWrap: { xs: 'wrap', sm: 'nowrap' },
+              }}
+            >
               <Typography
                 variant="subtitle2"
                 color="text.secondary"
@@ -95,7 +103,15 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
 
           {/* Payment Status */}
           <Grid size={{ xs: 12, sm: 6 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                mb: 1,
+                flexWrap: { xs: 'wrap', sm: 'nowrap' },
+              }}
+            >
               <Typography
                 variant="subtitle2"
                 color="text.secondary"
@@ -156,13 +172,20 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
           <Paper
             sx={{
               p: { xs: 1.5, sm: 2 },
-              bgcolor: alpha(theme.palette.text.secondary, theme.palette.mode === 'dark' ? 0.05 : 0.02),
+              bgcolor: alpha(
+                theme.palette.text.secondary,
+                theme.palette.mode === 'dark' ? 0.05 : 0.02
+              ),
               border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
             }}
           >
             <Typography
               variant="body2"
-              sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+              sx={{
+                fontWeight: 'bold',
+                color: 'text.primary',
+                fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+              }}
             >
               {order.deliveryAddress.recipientName}
             </Typography>
@@ -196,7 +219,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
           <Paper
             sx={{
               p: { xs: 1.5, sm: 2 },
-              bgcolor: alpha(theme.palette.text.secondary, theme.palette.mode === 'dark' ? 0.05 : 0.02),
+              bgcolor: alpha(
+                theme.palette.text.secondary,
+                theme.palette.mode === 'dark' ? 0.05 : 0.02
+              ),
               border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
             }}
           >
@@ -252,14 +278,21 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
             <Paper
               sx={{
                 p: { xs: 1.5, sm: 2 },
-                bgcolor: alpha(theme.palette.text.secondary, theme.palette.mode === 'dark' ? 0.05 : 0.02),
+                bgcolor: alpha(
+                  theme.palette.text.secondary,
+                  theme.palette.mode === 'dark' ? 0.05 : 0.02
+                ),
                 border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
               }}
             >
               {order.shippingCompany && (
                 <Typography
                   variant="body2"
-                  sx={{ color: 'text.primary', fontSize: { xs: '0.8125rem', sm: '0.875rem' }, mb: 0.5 }}
+                  sx={{
+                    color: 'text.primary',
+                    fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                    mb: 0.5,
+                  }}
                 >
                   {t('details.shippingCompany')}: {order.shippingCompany}
                 </Typography>
@@ -267,9 +300,13 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
               {order.trackingNumber && (
                 <Typography
                   variant="body2"
-                  sx={{ color: 'text.primary', fontSize: { xs: '0.8125rem', sm: '0.875rem' }, mb: 0.5 }}
+                  sx={{
+                    color: 'text.primary',
+                    fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                    mb: 0.5,
+                  }}
                 >
-                    {t('details.trackingNumber')}: {order.trackingNumber}
+                  {t('details.trackingNumber')}: {order.trackingNumber}
                 </Typography>
               )}
               {order.estimatedDeliveryDate && (
@@ -406,55 +443,61 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
             )}
 
             {/* Multiple Coupons - Show all applied coupons */}
-            {order.appliedCoupons && order.appliedCoupons.length > 0 ? (
-              order.appliedCoupons.map((coupon, index) => (
-                <ListItem key={index} sx={{ px: { xs: 0.5, sm: 0 }, py: { xs: 0.5, sm: 0.75 } }}>
-                  <ListItemText
-                    primary={
-                      <Typography
-                        variant="body2"
-                        sx={{ color: 'text.primary', fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-                      >
-                        {t('summary.coupon', { defaultValue: 'كوبون' })}: {coupon.code}
-                        {coupon.details.title && ` - ${coupon.details.title}`}
-                      </Typography>
-                    }
-                  />
-                  <Typography
-                    variant="body2"
-                    color="success.main"
-                    sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-                  >
-                    -{formatCurrency(coupon.discount, order.currency)}
-                  </Typography>
-                </ListItem>
-              ))
-            ) : (
-              // Backward compatibility: show single coupon if exists
-              order.couponDiscount > 0 && (
-                <ListItem sx={{ px: { xs: 0.5, sm: 0 }, py: { xs: 0.5, sm: 0.75 } }}>
-                  <ListItemText
-                    primary={
-                      <Typography
-                        variant="body2"
-                        sx={{ color: 'text.primary', fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-                      >
-                        {order.appliedCouponCode || order.couponDetails?.code
-                          ? `${t('summary.coupon', { defaultValue: 'كوبون' })}: ${order.appliedCouponCode || order.couponDetails?.code}`
-                          : t('summary.couponDiscount', { defaultValue: 'خصم الكوبون' })}
-                      </Typography>
-                    }
-                  />
-                  <Typography
-                    variant="body2"
-                    color="success.main"
-                    sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
-                  >
-                    -{formatCurrency(order.couponDiscount, order.currency)}
-                  </Typography>
-                </ListItem>
-              )
-            )}
+            {(order.appliedCoupons?.length ?? 0) > 0
+              ? order.appliedCoupons.map((coupon, index) => (
+                  <ListItem key={index} sx={{ px: { xs: 0.5, sm: 0 }, py: { xs: 0.5, sm: 0.75 } }}>
+                    <ListItemText
+                      primary={
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'text.primary',
+                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                          }}
+                        >
+                          {t('summary.coupon', { defaultValue: 'كوبون' })}: {coupon.code}
+                          {coupon.details.title && ` - ${coupon.details.title}`}
+                        </Typography>
+                      }
+                    />
+                    <Typography
+                      variant="body2"
+                      color="success.main"
+                      sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+                    >
+                      -{formatCurrency(coupon.discount, order.currency)}
+                    </Typography>
+                  </ListItem>
+                ))
+              : // Backward compatibility: show single coupon if exists
+                (order.couponDiscount ?? 0) > 0 && (
+                  <ListItem sx={{ px: { xs: 0.5, sm: 0 }, py: { xs: 0.5, sm: 0.75 } }}>
+                    <ListItemText
+                      primary={
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'text.primary',
+                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                          }}
+                        >
+                          {order.appliedCouponCode || order.couponDetails?.code
+                            ? `${t('summary.coupon', { defaultValue: 'كوبون' })}: ${
+                                order.appliedCouponCode || order.couponDetails?.code
+                              }`
+                            : t('summary.couponDiscount', { defaultValue: 'خصم الكوبون' })}
+                        </Typography>
+                      }
+                    />
+                    <Typography
+                      variant="body2"
+                      color="success.main"
+                      sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+                    >
+                      -{formatCurrency(order.couponDiscount, order.currency)}
+                    </Typography>
+                  </ListItem>
+                )}
 
             {order.shippingCost > 0 && (
               <ListItem sx={{ px: { xs: 0.5, sm: 0 }, py: { xs: 0.5, sm: 0.75 } }}>
@@ -464,7 +507,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
                       variant="body2"
                       sx={{ color: 'text.primary', fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
                     >
-                        {t('summary.shipping')}
+                      {t('summary.shipping')}
                     </Typography>
                   }
                 />
@@ -553,7 +596,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
                     sx={{
                       p: { xs: 1.5, sm: 2 },
                       mb: 1,
-                      bgcolor: alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.15 : 0.1),
+                      bgcolor: alpha(
+                        theme.palette.info.main,
+                        theme.palette.mode === 'dark' ? 0.15 : 0.1
+                      ),
                       border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
                     }}
                   >
@@ -569,7 +615,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
                   <Paper
                     sx={{
                       p: { xs: 1.5, sm: 2 },
-                      bgcolor: alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.15 : 0.1),
+                      bgcolor: alpha(
+                        theme.palette.warning.main,
+                        theme.palette.mode === 'dark' ? 0.15 : 0.1
+                      ),
                       border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
                     }}
                   >
@@ -601,13 +650,20 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
                 <Paper
                   sx={{
                     p: { xs: 1.5, sm: 2 },
-                    bgcolor: alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.15 : 0.1),
+                    bgcolor: alpha(
+                      theme.palette.error.main,
+                      theme.palette.mode === 'dark' ? 0.15 : 0.1
+                    ),
                     border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
                   }}
                 >
                   <Typography
                     variant="body2"
-                    sx={{ color: 'text.primary', fontSize: { xs: '0.8125rem', sm: '0.875rem' }, mb: 0.5 }}
+                    sx={{
+                      color: 'text.primary',
+                      fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                      mb: 0.5,
+                    }}
                   >
                     <strong>{t('details.refundAmount')}:</strong>{' '}
                     {formatCurrency(order.returnInfo.refundAmount, order.currency)}
@@ -615,10 +671,13 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
                   {order.returnInfo.refundReason && (
                     <Typography
                       variant="body2"
-                      sx={{ color: 'text.primary', fontSize: { xs: '0.8125rem', sm: '0.875rem' }, mb: 0.5 }}
+                      sx={{
+                        color: 'text.primary',
+                        fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                        mb: 0.5,
+                      }}
                     >
-                      <strong>{t('details.refundReason')}:</strong>{' '}
-                      {order.returnInfo.refundReason}
+                      <strong>{t('details.refundReason')}:</strong> {order.returnInfo.refundReason}
                     </Typography>
                   )}
                   {order.returnInfo.refundedAt && (

@@ -5212,12 +5212,18 @@ export class OrderService {
    */
   private async generateOrderInvoicePDF(order: OrderDocument): Promise<Buffer> {
     try {
+      // استخدام كائن عادي لضمان وصول موثوق لـ appliedCoupons و couponDiscount في الـ HTML
+      const orderData =
+        order && typeof (order as any).toObject === 'function'
+          ? (order as any).toObject()
+          : { ...(order || {}) };
+
       // جلب بيانات المستخدم
-      const user = await this.userModel.findById(order.userId);
+      const user = await this.userModel.findById(orderData.userId);
 
       // تحديد نوع الحساب
       const getAccountType = (): string => {
-        if (order.accountType) {
+        if (orderData.accountType) {
           // إذا كان موجود في Order، استخدمه مع الترجمة
           const accountTypeMap: Record<string, string> = {
             retail: 'عميل',
@@ -5227,7 +5233,7 @@ export class OrderService {
             admin: 'مدير',
             super_admin: 'مدير عام',
           };
-          return accountTypeMap[order.accountType] || order.accountType;
+          return accountTypeMap[orderData.accountType] || orderData.accountType;
         }
 
         if (user) {
@@ -5253,14 +5259,14 @@ export class OrderService {
               (user.firstName && user.lastName
                 ? `${user.firstName} ${user.lastName}`
                 : user.firstName || user.lastName) ||
-              order.customerName ||
+              orderData.customerName ||
               'غير محدد',
-            phone: user.phone || order.customerPhone || 'غير محدد',
+            phone: user.phone || orderData.customerPhone || 'غير محدد',
             accountType: getAccountType(),
           }
         : {
-            name: order.customerName || 'غير محدد',
-            phone: order.customerPhone || 'غير محدد',
+            name: orderData.customerName || 'غير محدد',
+            phone: orderData.customerPhone || 'غير محدد',
             accountType: getAccountType(),
           };
 
@@ -5304,7 +5310,7 @@ export class OrderService {
       let totalPromotionDiscount = 0;
       const itemsWithPromotions: Array<{ name: string; promotionId?: any; discount: number }> = [];
 
-      order.items.forEach((item) => {
+      orderData.items.forEach((item) => {
         // حساب الخصم الإجمالي للمنتج
         const itemDiscount = (item.basePrice - item.finalPrice) * item.qty;
 
@@ -5326,35 +5332,35 @@ export class OrderService {
       });
 
       // عملة العرض: اليمني يُحوّل إلى دولار؛ السعودي والدولار كما هما
-      const orderCurrency = this.normalizeCurrency(order.currency);
+      const orderCurrency = this.normalizeCurrency(orderData.currency);
       const displayInUSD = orderCurrency === 'YER';
       let displayCurrency = displayInUSD ? 'USD' : orderCurrency;
 
       // قيم للعرض (محوّلة عند YER أو أصلية)
-      let displaySubtotal = order.subtotal;
+      let displaySubtotal = orderData.subtotal;
       let displayTotalMerchantDiscount = totalMerchantDiscount;
       let displayTotalPromotionDiscount = totalPromotionDiscount;
-      let displayOrderSubtotal = order.subtotal;
-      let displayOrderItemsDiscount = order.itemsDiscount ?? 0;
+      let displayOrderSubtotal = orderData.subtotal;
+      let displayOrderItemsDiscount = orderData.itemsDiscount ?? 0;
       let displayExtraItemsDiscount =
-        (order.itemsDiscount ?? 0) - totalMerchantDiscount - totalPromotionDiscount;
+        (orderData.itemsDiscount ?? 0) - totalMerchantDiscount - totalPromotionDiscount;
       let displayCouponAndAuto =
-        (order.couponDiscount || 0) + (order.autoDiscountsTotal || 0);
-      let displayShippingCost = order.shippingCost ?? 0;
-      let displayTax = order.tax ?? 0;
-      let displayTotal = order.total;
-      let displayReturnAmount = order.returnInfo?.returnAmount ?? 0;
+        (orderData.couponDiscount || 0) + (orderData.autoDiscountsTotal || 0);
+      let displayShippingCost = orderData.shippingCost ?? 0;
+      let displayTax = orderData.tax ?? 0;
+      let displayTotal = orderData.total;
+      let displayReturnAmount = orderData.returnInfo?.returnAmount ?? 0;
       // إجمالي قبل الخصم (مجموع المنتجات بالسعر الطبيعي) وقيمة الخصم الكلي
       let displaySubtotalBeforeDiscount =
-        order.subtotal + (order.itemsDiscount ?? 0);
-      let displayTotalDiscount = order.totalDiscount ?? 0;
+        orderData.subtotal + (orderData.itemsDiscount ?? 0);
+      let displayTotalDiscount = orderData.totalDiscount ?? 0;
       let displayItems: Array<{
         basePrice: number;
         finalPrice: number;
         discount: number;
         lineTotalBeforeDiscount: number;
         lineTotal: number;
-      }> = order.items.map((item) => {
+      }> = orderData.items.map((item) => {
         const lineDiscount =
           item.discount ?? (item.basePrice - item.finalPrice) * item.qty;
         const lineTotalBefore = item.basePrice * item.qty;
@@ -5367,10 +5373,10 @@ export class OrderService {
         };
       });
       let displayPromotionDiscounts: number[] = itemsWithPromotions.map((p) => p.discount);
-      let displayAppliedCouponDiscounts: number[] = (order.appliedCoupons || []).map(
+      let displayAppliedCouponDiscounts: number[] = (orderData.appliedCoupons || []).map(
         (c: { discount?: number }) => c.discount ?? 0,
       );
-      let displayAutoCouponDiscounts: number[] = (order.autoAppliedCoupons || []).map(
+      let displayAutoCouponDiscounts: number[] = (orderData.autoAppliedCoupons || []).map(
         (c: { discount?: number }) => c.discount ?? 0,
       );
 
@@ -5395,20 +5401,20 @@ export class OrderService {
             convTotalDiscount,
             ...convItems
           ] = await Promise.all([
-            convert(order.subtotal),
+            convert(orderData.subtotal),
             convert(totalMerchantDiscount),
             convert(totalPromotionDiscount),
-            convert(order.subtotal),
-            convert(order.itemsDiscount ?? 0),
-            convert((order.itemsDiscount ?? 0) - totalMerchantDiscount - totalPromotionDiscount),
-            convert((order.couponDiscount || 0) + (order.autoDiscountsTotal || 0)),
-            convert(order.shippingCost ?? 0),
-            convert(order.tax ?? 0),
-            convert(order.total),
-            convert(order.returnInfo?.returnAmount ?? 0),
-            convert(order.subtotal + (order.itemsDiscount ?? 0)),
-            convert(order.totalDiscount ?? 0),
-            ...order.items.flatMap((item) => {
+            convert(orderData.subtotal),
+            convert(orderData.itemsDiscount ?? 0),
+            convert((orderData.itemsDiscount ?? 0) - totalMerchantDiscount - totalPromotionDiscount),
+            convert((orderData.couponDiscount || 0) + (orderData.autoDiscountsTotal || 0)),
+            convert(orderData.shippingCost ?? 0),
+            convert(orderData.tax ?? 0),
+            convert(orderData.total),
+            convert(orderData.returnInfo?.returnAmount ?? 0),
+            convert(orderData.subtotal + (orderData.itemsDiscount ?? 0)),
+            convert(orderData.totalDiscount ?? 0),
+            ...orderData.items.flatMap((item) => {
               const lineDisc =
                 item.discount ?? (item.basePrice - item.finalPrice) * item.qty;
               return [
@@ -5434,7 +5440,7 @@ export class OrderService {
           displaySubtotalBeforeDiscount = convSubtotalBeforeDiscount;
           displayTotalDiscount = convTotalDiscount;
           displayItems = [];
-          for (let i = 0; i < order.items.length; i++) {
+          for (let i = 0; i < orderData.items.length; i++) {
             displayItems.push({
               basePrice: convItems[i * 5]!,
               finalPrice: convItems[i * 5 + 1]!,
@@ -5447,12 +5453,12 @@ export class OrderService {
             itemsWithPromotions.map((p) => convert(p.discount)),
           );
           displayAppliedCouponDiscounts = await Promise.all(
-            (order.appliedCoupons || []).map((c: { discount?: number }) =>
+            (orderData.appliedCoupons || []).map((c: { discount?: number }) =>
               convert(c.discount ?? 0),
             ),
           );
           displayAutoCouponDiscounts = await Promise.all(
-            (order.autoAppliedCoupons || []).map((c: { discount?: number }) =>
+            (orderData.autoAppliedCoupons || []).map((c: { discount?: number }) =>
               convert(c.discount ?? 0),
             ),
           );
@@ -5471,7 +5477,7 @@ export class OrderService {
         <html dir="rtl" lang="ar">
         <head>
           <meta charset="UTF-8">
-          <title>فاتورة ${order.orderNumber}</title>
+          <title>فاتورة ${orderData.orderNumber}</title>
           <style>
             @font-face {
               font-family: 'Cairo';
@@ -5684,10 +5690,10 @@ export class OrderService {
           <div class="invoice-info">
             <div class="info-box">
               <h3>معلومات الفاتورة</h3>
-              <p><strong>رقم الفاتورة:</strong> ${order.invoiceNumber || order.orderNumber}</p>
-              <p><strong>رقم الطلب:</strong> ${order.orderNumber}</p>
-              <p><strong>تاريخ الفاتورة:</strong> ${formatDate(order.completedAt || order.createdAt)}</p>
-              <p><strong>تاريخ الطلب:</strong> ${formatDate(order.createdAt)}</p>
+              <p><strong>رقم الفاتورة:</strong> ${orderData.invoiceNumber || orderData.orderNumber}</p>
+              <p><strong>رقم الطلب:</strong> ${orderData.orderNumber}</p>
+              <p><strong>تاريخ الفاتورة:</strong> ${formatDate(orderData.completedAt || orderData.createdAt)}</p>
+              <p><strong>تاريخ الطلب:</strong> ${formatDate(orderData.createdAt)}</p>
             </div>
             
             <div class="info-box">
@@ -5700,29 +5706,29 @@ export class OrderService {
 
           <div class="delivery-info">
             <h3>عنوان التوصيل</h3>
-            <p><strong>المستلم:</strong> ${order.deliveryAddress?.recipientName || userInfo.name}</p>
-            <p><strong>الهاتف:</strong> ${order.deliveryAddress?.recipientPhone || userInfo.phone}</p>
-            <p><strong>العنوان:</strong> ${order.deliveryAddress?.line1 || ''} ${order.deliveryAddress?.line2 || ''}</p>
-            <p><strong>المدينة:</strong> ${order.deliveryAddress?.city || ''}</p>
-            <p><strong>المنطقة:</strong> ${order.deliveryAddress?.region || 'غير محدد'}</p>
-            ${order.deliveryAddress?.postalCode ? `<p><strong>الرمز البريدي:</strong> ${order.deliveryAddress.postalCode}</p>` : ''}
+            <p><strong>المستلم:</strong> ${orderData.deliveryAddress?.recipientName || userInfo.name}</p>
+            <p><strong>الهاتف:</strong> ${orderData.deliveryAddress?.recipientPhone || userInfo.phone}</p>
+            <p><strong>العنوان:</strong> ${orderData.deliveryAddress?.line1 || ''} ${orderData.deliveryAddress?.line2 || ''}</p>
+            <p><strong>المدينة:</strong> ${orderData.deliveryAddress?.city || ''}</p>
+            <p><strong>المنطقة:</strong> ${orderData.deliveryAddress?.region || 'غير محدد'}</p>
+            ${orderData.deliveryAddress?.postalCode ? `<p><strong>الرمز البريدي:</strong> ${orderData.deliveryAddress.postalCode}</p>` : ''}
             
             ${
-              order.deliveryAddress?.coords &&
-              typeof order.deliveryAddress.coords.lat === 'number' &&
-              typeof order.deliveryAddress.coords.lng === 'number' &&
-              !isNaN(order.deliveryAddress.coords.lat) &&
-              !isNaN(order.deliveryAddress.coords.lng)
+              orderData.deliveryAddress?.coords &&
+              typeof orderData.deliveryAddress.coords.lat === 'number' &&
+              typeof orderData.deliveryAddress.coords.lng === 'number' &&
+              !isNaN(orderData.deliveryAddress.coords.lat) &&
+              !isNaN(orderData.deliveryAddress.coords.lng)
                 ? `
             <div class="map-link">
               <p style="margin-bottom: 8px;">
                 <strong>📍 الموقع على الخريطة / Location on Map:</strong>
               </p>
               <p style="margin: 5px 0;">
-                <a href="https://www.google.com/maps?q=${order.deliveryAddress.coords.lat},${order.deliveryAddress.coords.lng}" 
+                <a href="https://www.google.com/maps?q=${orderData.deliveryAddress.coords.lat},${orderData.deliveryAddress.coords.lng}" 
                    target="_blank" 
                    rel="noopener noreferrer">
-                  ${order.deliveryAddress.coords.lat}, ${order.deliveryAddress.coords.lng}
+                  ${orderData.deliveryAddress.coords.lat}, ${orderData.deliveryAddress.coords.lng}
                 </a>
                 <span style="color: #666; font-size: 11px;"> (اضغط للفتح / Click to open)</span>
               </p>
@@ -5737,7 +5743,7 @@ export class OrderService {
 
           ${(() => {
             // التحقق من وجود أصناف مرتجعة
-            const hasReturnedItems = order.items.some(
+            const hasReturnedItems = orderData.items.some(
               (item) => item.isReturned && (item.returnQty || 0) > 0,
             );
 
@@ -5756,7 +5762,7 @@ export class OrderService {
               </tr>
             </thead>
             <tbody>
-              ${order.items
+              ${orderData.items
                 .map((item, index) => {
                   // رقم الصنف: من المنتج أو المتغير (snapshot.sku أو snapshot.variantSku)
                   const itemSku =
@@ -5847,18 +5853,18 @@ export class OrderService {
           ${(() => {
             // قسم ملخص الإرجاع
             const hasReturnedItems =
-              order.returnInfo?.isReturned && (order.returnInfo.returnAmount || 0) > 0;
+              orderData.returnInfo?.isReturned && (orderData.returnInfo.returnAmount || 0) > 0;
             if (!hasReturnedItems) {
               return '';
             }
 
-            const returnedItemsCount = order.items.filter(
+            const returnedItemsCount = orderData.items.filter(
               (item) => item.isReturned && (item.returnQty || 0) > 0,
             ).length;
-            const returnAmount = order.returnInfo.returnAmount || 0;
-            const returnReason = order.returnInfo.returnReason || 'غير محدد';
-            const returnedAt = order.returnInfo.returnedAt
-              ? formatDate(order.returnInfo.returnedAt)
+            const returnAmount = orderData.returnInfo.returnAmount || 0;
+            const returnReason = orderData.returnInfo.returnReason || 'غير محدد';
+            const returnedAt = orderData.returnInfo.returnedAt
+              ? formatDate(orderData.returnInfo.returnedAt)
               : 'غير محدد';
 
             return `
@@ -5874,15 +5880,16 @@ export class OrderService {
                 <p><strong>سبب الإرجاع:</strong> ${returnReason}</p>
               </div>
             </div>
-            ${order.returnInvoiceNumber ? `<p style="margin-top: 10px;"><strong>رقم فاتورة الإرجاع:</strong> ${order.returnInvoiceNumber}</p>` : ''}
+            ${orderData.returnInvoiceNumber ? `<p style="margin-top: 10px;"><strong>رقم فاتورة الإرجاع:</strong> ${orderData.returnInvoiceNumber}</p>` : ''}
           </div>
           `;
           })()}
 
           ${
             itemsWithPromotions.length > 0 ||
-            (order.appliedCoupons && order.appliedCoupons.length > 0) ||
-            (order.autoAppliedCoupons && order.autoAppliedCoupons.length > 0)
+            (orderData.appliedCoupons && orderData.appliedCoupons.length > 0) ||
+            (orderData.autoAppliedCoupons && orderData.autoAppliedCoupons.length > 0) ||
+            (orderData.couponDiscount ?? 0) > 0
               ? `
           <div class="discounts-section">
             <h3>العروض والكوبونات المطبقة</h3>
@@ -5907,11 +5914,11 @@ export class OrderService {
             }
             
             ${
-              order.appliedCoupons && order.appliedCoupons.length > 0
+              orderData.appliedCoupons && orderData.appliedCoupons.length > 0
                 ? `
             <div style="margin-bottom: 15px;">
               <strong style="color: #1976d2;">الكوبونات المطبقة:</strong>
-              ${order.appliedCoupons
+              ${orderData.appliedCoupons
                 .map((coupon: any, ci: number) => {
                   const couponType =
                     coupon.details?.type === 'percentage' ? 'نسبة مئوية' : 'مبلغ ثابت';
@@ -5928,15 +5935,24 @@ export class OrderService {
                 .join('')}
             </div>
             `
-                : ''
+                : (orderData.couponDiscount ?? 0) > 0
+                  ? `
+            <div style="margin-bottom: 15px;">
+              <strong style="color: #1976d2;">خصم الكوبون:</strong>
+              <div class="discount-item">
+                - ${formatCurrency(orderData.couponDiscount, displayCurrency)}
+              </div>
+            </div>
+            `
+                  : ''
             }
             
             ${
-              order.autoAppliedCoupons && order.autoAppliedCoupons.length > 0
+              orderData.autoAppliedCoupons && orderData.autoAppliedCoupons.length > 0
                 ? `
             <div>
               <strong style="color: #1976d2;">الكوبونات التلقائية:</strong>
-              ${order.autoAppliedCoupons
+              ${orderData.autoAppliedCoupons
                 .map(
                   (coupon: any, ai: number) => `
                 <div class="discount-item">
@@ -6030,7 +6046,7 @@ export class OrderService {
                 displayTax > 0
                   ? `
               <div class="total-row">
-                <span>الضريبة (${order.taxRate}%):</span>
+                <span>الضريبة (${orderData.taxRate}%):</span>
                 <span>${formatCurrency(displayTax, displayCurrency)}</span>
               </div>
               `
@@ -6045,11 +6061,11 @@ export class OrderService {
 
           <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 5px; border-right: 4px solid #ffc107;">
             <h3 style="color: #856404; margin-bottom: 10px;">معلومات الدفع</h3>
-            <p><strong>طريقة الدفع:</strong> ${order.paymentMethod === PaymentMethod.COD ? 'الدفع عند الاستلام' : order.paymentMethod === PaymentMethod.BANK_TRANSFER ? 'تحويل بنكي' : order.paymentMethod}</p>
-            <p><strong>حالة الدفع:</strong> ${order.paymentStatus === PaymentStatus.PAID ? 'مدفوع ✓' : order.paymentStatus}</p>
-            ${order.paidAt ? `<p><strong>تاريخ الدفع:</strong> ${formatDate(order.paidAt)}</p>` : ''}
-            ${order.trackingNumber ? `<p><strong>رقم التتبع:</strong> ${order.trackingNumber}</p>` : ''}
-            ${order.shippingCompany ? `<p><strong>شركة الشحن:</strong> ${order.shippingCompany}</p>` : ''}
+            <p><strong>طريقة الدفع:</strong> ${orderData.paymentMethod === PaymentMethod.COD ? 'الدفع عند الاستلام' : orderData.paymentMethod === PaymentMethod.BANK_TRANSFER ? 'تحويل بنكي' : orderData.paymentMethod}</p>
+            <p><strong>حالة الدفع:</strong> ${orderData.paymentStatus === PaymentStatus.PAID ? 'مدفوع ✓' : orderData.paymentStatus}</p>
+            ${orderData.paidAt ? `<p><strong>تاريخ الدفع:</strong> ${formatDate(orderData.paidAt)}</p>` : ''}
+            ${orderData.trackingNumber ? `<p><strong>رقم التتبع:</strong> ${orderData.trackingNumber}</p>` : ''}
+            ${orderData.shippingCompany ? `<p><strong>شركة الشحن:</strong> ${orderData.shippingCompany}</p>` : ''}
           </div>
 
           <div class="footer">

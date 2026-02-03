@@ -189,7 +189,11 @@ export const OrderDetailsPage: React.FC = () => {
 
     // State machine transitions from backend
     const transitions: Record<OrderStatus, OrderStatus[]> = {
-      [OrderStatus.PENDING_PAYMENT]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED, OrderStatus.OUT_OF_STOCK],
+      [OrderStatus.PENDING_PAYMENT]: [
+        OrderStatus.CONFIRMED,
+        OrderStatus.CANCELLED,
+        OrderStatus.OUT_OF_STOCK,
+      ],
       [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.ON_HOLD, OrderStatus.CANCELLED],
       [OrderStatus.PROCESSING]: [
         OrderStatus.COMPLETED,
@@ -1534,8 +1538,8 @@ export const OrderDetailsPage: React.FC = () => {
 
             {/* Discounts & Coupons Breakdown */}
             {(order.itemsDiscount > 0 ||
-              order.couponDiscount > 0 ||
-              (order.appliedCoupons && order.appliedCoupons.length > 0)) && (
+              (order.couponDiscount ?? 0) > 0 ||
+              (order.appliedCoupons?.length ?? 0) > 0) && (
               <Card
                 sx={{
                   mb: { xs: 2, md: 3 },
