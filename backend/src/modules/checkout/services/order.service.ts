@@ -23,6 +23,7 @@ import * as XLSX from 'xlsx';
 import {
   Order,
   OrderDocument,
+  OrderItem,
   OrderStatus,
   PaymentStatus,
   PaymentMethod,
@@ -5310,7 +5311,7 @@ export class OrderService {
       let totalPromotionDiscount = 0;
       const itemsWithPromotions: Array<{ name: string; promotionId?: any; discount: number }> = [];
 
-      orderData.items.forEach((item) => {
+      orderData.items.forEach((item: OrderItem) => {
         // حساب الخصم الإجمالي للمنتج
         const itemDiscount = (item.basePrice - item.finalPrice) * item.qty;
 
@@ -5360,7 +5361,7 @@ export class OrderService {
         discount: number;
         lineTotalBeforeDiscount: number;
         lineTotal: number;
-      }> = orderData.items.map((item) => {
+      }> = orderData.items.map((item: OrderItem) => {
         const lineDiscount =
           item.discount ?? (item.basePrice - item.finalPrice) * item.qty;
         const lineTotalBefore = item.basePrice * item.qty;
@@ -5414,7 +5415,7 @@ export class OrderService {
             convert(orderData.returnInfo?.returnAmount ?? 0),
             convert(orderData.subtotal + (orderData.itemsDiscount ?? 0)),
             convert(orderData.totalDiscount ?? 0),
-            ...orderData.items.flatMap((item) => {
+            ...orderData.items.flatMap((item: OrderItem) => {
               const lineDisc =
                 item.discount ?? (item.basePrice - item.finalPrice) * item.qty;
               return [
@@ -5744,7 +5745,7 @@ export class OrderService {
           ${(() => {
             // التحقق من وجود أصناف مرتجعة
             const hasReturnedItems = orderData.items.some(
-              (item) => item.isReturned && (item.returnQty || 0) > 0,
+              (item: OrderItem) => item.isReturned && (item.returnQty || 0) > 0,
             );
 
             return `
@@ -5763,7 +5764,7 @@ export class OrderService {
             </thead>
             <tbody>
               ${orderData.items
-                .map((item, index) => {
+                .map((item: OrderItem, index: number) => {
                   // رقم الصنف: من المنتج أو المتغير (snapshot.sku أو snapshot.variantSku)
                   const itemSku =
                     item.snapshot?.sku ??
@@ -5859,7 +5860,7 @@ export class OrderService {
             }
 
             const returnedItemsCount = orderData.items.filter(
-              (item) => item.isReturned && (item.returnQty || 0) > 0,
+              (item: OrderItem) => item.isReturned && (item.returnQty || 0) > 0,
             ).length;
             const returnAmount = orderData.returnInfo.returnAmount || 0;
             const returnReason = orderData.returnInfo.returnReason || 'غير محدد';
