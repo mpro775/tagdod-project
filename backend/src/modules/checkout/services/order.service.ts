@@ -4104,6 +4104,7 @@ export class OrderService {
       const newPaymentStatus = PaymentStatus.PAID;
       order.paymentStatus = newPaymentStatus;
       order.paidAt = new Date();
+      await order.save();
 
       // تسجيل حدث الدفع الناجح في audit
       if (this.auditService) {
