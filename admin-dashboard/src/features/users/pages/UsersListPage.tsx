@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
+import {
+  Box,
   Button,
   Stack,
   Paper as MuiPaper,
@@ -12,10 +12,7 @@ import { PersonAdd } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import {
-  useUsers,
-  useUserStats,
-} from '../hooks/useUsers';
+import { useUsers, useUserStats } from '../hooks/useUsers';
 import type { User, UserStatus } from '../types/user.types';
 import { UserStatsCards } from '../components/UserStatsCards';
 import { UsersFilter } from '../components/UsersFilter';
@@ -45,7 +42,7 @@ export const UsersListPage: React.FC = () => {
     role: undefined as any,
     includeDeleted: false,
   });
-  
+
   // Dialog state
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
@@ -54,7 +51,6 @@ export const UsersListPage: React.FC = () => {
     open: false,
     user: null,
   });
-
 
   // API
   const { data, isLoading, refetch } = useUsers({
@@ -69,9 +65,14 @@ export const UsersListPage: React.FC = () => {
   });
 
   const { data: stats, isLoading: statsLoading } = useUserStats();
-  
+
   // Table Actions Hook
-  const { handleStatusToggle, handleRestore, handleDelete: deleteUser, isDeleting } = useUsersTableActions({
+  const {
+    handleStatusToggle,
+    handleRestore,
+    handleDelete: deleteUser,
+    isDeleting,
+  } = useUsersTableActions({
     onRefetch: refetch,
   });
 
@@ -98,7 +99,6 @@ export const UsersListPage: React.FC = () => {
     navigate(`/users/${user._id}`);
   };
 
-
   const handleClearFilters = () => {
     setFilters({
       search: '',
@@ -106,7 +106,7 @@ export const UsersListPage: React.FC = () => {
       role: undefined,
       includeDeleted: false,
     });
-    setPaginationModel(prev => ({ ...prev, page: 0 }));
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
   };
 
   // Table Columns
@@ -135,7 +135,7 @@ export const UsersListPage: React.FC = () => {
     >
       {/* إحصائيات المستخدمين */}
       {stats && <UserStatsCards stats={stats} loading={statsLoading} />}
-      
+
       {/* فلاتر البحث */}
       <Box sx={{ px: { xs: 1, sm: 0 }, mb: { xs: 2, sm: 3 } }}>
         <UsersFilter
@@ -152,7 +152,7 @@ export const UsersListPage: React.FC = () => {
               role: newFilters.role,
               includeDeleted: newFilters.includeDeleted || false,
             });
-            setPaginationModel(prev => ({ ...prev, page: 0 }));
+            setPaginationModel((prev) => ({ ...prev, page: 0 }));
           }}
           onClearFilters={handleClearFilters}
         />
@@ -197,6 +197,8 @@ export const UsersListPage: React.FC = () => {
           loading={isLoading}
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
+          rowCount={data?.meta?.total ?? 0}
+          paginationMode="server"
           sortModel={sortModel}
           onSortModelChange={setSortModel}
           getRowId={(row: any) => row._id}
