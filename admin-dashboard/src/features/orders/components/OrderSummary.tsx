@@ -444,7 +444,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ order, showDetails =
 
             {/* Multiple Coupons - Show all applied coupons */}
             {(order.appliedCoupons?.length ?? 0) > 0
-              ? order.appliedCoupons.map((coupon, index) => (
+              ? (order.appliedCoupons ?? []).map((coupon, index) => (
                   <ListItem key={index} sx={{ px: { xs: 0.5, sm: 0 }, py: { xs: 0.5, sm: 0.75 } }}>
                     <ListItemText
                       primary={

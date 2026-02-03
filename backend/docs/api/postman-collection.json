@@ -15666,7 +15666,7 @@
                 "config"
               ]
             },
-            "description": "إرجاع سياسة النسخ (minVersion, blockedVersions, maintenanceMode, updateUrl) مع shouldUpdate و canUse عند إرسال X-App-Version"
+            "description": "إرجاع سياسة النسخ (minVersion, blockedVersions, maintenanceMode, updateUrl) مع shouldUpdate و canUse عند إرسال X-App-Version. عند إرسال X-Platform: android أو ios يُرجَع إعداد تلك المنصة."
           }
         }
       ],

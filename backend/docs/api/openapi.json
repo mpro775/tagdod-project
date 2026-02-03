@@ -33689,12 +33689,29 @@
       "get": {
         "operationId": "getConfig",
         "summary": "سياسة إصدار التطبيق",
-        "description": "إرجاع سياسة النسخ (minVersion, blockedVersions, maintenanceMode, updateUrl) مع shouldUpdate و canUse عند إرسال X-App-Version",
+        "description": "إرجاع سياسة النسخ (minVersion, blockedVersions, maintenanceMode, updateUrl) مع shouldUpdate و canUse عند إرسال X-App-Version. عند إرسال X-Platform: android أو ios يُرجَع إعداد تلك المنصة.",
         "parameters": [
           {
             "name": "x-app-version",
             "required": true,
             "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-platform",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Platform",
+            "in": "header",
+            "description": "منصة التطبيق: android أو ios (لإرجاع إعداد المنصة المناسب)",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -40032,6 +40049,43 @@
           "totalSize"
         ]
       },
+      "PlatformPolicyDto": {
+        "type": "object",
+        "properties": {
+          "minVersion": {
+            "type": "string",
+            "description": "أقل نسخة مسموح بها",
+            "example": "1.0.5"
+          },
+          "latestVersion": {
+            "type": "string",
+            "description": "أحدث نسخة",
+            "example": "1.0.6"
+          },
+          "blockedVersions": {
+            "description": "نسخ محظورة",
+            "example": [
+              "1.0.3",
+              "1.0.4"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "updateUrl": {
+            "type": "string",
+            "description": "رابط التحديث (متجر)",
+            "example": "https://..."
+          }
+        },
+        "required": [
+          "minVersion",
+          "latestVersion",
+          "blockedVersions",
+          "updateUrl"
+        ]
+      },
       "AppConfigClientResponseDto": {
         "type": "object",
         "properties": {
@@ -40070,6 +40124,22 @@
             "type": "string",
             "description": "رابط التحديث (متجر)",
             "example": "https://..."
+          },
+          "android": {
+            "description": "إعداد أندرويد",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformPolicyDto"
+              }
+            ]
+          },
+          "ios": {
+            "description": "إعداد آيفون",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformPolicyDto"
+              }
+            ]
           },
           "shouldUpdate": {
             "type": "boolean",
@@ -40129,6 +40199,22 @@
             "type": "string",
             "description": "رابط التحديث (متجر)",
             "example": "https://..."
+          },
+          "android": {
+            "description": "إعداد أندرويد",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformPolicyDto"
+              }
+            ]
+          },
+          "ios": {
+            "description": "إعداد آيفون",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlatformPolicyDto"
+              }
+            ]
           }
         },
         "required": [
@@ -40139,6 +40225,36 @@
           "maintenanceMode",
           "updateUrl"
         ]
+      },
+      "UpdatePlatformPolicyDto": {
+        "type": "object",
+        "properties": {
+          "minVersion": {
+            "type": "string",
+            "description": "أقل نسخة مسموح بها",
+            "example": "1.0.5"
+          },
+          "latestVersion": {
+            "type": "string",
+            "description": "أحدث نسخة",
+            "example": "1.0.6"
+          },
+          "blockedVersions": {
+            "description": "نسخ محظورة",
+            "example": [
+              "1.0.3",
+              "1.0.4"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "updateUrl": {
+            "type": "string",
+            "description": "رابط التحديث (متجر)"
+          }
+        }
       },
       "UpdateAppVersionPolicyDto": {
         "type": "object",
@@ -40175,6 +40291,22 @@
           "updateUrl": {
             "type": "string",
             "description": "رابط التحديث (متجر)"
+          },
+          "android": {
+            "description": "إعداد أندرويد",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdatePlatformPolicyDto"
+              }
+            ]
+          },
+          "ios": {
+            "description": "إعداد آيفون",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpdatePlatformPolicyDto"
+              }
+            ]
           }
         }
       }

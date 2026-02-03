@@ -22374,11 +22374,22 @@ paths:
       summary: سياسة إصدار التطبيق
       description: >-
         إرجاع سياسة النسخ (minVersion, blockedVersions, maintenanceMode, updateUrl) مع shouldUpdate و canUse عند إرسال
-        X-App-Version
+        X-App-Version. عند إرسال X-Platform: android أو ios يُرجَع إعداد تلك المنصة.
       parameters:
         - name: x-app-version
           required: true
           in: header
+          schema:
+            type: string
+        - name: x-platform
+          required: true
+          in: header
+          schema:
+            type: string
+        - name: X-Platform
+          in: header
+          description: 'منصة التطبيق: android أو ios (لإرجاع إعداد المنصة المناسب)'
+          required: false
           schema:
             type: string
         - name: X-App-Version
@@ -27105,6 +27116,34 @@ components:
         - completed
         - failed
         - totalSize
+    PlatformPolicyDto:
+      type: object
+      properties:
+        minVersion:
+          type: string
+          description: أقل نسخة مسموح بها
+          example: 1.0.5
+        latestVersion:
+          type: string
+          description: أحدث نسخة
+          example: 1.0.6
+        blockedVersions:
+          description: نسخ محظورة
+          example:
+            - 1.0.3
+            - 1.0.4
+          type: array
+          items:
+            type: string
+        updateUrl:
+          type: string
+          description: رابط التحديث (متجر)
+          example: https://...
+      required:
+        - minVersion
+        - latestVersion
+        - blockedVersions
+        - updateUrl
     AppConfigClientResponseDto:
       type: object
       properties:
@@ -27136,6 +27175,14 @@ components:
           type: string
           description: رابط التحديث (متجر)
           example: https://...
+        android:
+          description: إعداد أندرويد
+          allOf:
+            - $ref: '#/components/schemas/PlatformPolicyDto'
+        ios:
+          description: إعداد آيفون
+          allOf:
+            - $ref: '#/components/schemas/PlatformPolicyDto'
         shouldUpdate:
           type: boolean
           description: يجب تحديث التطبيق (نسخة قديمة أو محظورة)
@@ -27182,6 +27229,14 @@ components:
           type: string
           description: رابط التحديث (متجر)
           example: https://...
+        android:
+          description: إعداد أندرويد
+          allOf:
+            - $ref: '#/components/schemas/PlatformPolicyDto'
+        ios:
+          description: إعداد آيفون
+          allOf:
+            - $ref: '#/components/schemas/PlatformPolicyDto'
       required:
         - minVersion
         - latestVersion
@@ -27189,6 +27244,28 @@ components:
         - forceUpdate
         - maintenanceMode
         - updateUrl
+    UpdatePlatformPolicyDto:
+      type: object
+      properties:
+        minVersion:
+          type: string
+          description: أقل نسخة مسموح بها
+          example: 1.0.5
+        latestVersion:
+          type: string
+          description: أحدث نسخة
+          example: 1.0.6
+        blockedVersions:
+          description: نسخ محظورة
+          example:
+            - 1.0.3
+            - 1.0.4
+          type: array
+          items:
+            type: string
+        updateUrl:
+          type: string
+          description: رابط التحديث (متجر)
     UpdateAppVersionPolicyDto:
       type: object
       properties:
@@ -27217,3 +27294,11 @@ components:
         updateUrl:
           type: string
           description: رابط التحديث (متجر)
+        android:
+          description: إعداد أندرويد
+          allOf:
+            - $ref: '#/components/schemas/UpdatePlatformPolicyDto'
+        ios:
+          description: إعداد آيفون
+          allOf:
+            - $ref: '#/components/schemas/UpdatePlatformPolicyDto'
