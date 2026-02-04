@@ -162,14 +162,23 @@ export const useGenerateOrdersReport = () => {
   return useMutation({
     mutationFn: ({ params, format }: { params: ListOrdersParams; format?: 'json' | 'pdf' | 'excel' }) =>
       ordersApi.generateOrdersReport(params, format),
-    onSuccess: () => {
-      toast.success('تم إنشاء التقرير بنجاح');
+    onSuccess: (result) => {
+      if (result?.url && typeof result.url === 'string' && result.url.trim() !== '') {
+        window.open(result.url, '_blank');
+        toast.success('تم إنشاء التقرير بنجاح. تم فتح الرابط في نافذة جديدة.');
+      } else {
+        toast.success('تم إنشاء التقرير بنجاح');
+      }
     },
     onError: ErrorHandler.showError,
   });
 };
 
-// Generate financial report
+/**
+ * التقرير المالي للطلبات — من GET /admin/orders/reports/financial.
+ * النتيجة تحتوي على result.report (totalRevenue, totalOrders, netRevenue, إلخ).
+ * أي واجهة تعرض هذا التقرير يجب أن تقرأ من result.report وليس من واجهة التحليلات المتقدمة.
+ */
 export const useGenerateFinancialReport = () => {
   return useMutation({
     mutationFn: () => ordersApi.generateFinancialReport(),
@@ -416,6 +425,18 @@ export const useExportOrderAnalytics = () => {
       toDate?: string;
     }) => ordersApi.exportOrderAnalytics(format || 'csv', days, fromDate, toDate),
     onSuccess: (data) => {
+      // استغلال الرابط الحقيقي من الباك‌اند (Bunny) عند توفره
+      if (data?.success === false || data?.error) {
+        toast.error(data?.error || 'فشل تصدير التحليلات');
+        return;
+      }
+      if (data?.fileUrl && typeof data.fileUrl === 'string' && data.fileUrl.trim() !== '') {
+        window.open(data.fileUrl, '_blank');
+        toast.success(`تم إنشاء التقرير بنجاح (${data.recordCount ?? 0} سجل). تم فتح الرابط في نافذة جديدة.`);
+        return;
+      }
+
+      // Fallback: توليد الملف محلياً عند عدم وجود رابط من الباك‌اند
       const exportFormat = data.format || 'csv';
       const fileName = data.fileName || `order_analytics_${Date.now()}.${exportFormat}`;
       const summary = data.summary || {};

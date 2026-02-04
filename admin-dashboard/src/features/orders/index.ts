@@ -57,4 +57,6 @@ export type {
   RevenueAnalytics,
   PerformanceAnalytics,
   VerifyPaymentDto,
+  OrdersFinancialReport,
+  OrdersFinancialReportResponse,
 } from './types/order.types';

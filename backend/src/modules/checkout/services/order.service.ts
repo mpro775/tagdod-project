@@ -3843,25 +3843,31 @@ export class OrderService {
     const matchFilter: Record<string, unknown> = { createdAt: { $gte: fromDate } };
     if (status) matchFilter.status = status;
 
-    const [totalOrders, totalRevenue, ordersByStatus, recentOrders] = await Promise.all([
-      this.orderModel.countDocuments(matchFilter),
-      this.orderModel.aggregate([
-        { $match: { ...matchFilter, status: OrderStatus.COMPLETED } },
-        { $group: { _id: null, total: { $sum: '$total' } } },
-      ]),
-      this.orderModel.aggregate([
-        { $match: matchFilter },
-        { $group: { _id: '$status', count: { $sum: 1 } } },
-      ]),
-      this.orderModel.find(matchFilter).sort({ createdAt: -1 }).limit(10).lean(),
-    ]);
+    const completedMatch = { ...matchFilter, status: OrderStatus.COMPLETED };
+    const [totalOrders, completedOrdersCount, totalRevenue, ordersByStatus, recentOrders] =
+      await Promise.all([
+        this.orderModel.countDocuments(matchFilter),
+        this.orderModel.countDocuments(completedMatch),
+        this.orderModel.aggregate([
+          { $match: completedMatch },
+          { $group: { _id: null, total: { $sum: '$total' } } },
+        ]),
+        this.orderModel.aggregate([
+          { $match: matchFilter },
+          { $group: { _id: '$status', count: { $sum: 1 } } },
+        ]),
+        this.orderModel.find(matchFilter).sort({ createdAt: -1 }).limit(10).lean(),
+      ]);
 
-    const avgOrderValue = totalOrders > 0 ? (totalRevenue[0]?.total || 0) / totalOrders : 0;
+    const revenueSum = totalRevenue[0]?.total || 0;
+    const avgOrderValue =
+      completedOrdersCount > 0 ? revenueSum / completedOrdersCount : 0;
 
     return {
       period: `آخر ${days} أيام`,
       totalOrders,
-      totalRevenue: totalRevenue[0]?.total || 0,
+      completedOrdersCount,
+      totalRevenue: revenueSum,
       averageOrderValue: avgOrderValue,
       ordersByStatus,
       recentOrders,
@@ -4174,9 +4180,13 @@ export class OrderService {
 
   /**
    * تحليل الإيرادات المفصل
+   * الإيراد من الطلبات المكتملة والمدفوعة فقط.
    */
   async getRevenueAnalytics(params: { fromDate?: Date; toDate?: Date }) {
-    const matchQuery: Record<string, unknown> = {};
+    const matchQuery: Record<string, unknown> = {
+      status: OrderStatus.COMPLETED,
+      paymentStatus: PaymentStatus.PAID,
+    };
     if (params.fromDate || params.toDate) {
       matchQuery.createdAt = {};
       if (params.fromDate) (matchQuery.createdAt as Record<string, unknown>).$gte = params.fromDate;
@@ -4434,27 +4444,18 @@ export class OrderService {
         </html>
       `;
 
-      // إنشاء مجلد التقارير إذا لم يكن موجوداً
-      const reportsDir = path.join(process.cwd(), 'uploads', 'reports');
-      if (!fs.existsSync(reportsDir)) {
-        fs.mkdirSync(reportsDir, { recursive: true });
-      }
-
       const fileName = `orders-report-${new Date().toISOString().split('T')[0]}.pdf`;
-      const filePath = path.join(reportsDir, fileName);
 
       // إنشاء PDF باستخدام puppeteer
       let browser;
       try {
-        // في Windows/Linux المحلي: لا نحدد executablePath (سيجد Chrome تلقائياً)
-        // في Docker/VPS: يجب تحديد PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
         const puppeteerExecPath = process.env.PUPPETEER_EXECUTABLE_PATH;
         browser = await puppeteer.launch({
           headless: true,
           ...(puppeteerExecPath && puppeteerExecPath !== 'temp-invoices'
             ? { executablePath: puppeteerExecPath }
             : {}),
-          timeout: 60000, // زيادة timeout إلى 60 ثانية
+          timeout: 60000,
           args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -4465,12 +4466,11 @@ export class OrderService {
             '--disable-web-security',
             '--disable-features=IsolateOrigins,site-per-process',
             '--disable-blink-features=AutomationControlled',
-            '--single-process', // مهم لـ Docker
+            '--single-process',
           ],
         });
 
         const page = await browser.newPage();
-        // استخدام 'load' بدلاً من 'networkidle0' لأنه أسرع وأكثر موثوقية
         await page.setContent(htmlContent, { waitUntil: 'load', timeout: 30000 });
 
         const pdfBuffer = await page.pdf({
@@ -4484,10 +4484,24 @@ export class OrderService {
           },
         });
 
-        // حفظ الملف
-        fs.writeFileSync(filePath, pdfBuffer);
+        if (!this.uploadService) {
+          throw new OrderPdfGenerationFailedException({
+            ordersCount: orders.length,
+            error: 'خدمة الرفع غير متوفرة (Bunny)',
+          });
+        }
 
-        // إرسال إشعار INVOICE_CREATED للمدراء
+        const uploadedResult = await this.uploadService.uploadFile(
+          {
+            buffer: Buffer.from(pdfBuffer),
+            originalname: fileName,
+            mimetype: 'application/pdf',
+            size: pdfBuffer.length,
+          },
+          'reports',
+          fileName,
+        );
+
         if (orders.length > 0) {
           await this.notifyAdmins(
             NotificationType.INVOICE_CREATED,
@@ -4496,7 +4510,7 @@ export class OrderService {
             `Invoice PDF created with ${orders.length} order(s)`,
             {
               fileName,
-              filePath: `/uploads/reports/${fileName}`,
+              filePath: uploadedResult.url,
               orderCount: orders.length,
               totalRevenue,
               orderIds: orders.map((o) => o._id.toString()),
@@ -4504,8 +4518,7 @@ export class OrderService {
           );
         }
 
-        // إرجاع المسار النسبي للوصول من الويب
-        return `/uploads/reports/${fileName}`;
+        return uploadedResult.url;
       } finally {
         if (browser) {
           await browser.close();
@@ -4531,21 +4544,18 @@ export class OrderService {
   }
 
   /**
-   * إنشاء ملف Excel للطلبات
+   * إنشاء ملف Excel للطلبات ورفعه إلى Bunny (نفس آلية الفواتير)
    */
   async generateOrdersExcel(orders: OrderDocument[]): Promise<string> {
     try {
-      // جلب بيانات المستخدمين
       const userIds = orders.map((order) => order.userId).filter((id) => id);
       const usersMap = await this.getUsersMap(userIds);
 
-      // إنشاء البيانات للتقرير
       const excelData = orders.map((order) => {
         const userInfo = usersMap.get(order.userId.toString()) || {
           name: 'غير محدد',
           phone: 'غير محدد',
         };
-
         return {
           'رقم الطلب': order.orderNumber,
           'تاريخ الطلب': order.createdAt?.toLocaleDateString('ar-SA'),
@@ -4561,44 +4571,50 @@ export class OrderService {
         };
       });
 
-      // إنشاء مجلد التقارير إذا لم يكن موجوداً
-      const reportsDir = path.join(process.cwd(), 'uploads', 'reports');
-      if (!fs.existsSync(reportsDir)) {
-        fs.mkdirSync(reportsDir, { recursive: true });
-      }
-
-      const fileName = `orders-report-${new Date().toISOString().split('T')[0]}.xlsx`;
-      const filePath = path.join(reportsDir, fileName);
-
-      // إنشاء ملف Excel باستخدام xlsx
       const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-      // تنسيق الأعمدة
-      const columnWidths = [
-        { wch: 15 }, // رقم الطلب
-        { wch: 12 }, // تاريخ الطلب
-        { wch: 12 }, // الحالة
-        { wch: 12 }, // المجموع
-        { wch: 8 }, // العملة
-        { wch: 20 }, // اسم العميل
-        { wch: 15 }, // رقم الهاتف
-        { wch: 15 }, // المدينة
-        { wch: 15 }, // طريقة الدفع
-        { wch: 12 }, // عدد المنتجات
-        { wch: 10 }, // التقييم
+      worksheet['!cols'] = [
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 8 },
+        { wch: 20 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 10 },
       ];
 
-      worksheet['!cols'] = columnWidths;
-
-      // إنشاء workbook
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير الطلبات');
 
-      // حفظ الملف
-      XLSX.writeFile(workbook, filePath);
+      const fileName = `orders-report-${new Date().toISOString().split('T')[0]}.xlsx`;
+      const excelBuffer = XLSX.write(workbook, {
+        type: 'buffer',
+        bookType: 'xlsx',
+      }) as Buffer;
 
-      // إرجاع المسار النسبي للوصول من الويب
-      return `/uploads/reports/${fileName}`;
+      if (!this.uploadService) {
+        throw new OrderExcelGenerationFailedException({
+          ordersCount: orders.length,
+          error: 'خدمة الرفع غير متوفرة (Bunny)',
+        });
+      }
+
+      const uploadedResult = await this.uploadService.uploadFile(
+        {
+          buffer: excelBuffer,
+          originalname: fileName,
+          mimetype:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          size: excelBuffer.length,
+        },
+        'reports',
+        fileName,
+      );
+
+      return uploadedResult.url;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       this.logger.error('Error generating Excel report', {
@@ -4620,13 +4636,20 @@ export class OrderService {
 
   /**
    * التقرير المالي
+   * الإيراد من الطلبات المكتملة والمدفوعة فقط.
    */
   async generateFinancialReport() {
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
     const financialData = await this.orderModel.aggregate([
-      { $match: { createdAt: { $gte: lastMonth } } },
+      {
+        $match: {
+          createdAt: { $gte: lastMonth },
+          status: OrderStatus.COMPLETED,
+          paymentStatus: PaymentStatus.PAID,
+        },
+      },
       {
         $group: {
           _id: null,
@@ -4763,7 +4786,7 @@ export class OrderService {
   }
 
   /**
-   * تصدير تحليلات الطلبات
+   * تصدير تحليلات الطلبات — إنشاء الملف ورفعه إلى Bunny (نفس آلية الفواتير)
    */
   async exportOrderAnalytics(
     format: string,
@@ -4771,42 +4794,127 @@ export class OrderService {
     fromDate?: string,
     toDate?: string,
   ) {
-    this.logger.log('Exporting order analytics:', { format, params, fromDate, toDate });
+    this.logger.log('Exporting order analytics:', {
+      format,
+      params,
+      fromDate,
+      toDate,
+    });
 
-    // Get analytics data
     const analytics = await this.getAdminAnalytics(params);
-
-    // Get revenue analytics if date range provided
-    let revenueAnalytics = null;
+    let revenueAnalytics: Awaited<
+      ReturnType<OrderService['getRevenueAnalytics']>
+    > | null = null;
     if (fromDate && toDate) {
       revenueAnalytics = await this.getRevenueAnalytics({
         fromDate: new Date(fromDate),
         toDate: new Date(toDate),
       });
     }
-
-    // Get performance analytics
     const performanceAnalytics = await this.getPerformanceAnalytics();
 
-    // Generate filename
-    const fileName = `order_analytics_${Date.now()}.${format}`;
+    const summary = {
+      totalOrders: analytics.totalOrders,
+      completedOrdersCount: analytics.completedOrdersCount,
+      totalRevenue: analytics.totalRevenue,
+      averageOrderValue: analytics.averageOrderValue,
+      byStatus: analytics.ordersByStatus,
+      performance: performanceAnalytics,
+      ...(revenueAnalytics && { revenue: revenueAnalytics }),
+    };
+
+    const ext = format.toLowerCase() === 'xlsx' ? 'xlsx' : format.toLowerCase() === 'json' ? 'json' : 'csv';
+    const fileName = `order_analytics_${Date.now()}.${ext}`;
+
+    let buffer: Buffer;
+    let mimetype: string;
+
+    if (ext === 'json') {
+      buffer = Buffer.from(JSON.stringify(summary, null, 2), 'utf-8');
+      mimetype = 'application/json';
+    } else if (ext === 'csv') {
+      const rows: string[][] = [
+        ['key', 'value'],
+        ['totalOrders', String(summary.totalOrders)],
+        ['completedOrdersCount', String(summary.completedOrdersCount ?? '')],
+        ['totalRevenue', String(summary.totalRevenue)],
+        ['averageOrderValue', String(summary.averageOrderValue)],
+        [],
+        ['status', 'count'],
+        ...(Array.isArray(summary.byStatus)
+          ? summary.byStatus.map((s: { _id?: string; count?: number }) => [
+              String(s._id ?? ''),
+              String(s.count ?? 0),
+            ])
+          : []),
+      ];
+      const csvContent = rows.map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+      buffer = Buffer.from(csvContent, 'utf-8');
+      mimetype = 'text/csv';
+    } else {
+      const workbook = XLSX.utils.book_new();
+      const summarySheet = XLSX.utils.aoa_to_sheet([
+        ['المقياس', 'القيمة'],
+        ['إجمالي الطلبات', summary.totalOrders],
+        ['الطلبات المكتملة', summary.completedOrdersCount ?? ''],
+        ['إجمالي الإيرادات', summary.totalRevenue],
+        ['متوسط قيمة الطلب', summary.averageOrderValue],
+      ]);
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'ملخص');
+      const statusSheet = XLSX.utils.aoa_to_sheet([
+        ['الحالة', 'العدد'],
+        ...(Array.isArray(summary.byStatus)
+          ? summary.byStatus.map((s: { _id?: string; count?: number }) => [
+              String(s._id ?? ''),
+              s.count ?? 0,
+            ])
+          : []),
+      ]);
+      XLSX.utils.book_append_sheet(workbook, statusSheet, 'حسب الحالة');
+      buffer = XLSX.write(workbook, {
+        type: 'buffer',
+        bookType: 'xlsx',
+      }) as Buffer;
+      mimetype =
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    }
+
+    if (!this.uploadService) {
+      this.logger.warn('Export order analytics: UploadService not available');
+      return {
+        success: false,
+        data: {
+          fileUrl: '',
+          format: ext,
+          exportedAt: new Date().toISOString(),
+          fileName,
+          recordCount: analytics.totalOrders,
+          summary,
+          error: 'خدمة الرفع غير متوفرة (Bunny)',
+        },
+      };
+    }
+
+    const uploadedResult = await this.uploadService.uploadFile(
+      {
+        buffer,
+        originalname: fileName,
+        mimetype,
+        size: buffer.length,
+      },
+      'reports',
+      fileName,
+    );
 
     return {
       success: true,
       data: {
-        fileUrl: `https://api.example.com/exports/${fileName}`,
-        format,
+        fileUrl: uploadedResult.url,
+        format: ext,
         exportedAt: new Date().toISOString(),
         fileName,
         recordCount: analytics.totalOrders,
-        summary: {
-          totalOrders: analytics.totalOrders,
-          totalRevenue: analytics.totalRevenue,
-          averageOrderValue: analytics.averageOrderValue,
-          byStatus: analytics.ordersByStatus,
-          performance: performanceAnalytics,
-          ...(revenueAnalytics && { revenue: revenueAnalytics }),
-        },
+        summary,
       },
     };
   }
@@ -4995,25 +5103,129 @@ export class OrderService {
   }
 
   /**
-   * تصدير قائمة الطلبات
+   * تصدير قائمة الطلبات — إنشاء الملف (CSV/Excel) ورفعه إلى Bunny
    */
   async exportOrders(format: string, query: ListOrdersDto) {
     this.logger.log('Exporting orders list:', { format, query });
 
-    // Get orders list with filters
     const { orders, pagination } = await this.getAllOrders(query);
-
-    // Generate filename
-    const fileName = `orders_list_${Date.now()}.${format}`;
-
-    // Get summary statistics
     const stats = await this.getStats();
+
+    const ext =
+      format.toLowerCase() === 'xlsx' || format.toLowerCase() === 'excel'
+        ? 'xlsx'
+        : 'csv';
+    const fileName = `orders_list_${Date.now()}.${ext}`;
+
+    const userIds = orders.map((o) => o.userId).filter(Boolean) as Types.ObjectId[];
+    const usersMap = userIds.length > 0 ? await this.getUsersMap(userIds) : new Map<string, { name?: string; phone?: string }>();
+
+    const rowData = orders.map((order) => {
+      const userInfo = usersMap.get(order.userId?.toString?.() ?? '') ?? {
+        name: 'غير محدد',
+        phone: 'غير محدد',
+      };
+      return {
+        orderNumber: order.orderNumber,
+        createdAt: order.createdAt?.toLocaleDateString?.('ar-SA') ?? '',
+        status: order.status,
+        total: order.total ?? 0,
+        currency: order.currency ?? '',
+        customerName: userInfo.name ?? 'غير محدد',
+        customerPhone: userInfo.phone ?? 'غير محدد',
+        city: order.deliveryAddress?.city ?? 'غير محدد',
+        paymentMethod: order.paymentMethod ?? '',
+        itemsCount: order.items?.length ?? 0,
+        rating: order.ratingInfo?.rating ?? 'غير مقيم',
+      };
+    });
+
+    let buffer: Buffer;
+    let mimetype: string;
+
+    if (ext === 'xlsx') {
+      const worksheet = XLSX.utils.json_to_sheet(rowData);
+      worksheet['!cols'] = [
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 8 },
+        { wch: 20 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 10 },
+      ];
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'قائمة الطلبات');
+      buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+      mimetype =
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    } else {
+      const headers = [
+        'orderNumber',
+        'createdAt',
+        'status',
+        'total',
+        'currency',
+        'customerName',
+        'customerPhone',
+        'city',
+        'paymentMethod',
+        'itemsCount',
+        'rating',
+      ];
+      const escape = (v: unknown) =>
+        `"${String(v ?? '').replace(/"/g, '""')}"`;
+      const rows = [
+        headers.join(','),
+        ...rowData.map((row) =>
+          headers.map((h) => escape((row as Record<string, unknown>)[h])).join(','),
+        ),
+      ];
+      buffer = Buffer.from(rows.join('\n'), 'utf-8');
+      mimetype = 'text/csv';
+    }
+
+    if (!this.uploadService) {
+      this.logger.warn('Export orders list: UploadService not available');
+      return {
+        success: false,
+        data: {
+          fileUrl: '',
+          format: ext,
+          exportedAt: new Date().toISOString(),
+          fileName,
+          recordCount: pagination.total,
+          summary: {
+            totalOrders: pagination.total,
+            exportedOrders: orders.length,
+            filters: query,
+            stats,
+          },
+          error: 'خدمة الرفع غير متوفرة (Bunny)',
+        },
+      };
+    }
+
+    const uploadedResult = await this.uploadService.uploadFile(
+      {
+        buffer,
+        originalname: fileName,
+        mimetype,
+        size: buffer.length,
+      },
+      'reports',
+      fileName,
+    );
 
     return {
       success: true,
       data: {
-        fileUrl: `https://api.example.com/exports/${fileName}`,
-        format,
+        fileUrl: uploadedResult.url,
+        format: ext,
         exportedAt: new Date().toISOString(),
         fileName,
         recordCount: pagination.total,

@@ -401,7 +401,9 @@ export const OrderAnalyticsPage: React.FC = () => {
                     sx={{ fontWeight: 'bold' }}
                   >
                     {formatNumber(
-                      analytics.ordersByStatus?.find((s) => s.status === 'completed')?.count ?? 0
+                      analytics.completedOrdersCount ??
+                        analytics.ordersByStatus?.find((s) => s.status === 'completed')?.count ??
+                        0
                     )}
                   </Typography>
                   <Typography variant={isMobile ? 'caption' : 'body2'} color="text.secondary">

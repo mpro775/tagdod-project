@@ -82,13 +82,24 @@ export const productsApi = {
 
   /**
    * Get product statistics
+   * API returns: { total, active, featured, newProducts, byStatus: { draft, active, archived } }
+   * We map to ProductStats: { total, active, featured, new, draft, archived }
    */
   getStats: async (): Promise<ProductStats> => {
-    const response = await apiClient.get<ApiResponse<ProductStats | { data: ProductStats }>>(
-      '/admin/products/stats/summary'
-    );
-    const payload = response.data.data as ProductStats | { data: ProductStats };
-    return (payload as any)?.data ?? (payload as ProductStats);
+    const response = await apiClient.get<
+      ApiResponse<ProductStats | { data: ProductStats } | { total: number; active: number; featured: number; newProducts: number; byStatus: Record<string, number> }>
+    >('/admin/products/stats/summary');
+    const payload = response.data.data as any;
+    const inner = payload?.data ?? payload;
+    if (!inner) return { total: 0, active: 0, draft: 0, archived: 0, featured: 0, new: 0 };
+    return {
+      total: inner.total ?? 0,
+      active: inner.active ?? 0,
+      featured: inner.featured ?? 0,
+      new: inner.new ?? inner.newProducts ?? 0,
+      draft: inner.draft ?? inner.byStatus?.draft ?? 0,
+      archived: inner.archived ?? inner.byStatus?.archived ?? 0,
+    };
   },
 
   // ==================== Variants ====================

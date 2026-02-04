@@ -19,6 +19,7 @@ import type {
   RevenueAnalytics,
   PerformanceAnalytics,
   VerifyPaymentDto,
+  OrdersFinancialReportResponse,
 } from '../types/order.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
@@ -299,11 +300,14 @@ export const ordersApi = {
   },
 
   /**
-   * Generate financial report
+   * التقرير المالي للطلبات — من GET /admin/orders/reports/financial.
+   * أي واجهة تعرض هذا التقرير يجب أن تقرأ البيانات من result.report.
    */
-  generateFinancialReport: async () => {
-    const response = await apiClient.get<ApiResponse<any>>('/admin/orders/reports/financial');
-    return response.data.data;
+  generateFinancialReport: async (): Promise<OrdersFinancialReportResponse> => {
+    const response = await apiClient.get<ApiResponse<OrdersFinancialReportResponse>>(
+      '/admin/orders/reports/financial'
+    );
+    return response.data.data as OrdersFinancialReportResponse;
   },
 
   /**

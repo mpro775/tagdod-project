@@ -239,7 +239,7 @@ export class AnalyticsService {
         },
       ]).then(result => result[0]?.total || 0),
       this.serviceModel.countDocuments({ 
-        status: { $in: ['OPEN', 'OFFERS_COLLECTING', 'ASSIGNED', 'IN_PROGRESS'] }
+        status: { $in: ['OPEN', 'OFFERS_COLLECTING', 'ASSIGNED'] }
       }),
       this.supportModel.countDocuments({ 
         status: { $in: ['open', 'in_progress', 'waiting_for_user'] }
@@ -571,9 +571,14 @@ export class AnalyticsService {
       byPaymentMethod[method._id || 'unknown'] = method.count;
     });
 
-    // Top products - حساب من بيانات الطلبات الفعلية
+    // Top products - من الطلبات المكتملة والمدفوعة فقط
+    const completedPaidMatch = {
+      status: { $in: COMPLETED_STATUSES },
+      paymentStatus: 'paid',
+      createdAt: { $gte: startDate, $lte: endDate },
+    };
     const topProductsResult = await this.orderModel.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+      { $match: completedPaidMatch },
       { $unwind: '$items' },
       {
         $group: {
@@ -594,9 +599,9 @@ export class AnalyticsService {
       revenue: product.revenue,
     }));
 
-    // Revenue by category - حساب من بيانات الطلبات الفعلية
+    // Revenue by category - من الطلبات المكتملة والمدفوعة فقط
     const categoryRevenueResult = await this.orderModel.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+      { $match: completedPaidMatch },
       { $unwind: '$items' },
       {
         $group: {
@@ -642,7 +647,7 @@ export class AnalyticsService {
       this.serviceModel.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
       this.serviceModel.countDocuments({ status: 'OPEN', createdAt: { $gte: startDate, $lte: endDate } }),
       this.serviceModel.countDocuments({ status: 'ASSIGNED', createdAt: { $gte: startDate, $lte: endDate } }),
-      this.serviceModel.countDocuments({ status: 'completed', createdAt: { $gte: startDate, $lte: endDate } }),
+      this.serviceModel.countDocuments({ status: 'COMPLETED', createdAt: { $gte: startDate, $lte: endDate } }),
       this.serviceModel.countDocuments({ status: 'CANCELLED', createdAt: { $gte: startDate, $lte: endDate } }),
     ]);
 
@@ -678,7 +683,7 @@ export class AnalyticsService {
 
     // Top engineers
     const topEngineers = await this.serviceModel.aggregate([
-      { $match: { status: 'completed', engineerId: { $ne: null }, createdAt: { $gte: startDate, $lte: endDate } } },
+      { $match: { status: 'COMPLETED', engineerId: { $ne: null }, createdAt: { $gte: startDate, $lte: endDate } } },
       {
         $group: {
           _id: '$engineerId',

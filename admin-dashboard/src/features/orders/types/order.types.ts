@@ -426,6 +426,8 @@ export interface OrderStats {
 export interface OrderAnalytics {
   period: string;
   totalOrders: number;
+  /** عدد الطلبات المكتملة في الفترة (من الباك‌اند) */
+  completedOrdersCount?: number;
   totalRevenue: number;
   averageOrderValue: number;
   ordersByStatus: Array<{
@@ -484,4 +486,21 @@ export interface PerformanceAnalytics {
   cancellationRate: number;
   refundRate: number;
   customerSatisfactionScore: number;
+}
+
+/** التقرير المالي للطلبات — من GET /admin/orders/reports/financial. أي واجهة تعرض هذا التقرير يجب أن تقرأ من كائن report. */
+export interface OrdersFinancialReport {
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  refunds: number;
+  netRevenue: number;
+  profitMargin: number;
+  totalDiscounts: number;
+  totalShipping: number;
+}
+
+export interface OrdersFinancialReportResponse {
+  report: OrdersFinancialReport;
+  message: string;
 }
