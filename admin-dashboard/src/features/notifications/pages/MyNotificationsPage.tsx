@@ -14,11 +14,7 @@ import {
   Button,
   Divider,
 } from '@mui/material';
-import {
-  CheckCircle,
-  Circle,
-  Refresh,
-} from '@mui/icons-material';
+import { CheckCircle, Circle, Refresh } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
@@ -178,7 +174,25 @@ export const MyNotificationsPage: React.FC = () => {
         }
         return '/users';
 
+      case NotificationType.VERIFICATION_REQUEST_PENDING:
+        if (data?.section && typeof data.section === 'string') {
+          return data.section.replace(/^\/+/, '/');
+        }
+        return '/users/verification-requests';
+
       default:
+        // Fallback: use actionUrl or navigationTarget/section from notification
+        const actionUrl = notification.actionUrl;
+        if (actionUrl && typeof actionUrl === 'string') {
+          return actionUrl.replace(/^\/+/, '/');
+        }
+        if (notification.navigationType === 'section' && notification.navigationTarget) {
+          const target = String(notification.navigationTarget).replace(/^\/+/, '');
+          return target ? `/${target}` : null;
+        }
+        if (data?.section && typeof data.section === 'string') {
+          return data.section.replace(/^\/+/, '/');
+        }
         return null;
     }
 
@@ -294,7 +308,10 @@ export const MyNotificationsPage: React.FC = () => {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {total > 0
-              ? t('notifications.totalNotifications', { count: total, defaultValue: `إجمالي ${total} إشعار` })
+              ? t('notifications.totalNotifications', {
+                  count: total,
+                  defaultValue: `إجمالي ${total} إشعار`,
+                })
               : t('notifications.noNotifications', 'لا توجد إشعارات')}
           </Typography>
         </Box>
@@ -318,10 +335,10 @@ export const MyNotificationsPage: React.FC = () => {
 
       {unreadCount > 0 && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          {t(
-            'notifications.unreadCount',
-            { count: unreadCount, defaultValue: `لديك ${unreadCount} إشعار غير مقروء` }
-          )}
+          {t('notifications.unreadCount', {
+            count: unreadCount,
+            defaultValue: `لديك ${unreadCount} إشعار غير مقروء`,
+          })}
         </Alert>
       )}
 

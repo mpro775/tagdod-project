@@ -111,7 +111,9 @@ export class NotificationService implements OnModuleInit {
       case NotificationNavigationType.PRODUCT:
         return `/products/${navigationTarget}`;
       case NotificationNavigationType.SECTION:
-        return `/${navigationTarget}`;
+        return navigationTarget.startsWith('/')
+          ? navigationTarget
+          : `/${navigationTarget}`;
       case NotificationNavigationType.EXTERNAL_URL:
         return navigationTarget; // استخدام navigationTarget مباشرة كرابط خارجي
       case NotificationNavigationType.SERVICE_REQUEST:

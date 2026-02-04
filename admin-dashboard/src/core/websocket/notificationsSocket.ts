@@ -10,6 +10,9 @@ export interface NotificationPayload {
   category?: string;
   priority?: string;
   data?: Record<string, unknown>;
+  actionUrl?: string;
+  navigationType?: string;
+  navigationTarget?: string;
   createdAt: string;
   isRead: boolean;
 }

@@ -69,6 +69,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         category: n.category,
         priority: n.priority,
         data: n.data || {},
+        actionUrl: n.actionUrl,
+        navigationType: n.navigationType,
+        navigationTarget: n.navigationTarget,
         createdAt: n.createdAt ? new Date(n.createdAt).toISOString() : new Date().toISOString(),
         isRead: n.status === 'read' || n.readAt !== undefined,
       }));
@@ -250,7 +253,24 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         }
         return '/users';
 
+      case NotificationType.VERIFICATION_REQUEST_PENDING:
+        if (data?.section && typeof data.section === 'string') {
+          return data.section.replace(/^\/+/, '/');
+        }
+        return '/users/verification-requests';
+
       default:
+        // Fallback: use actionUrl or navigationTarget/section from notification
+        if (notification.actionUrl && typeof notification.actionUrl === 'string') {
+          return notification.actionUrl.replace(/^\/+/, '/');
+        }
+        if (notification.navigationType === 'section' && notification.navigationTarget) {
+          const target = String(notification.navigationTarget).replace(/^\/+/, '');
+          return target ? `/${target}` : null;
+        }
+        if (data?.section && typeof data.section === 'string') {
+          return data.section.replace(/^\/+/, '/');
+        }
         return null;
     }
 
