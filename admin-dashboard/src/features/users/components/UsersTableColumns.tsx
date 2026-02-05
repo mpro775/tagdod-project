@@ -5,7 +5,7 @@ import { Edit, Delete, Restore } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '@/shared/utils/formatters';
 import type { User, UserStatus } from '../types/user.types';
-import { getPrimaryRole } from '../types/user.types';
+import { getPrimaryRole, CapabilityStatus } from '../types/user.types';
 
 interface UsersTableColumnsProps {
   onEdit: (user: User) => void;
@@ -89,6 +89,72 @@ export const useUsersTableColumns = ({
             <Chip
               label={labelMap[role] || role}
               color={colorMap[role]}
+              size="small"
+              sx={{
+                fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                height: { xs: 20, sm: 24 },
+                '& .MuiChip-label': {
+                  px: { xs: 0.5, sm: 1 },
+                },
+              }}
+            />
+          );
+        },
+      },
+      {
+        field: 'verificationStatus',
+        headerName: t('users:list.columns.verification', 'التوثيق'),
+        minWidth: 110,
+        flex: 0.9,
+        renderCell: (params) => {
+          const caps = params.row.capabilities;
+          const roles = params.row.roles || [];
+          const isEngineer = roles.includes('engineer');
+          const isMerchant = roles.includes('merchant');
+
+          // لا يظهر شيء إذا لم يكن مهندس أو تاجر
+          if (!isEngineer && !isMerchant) {
+            return '-';
+          }
+
+          // تحديد حالة التوثيق حسب الدور
+          let status: CapabilityStatus = CapabilityStatus.NONE;
+          let label = '';
+          let color: 'success' | 'warning' | 'error' | 'info' | 'default' = 'default';
+
+          if (isEngineer) {
+            status = caps?.engineer_status || CapabilityStatus.NONE;
+          } else if (isMerchant) {
+            status = caps?.merchant_status || CapabilityStatus.NONE;
+          }
+
+          // تحديد اللون والنص حسب الحالة
+          switch (status) {
+            case CapabilityStatus.APPROVED:
+              label = t('users:status.verified', 'موثق');
+              color = 'success';
+              break;
+            case CapabilityStatus.PENDING:
+              label = t('users:status.pending', 'قيد المراجعة');
+              color = 'warning';
+              break;
+            case CapabilityStatus.UNVERIFIED:
+              label = t('users:status.unverified', 'غير موثق');
+              color = 'info';
+              break;
+            case CapabilityStatus.REJECTED:
+              label = t('users:status.rejected', 'مرفوض');
+              color = 'error';
+              break;
+            default:
+              label = t('users:status.none', 'غير مفعل');
+              color = 'default';
+          }
+
+          return (
+            <Chip
+              label={label}
+              color={color}
               size="small"
               sx={{
                 fontSize: { xs: '0.6rem', sm: '0.75rem' },
