@@ -649,7 +649,8 @@ export const EngineersManagementPage: React.FC = () => {
             columns={columns}
             rows={engineers}
             loading={isEngineersLoading}
-            // Search is handled by the TextField above, not by DataTable
+            searchPlaceholder={t('services:engineers.searchPlaceholder')}
+            onSearch={setSearchTerm}
             getRowId={(row: any) => row.engineerId}
             rowHeight={90}
             height="calc(100vh - 280px)"
