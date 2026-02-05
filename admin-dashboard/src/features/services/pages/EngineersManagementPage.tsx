@@ -502,6 +502,12 @@ export const EngineersManagementPage: React.FC = () => {
             label={t('services:engineers.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                // Search is already triggered by the useEngineers hook watching searchTerm
+              }
+            }}
             InputProps={{
               startAdornment: <Engineering sx={{ mr: 1, color: 'text.secondary' }} />,
             }}
@@ -643,8 +649,7 @@ export const EngineersManagementPage: React.FC = () => {
             columns={columns}
             rows={engineers}
             loading={isEngineersLoading}
-            searchPlaceholder={t('services:engineers.searchPlaceholder')}
-            onSearch={setSearchTerm}
+            // Search is handled by the TextField above, not by DataTable
             getRowId={(row: any) => row.engineerId}
             rowHeight={90}
             height="calc(100vh - 450px)"
