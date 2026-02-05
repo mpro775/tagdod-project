@@ -54,7 +54,7 @@ export const EngineersManagementPage: React.FC = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
-    pageSize: 20,
+    pageSize: 30, // Show 30 rows per page by default for better screen utilization
   });
 
   const {
@@ -652,7 +652,7 @@ export const EngineersManagementPage: React.FC = () => {
             // Search is handled by the TextField above, not by DataTable
             getRowId={(row: any) => row.engineerId}
             rowHeight={90}
-            height="calc(100vh - 450px)"
+            height="calc(100vh - 280px)"
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
             rowCount={engineersData?.meta?.total || engineers.length}
