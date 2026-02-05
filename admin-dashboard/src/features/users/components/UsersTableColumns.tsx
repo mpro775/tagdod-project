@@ -118,14 +118,17 @@ export const useUsersTableColumns = ({
           }
 
           // تحديد حالة التوثيق حسب الدور
+          // نتحقق أولاً من كائن المستخدم الرئيسي، ثم من capabilities
           let status: CapabilityStatus = CapabilityStatus.NONE;
           let label = '';
           let color: 'success' | 'warning' | 'error' | 'info' | 'default' = 'default';
 
           if (isEngineer) {
-            status = caps?.engineer_status || CapabilityStatus.NONE;
+            // نتحقق من كائن المستخدم أولاً، ثم من capabilities
+            status = params.row.engineer_status || caps?.engineer_status || CapabilityStatus.NONE;
           } else if (isMerchant) {
-            status = caps?.merchant_status || CapabilityStatus.NONE;
+            // نتحقق من كائن المستخدم أولاً، ثم من capabilities
+            status = params.row.merchant_status || caps?.merchant_status || CapabilityStatus.NONE;
           }
 
           // تحديد اللون والنص حسب الحالة
