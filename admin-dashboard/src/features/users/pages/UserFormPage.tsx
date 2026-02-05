@@ -397,7 +397,8 @@ export const UserFormPage: React.FC = () => {
                     </Box>
 
                     {/* Engineer Status Control */}
-                    {(userCapabilities?.engineer_capable ||
+                    {(user?.roles?.includes(UserRole.ENGINEER) ||
+                      userCapabilities?.engineer_capable ||
                       (userCapabilities?.engineer_status ?? CapabilityStatus.NONE) !==
                         CapabilityStatus.NONE) && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
@@ -423,7 +424,8 @@ export const UserFormPage: React.FC = () => {
                     )}
 
                     {/* Merchant Status Control */}
-                    {(userCapabilities?.merchant_capable ||
+                    {(user?.roles?.includes(UserRole.MERCHANT) ||
+                      userCapabilities?.merchant_capable ||
                       (userCapabilities?.merchant_status ?? CapabilityStatus.NONE) !==
                         CapabilityStatus.NONE) && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>

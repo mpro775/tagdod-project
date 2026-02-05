@@ -14,6 +14,7 @@ import {
 import { Description, Store, Note } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import type { User } from '../types/user.types';
+import { UserRole } from '../types/user.types';
 
 interface VerificationFilesSectionProps {
   user: User;
@@ -26,8 +27,14 @@ export const VerificationFilesSection: React.FC<VerificationFilesSectionProps> =
   const hasEngineerFile = !!user.cvFileUrl;
   const hasMerchantFile = !!user.storePhotoUrl;
   const hasVerificationNote = !!user.verificationNote;
-  const isEngineer = user.capabilities?.engineer_capable || user.capabilities?.engineer_status !== 'none';
-  const isMerchant = user.capabilities?.merchant_capable || user.capabilities?.merchant_status !== 'none';
+  const isEngineer =
+    user.roles?.includes(UserRole.ENGINEER) ||
+    user.capabilities?.engineer_capable ||
+    user.capabilities?.engineer_status !== 'none';
+  const isMerchant =
+    user.roles?.includes(UserRole.MERCHANT) ||
+    user.capabilities?.merchant_capable ||
+    user.capabilities?.merchant_status !== 'none';
 
   // لا نعرض القسم إذا لم تكن هناك ملفات أو ملاحظات
   if (!hasEngineerFile && !hasMerchantFile && !hasVerificationNote) {
@@ -163,4 +170,3 @@ export const VerificationFilesSection: React.FC<VerificationFilesSectionProps> =
     </Grid>
   );
 };
-

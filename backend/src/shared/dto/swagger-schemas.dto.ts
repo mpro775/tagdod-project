@@ -513,13 +513,6 @@ export class CreateNotificationDto {
     description: 'Additional data',
   })
   data?: Record<string, unknown>;
-
-  @ApiProperty({
-    example: 'https://app.example.com/orders/ORD-2024-001',
-    description: 'Action URL to open when user clicks the notification',
-    required: false,
-  })
-  actionUrl?: string;
 }
 
 export class MarkNotificationReadDto {
