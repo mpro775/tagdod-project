@@ -207,7 +207,6 @@ export const UserFormPage: React.FC = () => {
       jobTitle: data.jobTitle || undefined,
       city: mapCityToArabic(data.city),
       password: data.password || undefined,
-      roles: data.roles,
       permissions: permissions,
       status: data.status,
     };
@@ -217,17 +216,35 @@ export const UserFormPage: React.FC = () => {
       userData.phone = data.phone;
     }
 
+    // في وضع التعديل، لا نرسل roles إذا لم تتغير
+    // لتجنب إعادة تعيين القدرات من قبل الباك إند
+    if (isEditMode && user) {
+      const currentRoles = user.roles || [];
+      const newRoles = data.roles || [];
+      const rolesChanged = JSON.stringify(currentRoles.sort()) !== JSON.stringify(newRoles.sort());
+
+      if (rolesChanged) {
+        userData.roles = data.roles;
+      }
+    } else {
+      // في وضع الإنشاء، نرسل الأدوار دائماً
+      userData.roles = data.roles;
+    }
+
     // Handle capabilities based on user type
-    if (currentPrimaryRole === UserRole.ENGINEER) {
-      userData.capabilityRequest = 'engineer';
-    } else if (currentPrimaryRole === UserRole.MERCHANT) {
-      userData.capabilityRequest = 'merchant';
-      if (data.merchantDiscountPercent !== undefined && data.merchantDiscountPercent !== null) {
-        // Convert to number if it's a string
-        userData.merchantDiscountPercent =
-          typeof data.merchantDiscountPercent === 'string'
-            ? parseFloat(data.merchantDiscountPercent)
-            : data.merchantDiscountPercent;
+    // فقط في وضع الإنشاء أو إذا تغير الدور
+    if (!isEditMode || (isEditMode && userData.roles)) {
+      if (currentPrimaryRole === UserRole.ENGINEER) {
+        userData.capabilityRequest = 'engineer';
+      } else if (currentPrimaryRole === UserRole.MERCHANT) {
+        userData.capabilityRequest = 'merchant';
+        if (data.merchantDiscountPercent !== undefined && data.merchantDiscountPercent !== null) {
+          // Convert to number if it's a string
+          userData.merchantDiscountPercent =
+            typeof data.merchantDiscountPercent === 'string'
+              ? parseFloat(data.merchantDiscountPercent)
+              : data.merchantDiscountPercent;
+        }
       }
     }
 
