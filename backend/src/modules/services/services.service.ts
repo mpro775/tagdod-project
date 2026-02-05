@@ -2838,13 +2838,24 @@ export class ServicesService {
     };
 
     if (search) {
+      const searchRegex = { $regex: search, $options: 'i' };
       matchStage.$and = [
         {
           $or: [
-            { firstName: { $regex: search, $options: 'i' } },
-            { lastName: { $regex: search, $options: 'i' } },
-            { phone: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } },
+            { firstName: searchRegex },
+            { lastName: searchRegex },
+            { phone: searchRegex },
+            { email: searchRegex },
+            // Search by full name (firstName + lastName)
+            {
+              $expr: {
+                $regexMatch: {
+                  input: { $concat: ['$firstName', ' ', '$lastName'] },
+                  regex: search,
+                  options: 'i',
+                },
+              },
+            },
           ],
         },
       ];
@@ -2855,7 +2866,7 @@ export class ServicesService {
     const total = await this.userModel.countDocuments(matchStage);
 
     const engineers = await engineersQuery
-      .select('_id firstName lastName phone email engineer_status')
+      .select('_id firstName lastName phone email engineer_status status')
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
@@ -2996,6 +3007,8 @@ export class ServicesService {
         walletBalance,
         totalCoupons: coupons.totalCoupons,
         activeCoupons: coupons.activeCoupons,
+        status: engineer.status,
+        engineerStatus: engineer.engineer_status,
       };
     });
 
@@ -3146,8 +3159,11 @@ export class ServicesService {
   // === إحصائيات المهندسين ===
   async getEngineersOverviewStatistics() {
     const [totalEngineers, averageRating, averageCompletionRate, totalRevenue] = await Promise.all([
-      // إجمالي عدد المهندسين الذين لديهم طلبات
-      this.requests.distinct('engineerId').then((ids) => ids.filter((id) => id !== null).length),
+      // إجمالي عدد المهندسين المسجلين في النظام (من جدول المستخدمين)
+      this.userModel.countDocuments({
+        $or: [{ roles: { $in: ['engineer'] } }, { engineer_capable: true }],
+        status: { $ne: 'deleted' },
+      }),
 
       // متوسط التقييم
       this.requests

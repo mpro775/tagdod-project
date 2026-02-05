@@ -100,7 +100,8 @@ export const useCancelOrder = () => {
 export const useAddOrderNotes = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: AddOrderNotesDto }) => ordersApi.addNotes(id, data),
+    mutationFn: ({ id, data }: { id: string; data: AddOrderNotesDto }) =>
+      ordersApi.addNotes(id, data),
     onSuccess: () => {
       toast.success('تم إضافة الملاحظات بنجاح');
       queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
@@ -117,7 +118,9 @@ export const useBulkUpdateOrderStatus = () => {
     onSuccess: (data) => {
       const successCount = data.results.length;
       const errorCount = data.errors.length;
-      toast.success(`تم تحديث ${successCount} طلب بنجاح${errorCount > 0 ? `، فشل ${errorCount} طلب` : ''}`);
+      toast.success(
+        `تم تحديث ${successCount} طلب بنجاح${errorCount > 0 ? `، فشل ${errorCount} طلب` : ''}`
+      );
       queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
     },
     onError: ErrorHandler.showError,
@@ -160,8 +163,13 @@ export const useOrderTracking = (id: string) => {
 // Generate orders report
 export const useGenerateOrdersReport = () => {
   return useMutation({
-    mutationFn: ({ params, format }: { params: ListOrdersParams; format?: 'json' | 'pdf' | 'excel' }) =>
-      ordersApi.generateOrdersReport(params, format),
+    mutationFn: ({
+      params,
+      format,
+    }: {
+      params: ListOrdersParams;
+      format?: 'json' | 'pdf' | 'excel';
+    }) => ordersApi.generateOrdersReport(params, format),
     onSuccess: (result) => {
       if (result?.url && typeof result.url === 'string' && result.url.trim() !== '') {
         window.open(result.url, '_blank');
@@ -192,7 +200,7 @@ export const useGenerateFinancialReport = () => {
 // Helper function to generate CSV from data
 const generateCSV = (_data: any, summary: any): string => {
   const rows: string[] = [];
-  
+
   // Add summary section
   rows.push('تحليلات الطلبات - ملخص');
   rows.push('');
@@ -200,7 +208,7 @@ const generateCSV = (_data: any, summary: any): string => {
   rows.push(`إجمالي الإيرادات,${summary?.totalRevenue || 0}`);
   rows.push(`متوسط قيمة الطلب,${summary?.averageOrderValue || 0}`);
   rows.push('');
-  
+
   // Add status breakdown
   if (summary?.byStatus && Array.isArray(summary.byStatus)) {
     rows.push('الطلبات حسب الحالة');
@@ -212,7 +220,7 @@ const generateCSV = (_data: any, summary: any): string => {
     });
     rows.push('');
   }
-  
+
   // Add performance metrics
   if (summary?.performance) {
     rows.push('مؤشرات الأداء');
@@ -234,17 +242,21 @@ const generateCSV = (_data: any, summary: any): string => {
       rows.push(`رضا العملاء,${perf.customerSatisfaction}/5`);
     }
   }
-  
+
   return rows.join('\n');
 };
 
 // Helper function to generate JSON from data
 const generateJSON = (data: any, summary: any): string => {
-  return JSON.stringify({
-    exportedAt: new Date().toISOString(),
-    summary: summary || {},
-    data: data || {},
-  }, null, 2);
+  return JSON.stringify(
+    {
+      exportedAt: new Date().toISOString(),
+      summary: summary || {},
+      data: data || {},
+    },
+    null,
+    2
+  );
 };
 
 // Helper function to generate PDF content (simple HTML-based PDF)
@@ -337,7 +349,9 @@ const generatePDF = (_data: any, summary: any): string => {
     </div>
   </div>
   
-  ${summary?.byStatus && Array.isArray(summary.byStatus) && summary.byStatus.length > 0 ? `
+  ${
+    summary?.byStatus && Array.isArray(summary.byStatus) && summary.byStatus.length > 0
+      ? `
   <h2>الطلبات حسب الحالة</h2>
   <table>
     <thead>
@@ -347,17 +361,25 @@ const generatePDF = (_data: any, summary: any): string => {
       </tr>
     </thead>
     <tbody>
-      ${summary.byStatus.map((item: any) => `
+      ${summary.byStatus
+        .map(
+          (item: any) => `
       <tr>
         <td>${item._id || item.status || ''}</td>
         <td>${item.count || 0}</td>
       </tr>
-      `).join('')}
+      `
+        )
+        .join('')}
     </tbody>
   </table>
-  ` : ''}
+  `
+      : ''
+  }
   
-  ${summary?.performance ? `
+  ${
+    summary?.performance
+      ? `
   <h2>مؤشرات الأداء</h2>
   <table>
     <thead>
@@ -367,39 +389,61 @@ const generatePDF = (_data: any, summary: any): string => {
       </tr>
     </thead>
     <tbody>
-      ${summary.performance.averageProcessingTime !== undefined ? `
+      ${
+        summary.performance.averageProcessingTime !== undefined
+          ? `
       <tr>
         <td>متوسط وقت المعالجة</td>
         <td>${summary.performance.averageProcessingTime.toFixed(2)} أيام</td>
       </tr>
-      ` : ''}
-      ${summary.performance.fulfillmentRate !== undefined ? `
+      `
+          : ''
+      }
+      ${
+        summary.performance.fulfillmentRate !== undefined
+          ? `
       <tr>
         <td>معدل الإنجاز</td>
         <td>${summary.performance.fulfillmentRate.toFixed(2)}%</td>
       </tr>
-      ` : ''}
-      ${summary.performance.cancellationRate !== undefined ? `
+      `
+          : ''
+      }
+      ${
+        summary.performance.cancellationRate !== undefined
+          ? `
       <tr>
         <td>معدل الإلغاء</td>
         <td>${summary.performance.cancellationRate.toFixed(2)}%</td>
       </tr>
-      ` : ''}
-      ${summary.performance.returnRate !== undefined ? `
+      `
+          : ''
+      }
+      ${
+        summary.performance.returnRate !== undefined
+          ? `
       <tr>
         <td>معدل الإرجاع</td>
         <td>${summary.performance.returnRate.toFixed(2)}%</td>
       </tr>
-      ` : ''}
-      ${summary.performance.customerSatisfaction !== undefined ? `
+      `
+          : ''
+      }
+      ${
+        summary.performance.customerSatisfaction !== undefined
+          ? `
       <tr>
         <td>رضا العملاء</td>
         <td>${summary.performance.customerSatisfaction.toFixed(2)}/5</td>
       </tr>
-      ` : ''}
+      `
+          : ''
+      }
     </tbody>
   </table>
-  ` : ''}
+  `
+      : ''
+  }
   
   <p style="text-align: center; color: #999; margin-top: 40px; font-size: 12px;">
     تم إنشاء هذا التقرير تلقائياً من نظام إدارة الطلبات
@@ -432,7 +476,9 @@ export const useExportOrderAnalytics = () => {
       }
       if (data?.fileUrl && typeof data.fileUrl === 'string' && data.fileUrl.trim() !== '') {
         window.open(data.fileUrl, '_blank');
-        toast.success(`تم إنشاء التقرير بنجاح (${data.recordCount ?? 0} سجل). تم فتح الرابط في نافذة جديدة.`);
+        toast.success(
+          `تم إنشاء التقرير بنجاح (${data.recordCount ?? 0} سجل). تم فتح الرابط في نافذة جديدة.`
+        );
         return;
       }
 
@@ -440,10 +486,10 @@ export const useExportOrderAnalytics = () => {
       const exportFormat = data.format || 'csv';
       const fileName = data.fileName || `order_analytics_${Date.now()}.${exportFormat}`;
       const summary = data.summary || {};
-      
+
       let content: string;
       let mimeType: string;
-      
+
       try {
         switch (exportFormat.toLowerCase()) {
           case 'csv':
@@ -459,7 +505,10 @@ export const useExportOrderAnalytics = () => {
             // For Excel, we'll generate CSV as fallback (requires xlsx library for full support)
             content = generateCSV(data, summary);
             mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-            toast('ملاحظة: يتم تصدير Excel كـ CSV حالياً. لإضافة دعم كامل لـ Excel، يرجى تثبيت مكتبة xlsx', { icon: 'ℹ️' });
+            toast(
+              'ملاحظة: يتم تصدير Excel كـ CSV حالياً. لإضافة دعم كامل لـ Excel، يرجى تثبيت مكتبة xlsx',
+              { icon: 'ℹ️' }
+            );
             break;
           case 'pdf':
             // Generate HTML-based PDF content
@@ -481,23 +530,23 @@ export const useExportOrderAnalytics = () => {
             content = generateCSV(data, summary);
             mimeType = 'text/csv;charset=utf-8;';
         }
-        
+
         // Create blob and download
         const blob = new Blob(['\ufeff' + content], { type: mimeType });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        
+
         link.href = url;
         link.download = fileName;
         link.style.visibility = 'hidden';
-        
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         // Clean up
         URL.revokeObjectURL(url);
-        
+
         toast.success(`تم تصدير البيانات بنجاح (${data.recordCount || 0} سجل)`);
       } catch (error) {
         console.error('Error generating export file:', error);
@@ -538,9 +587,8 @@ export const useVerifyPayment = () => {
     mutationFn: ({ id, data }: { id: string; data: VerifyPaymentDto }) =>
       ordersApi.verifyPayment(id, data),
     onSuccess: (data) => {
-      const message = data.paymentStatus === 'paid' 
-        ? 'تم قبول الدفع بنجاح' 
-        : 'تم رفض الدفع - المبلغ غير كافٍ';
+      const message =
+        data.paymentStatus === 'paid' ? 'تم قبول الدفع بنجاح' : 'تم رفض الدفع - المبلغ غير كافٍ';
       toast.success(message);
       queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
     },
@@ -562,5 +610,14 @@ export const useSendInvoice = () => {
       }
     },
     onError: ErrorHandler.showError,
+  });
+};
+
+// Get pending orders count for sidebar badge
+export const usePendingOrdersCount = (refetchInterval = 60000) => {
+  return useQuery({
+    queryKey: [ORDERS_KEY, 'pending-count'],
+    queryFn: () => ordersApi.getPendingCount(),
+    refetchInterval,
   });
 };

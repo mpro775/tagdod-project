@@ -62,7 +62,11 @@ export const EngineersManagementPage: React.FC = () => {
     isLoading: isEngineersLoading,
     error: engineersError,
     refetch,
-  } = useEngineers({ search: searchTerm });
+  } = useEngineers({
+    search: searchTerm,
+    page: paginationModel.page + 1, // API uses 1-based indexing
+    limit: paginationModel.pageSize,
+  });
   const {
     data: engineersStats,
     isLoading: isStatsLoading,
@@ -89,14 +93,14 @@ export const EngineersManagementPage: React.FC = () => {
 
   const handleToggleStatus = async (engineer: any) => {
     try {
-      if (engineer.status === 'suspended' || engineer.isSuspended) {
+      if (engineer.status === 'suspended') {
         // Activate the engineer
-        await activateUserMutation.mutateAsync(engineer._id || engineer.id);
+        await activateUserMutation.mutateAsync(engineer.engineerId);
         refetch();
       } else {
         // Suspend the engineer
         await suspendUserMutation.mutateAsync({
-          id: engineer._id || engineer.id,
+          id: engineer.engineerId,
           data: { reason: t('services:engineers.suspendedByAdmin') },
         });
         refetch();
@@ -344,18 +348,44 @@ export const EngineersManagementPage: React.FC = () => {
       },
     },
     {
-      field: 'isActive',
-      headerName: t('services:engineers.status'),
+      field: 'engineerStatus',
+      headerName: t('services:engineers.verificationStatus', 'حالة التوثيق'),
+      minWidth: 120,
+      flex: 0.8,
+      renderCell: (params) => {
+        const status = params.row.engineerStatus;
+        const statusConfig: Record<
+          string,
+          { label: string; color: 'success' | 'warning' | 'error' | 'default' }
+        > = {
+          approved: { label: t('services:engineers.approved', 'موثق'), color: 'success' },
+          pending: { label: t('services:engineers.pending', 'قيد المراجعة'), color: 'warning' },
+          unverified: { label: t('services:engineers.unverified', 'غير موثق'), color: 'default' },
+          rejected: { label: t('services:engineers.rejected', 'مرفوض'), color: 'error' },
+          none: { label: t('services:engineers.none', 'بدون'), color: 'default' },
+        };
+        const config = statusConfig[status] || statusConfig.none;
+        return <Chip label={config.label} color={config.color} size="small" />;
+      },
+    },
+    {
+      field: 'status',
+      headerName: t('services:engineers.accountStatus', 'حالة الحساب'),
       minWidth: 100,
       flex: 0.8,
-      renderCell: (params) => (
-        <Chip
-          label={params.row.isActive ? t('common:status.active') : t('common:status.inactive')}
-          color={params.row.isActive ? 'success' : 'default'}
-          size="small"
-          icon={params.row.isActive ? <CheckCircle /> : <Cancel />}
-        />
-      ),
+      renderCell: (params) => {
+        const isActive = params.row.status === 'active';
+        return (
+          <Chip
+            label={
+              isActive ? t('common:status.active', 'نشط') : t('common:status.suspended', 'موقوف')
+            }
+            color={isActive ? 'success' : 'error'}
+            size="small"
+            icon={isActive ? <CheckCircle /> : <Cancel />}
+          />
+        );
+      },
     },
     {
       field: 'actions',
@@ -363,35 +393,38 @@ export const EngineersManagementPage: React.FC = () => {
       minWidth: 150,
       flex: 1,
       sortable: false,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={1}>
-          <Tooltip title={t('common:actions.view')}>
-            <IconButton size="small" onClick={() => handleViewDetails(params.row)} color="primary">
-              <Visibility />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t('common:actions.edit')}>
-            <IconButton size="small" onClick={() => handleEditEngineer(params.row)} color="info">
-              <Edit />
-            </IconButton>
-          </Tooltip>
-          <Tooltip
-            title={
-              params.row.isActive
-                ? t('services:engineers.suspend')
-                : t('services:engineers.activate')
-            }
-          >
-            <IconButton
-              size="small"
-              onClick={() => handleToggleStatus(params.row)}
-              color={params.row.isActive ? 'warning' : 'success'}
+      renderCell: (params) => {
+        const isActive = params.row.status === 'active';
+        return (
+          <Stack direction="row" spacing={1}>
+            <Tooltip title={t('common:actions.view')}>
+              <IconButton
+                size="small"
+                onClick={() => handleViewDetails(params.row)}
+                color="primary"
+              >
+                <Visibility />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t('common:actions.edit')}>
+              <IconButton size="small" onClick={() => handleEditEngineer(params.row)} color="info">
+                <Edit />
+              </IconButton>
+            </Tooltip>
+            <Tooltip
+              title={isActive ? t('services:engineers.suspend') : t('services:engineers.activate')}
             >
-              <Block />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
+              <IconButton
+                size="small"
+                onClick={() => handleToggleStatus(params.row)}
+                color={isActive ? 'warning' : 'success'}
+              >
+                <Block />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        );
+      },
     },
   ];
 
@@ -604,7 +637,7 @@ export const EngineersManagementPage: React.FC = () => {
           // عرض الجدول على الشاشات الكبيرة
           <DataTable
             title={t('services:engineers.listTitle', {
-              total: engineers.length,
+              total: engineersData?.meta?.total || engineers.length,
               active: engineers.filter((e: any) => e.isActive).length,
             })}
             columns={columns}
@@ -617,6 +650,8 @@ export const EngineersManagementPage: React.FC = () => {
             height="calc(100vh - 450px)"
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
+            rowCount={engineersData?.meta?.total || engineers.length}
+            paginationMode="server"
           />
         )}
       </Box>

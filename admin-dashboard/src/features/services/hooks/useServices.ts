@@ -184,7 +184,8 @@ export const useEngineers = (params: ListEngineersParams = {}) => {
     }),
     retry: 2,
     retryDelay: 1000,
-    staleTime: 5 * 60 * 1000,
+    // Disable stale time for search to get fresh results immediately
+    staleTime: params.search ? 0 : 5 * 60 * 1000,
   });
 };
 

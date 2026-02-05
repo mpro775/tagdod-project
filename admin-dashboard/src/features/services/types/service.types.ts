@@ -208,6 +208,8 @@ export interface EngineerDetails {
   totalRevenue: number;
   totalCoupons?: number;
   activeCoupons?: number;
+  status?: string;
+  engineerStatus?: string;
 }
 
 export interface EngineerStatisticsDetails {

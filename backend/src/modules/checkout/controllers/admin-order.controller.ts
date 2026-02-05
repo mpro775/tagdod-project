@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, Post, Patch, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Patch,
+  Query,
+  Req,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -83,9 +94,7 @@ export class AdminOrderController {
   async getOrderDetails(@Param('id') orderId: string) {
     const orderDoc = await this.orderService.getOrderDetails(orderId);
     const order =
-      typeof (orderDoc as any).toObject === 'function'
-        ? (orderDoc as any).toObject()
-        : orderDoc;
+      typeof (orderDoc as any).toObject === 'function' ? (orderDoc as any).toObject() : orderDoc;
 
     return {
       order,
@@ -653,6 +662,38 @@ export class AdminOrderController {
       orders: result.orders,
       pagination: result.pagination,
       message: 'تم الحصول على الطلبات غير المتوفرة بنجاح',
+    };
+  }
+
+  @RequirePermissions(AdminPermission.ORDERS_READ, AdminPermission.ADMIN_ACCESS)
+  @Get('pending-count')
+  @ApiOperation({
+    summary: 'عدد الطلبات المعلقة/الجديدة',
+    description:
+      'الحصول على عدد الطلبات التي تحتاج إلى اهتمام (pending_payment, confirmed, processing)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم الحصول على العدد بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        pendingCount: { type: 'number', example: 12 },
+        pendingPaymentCount: { type: 'number', example: 5 },
+        confirmedCount: { type: 'number', example: 4 },
+        processingCount: { type: 'number', example: 3 },
+      },
+    },
+  })
+  async getPendingOrdersCount() {
+    const stats = await this.orderService.getStats();
+
+    return {
+      pendingCount: stats.pending_payment + stats.confirmed + stats.processing,
+      pendingPaymentCount: stats.pending_payment,
+      confirmedCount: stats.confirmed,
+      processingCount: stats.processing,
+      message: 'تم الحصول على عدد الطلبات المعلقة',
     };
   }
 }

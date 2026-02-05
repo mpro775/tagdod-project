@@ -57,6 +57,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { filterMenuByPermissions } from '@/shared/constants/permissions';
 import { useUnreadSupportCount } from '@/features/support/hooks/useSupport';
+import { usePendingOrdersCount } from '@/features/orders/hooks/useOrders';
 
 interface MenuItem {
   id: string;
@@ -64,6 +65,7 @@ interface MenuItem {
   icon: React.ReactNode;
   path?: string;
   children?: MenuItem[];
+  badge?: number;
 }
 
 interface SidebarProps {
@@ -82,6 +84,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   const activeItemRef = useRef<HTMLDivElement | null>(null);
   const { data: unreadSupport } = useUnreadSupportCount(60000);
   const unreadSupportCount = unreadSupport?.unreadTicketsCount ?? 0;
+  const { data: pendingOrders } = usePendingOrdersCount(60000);
+  const pendingOrdersCount = pendingOrders?.pendingCount ?? 0;
 
   const menuItems: MenuItem[] = React.useMemo(
     () => [
@@ -557,11 +561,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     [t, i18n.language]
   );
 
+  // Add badges to menu items
+  const menuItemsWithBadges = React.useMemo(() => {
+    const addBadges = (items: MenuItem[]): MenuItem[] => {
+      return items.map((item) => {
+        const newItem = { ...item };
+
+        // Add badge to sales/orders menu
+        if (item.id === 'sales' && pendingOrdersCount > 0) {
+          newItem.badge = pendingOrdersCount;
+        }
+
+        // Add badge to support menu
+        if (item.id === 'support' && unreadSupportCount > 0) {
+          newItem.badge = unreadSupportCount;
+        }
+
+        // Recursively process children
+        if (item.children) {
+          newItem.children = addBadges(item.children);
+        }
+
+        return newItem;
+      });
+    };
+
+    return addBadges(menuItems);
+  }, [menuItems, pendingOrdersCount, unreadSupportCount]);
+
   // Filter menu items based on user permissions
   const userPermissions = user?.permissions || [];
   const filteredMenuItems = React.useMemo(() => {
-    return filterMenuByPermissions(menuItems, userPermissions);
-  }, [menuItems, userPermissions]);
+    return filterMenuByPermissions(menuItemsWithBadges, userPermissions);
+  }, [menuItemsWithBadges, userPermissions]);
 
   // Find and expand parent items for the current path
   useEffect(() => {
@@ -664,7 +696,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
               },
             }}
           >
-            {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
+            {item.icon && (
+              <ListItemIcon>
+                {item.badge && item.badge > 0 ? (
+                  <Badge badgeContent={item.badge} color="error" max={99}>
+                    {item.icon}
+                  </Badge>
+                ) : (
+                  item.icon
+                )}
+              </ListItemIcon>
+            )}
             <ListItemText
               primary={
                 item.id === 'support' && unreadSupportCount > 0 ? (
