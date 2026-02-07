@@ -1238,7 +1238,7 @@ export const CouponFormPage: React.FC = () => {
                           options={engineers}
                           value={selectedEngineer || null}
                           onChange={(_event, newValue) => {
-                            field.onChange(newValue ? newValue.engineerId || newValue._id : '');
+                            field.onChange(newValue ? newValue.engineerId : '');
                           }}
                           loading={engineersLoading}
                           onInputChange={(_event, newInputValue) => {
