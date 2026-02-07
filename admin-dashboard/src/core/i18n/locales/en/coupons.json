@@ -108,6 +108,9 @@
     "noProductsFound": "No products found",
     "noCategoriesFound": "No categories found",
     "noBrandsFound": "No brands found",
+    "searchEngineers": "Search for engineer...",
+    "noEngineersFound": "No engineers found",
+    "engineersSearchHint": "Showing first 100 engineers. Use search to find the engineer you need.",
     "loading": "Loading..."
   },
   "fields": {

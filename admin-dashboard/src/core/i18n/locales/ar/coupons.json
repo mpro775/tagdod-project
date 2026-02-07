@@ -105,6 +105,9 @@
     "noProductsFound": "لا توجد منتجات",
     "noCategoriesFound": "لا توجد فئات",
     "noBrandsFound": "لا توجد علامات تجارية",
+    "searchEngineers": "ابحث عن المهندس...",
+    "noEngineersFound": "لا يوجد مهندسون",
+    "engineersSearchHint": "يتم عرض أول 100 مهندس. استخدم البحث للعثور على المهندس المطلوب.",
     "loading": "جاري التحميل..."
   },
   "fields": {

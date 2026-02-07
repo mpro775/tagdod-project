@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
+  Alert,
   Box,
   Paper,
   Typography,
@@ -94,7 +95,14 @@ export const CouponFormPage: React.FC = () => {
   const appliesToOptions = createAppliesToOptions(t);
 
   const { data: coupon, isLoading: loadingCoupon } = useCoupon(id!);
-  const { data: engineersData } = useEngineers({});
+
+  // Engineer search - like notifications: search + limit to get all matching engineers
+  const [engineerSearch, setEngineerSearch] = useState('');
+  const { data: engineersData, isLoading: engineersLoading } = useEngineers({
+    search: engineerSearch || undefined,
+    limit: 100,
+    page: 1,
+  });
   const engineers = engineersData?.data || [];
 
   // Fetch products, categories, and brands for selection
@@ -1205,31 +1213,92 @@ export const CouponFormPage: React.FC = () => {
                   </Typography>
                 </Grid>
 
+                {engineersData?.meta?.total > 100 && (
+                  <Grid size={{ xs: 12 }}>
+                    <Alert severity="info" sx={{ mb: 1 }}>
+                      {t(
+                        'form.engineersSearchHint',
+                        'يتم عرض أول 100 مهندس. استخدم البحث للعثور على المهندس المطلوب.'
+                      )}
+                    </Alert>
+                  </Grid>
+                )}
+
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Controller
                     name="engineerId"
                     control={control}
                     rules={{ required: t('validation.engineerIdRequired', 'يجب اختيار المهندس') }}
-                    render={({ field, fieldState: { error } }) => (
-                      <FormControl fullWidth error={!!error} size={isMobile ? 'small' : 'medium'}>
-                        <InputLabel>{t('form.engineerId')}</InputLabel>
-                        <Select {...field} label={t('form.engineerId')}>
-                          {engineers.map((engineer: any) => (
-                            <MenuItem
-                              key={engineer._id || engineer.engineerId}
-                              value={engineer._id || engineer.engineerId}
-                            >
-                              {engineer.engineerName ||
-                                engineer.name ||
-                                engineer.email ||
-                                engineer._id ||
-                                engineer.engineerId}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                        {error && <FormHelperText>{error.message}</FormHelperText>}
-                      </FormControl>
-                    )}
+                    render={({ field, fieldState: { error } }) => {
+                      const selectedEngineer = engineers.find(
+                        (e: any) => (e._id || e.engineerId) === field.value
+                      );
+                      return (
+                        <Autocomplete
+                          options={engineers}
+                          value={selectedEngineer || null}
+                          onChange={(_event, newValue) => {
+                            field.onChange(newValue ? newValue.engineerId || newValue._id : '');
+                          }}
+                          loading={engineersLoading}
+                          onInputChange={(_event, newInputValue) => {
+                            setEngineerSearch(newInputValue);
+                          }}
+                          getOptionLabel={(option: any) =>
+                            option.engineerName ||
+                            option.name ||
+                            option.email ||
+                            option.phone ||
+                            option.engineerId ||
+                            option._id ||
+                            ''
+                          }
+                          isOptionEqualToValue={(option: any, value: any) =>
+                            (option.engineerId || option._id) === (value?.engineerId || value?._id)
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={t('form.engineerId')}
+                              placeholder={t('form.searchEngineers', 'ابحث عن المهندس...')}
+                              error={!!error}
+                              helperText={error?.message}
+                              size={isMobile ? 'small' : 'medium'}
+                              InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                  <>
+                                    {engineersLoading ? (
+                                      <CircularProgress color="inherit" size={20} />
+                                    ) : null}
+                                    {params.InputProps.endAdornment}
+                                  </>
+                                ),
+                              }}
+                            />
+                          )}
+                          renderOption={(props, option: any) => (
+                            <li {...props} key={option.engineerId || option._id}>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {option.engineerName ||
+                                    option.name ||
+                                    `${option.firstName || ''} ${option.lastName || ''}`.trim() ||
+                                    'بدون اسم'}
+                                </Typography>
+                                {(option.engineerPhone || option.phone) && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {option.engineerPhone || option.phone}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </li>
+                          )}
+                          noOptionsText={t('form.noEngineersFound', 'لا يوجد مهندسون')}
+                          loadingText={t('form.loading', 'جاري التحميل...')}
+                        />
+                      );
+                    }}
                   />
                 </Grid>
 
