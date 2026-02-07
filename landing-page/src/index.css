@@ -1,40 +1,40 @@
 /* Global Styles for Tagadodo Landing Page */
-@import './assets/fonts/stylesheet.css';
+@import "./assets/fonts/stylesheet.css";
 
 /* Root Variables */
 :root {
   /* Brand Colors */
-  --tagadodo-primary: #1A8BC2;
-  --tagadodo-primary-light: #4DB8E6;
-  --tagadodo-primary-dark: #1470A3;
-  --tagadodo-secondary: #90EE90;
-  --tagadodo-secondary-light: #B8F5B8;
-  --tagadodo-secondary-dark: #7DD87D;
-  
+  --tagadodo-primary: #1a8bc2;
+  --tagadodo-primary-light: #4db8e6;
+  --tagadodo-primary-dark: #1470a3;
+  --tagadodo-secondary: #90ee90;
+  --tagadodo-secondary-light: #b8f5b8;
+  --tagadodo-secondary-dark: #7dd87d;
+
   /* Neutral Colors */
   --tagadodo-black: #000000;
   --tagadodo-dark: #1a1a2e;
-  --tagadodo-light: #F5F5F5;
-  --tagadodo-white: #FFFFFF;
-  
+  --tagadodo-light: #f5f5f5;
+  --tagadodo-white: #ffffff;
+
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #1A8BC2 0%, #4DB8E6 100%);
-  --gradient-secondary: linear-gradient(135deg, #90EE90 0%, #B8F5B8 100%);
-  --gradient-brand: linear-gradient(135deg, #1A8BC2 0%, #90EE90 100%);
+  --gradient-primary: linear-gradient(135deg, #1a8bc2 0%, #4db8e6 100%);
+  --gradient-secondary: linear-gradient(135deg, #90ee90 0%, #b8f5b8 100%);
+  --gradient-brand: linear-gradient(135deg, #1a8bc2 0%, #90ee90 100%);
   --gradient-dark: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
-  
+
   /* Glassmorphism */
   --glass-bg: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(255, 255, 255, 0.2);
   --glass-shadow: 0 8px 32px rgba(26, 139, 194, 0.15);
-  
+
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
   --shadow-primary: 0 4px 20px rgba(26, 139, 194, 0.35);
   --shadow-secondary: 0 4px 20px rgba(144, 238, 144, 0.35);
-  
+
   /* Animation */
   --transition-fast: 0.2s ease;
   --transition-normal: 0.3s ease;
@@ -55,7 +55,8 @@ html {
 }
 
 body {
-  font-family: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: "Graphik Arabic", "Segoe UI Arabic", -apple-system,
+    BlinkMacSystemFont, system-ui, sans-serif;
   font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -193,7 +194,8 @@ button {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -202,7 +204,8 @@ button {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -247,15 +250,26 @@ button {
 }
 
 /* Animation Delays */
-.delay-100 { animation-delay: 0.1s; }
-.delay-200 { animation-delay: 0.2s; }
-.delay-300 { animation-delay: 0.3s; }
-.delay-400 { animation-delay: 0.4s; }
-.delay-500 { animation-delay: 0.5s; }
+.delay-100 {
+  animation-delay: 0.1s;
+}
+.delay-200 {
+  animation-delay: 0.2s;
+}
+.delay-300 {
+  animation-delay: 0.3s;
+}
+.delay-400 {
+  animation-delay: 0.4s;
+}
+.delay-500 {
+  animation-delay: 0.5s;
+}
 
 /* Hover Effects */
 .hover-lift {
-  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  transition: transform var(--transition-normal),
+    box-shadow var(--transition-normal);
 }
 
 .hover-lift:hover {
@@ -272,16 +286,29 @@ button {
 }
 
 /* Responsive Typography */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 700;
   line-height: 1.3;
   margin-bottom: 0.5em;
 }
 
-h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
-h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
-h3 { font-size: clamp(1.5rem, 3vw, 2rem); }
-h4 { font-size: clamp(1.25rem, 2.5vw, 1.5rem); }
+h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+h2 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+}
+h3 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+h4 {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+}
 
 p {
   font-size: clamp(1rem, 2vw, 1.125rem);

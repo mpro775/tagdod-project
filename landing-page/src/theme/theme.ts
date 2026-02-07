@@ -60,8 +60,6 @@ const getBaseTheme = (mode: 'light' | 'dark'): ThemeOptions => ({
   typography: {
     fontFamily: [
       '"Graphik Arabic"',
-      '"Cairo"',
-      '"Tajawal"',
       '"Segoe UI Arabic"',
       '-apple-system',
       'BlinkMacSystemFont',
