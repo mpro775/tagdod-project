@@ -571,12 +571,22 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                   {filteredLogs.length > 0 ? (
                     <TableContainer component={Paper} variant="outlined">
                       <Table size={isMobile ? 'small' : 'medium'}>
-                        <TableHead>
+                        <TableHead
+                          sx={{
+                            backgroundColor:
+                              theme.palette.mode === 'dark'
+                                ? theme.palette.grey[800]
+                                : theme.palette.grey[100],
+                          }}
+                        >
                           <TableRow>
                             <TableCell
                               sx={{
                                 fontSize: isMobile ? '0.75rem' : undefined,
                                 fontWeight: 'bold',
+                                color: 'text.primary',
+                                backgroundColor: 'transparent',
+                                borderBottom: `1px solid ${theme.palette.divider}`,
                               }}
                             >
                               {t('dialogs.user', 'المستخدم')}
@@ -585,6 +595,9 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                               sx={{
                                 fontSize: isMobile ? '0.75rem' : undefined,
                                 fontWeight: 'bold',
+                                color: 'text.primary',
+                                backgroundColor: 'transparent',
+                                borderBottom: `1px solid ${theme.palette.divider}`,
                               }}
                             >
                               {t('dialogs.status', 'الحالة')}
@@ -593,6 +606,9 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                               sx={{
                                 fontSize: isMobile ? '0.75rem' : undefined,
                                 fontWeight: 'bold',
+                                color: 'text.primary',
+                                backgroundColor: 'transparent',
+                                borderBottom: `1px solid ${theme.palette.divider}`,
                               }}
                             >
                               {t('dialogs.channel', 'القناة')}
@@ -601,6 +617,9 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                               sx={{
                                 fontSize: isMobile ? '0.75rem' : undefined,
                                 fontWeight: 'bold',
+                                color: 'text.primary',
+                                backgroundColor: 'transparent',
+                                borderBottom: `1px solid ${theme.palette.divider}`,
                               }}
                             >
                               {t('dialogs.time', 'الوقت')}
@@ -609,6 +628,9 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                               sx={{
                                 fontSize: isMobile ? '0.75rem' : undefined,
                                 fontWeight: 'bold',
+                                color: 'text.primary',
+                                backgroundColor: 'transparent',
+                                borderBottom: `1px solid ${theme.palette.divider}`,
                               }}
                             >
                               {t('dialogs.error', 'الخطأ')}
@@ -618,6 +640,9 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                                 sx={{
                                   fontSize: isMobile ? '0.75rem' : undefined,
                                   fontWeight: 'bold',
+                                  color: 'text.primary',
+                                  backgroundColor: 'transparent',
+                                  borderBottom: `1px solid ${theme.palette.divider}`,
                                 }}
                               >
                                 {t('dialogs.device', 'الجهاز')}
