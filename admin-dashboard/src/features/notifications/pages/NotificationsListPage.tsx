@@ -92,9 +92,16 @@ export const NotificationsListPage: React.FC = () => {
 
   const { mutate: sendNotification, isPending: isSending } = useSendNotification();
   const { mutate: sendBatchNotification, isPending: isSendingBatch } = useSendBatchNotification();
-  const { mutate: deleteNotification, isPending: isDeleting } = useDeleteNotification();
-  const { mutate: deleteBatchNotification, isPending: isDeletingBatch } =
-    useDeleteBatchNotification();
+  const {
+    mutate: deleteNotification,
+    mutateAsync: deleteNotificationAsync,
+    isPending: isDeleting,
+  } = useDeleteNotification();
+  const {
+    mutate: deleteBatchNotification,
+    mutateAsync: deleteBatchNotificationAsync,
+    isPending: isDeletingBatch,
+  } = useDeleteBatchNotification();
   const { mutate: updateNotification, isPending: isUpdating } = useUpdateNotification();
   const { mutate: createNotification, isPending: isCreating } = useCreateNotification();
   const { mutate: bulkSendNotification, isPending: isBulkSending } = useBulkSendNotification();
@@ -227,10 +234,10 @@ export const NotificationsListPage: React.FC = () => {
     if (confirmed) {
       try {
         const batchPromises = Array.from(batchIdsToDelete).map((batchId) =>
-          deleteBatchNotification.mutateAsync(batchId)
+          deleteBatchNotificationAsync(batchId)
         );
         const singlePromises = Array.from(singleIdsToDelete).map((id) =>
-          deleteNotification.mutateAsync(id)
+          deleteNotificationAsync(id)
         );
         await Promise.all([...batchPromises, ...singlePromises]);
         showSnackbar(t('messages.bulkDeleteSuccess'), 'success');
