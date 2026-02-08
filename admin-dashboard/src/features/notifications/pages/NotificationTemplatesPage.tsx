@@ -21,6 +21,9 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import { Add, Edit, Send, Code } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -31,13 +34,16 @@ import {
   useCreateTemplate,
   useUpdateTemplate,
 } from '../hooks/useNotifications';
-import { NotificationTemplate } from '../types/notification.types';
+import { NotificationTemplate, NotificationType } from '../types/notification.types';
 import { TestNotificationForm } from '../components/TestNotificationForm';
 import { translateApiValidationErrors } from '../utils/apiErrorTranslations';
 import { AxiosError } from 'axios';
 import toast from 'react-hot-toast';
 
 const NAME_MAX = 100;
+const KEY_MAX = 100;
+const TITLE_MAX = 200;
+const MESSAGE_MAX = 1000;
 const DESCRIPTION_MAX = 1000;
 
 /** API category values - must match backend enum */
@@ -53,16 +59,40 @@ const API_CATEGORIES = [
   'marketing',
 ] as const;
 
+const DEFAULT_CHANNELS = {
+  inApp: true,
+  push: true,
+  sms: false,
+  email: false,
+};
+
 interface EditFormData {
+  key: string;
   name: string;
+  title: string;
+  message: string;
+  messageEn: string;
+  type: string;
   category: string;
   description: string;
+  channels: {
+    inApp: boolean;
+    push: boolean;
+    sms: boolean;
+    email: boolean;
+  };
 }
 
 const DEFAULT_EDIT_FORM: EditFormData = {
+  key: '',
   name: '',
-  category: 'order',
+  title: '',
+  message: '',
+  messageEn: '',
+  type: NotificationType.SUPPORT_MESSAGE_RECEIVED,
+  category: 'support',
   description: '',
+  channels: { ...DEFAULT_CHANNELS },
 };
 
 export const NotificationTemplatesPage: React.FC = () => {
@@ -84,11 +114,22 @@ export const NotificationTemplatesPage: React.FC = () => {
     if (editDialogOpen) {
       setFormErrors({});
       if (selectedTemplate) {
+        const ch = selectedTemplate.channels as any;
         setEditFormData({
+          key: selectedTemplate.key || selectedTemplate.id || '',
           name: selectedTemplate.name || selectedTemplate.title || '',
-          category: (selectedTemplate.category as string) || 'order',
-          description:
-            selectedTemplate.description || selectedTemplate.body || selectedTemplate.message || '',
+          title: selectedTemplate.title || selectedTemplate.name || '',
+          message: selectedTemplate.message || selectedTemplate.body || '',
+          messageEn: selectedTemplate.messageEn || selectedTemplate.body || '',
+          type: (selectedTemplate.type as string) || NotificationType.SUPPORT_MESSAGE_RECEIVED,
+          category: (selectedTemplate.category as string) || 'support',
+          description: selectedTemplate.description || '',
+          channels: {
+            inApp: ch?.inApp ?? true,
+            push: ch?.push ?? true,
+            sms: ch?.sms ?? false,
+            email: ch?.email ?? false,
+          },
         });
       } else {
         setEditFormData(DEFAULT_EDIT_FORM);
@@ -126,15 +167,41 @@ export const NotificationTemplatesPage: React.FC = () => {
   const validateForm = (): boolean => {
     const err: Record<string, string> = {};
     const name = editFormData.name.trim();
+    const key = editFormData.key.trim();
+    const title = editFormData.title.trim();
+    const message = editFormData.message.trim();
+    const messageEn = editFormData.messageEn.trim();
+
+    if (!selectedTemplate && !key) err.key = t('templates.validation.keyRequired');
+    else if (key.length > KEY_MAX) err.key = t('templates.validation.keyMax', { max: KEY_MAX });
 
     if (!name) err.name = t('templates.validation.nameRequired');
     else if (name.length > NAME_MAX)
       err.name = t('templates.validation.nameMax', { max: NAME_MAX });
 
+    if (!selectedTemplate && !title) err.title = t('templates.validation.titleRequired');
+    else if (title.length > TITLE_MAX)
+      err.title = t('templates.validation.titleMax', { max: TITLE_MAX });
+
+    if (!message) err.message = t('templates.validation.messageRequired');
+    else if (message.length > MESSAGE_MAX)
+      err.message = t('templates.validation.messageMax', { max: MESSAGE_MAX });
+
+    if (!messageEn) err.messageEn = t('templates.validation.messageEnRequired');
+    else if (messageEn.length > MESSAGE_MAX)
+      err.messageEn = t('templates.validation.messageEnMax', { max: MESSAGE_MAX });
+
     if (!editFormData.category) err.category = t('templates.validation.categoryRequired');
 
     if (editFormData.description.length > DESCRIPTION_MAX)
       err.description = t('templates.validation.descriptionMax', { max: DESCRIPTION_MAX });
+
+    const hasChannel =
+      editFormData.channels.inApp ||
+      editFormData.channels.push ||
+      editFormData.channels.sms ||
+      editFormData.channels.email;
+    if (!hasChannel) err.channels = t('templates.validation.channelsRequired');
 
     setFormErrors(err);
     return Object.keys(err).length === 0;
@@ -144,14 +211,20 @@ export const NotificationTemplatesPage: React.FC = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    const templateKey = selectedTemplate?.key || selectedTemplate?.id || editFormData.key;
+
     if (selectedTemplate) {
       updateTemplate(
         {
-          key: selectedTemplate.key || selectedTemplate.id || '',
+          key: templateKey,
           data: {
             name: editFormData.name,
+            title: editFormData.title,
+            message: editFormData.message,
+            messageEn: editFormData.messageEn,
             category: editFormData.category,
-            description: editFormData.description,
+            description: editFormData.description || undefined,
+            channels: editFormData.channels,
           },
         },
         {
@@ -173,8 +246,14 @@ export const NotificationTemplatesPage: React.FC = () => {
     } else {
       createTemplate(
         {
+          key: editFormData.key.trim(),
           name: editFormData.name,
+          title: editFormData.title,
+          message: editFormData.message,
+          messageEn: editFormData.messageEn,
+          type: editFormData.type,
           category: editFormData.category,
+          channels: editFormData.channels,
           description: editFormData.description || undefined,
         },
         {
@@ -398,7 +477,7 @@ export const NotificationTemplatesPage: React.FC = () => {
                       overflowWrap: 'break-word',
                     }}
                   >
-                    {template.body}
+                    {template.body || template.message}
                   </Typography>
 
                   {template.hasLink && (
@@ -492,6 +571,25 @@ export const NotificationTemplatesPage: React.FC = () => {
             )}
 
             <Stack spacing={2} sx={{ mt: 1 }}>
+              {!selectedTemplate && (
+                <TextField
+                  fullWidth
+                  label={t('templates.editDialog.keyLabel')}
+                  value={editFormData.key}
+                  onChange={(e) =>
+                    setEditFormData((prev) => ({
+                      ...prev,
+                      key: e.target.value.replace(/\s/g, '-').toLowerCase(),
+                    }))
+                  }
+                  placeholder={t('templates.editDialog.keyPlaceholder')}
+                  helperText={formErrors.key || (t('templates.editDialog.keyHelper') as string)}
+                  error={!!formErrors.key}
+                  inputProps={{ maxLength: KEY_MAX }}
+                  size={isMobile ? 'small' : 'medium'}
+                />
+              )}
+
               <TextField
                 fullWidth
                 label={t('templates.editDialog.nameLabel')}
@@ -506,6 +604,80 @@ export const NotificationTemplatesPage: React.FC = () => {
                 inputProps={{ maxLength: NAME_MAX }}
                 size={isMobile ? 'small' : 'medium'}
               />
+
+              <TextField
+                fullWidth
+                label={t('templates.editDialog.titleLabel')}
+                value={editFormData.title}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, title: e.target.value }))}
+                placeholder={t('templates.editDialog.titlePlaceholder')}
+                helperText={
+                  formErrors.title ||
+                  `${editFormData.title.length}/${TITLE_MAX} ${t('templates.validation.charsMax')}`
+                }
+                error={!!formErrors.title}
+                inputProps={{ maxLength: TITLE_MAX }}
+                size={isMobile ? 'small' : 'medium'}
+              />
+
+              <TextField
+                fullWidth
+                label={t('templates.editDialog.bodyLabel')}
+                value={editFormData.message}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, message: e.target.value }))}
+                placeholder={t('templates.editDialog.bodyPlaceholder')}
+                helperText={
+                  formErrors.message ||
+                  `${editFormData.message.length}/${MESSAGE_MAX} ${t(
+                    'templates.validation.charsMax'
+                  )}`
+                }
+                error={!!formErrors.message}
+                multiline
+                rows={2}
+                inputProps={{ maxLength: MESSAGE_MAX }}
+                size={isMobile ? 'small' : 'medium'}
+              />
+
+              <TextField
+                fullWidth
+                label={t('templates.editDialog.bodyEnLabel')}
+                value={editFormData.messageEn}
+                onChange={(e) =>
+                  setEditFormData((prev) => ({ ...prev, messageEn: e.target.value }))
+                }
+                placeholder={t('templates.editDialog.bodyEnPlaceholder')}
+                helperText={
+                  formErrors.messageEn ||
+                  `${editFormData.messageEn.length}/${MESSAGE_MAX} ${t(
+                    'templates.validation.charsMax'
+                  )}`
+                }
+                error={!!formErrors.messageEn}
+                multiline
+                rows={2}
+                inputProps={{ maxLength: MESSAGE_MAX }}
+                size={isMobile ? 'small' : 'medium'}
+              />
+
+              {!selectedTemplate && (
+                <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                  <InputLabel>{t('templates.editDialog.typeLabel')}</InputLabel>
+                  <Select
+                    value={editFormData.type}
+                    label={t('templates.editDialog.typeLabel')}
+                    onChange={(e: { target: { value: string } }) =>
+                      setEditFormData((prev) => ({ ...prev, type: e.target.value }))
+                    }
+                  >
+                    {Object.values(NotificationType).map((typeVal) => (
+                      <MenuItem key={typeVal} value={typeVal}>
+                        {typeVal}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
 
               <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
                 <InputLabel>{t('templates.editDialog.categoryLabel')}</InputLabel>
@@ -522,6 +694,75 @@ export const NotificationTemplatesPage: React.FC = () => {
                     </MenuItem>
                   ))}
                 </Select>
+              </FormControl>
+
+              <FormControl component="fieldset" error={!!formErrors.channels}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {t('filters.channel')}
+                </Typography>
+                {formErrors.channels && (
+                  <Typography variant="caption" color="error" sx={{ mb: 1, display: 'block' }}>
+                    {formErrors.channels}
+                  </Typography>
+                )}
+                <FormGroup row>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={editFormData.channels.inApp}
+                        onChange={(e) =>
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            channels: { ...prev.channels, inApp: e.target.checked },
+                          }))
+                        }
+                      />
+                    }
+                    label={t('analytics.channels.inapp')}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={editFormData.channels.push}
+                        onChange={(e) =>
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            channels: { ...prev.channels, push: e.target.checked },
+                          }))
+                        }
+                      />
+                    }
+                    label={t('analytics.channels.push')}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={editFormData.channels.sms}
+                        onChange={(e) =>
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            channels: { ...prev.channels, sms: e.target.checked },
+                          }))
+                        }
+                      />
+                    }
+                    label={t('analytics.channels.sms')}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={editFormData.channels.email}
+                        onChange={(e) =>
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            channels: { ...prev.channels, email: e.target.checked },
+                          }))
+                        }
+                      />
+                    }
+                    label={t('analytics.channels.email')}
+                  />
+                </FormGroup>
               </FormControl>
 
               <TextField
@@ -565,7 +806,17 @@ export const NotificationTemplatesPage: React.FC = () => {
                 isCreating ||
                 isUpdating ||
                 !editFormData.name?.trim() ||
-                !editFormData.category?.trim()
+                !editFormData.title?.trim() ||
+                !editFormData.message?.trim() ||
+                !editFormData.messageEn?.trim() ||
+                !editFormData.category?.trim() ||
+                (!selectedTemplate && !editFormData.key?.trim()) ||
+                !(
+                  editFormData.channels.inApp ||
+                  editFormData.channels.push ||
+                  editFormData.channels.sms ||
+                  editFormData.channels.email
+                )
               }
               size={isMobile ? 'small' : 'medium'}
             >

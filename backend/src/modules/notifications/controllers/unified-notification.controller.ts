@@ -636,46 +636,12 @@ export class UnifiedNotificationController {
   })
   @ApiResponse({ status: 200, description: 'Templates retrieved successfully' })
   async adminGetTemplates() {
-    // قائمة القوالب الافتراضية
-    const templates = [
-      {
-        id: 'order_created',
-        name: 'طلب جديد',
-        description: 'إشعار بإنشاء طلب جديد',
-        category: 'order',
-        variables: ['orderId', 'orderNumber', 'totalAmount'],
-      },
-      {
-        id: 'order_updated',
-        name: 'تحديث الطلب',
-        description: 'إشعار بتحديث حالة الطلب',
-        category: 'order',
-        variables: ['orderId', 'orderNumber', 'status'],
-      },
-      {
-        id: 'payment_success',
-        name: 'دفع ناجح',
-        description: 'إشعار بنجاح عملية الدفع',
-        category: 'payment',
-        variables: ['paymentId', 'amount', 'method'],
-      },
-      {
-        id: 'shipment_update',
-        name: 'تحديث الشحن',
-        description: 'إشعار بتحديث حالة الشحن',
-        category: 'shipping',
-        variables: ['trackingNumber', 'status', 'location'],
-      },
-      {
-        id: 'support_ticket',
-        name: 'تذكرة دعم',
-        description: 'إشعار بتذكرة دعم جديدة',
-        category: 'support',
-        variables: ['ticketId', 'subject', 'priority'],
-      },
-    ];
-
-    return templates;
+    const templates = await this.templateService.getTemplates();
+    return templates.map((t) => ({
+      ...t,
+      id: (t as any).key ?? (t as any)._id,
+      key: (t as any).key ?? (t as any)._id,
+    }));
   }
 
   @Post('admin/cleanup')

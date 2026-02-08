@@ -6,6 +6,9 @@ export type NotificationTemplateDocument = NotificationTemplate & Document;
 @Schema({ timestamps: true })
 export class NotificationTemplate {
   @Prop({ required: true, unique: true })
+  key!: string;
+
+  @Prop({ required: true })
   name!: string;
 
   @Prop({ required: true })
@@ -21,15 +24,13 @@ export class NotificationTemplate {
 
   @Prop({ type: Object })
   channels!: {
+    inApp?: boolean;
     push?: boolean;
     sms?: boolean;
     email?: boolean;
   };
 
-  @Prop({ 
-    enum: ['welcome', 'order', 'promotion', 'alert', 'reminder', 'custom'],
-    default: 'custom'
-  })
+  @Prop({ default: 'custom' })
   type!: string;
 
   @Prop()

@@ -371,6 +371,7 @@
       "messageMax": "Content must be {{max}} characters or less",
       "messageEnRequired": "English content is required",
       "messageEnMax": "English content must be {{max}} characters or less",
+      "channelsRequired": "At least one channel must be selected",
       "charsMax": "characters max"
     }
   }

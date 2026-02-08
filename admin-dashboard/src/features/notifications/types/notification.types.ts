@@ -320,13 +320,25 @@ export interface MarkAsReadDto {
 }
 
 /**
- * Create template DTO - matches backend API (name, category - no channels)
+ * Create template DTO - matches backend API exactly
  */
 export interface CreateTemplateDto {
   name: string;
+  key: string;
+  title: string;
+  message: string;
+  messageEn: string;
+  type: string;
   category: string;
+  channels: {
+    inApp: boolean;
+    push: boolean;
+    sms: boolean;
+    email: boolean;
+  };
   description?: string;
-  variables?: string[];
+  variables?: string[] | Record<string, unknown>;
+  exampleData?: Record<string, unknown>;
 }
 
 /**
@@ -334,8 +346,17 @@ export interface CreateTemplateDto {
  */
 export interface UpdateTemplateDto {
   name?: string;
+  title?: string;
+  message?: string;
+  messageEn?: string;
   category?: string;
   description?: string;
+  channels?: {
+    inApp?: boolean;
+    push?: boolean;
+    sms?: boolean;
+    email?: boolean;
+  };
   variables?: string[];
 }
 

@@ -352,6 +352,8 @@
       "bodyHelper": "استخدم {{متغير}} لإدراج المتغيرات الديناميكية",
       "bodyEnLabel": "محتوى الإشعار (إنجليزي)",
       "bodyEnPlaceholder": "Order {{orderId}} with amount {{amount}}",
+      "descriptionLabel": "وصف القالب",
+      "descriptionPlaceholder": "إشعار لإنشاء طلب جديد",
       "categoryLabel": "الفئة",
       "typeLabel": "نوع الإشعار",
       "availableVariables": "المتغيرات المتاحة: orderId, amount, currency, requestId, engineerName"
@@ -369,6 +371,7 @@
       "messageMax": "المحتوى يجب أن يكون {{max}} حرف أو أقل",
       "messageEnRequired": "المحتوى (إنجليزي) مطلوب",
       "messageEnMax": "المحتوى (إنجليزي) يجب أن يكون {{max}} حرف أو أقل",
+      "channelsRequired": "يجب اختيار قناة واحدة على الأقل",
       "charsMax": "حرف كحد أقصى"
     }
   }
