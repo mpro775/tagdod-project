@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Box,
   TextField,
@@ -12,14 +12,23 @@ import {
   Typography,
   Button,
   ButtonGroup,
-  Autocomplete,
   CircularProgress,
   InputAdornment,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  Checkbox,
+  Paper,
 } from '@mui/material';
 import { Search, UploadFile, Person } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useUsers } from '@/features/users/hooks/useUsers';
+import { usersApi } from '@/features/users/api/usersApi';
 import { UserRole, UserStatus } from '@/features/users/types/user.types';
 import type { User } from '@/features/users/types/user.types';
 
@@ -28,6 +37,8 @@ interface NotificationUserSelectorProps {
   onUserIdsChange: (userIds: string[]) => void;
   disabled?: boolean;
 }
+
+const PAGE_SIZE = 50;
 
 /**
  * Parse comma or space separated string into trimmed non-empty values
@@ -83,9 +94,11 @@ export const NotificationUserSelector: React.FC<NotificationUserSelectorProps> =
   const { isMobile } = useBreakpoint();
   const [userSearch, setUserSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole | ''>('');
-  const [quickSelectIntent, setQuickSelectIntent] = useState<
-    'all' | 'merchant' | 'engineer' | null
-  >(null);
+  const [verificationStatus, setVerificationStatus] = useState<'all' | 'verified' | 'unverified'>(
+    'all'
+  );
+  const [page, setPage] = useState(1);
+  const [selectAllLoading, setSelectAllLoading] = useState(false);
   const [manualInputValue, setManualInputValue] = useState('');
   const [csvError, setCsvError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,46 +106,67 @@ export const NotificationUserSelector: React.FC<NotificationUserSelectorProps> =
   const { data: usersData, isLoading: usersLoading } = useUsers({
     search: userSearch || undefined,
     role: selectedRole || undefined,
-    limit: 100,
-    page: 1,
+    verificationStatus:
+      (selectedRole === UserRole.MERCHANT || selectedRole === UserRole.ENGINEER) &&
+      verificationStatus !== 'all'
+        ? verificationStatus
+        : undefined,
+    limit: PAGE_SIZE,
+    page,
     status: UserStatus.ACTIVE,
   });
 
   const allUsers = usersData?.data || [];
-
-  const selectedUsers = useMemo(() => {
-    return allUsers.filter((u) => selectedUserIds.includes(u._id));
-  }, [allUsers, selectedUserIds]);
+  const total = usersData?.meta?.total ?? 0;
+  const totalPages = usersData?.meta?.totalPages ?? 1;
 
   const getUserDisplayName = (user: User) =>
     user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.phone || user._id;
 
-  useEffect(() => {
-    if (!quickSelectIntent || usersLoading) return;
-    const roleMatch =
-      (quickSelectIntent === 'all' && selectedRole === '') ||
-      (quickSelectIntent === 'merchant' && selectedRole === UserRole.MERCHANT) ||
-      (quickSelectIntent === 'engineer' && selectedRole === UserRole.ENGINEER);
-    if (roleMatch && allUsers.length > 0) {
-      const ids = allUsers.map((u) => u._id);
-      onUserIdsChange([...new Set([...selectedUserIds, ...ids])]);
-      setQuickSelectIntent(null);
+  const handleSelectAllMatching = async (role: '' | UserRole.MERCHANT | UserRole.ENGINEER) => {
+    if (disabled || selectAllLoading) return;
+    setSelectAllLoading(true);
+    try {
+      const ids = await usersApi.listIds({
+        search: userSearch || undefined,
+        role: role || undefined,
+        verificationStatus:
+          (role === UserRole.MERCHANT || role === UserRole.ENGINEER) && verificationStatus !== 'all'
+            ? verificationStatus
+            : undefined,
+        status: UserStatus.ACTIVE,
+      });
+      onUserIdsChange(ids);
+    } catch {
+      // Error handled by global error handler
+    } finally {
+      setSelectAllLoading(false);
     }
-  }, [quickSelectIntent, selectedRole, allUsers, usersLoading]);
-
-  const handleQuickSelect = (role: '' | UserRole.MERCHANT | UserRole.ENGINEER) => {
-    if (disabled || usersLoading) return;
-    setSelectedRole(role);
-    setQuickSelectIntent(
-      role === '' ? 'all' : role === UserRole.MERCHANT ? 'merchant' : 'engineer'
-    );
   };
 
-  const handleAutocompleteChange = (_: unknown, newValue: User[]) => {
-    const ids = newValue.map((u) => u._id);
-    const orphanIds = selectedUserIds.filter((id) => !allUsers.some((u) => u._id === id));
-    onUserIdsChange([...new Set([...ids, ...orphanIds])]);
+  const handleSelectPage = () => {
+    const pageIds = allUsers.map((u) => u._id);
+    const newIds = [...new Set([...selectedUserIds, ...pageIds])];
+    onUserIdsChange(newIds);
   };
+
+  const handleDeselectPage = () => {
+    const pageIds = new Set(allUsers.map((u) => u._id));
+    const newIds = selectedUserIds.filter((id) => !pageIds.has(id));
+    onUserIdsChange(newIds);
+  };
+
+  const handleRowToggle = (userId: string, checked: boolean) => {
+    if (checked) {
+      onUserIdsChange([...new Set([...selectedUserIds, userId])]);
+    } else {
+      onUserIdsChange(selectedUserIds.filter((id) => id !== userId));
+    }
+  };
+
+  const allPageSelected =
+    allUsers.length > 0 && allUsers.every((u) => selectedUserIds.includes(u._id));
+  const somePageSelected = allUsers.some((u) => selectedUserIds.includes(u._id));
 
   const handleManualInputApply = () => {
     if (!manualInputValue.trim()) return;
@@ -172,6 +206,9 @@ export const NotificationUserSelector: React.FC<NotificationUserSelectorProps> =
     e.target.value = '';
   };
 
+  const showVerificationFilter =
+    selectedRole === UserRole.MERCHANT || selectedRole === UserRole.ENGINEER;
+
   return (
     <Box>
       <Box sx={{ mb: 1.5 }}>
@@ -180,13 +217,7 @@ export const NotificationUserSelector: React.FC<NotificationUserSelectorProps> =
         </Typography>
       </Box>
 
-      {usersData && usersData.meta.total > 100 && (
-        <Alert severity="info" sx={{ mb: 2, fontSize: isMobile ? '0.875rem' : undefined }}>
-          {t('forms.usersLimitInfo')}
-        </Alert>
-      )}
-
-      {/* Search and role filter - shown first to filter options */}
+      {/* Search and filters */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
@@ -194,7 +225,10 @@ export const NotificationUserSelector: React.FC<NotificationUserSelectorProps> =
             size="small"
             placeholder={t('forms.searchUsers', 'ابحث عن المستخدمين...')}
             value={userSearch}
-            onChange={(e) => setUserSearch(e.target.value)}
+            onChange={(e) => {
+              setUserSearch(e.target.value);
+              setPage(1);
+            }}
             InputProps={{
               startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
             }}
@@ -207,7 +241,10 @@ export const NotificationUserSelector: React.FC<NotificationUserSelectorProps> =
             <InputLabel>{t('forms.filterByRole', 'فلترة حسب الدور')}</InputLabel>
             <Select
               value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value as UserRole | '')}
+              onChange={(e) => {
+                setSelectedRole(e.target.value as UserRole | '');
+                setPage(1);
+              }}
               label={t('forms.filterByRole', 'فلترة حسب الدور')}
               aria-label={t('forms.filterByRole', 'فلترة حسب الدور')}
             >
@@ -219,34 +256,54 @@ export const NotificationUserSelector: React.FC<NotificationUserSelectorProps> =
             </Select>
           </FormControl>
         </Grid>
+        {showVerificationFilter && (
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <FormControl fullWidth size="small" disabled={disabled || usersLoading}>
+              <InputLabel>{t('forms.verificationStatus', 'حالة التوثيق')}</InputLabel>
+              <Select
+                value={verificationStatus}
+                onChange={(e) => {
+                  setVerificationStatus(e.target.value as 'all' | 'verified' | 'unverified');
+                  setPage(1);
+                }}
+                label={t('forms.verificationStatus', 'حالة التوثيق')}
+                aria-label={t('forms.verificationStatus', 'حالة التوثيق')}
+              >
+                <MenuItem value="all">{t('filters.all', 'الكل')}</MenuItem>
+                <MenuItem value="verified">{t('forms.verifiedOnly', 'موثقون فقط')}</MenuItem>
+                <MenuItem value="unverified">{t('forms.unverifiedOnly', 'غير موثقين')}</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        )}
       </Grid>
 
-      {/* Quick selection buttons */}
+      {/* Quick selection buttons - Select All (fetches all IDs) */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-          {t('forms.filterByRole', 'اختيار سريع')}
+          {t('forms.quickSelectHint', 'اختيار سريع')}
         </Typography>
         <ButtonGroup
           variant="outlined"
           size="small"
           fullWidth={isMobile}
-          disabled={disabled || usersLoading}
+          disabled={disabled || selectAllLoading}
         >
           <Button
-            onClick={() => handleQuickSelect('')}
-            startIcon={<Person />}
+            onClick={() => handleSelectAllMatching('')}
+            startIcon={selectAllLoading ? <CircularProgress size={16} /> : <Person />}
             sx={{ flex: isMobile ? 1 : undefined }}
           >
             {t('forms.quickSelectAll')}
           </Button>
           <Button
-            onClick={() => handleQuickSelect(UserRole.MERCHANT)}
+            onClick={() => handleSelectAllMatching(UserRole.MERCHANT)}
             sx={{ flex: isMobile ? 1 : undefined }}
           >
             {t('forms.quickSelectMerchants')}
           </Button>
           <Button
-            onClick={() => handleQuickSelect(UserRole.ENGINEER)}
+            onClick={() => handleSelectAllMatching(UserRole.ENGINEER)}
             sx={{ flex: isMobile ? 1 : undefined }}
           >
             {t('forms.quickSelectEngineers')}
@@ -254,54 +311,80 @@ export const NotificationUserSelector: React.FC<NotificationUserSelectorProps> =
         </ButtonGroup>
       </Box>
 
-      {/* Autocomplete for search & select */}
+      {/* User table with checkboxes */}
       <Box sx={{ mb: 2 }}>
-        <Autocomplete
-          multiple
-          options={allUsers}
-          value={selectedUsers}
-          onChange={handleAutocompleteChange}
-          getOptionLabel={(option) =>
-            typeof option === 'string' ? option : getUserDisplayName(option)
-          }
-          filterSelectedOptions
-          loading={usersLoading}
-          disabled={disabled}
-          size={isMobile ? 'small' : 'medium'}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label={t('forms.recipientId', 'المستلمون')}
-              placeholder={t('forms.searchUsers', 'ابحث عن المستخدمين...')}
-              InputProps={{
-                ...params.InputProps,
-                startAdornment: (
-                  <>
-                    <Search sx={{ mr: 1, color: 'text.secondary' }} />
-                    {params.InputProps.startAdornment}
-                  </>
-                ),
-                endAdornment: (
-                  <>
-                    {usersLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                    {params.InputProps.endAdornment}
-                  </>
-                ),
-              }}
+        <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 320 }}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    indeterminate={somePageSelected && !allPageSelected}
+                    checked={allPageSelected}
+                    onChange={(_, checked) => (checked ? handleSelectPage() : handleDeselectPage())}
+                    disabled={disabled || usersLoading || allUsers.length === 0}
+                    aria-label={t('forms.selectAllInPage', 'تحديد الصفحة الحالية')}
+                  />
+                </TableCell>
+                <TableCell>{t('forms.users', 'مستخدم')}</TableCell>
+                <TableCell>{t('forms.recipientPhone', 'رقم الهاتف')}</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {usersLoading ? (
+                <TableRow>
+                  <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                    <CircularProgress size={24} />
+                  </TableCell>
+                </TableRow>
+              ) : allUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                    <Typography color="text.secondary">{t('forms.noUsersFound')}</Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                allUsers.map((user) => (
+                  <TableRow key={user._id} hover>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={selectedUserIds.includes(user._id)}
+                        onChange={(_, checked) => handleRowToggle(user._id, checked)}
+                        disabled={disabled}
+                      />
+                    </TableCell>
+                    <TableCell>{getUserDisplayName(user)}</TableCell>
+                    <TableCell>{user.phone || '-'}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Pagination */}
+        {total > 0 && (
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              {t('forms.pageInfo', 'صفحة {{page}} من {{totalPages}} - إجمالي {{total}} مستخدم', {
+                page,
+                totalPages,
+                total,
+              })}
+            </Typography>
+            <TablePagination
+              component="div"
+              count={total}
+              page={page - 1}
+              onPageChange={(_, newPage) => setPage(newPage + 1)}
+              rowsPerPage={PAGE_SIZE}
+              rowsPerPageOptions={[PAGE_SIZE]}
+              labelDisplayedRows={() => ''}
             />
-          )}
-          renderTags={(value, getTagProps) =>
-            value.map((option, index) => (
-              <Chip
-                {...getTagProps({ index })}
-                key={option._id}
-                label={getUserDisplayName(option)}
-                size="small"
-              />
-            ))
-          }
-          noOptionsText={t('forms.noUsersFound')}
-        />
+          </Box>
+        )}
       </Box>
 
       {/* Manual input */}

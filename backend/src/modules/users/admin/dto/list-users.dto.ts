@@ -13,7 +13,7 @@ export class ListUsersDto {
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  @Max(100)
+  @Max(500)
   limit?: number = 20;
 
   @IsOptional()
@@ -27,6 +27,10 @@ export class ListUsersDto {
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
+
+  @IsOptional()
+  @IsIn(['all', 'verified', 'unverified'])
+  verificationStatus?: 'all' | 'verified' | 'unverified'; // يظهر عند role=merchant أو role=engineer
 
   @IsOptional()
   @Type(() => Boolean)

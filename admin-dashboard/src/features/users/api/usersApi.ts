@@ -39,6 +39,16 @@ export const usersApi = {
   },
 
   /**
+   * Get user IDs only (for "select all" in bulk notifications)
+   */
+  listIds: async (params: ListUsersParams): Promise<string[]> => {
+    const { data } = await apiClient.get<ApiResponse<{ ids: string[] }>>('/admin/users/ids', {
+      params: sanitizePaginationParams(params),
+    });
+    return data.data.ids;
+  },
+
+  /**
    * Get user by ID
    */
   getById: async (id: string): Promise<User> => {

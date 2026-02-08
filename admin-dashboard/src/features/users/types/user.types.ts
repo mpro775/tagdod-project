@@ -141,6 +141,7 @@ export interface UpdateUserDto {
 export interface ListUsersParams extends ListParams {
   status?: UserStatus;
   role?: UserRole;
+  verificationStatus?: 'all' | 'verified' | 'unverified';
   isAdmin?: boolean;
   includeDeleted?: boolean;
 }

@@ -124,6 +124,7 @@ export class UsersAdminController {
       search,
       status,
       role,
+      verificationStatus,
       isAdmin,
       includeDeleted,
       sortBy = 'createdAt',
@@ -165,6 +166,37 @@ export class UsersAdminController {
       query.roles = role;
     }
 
+    // فلترة حالة التوثيق (عند role=merchant أو role=engineer)
+    if (verificationStatus && verificationStatus !== 'all') {
+      if (role === UserRole.MERCHANT) {
+        if (verificationStatus === 'verified') {
+          query.merchant_status = CapabilityStatus.APPROVED;
+        } else if (verificationStatus === 'unverified') {
+          query.merchant_status = {
+            $in: [
+              CapabilityStatus.NONE,
+              CapabilityStatus.UNVERIFIED,
+              CapabilityStatus.PENDING,
+              CapabilityStatus.REJECTED,
+            ],
+          };
+        }
+      } else if (role === UserRole.ENGINEER) {
+        if (verificationStatus === 'verified') {
+          query.engineer_status = CapabilityStatus.APPROVED;
+        } else if (verificationStatus === 'unverified') {
+          query.engineer_status = {
+            $in: [
+              CapabilityStatus.NONE,
+              CapabilityStatus.UNVERIFIED,
+              CapabilityStatus.PENDING,
+              CapabilityStatus.REJECTED,
+            ],
+          };
+        }
+      }
+    }
+
     // فلترة الأدمن (استخدام الأدوار بدلاً من isAdmin)
     if (isAdmin !== undefined) {
       if (isAdmin) {
@@ -201,6 +233,116 @@ export class UsersAdminController {
       totalPages: Math.ceil(total / limit),
       hasNextPage: page < Math.ceil(total / limit),
       hasPrevPage: page > 1,
+    };
+  }
+
+  // ==================== جلب معرفات المستخدمين فقط (لاختيار الكل) ====================
+  @RequirePermissions('users.read', 'admin.access')
+  @Get('ids')
+  @ApiOperation({
+    summary: 'جلب معرفات المستخدمين',
+    description: 'استرداد مصفوفة معرفات المستخدمين المطابقين للفلاتر (لاختيار الكل في الإرسال الجماعي)',
+  })
+  @ApiQuery({ type: ListUsersDto })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرداد المعرفات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        ids: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'مصفوفة معرفات المستخدمين',
+        },
+      },
+    },
+  })
+  async listUserIds(@Query() dto: ListUsersDto) {
+    const {
+      search,
+      status,
+      role,
+      verificationStatus,
+      isAdmin,
+      includeDeleted,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = dto;
+
+    const query: FilterQuery<User> = {};
+
+    if (!includeDeleted) {
+      query.deletedAt = null;
+      query.status = { $ne: UserStatus.DELETED };
+    }
+
+    if (search) {
+      query.$or = [
+        { phone: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (role) {
+      query.roles = role;
+    }
+
+    if (verificationStatus && verificationStatus !== 'all') {
+      if (role === UserRole.MERCHANT) {
+        if (verificationStatus === 'verified') {
+          query.merchant_status = CapabilityStatus.APPROVED;
+        } else if (verificationStatus === 'unverified') {
+          query.merchant_status = {
+            $in: [
+              CapabilityStatus.NONE,
+              CapabilityStatus.UNVERIFIED,
+              CapabilityStatus.PENDING,
+              CapabilityStatus.REJECTED,
+            ],
+          };
+        }
+      } else if (role === UserRole.ENGINEER) {
+        if (verificationStatus === 'verified') {
+          query.engineer_status = CapabilityStatus.APPROVED;
+        } else if (verificationStatus === 'unverified') {
+          query.engineer_status = {
+            $in: [
+              CapabilityStatus.NONE,
+              CapabilityStatus.UNVERIFIED,
+              CapabilityStatus.PENDING,
+              CapabilityStatus.REJECTED,
+            ],
+          };
+        }
+      }
+    }
+
+    if (isAdmin !== undefined) {
+      if (isAdmin) {
+        query.roles = { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] };
+      } else {
+        query.roles = { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] };
+      }
+    }
+
+    const sort: Record<string, SortOrder> = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    const users = await this.userModel
+      .find(query)
+      .select('_id')
+      .sort(sort)
+      .limit(10000)
+      .lean();
+
+    return {
+      ids: users.map((u) => String(u._id)),
     };
   }
 
