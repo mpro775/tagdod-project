@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, Types, PipelineStage } from 'mongoose';
 import {
   UnifiedNotification,
   UnifiedNotificationDocument,
@@ -789,7 +789,7 @@ export class NotificationService implements OnModuleInit {
     }
 
     if (groupByBatch) {
-      const facetPipeline: unknown[] = [
+      const facetPipeline: PipelineStage[] = [
         { $match: filter },
         { $sort: { createdAt: -1 } },
         {
