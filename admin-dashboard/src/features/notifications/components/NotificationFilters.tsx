@@ -15,6 +15,8 @@ import {
   Menu,
   ListItemIcon,
   ListItemText,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import {
   Search,
@@ -80,6 +82,7 @@ export const NotificationFilters: React.FC<NotificationFiltersProps> = ({
     !!filters.status ||
     !!filters.category ||
     !!filters.priority ||
+    !!filters.campaign ||
     !!filters.startDate ||
     !!filters.endDate;
 
@@ -134,6 +137,23 @@ export const NotificationFilters: React.FC<NotificationFiltersProps> = ({
             <MenuItem value={NotificationChannel.DASHBOARD}>{t('channels.DASHBOARD')}</MenuItem>
           </Select>
         </FormControl>
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={filters.groupByBatch ?? true}
+              onChange={(e) => onFilterChange('groupByBatch', e.target.checked)}
+              size="small"
+              color="primary"
+            />
+          }
+          label={
+            <Typography variant="body2" sx={{ fontSize: isMobile ? '0.8rem' : undefined }}>
+              {filters.groupByBatch ? t('filters.viewGrouped') : t('filters.viewDetailed')}
+            </Typography>
+          }
+          sx={{ ml: isMobile ? 0 : 1 }}
+        />
 
         {/* Advanced filters toggle */}
         <Button
@@ -237,6 +257,15 @@ export const NotificationFilters: React.FC<NotificationFiltersProps> = ({
               <MenuItem value={NotificationPriority.LOW}>{t('priorities.low')}</MenuItem>
             </Select>
           </FormControl>
+
+          <TextField
+            size="small"
+            label={t('filters.campaign')}
+            placeholder={t('filters.campaignPlaceholder')}
+            value={filters.campaign || ''}
+            onChange={(e) => onFilterChange('campaign', e.target.value || undefined)}
+            sx={{ minWidth: isMobile ? '100%' : 150 }}
+          />
 
           <TextField
             size="small"

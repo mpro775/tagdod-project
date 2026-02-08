@@ -71,6 +71,7 @@ export const NotificationCreateWizard: React.FC<NotificationCreateWizardProps> =
     navigationTarget: '',
     navigationParams: {},
     data: {},
+    campaign: '',
   });
 
   const { data: categories = [] } = useCategories({ isActive: true });
@@ -543,6 +544,23 @@ export const NotificationCreateWizard: React.FC<NotificationCreateWizardProps> =
                     </Grid>
                   )}
               </Grid>
+
+              <TextField
+                fullWidth
+                label={t('forms.campaign')}
+                value={formData.campaign || ''}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, campaign: e.target.value || undefined }))
+                }
+                placeholder={t('filters.campaignPlaceholder')}
+                disabled={isLoading}
+                size={isMobile ? 'small' : 'medium'}
+                helperText={t(
+                  'forms.campaignHelper',
+                  'اختياري - لتصنيف الإشعارات حسب الحملة التسويقية'
+                )}
+                aria-label={t('forms.campaign')}
+              />
 
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}>

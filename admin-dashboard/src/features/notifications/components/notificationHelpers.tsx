@@ -171,3 +171,14 @@ export const canSendNotification = (status: NotificationStatus): boolean => {
   return status === NotificationStatus.QUEUED || status === NotificationStatus.PENDING;
 };
 
+/**
+ * Check if row represents a batch (multiple recipients)
+ * Edit/Send are hidden for batch rows to avoid applying to single notification only
+ */
+export const isBatchRow = (notification: {
+  batchId?: string;
+  recipientCount?: number;
+}): boolean => {
+  return !!(notification.batchId && notification.recipientCount != null && notification.recipientCount > 1);
+};
+

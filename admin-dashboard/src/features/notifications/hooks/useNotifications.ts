@@ -117,6 +117,32 @@ export const useDeleteNotification = () => {
   });
 };
 
+export const useDeleteBatchNotification = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (batchId: string) => notificationsApi.deleteBatch(batchId),
+    onSuccess: (data) => {
+      toast.success(`تم حذف ${data?.deletedCount ?? 0} إشعار من الدفعة بنجاح`);
+      queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] });
+      queryClient.invalidateQueries({ queryKey: [NOTIFICATION_STATS_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useSendBatchNotification = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (batchId: string) => notificationsApi.sendBatch(batchId),
+    onSuccess: (data) => {
+      toast.success(`تم إرسال ${data?.sent ?? 0} إشعار بنجاح${data?.failed && data.failed > 0 ? `، و فشل ${data.failed}` : ''}`);
+      queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] });
+      queryClient.invalidateQueries({ queryKey: [NOTIFICATION_STATS_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 export const useBulkSendNotification = () => {
   const queryClient = useQueryClient();
   return useMutation({

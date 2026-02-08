@@ -23,6 +23,13 @@
 - **اختبار القوالب**: إمكانية اختبار القوالب قبل الاستخدام
 - **تتبع الحالة**: مراقبة حالة كل إشعار من الإرسال حتى القراءة
 
+## المصطلحات (Terminology)
+
+| المصطلح | الوصف |
+|---------|-------|
+| **Batch (دفعة)** | معرف تقني يُنشأ تلقائياً عند الإرسال المجمع، يجمع الإشعارات المرسلة في عملية واحدة |
+| **Campaign (حملة)** | اسم حملة تسويقية اختياري لتصنيف الإشعارات والتحليلات، يُخزَن في `metadata.campaign` |
+
 ## الهيكل التقني
 
 ### Backend APIs
@@ -34,7 +41,9 @@ POST   /notifications/admin/create       # إنشاء إشعار جديد
 GET    /notifications/admin/:id          # تفاصيل إشعار محدد
 PUT    /notifications/admin/:id          # تحديث إشعار
 DELETE /notifications/admin/:id          # حذف إشعار
+DELETE /notifications/admin/batch/:batchId  # حذف دفعة كاملة
 POST   /notifications/admin/bulk-send    # إرسال مجمع
+POST   /notifications/admin/batch/:batchId/send  # إرسال دفعة
 GET    /notifications/admin/stats        # إحصائيات الإشعارات
 POST   /notifications/admin/cleanup      # تنظيف الإشعارات القديمة
 ```

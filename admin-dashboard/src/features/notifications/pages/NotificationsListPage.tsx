@@ -17,6 +17,8 @@ import {
   useNotifications,
   useSendNotification,
   useDeleteNotification,
+  useDeleteBatchNotification,
+  useSendBatchNotification,
   useUpdateNotification,
   useCreateNotification,
   useNotificationStats,
@@ -24,6 +26,7 @@ import {
   useBulkSendNotification,
   useTestNotification,
 } from '../hooks/useNotifications';
+import { isBatchRow } from '../components/notificationHelpers';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import type {
   Notification,
@@ -88,7 +91,10 @@ export const NotificationsListPage: React.FC = () => {
   const { data: templates } = useNotificationTemplates();
 
   const { mutate: sendNotification, isPending: isSending } = useSendNotification();
+  const { mutate: sendBatchNotification, isPending: isSendingBatch } = useSendBatchNotification();
   const { mutate: deleteNotification, isPending: isDeleting } = useDeleteNotification();
+  const { mutate: deleteBatchNotification, isPending: isDeletingBatch } =
+    useDeleteBatchNotification();
   const { mutate: updateNotification, isPending: isUpdating } = useUpdateNotification();
   const { mutate: createNotification, isPending: isCreating } = useCreateNotification();
   const { mutate: bulkSendNotification, isPending: isBulkSending } = useBulkSendNotification();
@@ -119,33 +125,61 @@ export const NotificationsListPage: React.FC = () => {
   };
 
   const handleSend = (notification: Notification) => {
-    sendNotification(
-      { id: notification._id, data: {} },
-      {
+    if (isBatchRow(notification) && notification.batchId) {
+      sendBatchNotification(notification.batchId, {
         onSuccess: () => {
           showSnackbar(t('messages.sendSuccess'), 'success');
           refetch();
         },
         onError: () => showSnackbar(t('messages.sendError'), 'error'),
-      }
-    );
+      });
+    } else {
+      sendNotification(
+        { id: notification._id, data: {} },
+        {
+          onSuccess: () => {
+            showSnackbar(t('messages.sendSuccess'), 'success');
+            refetch();
+          },
+          onError: () => showSnackbar(t('messages.sendError'), 'error'),
+        }
+      );
+    }
   };
 
   const handleDelete = async (notification: Notification) => {
+    const isBatch = isBatchRow(notification);
     const confirmed = await confirmDialog({
       title: t('messages.deleteTitle', 'تأكيد الحذف'),
-      message: t('messages.deleteConfirm'),
+      message: isBatch
+        ? t('messages.deleteBatchConfirm', {
+            count: notification.recipientCount ?? 0,
+            defaultValue: `هل تريد حذف كل الإشعارات في هذه الدفعة (${
+              notification.recipientCount ?? 0
+            } إشعار)؟`,
+          })
+        : t('messages.deleteConfirm'),
       type: 'warning',
       confirmColor: 'error',
     });
     if (confirmed) {
-      deleteNotification(notification._id, {
-        onSuccess: () => {
-          showSnackbar(t('messages.deleteSuccess'), 'success');
-          refetch();
-        },
-        onError: () => showSnackbar(t('messages.deleteError'), 'error'),
-      });
+      if (isBatch && notification.batchId) {
+        deleteBatchNotification(notification.batchId, {
+          onSuccess: () => {
+            showSnackbar(t('messages.deleteSuccess'), 'success');
+            refetch();
+          },
+          onError: () => showSnackbar(t('messages.deleteError'), 'error'),
+        });
+      } else {
+        deleteNotification(notification._id, {
+          onSuccess: () => {
+            showSnackbar(t('messages.deleteSuccess'), 'success');
+            refetch();
+          },
+          onError: () => showSnackbar(t('messages.deleteError'), 'error'),
+        });
+      }
     }
   };
 
@@ -155,17 +189,56 @@ export const NotificationsListPage: React.FC = () => {
       return;
     }
 
+    // Classify selected: batch rows → delete whole batch, single rows → delete individually
+    const batchIdsToDelete = new Set<string>();
+    const singleIdsToDelete = new Set<string>();
+    for (const id of selectedNotifications) {
+      const notification = notifications.find((n) => n._id === id);
+      if (!notification) continue;
+      if (isBatchRow(notification) && notification.batchId) {
+        batchIdsToDelete.add(notification.batchId);
+      } else {
+        singleIdsToDelete.add(notification._id);
+      }
+    }
+
+    const batchCount = batchIdsToDelete.size;
+    const singleCount = singleIdsToDelete.size;
+    const confirmMessage =
+      batchCount > 0 && singleCount > 0
+        ? t('messages.bulkDeleteConfirmMixed', {
+            batchCount,
+            singleCount,
+            defaultValue: `ستحذف ${batchCount} دفعة و ${singleCount} إشعار فردي. هل تريد المتابعة؟`,
+          })
+        : batchCount > 0
+        ? t('messages.bulkDeleteConfirmBatches', {
+            count: batchCount,
+            defaultValue: `هل تريد حذف ${batchCount} دفعة كاملة؟`,
+          })
+        : t('messages.bulkDeleteConfirm', { count: singleCount });
+
     const confirmed = await confirmDialog({
       title: t('messages.bulkDeleteTitle', 'تأكيد الحذف الجماعي'),
-      message: t('messages.bulkDeleteConfirm', { count: selectedNotifications.length }),
+      message: confirmMessage,
       type: 'warning',
       confirmColor: 'error',
     });
     if (confirmed) {
-      // Implement bulk delete logic
-      showSnackbar(t('messages.bulkDeleteSuccess'), 'success');
-      setSelectedNotifications([]);
-      refetch();
+      try {
+        const batchPromises = Array.from(batchIdsToDelete).map((batchId) =>
+          deleteBatchNotification.mutateAsync(batchId)
+        );
+        const singlePromises = Array.from(singleIdsToDelete).map((id) =>
+          deleteNotification.mutateAsync(id)
+        );
+        await Promise.all([...batchPromises, ...singlePromises]);
+        showSnackbar(t('messages.bulkDeleteSuccess'), 'success');
+        setSelectedNotifications([]);
+        refetch();
+      } catch {
+        showSnackbar(t('messages.deleteError'), 'error');
+      }
     }
   };
 
@@ -329,7 +402,7 @@ export const NotificationsListPage: React.FC = () => {
         isBulkSending={isBulkSending}
         isTesting={isTesting}
         isLoading={isLoading}
-        isDeleting={isDeleting}
+        isDeleting={isDeleting || isDeletingBatch}
       />
 
       {/* Data Table */}
@@ -344,8 +417,8 @@ export const NotificationsListPage: React.FC = () => {
         onSend={handleSend}
         onDelete={handleDelete}
         onSelectionChange={setSelectedNotifications}
-        isSending={isSending}
-        isDeleting={isDeleting}
+        isSending={isSending || isSendingBatch}
+        isDeleting={isDeleting || isDeletingBatch}
       />
 
       {/* Snackbar for notifications */}

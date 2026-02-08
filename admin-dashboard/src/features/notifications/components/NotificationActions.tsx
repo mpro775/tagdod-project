@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { Send, Delete, Edit, Visibility } from '@mui/icons-material';
 import { Notification } from '../types/notification.types';
-import { canEditNotification, canSendNotification } from './notificationHelpers';
+import { canEditNotification, canSendNotification, isBatchRow } from './notificationHelpers';
 import { useTranslation } from 'react-i18next';
 
 interface NotificationActionsProps {
@@ -25,8 +25,10 @@ export const NotificationActions: React.FC<NotificationActionsProps> = ({
   isDeleting = false,
 }) => {
   const { t } = useTranslation('notifications');
-  const canSend = canSendNotification(notification.status);
-  const canEdit = canEditNotification(notification.status);
+  const isBatch = isBatchRow(notification);
+  // للدفعات: إظهار Send (يستدعي إرسال كل الدفعة). للإشعارات الفردية: حسب الحالة
+  const canSend = isBatch || canSendNotification(notification.status);
+  const canEdit = !isBatch && canEditNotification(notification.status);
 
   return (
     <Box display="flex" gap={0.5}>

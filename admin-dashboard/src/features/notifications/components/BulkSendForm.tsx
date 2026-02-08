@@ -45,6 +45,7 @@ export const BulkSendForm: React.FC<BulkSendFormProps> = ({ onSave, onCancel, is
     targetUserIds: [],
     actionUrl: '',
     data: {},
+    campaign: '',
   });
 
   // Update formData when selectedUserIds changes
@@ -143,6 +144,20 @@ export const BulkSendForm: React.FC<BulkSendFormProps> = ({ onSave, onCancel, is
           disabled={isLoading}
           size={isMobile ? 'small' : 'medium'}
           aria-label={t('forms.message')}
+        />
+
+        <TextField
+          fullWidth
+          label={t('forms.campaign')}
+          value={formData.campaign || ''}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, campaign: e.target.value || undefined }))
+          }
+          placeholder={t('filters.campaignPlaceholder')}
+          disabled={isLoading}
+          size={isMobile ? 'small' : 'medium'}
+          helperText={t('forms.campaignHelper', 'اختياري - لتصنيف الإشعارات حسب الحملة التسويقية')}
+          aria-label={t('forms.campaign')}
         />
 
         <TextField

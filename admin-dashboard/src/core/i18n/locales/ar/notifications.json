@@ -10,6 +10,7 @@
     "user": "المستخدم",
     "recipients": "المستلمون",
     "recipientCount": "{{count}} مستلم",
+    "batchLabel": "دفعة",
     "createdAt": "تاريخ الإنشاء",
     "sentAt": "تاريخ الإرسال",
     "actions": "الإجراءات"
@@ -25,7 +26,11 @@
     "showMore": "عرض المزيد",
     "showLess": "عرض أقل",
     "startDate": "من تاريخ",
-    "endDate": "إلى تاريخ"
+    "endDate": "إلى تاريخ",
+    "viewGrouped": "تجميع حسب الدفعة",
+    "viewDetailed": "عرض كل إشعار",
+    "campaign": "الحملة",
+    "campaignPlaceholder": "اسم الحملة..."
   },
   "channels": {
     "IN_APP": "داخل التطبيق",
@@ -139,7 +144,10 @@
     "deleteSuccess": "تم حذف التنبيه بنجاح",
     "deleteError": "فشل في حذف التنبيه",
     "deleteConfirm": "هل تريد حذف التنبيه؟",
+    "deleteBatchConfirm": "هل تريد حذف كل الإشعارات في هذه الدفعة ({{count}} إشعار)؟",
     "bulkDeleteConfirm": "هل تريد حذف {{count}} تنبيه؟",
+    "bulkDeleteConfirmBatches": "هل تريد حذف {{count}} دفعة كاملة؟",
+    "bulkDeleteConfirmMixed": "ستحذف {{batchCount}} دفعة و {{singleCount}} إشعار فردي. هل تريد المتابعة؟",
     "bulkDeleteSuccess": "تم حذف التنبيهات المحددة",
     "bulkDeleteWarning": "يرجى تحديد التنبيهات المراد حذفها",
     "updateSuccess": "تم تحديث التنبيه بنجاح",
@@ -182,6 +190,10 @@
     "close": "إغلاق",
     "recipientsCount": "{{count}} مستلم",
     "deliveryDetails": "تفاصيل الإرسال",
+    "batchRecipients": "المستلمون",
+    "batchForRecipients": "دفعة لـ {{count}} مستلم",
+    "viewRecipientsBelow": "يمكن عرض قائمة المستلمين في قسم تفاصيل الإرسال أدناه",
+    "batchIdLabel": "معرف الدفعة",
     "total": "إجمالي",
     "sent": "نجح",
     "failed": "فشل",
@@ -202,6 +214,8 @@
     "recipientId": "المستلمون",
     "recipientEmail": "البريد الإلكتروني",
     "recipientPhone": "رقم الهاتف",
+    "campaign": "اسم الحملة",
+    "campaignHelper": "اختياري - لتصنيف الإشعارات حسب الحملة التسويقية",
     "recipientEmailHelper": "اختياري - للبريد الإلكتروني",
     "recipientPhoneHelper": "اختياري - للرسائل النصية",
     "targetUserIds": "معرفات المستخدمين (مفصولة بفواصل)",
@@ -389,5 +403,12 @@
       "channelsRequired": "يجب اختيار قناة واحدة على الأقل",
       "charsMax": "حرف كحد أقصى"
     }
+  },
+  "terms": {
+    "batch": "دفعة",
+    "batchDescription": "مجموعة إشعارات أُرسلت في عملية إرسال مجمع واحدة (معرف تقني)",
+    "campaign": "حملة",
+    "campaignDescription": "اسم حملة تسويقية لتصنيف الإشعارات (اختياري)",
+    "groupByBatch": "تجميع حسب الدفعة"
   }
 }

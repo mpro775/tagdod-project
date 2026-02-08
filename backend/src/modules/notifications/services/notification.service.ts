@@ -241,6 +241,7 @@ export class NotificationService implements OnModuleInit {
         channel: channel,
         targetRoles: targetRoles,
         batchId: dto.batchId,
+        metadata: dto.campaign ? { campaign: dto.campaign } : {},
       });
 
       const savedNotification = await notification.save();
@@ -557,6 +558,123 @@ export class NotificationService implements OnModuleInit {
     return !!result;
   }
 
+  /**
+   * حذف كل الإشعارات في دفعة (batch)
+   */
+  async deleteBatchNotifications(batchId: string): Promise<{ deletedCount: number }> {
+    const result = await this.notificationModel.deleteMany({ batchId });
+    this.logger.log(`Deleted ${result.deletedCount} notifications for batch ${batchId}`);
+    return { deletedCount: result.deletedCount };
+  }
+
+  /**
+   * إرسال كل الإشعارات في دفعة (batch) لكل المستلمين
+   */
+  async sendBatchNotifications(batchId: string): Promise<{
+    sent: number;
+    failed: number;
+    results: Array<{ notificationId: string; success: boolean; error?: string }>;
+  }> {
+    const notifications = await this.notificationModel
+      .find({ batchId })
+      .lean();
+
+    if (notifications.length === 0) {
+      return { sent: 0, failed: 0, results: [] };
+    }
+
+    const results: Array<{ notificationId: string; success: boolean; error?: string }> = [];
+    let sent = 0;
+    let failed = 0;
+
+    for (const notification of notifications) {
+      const notificationId = notification._id.toString();
+      const recipientId = notification.recipientId?.toString();
+
+      try {
+        if (!recipientId) {
+          results.push({ notificationId, success: false, error: 'No recipient' });
+          failed++;
+          continue;
+        }
+
+        if (
+          notification.status !== NotificationStatus.PENDING &&
+          notification.status !== NotificationStatus.QUEUED
+        ) {
+          results.push({
+            notificationId,
+            success: false,
+            error: `Notification already ${notification.status}`,
+          });
+          failed++;
+          continue;
+        }
+
+        if (notification.channel === NotificationChannel.PUSH) {
+          await this.sendPushNotification(
+            notification as UnifiedNotificationDocument,
+            recipientId,
+          );
+        } else if (notification.channel === NotificationChannel.IN_APP) {
+          await this.resendInAppNotification(notificationId);
+        } else if (notification.channel === NotificationChannel.DASHBOARD) {
+          this.webSocketService.sendToUser(
+            recipientId,
+            'notification:new',
+            {
+              id: notificationId,
+              title: notification.title,
+              message: notification.message,
+              messageEn: notification.messageEn,
+              type: notification.type,
+              category: notification.category,
+              priority: notification.priority,
+              data: notification.data,
+              createdAt: notification.createdAt,
+              isRead: false,
+            },
+            '/notifications',
+          );
+        } else if (
+          notification.channel === NotificationChannel.SMS ||
+          notification.channel === NotificationChannel.EMAIL
+        ) {
+          const jobData = this.createJobData(
+            notification as UnifiedNotificationDocument,
+            recipientId,
+          );
+          await this.queueService.addToQueue(jobData);
+        }
+
+        await this.notificationModel.updateOne(
+          { _id: notificationId },
+          {
+            $set: {
+              status: NotificationStatus.SENT,
+              sentAt: new Date(),
+            },
+          },
+        );
+
+        results.push({ notificationId, success: true });
+        sent++;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Failed to send notification ${notificationId} in batch ${batchId}: ${errorMsg}`,
+        );
+        results.push({ notificationId, success: false, error: errorMsg });
+        failed++;
+      }
+    }
+
+    this.logger.log(
+      `Batch send completed for ${batchId}: ${sent} sent, ${failed} failed`,
+    );
+    return { sent, failed, results };
+  }
+
   // ===== User Operations =====
 
   /**
@@ -743,6 +861,7 @@ export class NotificationService implements OnModuleInit {
       startDate,
       endDate,
       groupByBatch = true, // افتراضي: تجميع الحملات
+      campaign,
     } = query;
 
     const skip = (page - 1) * limit;
@@ -787,6 +906,11 @@ export class NotificationService implements OnModuleInit {
         { message: { $regex: search, $options: 'i' } },
         { messageEn: { $regex: search, $options: 'i' } },
       ];
+    }
+
+    // Campaign filter
+    if (campaign) {
+      filter['metadata.campaign'] = campaign;
     }
 
     if (groupByBatch) {
@@ -956,6 +1080,7 @@ export class NotificationService implements OnModuleInit {
           navigationType: dto.navigationType,
           navigationTarget: dto.navigationTarget,
           navigationParams: dto.navigationParams,
+          campaign: dto.campaign,
         };
 
         await this.createNotification(notificationData);

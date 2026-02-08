@@ -30,7 +30,15 @@ import {
   CircularProgress,
   Tooltip,
 } from '@mui/material';
-import { Visibility, ExpandMore, CheckCircle, Error, Schedule, Search } from '@mui/icons-material';
+import {
+  Visibility,
+  ExpandMore,
+  CheckCircle,
+  Error,
+  Schedule,
+  Search,
+  Group,
+} from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { Notification, NotificationStatus } from '../types/notification.types';
@@ -41,6 +49,7 @@ import { NotificationChannelChip } from './NotificationChannelChip';
 import { NotificationPriorityChip } from './NotificationPriorityChip';
 import { NotificationCategoryChip } from './NotificationCategoryChip';
 import { useNotificationDeliveryDetails, useBatchDeliveryDetails } from '../hooks/useNotifications';
+import { isBatchRow } from './notificationHelpers';
 
 interface NotificationViewDialogProps {
   open: boolean;
@@ -83,6 +92,9 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
   }, [deliveryDetails?.logs, searchQuery]);
 
   if (!notification) return null;
+
+  const isBatch = isBatchRow(notification);
+  const recipientsCount = deliveryDetails?.summary?.total ?? notification.recipientCount ?? 0;
 
   return (
     <Dialog
@@ -151,15 +163,15 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
             </Paper>
           </Box>
 
-          {/* User Info */}
-          {notification.user && (
+          {/* User Info / Batch Info */}
+          {isBatch ? (
             <Box>
               <Typography
                 variant="subtitle1"
                 gutterBottom
                 sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}
               >
-                {t('dialogs.user')}
+                {t('dialogs.batchRecipients')}
               </Typography>
               <Box
                 sx={{
@@ -178,36 +190,89 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                     height: isMobile ? 40 : 56,
                   }}
                 >
-                  {notification.user.name?.charAt(0) || notification.user.email?.charAt(0)}
+                  <Group />
                 </Avatar>
                 <Box>
                   <Typography
                     variant="body1"
                     sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}
                   >
-                    {notification.user.name || notification.user.email}
+                    {t('dialogs.batchForRecipients', {
+                      count: recipientsCount,
+                      defaultValue: `دفعة لـ ${recipientsCount} مستلم`,
+                    })}
                   </Typography>
-                  {notification.user.email && notification.user.name && (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
-                    >
-                      {notification.user.email}
-                    </Typography>
-                  )}
-                  {notification.user.phone && (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
-                    >
-                      {notification.user.phone}
-                    </Typography>
-                  )}
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                  >
+                    {t('dialogs.viewRecipientsBelow', {
+                      defaultValue: 'يمكن عرض قائمة المستلمين في قسم تفاصيل الإرسال أدناه',
+                    })}
+                  </Typography>
                 </Box>
               </Box>
             </Box>
+          ) : (
+            notification.user && (
+              <Box>
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}
+                >
+                  {t('dialogs.user')}
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: isMobile ? 1 : 2,
+                    p: isMobile ? 1.5 : 2,
+                    bgcolor:
+                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                    borderRadius: 1,
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      bgcolor: 'secondary.main',
+                      width: isMobile ? 40 : 56,
+                      height: isMobile ? 40 : 56,
+                    }}
+                  >
+                    {notification.user.name?.charAt(0) || notification.user.email?.charAt(0)}
+                  </Avatar>
+                  <Box>
+                    <Typography
+                      variant="body1"
+                      sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}
+                    >
+                      {notification.user.name || notification.user.email}
+                    </Typography>
+                    {notification.user.email && notification.user.name && (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                      >
+                        {notification.user.email}
+                      </Typography>
+                    )}
+                    {notification.user.phone && (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                      >
+                        {notification.user.phone}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+            )
           )}
 
           {/* Timestamps */}
@@ -295,6 +360,32 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
               )}
             </Grid>
           </Box>
+
+          {/* Batch ID */}
+          {notification.batchId && (
+            <Box>
+              <Typography
+                variant="subtitle1"
+                gutterBottom
+                sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}
+              >
+                {t('dialogs.batchIdLabel')}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  wordBreak: 'break-all',
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                  p: 1,
+                  borderRadius: 1,
+                  fontSize: isMobile ? '0.75rem' : undefined,
+                  fontFamily: 'monospace',
+                }}
+              >
+                {notification.batchId}
+              </Typography>
+            </Box>
+          )}
 
           {/* Action URL */}
           {notification.actionUrl && (

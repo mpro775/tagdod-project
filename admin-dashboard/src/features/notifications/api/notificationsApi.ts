@@ -124,6 +124,36 @@ export const notificationsApi = {
     await apiClient.delete(`/notifications/admin/notification/${id}`);
   },
 
+  deleteBatch: async (batchId: string): Promise<{ deletedCount: number }> => {
+    const response = await apiClient.delete<ApiResponse<{ deletedCount: number; message?: string }>>(
+      `/notifications/admin/batch/${batchId}`
+    );
+    const data = response.data.data || response.data;
+    return { deletedCount: data?.deletedCount ?? 0 };
+  },
+
+  sendBatch: async (
+    batchId: string
+  ): Promise<{
+    sent: number;
+    failed: number;
+    results: Array<{ notificationId: string; success: boolean; error?: string }>;
+  }> => {
+    const response = await apiClient.post<
+      ApiResponse<{
+        sent: number;
+        failed: number;
+        results: Array<{ notificationId: string; success: boolean; error?: string }>;
+      }>
+    >(`/notifications/admin/batch/${batchId}/send`);
+    const data = response.data.data || response.data;
+    return {
+      sent: data?.sent ?? 0,
+      failed: data?.failed ?? 0,
+      results: data?.results ?? [],
+    };
+  },
+
   send: async (id: string, data: SendNotificationDto = {}): Promise<Notification> => {
     const response = await apiClient.post<ApiResponse<Notification>>(
       `/notifications/admin/notification/${id}/send`,

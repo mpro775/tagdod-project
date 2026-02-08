@@ -10,6 +10,7 @@
     "user": "User",
     "recipients": "Recipients",
     "recipientCount": "{{count}} recipients",
+    "batchLabel": "Batch",
     "createdAt": "Created At",
     "sentAt": "Sent At",
     "actions": "Actions"
@@ -25,7 +26,11 @@
     "showMore": "Show more",
     "showLess": "Show less",
     "startDate": "From date",
-    "endDate": "To date"
+    "endDate": "To date",
+    "viewGrouped": "Group by batch",
+    "viewDetailed": "View each notification",
+    "campaign": "Campaign",
+    "campaignPlaceholder": "Campaign name..."
   },
   "channels": {
     "IN_APP": "In App",
@@ -139,7 +144,10 @@
     "deleteSuccess": "Notification deleted successfully",
     "deleteError": "Failed to delete notification",
     "deleteConfirm": "Do you want to delete the notification?",
+    "deleteBatchConfirm": "Do you want to delete all notifications in this batch ({{count}} notifications)?",
     "bulkDeleteConfirm": "Do you want to delete {{count}} notifications?",
+    "bulkDeleteConfirmBatches": "Do you want to delete {{count}} full batches?",
+    "bulkDeleteConfirmMixed": "You will delete {{batchCount}} batch(es) and {{singleCount}} individual notification(s). Continue?",
     "bulkDeleteSuccess": "Selected notifications deleted",
     "bulkDeleteWarning": "Please select notifications to delete",
     "updateSuccess": "Notification updated successfully",
@@ -182,6 +190,10 @@
     "close": "Close",
     "recipientsCount": "{{count}} recipients",
     "deliveryDetails": "Delivery Details",
+    "batchRecipients": "Recipients",
+    "batchForRecipients": "Batch for {{count}} recipients",
+    "viewRecipientsBelow": "View the list of recipients in the delivery details section below",
+    "batchIdLabel": "Batch ID",
     "total": "Total",
     "sent": "Sent",
     "failed": "Failed",
@@ -202,6 +214,8 @@
     "recipientId": "Recipients",
     "recipientEmail": "Email",
     "recipientPhone": "Phone Number",
+    "campaign": "Campaign Name",
+    "campaignHelper": "Optional - to classify notifications by marketing campaign",
     "recipientEmailHelper": "Optional - for email notifications",
     "recipientPhoneHelper": "Optional - for SMS notifications",
     "targetUserIds": "User IDs (comma separated)",
@@ -389,5 +403,12 @@
       "channelsRequired": "At least one channel must be selected",
       "charsMax": "characters max"
     }
+  },
+  "terms": {
+    "batch": "Batch",
+    "batchDescription": "Group of notifications sent in one bulk send operation (technical identifier)",
+    "campaign": "Campaign",
+    "campaignDescription": "Marketing campaign name for classifying notifications (optional)",
+    "groupByBatch": "Group by batch"
   }
 }

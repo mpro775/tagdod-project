@@ -228,6 +228,7 @@ export interface CreateNotificationDto {
   navigationType?: NotificationNavigationType;
   navigationTarget?: string;
   navigationParams?: Record<string, unknown>;
+  campaign?: string;
 }
 
 export interface UpdateNotificationDto {
@@ -294,6 +295,7 @@ export interface ListNotificationsParams extends ListParams {
   startDate?: string;
   endDate?: string;
   includeDeleted?: boolean;
+  campaign?: string;
 }
 
 export interface NotificationStats {

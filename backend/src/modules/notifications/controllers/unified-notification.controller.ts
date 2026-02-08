@@ -1231,14 +1231,63 @@ export class UnifiedNotificationController {
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
-    summary: 'الإدارة: تفاصيل إرسال حملة الإشعارات',
-    description: 'استرداد تفاصيل الإرسال لكل مستلم في الحملة (للإداريين فقط)',
+    summary: 'الإدارة: تفاصيل إرسال دفعة الإشعارات',
+    description:
+      'استرداد تفاصيل الإرسال لكل مستلم في الدفعة (للإداريين فقط). ' +
+      'ملاحظة: Batch = معرف تقني لمجموعة الإشعارات المرسلة معاً، بينما Campaign = اسم حملة تسويقية (اختياري).',
   })
-  @ApiParam({ name: 'batchId', description: 'معرف الحملة' })
+  @ApiParam({
+    name: 'batchId',
+    description: 'معرف الدفعة (Batch) - معرف تقني يُنشأ تلقائياً عند الإرسال المجمع',
+  })
   @ApiResponse({ status: 200, description: 'Batch delivery details retrieved successfully' })
   async adminGetBatchDeliveryDetails(@Param('batchId') batchId: string) {
     const details = await this.notificationService.getBatchDeliveryDetails(batchId);
     return details;
+  }
+
+  @Delete('admin/batch/:batchId')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: حذف دفعة إشعارات',
+    description:
+      'حذف جميع الإشعارات المرتبطة بمعرف الدفعة (للإداريين فقط). ' +
+      'Batch: مجموعة إشعارات أُرسلت في عملية إرسال مجمع واحدة.',
+  })
+  @ApiParam({
+    name: 'batchId',
+    description: 'معرف الدفعة (Batch) - مثلاً: batch_1739020800000_x7k2m9p4q',
+  })
+  @ApiResponse({ status: 200, description: 'Batch deleted successfully' })
+  async adminDeleteBatch(@Param('batchId') batchId: string) {
+    const { deletedCount } = await this.notificationService.deleteBatchNotifications(batchId);
+    return {
+      deletedCount,
+      message: `تم حذف ${deletedCount} إشعار من الدفعة بنجاح`,
+    };
+  }
+
+  @Post('admin/batch/:batchId/send')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: إرسال دفعة إشعارات',
+    description:
+      'إرسال جميع الإشعارات في الدفعة لكل المستلمين (للإداريين فقط). ' +
+      'يختلف عن Campaign: الدفعة (Batch) تجميع تقني، والحملة (Campaign) تصنيف تسويقي اختياري.',
+  })
+  @ApiParam({
+    name: 'batchId',
+    description: 'معرف الدفعة (Batch) - معرف تقني يُنشأ تلقائياً عند الإرسال المجمع',
+  })
+  @ApiResponse({ status: 200, description: 'Batch send completed' })
+  async adminSendBatch(@Param('batchId') batchId: string) {
+    const result = await this.notificationService.sendBatchNotifications(batchId);
+    return {
+      ...result,
+      message: `تم إرسال ${result.sent} إشعار بنجاح${result.failed > 0 ? `، و فشل ${result.failed}` : ''}`,
+    };
   }
 
   // ===== Frequency Limit Admin Endpoints =====

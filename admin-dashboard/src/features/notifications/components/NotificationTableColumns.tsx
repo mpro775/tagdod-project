@@ -1,8 +1,9 @@
 import { GridColDef } from '@mui/x-data-grid';
 import { Box, Avatar, Typography, Chip } from '@mui/material';
+import { Group } from '@mui/icons-material';
 import { Notification } from '../types/notification.types';
 import { formatDate } from '@/shared/utils/formatters';
-import { getChannelIcon } from './notificationHelpers';
+import { getChannelIcon, isBatchRow } from './notificationHelpers';
 import { NotificationStatusChip } from './NotificationStatusChip';
 import { NotificationChannelChip } from './NotificationChannelChip';
 import { NotificationPriorityChip } from './NotificationPriorityChip';
@@ -36,66 +37,81 @@ export const createNotificationColumns = ({
       headerName: t('columns.title'),
       minWidth: isMobile ? 200 : 250,
       flex: 2,
-      renderCell: (params: any) => (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 1.5,
-            width: '100%',
-            height: '100%',
-            py: 1,
-            overflow: 'hidden',
-          }}
-        >
-          <Avatar
-            sx={{
-              width: 32,
-              height: 32,
-              bgcolor: 'primary.main',
-              flexShrink: 0,
-              mt: 0.5,
-            }}
-          >
-            {getChannelIcon(params.row.channel)}
-          </Avatar>
+      renderCell: (params: any) => {
+        const isBatch = isBatchRow(params.row);
+        return (
           <Box
             sx={{
-              minWidth: 0,
-              flex: 1,
-              overflow: 'hidden',
               display: 'flex',
-              flexDirection: 'column',
-              gap: 0.5,
-              justifyContent: 'center',
+              alignItems: 'flex-start',
+              gap: 1.5,
+              width: '100%',
+              height: '100%',
+              py: 1,
+              overflow: 'hidden',
             }}
           >
-            <Typography
-              variant="body2"
-              noWrap
-              title={params.value}
+            <Avatar
               sx={{
-                fontWeight: 'medium',
-                lineHeight: 1.4,
-                fontSize: '0.875rem',
+                width: 32,
+                height: 32,
+                bgcolor: isBatch ? 'secondary.main' : 'primary.main',
+                flexShrink: 0,
+                mt: 0.5,
               }}
             >
-              {params.value || t('placeholders.noTitle')}
-            </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              noWrap
+              {getChannelIcon(params.row.channel)}
+            </Avatar>
+            <Box
               sx={{
-                lineHeight: 1.3,
-                fontSize: '0.75rem',
+                minWidth: 0,
+                flex: 1,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0.5,
+                justifyContent: 'center',
               }}
             >
-              {params.row.message?.substring(0, 50)}...
-            </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+                <Typography
+                  variant="body2"
+                  noWrap
+                  title={params.value}
+                  sx={{
+                    fontWeight: 'medium',
+                    lineHeight: 1.4,
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  {params.value || t('placeholders.noTitle')}
+                </Typography>
+                {isBatch && (
+                  <Chip
+                    icon={<Group sx={{ fontSize: 14 }} />}
+                    label={t('columns.batchLabel', { defaultValue: 'دفعة' })}
+                    size="small"
+                    color="secondary"
+                    variant="outlined"
+                    sx={{ fontSize: '0.65rem', height: 20 }}
+                  />
+                )}
+              </Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                noWrap
+                sx={{
+                  lineHeight: 1.3,
+                  fontSize: '0.75rem',
+                }}
+              >
+                {params.row.message?.substring(0, 50)}...
+              </Typography>
+            </Box>
           </Box>
-        </Box>
-      ),
+        );
+      },
     },
     {
       field: 'category',
