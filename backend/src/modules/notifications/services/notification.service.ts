@@ -2141,24 +2141,30 @@ export class NotificationService implements OnModuleInit {
       pending: number;
     };
   }> {
-    // جلب الإشعار
-    const notification = await this.notificationModel.findById(notificationId).lean();
+    // جلب الإشعار مع بيانات المستلم (User يستخدم firstName/lastName)
+    const notification = await this.notificationModel
+      .findById(notificationId)
+      .populate('recipientId', 'firstName lastName phone')
+      .lean();
 
     // جلب جميع السجلات للإشعار
     const logs = await this.notificationLogModel
       .find({ notificationId: new Types.ObjectId(notificationId) })
-      .populate('userId', 'name email phone')
+      .populate('userId', 'firstName lastName phone')
       .sort({ createdAt: -1 })
       .lean();
 
-    // تحضير البيانات
+    // تحضير البيانات (User model uses firstName/lastName, no email)
     const logsWithUserInfo = logs.map((log) => {
-      const user = log.userId as any;
+      const user = log.userId as { _id?: unknown; firstName?: string; lastName?: string; phone?: string } | null;
+      const userName =
+        user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.phone || 'غير معروف' : 'غير معروف';
+      const userPhone = user?.phone || 'غير متوفر';
       return {
         _id: log._id.toString(),
-        userId: user?._id?.toString() || log.userId?.toString() || '',
-        userName: user?.name || 'غير معروف',
-        userEmail: user?.email || 'غير معروف',
+        userId: user?._id?.toString() || (log.userId as Types.ObjectId)?.toString() || '',
+        userName,
+        userEmail: userPhone,
         status: log.status,
         channel: log.channel,
         sentAt: log.sentAt,
@@ -2217,7 +2223,7 @@ export class NotificationService implements OnModuleInit {
   }> {
     const notifications = await this.notificationModel
       .find({ batchId })
-      .populate('recipientId', 'name email phone')
+      .populate('recipientId', 'firstName lastName phone')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -2231,12 +2237,15 @@ export class NotificationService implements OnModuleInit {
 
     const firstNotification = notifications[0];
     const logs = notifications.map((notif) => {
-      const user = notif.recipientId as any;
+      const user = notif.recipientId as { _id?: unknown; firstName?: string; lastName?: string; phone?: string } | null;
+      const userName =
+        user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.phone || 'غير معروف' : 'غير معروف';
+      const userPhone = user?.phone || 'غير متوفر';
       return {
         _id: notif._id.toString(),
-        userId: user?._id?.toString() || notif.recipientId?.toString() || '',
-        userName: user?.name || 'غير معروف',
-        userEmail: user?.email || 'غير معروف',
+        userId: user?._id?.toString() || (notif.recipientId as Types.ObjectId)?.toString() || '',
+        userName,
+        userEmail: userPhone,
         status: notif.status,
         channel: notif.channel,
         sentAt: notif.sentAt,
