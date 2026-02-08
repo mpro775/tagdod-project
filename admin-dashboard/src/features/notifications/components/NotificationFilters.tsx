@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   TextField,
@@ -10,6 +10,11 @@ import {
   Paper,
   Divider,
   Typography,
+  Collapse,
+  IconButton,
+  Menu,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   Search,
@@ -18,6 +23,10 @@ import {
   Analytics,
   Refresh,
   Delete,
+  FilterList,
+  ExpandMore,
+  ExpandLess,
+  MoreVert,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
@@ -64,6 +73,17 @@ export const NotificationFilters: React.FC<NotificationFiltersProps> = ({
   const { t } = useTranslation('notifications');
   const { isMobile } = useBreakpoint();
   const theme = useTheme();
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
+  const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
+
+  const hasActiveAdvancedFilters =
+    !!filters.status ||
+    !!filters.category ||
+    !!filters.priority ||
+    !!filters.startDate ||
+    !!filters.endDate;
+
+  const handleCloseMoreMenu = () => setMoreMenuAnchor(null);
 
   return (
     <Paper
@@ -73,13 +93,14 @@ export const NotificationFilters: React.FC<NotificationFiltersProps> = ({
         bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
       }}
     >
+      {/* Primary filters: Search + Channel */}
       <Box
         sx={{
           display: 'flex',
           gap: isMobile ? 1.5 : 2,
           flexWrap: 'wrap',
           alignItems: 'center',
-          mb: isMobile ? 1.5 : 2,
+          mb: 1,
         }}
       >
         <TextField
@@ -114,74 +135,132 @@ export const NotificationFilters: React.FC<NotificationFiltersProps> = ({
           </Select>
         </FormControl>
 
-        <FormControl
+        {/* Advanced filters toggle */}
+        <Button
           size="small"
-          sx={{ minWidth: isMobile ? '100%' : 150, flex: isMobile ? '1 1 100%' : undefined }}
+          variant="text"
+          onClick={() => setAdvancedFiltersOpen(!advancedFiltersOpen)}
+          startIcon={<FilterList fontSize="small" />}
+          endIcon={advancedFiltersOpen ? <ExpandLess /> : <ExpandMore />}
+          color={hasActiveAdvancedFilters ? 'primary' : 'inherit'}
+          sx={{ minWidth: isMobile ? '100%' : 'auto' }}
         >
-          <InputLabel>{t('filters.status')}</InputLabel>
-          <Select
-            value={filters.status || ''}
-            onChange={(e) => onFilterChange('status', e.target.value || undefined)}
-            label={t('filters.status')}
-            aria-label={t('filters.status')}
-          >
-            <MenuItem value="">{t('filters.all')}</MenuItem>
-            <MenuItem value={NotificationStatus.SENT}>{t('statuses.sent')}</MenuItem>
-            <MenuItem value={NotificationStatus.DELIVERED}>{t('statuses.delivered')}</MenuItem>
-            <MenuItem value={NotificationStatus.READ}>{t('statuses.read')}</MenuItem>
-            <MenuItem value={NotificationStatus.CLICKED}>{t('statuses.clicked')}</MenuItem>
-            <MenuItem value={NotificationStatus.FAILED}>{t('statuses.failed')}</MenuItem>
-            <MenuItem value={NotificationStatus.QUEUED}>{t('statuses.queued')}</MenuItem>
-            <MenuItem value={NotificationStatus.PENDING}>{t('statuses.pending')}</MenuItem>
-            <MenuItem value={NotificationStatus.CANCELLED}>{t('statuses.cancelled')}</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl
-          size="small"
-          sx={{ minWidth: isMobile ? '100%' : 150, flex: isMobile ? '1 1 100%' : undefined }}
-        >
-          <InputLabel>{t('filters.category')}</InputLabel>
-          <Select
-            value={filters.category || ''}
-            onChange={(e) => onFilterChange('category', e.target.value || undefined)}
-            label={t('filters.category')}
-            aria-label={t('filters.category')}
-          >
-            <MenuItem value="">{t('filters.all')}</MenuItem>
-            <MenuItem value={NotificationCategory.ORDER}>{t('categories.ORDER')}</MenuItem>
-            <MenuItem value={NotificationCategory.PRODUCT}>{t('categories.PRODUCT')}</MenuItem>
-            <MenuItem value={NotificationCategory.SERVICE}>{t('categories.SERVICE')}</MenuItem>
-            <MenuItem value={NotificationCategory.PROMOTION}>{t('categories.PROMOTION')}</MenuItem>
-            <MenuItem value={NotificationCategory.ACCOUNT}>{t('categories.ACCOUNT')}</MenuItem>
-            <MenuItem value={NotificationCategory.SYSTEM}>{t('categories.SYSTEM')}</MenuItem>
-            <MenuItem value={NotificationCategory.SUPPORT}>{t('categories.SUPPORT')}</MenuItem>
-            <MenuItem value={NotificationCategory.PAYMENT}>{t('categories.PAYMENT')}</MenuItem>
-            <MenuItem value={NotificationCategory.MARKETING}>{t('categories.MARKETING')}</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl
-          size="small"
-          sx={{ minWidth: isMobile ? '100%' : 150, flex: isMobile ? '1 1 100%' : undefined }}
-        >
-          <InputLabel>{t('filters.priority')}</InputLabel>
-          <Select
-            value={filters.priority || ''}
-            onChange={(e) => onFilterChange('priority', e.target.value || undefined)}
-            label={t('filters.priority')}
-            aria-label={t('filters.priority')}
-          >
-            <MenuItem value="">{t('filters.all')}</MenuItem>
-            <MenuItem value={NotificationPriority.URGENT}>{t('priorities.urgent')}</MenuItem>
-            <MenuItem value={NotificationPriority.HIGH}>{t('priorities.high')}</MenuItem>
-            <MenuItem value={NotificationPriority.MEDIUM}>{t('priorities.medium')}</MenuItem>
-            <MenuItem value={NotificationPriority.LOW}>{t('priorities.low')}</MenuItem>
-          </Select>
-        </FormControl>
+          {t('filters.advancedFilters')}
+          {hasActiveAdvancedFilters && (
+            <Typography component="span" sx={{ ml: 0.5, color: 'primary.main' }}>
+              •
+            </Typography>
+          )}
+        </Button>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* Advanced filters (collapsible) */}
+      <Collapse in={advancedFiltersOpen}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: isMobile ? 1.5 : 2,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            py: 2,
+            borderTop: 1,
+            borderColor: 'divider',
+            mt: 1,
+          }}
+        >
+          <FormControl
+            size="small"
+            sx={{ minWidth: isMobile ? '100%' : 150, flex: isMobile ? '1 1 100%' : undefined }}
+          >
+            <InputLabel>{t('filters.status')}</InputLabel>
+            <Select
+              value={filters.status || ''}
+              onChange={(e) => onFilterChange('status', e.target.value || undefined)}
+              label={t('filters.status')}
+              aria-label={t('filters.status')}
+            >
+              <MenuItem value="">{t('filters.all')}</MenuItem>
+              <MenuItem value={NotificationStatus.SENT}>{t('statuses.sent')}</MenuItem>
+              <MenuItem value={NotificationStatus.DELIVERED}>{t('statuses.delivered')}</MenuItem>
+              <MenuItem value={NotificationStatus.READ}>{t('statuses.read')}</MenuItem>
+              <MenuItem value={NotificationStatus.CLICKED}>{t('statuses.clicked')}</MenuItem>
+              <MenuItem value={NotificationStatus.FAILED}>{t('statuses.failed')}</MenuItem>
+              <MenuItem value={NotificationStatus.QUEUED}>{t('statuses.queued')}</MenuItem>
+              <MenuItem value={NotificationStatus.PENDING}>{t('statuses.pending')}</MenuItem>
+              <MenuItem value={NotificationStatus.CANCELLED}>{t('statuses.cancelled')}</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl
+            size="small"
+            sx={{ minWidth: isMobile ? '100%' : 150, flex: isMobile ? '1 1 100%' : undefined }}
+          >
+            <InputLabel>{t('filters.category')}</InputLabel>
+            <Select
+              value={filters.category || ''}
+              onChange={(e) => onFilterChange('category', e.target.value || undefined)}
+              label={t('filters.category')}
+              aria-label={t('filters.category')}
+            >
+              <MenuItem value="">{t('filters.all')}</MenuItem>
+              <MenuItem value={NotificationCategory.ORDER}>{t('categories.ORDER')}</MenuItem>
+              <MenuItem value={NotificationCategory.PRODUCT}>{t('categories.PRODUCT')}</MenuItem>
+              <MenuItem value={NotificationCategory.SERVICE}>{t('categories.SERVICE')}</MenuItem>
+              <MenuItem value={NotificationCategory.PROMOTION}>
+                {t('categories.PROMOTION')}
+              </MenuItem>
+              <MenuItem value={NotificationCategory.ACCOUNT}>{t('categories.ACCOUNT')}</MenuItem>
+              <MenuItem value={NotificationCategory.SYSTEM}>{t('categories.SYSTEM')}</MenuItem>
+              <MenuItem value={NotificationCategory.SUPPORT}>{t('categories.SUPPORT')}</MenuItem>
+              <MenuItem value={NotificationCategory.PAYMENT}>{t('categories.PAYMENT')}</MenuItem>
+              <MenuItem value={NotificationCategory.MARKETING}>
+                {t('categories.MARKETING')}
+              </MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl
+            size="small"
+            sx={{ minWidth: isMobile ? '100%' : 150, flex: isMobile ? '1 1 100%' : undefined }}
+          >
+            <InputLabel>{t('filters.priority')}</InputLabel>
+            <Select
+              value={filters.priority || ''}
+              onChange={(e) => onFilterChange('priority', e.target.value || undefined)}
+              label={t('filters.priority')}
+              aria-label={t('filters.priority')}
+            >
+              <MenuItem value="">{t('filters.all')}</MenuItem>
+              <MenuItem value={NotificationPriority.URGENT}>{t('priorities.urgent')}</MenuItem>
+              <MenuItem value={NotificationPriority.HIGH}>{t('priorities.high')}</MenuItem>
+              <MenuItem value={NotificationPriority.MEDIUM}>{t('priorities.medium')}</MenuItem>
+              <MenuItem value={NotificationPriority.LOW}>{t('priorities.low')}</MenuItem>
+            </Select>
+          </FormControl>
+
+          <TextField
+            size="small"
+            type="date"
+            label={t('filters.startDate')}
+            value={filters.startDate || ''}
+            onChange={(e) => onFilterChange('startDate', e.target.value || undefined)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: isMobile ? '100%' : 150 }}
+          />
+          <TextField
+            size="small"
+            type="date"
+            label={t('filters.endDate')}
+            value={filters.endDate || ''}
+            onChange={(e) => onFilterChange('endDate', e.target.value || undefined)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: isMobile ? '100%' : 150 }}
+          />
+        </Box>
+      </Collapse>
+
+      {/* Action buttons */}
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', pt: 1 }}>
         <Button
           variant="contained"
           startIcon={<Add />}
@@ -189,46 +268,67 @@ export const NotificationFilters: React.FC<NotificationFiltersProps> = ({
           disabled={isCreating}
           size={isMobile ? 'small' : 'medium'}
           fullWidth={isMobile}
-          aria-label={t('actions.add')}
+          aria-label={t('actions.addNotification')}
         >
-          {t('actions.add')}
+          {t('actions.addNotification')}
         </Button>
 
-        <Button
-          variant="outlined"
-          startIcon={<Send />}
-          onClick={onBulkSendClick}
-          disabled={isBulkSending}
+        <IconButton
+          onClick={(e) => setMoreMenuAnchor(e.currentTarget)}
+          color="inherit"
           size={isMobile ? 'small' : 'medium'}
-          fullWidth={isMobile}
-          aria-label={t('actions.bulkSend')}
+          aria-label={t('actions.more')}
+          aria-controls={moreMenuAnchor ? 'more-actions-menu' : undefined}
+          aria-haspopup="true"
+          aria-expanded={moreMenuAnchor ? 'true' : 'false'}
         >
-          {t('actions.bulkSend')}
-        </Button>
-
-        <Button
-          variant="outlined"
-          startIcon={<Analytics />}
-          onClick={onTestClick}
-          disabled={isTesting}
-          size={isMobile ? 'small' : 'medium'}
-          fullWidth={isMobile}
-          aria-label={t('actions.testTemplate')}
+          <MoreVert />
+        </IconButton>
+        <Menu
+          id="more-actions-menu"
+          anchorEl={moreMenuAnchor}
+          open={Boolean(moreMenuAnchor)}
+          onClose={handleCloseMoreMenu}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         >
-          {t('actions.testTemplate')}
-        </Button>
-
-        <Button
-          variant="outlined"
-          startIcon={<Refresh />}
-          onClick={onRefresh}
-          disabled={isLoading}
-          size={isMobile ? 'small' : 'medium'}
-          fullWidth={isMobile}
-          aria-label={t('actions.refresh')}
-        >
-          {t('actions.refresh')}
-        </Button>
+          <MenuItem
+            onClick={() => {
+              onBulkSendClick();
+              handleCloseMoreMenu();
+            }}
+            disabled={isBulkSending}
+          >
+            <ListItemIcon>
+              <Send fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={t('actions.bulkSend')} />
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              onTestClick();
+              handleCloseMoreMenu();
+            }}
+            disabled={isTesting}
+          >
+            <ListItemIcon>
+              <Analytics fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={t('actions.testTemplate')} />
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              onRefresh();
+              handleCloseMoreMenu();
+            }}
+            disabled={isLoading}
+          >
+            <ListItemIcon>
+              <Refresh fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={t('actions.refresh')} />
+          </MenuItem>
+        </Menu>
 
         {selectedCount > 0 && (
           <>
@@ -262,4 +362,3 @@ export const NotificationFilters: React.FC<NotificationFiltersProps> = ({
     </Paper>
   );
 };
-

@@ -18,7 +18,12 @@
     "status": "الحالة",
     "category": "الفئة",
     "priority": "الأولوية",
-    "all": "الكل"
+    "all": "الكل",
+    "advancedFilters": "فلاتر متقدمة",
+    "showMore": "عرض المزيد",
+    "showLess": "عرض أقل",
+    "startDate": "من تاريخ",
+    "endDate": "إلى تاريخ"
   },
   "channels": {
     "IN_APP": "داخل التطبيق",
@@ -105,8 +110,17 @@
     "read": "تم القراءة",
     "unread": "غير مقروء"
   },
+  "mobile": {
+    "actionsDrawer": "إجراءات الإشعارات",
+    "tabCreate": "إنشاء",
+    "tabBulkSend": "إرسال جماعي",
+    "tabTest": "اختبار",
+    "fabLabel": "إرسال إشعار جديد"
+  },
   "actions": {
     "add": "إضافة تنبيه",
+    "addNotification": "إرسال إشعار جديد",
+    "more": "المزيد",
     "bulkSend": "إرسال مجمع",
     "testTemplate": "اختبار قالب",
     "refresh": "تحديث",
@@ -137,6 +151,16 @@
     "refreshSuccess": "تم تحديث البيانات",
     "loadingError": "حدث خطأ في تحميل البيانات",
     "loadingErrorWithDetails": "حدث خطأ في تحميل البيانات: {{error}}"
+  },
+  "wizard": {
+    "step1": "النوع والقالب",
+    "step2": "المحتوى",
+    "step3": "المستلمون",
+    "step4": "خيارات متقدمة",
+    "next": "التالي",
+    "back": "السابق",
+    "advancedOptions": "خيارات متقدمة",
+    "advancedOptionsHint": "إعدادات التنقل (يُبنى الرابط تلقائياً)، البريد والهاتف..."
   },
   "dialogs": {
     "viewTitle": "تفاصيل التنبيه",
@@ -189,9 +213,21 @@
     "roleSuperAdmin": "مدير عام",
     "noUsersFound": "لا يوجد مستخدمون",
     "usersLimitInfo": "يتم عرض أول 100 مستخدم. استخدم البحث والفلترة للعثور على المستخدمين المطلوبين.",
+    "quickSelectAll": "جميع المستخدمين",
+    "quickSelectMerchants": "التجار فقط",
+    "quickSelectEngineers": "المهندسون فقط",
+    "manualInput": "إدخال يدوي",
+    "manualInputPlaceholder": "معرفات المستخدمين أو أرقام الهواتف مفصولة بفاصلة",
+    "manualInputHelper": "أدخل المعرفات أو أرقام الهواتف مفصولة بفاصلة أو مسافة",
+    "uploadCsv": "رفع ملف CSV",
+    "uploadCsvHelper": "رفع ملف يحتوي على معرفات أو أرقام هواتف (عمود واحد)",
+    "csvUploadSuccess": "تم إضافة {{count}} مستلم",
+    "csvUploadError": "تعذر قراءة الملف. تأكد من صيغة CSV الصحيحة.",
+    "addRecipients": "إضافة",
+    "quickSelectHint": "اختيار سريع",
     "templateKey": "القالب",
-    "testData": "بيانات الاختبار (JSON)",
-    "testDataHelper": "أدخل البيانات كـ JSON صحيح",
+    "testData": "بيانات الاختبار",
+    "testDataHelper": "قيم المتغيرات لاختبار القالب",
     "bulkSendInfo": "سيتم إرسال التنبيه لجميع المستخدمين المحددين",
     "testWarning": "سيتم إرسال تنبيه تجريبي للمستخدم المحدد",
     "saving": "جاري الحفظ...",
@@ -283,7 +319,12 @@
       "userIdPlaceholder": "أدخل معرف المستخدم",
       "userIdHelper": "معرف المستخدم الذي سيستقبل التنبيه التجريبي",
       "preview": "معاينة المحتوى:",
-      "variablePlaceholder": "[متغير]"
+      "variablePlaceholder": "[متغير]",
+      "selectUser": "اختر المستخدم للاختبار",
+      "searchUser": "ابحث عن مستخدم...",
+      "templateVariables": "بيانات الاختبار",
+      "variableLabel": "{{name}}",
+      "previewTitle": "المعاينة"
     },
     "editDialog": {
       "editTitle": "تعديل القالب",
@@ -302,4 +343,3 @@
     }
   }
 }
-

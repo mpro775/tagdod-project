@@ -96,7 +96,7 @@ export const NotificationEditForm: React.FC<NotificationEditFormProps> = ({
         ordersData.map((o: any) => ({
           _id: o._id,
           orderNumber: o.orderNumber || o._id,
-        })),
+        }))
       );
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -180,9 +180,7 @@ export const NotificationEditForm: React.FC<NotificationEditFormProps> = ({
         <Divider sx={{ my: 2 }} />
         <Box display="flex" alignItems="center" gap={1} mb={1}>
           <Navigation />
-          <Typography variant="h6">
-            {t('forms.navigation', 'إعدادات التنقل')}
-          </Typography>
+          <Typography variant="h6">{t('forms.navigation', 'إعدادات التنقل')}</Typography>
         </Box>
 
         <Grid container spacing={2}>
@@ -310,18 +308,6 @@ export const NotificationEditForm: React.FC<NotificationEditFormProps> = ({
             )}
         </Grid>
 
-        {/* Legacy actionUrl field - kept for backward compatibility */}
-        <TextField
-          fullWidth
-          label={t('forms.actionUrl')}
-          value={formData.actionUrl}
-          onChange={(e) => setFormData((prev) => ({ ...prev, actionUrl: e.target.value }))}
-          disabled={isLoading}
-          size={isMobile ? 'small' : 'medium'}
-          aria-label={t('forms.actionUrl')}
-          helperText={t('forms.actionUrlHelper', 'سيتم بناء هذا تلقائياً من إعدادات التنقل أعلاه')}
-        />
-
         <Box
           sx={{
             display: 'flex',
@@ -354,4 +340,3 @@ export const NotificationEditForm: React.FC<NotificationEditFormProps> = ({
     </Box>
   );
 };
-

@@ -8,6 +8,7 @@ import {
   DialogContent,
   Snackbar,
   Alert as MuiAlert,
+  Fab,
 } from '@mui/material';
 import { Add, Edit, Send, Analytics } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -36,9 +37,11 @@ import { NotificationFilters } from '../components/NotificationFilters';
 import { NotificationTable } from '../components/NotificationTable';
 import { NotificationViewDialog } from '../components/NotificationViewDialog';
 import { NotificationEditForm } from '../components/NotificationEditForm';
-import { NotificationCreateForm } from '../components/NotificationCreateForm';
+import { NotificationCreateWizard } from '../components/NotificationCreateWizard';
 import { BulkSendForm } from '../components/BulkSendForm';
 import { TestNotificationForm } from '../components/TestNotificationForm';
+import { NotificationActionsDrawer } from '../components/NotificationActionsDrawer';
+import type { NotificationActionTab } from '../components/NotificationActionsDrawer';
 
 export const NotificationsListPage: React.FC = () => {
   const { t } = useTranslation('notifications');
@@ -66,6 +69,9 @@ export const NotificationsListPage: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [bulkSendDialogOpen, setBulkSendDialogOpen] = useState(false);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
+  const [mobileActionsDrawerOpen, setMobileActionsDrawerOpen] = useState(false);
+  const [mobileActionsDrawerTab, setMobileActionsDrawerTab] =
+    useState<NotificationActionTab>('create');
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -183,6 +189,7 @@ export const NotificationsListPage: React.FC = () => {
     createNotification(data, {
       onSuccess: () => {
         setCreateDialogOpen(false);
+        setMobileActionsDrawerOpen(false);
         showSnackbar(t('messages.createSuccess'), 'success');
         refetch();
       },
@@ -194,6 +201,7 @@ export const NotificationsListPage: React.FC = () => {
     bulkSendNotification(data, {
       onSuccess: () => {
         setBulkSendDialogOpen(false);
+        setMobileActionsDrawerOpen(false);
         showSnackbar(t('messages.bulkSendSuccess'), 'success');
         refetch();
       },
@@ -207,6 +215,7 @@ export const NotificationsListPage: React.FC = () => {
       {
         onSuccess: () => {
           setTestDialogOpen(false);
+          setMobileActionsDrawerOpen(false);
           showSnackbar(t('messages.testSuccess'), 'success');
         },
         onError: () => showSnackbar(t('messages.testError'), 'error'),
@@ -254,9 +263,30 @@ export const NotificationsListPage: React.FC = () => {
       <NotificationFilters
         filters={filters}
         onFilterChange={handleFilterChange}
-        onCreateClick={() => setCreateDialogOpen(true)}
-        onBulkSendClick={() => setBulkSendDialogOpen(true)}
-        onTestClick={() => setTestDialogOpen(true)}
+        onCreateClick={() => {
+          if (isMobile) {
+            setMobileActionsDrawerTab('create');
+            setMobileActionsDrawerOpen(true);
+          } else {
+            setCreateDialogOpen(true);
+          }
+        }}
+        onBulkSendClick={() => {
+          if (isMobile) {
+            setMobileActionsDrawerTab('bulkSend');
+            setMobileActionsDrawerOpen(true);
+          } else {
+            setBulkSendDialogOpen(true);
+          }
+        }}
+        onTestClick={() => {
+          if (isMobile) {
+            setMobileActionsDrawerTab('test');
+            setMobileActionsDrawerOpen(true);
+          } else {
+            setTestDialogOpen(true);
+          }
+        }}
         onRefresh={handleRefresh}
         selectedCount={selectedNotifications.length}
         onBulkDelete={handleBulkDelete}
@@ -346,91 +376,125 @@ export const NotificationsListPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Dialog */}
-      <Dialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        maxWidth="lg"
-        fullWidth
-        fullScreen={isMobile}
-      >
-        <DialogTitle
+      {/* Create Dialog - Desktop only (mobile uses drawer) */}
+      {!isMobile && (
+        <Dialog
+          open={createDialogOpen}
+          onClose={() => setCreateDialogOpen(false)}
+          maxWidth="lg"
+          fullWidth
+        >
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              fontSize: isMobile ? '1.125rem' : undefined,
+            }}
+          >
+            <Add />
+            {t('dialogs.createTitle')}
+          </DialogTitle>
+          <DialogContent>
+            <NotificationCreateWizard
+              templates={templates || []}
+              onSave={handleCreate}
+              onCancel={() => setCreateDialogOpen(false)}
+              isLoading={isCreating}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Bulk Send Dialog - Desktop only (mobile uses drawer) */}
+      {!isMobile && (
+        <Dialog
+          open={bulkSendDialogOpen}
+          onClose={() => setBulkSendDialogOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              fontSize: isMobile ? '1.125rem' : undefined,
+            }}
+          >
+            <Send />
+            {t('dialogs.bulkSendTitle')}
+          </DialogTitle>
+          <DialogContent>
+            <BulkSendForm
+              onSave={handleBulkSend}
+              onCancel={() => setBulkSendDialogOpen(false)}
+              isLoading={isBulkSending}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Test Dialog - Desktop only */}
+      {!isMobile && (
+        <Dialog
+          open={testDialogOpen}
+          onClose={() => setTestDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Analytics />
+            {t('dialogs.testTitle')}
+          </DialogTitle>
+          <DialogContent>
+            <TestNotificationForm
+              templates={templates || []}
+              onTest={handleTest}
+              onCancel={() => setTestDialogOpen(false)}
+              isLoading={isTesting}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Mobile: Actions Drawer with Tabs (Create | Bulk Send | Test) */}
+      {isMobile && (
+        <NotificationActionsDrawer
+          open={mobileActionsDrawerOpen}
+          onClose={() => setMobileActionsDrawerOpen(false)}
+          initialTab={mobileActionsDrawerTab}
+          templates={templates || []}
+          onCreate={handleCreate}
+          onBulkSend={handleBulkSend}
+          onTest={handleTest}
+          isCreating={isCreating}
+          isBulkSending={isBulkSending}
+          isTesting={isTesting}
+        />
+      )}
+
+      {/* FAB - Mobile only (hidden when drawer is open) */}
+      {isMobile && !mobileActionsDrawerOpen && (
+        <Fab
+          color="primary"
+          aria-label={t('mobile.fabLabel')}
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            fontSize: isMobile ? '1.125rem' : undefined,
+            position: 'fixed',
+            bottom: 16,
+            right: 16,
+            display: { xs: 'flex', sm: 'none' },
+            zIndex: (theme) => theme.zIndex.speedDial,
           }}
+          onClick={() => {
+            setMobileActionsDrawerTab('create');
+            setMobileActionsDrawerOpen(true);
+          }}
+          size="medium"
         >
           <Add />
-          {t('dialogs.createTitle')}
-        </DialogTitle>
-        <DialogContent>
-          <NotificationCreateForm
-            templates={templates || []}
-            onSave={handleCreate}
-            onCancel={() => setCreateDialogOpen(false)}
-            isLoading={isCreating}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Send Dialog */}
-      <Dialog
-        open={bulkSendDialogOpen}
-        onClose={() => setBulkSendDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-        fullScreen={isMobile}
-      >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            fontSize: isMobile ? '1.125rem' : undefined,
-          }}
-        >
-          <Send />
-          {t('dialogs.bulkSendTitle')}
-        </DialogTitle>
-        <DialogContent>
-          <BulkSendForm
-            onSave={handleBulkSend}
-            onCancel={() => setBulkSendDialogOpen(false)}
-            isLoading={isBulkSending}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Test Dialog */}
-      <Dialog
-        open={testDialogOpen}
-        onClose={() => setTestDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
-      >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            fontSize: isMobile ? '1.125rem' : undefined,
-          }}
-        >
-          <Analytics />
-          {t('dialogs.testTitle')}
-        </DialogTitle>
-        <DialogContent>
-          <TestNotificationForm
-            templates={templates || []}
-            onTest={handleTest}
-            onCancel={() => setTestDialogOpen(false)}
-            isLoading={isTesting}
-          />
-        </DialogContent>
-      </Dialog>
+        </Fab>
+      )}
     </Box>
   );
 };

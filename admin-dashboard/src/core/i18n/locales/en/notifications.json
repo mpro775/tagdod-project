@@ -18,7 +18,12 @@
     "status": "Status",
     "category": "Category",
     "priority": "Priority",
-    "all": "All"
+    "all": "All",
+    "advancedFilters": "Advanced filters",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "startDate": "From date",
+    "endDate": "To date"
   },
   "channels": {
     "IN_APP": "In App",
@@ -105,8 +110,17 @@
     "read": "Read",
     "unread": "Unread"
   },
+  "mobile": {
+    "actionsDrawer": "Notification Actions",
+    "tabCreate": "Create",
+    "tabBulkSend": "Bulk Send",
+    "tabTest": "Test",
+    "fabLabel": "Send new notification"
+  },
   "actions": {
     "add": "Add Notification",
+    "addNotification": "Send New Notification",
+    "more": "More",
     "bulkSend": "Bulk Send",
     "testTemplate": "Test Template",
     "refresh": "Refresh",
@@ -137,6 +151,16 @@
     "refreshSuccess": "Data refreshed",
     "loadingError": "Error loading data",
     "loadingErrorWithDetails": "Error loading data: {{error}}"
+  },
+  "wizard": {
+    "step1": "Type & Template",
+    "step2": "Content",
+    "step3": "Recipients",
+    "step4": "Advanced Options",
+    "next": "Next",
+    "back": "Back",
+    "advancedOptions": "Advanced options",
+    "advancedOptionsHint": "Navigation settings (link is built automatically), email & phone..."
   },
   "dialogs": {
     "viewTitle": "Notification Details",
@@ -189,9 +213,21 @@
     "roleSuperAdmin": "Super Admin",
     "noUsersFound": "No users found",
     "usersLimitInfo": "Showing first 100 users. Use search and filters to find the users you need.",
+    "quickSelectAll": "All Users",
+    "quickSelectMerchants": "Merchants Only",
+    "quickSelectEngineers": "Engineers Only",
+    "manualInput": "Manual Input",
+    "manualInputPlaceholder": "User IDs or phone numbers separated by comma",
+    "manualInputHelper": "Enter IDs or phone numbers separated by comma or space",
+    "uploadCsv": "Upload CSV",
+    "uploadCsvHelper": "Upload a file with IDs or phone numbers (one column)",
+    "csvUploadSuccess": "Added {{count}} recipients",
+    "csvUploadError": "Could not read file. Ensure valid CSV format.",
+    "addRecipients": "Add",
+    "quickSelectHint": "Quick select",
     "templateKey": "Template",
-    "testData": "Test Data (JSON)",
-    "testDataHelper": "Enter data as valid JSON",
+    "testData": "Test Data",
+    "testDataHelper": "Variable values for testing the template",
     "bulkSendInfo": "Notification will be sent to all selected users",
     "testWarning": "Test notification will be sent to the selected user",
     "saving": "Saving...",
@@ -283,7 +319,12 @@
       "userIdPlaceholder": "Enter user ID",
       "userIdHelper": "User ID who will receive the test notification",
       "preview": "Content Preview:",
-      "variablePlaceholder": "[variable]"
+      "variablePlaceholder": "[variable]",
+      "selectUser": "Select user for testing",
+      "searchUser": "Search for user...",
+      "templateVariables": "Test Data",
+      "variableLabel": "{{name}}",
+      "previewTitle": "Preview"
     },
     "editDialog": {
       "editTitle": "Edit Template",
@@ -302,4 +343,3 @@
     }
   }
 }
-

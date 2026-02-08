@@ -491,18 +491,6 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
             )}
         </Grid>
 
-        {/* Legacy actionUrl field - kept for backward compatibility */}
-        <TextField
-          fullWidth
-          label={t('forms.actionUrl')}
-          value={formData.actionUrl}
-          onChange={(e) => setFormData((prev) => ({ ...prev, actionUrl: e.target.value }))}
-          disabled={isLoading}
-          size={isMobile ? 'small' : 'medium'}
-          aria-label={t('forms.actionUrl')}
-          helperText={t('forms.actionUrlHelper', 'سيتم بناء هذا تلقائياً من إعدادات التنقل أعلاه')}
-        />
-
         <NotificationUserSelector
           selectedUserIds={selectedUserIds}
           onUserIdsChange={handleUserIdsChange}

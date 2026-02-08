@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   TextField,
@@ -9,16 +9,49 @@ import {
   Button,
   Stack,
   Alert,
+  Autocomplete,
+  Typography,
+  Paper,
+  useTheme,
 } from '@mui/material';
+import { Person, Visibility } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { useUsers } from '@/features/users/hooks/useUsers';
+import { UserStatus } from '@/features/users/types/user.types';
+import type { User } from '@/features/users/types/user.types';
 import { NotificationTemplate } from '../types/notification.types';
+
+/**
+ * Extract variable names from template body (e.g. {{orderId}} -> orderId)
+ */
+const extractVariables = (body: string): string[] => {
+  if (!body || typeof body !== 'string') return [];
+  const matches = body.match(/\{\{\s*(\w+)\s*\}\}/g);
+  if (!matches) return [];
+  const vars = matches.map((m) => m.replace(/\{\{|\}\}|\s/g, ''));
+  return [...new Set(vars)];
+};
+
+/**
+ * Default values for common template variables
+ */
+const DEFAULT_VARIABLE_VALUES: Record<string, string> = {
+  orderId: 'TEST-123',
+  amount: '150',
+  currency: 'USD',
+  requestId: 'REQ-456',
+  engineerName: 'أحمد محمد',
+  customerName: 'مستخدم تجريبي',
+};
 
 interface TestNotificationFormProps {
   templates: NotificationTemplate[];
   onTest: (userId: string, templateKey: string, payload: Record<string, unknown>) => void;
   onCancel: () => void;
   isLoading: boolean;
+  /** Pre-selected template key (e.g. when opened from template card) */
+  initialTemplateKey?: string;
 }
 
 export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
@@ -26,19 +59,109 @@ export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
   onTest,
   onCancel,
   isLoading,
+  initialTemplateKey = '',
 }) => {
   const { t } = useTranslation('notifications');
   const { isMobile } = useBreakpoint();
-  const [formData, setFormData] = useState({
-    userId: '',
-    templateKey: '',
-    payload: {} as Record<string, unknown>,
+  const theme = useTheme();
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [templateKey, setTemplateKey] = useState(initialTemplateKey);
+  const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (initialTemplateKey) {
+      setTemplateKey(initialTemplateKey);
+      const tpl = templates.find((t) => t.key === initialTemplateKey);
+      if (tpl) {
+        const body = tpl.body || tpl.message || '';
+        const vars = extractVariables(body);
+        const initial: Record<string, string> = {};
+        for (const v of vars) {
+          initial[v] =
+            ((tpl.exampleData as Record<string, unknown>)?.[v] as string) ||
+            DEFAULT_VARIABLE_VALUES[v] ||
+            '';
+        }
+        setVariableValues(initial);
+      }
+    }
+  }, [initialTemplateKey, templates]);
+
+  const { data: usersData, isLoading: usersLoading } = useUsers({
+    limit: 50,
+    page: 1,
+    status: UserStatus.ACTIVE,
   });
+
+  const allUsers = usersData?.data || [];
+
+  const selectedTemplate = useMemo(
+    () => templates.find((tpl) => tpl.key === templateKey),
+    [templates, templateKey]
+  );
+
+  const templateVariables = useMemo(() => {
+    if (!selectedTemplate) return [];
+    const body = selectedTemplate.body || selectedTemplate.message || '';
+    return extractVariables(body);
+  }, [selectedTemplate]);
+
+  const payload = useMemo(() => {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(variableValues)) {
+      if (value !== undefined && value !== '') {
+        result[key] = value;
+      }
+    }
+    return result;
+  }, [variableValues]);
+
+  const previewBody = useMemo(() => {
+    if (!selectedTemplate) return '';
+    const body = selectedTemplate.body || selectedTemplate.message || '';
+    return body.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, varName) => {
+      const val = variableValues[varName];
+      return val !== undefined && val !== ''
+        ? String(val)
+        : t('templates.testDialog.variablePlaceholder');
+    });
+  }, [selectedTemplate, variableValues, t]);
+
+  const handleTemplateChange = (key: string) => {
+    setTemplateKey(key);
+    const tpl = templates.find((t) => t.key === key);
+    if (tpl) {
+      const body = tpl.body || tpl.message || '';
+      const vars = extractVariables(body);
+      const initial: Record<string, string> = {};
+      for (const v of vars) {
+        initial[v] =
+          ((tpl.exampleData as Record<string, unknown>)?.[v] as string) ||
+          DEFAULT_VARIABLE_VALUES[v] ||
+          '';
+      }
+      setVariableValues(initial);
+    } else {
+      setVariableValues({});
+    }
+  };
+
+  const handleVariableChange = (varName: string, value: string) => {
+    setVariableValues((prev) => ({ ...prev, [varName]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onTest(formData.userId, formData.templateKey, formData.payload);
+    const userId = selectedUser?._id;
+    if (userId && templateKey) {
+      onTest(userId, templateKey, payload);
+    }
   };
+
+  const getUserDisplayName = (user: User) =>
+    user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.phone || user._id;
+
+  const canSubmit = !!selectedUser?._id && !!templateKey && !isLoading;
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
@@ -47,24 +170,44 @@ export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
           {t('forms.testWarning')}
         </Alert>
 
-        <TextField
-          fullWidth
-          label={t('forms.userId')}
-          value={formData.userId}
-          onChange={(e) => setFormData((prev) => ({ ...prev, userId: e.target.value }))}
-          required
+        {/* User selector */}
+        <Autocomplete
+          value={selectedUser}
+          onChange={(_, newValue) => setSelectedUser(newValue)}
+          options={allUsers}
+          getOptionLabel={(option) =>
+            typeof option === 'string' ? option : getUserDisplayName(option)
+          }
+          loading={usersLoading}
           disabled={isLoading}
           size={isMobile ? 'small' : 'medium'}
-          aria-label={t('forms.userId')}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={t('templates.testDialog.selectUser')}
+              placeholder={t('templates.testDialog.searchUser')}
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <>
+                    <Person sx={{ mr: 1, color: 'text.secondary' }} />
+                    {params.InputProps.startAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+          noOptionsText={t('forms.noUsersFound')}
         />
 
+        {/* Template selector */}
         <FormControl fullWidth required>
           <InputLabel>{t('forms.template')}</InputLabel>
           <Select
-            value={formData.templateKey}
-            onChange={(e) => setFormData((prev) => ({ ...prev, templateKey: e.target.value }))}
+            value={templateKey}
+            onChange={(e) => handleTemplateChange(e.target.value)}
             label={t('forms.template')}
-            disabled={isLoading}
+            disabled={isLoading || templates.length === 0}
             size={isMobile ? 'small' : 'medium'}
             aria-label={t('forms.template')}
           >
@@ -76,25 +219,63 @@ export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
           </Select>
         </FormControl>
 
-        <TextField
-          fullWidth
-          label={t('forms.testData')}
-          value={JSON.stringify(formData.payload, null, 2)}
-          onChange={(e) => {
-            try {
-              const parsed = JSON.parse(e.target.value);
-              setFormData((prev) => ({ ...prev, payload: parsed }));
-            } catch {
-              // Invalid JSON, keep the text but don't update payload
-            }
-          }}
-          multiline
-          rows={isMobile ? 4 : 6}
-          disabled={isLoading}
-          helperText={t('forms.testDataHelper')}
-          size={isMobile ? 'small' : 'medium'}
-          aria-label={t('forms.testData')}
-        />
+        {/* Dynamic variable fields */}
+        {templateVariables.length > 0 && (
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+              {t('templates.testDialog.templateVariables')}
+            </Typography>
+            <Stack spacing={2}>
+              {templateVariables.map((varName) => (
+                <TextField
+                  key={varName}
+                  fullWidth
+                  size="small"
+                  label={t('templates.testDialog.variableLabel', { name: varName })}
+                  value={variableValues[varName] ?? ''}
+                  onChange={(e) => handleVariableChange(varName, e.target.value)}
+                  placeholder={t('templates.testDialog.variablePlaceholder')}
+                  disabled={isLoading}
+                  helperText={
+                    selectedTemplate?.variables?.[varName]?.description
+                      ? String(selectedTemplate.variables[varName].description)
+                      : undefined
+                  }
+                />
+              ))}
+            </Stack>
+          </Box>
+        )}
+
+        {/* Preview */}
+        {selectedTemplate && (
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'grey.50',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Visibility fontSize="small" color="action" />
+              <Typography variant="subtitle2" fontWeight={600}>
+                {t('templates.testDialog.previewTitle')}
+              </Typography>
+            </Box>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+              {selectedTemplate.title}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {previewBody}
+            </Typography>
+          </Paper>
+        )}
 
         <Box
           sx={{
@@ -116,7 +297,7 @@ export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
           <Button
             type="submit"
             variant="contained"
-            disabled={isLoading}
+            disabled={!canSubmit}
             size={isMobile ? 'small' : 'medium'}
             fullWidth={isMobile}
             aria-label={t('templates.actions.sendTest')}
@@ -128,4 +309,3 @@ export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
     </Box>
   );
 };
-
