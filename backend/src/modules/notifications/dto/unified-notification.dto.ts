@@ -255,6 +255,38 @@ export class BulkSendNotificationDto extends BaseNotificationDto {
 }
 
 // ===== Template DTOs =====
+export class TemplateChannelsDto {
+  @IsBoolean()
+  inApp!: boolean;
+
+  @IsBoolean()
+  push!: boolean;
+
+  @IsBoolean()
+  sms!: boolean;
+
+  @IsBoolean()
+  email!: boolean;
+}
+
+export class TemplateChannelsOptionalDto {
+  @IsOptional()
+  @IsBoolean()
+  inApp?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  push?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  sms?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  email?: boolean;
+}
+
 export class CreateTemplateDto {
   @IsString()
   @MaxLength(100)
@@ -281,13 +313,8 @@ export class CreateTemplateDto {
   template?: string;
 
   @ValidateNested()
-  @Type(() => Object)
-  channels!: {
-    inApp: boolean;
-    push: boolean;
-    sms: boolean;
-    email: boolean;
-  };
+  @Type(() => TemplateChannelsDto)
+  channels!: TemplateChannelsDto;
 
   @IsString()
   type!: string;
@@ -344,13 +371,8 @@ export class UpdateTemplateDto {
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => Object)
-  channels?: {
-    inApp?: boolean;
-    push?: boolean;
-    sms?: boolean;
-    email?: boolean;
-  };
+  @Type(() => TemplateChannelsOptionalDto)
+  channels?: TemplateChannelsOptionalDto;
 
   @IsOptional()
   @IsString()
