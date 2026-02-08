@@ -186,15 +186,47 @@ export const NotificationsListPage: React.FC = () => {
   };
 
   const handleCreate = (data: CreateNotificationDto) => {
-    createNotification(data, {
-      onSuccess: () => {
-        setCreateDialogOpen(false);
-        setMobileActionsDrawerOpen(false);
-        showSnackbar(t('messages.createSuccess'), 'success');
-        refetch();
-      },
-      onError: () => showSnackbar(t('messages.createError'), 'error'),
-    });
+    // إذا كان recipientId يحتوي على عدة معرفات (مفصولة بفاصلة)، استخدم bulk-send بدلاً من create
+    const recipientIds = data.recipientId
+      ? data.recipientId
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean)
+      : [];
+
+    if (recipientIds.length === 0) {
+      showSnackbar(
+        t('messages.selectRecipientRequired', 'يرجى تحديد مستلم واحد على الأقل'),
+        'warning'
+      );
+      return;
+    }
+
+    if (recipientIds.length > 1) {
+      const bulkData: BulkSendNotificationDto = {
+        ...data,
+        targetUserIds: recipientIds,
+      };
+      bulkSendNotification(bulkData, {
+        onSuccess: () => {
+          setCreateDialogOpen(false);
+          setMobileActionsDrawerOpen(false);
+          showSnackbar(t('messages.bulkSendSuccess'), 'success');
+          refetch();
+        },
+        onError: () => showSnackbar(t('messages.bulkSendError'), 'error'),
+      });
+    } else {
+      createNotification(data, {
+        onSuccess: () => {
+          setCreateDialogOpen(false);
+          setMobileActionsDrawerOpen(false);
+          showSnackbar(t('messages.createSuccess'), 'success');
+          refetch();
+        },
+        onError: () => showSnackbar(t('messages.createError'), 'error'),
+      });
+    }
   };
 
   const handleBulkSend = (data: BulkSendNotificationDto) => {

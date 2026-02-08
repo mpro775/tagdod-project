@@ -150,7 +150,8 @@
     "testError": "Failed to send test notification",
     "refreshSuccess": "Data refreshed",
     "loadingError": "Error loading data",
-    "loadingErrorWithDetails": "Error loading data: {{error}}"
+    "loadingErrorWithDetails": "Error loading data: {{error}}",
+    "selectRecipientRequired": "Please select at least one recipient"
   },
   "wizard": {
     "step1": "Type & Template",

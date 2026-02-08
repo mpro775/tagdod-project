@@ -150,7 +150,8 @@
     "testError": "فشل في إرسال تنبيه الاختبار",
     "refreshSuccess": "تم تحديث البيانات",
     "loadingError": "حدث خطأ في تحميل البيانات",
-    "loadingErrorWithDetails": "حدث خطأ في تحميل البيانات: {{error}}"
+    "loadingErrorWithDetails": "حدث خطأ في تحميل البيانات: {{error}}",
+    "selectRecipientRequired": "يرجى تحديد مستلم واحد على الأقل"
   },
   "wizard": {
     "step1": "النوع والقالب",
