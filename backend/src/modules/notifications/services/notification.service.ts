@@ -198,7 +198,7 @@ export class NotificationService implements OnModuleInit {
       }
 
       // إثراء حقل data بمعلومات التنقل (للتوافق مع التطبيقات التي تتوقع categoryId, productId, orderId في data)
-      let enrichedData: Record<string, unknown> = { ...(dto.data || {}) };
+      const enrichedData: Record<string, unknown> = { ...(dto.data || {}) };
       if (dto.navigationType && dto.navigationTarget) {
         switch (dto.navigationType) {
           case NotificationNavigationType.CATEGORY:
@@ -866,14 +866,20 @@ export class NotificationService implements OnModuleInit {
         { $project: { userDoc: 0 } },
       ];
 
-      const [facetResult] = await this.notificationModel.aggregate([
-        {
-          $facet: {
-            total: [{ $match: filter }, { $group: { _id: { $ifNull: ['$batchId', { $toString: '$_id' }] } } }, { $count: 'count' }],
-            notifications: [...facetPipeline, { $skip: skip }, { $limit: limit }],
+      const [facetResult] = await this.notificationModel
+        .aggregate([
+          {
+            $facet: {
+              total: [
+                { $match: filter },
+                { $group: { _id: { $ifNull: ['$batchId', { $toString: '$_id' }] } } },
+                { $count: 'count' },
+              ],
+              notifications: [...facetPipeline, { $skip: skip }, { $limit: limit }],
+            },
           },
-        },
-      ]).exec();
+        ] as PipelineStage[])
+        .exec();
 
       const total = facetResult?.total?.[0]?.count ?? 0;
       const notifications = facetResult?.notifications ?? [];
