@@ -40,7 +40,7 @@ import { NotificationStatusChip } from './NotificationStatusChip';
 import { NotificationChannelChip } from './NotificationChannelChip';
 import { NotificationPriorityChip } from './NotificationPriorityChip';
 import { NotificationCategoryChip } from './NotificationCategoryChip';
-import { useNotificationDeliveryDetails } from '../hooks/useNotifications';
+import { useNotificationDeliveryDetails, useBatchDeliveryDetails } from '../hooks/useNotifications';
 
 interface NotificationViewDialogProps {
   open: boolean;
@@ -58,12 +58,15 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // جلب تفاصيل الإرسال
-  const {
-    data: deliveryDetails,
-    isLoading: isLoadingDetails,
-    error: deliveryError,
-  } = useNotificationDeliveryDetails(notification?._id || '');
+  // جلب تفاصيل الإرسال (حسب batch أو إشعار فردي)
+  const singleDetails = useNotificationDeliveryDetails(
+    notification?.batchId ? '' : notification?._id || ''
+  );
+  const batchDetails = useBatchDeliveryDetails(notification?.batchId || '');
+
+  const deliveryDetails = notification?.batchId ? batchDetails.data : singleDetails.data;
+  const isLoadingDetails = notification?.batchId ? batchDetails.isLoading : singleDetails.isLoading;
+  const deliveryError = notification?.batchId ? batchDetails.error : singleDetails.error;
 
   // فلترة السجلات حسب البحث
   const filteredLogs = useMemo(() => {
@@ -221,7 +224,8 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                 <Box
                   sx={{
                     p: isMobile ? 1.5 : 2,
-                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                    bgcolor:
+                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
                     borderRadius: 1,
                   }}
                 >
@@ -242,7 +246,8 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                   <Box
                     sx={{
                       p: isMobile ? 1.5 : 2,
-                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                      bgcolor:
+                        theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
                       borderRadius: 1,
                     }}
                   >
@@ -253,7 +258,10 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                     >
                       {t('dialogs.sentAt')}
                     </Typography>
-                    <Typography variant="body1" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+                    <Typography
+                      variant="body1"
+                      sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
+                    >
                       {formatDate(notification.sentAt)}
                     </Typography>
                   </Box>
@@ -264,7 +272,8 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                   <Box
                     sx={{
                       p: isMobile ? 1.5 : 2,
-                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
+                      bgcolor:
+                        theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50',
                       borderRadius: 1,
                     }}
                   >
@@ -275,7 +284,10 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                     >
                       {t('dialogs.readAt')}
                     </Typography>
-                    <Typography variant="body1" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+                    <Typography
+                      variant="body1"
+                      sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
+                    >
                       {formatDate(notification.readAt)}
                     </Typography>
                   </Box>
@@ -334,14 +346,18 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
           {notification.metadata && Object.keys(notification.metadata).length > 0 && (
             <Accordion>
               <AccordionSummary expandIcon={<ExpandMore />}>
-                <Typography variant="subtitle1" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
+                >
                   {t('dialogs.errorInfo')}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <pre
                   style={{
-                    background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5',
+                    background:
+                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5',
                     padding: isMobile ? '8px' : '12px',
                     borderRadius: '4px',
                     overflow: 'auto',
@@ -359,7 +375,10 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
           {/* Delivery Details */}
           <Accordion defaultExpanded={!!deliveryDetails?.logs.length}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.875rem' : undefined }}
+              >
                 {t('dialogs.deliveryDetails', 'تفاصيل الإرسال')}
               </Typography>
             </AccordionSummary>
@@ -379,10 +398,18 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                     <Grid size={{ xs: 6, sm: 3 }}>
                       <Card>
                         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                          <Typography variant="h4" color="text.secondary" sx={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>
+                          <Typography
+                            variant="h4"
+                            color="text.secondary"
+                            sx={{ fontSize: isMobile ? '1.5rem' : '2rem' }}
+                          >
                             {deliveryDetails.summary.total}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                          >
                             {t('dialogs.total', 'إجمالي')}
                           </Typography>
                         </CardContent>
@@ -394,7 +421,10 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                           <Typography variant="h4" sx={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>
                             {deliveryDetails.summary.sent}
                           </Typography>
-                          <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                          >
                             {t('dialogs.sent', 'نجح')}
                           </Typography>
                         </CardContent>
@@ -406,7 +436,10 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                           <Typography variant="h4" sx={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>
                             {deliveryDetails.summary.failed}
                           </Typography>
-                          <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                          >
                             {t('dialogs.failed', 'فشل')}
                           </Typography>
                         </CardContent>
@@ -418,7 +451,10 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                           <Typography variant="h4" sx={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>
                             {deliveryDetails.summary.pending}
                           </Typography>
-                          <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                          >
                             {t('dialogs.pending', 'قيد الانتظار')}
                           </Typography>
                         </CardContent>
@@ -446,23 +482,53 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                       <Table size={isMobile ? 'small' : 'medium'}>
                         <TableHead>
                           <TableRow>
-                            <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                            <TableCell
+                              sx={{
+                                fontSize: isMobile ? '0.75rem' : undefined,
+                                fontWeight: 'bold',
+                              }}
+                            >
                               {t('dialogs.user', 'المستخدم')}
                             </TableCell>
-                            <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                            <TableCell
+                              sx={{
+                                fontSize: isMobile ? '0.75rem' : undefined,
+                                fontWeight: 'bold',
+                              }}
+                            >
                               {t('dialogs.status', 'الحالة')}
                             </TableCell>
-                            <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                            <TableCell
+                              sx={{
+                                fontSize: isMobile ? '0.75rem' : undefined,
+                                fontWeight: 'bold',
+                              }}
+                            >
                               {t('dialogs.channel', 'القناة')}
                             </TableCell>
-                            <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                            <TableCell
+                              sx={{
+                                fontSize: isMobile ? '0.75rem' : undefined,
+                                fontWeight: 'bold',
+                              }}
+                            >
                               {t('dialogs.time', 'الوقت')}
                             </TableCell>
-                            <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                            <TableCell
+                              sx={{
+                                fontSize: isMobile ? '0.75rem' : undefined,
+                                fontWeight: 'bold',
+                              }}
+                            >
                               {t('dialogs.error', 'الخطأ')}
                             </TableCell>
                             {!isMobile && (
-                              <TableCell sx={{ fontSize: isMobile ? '0.75rem' : undefined, fontWeight: 'bold' }}>
+                              <TableCell
+                                sx={{
+                                  fontSize: isMobile ? '0.75rem' : undefined,
+                                  fontWeight: 'bold',
+                                }}
+                              >
                                 {t('dialogs.device', 'الجهاز')}
                               </TableCell>
                             )}
@@ -473,10 +539,20 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                             <TableRow key={log._id} hover>
                               <TableCell>
                                 <Box>
-                                  <Typography variant="body2" sx={{ fontWeight: 'medium', fontSize: isMobile ? '0.75rem' : undefined }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      fontWeight: 'medium',
+                                      fontSize: isMobile ? '0.75rem' : undefined,
+                                    }}
+                                  >
                                     {log.userName}
                                   </Typography>
-                                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: isMobile ? '0.7rem' : undefined }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
+                                  >
                                     {log.userEmail}
                                   </Typography>
                                 </Box>
@@ -512,7 +588,10 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                                 <NotificationChannelChip channel={log.channel} />
                               </TableCell>
                               <TableCell>
-                                <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
+                                >
                                   {log.sentAt
                                     ? formatDate(log.sentAt)
                                     : log.failedAt
@@ -538,7 +617,11 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                                     </Typography>
                                   </Tooltip>
                                 ) : (
-                                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: isMobile ? '0.7rem' : undefined }}>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
+                                  >
                                     -
                                   </Typography>
                                 )}
@@ -547,7 +630,10 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                                 <TableCell>
                                   {log.deviceToken ? (
                                     <Box>
-                                      <Typography variant="caption" sx={{ fontSize: '0.7rem', display: 'block' }}>
+                                      <Typography
+                                        variant="caption"
+                                        sx={{ fontSize: '0.7rem', display: 'block' }}
+                                      >
                                         {log.platform || 'Unknown'}
                                       </Typography>
                                       <Typography
@@ -565,7 +651,11 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                                       </Typography>
                                     </Box>
                                   ) : (
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{ fontSize: '0.7rem' }}
+                                    >
                                       -
                                     </Typography>
                                   )}
@@ -592,11 +682,14 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: isMobile ? 2 : 3, pb: isMobile ? 2 : 3 }}>
-        <Button onClick={onClose} size={isMobile ? 'small' : 'medium'} aria-label={t('dialogs.close')}>
+        <Button
+          onClick={onClose}
+          size={isMobile ? 'small' : 'medium'}
+          aria-label={t('dialogs.close')}
+        >
           {t('dialogs.close')}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
-

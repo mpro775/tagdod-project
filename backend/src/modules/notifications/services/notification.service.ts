@@ -239,6 +239,7 @@ export class NotificationService implements OnModuleInit {
         priority: dto.priority || NotificationPriority.MEDIUM,
         channel: channel,
         targetRoles: targetRoles,
+        batchId: dto.batchId,
       });
 
       const savedNotification = await notification.save();
@@ -392,6 +393,7 @@ export class NotificationService implements OnModuleInit {
 
           if (targetUsers.length > 0) {
             const userIds = targetUsers.map((user) => user._id.toString());
+            const roleBatchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
             // إنشاء نسخة من الإشعار لكل مستخدم
             const userNotifications = targetUsers.map((user) => {
@@ -421,6 +423,7 @@ export class NotificationService implements OnModuleInit {
                 sentAt: new Date(),
                 isSystemGenerated: savedNotification.isSystemGenerated,
                 createdBy: savedNotification.createdBy,
+                batchId: roleBatchId,
               };
             });
 
@@ -738,6 +741,7 @@ export class NotificationService implements OnModuleInit {
       search,
       startDate,
       endDate,
+      groupByBatch = false,
     } = query;
 
     const skip = (page - 1) * limit;
@@ -766,12 +770,12 @@ export class NotificationService implements OnModuleInit {
 
     // Date filters
     if (startDate || endDate) {
-      filter.createdAt = {};
+      filter.createdAt = filter.createdAt || {};
       if (startDate) {
-        filter.createdAt = { $gte: new Date(startDate) };
+        (filter.createdAt as Record<string, unknown>).$gte = new Date(startDate);
       }
       if (endDate) {
-        filter.createdAt = { $lte: new Date(endDate) };
+        (filter.createdAt as Record<string, unknown>).$lte = new Date(endDate);
       }
     }
 
@@ -782,6 +786,110 @@ export class NotificationService implements OnModuleInit {
         { message: { $regex: search, $options: 'i' } },
         { messageEn: { $regex: search, $options: 'i' } },
       ];
+    }
+
+    if (groupByBatch) {
+      const facetPipeline: unknown[] = [
+        { $match: filter },
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id: { $ifNull: ['$batchId', { $toString: '$_id' }] },
+            first: { $first: '$$ROOT' },
+            recipientCount: { $sum: 1 },
+            sentCount: {
+              $sum: { $cond: [{ $eq: ['$status', NotificationStatus.SENT] }, 1, 0] },
+            },
+            failedCount: {
+              $sum: { $cond: [{ $eq: ['$status', NotificationStatus.FAILED] }, 1, 0] },
+            },
+            pendingCount: {
+              $sum: {
+                $cond: [
+                  {
+                    $in: [
+                      '$status',
+                      [
+                        NotificationStatus.PENDING,
+                        NotificationStatus.QUEUED,
+                        NotificationStatus.SENDING,
+                      ],
+                    ],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            },
+          },
+        },
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: [
+                '$first',
+                {
+                  batchId: '$first.batchId',
+                  recipientCount: '$recipientCount',
+                  sentCount: '$sentCount',
+                  failedCount: '$failedCount',
+                  pendingCount: '$pendingCount',
+                },
+              ],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'recipientId',
+            foreignField: '_id',
+            as: 'userDoc',
+          },
+        },
+        {
+          $addFields: {
+            user: {
+              $cond: {
+                if: { $gt: [{ $size: '$userDoc' }, 0] },
+                then: {
+                  _id: { $toString: { $arrayElemAt: ['$userDoc._id', 0] } },
+                  name: { $arrayElemAt: ['$userDoc.name', 0] },
+                  email: { $arrayElemAt: ['$userDoc.email', 0] },
+                  phone: { $arrayElemAt: ['$userDoc.phone', 0] },
+                },
+                else: null,
+              },
+            },
+          },
+        },
+        { $project: { userDoc: 0 } },
+      ];
+
+      const [facetResult] = await this.notificationModel.aggregate([
+        {
+          $facet: {
+            total: [{ $match: filter }, { $group: { _id: { $ifNull: ['$batchId', { $toString: '$_id' }] } } }, { $count: 'count' }],
+            notifications: [...facetPipeline, { $skip: skip }, { $limit: limit }],
+          },
+        },
+      ]).exec();
+
+      const total = facetResult?.total?.[0]?.count ?? 0;
+      const notifications = facetResult?.notifications ?? [];
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        notifications,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      };
     }
 
     const [notifications, total] = await Promise.all([
@@ -813,10 +921,13 @@ export class NotificationService implements OnModuleInit {
     sent: number;
     failed: number;
     results: Array<{ userId: string; success: boolean; error?: string }>;
+    batchId?: string;
   }> {
     const results: Array<{ userId: string; success: boolean; error?: string }> = [];
     let sent = 0;
     let failed = 0;
+
+    const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     for (const userId of dto.targetUserIds) {
       try {
@@ -833,6 +944,11 @@ export class NotificationService implements OnModuleInit {
           templateKey: dto.templateKey,
           scheduledFor: dto.scheduledFor,
           isSystemGenerated: dto.isSystemGenerated,
+          batchId,
+          actionUrl: dto.actionUrl,
+          navigationType: dto.navigationType,
+          navigationTarget: dto.navigationTarget,
+          navigationParams: dto.navigationParams,
         };
 
         await this.createNotification(notificationData);
@@ -848,8 +964,8 @@ export class NotificationService implements OnModuleInit {
       }
     }
 
-    this.logger.log(`Bulk send completed: ${sent} sent, ${failed} failed`);
-    return { sent, failed, results };
+    this.logger.log(`Bulk send completed: ${sent} sent, ${failed} failed, batchId: ${batchId}`);
+    return { sent, failed, results, batchId };
   }
 
   // ===== Status Management =====
@@ -1876,6 +1992,88 @@ export class NotificationService implements OnModuleInit {
     return {
       notification: notification as UnifiedNotificationDocument,
       logs: logsWithUserInfo,
+      summary,
+    };
+  }
+
+  /**
+   * الحصول على تفاصيل الإرسال لحملة (batch) من الإشعارات
+   */
+  async getBatchDeliveryDetails(batchId: string): Promise<{
+    notification: UnifiedNotificationDocument | null;
+    logs: Array<{
+      _id: string;
+      userId: string;
+      userName?: string;
+      userEmail?: string;
+      status: NotificationStatus;
+      channel: NotificationChannel;
+      sentAt?: Date;
+      deliveredAt?: Date;
+      failedAt?: Date;
+      errorMessage?: string;
+      errorCode?: string;
+      deviceToken?: string;
+      platform?: string;
+      createdAt: Date;
+    }>;
+    summary: {
+      total: number;
+      sent: number;
+      failed: number;
+      pending: number;
+    };
+  }> {
+    const notifications = await this.notificationModel
+      .find({ batchId })
+      .populate('recipientId', 'name email phone')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (notifications.length === 0) {
+      return {
+        notification: null,
+        logs: [],
+        summary: { total: 0, sent: 0, failed: 0, pending: 0 },
+      };
+    }
+
+    const firstNotification = notifications[0];
+    const logs = notifications.map((notif) => {
+      const user = notif.recipientId as any;
+      return {
+        _id: notif._id.toString(),
+        userId: notif.recipientId?.toString() || '',
+        userName: user?.name || 'غير معروف',
+        userEmail: user?.email || 'غير معروف',
+        status: notif.status,
+        channel: notif.channel,
+        sentAt: notif.sentAt,
+        deliveredAt: notif.deliveredAt,
+        failedAt: notif.failedAt,
+        errorMessage: notif.errorMessage,
+        errorCode: notif.errorCode,
+        deviceToken: undefined,
+        platform: undefined,
+        createdAt: notif.createdAt || new Date(),
+      };
+    });
+
+    const summary = {
+      total: logs.length,
+      sent: logs.filter((log) => log.status === NotificationStatus.SENT).length,
+      failed: logs.filter((log) => log.status === NotificationStatus.FAILED).length,
+      pending: logs.filter(
+        (log) =>
+          log.status === NotificationStatus.PENDING ||
+          log.status === NotificationStatus.QUEUED ||
+          log.status === NotificationStatus.SENDING,
+      ).length,
+    };
+
+    return {
+      notification: firstNotification as UnifiedNotificationDocument,
+      logs,
       summary,
     };
   }

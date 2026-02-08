@@ -1,5 +1,5 @@
 import { GridColDef } from '@mui/x-data-grid';
-import { Box, Avatar, Typography } from '@mui/material';
+import { Box, Avatar, Typography, Chip } from '@mui/material';
 import { Notification } from '../types/notification.types';
 import { formatDate } from '@/shared/utils/formatters';
 import { getChannelIcon } from './notificationHelpers';
@@ -131,7 +131,21 @@ export const createNotificationColumns = ({
       minWidth: isMobile ? 120 : 150,
       flex: 1.2,
       renderCell: (params: any) => {
-        const user = params.row.user;
+        const { batchId, recipientCount, user } = params.row;
+        if (batchId && recipientCount != null && recipientCount > 1) {
+          return (
+            <Chip
+              label={t('columns.recipientCount', {
+                count: recipientCount,
+                defaultValue: `${recipientCount} مستلم`,
+              })}
+              size="small"
+              color="primary"
+              variant="outlined"
+              sx={{ fontSize: '0.75rem' }}
+            />
+          );
+        }
         return user ? (
           <Box
             sx={{

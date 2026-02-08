@@ -140,18 +140,16 @@ export const NotificationCreateWizard: React.FC<NotificationCreateWizardProps> =
   const handleNext = () => setActiveStep((prev) => prev + 1);
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // لا ترسل إلا إذا كنا في الخطوة الأخيرة
-    if (activeStep !== 3) return;
-    onSave(formData);
+    // منع الإرسال التلقائي عند الضغط على Enter - الإرسال يتم فقط عند النقر على "إنشاء"
   };
 
   const canProceedStep2 = !!formData.title?.trim() && !!formData.message?.trim();
   const canProceedStep3 = selectedUserIds.length > 0;
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+    <Box component="form" onSubmit={handleFormSubmit} sx={{ mt: 2 }}>
       <Stepper
         activeStep={activeStep}
         sx={{ mb: 3 }}
@@ -625,8 +623,9 @@ export const NotificationCreateWizard: React.FC<NotificationCreateWizardProps> =
             </Button>
           ) : (
             <Button
-              type="submit"
+              type="button"
               variant="contained"
+              onClick={() => onSave(formData)}
               disabled={isLoading}
               size={isMobile ? 'small' : 'medium'}
               aria-label={t('forms.create')}

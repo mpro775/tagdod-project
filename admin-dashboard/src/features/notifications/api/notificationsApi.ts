@@ -55,6 +55,7 @@ export const notificationsApi = {
       params: {
         page: Math.max(1, params.page || 1),
         limit: params.limit || 20,
+        groupByBatch: params.groupByBatch ?? true,
         ...params,
       },
     });
@@ -91,6 +92,13 @@ export const notificationsApi = {
       `/notifications/admin/notification/${id}/delivery-details`
     );
     // Backend returns: { success: true, data: details }
+    return response.data.data || response.data;
+  },
+
+  getBatchDeliveryDetails: async (batchId: string): Promise<NotificationDeliveryDetails> => {
+    const response = await apiClient.get<ApiResponse<NotificationDeliveryDetails>>(
+      `/notifications/admin/batch/${batchId}/delivery-details`
+    );
     return response.data.data || response.data;
   },
 

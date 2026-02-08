@@ -139,6 +139,10 @@ export interface Notification extends BaseEntity {
   };
   groupId?: string;
   batchId?: string;
+  recipientCount?: number;
+  sentCount?: number;
+  failedCount?: number;
+  pendingCount?: number;
   dismissedAt?: Date;
   isArchived: boolean;
   interaction?: {
@@ -284,6 +288,7 @@ export interface ListNotificationsParams extends ListParams {
   status?: NotificationStatus;
   channel?: NotificationChannel;
   category?: NotificationCategory;
+  groupByBatch?: boolean;
   priority?: NotificationPriority;
   search?: string;
   startDate?: string;

@@ -8,6 +8,8 @@
     "status": "Status",
     "priority": "Priority",
     "user": "User",
+    "recipients": "Recipients",
+    "recipientCount": "{{count}} recipients",
     "createdAt": "Created At",
     "sentAt": "Sent At",
     "actions": "Actions"
@@ -177,7 +179,13 @@
     "readAt": "Read At:",
     "actionUrl": "Action URL:",
     "errorInfo": "Additional Information",
-    "close": "Close"
+    "close": "Close",
+    "recipientsCount": "{{count}} recipients",
+    "deliveryDetails": "Delivery Details",
+    "total": "Total",
+    "sent": "Sent",
+    "failed": "Failed",
+    "pending": "Pending"
   },
   "forms": {
     "title": "Title",

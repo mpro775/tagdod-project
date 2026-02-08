@@ -8,6 +8,8 @@
     "status": "الحالة",
     "priority": "الأولوية",
     "user": "المستخدم",
+    "recipients": "المستلمون",
+    "recipientCount": "{{count}} مستلم",
     "createdAt": "تاريخ الإنشاء",
     "sentAt": "تاريخ الإرسال",
     "actions": "الإجراءات"
@@ -177,7 +179,13 @@
     "readAt": "تاريخ القراءة:",
     "actionUrl": "رابط الإجراء:",
     "errorInfo": "معلومات إضافية",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "recipientsCount": "{{count}} مستلم",
+    "deliveryDetails": "تفاصيل الإرسال",
+    "total": "إجمالي",
+    "sent": "نجح",
+    "failed": "فشل",
+    "pending": "قيد الانتظار"
   },
   "forms": {
     "title": "العنوان",

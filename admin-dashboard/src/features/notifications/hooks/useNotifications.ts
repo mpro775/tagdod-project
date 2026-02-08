@@ -49,6 +49,14 @@ export const useNotificationDeliveryDetails = (id: string) => {
   });
 };
 
+export const useBatchDeliveryDetails = (batchId: string) => {
+  return useQuery({
+    queryKey: ['notification-batch-delivery-details', batchId],
+    queryFn: () => notificationsApi.getBatchDeliveryDetails(batchId),
+    enabled: !!batchId,
+  });
+};
+
 export const useNotificationLogs = (params: ListNotificationsParams = {}) => {
   return useQuery({
     queryKey: [NOTIFICATION_LOGS_KEY, params],

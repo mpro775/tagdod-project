@@ -1227,6 +1227,20 @@ export class UnifiedNotificationController {
     return details;
   }
 
+  @Get('admin/batch/:batchId/delivery-details')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: تفاصيل إرسال حملة الإشعارات',
+    description: 'استرداد تفاصيل الإرسال لكل مستلم في الحملة (للإداريين فقط)',
+  })
+  @ApiParam({ name: 'batchId', description: 'معرف الحملة' })
+  @ApiResponse({ status: 200, description: 'Batch delivery details retrieved successfully' })
+  async adminGetBatchDeliveryDetails(@Param('batchId') batchId: string) {
+    const details = await this.notificationService.getBatchDeliveryDetails(batchId);
+    return details;
+  }
+
   // ===== Frequency Limit Admin Endpoints =====
 
   @Get('admin/users/:userId/frequency-stats')

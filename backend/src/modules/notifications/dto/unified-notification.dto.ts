@@ -117,6 +117,11 @@ export class CreateNotificationDto extends BaseNotificationDto {
   @IsOptional()
   @IsBoolean()
   isSystemGenerated?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  batchId?: string;
 }
 
 // ===== Update Notification DTO =====
@@ -224,6 +229,11 @@ export class ListNotificationsDto {
   @IsOptional()
   @IsBoolean()
   includeDeleted?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  groupByBatch?: boolean;
 }
 
 // ===== Mark as Read DTO =====

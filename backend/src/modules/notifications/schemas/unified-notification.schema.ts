@@ -146,6 +146,9 @@ export class UnifiedNotification {
   @Prop({ maxlength: 100 })
   externalId?: string;
 
+  @Prop({ maxlength: 100, index: true })
+  batchId?: string;
+
   // ===== Analytics =====
   @Prop({ type: Number, default: 0 })
   openCount!: number;
@@ -205,6 +208,7 @@ UnifiedNotificationSchema.index({ channel: 1, status: 1, createdAt: -1 });
 UnifiedNotificationSchema.index({ category: 1, status: 1, createdAt: -1 });
 UnifiedNotificationSchema.index({ status: 1, scheduledFor: 1 });
 UnifiedNotificationSchema.index({ trackingId: 1 }, { sparse: true, unique: true });
+UnifiedNotificationSchema.index({ batchId: 1 }, { sparse: true });
 UnifiedNotificationSchema.index({ templateKey: 1, channel: 1 });
 UnifiedNotificationSchema.index({ createdAt: -1 });
 UnifiedNotificationSchema.index({ readAt: 1 }, { sparse: true });

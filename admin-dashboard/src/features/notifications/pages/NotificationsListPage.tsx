@@ -60,6 +60,7 @@ export const NotificationsListPage: React.FC = () => {
     startDate: undefined,
     endDate: undefined,
     includeDeleted: false,
+    groupByBatch: true,
   });
 
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
