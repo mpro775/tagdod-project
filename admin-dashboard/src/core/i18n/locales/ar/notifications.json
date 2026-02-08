@@ -293,7 +293,12 @@
       "order": "الطلبات",
       "payment": "الدفع",
       "shipping": "الشحن",
-      "support": "الدعم"
+      "support": "الدعم",
+      "product": "المنتجات",
+      "promotion": "العروض",
+      "account": "الحساب",
+      "system": "النظام",
+      "marketing": "التسويق"
     },
     "descriptions": {
       "ORDER_CONFIRMED": "إشعار تأكيد الطلب",
@@ -337,6 +342,8 @@
       "keyLabel": "مفتاح القالب",
       "keyPlaceholder": "order_created",
       "keyHelper": "معرف فريد للقالب (لا يمكن تغييره بعد الإنشاء)",
+      "nameLabel": "اسم القالب",
+      "namePlaceholder": "طلب جديد",
       "titleLabel": "عنوان الإشعار",
       "titlePlaceholder": "تم تأكيد طلبك",
       "titleHelper": "العنوان الذي سيظهر في الإشعار",
@@ -352,6 +359,10 @@
     "validation": {
       "keyRequired": "المفتاح مطلوب",
       "keyMax": "المفتاح يجب أن يكون {{max}} حرف أو أقل",
+      "nameRequired": "اسم القالب مطلوب",
+      "nameMax": "الاسم يجب أن يكون {{max}} حرف أو أقل",
+      "categoryRequired": "الفئة مطلوبة",
+      "descriptionMax": "الوصف يجب أن يكون {{max}} حرف أو أقل",
       "titleRequired": "العنوان مطلوب",
       "titleMax": "العنوان يجب أن يكون {{max}} حرف أو أقل",
       "messageRequired": "المحتوى مطلوب",

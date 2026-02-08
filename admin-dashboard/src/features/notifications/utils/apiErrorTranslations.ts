@@ -5,6 +5,8 @@ const VALIDATION_MESSAGES_AR: Record<string, string> = {
   'property id should not exist': 'الحقل id غير مسموح',
   'key must be shorter than or equal to 100 characters': 'المفتاح يجب أن يكون 100 حرف أو أقل',
   'key must be a string': 'المفتاح يجب أن يكون نصاً',
+  'name must be shorter than or equal to 100 characters': 'الاسم يجب أن يكون 100 حرف أو أقل',
+  'name must be a string': 'الاسم يجب أن يكون نصاً',
   'title must be shorter than or equal to 200 characters': 'العنوان يجب أن يكون 200 حرف أو أقل',
   'title must be a string': 'العنوان يجب أن يكون نصاً',
   'message must be shorter than or equal to 1000 characters': 'المحتوى يجب أن يكون 1000 حرف أو أقل',
@@ -13,11 +15,15 @@ const VALIDATION_MESSAGES_AR: Record<string, string> = {
     'المحتوى (إنجليزي) يجب أن يكون 1000 حرف أو أقل',
   'messageEn must be a string': 'المحتوى (إنجليزي) يجب أن يكون نصاً',
   'type must be a string': 'النوع يجب أن يكون نصاً',
+  'category must be one of the following values: order, product, service, promotion, account, system, support, payment, marketing':
+    'الفئة يجب أن تكون واحدة من: order, product, service, promotion, account, system, support, payment, marketing',
   'key should not be empty': 'المفتاح مطلوب',
+  'name should not be empty': 'الاسم مطلوب',
   'title should not be empty': 'العنوان مطلوب',
   'message should not be empty': 'المحتوى مطلوب',
   'messageEn should not be empty': 'المحتوى (إنجليزي) مطلوب',
   'type should not be empty': 'النوع مطلوب',
+  'category should not be empty': 'الفئة مطلوبة',
 };
 
 export function translateApiValidationErrors(message: string | string[]): string {

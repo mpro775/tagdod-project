@@ -320,24 +320,23 @@ export interface MarkAsReadDto {
 }
 
 /**
- * Create template DTO - matches backend API (key, title, message, messageEn, type - no channels)
+ * Create template DTO - matches backend API (name, category - no channels)
  */
 export interface CreateTemplateDto {
-  key: string;
-  title: string;
-  message: string;
-  messageEn: string;
-  type: string;
+  name: string;
+  category: string;
+  description?: string;
+  variables?: string[];
 }
 
 /**
  * Update template DTO - matches backend API
  */
 export interface UpdateTemplateDto {
-  title?: string;
-  message?: string;
-  messageEn?: string;
-  type?: string;
+  name?: string;
+  category?: string;
+  description?: string;
+  variables?: string[];
 }
 
 export interface UpdatePreferenceDto {
