@@ -34,7 +34,7 @@
   },
   "channels": {
     "IN_APP": "In App",
-    "PUSH": "Push Notification",
+    "PUSH": "Out of App",
     "SMS": "SMS",
     "EMAIL": "Email",
     "DASHBOARD": "Dashboard"
@@ -301,7 +301,7 @@
     "percentageOfTotal": "of total notifications",
     "channels": {
       "inapp": "In App",
-      "push": "Push Notification",
+      "push": "Out of App",
       "sms": "SMS",
       "email": "Email"
     }
