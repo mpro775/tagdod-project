@@ -31,21 +31,30 @@ import {
   useCreateTemplate,
   useUpdateTemplate,
 } from '../hooks/useNotifications';
-import { NotificationTemplate } from '../types/notification.types';
+import { NotificationTemplate, NotificationType } from '../types/notification.types';
 import { TestNotificationForm } from '../components/TestNotificationForm';
+import { translateApiValidationErrors } from '../utils/apiErrorTranslations';
+import { AxiosError } from 'axios';
+import toast from 'react-hot-toast';
+
+const KEY_MAX = 100;
+const TITLE_MAX = 200;
+const MESSAGE_MAX = 1000;
 
 interface EditFormData {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
+  key: string;
+  title: string;
+  message: string;
+  messageEn: string;
+  type: string;
 }
 
 const DEFAULT_EDIT_FORM: EditFormData = {
-  id: '',
-  name: '',
-  description: '',
-  category: 'order',
+  key: '',
+  title: '',
+  message: '',
+  messageEn: '',
+  type: NotificationType.ORDER_CONFIRMED,
 };
 
 export const NotificationTemplatesPage: React.FC = () => {
@@ -56,6 +65,7 @@ export const NotificationTemplatesPage: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<EditFormData>(DEFAULT_EDIT_FORM);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const { data: templates = [], isLoading } = useNotificationTemplates();
   const { mutate: testNotification, isPending: isTesting } = useTestNotification();
@@ -64,13 +74,15 @@ export const NotificationTemplatesPage: React.FC = () => {
 
   useEffect(() => {
     if (editDialogOpen) {
+      setFormErrors({});
       if (selectedTemplate) {
         setEditFormData({
-          id: selectedTemplate.key || selectedTemplate.id || '',
-          name: selectedTemplate.name || selectedTemplate.title || '',
-          description:
-            selectedTemplate.description || selectedTemplate.body || selectedTemplate.message || '',
-          category: (selectedTemplate.category as string) || 'order',
+          key: selectedTemplate.key || selectedTemplate.id || '',
+          title: selectedTemplate.title || selectedTemplate.name || '',
+          message:
+            selectedTemplate.message || selectedTemplate.body || selectedTemplate.description || '',
+          messageEn: selectedTemplate.messageEn || selectedTemplate.description || '',
+          type: selectedTemplate.type || NotificationType.ORDER_CONFIRMED,
         });
       } else {
         setEditFormData(DEFAULT_EDIT_FORM);
@@ -105,16 +117,45 @@ export const NotificationTemplatesPage: React.FC = () => {
     );
   };
 
+  const validateForm = (): boolean => {
+    const err: Record<string, string> = {};
+    const key = editFormData.key.trim();
+    const title = editFormData.title.trim();
+    const message = editFormData.message.trim();
+    const messageEn = editFormData.messageEn.trim();
+
+    if (!key) err.key = t('templates.validation.keyRequired');
+    else if (key.length > KEY_MAX) err.key = t('templates.validation.keyMax', { max: KEY_MAX });
+
+    if (!title) err.title = t('templates.validation.titleRequired');
+    else if (title.length > TITLE_MAX)
+      err.title = t('templates.validation.titleMax', { max: TITLE_MAX });
+
+    if (!message) err.message = t('templates.validation.messageRequired');
+    else if (message.length > MESSAGE_MAX)
+      err.message = t('templates.validation.messageMax', { max: MESSAGE_MAX });
+
+    if (!messageEn) err.messageEn = t('templates.validation.messageEnRequired');
+    else if (messageEn.length > MESSAGE_MAX)
+      err.messageEn = t('templates.validation.messageEnMax', { max: MESSAGE_MAX });
+
+    setFormErrors(err);
+    return Object.keys(err).length === 0;
+  };
+
   const handleSaveTemplate = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     if (selectedTemplate) {
       updateTemplate(
         {
           key: selectedTemplate.key || selectedTemplate.id || '',
           data: {
-            name: editFormData.name,
-            description: editFormData.description,
-            category: editFormData.category,
+            title: editFormData.title,
+            message: editFormData.message,
+            messageEn: editFormData.messageEn,
+            type: editFormData.type,
           },
         },
         {
@@ -122,22 +163,39 @@ export const NotificationTemplatesPage: React.FC = () => {
             setEditDialogOpen(false);
             setSelectedTemplate(null);
             setEditFormData(DEFAULT_EDIT_FORM);
+          },
+          onError: (err) => {
+            if (err instanceof AxiosError) {
+              const msg = err.response?.data?.error?.message;
+              toast.error(translateApiValidationErrors(msg || ''));
+            } else {
+              toast.error('حدث خطأ عند تحديث القالب');
+            }
           },
         }
       );
     } else {
       createTemplate(
         {
-          id: editFormData.id,
-          name: editFormData.name,
-          description: editFormData.description,
-          category: editFormData.category,
+          key: editFormData.key,
+          title: editFormData.title,
+          message: editFormData.message,
+          messageEn: editFormData.messageEn,
+          type: editFormData.type,
         },
         {
           onSuccess: () => {
             setEditDialogOpen(false);
             setSelectedTemplate(null);
             setEditFormData(DEFAULT_EDIT_FORM);
+          },
+          onError: (err) => {
+            if (err instanceof AxiosError) {
+              const msg = err.response?.data?.error?.message;
+              toast.error(translateApiValidationErrors(msg || ''));
+            } else {
+              toast.error('حدث خطأ عند إنشاء القالب');
+            }
           },
         }
       );
@@ -425,59 +483,101 @@ export const NotificationTemplatesPage: React.FC = () => {
               {t('templates.editDialog.warning')}
             </Alert>
 
+            {Object.keys(formErrors).length > 0 && (
+              <Alert severity="error" sx={{ mb: 2, fontSize: isMobile ? '0.875rem' : undefined }}>
+                {Object.values(formErrors).map((err, i) => (
+                  <Typography key={i} component="div" variant="body2">
+                    • {err}
+                  </Typography>
+                ))}
+              </Alert>
+            )}
+
             <Stack spacing={2} sx={{ mt: 1 }}>
               <TextField
                 fullWidth
                 label={t('templates.editDialog.keyLabel')}
-                value={editFormData.id}
+                value={editFormData.key}
                 onChange={(e) =>
                   setEditFormData((prev) => ({
                     ...prev,
-                    id: e.target.value.toLowerCase().replace(/\s+/g, '_'),
+                    key: e.target.value.toLowerCase().replace(/\s+/g, '_'),
                   }))
                 }
                 placeholder={t('templates.editDialog.keyPlaceholder')}
                 disabled={!!selectedTemplate}
-                helperText={t('templates.editDialog.keyHelper')}
+                helperText={
+                  formErrors.key ||
+                  `${t('templates.editDialog.keyHelper')} (${KEY_MAX} ${t(
+                    'templates.validation.charsMax'
+                  )})`
+                }
+                error={!!formErrors.key}
+                inputProps={{ maxLength: KEY_MAX }}
                 size={isMobile ? 'small' : 'medium'}
               />
 
               <TextField
                 fullWidth
                 label={t('templates.editDialog.titleLabel')}
-                value={editFormData.name}
-                onChange={(e) => setEditFormData((prev) => ({ ...prev, name: e.target.value }))}
+                value={editFormData.title}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, title: e.target.value }))}
                 placeholder={t('templates.editDialog.titlePlaceholder')}
-                helperText={t('templates.editDialog.titleHelper')}
+                helperText={formErrors.title || `${editFormData.title.length}/${TITLE_MAX}`}
+                error={!!formErrors.title}
+                inputProps={{ maxLength: TITLE_MAX }}
                 size={isMobile ? 'small' : 'medium'}
               />
 
               <TextField
                 fullWidth
                 label={t('templates.editDialog.bodyLabel')}
-                value={editFormData.description}
-                onChange={(e) =>
-                  setEditFormData((prev) => ({ ...prev, description: e.target.value }))
-                }
+                value={editFormData.message}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, message: e.target.value }))}
                 placeholder={t('templates.editDialog.bodyPlaceholder')}
                 multiline
                 rows={isMobile ? 3 : 4}
-                helperText={t('templates.editDialog.bodyHelper')}
+                helperText={
+                  formErrors.message ||
+                  `${t('templates.editDialog.bodyHelper')} (${MESSAGE_MAX} ${t(
+                    'templates.validation.charsMax'
+                  )})`
+                }
+                error={!!formErrors.message}
+                inputProps={{ maxLength: MESSAGE_MAX }}
+                size={isMobile ? 'small' : 'medium'}
+              />
+
+              <TextField
+                fullWidth
+                label={t('templates.editDialog.bodyEnLabel')}
+                value={editFormData.messageEn}
+                onChange={(e) =>
+                  setEditFormData((prev) => ({ ...prev, messageEn: e.target.value }))
+                }
+                placeholder={t('templates.editDialog.bodyEnPlaceholder')}
+                multiline
+                rows={isMobile ? 2 : 3}
+                helperText={
+                  formErrors.messageEn || `${editFormData.messageEn.length}/${MESSAGE_MAX}`
+                }
+                error={!!formErrors.messageEn}
+                inputProps={{ maxLength: MESSAGE_MAX }}
                 size={isMobile ? 'small' : 'medium'}
               />
 
               <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
-                <InputLabel>{t('templates.editDialog.categoryLabel')}</InputLabel>
+                <InputLabel>{t('templates.editDialog.typeLabel')}</InputLabel>
                 <Select
-                  value={editFormData.category}
-                  label={t('templates.editDialog.categoryLabel')}
+                  value={editFormData.type}
+                  label={t('templates.editDialog.typeLabel')}
                   onChange={(e: { target: { value: string } }) =>
-                    setEditFormData((prev) => ({ ...prev, category: e.target.value }))
+                    setEditFormData((prev) => ({ ...prev, type: e.target.value }))
                   }
                 >
-                  {TEMPLATE_CATEGORIES.map((c) => (
-                    <MenuItem key={c.value} value={c.value}>
-                      {c.label}
+                  {Object.values(NotificationType).map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {t(`types.${type}`)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -502,9 +602,10 @@ export const NotificationTemplatesPage: React.FC = () => {
               disabled={
                 isCreating ||
                 isUpdating ||
-                !editFormData.id?.trim() ||
-                !editFormData.name?.trim() ||
-                !editFormData.description?.trim()
+                !editFormData.key?.trim() ||
+                !editFormData.title?.trim() ||
+                !editFormData.message?.trim() ||
+                !editFormData.messageEn?.trim()
               }
               size={isMobile ? 'small' : 'medium'}
             >

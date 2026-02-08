@@ -156,7 +156,7 @@ export const useCreateTemplate = () => {
       toast.success('تم إنشاء القالب بنجاح');
       queryClient.invalidateQueries({ queryKey: [NOTIFICATION_TEMPLATES_KEY] });
     },
-    onError: ErrorHandler.showError,
+    // Caller handles onError for custom Arabic messages
   });
 };
 
@@ -169,7 +169,7 @@ export const useUpdateTemplate = () => {
       toast.success('تم تحديث القالب بنجاح');
       queryClient.invalidateQueries({ queryKey: [NOTIFICATION_TEMPLATES_KEY] });
     },
-    onError: ErrorHandler.showError,
+    // Caller handles onError for custom Arabic messages
   });
 };
 

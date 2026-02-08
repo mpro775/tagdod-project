@@ -320,46 +320,24 @@ export interface MarkAsReadDto {
 }
 
 /**
- * Create template DTO - matches backend API (no channels)
+ * Create template DTO - matches backend API (key, title, message, messageEn, type - no channels)
  */
 export interface CreateTemplateDto {
-  id: string;
-  name: string;
-  description?: string;
-  category: string;
-  variables?: string[];
-}
-
-/**
- * Legacy create template (for backward compatibility)
- */
-export interface CreateTemplateDtoLegacy {
-  name: string;
   key: string;
   title: string;
   message: string;
   messageEn: string;
-  template?: string;
-  channels?: {
-    inApp: boolean;
-    push: boolean;
-    sms: boolean;
-    email: boolean;
-  };
-  type?: string;
-  category: NotificationCategory;
-  description?: string;
-  variables?: Record<string, unknown> | string[];
+  type: string;
 }
 
 /**
- * Update template DTO - matches backend API (no channels)
+ * Update template DTO - matches backend API
  */
 export interface UpdateTemplateDto {
-  name?: string;
-  description?: string;
-  category?: string;
-  variables?: string[];
+  title?: string;
+  message?: string;
+  messageEn?: string;
+  type?: string;
 }
 
 export interface UpdatePreferenceDto {

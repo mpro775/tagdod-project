@@ -343,8 +343,22 @@
       "bodyLabel": "Notification Content",
       "bodyPlaceholder": "Order number {{orderId}} with amount {{amount}} {{currency}}",
       "bodyHelper": "Use {{variable}} to insert dynamic variables",
+      "bodyEnLabel": "Notification content (English)",
+      "bodyEnPlaceholder": "Order {{orderId}} with amount {{amount}}",
       "categoryLabel": "Category",
+      "typeLabel": "Notification type",
       "availableVariables": "Available variables: orderId, amount, currency, requestId, engineerName"
+    },
+    "validation": {
+      "keyRequired": "Template key is required",
+      "keyMax": "Key must be {{max}} characters or less",
+      "titleRequired": "Title is required",
+      "titleMax": "Title must be {{max}} characters or less",
+      "messageRequired": "Content is required",
+      "messageMax": "Content must be {{max}} characters or less",
+      "messageEnRequired": "English content is required",
+      "messageEnMax": "English content must be {{max}} characters or less",
+      "charsMax": "characters max"
     }
   }
 }

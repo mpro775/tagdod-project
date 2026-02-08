@@ -343,8 +343,22 @@
       "bodyLabel": "محتوى الإشعار",
       "bodyPlaceholder": "رقم الطلب {{orderId}} بمبلغ {{amount}} {{currency}}",
       "bodyHelper": "استخدم {{متغير}} لإدراج المتغيرات الديناميكية",
+      "bodyEnLabel": "محتوى الإشعار (إنجليزي)",
+      "bodyEnPlaceholder": "Order {{orderId}} with amount {{amount}}",
       "categoryLabel": "الفئة",
+      "typeLabel": "نوع الإشعار",
       "availableVariables": "المتغيرات المتاحة: orderId, amount, currency, requestId, engineerName"
+    },
+    "validation": {
+      "keyRequired": "المفتاح مطلوب",
+      "keyMax": "المفتاح يجب أن يكون {{max}} حرف أو أقل",
+      "titleRequired": "العنوان مطلوب",
+      "titleMax": "العنوان يجب أن يكون {{max}} حرف أو أقل",
+      "messageRequired": "المحتوى مطلوب",
+      "messageMax": "المحتوى يجب أن يكون {{max}} حرف أو أقل",
+      "messageEnRequired": "المحتوى (إنجليزي) مطلوب",
+      "messageEnMax": "المحتوى (إنجليزي) يجب أن يكون {{max}} حرف أو أقل",
+      "charsMax": "حرف كحد أقصى"
     }
   }
 }

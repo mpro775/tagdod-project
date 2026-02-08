@@ -22,7 +22,8 @@ export class ErrorHandler {
       
       // New unified format: { success: false, error: { code, message, details } }
       if (data?.error?.message) {
-        return data.error.message;
+        const msg = data.error.message;
+        return Array.isArray(msg) ? msg.join('\n') : String(msg);
       }
       
       // Legacy format: { message: string }
