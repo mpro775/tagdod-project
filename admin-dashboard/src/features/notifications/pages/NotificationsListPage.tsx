@@ -203,8 +203,10 @@ export const NotificationsListPage: React.FC = () => {
     }
 
     if (recipientIds.length > 1) {
+      // bulk-send لا يقبل recipientId, recipientEmail, recipientPhone
+      const { recipientId: _r, recipientEmail: _e, recipientPhone: _p, ...restData } = data;
       const bulkData: BulkSendNotificationDto = {
-        ...data,
+        ...restData,
         targetUserIds: recipientIds,
       };
       bulkSendNotification(bulkData, {
