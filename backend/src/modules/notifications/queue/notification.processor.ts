@@ -16,8 +16,9 @@ import {
 import { NotificationLog, NotificationLogDocument } from '../schemas/notification-log.schema';
 import { NotificationStatus, NotificationChannel, DevicePlatform } from '../enums/notification.enums';
 import { WebSocketService } from '../../../shared/websocket/websocket.service';
-import { PushNotificationAdapter } from '../adapters/notification.adapters';
+import { PushNotificationAdapter, SmsNotificationAdapter } from '../adapters/notification.adapters';
 import { DeviceToken, DeviceTokenDocument } from '../schemas/device-token.schema';
+import { User, UserDocument } from '../../users/schemas/user.schema';
 
 @Processor(NOTIFICATION_QUEUE)
 export class NotificationProcessor {
@@ -30,8 +31,11 @@ export class NotificationProcessor {
     private readonly notificationLogModel: Model<NotificationLogDocument>,
     @InjectModel(DeviceToken.name)
     private readonly deviceTokenModel: Model<DeviceTokenDocument>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
     private readonly webSocketService: WebSocketService,
     private readonly pushNotificationAdapter: PushNotificationAdapter,
+    private readonly smsNotificationAdapter: SmsNotificationAdapter,
     @Inject(forwardRef(() => NotificationQueueService))
     private readonly queueService: NotificationQueueService,
   ) {}
@@ -274,6 +278,56 @@ export class NotificationProcessor {
   }
 
   /**
+   * محاولة القنوات البديلة عند عدم وجود device token (IN_APP ثم SMS)
+   */
+  private async tryFallbackChannels(
+    data: NotificationJobData,
+    logId?: string,
+  ): Promise<{ success: boolean; error?: string; errorCode?: string }> {
+    // 1. محاولة IN_APP (WebSocket)
+    const inAppResult = await this.sendInApp(data, logId);
+    if (inAppResult.success) {
+      this.logger.log(`Fallback IN_APP succeeded for user ${data.recipientId}`);
+      return inAppResult;
+    }
+
+    // 2. محاولة SMS
+    const user = await this.userModel.findById(data.recipientId).select('phone').lean();
+    if (user?.phone) {
+      try {
+        const smsResult = await this.smsNotificationAdapter.send({
+          id: data.notificationId,
+          type: data.type,
+          title: data.title,
+          message: data.message,
+          messageEn: data.messageEn || '',
+          channel: NotificationChannel.SMS,
+          priority: data.priority,
+          recipientId: data.recipientId,
+          recipientPhone: user.phone,
+        });
+        if (smsResult.success) {
+          this.logger.log(`Fallback SMS succeeded for user ${data.recipientId}`);
+          if (logId) {
+            await this.updateNotificationLog(logId, NotificationStatus.SENT);
+          }
+          return { success: true };
+        }
+      } catch (err) {
+        this.logger.warn(`SMS fallback failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // كل القنوات البديلة فشلت
+    const errorMsg =
+      'No active device tokens found. Fallback channels (IN_APP, SMS) failed or unavailable.';
+    if (logId) {
+      await this.updateNotificationLog(logId, NotificationStatus.FAILED, errorMsg, 'NO_DEVICE_TOKEN');
+    }
+    return { success: false, error: errorMsg, errorCode: 'NO_DEVICE_TOKEN' };
+  }
+
+  /**
    * Send push notification via FCM
    */
   private async sendPush(
@@ -301,16 +355,8 @@ export class NotificationProcessor {
       .lean();
 
     if (deviceTokens.length === 0) {
-      this.logger.debug(`No active device tokens for user ${data.recipientId}`);
-      if (logId) {
-        await this.updateNotificationLog(
-          logId,
-          NotificationStatus.FAILED,
-          'No active device tokens found',
-          'NO_DEVICE_TOKEN',
-        );
-      }
-      return { success: false, error: 'No active device tokens found', errorCode: 'NO_DEVICE_TOKEN' };
+      this.logger.debug(`No active device tokens for user ${data.recipientId}, trying fallback channels`);
+      return await this.tryFallbackChannels(data, logId);
     }
 
     let successCount = 0;

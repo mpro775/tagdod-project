@@ -26,7 +26,7 @@ import {
   ErrorCode,
 } from '../../../shared/exceptions';
 import { WebSocketService } from '../../../shared/websocket/websocket.service';
-import { PushNotificationAdapter } from '../adapters/notification.adapters';
+import { PushNotificationAdapter, SmsNotificationAdapter } from '../adapters/notification.adapters';
 import { DeviceToken, DeviceTokenDocument } from '../schemas/device-token.schema';
 import { User, UserDocument, UserStatus, UserRole } from '../../users/schemas/user.schema';
 import {
@@ -53,6 +53,7 @@ export class NotificationService implements OnModuleInit {
     private userModel: Model<UserDocument>,
     private readonly webSocketService: WebSocketService,
     private readonly pushNotificationAdapter: PushNotificationAdapter,
+    private readonly smsNotificationAdapter: SmsNotificationAdapter,
     private readonly channelConfigService: NotificationChannelConfigService,
     private readonly queueService: NotificationQueueService,
   ) {}
@@ -1197,6 +1198,64 @@ export class NotificationService implements OnModuleInit {
   // ===== Push Notification Sending =====
 
   /**
+   * محاولة القنوات البديلة عند عدم وجود device token (IN_APP ثم SMS)
+   */
+  private async tryPushFallbackChannels(
+    notification: UnifiedNotificationDocument,
+    userId: string,
+  ): Promise<void> {
+    // 1. محاولة IN_APP (WebSocket)
+    const sentViaWebSocket = this.webSocketService.sendToUser(
+      userId,
+      'notification:new',
+      {
+        id: notification._id.toString(),
+        title: notification.title,
+        message: notification.message,
+        messageEn: notification.messageEn,
+        type: notification.type,
+        priority: notification.priority,
+        data: notification.data,
+        createdAt: new Date(),
+        isRead: false,
+      },
+      '/notifications',
+    );
+    if (sentViaWebSocket) {
+      this.logger.log(`Fallback IN_APP succeeded for user ${userId}`);
+      return;
+    }
+
+    // 2. محاولة SMS
+    const user = await this.userModel.findById(userId).select('phone').lean();
+    if (user?.phone) {
+      try {
+        const smsResult = await this.smsNotificationAdapter.send({
+          id: notification._id.toString(),
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          messageEn: notification.messageEn || '',
+          channel: NotificationChannel.SMS,
+          priority: notification.priority,
+          recipientId: userId,
+          recipientPhone: user.phone,
+        });
+        if (smsResult.success) {
+          this.logger.log(`Fallback SMS succeeded for user ${userId}`);
+          return;
+        }
+      } catch (err) {
+        this.logger.warn(`SMS fallback failed for user ${userId}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    this.logger.warn(
+      `All fallback channels failed for user ${userId}. No device token, IN_APP and SMS unavailable or failed.`,
+    );
+  }
+
+  /**
    * إرسال Push Notification للمستخدم
    */
   async sendPushNotification(
@@ -1213,7 +1272,8 @@ export class NotificationService implements OnModuleInit {
         .lean();
 
       if (deviceTokens.length === 0) {
-        this.logger.debug(`No active device tokens found for user ${userId}`);
+        this.logger.debug(`No active device tokens found for user ${userId}, trying fallback channels`);
+        await this.tryPushFallbackChannels(notification, userId);
         return;
       }
 
@@ -1971,7 +2031,7 @@ export class NotificationService implements OnModuleInit {
       const user = log.userId as any;
       return {
         _id: log._id.toString(),
-        userId: log.userId.toString(),
+        userId: user?._id?.toString() || log.userId?.toString() || '',
         userName: user?.name || 'غير معروف',
         userEmail: user?.email || 'غير معروف',
         status: log.status,
@@ -2049,7 +2109,7 @@ export class NotificationService implements OnModuleInit {
       const user = notif.recipientId as any;
       return {
         _id: notif._id.toString(),
-        userId: notif.recipientId?.toString() || '',
+        userId: user?._id?.toString() || notif.recipientId?.toString() || '',
         userName: user?.name || 'غير معروف',
         userEmail: user?.email || 'غير معروف',
         status: notif.status,
