@@ -289,7 +289,11 @@
     "categories": {
       "orders": "الطلبات",
       "services": "الخدمات",
-      "general": "عام"
+      "general": "عام",
+      "order": "الطلبات",
+      "payment": "الدفع",
+      "shipping": "الشحن",
+      "support": "الدعم"
     },
     "descriptions": {
       "ORDER_CONFIRMED": "إشعار تأكيد الطلب",
@@ -331,7 +335,7 @@
       "createTitle": "إضافة قالب جديد",
       "warning": "تحذير: تعديل القوالب الموجودة قد يؤثر على الإشعارات الموجودة في النظام",
       "keyLabel": "مفتاح القالب",
-      "keyPlaceholder": "ORDER_CONFIRMED",
+      "keyPlaceholder": "order_created",
       "keyHelper": "معرف فريد للقالب (لا يمكن تغييره بعد الإنشاء)",
       "titleLabel": "عنوان الإشعار",
       "titlePlaceholder": "تم تأكيد طلبك",
@@ -339,6 +343,7 @@
       "bodyLabel": "محتوى الإشعار",
       "bodyPlaceholder": "رقم الطلب {{orderId}} بمبلغ {{amount}} {{currency}}",
       "bodyHelper": "استخدم {{متغير}} لإدراج المتغيرات الديناميكية",
+      "categoryLabel": "الفئة",
       "availableVariables": "المتغيرات المتاحة: orderId, amount, currency, requestId, engineerName"
     }
   }

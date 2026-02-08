@@ -119,15 +119,15 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
   };
 
   const handleTemplateChange = (templateKey: string) => {
-    const template = templates.find((t) => t.key === templateKey);
+    const template = templates.find((t) => (t.key || t.id) === templateKey);
     if (template) {
       setFormData((prev) => ({
         ...prev,
         templateKey,
-        title: template.title,
-        message: template.message,
-        messageEn: template.messageEn,
-        category: template.category,
+        title: template.title || template.name,
+        message: template.message || template.body || template.description || '',
+        messageEn: template.messageEn || template.description || '',
+        category: template.category as NotificationCategory,
       }));
     }
   };
@@ -157,11 +157,14 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
               aria-label={t('forms.template')}
             >
               <MenuItem value="">{t('forms.noTemplate')}</MenuItem>
-              {templates.map((template) => (
-                <MenuItem key={template.key} value={template.key}>
-                  {template.name} - {template.title}
-                </MenuItem>
-              ))}
+              {templates.map((template) => {
+                const k = template.key || template.id;
+                return (
+                  <MenuItem key={k} value={k}>
+                    {template.name || template.title} - {template.title || template.name}
+                  </MenuItem>
+                );
+              })}
             </Select>
           </FormControl>
         )}

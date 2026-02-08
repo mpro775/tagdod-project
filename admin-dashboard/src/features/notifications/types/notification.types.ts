@@ -158,8 +158,20 @@ export interface Notification extends BaseEntity {
   };
 }
 
+/**
+ * API response format for templates (backend returns id, name, description, category, variables[])
+ */
+export interface ApiTemplateResponse {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  variables?: string[];
+}
+
 export interface NotificationTemplate {
   _id?: string;
+  id?: string;
   name: string;
   key: string;
   title: string;
@@ -167,14 +179,14 @@ export interface NotificationTemplate {
   message: string;
   messageEn: string;
   template?: string;
-  channels: {
+  channels?: {
     inApp: boolean;
     push: boolean;
     sms: boolean;
     email: boolean;
   };
-  type: string;
-  category: NotificationCategory;
+  type?: string;
+  category: NotificationCategory | string;
   description?: string;
   hasLink?: boolean;
   variables?: Record<
@@ -185,9 +197,9 @@ export interface NotificationTemplate {
       defaultValue?: unknown;
       description?: string;
     }
-  >;
+  > | string[];
   exampleData?: Record<string, unknown>;
-  isActive: boolean;
+  isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -307,48 +319,47 @@ export interface MarkAsReadDto {
   notificationIds: string[];
 }
 
+/**
+ * Create template DTO - matches backend API (no channels)
+ */
 export interface CreateTemplateDto {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  variables?: string[];
+}
+
+/**
+ * Legacy create template (for backward compatibility)
+ */
+export interface CreateTemplateDtoLegacy {
   name: string;
   key: string;
   title: string;
   message: string;
   messageEn: string;
   template?: string;
-  channels: {
+  channels?: {
     inApp: boolean;
     push: boolean;
     sms: boolean;
     email: boolean;
   };
-  type: string;
+  type?: string;
   category: NotificationCategory;
   description?: string;
-  variables?: Record<
-    string,
-    {
-      type: 'string' | 'number' | 'boolean' | 'date';
-      required: boolean;
-      defaultValue?: unknown;
-      description?: string;
-    }
-  >;
-  exampleData?: Record<string, unknown>;
+  variables?: Record<string, unknown> | string[];
 }
 
+/**
+ * Update template DTO - matches backend API (no channels)
+ */
 export interface UpdateTemplateDto {
   name?: string;
-  title?: string;
-  message?: string;
-  messageEn?: string;
-  template?: string;
-  channels?: {
-    inApp?: boolean;
-    push?: boolean;
-    sms?: boolean;
-    email?: boolean;
-  };
   description?: string;
-  isActive?: boolean;
+  category?: string;
+  variables?: string[];
 }
 
 export interface UpdatePreferenceDto {

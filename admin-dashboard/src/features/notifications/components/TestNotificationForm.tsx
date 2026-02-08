@@ -71,10 +71,13 @@ export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
   useEffect(() => {
     if (initialTemplateKey) {
       setTemplateKey(initialTemplateKey);
-      const tpl = templates.find((t) => t.key === initialTemplateKey);
+      const tpl = templates.find(
+        (t) => t.key === initialTemplateKey || t.id === initialTemplateKey
+      );
       if (tpl) {
-        const body = tpl.body || tpl.message || '';
-        const vars = extractVariables(body);
+        const vars = Array.isArray(tpl.variables)
+          ? tpl.variables
+          : extractVariables(tpl.body || tpl.message || tpl.description || '');
         const initial: Record<string, string> = {};
         for (const v of vars) {
           initial[v] =
@@ -118,7 +121,8 @@ export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
 
   const previewBody = useMemo(() => {
     if (!selectedTemplate) return '';
-    const body = selectedTemplate.body || selectedTemplate.message || '';
+    const body =
+      selectedTemplate.body || selectedTemplate.message || selectedTemplate.description || '';
     return body.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, varName) => {
       const val = variableValues[varName];
       return val !== undefined && val !== ''
@@ -129,10 +133,11 @@ export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
 
   const handleTemplateChange = (key: string) => {
     setTemplateKey(key);
-    const tpl = templates.find((t) => t.key === key);
+    const tpl = templates.find((t) => (t.key || t.id) === key);
     if (tpl) {
-      const body = tpl.body || tpl.message || '';
-      const vars = extractVariables(body);
+      const vars = Array.isArray(tpl.variables)
+        ? tpl.variables
+        : extractVariables(tpl.body || tpl.message || tpl.description || '');
       const initial: Record<string, string> = {};
       for (const v of vars) {
         initial[v] =
@@ -211,11 +216,14 @@ export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
             size={isMobile ? 'small' : 'medium'}
             aria-label={t('forms.template')}
           >
-            {templates.map((template) => (
-              <MenuItem key={template.key} value={template.key}>
-                {template.name} - {template.title}
-              </MenuItem>
-            ))}
+            {templates.map((template) => {
+              const k = template.key || template.id;
+              return (
+                <MenuItem key={k} value={k}>
+                  {template.name || template.title} - {template.title || template.name}
+                </MenuItem>
+              );
+            })}
           </Select>
         </FormControl>
 
@@ -237,8 +245,14 @@ export const TestNotificationForm: React.FC<TestNotificationFormProps> = ({
                   placeholder={t('templates.testDialog.variablePlaceholder')}
                   disabled={isLoading}
                   helperText={
-                    selectedTemplate?.variables?.[varName]?.description
-                      ? String(selectedTemplate.variables[varName].description)
+                    selectedTemplate?.variables &&
+                    !Array.isArray(selectedTemplate.variables) &&
+                    selectedTemplate.variables[varName]?.description
+                      ? String(
+                          (selectedTemplate.variables as Record<string, { description?: string }>)[
+                            varName
+                          ].description
+                        )
                       : undefined
                   }
                 />

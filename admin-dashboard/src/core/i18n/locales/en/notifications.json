@@ -289,7 +289,11 @@
     "categories": {
       "orders": "Orders",
       "services": "Services",
-      "general": "General"
+      "general": "General",
+      "order": "Orders",
+      "payment": "Payment",
+      "shipping": "Shipping",
+      "support": "Support"
     },
     "descriptions": {
       "ORDER_CONFIRMED": "Order Confirmation Notification",
@@ -339,6 +343,7 @@
       "bodyLabel": "Notification Content",
       "bodyPlaceholder": "Order number {{orderId}} with amount {{amount}} {{currency}}",
       "bodyHelper": "Use {{variable}} to insert dynamic variables",
+      "categoryLabel": "Category",
       "availableVariables": "Available variables: orderId, amount, currency, requestId, engineerName"
     }
   }

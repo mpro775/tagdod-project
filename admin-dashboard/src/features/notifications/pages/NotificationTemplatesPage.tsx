@@ -17,6 +17,10 @@ import {
   Grid,
   useTheme,
   Stack,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
 } from '@mui/material';
 import { Add, Edit, Send, Code } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -28,19 +32,20 @@ import {
   useUpdateTemplate,
 } from '../hooks/useNotifications';
 import { NotificationTemplate } from '../types/notification.types';
-import { NotificationCategory } from '../types/notification.types';
 import { TestNotificationForm } from '../components/TestNotificationForm';
 
 interface EditFormData {
-  key: string;
-  title: string;
-  body: string;
+  id: string;
+  name: string;
+  description: string;
+  category: string;
 }
 
 const DEFAULT_EDIT_FORM: EditFormData = {
-  key: '',
-  title: '',
-  body: '',
+  id: '',
+  name: '',
+  description: '',
+  category: 'order',
 };
 
 export const NotificationTemplatesPage: React.FC = () => {
@@ -61,9 +66,11 @@ export const NotificationTemplatesPage: React.FC = () => {
     if (editDialogOpen) {
       if (selectedTemplate) {
         setEditFormData({
-          key: selectedTemplate.key,
-          title: selectedTemplate.title || '',
-          body: selectedTemplate.body || selectedTemplate.message || '',
+          id: selectedTemplate.key || selectedTemplate.id || '',
+          name: selectedTemplate.name || selectedTemplate.title || '',
+          description:
+            selectedTemplate.description || selectedTemplate.body || selectedTemplate.message || '',
+          category: (selectedTemplate.category as string) || 'order',
         });
       } else {
         setEditFormData(DEFAULT_EDIT_FORM);
@@ -103,11 +110,11 @@ export const NotificationTemplatesPage: React.FC = () => {
     if (selectedTemplate) {
       updateTemplate(
         {
-          key: selectedTemplate.key,
+          key: selectedTemplate.key || selectedTemplate.id || '',
           data: {
-            title: editFormData.title,
-            message: editFormData.body,
-            messageEn: editFormData.body,
+            name: editFormData.name,
+            description: editFormData.description,
+            category: editFormData.category,
           },
         },
         {
@@ -121,19 +128,10 @@ export const NotificationTemplatesPage: React.FC = () => {
     } else {
       createTemplate(
         {
-          name: editFormData.key,
-          key: editFormData.key,
-          title: editFormData.title,
-          message: editFormData.body,
-          messageEn: editFormData.body || '',
-          channels: {
-            inApp: true,
-            push: false,
-            sms: false,
-            email: false,
-          },
-          type: 'ORDER_CONFIRMED',
-          category: NotificationCategory.ORDER,
+          id: editFormData.id,
+          name: editFormData.name,
+          description: editFormData.description,
+          category: editFormData.category,
         },
         {
           onSuccess: () => {
@@ -152,30 +150,48 @@ export const NotificationTemplatesPage: React.FC = () => {
     setEditFormData(DEFAULT_EDIT_FORM);
   };
 
-  const getTemplateDescription = (key: string | undefined) => {
+  const getTemplateDescription = (template: NotificationTemplate) => {
+    const desc = template.description || template.body || template.message;
+    if (desc) return desc;
+    const key = template.key || template.id;
     if (!key || typeof key !== 'string') return t('templates.descriptions.custom');
     const translationKey = `templates.descriptions.${key}`;
     const translated = t(translationKey);
     return translated !== translationKey ? translated : t('templates.descriptions.custom');
   };
 
-  const getTemplateCategory = (key: string | undefined) => {
-    if (!key || typeof key !== 'string') return 'general';
-    if (key.includes('ORDER')) return 'orders';
-    if (key.includes('SERVICE')) return 'services';
-    return 'general';
+  const getTemplateCategory = (template: NotificationTemplate) => {
+    const cat = template.category;
+    if (typeof cat === 'string') {
+      if (cat === 'order') return 'order';
+      if (cat === 'payment') return 'payment';
+      if (cat === 'shipping') return 'shipping';
+      if (cat === 'support') return 'support';
+    }
+    return cat || 'order';
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'orders':
+      case 'order':
         return 'primary';
-      case 'services':
+      case 'payment':
         return 'success';
+      case 'shipping':
+        return 'info';
+      case 'support':
+        return 'warning';
       default:
         return 'default';
     }
   };
+
+  const TEMPLATE_CATEGORIES = [
+    { value: 'order', label: t('templates.categories.order') },
+    { value: 'payment', label: t('templates.categories.payment') },
+    { value: 'shipping', label: t('templates.categories.shipping') },
+    { value: 'support', label: t('templates.categories.support') },
+  ];
 
   if (isLoading) {
     return (
@@ -258,12 +274,15 @@ export const NotificationTemplatesPage: React.FC = () => {
                           wordBreak: 'break-word',
                         }}
                       >
-                        {template.title}
+                        {template.name || template.title}
                       </Typography>
                       <Chip
-                        label={t(`templates.categories.${getTemplateCategory(template.key)}`)}
+                        label={
+                          TEMPLATE_CATEGORIES.find((c) => c.value === getTemplateCategory(template))
+                            ?.label || getTemplateCategory(template)
+                        }
                         size="small"
-                        color={getCategoryColor(getTemplateCategory(template.key)) as any}
+                        color={getCategoryColor(getTemplateCategory(template)) as any}
                         sx={{ mb: 1 }}
                       />
                     </Box>
@@ -297,7 +316,7 @@ export const NotificationTemplatesPage: React.FC = () => {
                       fontSize: isMobile ? '0.8rem' : undefined,
                     }}
                   >
-                    {getTemplateDescription(template.key)}
+                    {getTemplateDescription(template)}
                   </Typography>
 
                   <Typography
@@ -346,7 +365,7 @@ export const NotificationTemplatesPage: React.FC = () => {
                       wordBreak: 'break-all',
                     }}
                   >
-                    {t('templates.key')}: {template.key}
+                    {t('templates.key')}: {template.key || template.id}
                   </Typography>
                 </CardContent>
               </Card>
@@ -410,8 +429,13 @@ export const NotificationTemplatesPage: React.FC = () => {
               <TextField
                 fullWidth
                 label={t('templates.editDialog.keyLabel')}
-                value={editFormData.key}
-                onChange={(e) => setEditFormData((prev) => ({ ...prev, key: e.target.value }))}
+                value={editFormData.id}
+                onChange={(e) =>
+                  setEditFormData((prev) => ({
+                    ...prev,
+                    id: e.target.value.toLowerCase().replace(/\s+/g, '_'),
+                  }))
+                }
                 placeholder={t('templates.editDialog.keyPlaceholder')}
                 disabled={!!selectedTemplate}
                 helperText={t('templates.editDialog.keyHelper')}
@@ -421,8 +445,8 @@ export const NotificationTemplatesPage: React.FC = () => {
               <TextField
                 fullWidth
                 label={t('templates.editDialog.titleLabel')}
-                value={editFormData.title}
-                onChange={(e) => setEditFormData((prev) => ({ ...prev, title: e.target.value }))}
+                value={editFormData.name}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder={t('templates.editDialog.titlePlaceholder')}
                 helperText={t('templates.editDialog.titleHelper')}
                 size={isMobile ? 'small' : 'medium'}
@@ -431,14 +455,33 @@ export const NotificationTemplatesPage: React.FC = () => {
               <TextField
                 fullWidth
                 label={t('templates.editDialog.bodyLabel')}
-                value={editFormData.body}
-                onChange={(e) => setEditFormData((prev) => ({ ...prev, body: e.target.value }))}
+                value={editFormData.description}
+                onChange={(e) =>
+                  setEditFormData((prev) => ({ ...prev, description: e.target.value }))
+                }
                 placeholder={t('templates.editDialog.bodyPlaceholder')}
                 multiline
                 rows={isMobile ? 3 : 4}
                 helperText={t('templates.editDialog.bodyHelper')}
                 size={isMobile ? 'small' : 'medium'}
               />
+
+              <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                <InputLabel>{t('templates.editDialog.categoryLabel')}</InputLabel>
+                <Select
+                  value={editFormData.category}
+                  label={t('templates.editDialog.categoryLabel')}
+                  onChange={(e: { target: { value: string } }) =>
+                    setEditFormData((prev) => ({ ...prev, category: e.target.value }))
+                  }
+                >
+                  {TEMPLATE_CATEGORIES.map((c) => (
+                    <MenuItem key={c.value} value={c.value}>
+                      {c.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
               <Alert severity="info" sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
                 {t('templates.editDialog.availableVariables')}
@@ -459,9 +502,9 @@ export const NotificationTemplatesPage: React.FC = () => {
               disabled={
                 isCreating ||
                 isUpdating ||
-                !editFormData.key?.trim() ||
-                !editFormData.title?.trim() ||
-                !editFormData.body?.trim()
+                !editFormData.id?.trim() ||
+                !editFormData.name?.trim() ||
+                !editFormData.description?.trim()
               }
               size={isMobile ? 'small' : 'medium'}
             >

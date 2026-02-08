@@ -12,6 +12,7 @@ import type {
   NotificationStatsParams,
   CreateTemplateDto,
   UpdateTemplateDto,
+  ApiTemplateResponse,
   MarkAsReadDto,
   NotificationChannelConfig,
   CreateChannelConfigDto,
@@ -20,6 +21,28 @@ import type {
   NotificationType,
   NotificationDeliveryDetails,
 } from '../types/notification.types';
+
+/**
+ * Map API template response to NotificationTemplate (supports both id/key and name/description formats)
+ */
+function mapApiTemplateToNotificationTemplate(api: ApiTemplateResponse | NotificationTemplate): NotificationTemplate {
+  const hasApiFormat = 'id' in api && typeof (api as ApiTemplateResponse).name === 'string' && !('key' in api && (api as any).key);
+  if (hasApiFormat) {
+    const a = api as ApiTemplateResponse;
+    return {
+      key: a.id,
+      id: a.id,
+      name: a.name,
+      title: a.name,
+      body: a.description || '',
+      message: a.description || '',
+      messageEn: a.description || '',
+      category: a.category as any,
+      variables: a.variables,
+    };
+  }
+  return api as NotificationTemplate;
+}
 
 export const notificationsApi = {
   // ===== Admin Notifications =====
@@ -124,26 +147,30 @@ export const notificationsApi = {
 
   // ===== Templates =====
   getTemplates: async (): Promise<NotificationTemplate[]> => {
-    const response = await apiClient.get<ApiResponse<NotificationTemplate[]>>(
+    const response = await apiClient.get<ApiResponse<ApiTemplateResponse[] | NotificationTemplate[]>>(
       '/notifications/admin/templates'
     );
-    return response.data.data;
+    const raw = response.data.data || [];
+    const arr = Array.isArray(raw) ? raw : [];
+    return arr.map((item) => mapApiTemplateToNotificationTemplate(item as ApiTemplateResponse));
   },
 
   createTemplate: async (data: CreateTemplateDto): Promise<NotificationTemplate> => {
-    const response = await apiClient.post<ApiResponse<NotificationTemplate>>(
+    const response = await apiClient.post<ApiResponse<ApiTemplateResponse | NotificationTemplate>>(
       '/notifications/admin/templates',
       data
     );
-    return response.data.data;
+    const raw = response.data.data;
+    return raw ? mapApiTemplateToNotificationTemplate(raw as ApiTemplateResponse) : (raw as NotificationTemplate);
   },
 
   updateTemplate: async (key: string, data: UpdateTemplateDto): Promise<NotificationTemplate> => {
-    const response = await apiClient.put<ApiResponse<NotificationTemplate>>(
+    const response = await apiClient.put<ApiResponse<ApiTemplateResponse | NotificationTemplate>>(
       `/notifications/admin/templates/${key}`,
       data
     );
-    return response.data.data;
+    const raw = response.data.data;
+    return raw ? mapApiTemplateToNotificationTemplate(raw as ApiTemplateResponse) : (raw as NotificationTemplate);
   },
 
   deleteTemplate: async (key: string): Promise<void> => {
