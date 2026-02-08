@@ -142,6 +142,8 @@ export const NotificationCreateWizard: React.FC<NotificationCreateWizardProps> =
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // لا ترسل إلا إذا كنا في الخطوة الأخيرة
+    if (activeStep !== 3) return;
     onSave(formData);
   };
 
@@ -598,6 +600,7 @@ export const NotificationCreateWizard: React.FC<NotificationCreateWizardProps> =
       >
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
+            type="button"
             onClick={activeStep === 0 ? onCancel : handleBack}
             disabled={isLoading}
             size={isMobile ? 'small' : 'medium'}
@@ -607,6 +610,7 @@ export const NotificationCreateWizard: React.FC<NotificationCreateWizardProps> =
           </Button>
           {activeStep < 3 ? (
             <Button
+              type="button"
               variant="contained"
               onClick={handleNext}
               disabled={
