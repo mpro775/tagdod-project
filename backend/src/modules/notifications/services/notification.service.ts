@@ -742,7 +742,7 @@ export class NotificationService implements OnModuleInit {
       search,
       startDate,
       endDate,
-      groupByBatch = false,
+      groupByBatch = true, // افتراضي: تجميع الحملات
     } = query;
 
     const skip = (page - 1) * limit;
