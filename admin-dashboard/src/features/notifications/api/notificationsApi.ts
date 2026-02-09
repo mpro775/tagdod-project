@@ -163,12 +163,18 @@ export const notificationsApi = {
     return response.data.data || response.data;
   },
 
-  bulkSend: async (data: BulkSendNotificationDto): Promise<Notification[]> => {
-    const response = await apiClient.post<ApiResponse<Notification[]>>(
-      '/notifications/admin/bulk-send',
-      data
-    );
-    return response.data.data;
+  bulkSend: async (
+    data: BulkSendNotificationDto
+  ): Promise<{ batchId: string; accepted: boolean; total: number }> => {
+    const response = await apiClient.post<
+      ApiResponse<{ batchId: string; accepted: boolean; total: number }>
+    >('/notifications/admin/bulk-send', data);
+    const payload = response.data.data || response.data;
+    return {
+      batchId: payload.batchId,
+      accepted: !!payload.accepted,
+      total: payload.total ?? 0,
+    };
   },
 
   test: async (

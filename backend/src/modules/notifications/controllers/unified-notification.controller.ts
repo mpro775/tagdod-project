@@ -1040,13 +1040,17 @@ export class UnifiedNotificationController {
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({
     summary: 'الإدارة: إرسال إشعارات مجمعة',
-    description: 'إرسال إشعارات لعدة مستخدمين دفعة واحدة (للإداريين فقط)',
+    description:
+      'إرسال إشعارات لعدة مستخدمين دفعة واحدة (للإداريين فقط). يتم تنفيذ الإرسال في الخلفية عبر Queue لتفادي مشاكل الـ timeout عند الأعداد الكبيرة.',
   })
   @ApiBody({ type: BulkSendNotificationDto })
-  @ApiResponse({ status: 200, description: 'Bulk send completed' })
+  @ApiResponse({
+    status: 202,
+    description: 'Bulk send request accepted and scheduled in background',
+  })
   async adminBulkSend(@Body() dto: BulkSendNotificationDto) {
-    const result = await this.notificationService.bulkSendNotifications(dto);
-    return result;
+    const queued = await this.notificationService.queueBulkSend(dto);
+    return queued;
   }
 
   @Post('admin/test')
@@ -1244,6 +1248,24 @@ export class UnifiedNotificationController {
   async adminGetBatchDeliveryDetails(@Param('batchId') batchId: string) {
     const details = await this.notificationService.getBatchDeliveryDetails(batchId);
     return details;
+  }
+
+  @Get('admin/batch/:batchId/status')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'الإدارة: حالة دفعة الإشعارات',
+    description:
+      'استرداد ملخص حالة الدفعة (إجمالي، مرسل، فشل، قيد الانتظار) باستخدام batchId بدون تفاصيل كل مستخدم.',
+  })
+  @ApiParam({
+    name: 'batchId',
+    description: 'معرف الدفعة (Batch) - معرف تقني يُنشأ تلقائياً عند الإرسال المجمع',
+  })
+  @ApiResponse({ status: 200, description: 'Batch status retrieved successfully' })
+  async adminGetBatchStatus(@Param('batchId') batchId: string) {
+    const details = await this.notificationService.getBatchDeliveryDetails(batchId);
+    return details.summary;
   }
 
   @Delete('admin/batch/:batchId')

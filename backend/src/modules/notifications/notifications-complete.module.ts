@@ -73,6 +73,7 @@ import {
   ScheduledNotificationProcessor,
   RetryNotificationProcessor,
 } from './queue/notification.processor';
+import { BulkNotificationProcessor } from './queue/notification-bulk.processor';
 
 @Module({
   imports: [
@@ -131,6 +132,7 @@ import {
     NotificationProcessor,
     ScheduledNotificationProcessor,
     RetryNotificationProcessor,
+    BulkNotificationProcessor,
 
     // Port Providers
     {

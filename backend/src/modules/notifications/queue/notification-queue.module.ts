@@ -7,6 +7,7 @@ import {
   NOTIFICATION_QUEUE,
   NOTIFICATION_SCHEDULED_QUEUE,
   NOTIFICATION_RETRY_QUEUE,
+  NOTIFICATION_BULK_QUEUE,
 } from './queue.constants';
 import {
   UnifiedNotification,
@@ -14,7 +15,12 @@ import {
 } from '../schemas/unified-notification.schema';
 
 // Re-export constants for convenience
-export { NOTIFICATION_QUEUE, NOTIFICATION_SCHEDULED_QUEUE, NOTIFICATION_RETRY_QUEUE };
+export {
+  NOTIFICATION_QUEUE,
+  NOTIFICATION_SCHEDULED_QUEUE,
+  NOTIFICATION_RETRY_QUEUE,
+  NOTIFICATION_BULK_QUEUE,
+};
 
 @Module({
   imports: [
@@ -102,6 +108,15 @@ export { NOTIFICATION_QUEUE, NOTIFICATION_SCHEDULED_QUEUE, NOTIFICATION_RETRY_QU
             type: 'exponential',
             delay: 10000,
           },
+        },
+      },
+      {
+        // Bulk queue: used for long-running batch send jobs
+        name: NOTIFICATION_BULK_QUEUE,
+        defaultJobOptions: {
+          attempts: 1,
+          removeOnComplete: true,
+          removeOnFail: 10,
         },
       },
     ),

@@ -147,8 +147,14 @@ export const useBulkSendNotification = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: BulkSendNotificationDto) => notificationsApi.bulkSend(data),
-    onSuccess: () => {
-      toast.success('تم إرسال التنبيهات بنجاح');
+    onSuccess: (result) => {
+      // يتم تنفيذ الإرسال فعلياً في الخلفية عبر Queue
+      // هنا نعرض فقط رسالة قبول الطلب مع batchId (إن لزم مستقبلاً للمتابعة).
+      if (result?.batchId) {
+        toast.success(`تم قبول طلب الإرسال المجمّع (دفعة ${result.batchId})، وسيتم التنفيذ في الخلفية.`);
+      } else {
+        toast.success('تم قبول طلب الإرسال المجمّع وسيتم التنفيذ في الخلفية.');
+      }
       queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] });
       queryClient.invalidateQueries({ queryKey: [NOTIFICATION_STATS_KEY] });
     },

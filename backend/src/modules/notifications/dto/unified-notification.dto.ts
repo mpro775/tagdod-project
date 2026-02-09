@@ -277,6 +277,13 @@ export class BulkSendNotificationDto extends BaseNotificationDto {
   @IsString()
   @MaxLength(100)
   campaign?: string;
+
+  // Optional technical batch identifier; when provided, all created notifications
+  // will share the same batchId for tracking. Usually يتم توليده تلقائياً في الـ Service.
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  batchId?: string;
 }
 
 // ===== Template DTOs =====

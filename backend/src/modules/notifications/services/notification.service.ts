@@ -37,6 +37,10 @@ import {
 } from '../config/notification-rules';
 import { NotificationChannelConfigService } from './notification-channel-config.service';
 import { NotificationQueueService, NotificationJobData } from '../queue/notification-queue.service';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+import { NOTIFICATION_BULK_QUEUE } from '../queue/queue.constants';
+import type { BulkNotificationJobData } from '../queue/notification-bulk.processor';
 
 @Injectable()
 export class NotificationService implements OnModuleInit {
@@ -56,6 +60,8 @@ export class NotificationService implements OnModuleInit {
     private readonly smsNotificationAdapter: SmsNotificationAdapter,
     private readonly channelConfigService: NotificationChannelConfigService,
     private readonly queueService: NotificationQueueService,
+    @InjectQueue(NOTIFICATION_BULK_QUEUE)
+    private readonly bulkQueue: Queue<BulkNotificationJobData>,
   ) {}
 
   // ===== Helper Methods =====
@@ -1046,7 +1052,29 @@ export class NotificationService implements OnModuleInit {
   // ===== Bulk Operations =====
 
   /**
+   * جدولة إرسال إشعارات مجمعة في الخلفية عبر Bull Queue
+   * تُستخدم من Endpoint الإدارة لتفادي الـ timeout عند الأعداد الكبيرة.
+   */
+  async queueBulkSend(dto: BulkSendNotificationDto): Promise<{
+    batchId: string;
+    accepted: boolean;
+    total: number;
+  }> {
+    const total = dto.targetUserIds?.length ?? 0;
+    const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    await this.bulkQueue.add('bulkSend', { dto, batchId });
+
+    this.logger.log(
+      `Bulk send request queued: batchId=${batchId}, total=${total}, type=${dto.type}, channel=${dto.channel}`,
+    );
+
+    return { batchId, accepted: true, total };
+  }
+
+  /**
    * إرسال إشعارات مجمعة
+   * ملاحظة: يتم استدعاؤها حالياً من الـ Bulk Processor في الخلفية
    */
   async bulkSendNotifications(dto: BulkSendNotificationDto): Promise<{
     sent: number;
@@ -1058,7 +1086,7 @@ export class NotificationService implements OnModuleInit {
     let sent = 0;
     let failed = 0;
 
-    const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const batchId = dto.batchId || `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     for (const userId of dto.targetUserIds) {
       try {
