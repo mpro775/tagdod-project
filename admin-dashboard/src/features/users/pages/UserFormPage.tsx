@@ -21,6 +21,7 @@ import {
   LockReset,
   VerifiedUser,
   Store,
+  Visibility,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useUser, useCreateUser, useUpdateUser } from '../hooks/useUsers';
@@ -34,6 +35,7 @@ import { MerchantInfoSection } from '../components/MerchantInfoSection';
 import { VerificationFilesSection } from '../components/VerificationFilesSection';
 import { ResetPasswordDialog } from '../components/ResetPasswordDialog';
 import { StatusControlDialog } from '../components/StatusControlDialog';
+import { EngineerDetailsDialog } from '@/features/services/components/EngineerDetailsDialog';
 import { mapCityToArabic } from '@/shared/utils/cityMapper';
 import '../styles/responsive-users.css';
 
@@ -50,6 +52,7 @@ export const UserFormPage: React.FC = () => {
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [engineerStatusOpen, setEngineerStatusOpen] = useState(false);
   const [merchantStatusOpen, setMerchantStatusOpen] = useState(false);
+  const [engineerProfileDialogOpen, setEngineerProfileDialogOpen] = useState(false);
 
   // Form
   const schema = createUserFormSchema(t);
@@ -422,6 +425,15 @@ export const UserFormPage: React.FC = () => {
                         <Button
                           variant="outlined"
                           color="primary"
+                          startIcon={<Visibility />}
+                          onClick={() => setEngineerProfileDialogOpen(true)}
+                          size="small"
+                        >
+                          {t('users:actions.viewEngineerProfile', 'عرض البروفايل')}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="primary"
                           startIcon={<VerifiedUser />}
                           onClick={() => setEngineerStatusOpen(true)}
                           size="small"
@@ -558,6 +570,18 @@ export const UserFormPage: React.FC = () => {
             type="merchant"
             currentStatus={userCapabilities?.merchant_status || CapabilityStatus.NONE}
             currentDiscountPercent={userCapabilities?.merchant_discount_percent}
+          />
+
+          <EngineerDetailsDialog
+            open={engineerProfileDialogOpen}
+            onClose={() => setEngineerProfileDialogOpen(false)}
+            engineerId={id!}
+            engineerData={{
+              firstName: user.firstName,
+              lastName: user.lastName,
+              phone: user.phone,
+              city: user.city,
+            }}
           />
         </>
       )}

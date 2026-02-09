@@ -36,7 +36,11 @@
     "delete": "حذف",
     "restore": "استعادة",
     "suspend": "إيقاف",
-    "activate": "تفعيل"
+    "activate": "تفعيل",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "viewEngineerProfile": "عرض البروفايل",
+    "manageEngineerStatus": "إدارة حالة المهندس",
+    "manageMerchantStatus": "إدارة حالة التاجر"
   },
   "dialog": {
     "delete": {

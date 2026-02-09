@@ -36,7 +36,11 @@
     "delete": "Delete",
     "restore": "Restore",
     "suspend": "Suspend",
-    "activate": "Activate"
+    "activate": "Activate",
+    "resetPassword": "Reset Password",
+    "viewEngineerProfile": "View Profile",
+    "manageEngineerStatus": "Manage Engineer Status",
+    "manageMerchantStatus": "Manage Merchant Status"
   },
   "dialog": {
     "delete": {
