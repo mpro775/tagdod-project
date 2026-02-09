@@ -278,7 +278,17 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
   };
 
   useEffect(() => {
-    if (latestNotification) {
+    if (!latestNotification) {
+      return;
+    }
+
+    // إذا كان الإشعار مقروءاً بالفعل أو موجوداً مسبقاً في القائمة، لا نعيد تشغيل الصوت أو إظهار التوست
+    const alreadyExists = notifications.some((n) => n.id === latestNotification.id);
+    if (alreadyExists || latestNotification.isRead) {
+      return;
+    }
+
+    {
       // Show toast notification
       const isOrderNotification = latestNotification.type === NotificationType.ORDER_CREATED;
       const icon = isOrderNotification ? '🛒' : '🔔';
@@ -342,7 +352,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         return [latestNotification, ...prev].slice(0, 10);
       });
     }
-  }, [latestNotification, navigate]);
+  }, [latestNotification, navigate, notifications]);
 
   const handleNotificationClick = (notification: NotificationPayload) => {
     if (!notification.isRead) {
