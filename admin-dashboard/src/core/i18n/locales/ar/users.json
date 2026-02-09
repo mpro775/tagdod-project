@@ -169,7 +169,12 @@
     "search": "بحث",
     "statusLabel": "حالة:",
     "roleLabel": "دور:",
-    "typeLabel": "نوع:"
+    "typeLabel": "نوع:",
+    "verificationStatus": "حالة التوثيق",
+    "verificationLabel": "توثيق:",
+    "allVerification": "الكل",
+    "verifiedOnly": "موثقون فقط",
+    "unverifiedOnly": "غير موثقين"
   },
   "stats": {
     "title": "إحصائيات المستخدمين",

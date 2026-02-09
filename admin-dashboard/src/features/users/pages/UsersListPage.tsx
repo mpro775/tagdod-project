@@ -40,6 +40,7 @@ export const UsersListPage: React.FC = () => {
     search: '',
     status: undefined as UserStatus | undefined,
     role: undefined as any,
+    verificationStatus: undefined as 'all' | 'verified' | 'unverified' | undefined,
     includeDeleted: false,
   });
 
@@ -53,12 +54,20 @@ export const UsersListPage: React.FC = () => {
   });
 
   // API
+  const verificationStatusForApi =
+    (filters.role === 'merchant' || filters.role === 'engineer') &&
+    filters.verificationStatus &&
+    filters.verificationStatus !== 'all'
+      ? filters.verificationStatus
+      : undefined;
+
   const { data, isLoading, refetch } = useUsers({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
     search: filters.search,
     status: filters.status,
     role: filters.role,
+    verificationStatus: verificationStatusForApi,
     includeDeleted: filters.includeDeleted,
     sortBy: sortModel[0]?.field || 'createdAt',
     sortOrder: sortModel[0]?.sort || 'desc',
@@ -104,6 +113,7 @@ export const UsersListPage: React.FC = () => {
       search: '',
       status: undefined,
       role: undefined,
+      verificationStatus: undefined,
       includeDeleted: false,
     });
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
@@ -143,6 +153,7 @@ export const UsersListPage: React.FC = () => {
             search: filters.search,
             status: filters.status,
             role: filters.role,
+            verificationStatus: filters.verificationStatus,
             includeDeleted: filters.includeDeleted,
           }}
           onFiltersChange={(newFilters) => {
@@ -150,6 +161,7 @@ export const UsersListPage: React.FC = () => {
               search: newFilters.search,
               status: newFilters.status,
               role: newFilters.role,
+              verificationStatus: newFilters.verificationStatus,
               includeDeleted: newFilters.includeDeleted || false,
             });
             setPaginationModel((prev) => ({ ...prev, page: 0 }));

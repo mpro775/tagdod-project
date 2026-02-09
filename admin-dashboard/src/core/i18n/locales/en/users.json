@@ -169,7 +169,12 @@
     "search": "Search",
     "statusLabel": "Status:",
     "roleLabel": "Role:",
-    "typeLabel": "Type:"
+    "typeLabel": "Type:",
+    "verificationStatus": "Verification Status",
+    "verificationLabel": "Verification:",
+    "allVerification": "All",
+    "verifiedOnly": "Verified only",
+    "unverifiedOnly": "Unverified"
   },
   "stats": {
     "title": "User Statistics",

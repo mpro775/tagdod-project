@@ -30,12 +30,14 @@ interface UsersFilterProps {
     search: string;
     status?: UserStatus;
     role?: UserRole;
+    verificationStatus?: 'all' | 'verified' | 'unverified';
     includeDeleted?: boolean;
   };
   onFiltersChange: (filters: {
     search: string;
     status?: UserStatus;
     role?: UserRole;
+    verificationStatus?: 'all' | 'verified' | 'unverified';
     includeDeleted?: boolean;
   }) => void;
   onClearFilters: () => void;
@@ -67,17 +69,26 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
   };
 
   const handleFilterChange = (key: string, value: any) => {
-    onFiltersChange({
+    const updates = {
       ...filters,
       [key]: value,
-    });
+    };
+    // Reset verificationStatus when role changes to non-engineer/merchant
+    if (key === 'role' && value !== UserRole.MERCHANT && value !== UserRole.ENGINEER) {
+      updates.verificationStatus = undefined;
+    }
+    onFiltersChange(updates);
   };
+
+  const showVerificationFilter =
+    filters.role === UserRole.MERCHANT || filters.role === UserRole.ENGINEER;
 
   const hasActiveFilters =
     filters.search ||
     filters.status ||
     filters.role ||
-    filters.includeDeleted;
+    filters.includeDeleted ||
+    (showVerificationFilter && filters.verificationStatus && filters.verificationStatus !== 'all');
 
   const getActiveFiltersCount = () => {
     let count = 0;
@@ -85,7 +96,19 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
     if (filters.status) count++;
     if (filters.role) count++;
     if (filters.includeDeleted) count++;
+    if (
+      showVerificationFilter &&
+      filters.verificationStatus &&
+      filters.verificationStatus !== 'all'
+    )
+      count++;
     return count;
+  };
+
+  const VERIFICATION_LABELS: Record<'all' | 'verified' | 'unverified', string> = {
+    all: t('users:filter.allVerification', 'الكل'),
+    verified: t('users:filter.verifiedOnly', 'موثقون فقط'),
+    unverified: t('users:filter.unverifiedOnly', 'غير موثقين'),
   };
 
   return (
@@ -156,146 +179,188 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
         {isExpanded && (
           <>
             <Grid container spacing={{ xs: 2, sm: 2 }}>
-          {/* البحث */}
-          <Grid component="div" size={{ xs: 12, md: 4 }}>
-            <TextField
-              fullWidth
-              size={isMobile ? 'small' : 'medium'}
-              label={t('users:filter.searchLabel', 'البحث في المستخدمين')}
-              placeholder={t('users:filter.searchPlaceholder', 'رقم الهاتف، الاسم...')}
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <SearchIcon
-                    sx={{
-                      mr: 1,
-                      color: 'text.secondary',
-                      fontSize: { xs: 18, sm: 20 },
-                    }}
-                  />
-                ),
-              }}
-            />
-          </Grid>
-
-          {/* الحالة */}
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 2 }}>
-            <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
-              <InputLabel>{t('users:filter.status', 'الحالة')}</InputLabel>
-              <Select
-                value={filters.status || ''}
-                onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-                label={t('users:filter.status', 'الحالة')}
-              >
-                <MenuItem value="">{t('users:filter.allStatuses', 'جميع الحالات')}</MenuItem>
-                {Object.entries(STATUS_LABELS).map(([status, label]) => (
-                  <MenuItem key={status} value={status}>
-                    {label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* الدور */}
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
-            <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
-              <InputLabel>{t('users:filter.role', 'الدور')}</InputLabel>
-              <Select
-                value={filters.role || ''}
-                onChange={(e) => handleFilterChange('role', e.target.value || undefined)}
-                label={t('users:filter.role', 'الدور')}
-              >
-                <MenuItem value="">{t('users:filter.allRoles', 'جميع الأدوار')}</MenuItem>
-                {Object.entries(ROLE_LABELS).map(([role, label]) => (
-                  <MenuItem key={role} value={role}>
-                    {label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* الإجراءات */}
-          <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 1,
-                height: '100%',
-                alignItems: isMobile ? 'stretch' : 'center',
-              }}
-            >
-              <Button
-                variant="outlined"
-                onClick={onClearFilters}
-                disabled={!hasActiveFilters}
-                startIcon={<ClearIcon />}
-                size={isMobile ? 'small' : 'medium'}
-                fullWidth={isMobile}
-              >
-                {t('users:filter.clearFilters', 'مسح الفلاتر')}
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-
-        {/* الفلاتر النشطة */}
-        {hasActiveFilters && (
-          <Box sx={{ mt: 2 }}>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                mb: 1,
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              }}
-            >
-              {t('users:filter.activeFiltersLabel', 'الفلاتر النشطة:')}
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {filters.search && (
-                <Chip
-                  label={
-                    t('users:filter.search', 'بحث:') +
-                    ` ${filters.search.length > 20 ? filters.search.substring(0, 20) + '...' : filters.search}`
-                  }
-                  onDelete={() => handleFilterChange('search', '')}
-                  size="small"
-                  sx={{
-                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                    maxWidth: isMobile ? '100%' : 'auto',
+              {/* البحث */}
+              <Grid component="div" size={{ xs: 12, md: 4 }}>
+                <TextField
+                  fullWidth
+                  size={isMobile ? 'small' : 'medium'}
+                  label={t('users:filter.searchLabel', 'البحث في المستخدمين')}
+                  placeholder={t('users:filter.searchPlaceholder', 'رقم الهاتف، الاسم...')}
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <SearchIcon
+                        sx={{
+                          mr: 1,
+                          color: 'text.secondary',
+                          fontSize: { xs: 18, sm: 20 },
+                        }}
+                      />
+                    ),
                   }}
                 />
+              </Grid>
+
+              {/* الحالة */}
+              <Grid component="div" size={{ xs: 12, sm: 6, md: 2 }}>
+                <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                  <InputLabel>{t('users:filter.status', 'الحالة')}</InputLabel>
+                  <Select
+                    value={filters.status || ''}
+                    onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
+                    label={t('users:filter.status', 'الحالة')}
+                  >
+                    <MenuItem value="">{t('users:filter.allStatuses', 'جميع الحالات')}</MenuItem>
+                    {Object.entries(STATUS_LABELS).map(([status, label]) => (
+                      <MenuItem key={status} value={status}>
+                        {label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* الدور */}
+              <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+                <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                  <InputLabel>{t('users:filter.role', 'الدور')}</InputLabel>
+                  <Select
+                    value={filters.role || ''}
+                    onChange={(e) => handleFilterChange('role', e.target.value || undefined)}
+                    label={t('users:filter.role', 'الدور')}
+                  >
+                    <MenuItem value="">{t('users:filter.allRoles', 'جميع الأدوار')}</MenuItem>
+                    {Object.entries(ROLE_LABELS).map(([role, label]) => (
+                      <MenuItem key={role} value={role}>
+                        {label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* حالة التوثيق - يظهر للمهندسين والتجار فقط */}
+              {showVerificationFilter && (
+                <Grid component="div" size={{ xs: 12, sm: 6, md: 2 }}>
+                  <FormControl fullWidth size={isMobile ? 'small' : 'medium'}>
+                    <InputLabel>{t('users:filter.verificationStatus', 'حالة التوثيق')}</InputLabel>
+                    <Select
+                      value={filters.verificationStatus || 'all'}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          'verificationStatus',
+                          e.target.value === 'all' ? undefined : e.target.value
+                        )
+                      }
+                      label={t('users:filter.verificationStatus', 'حالة التوثيق')}
+                    >
+                      <MenuItem value="all">{VERIFICATION_LABELS.all}</MenuItem>
+                      <MenuItem value="verified">{VERIFICATION_LABELS.verified}</MenuItem>
+                      <MenuItem value="unverified">{VERIFICATION_LABELS.unverified}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
               )}
-              {filters.status && (
-                <Chip
-                  label={t('users:filter.statusLabel', 'حالة:') + ` ${STATUS_LABELS[filters.status]}`}
-                  onDelete={() => handleFilterChange('status', undefined)}
-                  size="small"
-                  sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
-                />
-              )}
-              {filters.role && (
-                <Chip
-                  label={t('users:filter.roleLabel', 'دور:') + ` ${ROLE_LABELS[filters.role]}`}
-                  onDelete={() => handleFilterChange('role', undefined)}
-                  size="small"
-                  sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
-                />
-              )}
-              {filters.includeDeleted && (
-                <Chip
-                  label={t('users:filter.includeDeleted', 'يشمل المستخدمين المحذوفين')}
-                  onDelete={() => handleFilterChange('includeDeleted', false)}
-                  size="small"
-                  sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
-                />
-              )}
-            </Box>
-          </Box>
-        )}
+
+              {/* الإجراءات */}
+              <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 1,
+                    height: '100%',
+                    alignItems: isMobile ? 'stretch' : 'center',
+                  }}
+                >
+                  <Button
+                    variant="outlined"
+                    onClick={onClearFilters}
+                    disabled={!hasActiveFilters}
+                    startIcon={<ClearIcon />}
+                    size={isMobile ? 'small' : 'medium'}
+                    fullWidth={isMobile}
+                  >
+                    {t('users:filter.clearFilters', 'مسح الفلاتر')}
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+
+            {/* الفلاتر النشطة */}
+            {hasActiveFilters && (
+              <Box sx={{ mt: 2 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    mb: 1,
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  }}
+                >
+                  {t('users:filter.activeFiltersLabel', 'الفلاتر النشطة:')}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  {filters.search && (
+                    <Chip
+                      label={
+                        t('users:filter.search', 'بحث:') +
+                        ` ${
+                          filters.search.length > 20
+                            ? filters.search.substring(0, 20) + '...'
+                            : filters.search
+                        }`
+                      }
+                      onDelete={() => handleFilterChange('search', '')}
+                      size="small"
+                      sx={{
+                        fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                        maxWidth: isMobile ? '100%' : 'auto',
+                      }}
+                    />
+                  )}
+                  {filters.status && (
+                    <Chip
+                      label={
+                        t('users:filter.statusLabel', 'حالة:') + ` ${STATUS_LABELS[filters.status]}`
+                      }
+                      onDelete={() => handleFilterChange('status', undefined)}
+                      size="small"
+                      sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                    />
+                  )}
+                  {filters.role && (
+                    <Chip
+                      label={t('users:filter.roleLabel', 'دور:') + ` ${ROLE_LABELS[filters.role]}`}
+                      onDelete={() => handleFilterChange('role', undefined)}
+                      size="small"
+                      sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                    />
+                  )}
+                  {showVerificationFilter &&
+                    filters.verificationStatus &&
+                    filters.verificationStatus !== 'all' && (
+                      <Chip
+                        label={
+                          t('users:filter.verificationLabel', 'توثيق:') +
+                          ` ${VERIFICATION_LABELS[filters.verificationStatus]}`
+                        }
+                        onDelete={() => handleFilterChange('verificationStatus', undefined)}
+                        size="small"
+                        sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                      />
+                    )}
+                  {filters.includeDeleted && (
+                    <Chip
+                      label={t('users:filter.includeDeleted', 'يشمل المستخدمين المحذوفين')}
+                      onDelete={() => handleFilterChange('includeDeleted', false)}
+                      size="small"
+                      sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                    />
+                  )}
+                </Box>
+              </Box>
+            )}
           </>
         )}
       </CardContent>
