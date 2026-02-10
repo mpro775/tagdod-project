@@ -1149,6 +1149,12 @@ export const OrderDetailsPage: React.FC = () => {
                         size={isMobile ? 'small' : 'medium'}
                         color={order.localPaymentAccountType === 'wallet' ? 'primary' : undefined}
                       />
+                      {order.paymentMethod === PaymentMethod.BANK_TRANSFER &&
+                        order.localPaymentProviderName && (
+                          <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 'bold' }}>
+                            {order.localPaymentProviderName}
+                          </Typography>
+                        )}
                     </Box>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>

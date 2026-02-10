@@ -2835,7 +2835,7 @@ export class OrderService {
       throw new OrderNotFoundException();
     }
 
-    // جلب نوع الحساب المحلي إذا كان موجوداً (مع timeout لتجنب التأخير)
+    // جلب معلومات الحساب/المحفظة المحلية إذا كانت موجودة (مع timeout لتجنب التأخير)
     if (order.localPaymentAccountId) {
       try {
         const selection = await Promise.race([
@@ -2845,12 +2845,22 @@ export class OrderService {
           ),
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)), // timeout 1 ثانية
         ]);
+
         if (selection) {
+          // نوع الحساب (محفظة/بنك) - مستخدم بالفعل في لوحة التحكم
           (order as unknown as { localPaymentAccountType?: string }).localPaymentAccountType =
             selection.type;
+
+          // معلومات إضافية لعرضها في تفاصيل الطلب بدون تغيير الـ Schema
+          (order as unknown as { localPaymentProviderName?: string }).localPaymentProviderName =
+            selection.providerName;
+          (order as unknown as { localPaymentAccountNumber?: string }).localPaymentAccountNumber =
+            selection.accountNumber;
+          (order as unknown as { localPaymentProviderIcon?: unknown }).localPaymentProviderIcon =
+            selection.icon;
         }
       } catch (error) {
-        this.logger.debug(`Failed to resolve account type for order ${orderId}: ${error}`);
+        this.logger.debug(`Failed to resolve account selection for order ${orderId}: ${error}`);
       }
     }
 

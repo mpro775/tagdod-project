@@ -235,6 +235,13 @@ export interface Order extends BaseEntity {
   // Local Payment
   localPaymentAccountId?: string;
   localPaymentAccountType?: 'bank' | 'wallet';
+  localPaymentProviderName?: string;
+  localPaymentAccountNumber?: string;
+  localPaymentProviderIcon?: {
+    id?: string;
+    url?: string;
+    name?: string;
+  };
   paymentReference?: string;
   verifiedPaymentAmount?: number;
   verifiedPaymentCurrency?: string;
