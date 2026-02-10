@@ -40,7 +40,11 @@ export class FCMAdapter {
         );
         return;
       }
-
+      this.logger.log(
+        `FCM env: projectId=${!!projectId}, email=${!!clientEmail}, key=${!!privateKey}, ` +
+        `keyLen=${privateKey?.length || 0}, hasBegin=${privateKey?.includes('BEGIN PRIVATE KEY')}`,
+      );
+      
       const serviceAccount = {
         type: 'service_account',
         project_id: projectId,
