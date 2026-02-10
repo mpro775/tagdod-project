@@ -110,7 +110,16 @@ export const ordersApi = {
    * Cancel order
    */
   cancel: async (id: string, data: CancelOrderDto): Promise<Order> => {
-    const response = await apiClient.post<ApiResponse<Order>>(`/admin/orders/${id}/cancel`, data);
+    // لا يوجد مسار /admin/orders/:id/cancel في الـ Backend للإدارة،
+    // لذلك نستخدم تحديث الحالة إلى "cancelled" مع حفظ سبب الإلغاء في notes.
+    const payload: UpdateOrderStatusDto = {
+      status: 'cancelled' as UpdateOrderStatusDto['status'],
+      notes: data.reason,
+    };
+    const response = await apiClient.patch<ApiResponse<Order>>(
+      `/admin/orders/${id}/status`,
+      payload
+    );
     return response.data.data;
   },
 
