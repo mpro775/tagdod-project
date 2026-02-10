@@ -166,7 +166,13 @@ export class FCMAdapter {
           errorMessage,
         };
       } else {
-        this.logger.error(`Failed to send FCM notification:`, error);
+        const e: any = error;
+        this.logger.error('FCM send failed details', {
+          code: e?.code,
+          message: e?.message,
+          status: e?.errorInfo?.code,
+          details: e?.errorInfo,
+        });
         return {
           success: false,
           errorCode,
