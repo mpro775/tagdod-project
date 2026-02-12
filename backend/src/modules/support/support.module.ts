@@ -10,6 +10,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
 import { SecurityModule } from '../security/security.module';
+import { SystemSettingsModule } from '../system-settings/system-settings.module';
 import { SupportMessagesGateway } from './gateways/support-messages.gateway';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
   
@@ -24,6 +25,7 @@ import { NotificationsCompleteModule } from '../notifications/notifications-comp
     AuthModule,
     SharedModule,
     SecurityModule,
+    forwardRef(() => SystemSettingsModule),
     forwardRef(() => NotificationsCompleteModule),
   ],
   controllers: [CustomerSupportController, AdminSupportController],
