@@ -71,7 +71,11 @@
       "force2FADesc": "Force 2FA for all users",
       "sessionTimeout": "Session Timeout (minutes)",
       "maxLoginAttempts": "Maximum Login Attempts",
-      "lockoutDuration": "Lockout Duration After Failure (minutes)"
+      "lockoutDuration": "Lockout Duration After Failure (minutes)",
+      "restrictToYemen": "Restrict access to Yemen users only",
+      "restrictToYemenDesc": "Allow only users from Yemen based on IP address (does not affect admin panel)",
+      "yemenRestrictionWhitelist": "Excluded IP addresses",
+      "yemenRestrictionWhitelistHint": "IP addresses exempt from restriction (comma or newline separated) - for admins outside Yemen"
     },
     "notifications": {
       "title": "Notification Settings",
@@ -186,7 +190,8 @@
     "estimatedDeliveryDays": "3",
     "sessionTimeout": "60",
     "maxLoginAttempts": "5",
-    "lockoutDuration": "15"
+    "lockoutDuration": "15",
+    "yemenRestrictionWhitelist": "192.168.1.1, 10.0.0.1"
   },
   "messages": {
     "loading": "Loading settings...",

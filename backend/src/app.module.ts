@@ -2,7 +2,7 @@ import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/c
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { User, UserSchema } from './modules/users/schemas/user.schema';
 
 // Core modules
@@ -52,6 +52,7 @@ import { GlobalExceptionFilter } from './shared/filters/global-exception.filter'
 import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-envelope.interceptor';
 import { SecurityLoggingInterceptor } from './modules/security/interceptors/security-logging.interceptor';
 import { ApiMetricsInterceptor } from './modules/system-monitoring/interceptors/api-metrics.interceptor';
+import { CountryRestrictionGuard } from './modules/security/guards/country-restriction.guard';
 import { WellKnownController } from './deep-linking/well-known.controller';
 import { ShareProductController } from './deep-linking/share-product.controller';
 
@@ -131,6 +132,7 @@ import { ShareProductController } from './deep-linking/share-product.controller'
   ],
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
+    { provide: APP_GUARD, useClass: CountryRestrictionGuard },
     { provide: APP_INTERCEPTOR, useClass: ResponseEnvelopeInterceptor },
     { provide: APP_INTERCEPTOR, useClass: SecurityLoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ApiMetricsInterceptor },

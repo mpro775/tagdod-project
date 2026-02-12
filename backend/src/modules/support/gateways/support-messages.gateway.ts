@@ -11,9 +11,9 @@ import {
 } from '@nestjs/websockets';
 import { Logger, UseGuards, UseFilters } from '@nestjs/common';
 import { Server } from 'socket.io';
-import { WebSocketAuthGuard } from '../../../shared/websocket/websocket-auth.guard';
+import { WebSocketAuthGuard, AuthenticatedSocket } from '../../../shared/websocket/websocket-auth.guard';
+import { WebSocketCountryRestrictionGuard } from '../../security/guards/websocket-country-restriction.guard';
 import { WebSocketService } from '../../../shared/websocket/websocket.service';
-import { AuthenticatedSocket } from '../../../shared/websocket/websocket-auth.guard';
 import { getWebSocketCorsOrigins } from '../../../shared/websocket/websocket-cors.helper';
 import { WebSocketExceptionFilter } from '../../../shared/filters/websocket-exception.filter';
 import { SupportService } from '../support.service';
@@ -28,7 +28,7 @@ import { SupportService } from '../support.service';
   pingTimeout: 60000,
   pingInterval: 25000,
 })
-@UseGuards(WebSocketAuthGuard)
+@UseGuards(WebSocketCountryRestrictionGuard, WebSocketAuthGuard)
 @UseFilters(WebSocketExceptionFilter)
 export class SupportMessagesGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -100,7 +100,7 @@ export class SupportMessagesGateway implements OnGatewayInit, OnGatewayConnectio
   }
 
   @SubscribeMessage('ping')
-  handlePing(@ConnectedSocket() client: AuthenticatedSocket): { event: string; data: { pong: boolean; timestamp: string } } {
+  handlePing(): { event: string; data: { pong: boolean; timestamp: string } } {
     return {
       event: 'pong',
       data: {

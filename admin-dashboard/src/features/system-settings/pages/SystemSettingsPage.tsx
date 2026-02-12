@@ -1494,6 +1494,60 @@ type PaymentProviderRow = GridValidRowModel & {
                 fullWidth
               />
 
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  border: 1,
+                  borderColor: 'divider',
+                  bgcolor: theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.primary.main, 0.05)
+                    : alpha(theme.palette.primary.main, 0.02),
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={settings.restrict_to_yemen || false}
+                      onChange={(e) => updateSetting('restrict_to_yemen', e.target.checked)}
+                    />
+                  }
+                  label={
+                    <Box>
+                      <Typography variant="body1" fontWeight="medium">
+                        {t('sections.security.restrictToYemen')}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {t('sections.security.restrictToYemenDesc')}
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </Paper>
+
+              {settings.restrict_to_yemen && (
+                <TextField
+                  label={t('sections.security.yemenRestrictionWhitelist')}
+                  value={
+                    Array.isArray(settings.yemen_restriction_whitelist)
+                      ? settings.yemen_restriction_whitelist.join('\n')
+                      : ''
+                  }
+                  onChange={(e) => {
+                    const value = e.target.value
+                      .split(/[,\n]/)
+                      .map((s) => s.trim())
+                      .filter(Boolean);
+                    updateSetting('yemen_restriction_whitelist', value);
+                  }}
+                  placeholder={t('placeholders.yemenRestrictionWhitelist')}
+                  fullWidth
+                  multiline
+                  rows={4}
+                  helperText={t('sections.security.yemenRestrictionWhitelistHint')}
+                />
+              )}
+
               <Divider />
 
               <Button

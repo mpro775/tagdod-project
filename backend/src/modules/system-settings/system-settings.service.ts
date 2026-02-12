@@ -160,6 +160,8 @@ export class SystemSettingsService {
       { key: 'session_timeout', value: 60, category: SettingCategory.SECURITY, isPublic: false, description: 'مدة صلاحية الجلسة (دقائق)' },
       { key: 'max_login_attempts', value: 5, category: SettingCategory.SECURITY, isPublic: false, description: 'الحد الأقصى لمحاولات الدخول' },
       { key: 'lockout_duration', value: 15, category: SettingCategory.SECURITY, isPublic: false, description: 'مدة الحظر (دقائق)' },
+      { key: 'restrict_to_yemen', value: false, category: SettingCategory.SECURITY, isPublic: false, description: 'تقيد الوصول بالمستخدمين من اليمن فقط' },
+      { key: 'yemen_restriction_whitelist', value: [], category: SettingCategory.SECURITY, isPublic: false, description: 'عناوين IP مستثناة من التقييد (للإداريين خارج اليمن)' },
 
       // Email
       { key: 'from_email', value: 'noreply@tagdod.com', category: SettingCategory.EMAIL, isPublic: false, description: 'بريد المرسل' },

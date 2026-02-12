@@ -71,7 +71,11 @@
       "force2FADesc": "إجبار المصادقة الثنائية لجميع المستخدمين",
       "sessionTimeout": "مدة صلاحية الجلسة (دقائق)",
       "maxLoginAttempts": "الحد الأقصى لمحاولات الدخول",
-      "lockoutDuration": "مدة الحظر بعد الفشل (دقائق)"
+      "lockoutDuration": "مدة الحظر بعد الفشل (دقائق)",
+      "restrictToYemen": "تقيد الوصول بالمستخدمين من اليمن فقط",
+      "restrictToYemenDesc": "السماح فقط للمستخدمين من اليمن حسب عنوان IP (لا يؤثر على لوحة التحكم)",
+      "yemenRestrictionWhitelist": "عناوين IP مستثناة",
+      "yemenRestrictionWhitelistHint": "عناوين IP مُعفاة من التقييد (مفصولة بفاصلة أو سطر جديد) - للإداريين خارج اليمن"
     },
     "notifications": {
       "title": "إعدادات الإشعارات",
@@ -186,7 +190,8 @@
     "estimatedDeliveryDays": "3",
     "sessionTimeout": "60",
     "maxLoginAttempts": "5",
-    "lockoutDuration": "15"
+    "lockoutDuration": "15",
+    "yemenRestrictionWhitelist": "192.168.1.1, 10.0.0.1"
   },
   "messages": {
     "loading": "جاري تحميل الإعدادات...",
