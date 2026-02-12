@@ -7580,7 +7580,7 @@
       "post": {
         "operationId": "adminBulkSend",
         "summary": "الإدارة: إرسال إشعارات مجمعة",
-        "description": "إرسال إشعارات لعدة مستخدمين دفعة واحدة (للإداريين فقط)",
+        "description": "إرسال إشعارات لعدة مستخدمين دفعة واحدة (للإداريين فقط). يتم تنفيذ الإرسال في الخلفية عبر Queue لتفادي مشاكل الـ timeout عند الأعداد الكبيرة.",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -7593,8 +7593,8 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Bulk send completed"
+          "202": {
+            "description": "Bulk send request accepted and scheduled in background"
           }
         },
         "tags": [
@@ -7820,6 +7820,130 @@
         "responses": {
           "200": {
             "description": "Delivery details retrieved successfully"
+          }
+        },
+        "tags": [
+          "الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/admin/batch/{batchId}/delivery-details": {
+      "get": {
+        "operationId": "adminGetBatchDeliveryDetails",
+        "summary": "الإدارة: تفاصيل إرسال دفعة الإشعارات",
+        "description": "استرداد تفاصيل الإرسال لكل مستلم في الدفعة (للإداريين فقط). ملاحظة: Batch = معرف تقني لمجموعة الإشعارات المرسلة معاً، بينما Campaign = اسم حملة تسويقية (اختياري).",
+        "parameters": [
+          {
+            "name": "batchId",
+            "required": true,
+            "in": "path",
+            "description": "معرف الدفعة (Batch) - معرف تقني يُنشأ تلقائياً عند الإرسال المجمع",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Batch delivery details retrieved successfully"
+          }
+        },
+        "tags": [
+          "الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/admin/batch/{batchId}/status": {
+      "get": {
+        "operationId": "adminGetBatchStatus",
+        "summary": "الإدارة: حالة دفعة الإشعارات",
+        "description": "استرداد ملخص حالة الدفعة (إجمالي، مرسل، فشل، قيد الانتظار) باستخدام batchId بدون تفاصيل كل مستخدم.",
+        "parameters": [
+          {
+            "name": "batchId",
+            "required": true,
+            "in": "path",
+            "description": "معرف الدفعة (Batch) - معرف تقني يُنشأ تلقائياً عند الإرسال المجمع",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Batch status retrieved successfully"
+          }
+        },
+        "tags": [
+          "الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/admin/batch/{batchId}": {
+      "delete": {
+        "operationId": "adminDeleteBatch",
+        "summary": "الإدارة: حذف دفعة إشعارات",
+        "description": "حذف جميع الإشعارات المرتبطة بمعرف الدفعة (للإداريين فقط). Batch: مجموعة إشعارات أُرسلت في عملية إرسال مجمع واحدة.",
+        "parameters": [
+          {
+            "name": "batchId",
+            "required": true,
+            "in": "path",
+            "description": "معرف الدفعة (Batch) - مثلاً: batch_1739020800000_x7k2m9p4q",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Batch deleted successfully"
+          }
+        },
+        "tags": [
+          "الإشعارات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/admin/batch/{batchId}/send": {
+      "post": {
+        "operationId": "adminSendBatch",
+        "summary": "الإدارة: إرسال دفعة إشعارات",
+        "description": "إرسال جميع الإشعارات في الدفعة لكل المستلمين (للإداريين فقط). يختلف عن Campaign: الدفعة (Batch) تجميع تقني، والحملة (Campaign) تصنيف تسويقي اختياري.",
+        "parameters": [
+          {
+            "name": "batchId",
+            "required": true,
+            "in": "path",
+            "description": "معرف الدفعة (Batch) - معرف تقني يُنشأ تلقائياً عند الإرسال المجمع",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Batch send completed"
           }
         },
         "tags": [
@@ -15539,6 +15663,52 @@
         ]
       }
     },
+    "/api/v1/admin/orders/pending-count": {
+      "get": {
+        "operationId": "getPendingOrdersCount",
+        "summary": "عدد الطلبات المعلقة/الجديدة",
+        "description": "الحصول على عدد الطلبات التي تحتاج إلى اهتمام (pending_payment, confirmed, processing)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم الحصول على العدد بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pendingCount": {
+                      "type": "number",
+                      "example": 12
+                    },
+                    "pendingPaymentCount": {
+                      "type": "number",
+                      "example": 5
+                    },
+                    "confirmedCount": {
+                      "type": "number",
+                      "example": 4
+                    },
+                    "processingCount": {
+                      "type": "number",
+                      "example": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "إدارة-الطلبات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/webhooks/payment": {
       "post": {
         "operationId": "handlePaymentWebhook",
@@ -22823,6 +22993,43 @@
         "responses": {
           "201": {
             "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/ids": {
+      "get": {
+        "operationId": "listUserIds",
+        "summary": "جلب معرفات المستخدمين",
+        "description": "استرداد مصفوفة معرفات المستخدمين المطابقين للفلاتر (لاختيار الكل في الإرسال الجماعي)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم استرداد المعرفات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "مصفوفة معرفات المستخدمين"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [

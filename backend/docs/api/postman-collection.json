@@ -3672,7 +3672,7 @@
                 "bulk-send"
               ]
             },
-            "description": "إرسال إشعارات لعدة مستخدمين دفعة واحدة (للإداريين فقط)"
+            "description": "إرسال إشعارات لعدة مستخدمين دفعة واحدة (للإداريين فقط). يتم تنفيذ الإرسال في الخلفية عبر Queue لتفادي مشاكل الـ timeout عند الأعداد الكبيرة."
           }
         },
         {
@@ -3869,6 +3869,121 @@
               ]
             },
             "description": "استرداد تفاصيل الإرسال لكل مستخدم (للإداريين فقط)"
+          }
+        },
+        {
+          "name": "الإدارة: تفاصيل إرسال دفعة الإشعارات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/batch/{batchId}/delivery-details",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "batch",
+                "{batchId}",
+                "delivery-details"
+              ]
+            },
+            "description": "استرداد تفاصيل الإرسال لكل مستلم في الدفعة (للإداريين فقط). ملاحظة: Batch = معرف تقني لمجموعة الإشعارات المرسلة معاً، بينما Campaign = اسم حملة تسويقية (اختياري)."
+          }
+        },
+        {
+          "name": "الإدارة: حالة دفعة الإشعارات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/batch/{batchId}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "batch",
+                "{batchId}",
+                "status"
+              ]
+            },
+            "description": "استرداد ملخص حالة الدفعة (إجمالي، مرسل، فشل، قيد الانتظار) باستخدام batchId بدون تفاصيل كل مستخدم."
+          }
+        },
+        {
+          "name": "الإدارة: حذف دفعة إشعارات",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/batch/{batchId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "batch",
+                "{batchId}"
+              ]
+            },
+            "description": "حذف جميع الإشعارات المرتبطة بمعرف الدفعة (للإداريين فقط). Batch: مجموعة إشعارات أُرسلت في عملية إرسال مجمع واحدة."
+          }
+        },
+        {
+          "name": "الإدارة: إرسال دفعة إشعارات",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/admin/batch/{batchId}/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "admin",
+                "batch",
+                "{batchId}",
+                "send"
+              ]
+            },
+            "description": "إرسال جميع الإشعارات في الدفعة لكل المستلمين (للإداريين فقط). يختلف عن Campaign: الدفعة (Batch) تجميع تقني، والحملة (Campaign) تصنيف تسويقي اختياري."
           }
         },
         {
@@ -7261,6 +7376,33 @@
             },
             "description": "قائمة بجميع الطلبات التي فشلت بسبب عدم توفر المخزون"
           }
+        },
+        {
+          "name": "عدد الطلبات المعلقة/الجديدة",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/pending-count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "pending-count"
+              ]
+            },
+            "description": "الحصول على عدد الطلبات التي تحتاج إلى اهتمام (pending_payment, confirmed, processing)"
+          }
         }
       ],
       "description": "Endpoints for إدارة-الطلبات functionality"
@@ -10492,6 +10634,33 @@
               ]
             },
             "description": ""
+          }
+        },
+        {
+          "name": "جلب معرفات المستخدمين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/ids",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "ids"
+              ]
+            },
+            "description": "استرداد مصفوفة معرفات المستخدمين المطابقين للفلاتر (لاختيار الكل في الإرسال الجماعي)"
           }
         },
         {
