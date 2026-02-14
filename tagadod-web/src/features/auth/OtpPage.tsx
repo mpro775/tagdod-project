@@ -27,6 +27,7 @@ interface OtpState {
   city?: string
   jobTitle?: string
   needSetPassword?: boolean
+  from?: string
 }
 
 export function OtpPage() {
@@ -118,7 +119,7 @@ export function OtpPage() {
       if (mode === 'register' || state.needSetPassword) {
         navigate('/setPassword', { replace: true, state: { phone, fromOtp: true } })
       } else {
-        navigate('/home', { replace: true })
+        navigate(state.from ?? '/home', { replace: true })
       }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message

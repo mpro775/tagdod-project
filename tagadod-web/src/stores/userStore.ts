@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { VerificationStatus } from '../types/enums'
 
 export type UserType = 'customer' | 'engineer' | 'merchant'
 
@@ -10,6 +11,7 @@ interface User {
   phone?: string
   email?: string
   userType: UserType
+  verificationStatus?: VerificationStatus
 }
 
 interface UserStore {

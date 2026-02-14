@@ -81,8 +81,19 @@ export async function completeServiceCustomer(requestId: string): Promise<void> 
 
 // ──────────────────────────── Engineer Endpoints ────────────────────────────
 
-export async function getNearbyRequests(params?: PaginationParams): Promise<PaginatedResponse<ServiceRequest>> {
-  const { data } = await api.get<PaginatedResponse<ServiceRequest>>('/services/engineer/requests/nearby', { params })
+/** Requires lat/lng as numbers. Use getCityRequests when coords unavailable. */
+export async function getNearbyRequests(params: {
+  lat: number
+  lng: number
+  radiusKm?: number
+  page?: number
+  limit?: number
+}): Promise<PaginatedResponse<ServiceRequest>> {
+  const { lat, lng, radiusKm = 10, ...rest } = params
+  const query = { lat: Number(lat), lng: Number(lng), radiusKm: Number(radiusKm), ...rest }
+  const { data } = await api.get<PaginatedResponse<ServiceRequest>>('/services/engineer/requests/nearby', {
+    params: query,
+  })
   return data
 }
 

@@ -83,6 +83,10 @@
     "deleteReason": "سبب الحذف",
     "enterPassword": "أدخل كلمة المرور للتأكيد",
     "verifyAccount": "تحقق الحساب",
+    "verified": "موثق",
+    "underReview": "قيد المراجعة",
+    "unverified": "غير موثق",
+    "loginNow": "تسجيل الدخول الآن",
     "privacyPolicy": "سياسة الخصوصية",
     "termsAndConditions": "الشروط والأحكام",
     "chat": "الدردشة"
@@ -168,8 +172,9 @@
     "shopNow": "تسوق الآن",
     "subtotal": "المجموع الفرعي",
     "total": "الإجمالي",
-    "checkout": "إتمام الشراء",
-    "removeItem": "إزالة"
+    "checkout": "متابعة الشراء",
+    "removeItem": "إزالة",
+    "syncError": "فشل مزامنة السلة. حاول مرة أخرى."
   },
   "payment": {
     "title": "الدفع",

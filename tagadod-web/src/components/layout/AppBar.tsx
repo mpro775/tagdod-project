@@ -5,14 +5,12 @@ import { isLoggedIn } from '../../stores/authStore'
 import * as notificationService from '../../services/notificationService'
 
 interface AppBarProps {
-  title?: string
   showLogo?: boolean
   showSearch?: boolean
   showNotifications?: boolean
 }
 
 export function AppBar({
-  title = 'Tagadod',
   showLogo = true,
   showSearch = true,
   showNotifications = true,
@@ -32,8 +30,12 @@ export function AppBar({
     <header className="sticky top-0 z-40 bg-white dark:bg-tagadod-dark-gray shadow-sm">
       <div className="flex items-center justify-between h-14 px-4">
         {showLogo && (
-          <Link to="/home" className="text-xl font-bold text-primary">
-            {title}
+          <Link to="/home" className="flex items-center h-9">
+            <img
+              src="/assets/icons/app_logo.png"
+              alt="تجدد - Tagadod"
+              className="h-9 w-auto object-contain"
+            />
           </Link>
         )}
         <div className="flex items-center gap-3">

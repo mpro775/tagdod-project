@@ -1,18 +1,15 @@
 import { useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Heart, ShoppingCart, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
-import { gradients } from '../../theme'
 import { getProductById } from '../../services/productService'
-import { addToCart } from '../../services/cartService'
-import { addFavorite, removeFavorite } from '../../services/favoriteService'
+import { addToCartLocal } from '../../services/cartService'
 import { formatPrice } from '../../stores/currencyStore'
+import { useFavorites } from '../../hooks'
 import {
   GlobalButton,
   ProductCard,
-  ProductCardShimmer,
-  SectionHeader,
   ShimmerBox,
 } from '../../components/shared'
 
@@ -117,7 +114,6 @@ function VariantSelector({
             }`}
           >
             {v.name}
-            {v.price ? ` - ${formatPrice(v.price)}` : ''}
           </button>
         ))}
       </div>
@@ -132,10 +128,10 @@ export function ProductPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
 
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null)
-  const [isFavorite, setIsFavorite] = useState(false)
+  const [addSuccess, setAddSuccess] = useState(false)
+  const { isFavorite, toggleFavorite, loggedIn } = useFavorites()
 
   const { data: productDetail, isLoading } = useQuery({
     queryKey: ['product', id],
@@ -146,34 +142,36 @@ export function ProductPage() {
   const product = productDetail?.product
   const relatedProducts = productDetail?.relatedProducts ?? []
 
-  const addToCartMutation = useMutation({
-    mutationFn: addToCart,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] })
-    },
-  })
-
   const handleAddToCart = () => {
     if (!product) return
-    addToCartMutation.mutate({
+    const activeVariant = product.variants?.find((v) => v.id === selectedVariant)
+    const displayPrice = activeVariant?.price ?? product.price
+    const displayImage = activeVariant?.image ?? product.images?.[0]
+    addToCartLocal({
+      id: activeVariant ? `variant:${activeVariant.id}` : `product:${product.id}`,
       productId: product.id,
       variantId: selectedVariant ?? undefined,
       quantity: 1,
+      price: displayPrice,
+      variantName: activeVariant?.name,
+      product: {
+        id: product.id,
+        name: product.name,
+        images: displayImage ? [displayImage] : product.images ?? [],
+        price: displayPrice,
+      },
     })
+    setAddSuccess(true)
+    setTimeout(() => setAddSuccess(false), 1500)
   }
 
   const handleToggleFavorite = async () => {
     if (!product) return
-    try {
-      if (isFavorite) {
-        await removeFavorite(product.id)
-      } else {
-        await addFavorite(product.id)
-      }
-      setIsFavorite(!isFavorite)
-    } catch {
-      // silently fail
+    if (!loggedIn) {
+      navigate('/login', { state: { from: `/products/${product.id}` } })
+      return
     }
+    await toggleFavorite(product.id)
   }
 
   /* Loading state */
@@ -201,7 +199,7 @@ export function ProductPage() {
   const displayOriginalPrice = activeVariant?.originalPrice ?? product.originalPrice
 
   return (
-    <div className="pb-28">
+    <div className="pb-36">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-tagadod-light-bg dark:bg-tagadod-dark-bg px-4 py-3 flex items-center justify-between border-b border-gray-100 dark:border-white/5">
         <div className="flex items-center gap-3">
@@ -222,7 +220,7 @@ export function ProductPage() {
         >
           <Heart
             size={22}
-            className={isFavorite ? 'fill-tagadod-red text-tagadod-red' : 'text-tagadod-gray'}
+            className={isFavorite(product.id) ? 'fill-tagadod-red text-tagadod-red' : 'text-tagadod-gray'}
           />
         </button>
       </div>
@@ -275,22 +273,24 @@ export function ProductPage() {
             {t('غير متوفر حالياً')}
           </div>
         )}
+
+        {/* Related products – horizontal slider */}
+        {relatedProducts.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-base font-semibold text-tagadod-titles dark:text-tagadod-dark-titles mb-3">
+              {t('منتجات ذات صلة')}
+            </h3>
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 snap-x snap-mandatory">
+              {relatedProducts.map((p) => (
+                <ProductCard key={p.id} product={p} compact />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Related products */}
-      {relatedProducts.length > 0 && (
-        <div className="mb-6">
-          <SectionHeader title={t('منتجات ذات صلة')} />
-          <div className="grid grid-cols-2 gap-3 px-4">
-            {relatedProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Bottom bar – Add to cart */}
-      <div className="fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-tagadod-dark-gray border-t border-gray-100 dark:border-white/5 px-4 py-3 flex items-center gap-3">
+      {/* Bottom bar – Add to cart (أعلى الشريط السفلي) */}
+      <div className="fixed bottom-20 left-4 right-4 z-40 flex items-center justify-between p-4 bg-white dark:bg-tagadod-dark-gray rounded-xl shadow-lg border border-gray-100 dark:border-white/10">
         <div className="flex-1">
           <span className="text-lg font-bold text-primary">{formatPrice(displayPrice)}</span>
         </div>
@@ -298,11 +298,10 @@ export function ProductPage() {
           fullWidth={false}
           className="min-w-[160px]"
           onClick={handleAddToCart}
-          loading={addToCartMutation.isPending}
           disabled={product.inStock === false}
         >
           <ShoppingCart size={18} />
-          <span>{t('إضافة للسلة')}</span>
+          <span>{addSuccess ? t('تمت الإضافة', 'تمت الإضافة') : t('إضافة للسلة')}</span>
         </GlobalButton>
       </div>
     </div>

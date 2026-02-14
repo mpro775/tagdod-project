@@ -2,11 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react'
 import { gradients } from '../../theme'
 import { useUserStore } from '../../stores/userStore'
 import { getBanners } from '../../services/bannerService'
-import { getFeaturedCategories } from '../../services/categoryService'
+import { getRootCategoriesForHome } from '../../services/categoryService'
 import { getNewProducts, getFeaturedProducts } from '../../services/productService'
 import {
   ProductCard,
@@ -118,12 +118,12 @@ function BannerCarousel() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Categories Strip                                                  */
+/*  Categories Strip – نفس أسلوب التطبيق                                 */
 /* ------------------------------------------------------------------ */
 function CategoriesStrip() {
   const { data: categories, isLoading } = useQuery({
-    queryKey: ['featuredCategories'],
-    queryFn: getFeaturedCategories,
+    queryKey: ['rootCategories'],
+    queryFn: getRootCategoriesForHome,
   })
 
   if (isLoading) {
@@ -132,35 +132,46 @@ function CategoriesStrip() {
         <div className="px-4 mb-3">
           <ShimmerBox className="w-24" height={20} />
         </div>
-        <div className="flex gap-3 px-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <ShimmerBox key={i} className="flex-shrink-0 w-20 h-20" rounded="rounded-xl" />
+        <div className="flex gap-4 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ShimmerBox key={i} className="flex-shrink-0 w-[160px] h-[140px]" rounded="rounded-2xl" />
           ))}
         </div>
       </div>
     )
   }
 
-  if (!categories?.length) return null
-
   return (
     <div className="mb-6">
       <SectionHeader title="التصنيفات" viewAllLink="/allCategories" />
-      <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
-        {categories.map((cat) => (
+      <div
+        className="flex gap-4 px-4 pb-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+        style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+      >
+        {/* زر الكل */}
+        <Link
+          to="/allCategories"
+          className="flex-shrink-0 w-[100px] h-[140px] min-w-[100px] rounded-2xl flex flex-col items-center justify-center gap-3 snap-start snap-always text-white"
+          style={{ background: gradients.linerGreenReversed }}
+        >
+          <LayoutGrid size={44} strokeWidth={2} />
+          <span className="text-base font-semibold">الكل</span>
+        </Link>
+        {/* فئات */}
+        {(categories ?? []).map((cat) => (
           <Link
             key={cat.id}
             to={`/categories/${cat.id}/products`}
-            className="flex-shrink-0 w-20 flex flex-col items-center gap-1.5"
+            className="flex-shrink-0 w-[160px] h-[140px] min-w-[160px] rounded-2xl flex flex-col items-center justify-center gap-3 snap-start snap-always overflow-hidden bg-gradient-to-br from-[#E4F5FF] to-[#C8EDFF] dark:from-[rgba(58,58,60,0.5)] dark:to-[#3A3A3C]"
           >
-            <div className="w-20 h-20 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden flex items-center justify-center">
+            <div className="w-16 h-16 flex items-center justify-center flex-shrink-0">
               {cat.image ? (
-                <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+                <img src={cat.image} alt={cat.name} className="w-16 h-16 object-contain" />
               ) : (
-                <span className="text-tagadod-gray text-xl">{cat.icon ?? '📦'}</span>
+                <span className="text-tagadod-gray text-4xl">{cat.icon ?? '📦'}</span>
               )}
             </div>
-            <span className="text-xs text-tagadod-titles dark:text-tagadod-dark-titles text-center line-clamp-1">
+            <span className="text-base font-semibold text-tagadod-titles dark:text-tagadod-titles text-center line-clamp-2 px-1">
               {cat.name}
             </span>
           </Link>

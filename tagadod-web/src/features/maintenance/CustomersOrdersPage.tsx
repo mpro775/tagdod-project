@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
@@ -26,15 +26,35 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key']
 
+/** Get user location – returns null if denied or unavailable */
+function useUserCoords(enabled: boolean) {
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    if (!enabled || !navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (p) => setCoords({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => setCoords(null),
+      { enableHighAccuracy: false, maximumAge: 300000 }
+    )
+  }, [enabled])
+
+  return coords
+}
+
 export function CustomersOrdersPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<TabKey>('nearby')
+  const coords = useUserCoords(activeTab === 'nearby')
 
   // ─── queries per tab ───────────────────────────────────────────────
   const nearbyQuery = useQuery({
-    queryKey: ['engineerRequests', 'nearby'],
-    queryFn: () => getNearbyRequests(),
+    queryKey: ['engineerRequests', 'nearby', coords?.lat, coords?.lng],
+    queryFn: () =>
+      coords
+        ? getNearbyRequests({ lat: coords.lat, lng: coords.lng })
+        : getCityRequests(),
     enabled: activeTab === 'nearby',
   })
 
@@ -70,8 +90,10 @@ export function CustomersOrdersPage() {
   }
 
   const isOffersTab = activeTab === 'offers'
-  const requests = !isOffersTab ? (requestsMap[activeTab as Exclude<TabKey, 'offers'>]?.data?.data ?? []) : []
-  const offers = isOffersTab ? (offersQuery.data?.data ?? []) : []
+  const requestData = !isOffersTab ? requestsMap[activeTab as Exclude<TabKey, 'offers'>]?.data?.data : null
+  const requests = Array.isArray(requestData) ? requestData : []
+  const offerData = isOffersTab ? offersQuery.data?.data : null
+  const offers = Array.isArray(offerData) ? offerData : []
 
   // ─── render ────────────────────────────────────────────────────────
   return (

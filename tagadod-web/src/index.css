@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Enable dark mode variant with class strategy in Tailwind v4 */
+@custom-variant dark (.dark &);
+
 /* Tagadod Theme - Tailwind v4 */
 @theme {
   --color-primary: #1E99D3;

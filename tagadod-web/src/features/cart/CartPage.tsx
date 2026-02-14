@@ -1,64 +1,65 @@
-import { useMemo } from 'react'
+import { useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react'
-import { GlobalButton, EmptyState, ListShimmer } from '../../components/shared'
+import { GlobalButton, EmptyState } from '../../components/shared'
 import * as cartService from '../../services/cartService'
 import { formatPrice } from '../../stores/currencyStore'
+import { useCartStore } from '../../stores/cartStore'
 import { gradients } from '../../theme'
 import type { CartItem } from '../../types/cart'
 
 export function CartPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const items = useCartStore((s) => s.items)
+  const updateQuantity = useCartStore((s) => s.updateQuantity)
+  const removeItem = useCartStore((s) => s.removeItem)
+  const getSubtotal = useCartStore((s) => s.getSubtotal)
+  const rehydrate = useCartStore((s) => s.rehydrate)
 
-  const {
-    data: cart,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ['cart'],
-    queryFn: cartService.getCart,
-  })
+  const [syncLoading, setSyncLoading] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
 
-  const updateMutation = useMutation({
-    mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
-      cartService.updateCartItem(itemId, { quantity }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cart'] }),
-  })
+  useEffect(() => {
+    rehydrate()
+  }, [rehydrate])
 
-  const removeMutation = useMutation({
-    mutationFn: (itemId: string) => cartService.removeCartItem(itemId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cart'] }),
-  })
-
-  const items: CartItem[] = useMemo(() => cart?.items ?? [], [cart])
-  const subtotal = useMemo(() => cart?.subtotal ?? 0, [cart])
-  const isEmpty = !isLoading && items.length === 0
+  const subtotal = getSubtotal()
+  const isEmpty = items.length === 0
 
   const handleQuantityChange = (item: CartItem, delta: number) => {
     const newQty = item.quantity + delta
     if (newQty <= 0) {
-      removeMutation.mutate(item.id)
+      removeItem(item.id)
     } else {
-      updateMutation.mutate({ itemId: item.id, quantity: newQty })
+      updateQuantity(item.id, newQty)
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="p-4 pb-24">
-        <h2 className="text-xl font-bold text-tagadod-titles dark:text-tagadod-dark-titles mb-4">
-          {t('cart.title', 'السلة')}
-        </h2>
-        <ListShimmer count={4} />
-      </div>
-    )
+  const handleCheckout = async () => {
+    if (items.length === 0) return
+    setSyncError(null)
+    setSyncLoading(true)
+    try {
+      await cartService.syncCart()
+      navigate('/payment')
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (status === 401) {
+        navigate('/login', { state: { from: '/CartPage', requireLogin: true } })
+        return
+      }
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setSyncError(msg || t('cart.syncError', 'فشل مزامنة السلة. حاول مرة أخرى.'))
+    } finally {
+      setSyncLoading(false)
+    }
   }
 
-  if (isEmpty || isError) {
+  if (isEmpty) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
         <EmptyState
@@ -84,6 +85,12 @@ export function CartPage() {
       <h2 className="text-xl font-bold text-tagadod-titles dark:text-tagadod-dark-titles mb-4">
         {t('cart.title', 'السلة')}
       </h2>
+
+      {syncError && (
+        <div className="mb-4 p-3 rounded-xl bg-tagadod-red/10 text-tagadod-red text-sm">
+          {syncError}
+        </div>
+      )}
 
       <div className="space-y-3">
         {items.map((item) => (
@@ -125,7 +132,6 @@ export function CartPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleQuantityChange(item, -1)}
-                    disabled={updateMutation.isPending || removeMutation.isPending}
                     className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center text-tagadod-titles dark:text-tagadod-dark-titles hover:bg-gray-200 dark:hover:bg-white/20 transition-colors disabled:opacity-50"
                   >
                     <Minus size={16} />
@@ -135,7 +141,6 @@ export function CartPage() {
                   </span>
                   <button
                     onClick={() => handleQuantityChange(item, 1)}
-                    disabled={updateMutation.isPending}
                     className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
                   >
                     <Plus size={16} />
@@ -143,8 +148,7 @@ export function CartPage() {
                 </div>
 
                 <button
-                  onClick={() => removeMutation.mutate(item.id)}
-                  disabled={removeMutation.isPending}
+                  onClick={() => removeItem(item.id)}
                   className="p-2 rounded-lg hover:bg-tagadod-red/10 transition-colors disabled:opacity-50"
                 >
                   <Trash2 size={18} className="text-tagadod-red" />
@@ -168,7 +172,8 @@ export function CartPage() {
         <GlobalButton
           fullWidth={false}
           size="md"
-          onClick={() => navigate('/payment')}
+          onClick={handleCheckout}
+          loading={syncLoading}
           className="px-6"
         >
           {t('cart.checkout', 'متابعة الشراء')}

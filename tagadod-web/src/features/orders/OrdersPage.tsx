@@ -31,7 +31,7 @@ export function OrdersPage() {
     queryFn: () => orderService.getOrders({ status: statusFilter }),
   })
 
-  const orders = data?.data ?? []
+  const orders = Array.isArray(data?.data) ? data.data : []
 
   const tabs = ORDER_TABS.map((tab) => ({
     key: tab.key,

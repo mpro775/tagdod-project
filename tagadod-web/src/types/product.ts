@@ -16,6 +16,8 @@ export interface Product {
   isNew?: boolean
   rating?: number
   ratingsCount?: number
+  /** من الـ API: true إذا المنتج له متغيرات (يحتاج اختيار قبل الإضافة) */
+  hasVariants?: boolean
   variants?: ProductVariant[]
   priceRange?: PriceRange
   createdAt?: string

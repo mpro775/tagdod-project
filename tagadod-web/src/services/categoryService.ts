@@ -43,6 +43,7 @@ function normalizeCategory(raw: ApiCategory): Category {
     id,
     name: raw.name ?? raw.nameEn ?? raw.nameAr ?? '',
     image,
+    icon: raw.icon,
     parentId: raw.parentId ?? raw.parent?.id ?? null,
     children: raw.children?.map(normalizeCategory),
     productsCount: raw.productsCount,
@@ -50,12 +51,20 @@ function normalizeCategory(raw: ApiCategory): Category {
   }
 }
 
-export async function getCategories(parentId?: string): Promise<Category[]> {
-  const { data } = await api.get<ApiResponse<ApiCategory[]>>('/categories', {
-    params: parentId ? { parentId } : undefined,
-  })
-  const list = data.data ?? []
-  return list.map(normalizeCategory)
+function parseCategoryList(raw: unknown): ApiCategory[] {
+  if (Array.isArray(raw)) return raw
+  if (raw && typeof raw === 'object' && 'data' in raw) {
+    const d = (raw as { data?: unknown }).data
+    return Array.isArray(d) ? d : []
+  }
+  return []
+}
+
+export async function getCategories(parentId?: string | null): Promise<Category[]> {
+  const params = parentId != null ? { parentId: String(parentId) } : { parentId: 'null' }
+  const { data } = await api.get<unknown>('/categories', { params })
+  const list = parseCategoryList(data)
+  return list.map((r: ApiCategory) => normalizeCategory(r))
 }
 
 export async function getCategoryById(id: string): Promise<Category> {
@@ -63,10 +72,21 @@ export async function getCategoryById(id: string): Promise<Category> {
   return normalizeCategory(data.data ?? {})
 }
 
+/** تصنيفات الصفحة الرئيسية - كالتطبيق: الجذر أولاً ثم المميزة */
+export async function getRootCategoriesForHome(): Promise<Category[]> {
+  try {
+    const roots = await getCategories(null)
+    if (roots.length > 0) return roots
+  } catch {
+    // تجاهل الخطأ
+  }
+  return getFeaturedCategories()
+}
+
 export async function getFeaturedCategories(): Promise<Category[]> {
-  const { data } = await api.get<ApiResponse<ApiCategory[]>>('/categories/featured/list')
-  const list = data.data ?? []
-  return list.map(normalizeCategory)
+  const { data } = await api.get<unknown>('/categories/featured/list')
+  const list = parseCategoryList(data)
+  return list.map((r: ApiCategory) => normalizeCategory(r))
 }
 
 export async function getCategoryTree(): Promise<CategoryTree> {

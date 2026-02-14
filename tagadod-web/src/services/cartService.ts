@@ -2,98 +2,60 @@ import { api } from './api'
 import type { Cart, CartItem, CartPreview, CheckoutPreview, CheckoutConfirmRequest, CheckoutSession } from '../types/cart'
 import type { ApiResponse } from '../types/common'
 import { useCurrencyStore } from '../stores/currencyStore'
+import { useCartStore } from '../stores/cartStore'
 
-/** API cart response shape */
-interface ApiCartItem {
-  itemId?: string
-  productId?: string
-  variantId?: string
-  qty?: number
-  quantity?: number
-  unit?: { base?: number; final?: number }
-  pricing?: { basePrice?: number; finalPrice?: number }
-  snapshot?: { name?: string; image?: string; slug?: string }
-}
-
-interface ApiCartResponse {
-  success?: boolean
-  data?: {
-    items?: ApiCartItem[]
-    subtotal?: number
-    total?: number
-    meta?: { count?: number; quantity?: number }
-    pricingSummaryByCurrency?: Record<
-      string,
-      { subtotal?: number; total?: number; currency?: string }
-    >
-    currency?: string
-  }
-}
-
-function normalizeCartItem(raw: ApiCartItem): CartItem {
-  const price =
-    raw.unit?.final ??
-    raw.pricing?.finalPrice ??
-    raw.unit?.base ??
-    raw.pricing?.basePrice ??
-    0
-  return {
-    id: raw.itemId ?? '',
-    productId: raw.productId ?? '',
-    variantId: raw.variantId,
-    quantity: raw.qty ?? raw.quantity ?? 0,
-    price,
-    product: raw.snapshot
-      ? {
-          id: raw.productId ?? '',
-          name: raw.snapshot.name ?? '',
-          images: raw.snapshot.image ? [raw.snapshot.image] : [],
-          price,
-        }
-      : undefined,
-  }
-}
-
-export async function getCart(): Promise<Cart> {
-  const { data } = await api.get<ApiCartResponse>('/cart')
-  const inner = data?.data
-  const rawItems = inner?.items ?? []
-  const items = rawItems.map(normalizeCartItem)
-  const currency = useCurrencyStore.getState().currency
-  const summary = inner?.pricingSummaryByCurrency?.[currency] ?? inner?.pricingSummaryByCurrency?.USD ?? {}
-  const subtotal = summary.subtotal ?? summary.total ?? inner?.subtotal ?? 0
-  const total = summary.total ?? summary.subtotal ?? inner?.total ?? subtotal
-  const meta = inner?.meta ?? {}
-
+/**
+ * Returns cart from local storage (Local-first: no API call).
+ * Use this for displaying cart in UI.
+ */
+export function getLocalCart(): Cart {
+  const items = useCartStore.getState().items
+  const subtotal = useCartStore.getState().getSubtotal()
   return {
     items,
     subtotal,
-    total,
-    itemsCount: meta.quantity ?? meta.count ?? items.length,
+    total: subtotal,
+    itemsCount: useCartStore.getState().getCount(),
   }
 }
 
-export async function addToCart(body: { productId: string; variantId?: string; quantity: number }): Promise<CartItem> {
-  const { data } = await api.post<ApiResponse<CartItem>>('/cart/items', body)
-  return data.data
+/**
+ * Add item to local cart (no API). Call syncCart before checkout.
+ */
+export function addToCartLocal(item: CartItem): void {
+  useCartStore.getState().addItem(item)
 }
 
-export async function updateCartItem(itemId: string, body: { quantity: number }): Promise<CartItem> {
-  const { data } = await api.patch<ApiResponse<CartItem>>(`/cart/items/${itemId}`, body)
-  return data.data
+/**
+ * Update quantity locally. Use item id (product:id or variant:id).
+ */
+export function updateCartItemLocal(itemId: string, quantity: number): void {
+  useCartStore.getState().updateQuantity(itemId, quantity)
 }
 
-export async function removeCartItem(itemId: string): Promise<void> {
-  await api.delete(`/cart/items/${itemId}`)
+/**
+ * Remove item from local cart.
+ */
+export function removeCartItemLocal(itemId: string): void {
+  useCartStore.getState().removeItem(itemId)
+}
+
+/**
+ * Sync local cart to server. Call this before checkout (e.g. when user clicks "متابعة الشراء").
+ * Backend expects items with productId?, variantId?, qty. Returns local cart on success.
+ */
+export async function syncCart(items?: Array<{ productId?: string; variantId?: string; qty: number }>): Promise<Cart> {
+  const payload = items ?? useCartStore.getState().getSyncPayload()
+  const currency = useCurrencyStore.getState().currency
+  await api.post<{ data?: { synced?: boolean; message?: string; itemsCount?: number } }>('/cart/sync', {
+    items: payload,
+    currency,
+  })
+  return getLocalCart()
 }
 
 export async function previewCart(): Promise<CartPreview> {
   const { data } = await api.post<ApiResponse<CartPreview>>('/cart/preview')
-  return data.data
-}
-
-export async function syncCart(items: Array<{ productId: string; variantId?: string; quantity: number }>): Promise<Cart> {
-  const { data } = await api.post<ApiResponse<Cart>>('/cart/sync', { items })
   return data.data
 }
 

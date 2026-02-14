@@ -3,9 +3,40 @@
   <head>
     <script>
       (function(){
-        var t=localStorage.getItem('tagadod-theme');
-        if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))
-          document.documentElement.classList.add('dark');
+        try {
+          var t = localStorage.getItem('tagadod-theme');
+          var mode = 'auto';
+          
+          if (t) {
+            // Try to parse as JSON (zustand persist format)
+            try {
+              var parsed = JSON.parse(t);
+              mode = parsed?.state?.mode || 'auto';
+            } catch(e) {
+              // If not JSON, check if it's a direct theme value
+              if (t === 'light' || t === 'dark' || t === 'auto') {
+                mode = t;
+              }
+            }
+          }
+          
+          // Apply theme based on mode
+          var isDark = false;
+          if (mode === 'dark') {
+            isDark = true;
+          } else if (mode === 'auto') {
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          }
+          
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch(e) {
+          // Fallback - check system preference
+          if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+          }
+        }
       })();
     </script>
     <meta charset="UTF-8" />

@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Heart,
   MapPin,
@@ -17,25 +17,65 @@ import {
   FileText,
   Shield,
   Trash2,
-  CheckCircle,
   Monitor,
+  CheckCircle2,
+  Clock,
+  Info,
+  LogIn,
+  ArrowRight,
+  LogOut,
 } from 'lucide-react'
-import { clearAuth, isLoggedIn } from '../../stores/authStore'
+import { clearAuth, isLoggedIn, isGuestMode as getIsGuestMode } from '../../stores/authStore'
 import { useUserStore } from '../../stores/userStore'
 import { useThemeStore } from '../../stores/themeStore'
 import { useLanguageStore } from '../../stores/languageStore'
 import { useCurrencyStore } from '../../stores/currencyStore'
 import { languages } from '../../i18n'
+import { gradients } from '../../theme'
 import { ConfirmationSheet, GlobalTextField, GlobalButton, BottomSheet } from '../../components/shared'
 import * as authService from '../../services/authService'
 
+/* ------------------------------------------------------------------ */
+/*  Menu Item                                                          */
+/* ------------------------------------------------------------------ */
+function MenuItem({
+  icon: Icon,
+  label,
+  to,
+  onClick,
+  trailing,
+  disabled,
+}: {
+  icon: React.ElementType
+  label: string
+  to?: string
+  onClick?: () => void
+  trailing?: React.ReactNode
+  disabled?: boolean
+}) {
+  const cls = `w-full flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5 text-start ${disabled ? 'opacity-40 pointer-events-none' : ''}`
+  const content = (
+    <>
+      <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles text-sm">
+        <Icon size={20} />
+        {label}
+      </span>
+      {trailing ?? <ChevronLeft size={18} className="text-tagadod-gray rtl:rotate-0 ltr:rotate-180" />}
+    </>
+  )
+  if (to) return <Link to={to} className={cls}>{content}</Link>
+  return <button onClick={onClick} className={cls}>{content}</button>
+}
+
+/* ------------------------------------------------------------------ */
+/*  Profile Page                                                       */
+/* ------------------------------------------------------------------ */
 export function ProfilePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const loggedIn = isLoggedIn()
+  const isGuest = getIsGuestMode() || !loggedIn
   const user = useUserStore((s) => s.user)
-  const isEngineer = useUserStore((s) => s.isEngineer())
-  const isMerchant = user?.userType === 'merchant'
   const themeMode = useThemeStore((s) => s.mode)
   const setThemeMode = useThemeStore((s) => s.setMode)
   const language = useLanguageStore((s) => s.language)
@@ -51,6 +91,39 @@ export function ProfilePage() {
   const [deleteReason, setDeleteReason] = useState('')
   const [deletePassword, setDeletePassword] = useState('')
 
+  /* ---- جلب بيانات المستخدم ---- */
+  const { data: meData } = useQuery({
+    queryKey: ['user', 'me'],
+    queryFn: authService.getMe,
+    enabled: loggedIn,
+  })
+
+  useEffect(() => {
+    if (meData) {
+      useUserStore.getState().setUser({
+        id: meData.id,
+        firstName: meData.firstName,
+        lastName: meData.lastName,
+        phone: meData.phone,
+        userType: meData.userType,
+        verificationStatus: meData.verificationStatus,
+      })
+    }
+  }, [meData])
+
+  /* ---- مشتقات المستخدم ---- */
+  const isEngineer = user?.userType === 'engineer'
+  const isMerchant = user?.userType === 'merchant'
+  const displayName = user?.firstName
+    ? [user.firstName, user.lastName].filter(Boolean).join(' ')
+    : null
+  const avatarLetter = displayName
+    ? displayName.charAt(0)
+    : loggedIn ? 'م' : 'ز'
+  const verificationStatus = user?.verificationStatus ?? 'unverified'
+  const needsVerify = loggedIn && verificationStatus === 'unverified' && (isEngineer || isMerchant)
+
+  /* ---- أحداث ---- */
   const handleLogout = () => {
     clearAuth()
     useUserStore.getState().setUser(null)
@@ -82,224 +155,154 @@ export function ProfilePage() {
         : t('profile.auto', 'تلقائي')
 
   return (
-    <div className="p-4 pb-24">
-      {/* Header */}
-      <div className="flex flex-col items-center py-6">
-        <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-3">
-          <span className="text-2xl font-bold text-primary">
-            {loggedIn ? 'م' : 'ز'}
-          </span>
+    <div className="pb-24">
+      {/* ========== Header ========== */}
+      <div className="flex flex-col items-center pt-6 pb-4 px-4">
+        {/* Avatar */}
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#E4F5FF] to-[#C8EDFF] dark:from-white/10 dark:to-white/5 flex items-center justify-center mb-4 shadow-md">
+          <span className="text-3xl font-bold text-primary">{avatarLetter}</span>
         </div>
-        <h3 className="text-lg font-semibold text-tagadod-titles dark:text-tagadod-dark-titles">
-          {loggedIn ? t('profile.welcome') : t('profile.guest')}
+
+        {/* Name */}
+        <h3 className="text-xl font-bold text-tagadod-titles dark:text-tagadod-dark-titles text-center mb-1">
+          {isGuest ? t('auth.continueAsGuest', 'الاستمرار كزائر') : (displayName ?? t('profile.welcome'))}
         </h3>
-      </div>
 
-      {/* Menu */}
-      <div className="rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden">
-        <Link
-          to="/favorites"
-          className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10"
-        >
-          <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-            <Heart size={20} />
-            {t('profile.favorites')}
+        {/* Phone */}
+        {loggedIn && user?.phone && (
+          <p className="text-sm text-tagadod-gray mb-3" dir="ltr">{user.phone}</p>
+        )}
+
+        {/* شارة حالة التوثيق أو الزائر */}
+        {isGuest ? (
+          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary/15 border border-primary/30 text-primary text-sm font-medium mb-4">
+            <User size={16} />
+            {t('auth.continueAsGuest', 'الاستمرار كزائر')}
           </span>
-          <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-        </Link>
-        <Link
-          to="/addresses"
-          className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10"
-        >
-          <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-            <MapPin size={20} />
-            {t('profile.addresses')}
-          </span>
-          <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-        </Link>
-        {!isEngineer ? (
-          <Link
-            to="/maintenance-orders"
-            className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10"
-          >
-            <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-              <Wrench size={20} />
-              {t('profile.requestEngineer')}
-            </span>
-            <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-          </Link>
         ) : (
-          <>
-            <Link
-              to="/my-engineer-profile"
-              className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10"
-            >
-              <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-                <User size={20} />
-                بروفايل المهندس
-              </span>
-              <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-            </Link>
-            <Link
-              to="/customers-orders"
-              className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10"
-            >
-              <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-                <Wrench size={20} />
-                طلبات العملاء
-              </span>
-              <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-            </Link>
-          </>
+          <span
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium mb-3 ${
+              verificationStatus === 'verified'
+                ? 'bg-green-500/15 border border-green-500/30 text-green-600 dark:text-green-400'
+                : verificationStatus === 'underReview'
+                  ? 'bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400'
+                  : 'bg-tagadod-gray/15 border border-tagadod-gray/30 text-tagadod-gray'
+            }`}
+          >
+            {verificationStatus === 'verified' ? <CheckCircle2 size={16} /> : verificationStatus === 'underReview' ? <Clock size={16} /> : <Info size={16} />}
+            {t(`profile.${verificationStatus}`)}
+          </span>
         )}
 
-        {/* Preferences */}
-        <button
-          onClick={() => setShowLangSheet(true)}
-          className="w-full flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 text-start"
-        >
-          <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-            <Globe size={20} />
-            {t('profile.language')}
-          </span>
-          <span className="text-tagadod-gray text-sm">
-            {languages.find((x) => x.code === language)?.label ?? language}
-          </span>
-        </button>
-        <button
-          onClick={() => setShowThemeSheet(true)}
-          className="w-full flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 text-start"
-        >
-          <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-            <Sun size={20} />
-            {t('profile.theme')}
-          </span>
-          <span className="text-tagadod-gray text-sm">{themeLabel}</span>
-        </button>
-        <button
-          onClick={() => setShowCurrencySheet(true)}
-          className="w-full flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 text-start"
-        >
-          <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-            <DollarSign size={20} />
-            {t('profile.currencyType')}
-          </span>
-          <span className="text-tagadod-gray text-sm">{currencyLabels[currency] ?? currency}</span>
-        </button>
-
-        {loggedIn && (
-          <>
-            <Link
-              to="/edit-profile"
-              className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10"
-            >
-              <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-                <User size={20} />
-                {t('profile.editAccount')}
-              </span>
-              <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-            </Link>
-            <Link
-              to="/reset-password"
-              className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10"
-            >
-              <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-                <Lock size={20} />
-                {t('profile.changePassword', 'تغيير كلمة المرور')}
-              </span>
-              <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-            </Link>
-          </>
-        )}
-
-        {/* Verify Account - for engineer/merchant */}
-        {loggedIn && (isEngineer || isMerchant) && (
+        {/* زر تحقق الحساب */}
+        {needsVerify && (
           <Link
             to="/verify-account"
-            className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-amber-500 text-white text-sm font-semibold mb-3 hover:bg-amber-600 transition-colors"
           >
-            <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-              <CheckCircle size={20} />
-              تحقق الحساب
-            </span>
-            <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
+            {t('profile.verifyAccount')}
+            <ArrowRight size={14} className="rtl:rotate-180" />
           </Link>
         )}
 
-        {/* Chat */}
-        <Link
-          to="/chat"
-          className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10"
-        >
-          <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-            <MessageCircle size={20} />
-            الدردشة
-          </span>
-          <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-        </Link>
-
-        <button className="w-full flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10 text-start">
-          <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-            <Share2 size={20} />
-            {t('profile.shareApp')}
-          </span>
-          <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-        </button>
-        <Link
-          to="/privacy-policy"
-          className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10"
-        >
-          <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-            <FileText size={20} />
-            سياسة الخصوصية
-          </span>
-          <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-        </Link>
-        <Link
-          to="/terms-and-conditions"
-          className="flex items-center justify-between p-4 text-start"
-        >
-          <span className="flex items-center gap-3 text-tagadod-titles dark:text-tagadod-dark-titles">
-            <Shield size={20} />
-            الشروط والأحكام
-          </span>
-          <ChevronLeft size={20} className="text-tagadod-gray rotate-180" />
-        </Link>
+        {/* زر تعديل الحساب أو تسجيل الدخول */}
+        {isGuest ? (
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-white text-sm font-semibold transition-colors"
+            style={{ background: gradients.linerGreen }}
+          >
+            {t('profile.loginNow')}
+            <LogIn size={16} />
+          </Link>
+        ) : (
+          <Link
+            to="/edit-profile"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-white text-sm font-semibold transition-colors"
+            style={{ background: gradients.linerGreenReversed }}
+          >
+            {t('profile.editAccount')}
+            <ArrowRight size={14} className="rtl:rotate-180" />
+          </Link>
+        )}
       </div>
 
+      {/* ========== قسم المهندس / الصيانة ========== */}
+      <div className="mx-4 mb-4 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden">
+        {isEngineer ? (
+          <>
+            <MenuItem icon={User} label="بروفايل المهندس" to="/my-engineer-profile" />
+            <MenuItem icon={Wrench} label={t('profile.customerOrders', 'طلبات العملاء')} to="/customers-orders" />
+          </>
+        ) : (
+          <MenuItem icon={Wrench} label={t('profile.requestEngineer')} to="/maintenance-orders" />
+        )}
+      </div>
+
+      {/* ========== المفضلة والعناوين ========== */}
+      <div className="mx-4 mb-4 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden">
+        <MenuItem icon={Heart} label={t('profile.favorites')} to="/favorites" disabled={isGuest} />
+        <MenuItem icon={MapPin} label={t('profile.addresses')} to="/addresses" disabled={isGuest} />
+      </div>
+
+      {/* ========== الأمان ========== */}
       {loggedIn && (
+        <div className="mx-4 mb-4 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden">
+          <MenuItem icon={Lock} label={t('profile.changePassword', 'تغيير كلمة المرور')} to="/reset-password" />
+        </div>
+      )}
+
+      {/* ========== الدعم والمشاركة ========== */}
+      <div className="mx-4 mb-4 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden">
+        <MenuItem icon={MessageCircle} label={t('profile.contactUs', 'تواصل معنا')} to="/chat" />
+        <MenuItem icon={Share2} label={t('profile.shareApp')} onClick={() => navigator.share?.({ url: 'https://tagadod.app/' }).catch(() => {})} />
+      </div>
+
+      {/* ========== اللغة والعملة والمظهر ========== */}
+      <div className="mx-4 mb-4 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden">
+        <MenuItem
+          icon={Globe}
+          label={t('profile.language')}
+          onClick={() => setShowLangSheet(true)}
+          trailing={<span className="text-tagadod-gray text-sm">{languages.find((x) => x.code === language)?.label ?? language}</span>}
+        />
+        <MenuItem
+          icon={Sun}
+          label={t('profile.theme')}
+          onClick={() => setShowThemeSheet(true)}
+          trailing={<span className="text-tagadod-gray text-sm">{themeLabel}</span>}
+        />
+        <MenuItem
+          icon={DollarSign}
+          label={t('profile.currencyType')}
+          onClick={() => setShowCurrencySheet(true)}
+          trailing={<span className="text-tagadod-gray text-sm">{currencyLabels[currency] ?? currency}</span>}
+        />
+      </div>
+
+      {/* ========== الشروط والسياسة ========== */}
+      <div className="mx-4 mb-4 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden">
+        <MenuItem icon={FileText} label={t('profile.termsAndConditions', 'الشروط والأحكام')} to="/terms-and-conditions" />
+        <MenuItem icon={Shield} label={t('profile.privacyPolicy', 'سياسة الخصوصية')} to="/privacy-policy" />
+      </div>
+
+      {/* ========== تسجيل الخروج / حذف الحساب ========== */}
+      {isGuest ? (
+        <div className="mx-4 mb-4 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden">
+          <MenuItem icon={LogIn} label={t('profile.loginNow')} to="/login" />
+        </div>
+      ) : (
         <>
-          <button
-            onClick={() => setShowLogoutConfirm(true)}
-            className="w-full mt-6 py-3 text-tagadod-red font-semibold rounded-xl border border-tagadod-red"
-          >
-            {t('profile.logout')}
-          </button>
-
-          {/* Delete Account */}
-          <button
-            onClick={() => setShowDeleteSheet(true)}
-            className="w-full mt-3 py-3 text-tagadod-red/70 font-medium rounded-xl border border-dashed border-tagadod-red/40 flex items-center justify-center gap-2"
-          >
-            <Trash2 size={18} />
-            حذف الحساب
-          </button>
-
-          {/* Engineer/Customer toggle for testing */}
-          <button
-            onClick={() => {
-              useUserStore.getState().setUser(
-                isEngineer
-                  ? { id: 'demo', userType: 'customer' }
-                  : { id: 'demo', userType: 'engineer' }
-              )
-            }}
-            className="w-full mt-3 py-2 text-xs text-tagadod-gray border border-dashed rounded-xl"
-          >
-            {isEngineer ? 'عرض كعميل' : 'عرض كمهندس'}
-          </button>
+          <div className="mx-4 mb-4 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden">
+            <MenuItem icon={LogOut} label={t('profile.logout')} onClick={() => setShowLogoutConfirm(true)} />
+          </div>
+          <div className="mx-4 mb-4 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden">
+            <MenuItem icon={Trash2} label={t('profile.deleteAccount', 'حذف الحساب')} onClick={() => setShowDeleteSheet(true)} />
+          </div>
         </>
       )}
+
+      {/* ========== Sheets ========== */}
 
       {/* Logout Confirmation */}
       <ConfirmationSheet
@@ -315,29 +318,24 @@ export function ProfilePage() {
       {/* Delete Account Sheet */}
       <BottomSheet
         open={showDeleteSheet}
-        onClose={() => {
-          setShowDeleteSheet(false)
-          setDeleteReason('')
-          setDeletePassword('')
-          deleteAccountMutation.reset()
-        }}
-        title="حذف الحساب"
+        onClose={() => { setShowDeleteSheet(false); setDeleteReason(''); setDeletePassword(''); deleteAccountMutation.reset() }}
+        title={t('profile.deleteAccount', 'حذف الحساب')}
       >
         <p className="text-sm text-tagadod-gray mb-4">
-          هل أنت متأكد من حذف حسابك؟ هذا الإجراء لا يمكن التراجع عنه.
+          {t('profile.deleteAccountConfirm', 'هل أنت متأكد من حذف حسابك؟ هذا الإجراء لا يمكن التراجع عنه.')}
         </p>
         <div className="space-y-3 mb-4">
           <GlobalTextField
-            label="سبب الحذف (اختياري)"
-            placeholder="أدخل سبب الحذف..."
+            label={t('profile.deleteReason', 'سبب الحذف (اختياري)')}
+            placeholder="..."
             value={deleteReason}
             onChange={(e) => setDeleteReason(e.target.value)}
             multiline
             rows={2}
           />
           <GlobalTextField
-            label="كلمة المرور"
-            placeholder="أدخل كلمة المرور للتأكيد"
+            label={t('profile.enterPassword', 'كلمة المرور')}
+            placeholder="..."
             type="password"
             value={deletePassword}
             onChange={(e) => setDeletePassword(e.target.value)}
@@ -345,51 +343,27 @@ export function ProfilePage() {
         </div>
         {deleteAccountMutation.isError && (
           <p className="text-xs text-tagadod-red mb-3">
-            {(deleteAccountMutation.error as Error)?.message || 'حدث خطأ'}
+            {(deleteAccountMutation.error as Error)?.message || t('common.error')}
           </p>
         )}
         <div className="flex gap-3">
-          <GlobalButton
-            variant="ghost"
-            onClick={() => {
-              setShowDeleteSheet(false)
-              setDeleteReason('')
-              setDeletePassword('')
-            }}
-            className="border border-gray-300 dark:border-white/20"
-          >
+          <GlobalButton variant="ghost" onClick={() => { setShowDeleteSheet(false); setDeleteReason(''); setDeletePassword('') }} className="border border-gray-300 dark:border-white/20">
             {t('common.cancel', 'إلغاء')}
           </GlobalButton>
-          <GlobalButton
-            variant="danger"
-            onClick={() => deleteAccountMutation.mutate()}
-            loading={deleteAccountMutation.isPending}
-            disabled={!deletePassword.trim()}
-          >
-            حذف الحساب
+          <GlobalButton variant="danger" onClick={() => deleteAccountMutation.mutate()} loading={deleteAccountMutation.isPending} disabled={!deletePassword.trim()}>
+            {t('profile.deleteAccount', 'حذف الحساب')}
           </GlobalButton>
         </div>
       </BottomSheet>
 
       {/* Language Sheet */}
-      <BottomSheet
-        open={showLangSheet}
-        onClose={() => setShowLangSheet(false)}
-        title={t('profile.language')}
-      >
+      <BottomSheet open={showLangSheet} onClose={() => setShowLangSheet(false)} title={t('profile.language')}>
         <div className="space-y-2">
           {languages.map((l) => (
             <button
               key={l.code}
-              onClick={() => {
-                setLanguage(l.code as 'ar' | 'en')
-                setShowLangSheet(false)
-              }}
-              className={`w-full py-3 rounded-xl text-start px-4 ${
-                language === l.code
-                  ? 'bg-primary/20 text-primary'
-                  : 'bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles'
-              }`}
+              onClick={() => { setLanguage(l.code as 'ar' | 'en'); setShowLangSheet(false) }}
+              className={`w-full py-3 rounded-xl text-start px-4 ${language === l.code ? 'bg-primary/20 text-primary' : 'bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles'}`}
             >
               {l.label}
             </button>
@@ -397,77 +371,34 @@ export function ProfilePage() {
         </div>
       </BottomSheet>
 
-      {/* Theme Sheet with auto option */}
-      <BottomSheet
-        open={showThemeSheet}
-        onClose={() => setShowThemeSheet(false)}
-        title={t('profile.theme')}
-      >
+      {/* Theme Sheet */}
+      <BottomSheet open={showThemeSheet} onClose={() => setShowThemeSheet(false)} title={t('profile.theme')}>
         <div className="flex gap-3">
-          <button
-            onClick={() => {
-              setThemeMode('light')
-              setShowThemeSheet(false)
-            }}
-            className={`flex-1 py-3 rounded-xl flex flex-col items-center gap-1 ${
-              themeMode === 'light'
-                ? 'bg-primary/20 text-primary'
-                : 'bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles'
-            }`}
-          >
-            <Sun size={20} />
-            <span className="text-sm">{t('profile.light', 'فاتح')}</span>
-          </button>
-          <button
-            onClick={() => {
-              setThemeMode('dark')
-              setShowThemeSheet(false)
-            }}
-            className={`flex-1 py-3 rounded-xl flex flex-col items-center gap-1 ${
-              themeMode === 'dark'
-                ? 'bg-primary/20 text-primary'
-                : 'bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles'
-            }`}
-          >
-            <Sun size={20} />
-            <span className="text-sm">{t('profile.dark', 'داكن')}</span>
-          </button>
-          <button
-            onClick={() => {
-              setThemeMode('auto')
-              setShowThemeSheet(false)
-            }}
-            className={`flex-1 py-3 rounded-xl flex flex-col items-center gap-1 ${
-              themeMode === 'auto'
-                ? 'bg-primary/20 text-primary'
-                : 'bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles'
-            }`}
-          >
-            <Monitor size={20} />
-            <span className="text-sm">{t('profile.auto', 'تلقائي')}</span>
-          </button>
+          {([
+            { key: 'light' as const, icon: Sun, label: t('profile.light', 'فاتح') },
+            { key: 'dark' as const, icon: Sun, label: t('profile.dark', 'داكن') },
+            { key: 'auto' as const, icon: Monitor, label: t('profile.auto', 'تلقائي') },
+          ]).map(({ key, icon: TIcon, label }) => (
+            <button
+              key={key}
+              onClick={() => { setThemeMode(key); setShowThemeSheet(false) }}
+              className={`flex-1 py-3 rounded-xl flex flex-col items-center gap-1 ${themeMode === key ? 'bg-primary/20 text-primary' : 'bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles'}`}
+            >
+              <TIcon size={20} />
+              <span className="text-sm">{label}</span>
+            </button>
+          ))}
         </div>
       </BottomSheet>
 
       {/* Currency Sheet */}
-      <BottomSheet
-        open={showCurrencySheet}
-        onClose={() => setShowCurrencySheet(false)}
-        title={t('profile.currencyType')}
-      >
+      <BottomSheet open={showCurrencySheet} onClose={() => setShowCurrencySheet(false)} title={t('profile.currencyType')}>
         <div className="space-y-2">
           {(['USD', 'SAR', 'YER'] as const).map((c) => (
             <button
               key={c}
-              onClick={() => {
-                setCurrency(c)
-                setShowCurrencySheet(false)
-              }}
-              className={`w-full py-3 rounded-xl text-start px-4 ${
-                currency === c
-                  ? 'bg-primary/20 text-primary'
-                  : 'bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles'
-              }`}
+              onClick={() => { setCurrency(c); setShowCurrencySheet(false) }}
+              className={`w-full py-3 rounded-xl text-start px-4 ${currency === c ? 'bg-primary/20 text-primary' : 'bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles'}`}
             >
               {currencyLabels[c]}
             </button>

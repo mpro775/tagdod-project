@@ -11,7 +11,7 @@ export interface ProductFilters extends PaginationParams {
   inStock?: boolean
 }
 
-/** Raw product shape from API (new/featured list endpoints) */
+/** Raw product shape from API (new/featured/list endpoints) */
 interface ApiProductListItem {
   _id?: string
   id?: string
@@ -31,6 +31,8 @@ interface ApiProductListItem {
   isNew?: boolean
   isFeatured?: boolean
   isAvailable?: boolean
+  /** من الـ API: هل المنتج له متغيرات */
+  hasVariants?: boolean
 }
 
 function normalizeProduct(raw: ApiProductListItem): Product {
@@ -54,6 +56,7 @@ function normalizeProduct(raw: ApiProductListItem): Product {
     inStock: raw.isAvailable ?? true,
     isNew: raw.isNew ?? false,
     isFeatured: raw.isFeatured ?? false,
+    hasVariants: raw.hasVariants ?? false,
   }
 }
 
@@ -169,6 +172,7 @@ function normalizeProductDetail(
     inStock: rawProduct.isAvailable ?? true,
     isNew: rawProduct.isNew ?? false,
     isFeatured: rawProduct.isFeatured ?? false,
+    hasVariants: variants.length > 0,
     variants: variants.length ? variants : undefined,
   }
 }
@@ -228,7 +232,72 @@ export async function getProductPriceRange(productId: string): Promise<PriceRang
   return data.data
 }
 
+/** Raw product from categories API – data.data[] */
+interface ApiCollectionProduct {
+  _id?: string
+  id?: string
+  name?: string
+  nameEn?: string
+  mainImage?: { _id?: string; url?: string } | string | null
+  images?: string[]
+  hasVariants?: boolean
+  isAvailable?: boolean
+  isFeatured?: boolean
+  isNew?: boolean
+  pricing?: { minPriceUSD?: number; maxPriceUSD?: number; basePriceUSD?: number; finalPriceUSD?: number }
+  pricingByCurrency?: Record<string, { finalPrice?: number; basePrice?: number }>
+  defaultPricing?: { finalPrice?: number; basePrice?: number }
+}
+
+function normalizeCollectionProduct(raw: ApiCollectionProduct): Product {
+  const id = raw._id ?? raw.id ?? ''
+  const mainImg = raw.mainImage
+  const mainImageUrl =
+    (typeof mainImg === 'string' ? mainImg : (mainImg as { url?: string })?.url) ??
+    (Array.isArray(raw.images) ? raw.images[0] : undefined) ??
+    ''
+  const p = raw.pricing ?? {}
+  const dp = raw.defaultPricing
+  const pc = raw.pricingByCurrency
+  const usdPrice = pc?.USD
+  const price =
+    p.minPriceUSD ??
+    p.finalPriceUSD ??
+    p.basePriceUSD ??
+    p.maxPriceUSD ??
+    dp?.finalPrice ??
+    dp?.basePrice ??
+    usdPrice?.finalPrice ??
+    usdPrice?.basePrice ??
+    0
+
+  return {
+    id,
+    name: raw.name ?? raw.nameEn ?? '',
+    images: mainImageUrl ? [mainImageUrl] : [],
+    price,
+    inStock: raw.isAvailable ?? true,
+    hasVariants: raw.hasVariants ?? false,
+    isFeatured: raw.isFeatured ?? false,
+    isNew: raw.isNew ?? false,
+  }
+}
+
+/** API يعيد { success, data: { data: [...], meta } } */
+function parseCategoryProductsResponse(raw: unknown): PaginatedResponse<Product> {
+  const inner = raw && typeof raw === 'object' && 'data' in raw ? (raw as { data?: unknown }).data : undefined
+  const obj = inner && typeof inner === 'object' ? (inner as { data?: unknown[]; meta?: PaginatedResponse<Product>['meta'] }) : undefined
+  const items = Array.isArray(obj?.data) ? obj.data : []
+  return {
+    data: items.map((r) => normalizeCollectionProduct(r as ApiCollectionProduct)),
+    meta: obj?.meta ?? { page: 1, limit: 20, total: 0, totalPages: 0 },
+  }
+}
+
 export async function getProductsByCategory(categoryId: string, params?: PaginationParams): Promise<PaginatedResponse<Product>> {
-  const { data } = await api.get<PaginatedResponse<Product>>(`/categories/${categoryId}/products`, { params })
-  return data
+  const currency = useCurrencyStore.getState().currency
+  const { data } = await api.get<unknown>(`/categories/${categoryId}/products`, {
+    params: { ...params, currency },
+  })
+  return parseCategoryProductsResponse(data)
 }

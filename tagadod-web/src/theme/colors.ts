@@ -39,6 +39,8 @@ export const gradients = {
   linerGreen: 'linear-gradient(135deg, #159647 0%, #8BC543 100%)',
   linerGreenReversed: 'linear-gradient(135deg, #8BC543 0%, #159647 100%)',
   linerBlue: 'linear-gradient(135deg, #E4F5FF 0%, #C8EDFF 100%)',
+  /** للوضع الليلي – كـ darkLinerBlue في التطبيق */
+  linerBlueDark: 'linear-gradient(135deg, rgba(58,58,60,0.5) 0%, #3A3A3C 100%)',
 } as const;
 
 export type Colors = typeof colors;

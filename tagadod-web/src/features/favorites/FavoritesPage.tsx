@@ -8,14 +8,12 @@ import {
   ProductCardShimmer,
 } from '../../components/shared'
 import * as favoriteService from '../../services/favoriteService'
-import { useFavoritesStore } from '../../stores/favoritesStore'
 import type { FavoriteItem } from '../../types/favorite'
 
 export function FavoritesPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { toggle } = useFavoritesStore()
 
   const { data, isLoading } = useQuery({
     queryKey: ['favorites'],
@@ -32,7 +30,6 @@ export function FavoritesPage() {
   const favorites: FavoriteItem[] = data?.data ?? []
 
   const handleToggleFavorite = (productId: string) => {
-    toggle(productId)
     removeMutation.mutate(productId)
   }
 

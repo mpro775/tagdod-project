@@ -9,14 +9,35 @@ export interface EngineerProfile {
   jobTitle?: string
   whatsapp?: string
   phone?: string
-  specialties?: string[]
-  certifications?: string[]
-  rating?: number
-  ratingsCount?: number
-  completedServices?: number
+  specialties: string[]
+  certifications: string[]
+  rating: number
+  ratingsCount: number
+  completedServices: number
+  successRate: number
   city?: string
   isVerified?: boolean
+  joinedAt?: string
   createdAt?: string
+  // Wallet & financials (only in /me endpoint)
+  walletBalance: number
+  totalCommissionEarnings: number
+  totalEarnings: number
+  // Ratings from API
+  ratings: EngineerRating[]
+  ratingDistribution?: number[]
+  // Exchange rates
+  exchangeRates?: {
+    usdToYer: number
+    usdToSar: number
+    lastUpdatedAt?: string
+  }
+  // Offers profit
+  offersTotalProfit?: {
+    USD: number
+    YER: number
+    SAR: number
+  }
 }
 
 export interface EngineerRating {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff } from 'lucide-react'
 import { setGuestMode, setTokens } from '../../stores/authStore'
@@ -25,6 +25,8 @@ const GENDERS: { value: Gender; label: string; labelEn: string }[] = [
 export function LoginPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = (location.state as { from?: string })?.from ?? '/home'
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
 
   // Login fields
@@ -62,11 +64,11 @@ export function LoginPage() {
           phone: user.phone,
           userType: user.userType,
         })
-        navigate('/home', { replace: true })
+        navigate(from, { replace: true })
       } else {
         // Login with OTP
         await authService.sendOtp({ phone: phone.trim(), type: 'login' })
-        navigate('/otp', { state: { phone: phone.trim(), mode: 'login' } })
+        navigate('/otp', { state: { phone: phone.trim(), mode: 'login', from } })
       }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -105,6 +107,7 @@ export function LoginPage() {
 
   const handleGuest = () => {
     setGuestMode()
+    useUserStore.getState().setUser(null)
     navigate('/home', { replace: true })
   }
 

@@ -83,6 +83,10 @@
     "deleteReason": "Reason for deletion",
     "enterPassword": "Enter your password to confirm",
     "verifyAccount": "Verify Account",
+    "verified": "Verified",
+    "underReview": "Under review",
+    "unverified": "Unverified",
+    "loginNow": "Login now",
     "privacyPolicy": "Privacy Policy",
     "termsAndConditions": "Terms & Conditions",
     "chat": "Chat"
@@ -169,7 +173,8 @@
     "subtotal": "Subtotal",
     "total": "Total",
     "checkout": "Proceed to Checkout",
-    "removeItem": "Remove"
+    "removeItem": "Remove",
+    "syncError": "Failed to sync cart. Please try again."
   },
   "payment": {
     "title": "Payment",

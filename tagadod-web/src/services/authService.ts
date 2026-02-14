@@ -87,18 +87,55 @@ export async function getMe(): Promise<User> {
   return normalizeUser(user)
 }
 
+function mapStatusToVerification(status: string | undefined): User['verificationStatus'] {
+  switch (status) {
+    case 'approved':
+      return 'verified'
+    case 'pending':
+      return 'underReview'
+    default:
+      return 'unverified'
+  }
+}
+
+function resolveUserType(raw: Record<string, unknown>): User['userType'] {
+  // حقل صريح
+  if (raw.userType === 'engineer' || raw.userType === 'merchant' || raw.userType === 'customer') {
+    return raw.userType as User['userType']
+  }
+  // نفس التطبيق: نتحقق من roles أو capabilities
+  const roles = Array.isArray(raw.roles) ? raw.roles as string[] : []
+  if (roles.includes('engineer') || raw.engineerCapable === true) return 'engineer'
+  if (roles.includes('merchant') || raw.merchantCapable === true) return 'merchant'
+  return 'customer'
+}
+
 function normalizeUser(raw: Record<string, unknown>): User {
   const id = String(raw.id ?? raw._id ?? '')
+  const userType = resolveUserType(raw)
+
+  // حالة التوثيق – نفس التطبيق
+  let verificationStatus = raw.verificationStatus as User['verificationStatus'] | undefined
+  if (!verificationStatus || !['verified', 'unverified', 'underReview'].includes(verificationStatus)) {
+    if (userType === 'engineer') {
+      verificationStatus = mapStatusToVerification(raw.engineerStatus as string | undefined)
+    } else if (userType === 'merchant') {
+      verificationStatus = mapStatusToVerification(raw.merchantStatus as string | undefined)
+    } else {
+      verificationStatus = 'verified'
+    }
+  }
   return {
     id,
     firstName: raw.firstName as string | undefined,
     lastName: raw.lastName as string | undefined,
     phone: raw.phone as string | undefined,
     email: raw.email as string | undefined,
-    userType: (raw.userType ?? raw.roles?.[0] ?? 'customer') as User['userType'],
+    userType,
     gender: raw.gender as User['gender'],
     city: raw.city as string | undefined,
     avatar: raw.avatar as string | undefined,
+    verificationStatus,
   }
 }
 
