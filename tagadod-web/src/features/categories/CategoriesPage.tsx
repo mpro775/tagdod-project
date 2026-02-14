@@ -21,6 +21,8 @@ export function CategoriesPage() {
   const { data: categories, isLoading } = useQuery({
     queryKey: ['categoryTree'],
     queryFn: getCategoryTree,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
   })
 
   const flatCategories = Array.isArray(categories) ? categories : []

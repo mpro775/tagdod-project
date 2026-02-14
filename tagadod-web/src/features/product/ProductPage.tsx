@@ -137,6 +137,8 @@ export function ProductPage() {
     queryKey: ['product', id],
     queryFn: () => getProductById(id!),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
   })
 
   const product = productDetail?.product

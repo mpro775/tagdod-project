@@ -22,10 +22,12 @@ function BannerCarousel() {
   const { data: banners, isLoading } = useQuery({
     queryKey: ['banners'],
     queryFn: getBanners,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
   })
 
   const [current, setCurrent] = useState(0)
-  const timerRef = useRef<ReturnType<typeof setInterval>>()
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
   const count = banners?.length ?? 0
 
@@ -41,7 +43,9 @@ function BannerCarousel() {
   useEffect(() => {
     if (count <= 1) return
     timerRef.current = setInterval(next, 4000)
-    return () => clearInterval(timerRef.current)
+    return () => {
+      if (timerRef.current !== undefined) clearInterval(timerRef.current)
+    }
   }, [count, next])
 
   if (isLoading) {
@@ -58,25 +62,30 @@ function BannerCarousel() {
     <div className="relative px-4 mb-4 group max-w-7xl mx-auto">
       {/* Slide container */}
       <div className="overflow-hidden rounded-2xl relative h-48 sm:h-56 md:h-72 lg:h-80 xl:h-96">
-        {banners.map((banner, idx) => {
-          const Wrapper = banner.link ? Link : 'div'
-          const wrapperProps = banner.link ? { to: banner.link } : {}
-          return (
-            <Wrapper
-              key={banner.id}
-              {...wrapperProps}
-              className={`absolute inset-0 transition-opacity duration-500 ${
-                idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
-              }`}
-            >
+        {banners.map((banner, idx) => (
+          <div
+            key={banner.id}
+            className={`absolute inset-0 transition-opacity duration-500 ${
+              idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
+            }`}
+          >
+            {banner.link ? (
+              <Link to={banner.link} className="block w-full h-full">
+                <img
+                  src={banner.imageUrl}
+                  alt={banner.altText ?? ''}
+                  className="w-full h-full object-cover rounded-2xl"
+                />
+              </Link>
+            ) : (
               <img
                 src={banner.imageUrl}
                 alt={banner.altText ?? ''}
                 className="w-full h-full object-cover rounded-2xl"
               />
-            </Wrapper>
-          )
-        })}
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Arrows */}
@@ -124,6 +133,8 @@ function CategoriesStrip() {
   const { data: categories, isLoading } = useQuery({
     queryKey: ['rootCategories'],
     queryFn: getRootCategoriesForHome,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
   })
 
   if (isLoading) {
@@ -195,7 +206,12 @@ function ProductsGrid({
   title: string
   viewAllLink?: string
 }) {
-  const { data, isLoading } = useQuery({ queryKey, queryFn })
+  const { data, isLoading } = useQuery({
+    queryKey,
+    queryFn,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  })
 
   return (
     <div className="mb-6">

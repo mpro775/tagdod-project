@@ -23,6 +23,8 @@ export function ProductsByCategoryPage() {
     queryKey: ['category', id],
     queryFn: () => getCategoryById(id!),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
   })
 
   const {
@@ -41,6 +43,8 @@ export function ProductsByCategoryPage() {
       const { page, totalPages } = lastPage.meta
       return page < totalPages ? page + 1 : undefined
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
   })
 
   const handleObserver = useCallback(
