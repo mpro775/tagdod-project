@@ -1,0 +1,250 @@
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { gradients } from '../../theme'
+import { useUserStore } from '../../stores/userStore'
+import { getBanners } from '../../services/bannerService'
+import { getFeaturedCategories } from '../../services/categoryService'
+import { getNewProducts, getFeaturedProducts } from '../../services/productService'
+import {
+  ProductCard,
+  ProductCardShimmer,
+  SectionHeader,
+  ShimmerBox,
+} from '../../components/shared'
+
+/* ------------------------------------------------------------------ */
+/*  Banner Carousel                                                   */
+/* ------------------------------------------------------------------ */
+function BannerCarousel() {
+  const { data: banners, isLoading } = useQuery({
+    queryKey: ['banners'],
+    queryFn: getBanners,
+  })
+
+  const [current, setCurrent] = useState(0)
+  const timerRef = useRef<ReturnType<typeof setInterval>>()
+
+  const count = banners?.length ?? 0
+
+  const next = useCallback(() => {
+    setCurrent((prev) => (prev + 1) % (count || 1))
+  }, [count])
+
+  const prev = useCallback(() => {
+    setCurrent((p) => (p - 1 + (count || 1)) % (count || 1))
+  }, [count])
+
+  // Auto‑slide
+  useEffect(() => {
+    if (count <= 1) return
+    timerRef.current = setInterval(next, 4000)
+    return () => clearInterval(timerRef.current)
+  }, [count, next])
+
+  if (isLoading) {
+    return (
+      <div className="px-4 mb-4 max-w-7xl mx-auto">
+        <ShimmerBox className="w-full h-48 sm:h-56 md:h-72 lg:h-80 xl:h-96" rounded="rounded-2xl" />
+      </div>
+    )
+  }
+
+  if (!banners?.length) return null
+
+  return (
+    <div className="relative px-4 mb-4 group max-w-7xl mx-auto">
+      {/* Slide container */}
+      <div className="overflow-hidden rounded-2xl relative h-48 sm:h-56 md:h-72 lg:h-80 xl:h-96">
+        {banners.map((banner, idx) => {
+          const Wrapper = banner.link ? Link : 'div'
+          const wrapperProps = banner.link ? { to: banner.link } : {}
+          return (
+            <Wrapper
+              key={banner.id}
+              {...wrapperProps}
+              className={`absolute inset-0 transition-opacity duration-500 ${
+                idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              }`}
+            >
+              <img
+                src={banner.imageUrl}
+                alt={banner.altText ?? ''}
+                className="w-full h-full object-cover rounded-2xl"
+              />
+            </Wrapper>
+          )
+        })}
+      </div>
+
+      {/* Arrows */}
+      {count > 1 && (
+        <>
+          <button
+            onClick={prev}
+            className="absolute start-6 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/70 dark:bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronRight size={20} className="rtl:hidden" />
+            <ChevronLeft size={20} className="hidden rtl:block" />
+          </button>
+          <button
+            onClick={next}
+            className="absolute end-6 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/70 dark:bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronLeft size={20} className="rtl:hidden" />
+            <ChevronRight size={20} className="hidden rtl:block" />
+          </button>
+        </>
+      )}
+
+      {/* Dots */}
+      {count > 1 && (
+        <div className="flex justify-center gap-1.5 mt-2">
+          {banners.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrent(idx)}
+              className={`h-1.5 rounded-full transition-all ${
+                idx === current ? 'w-4 bg-primary' : 'w-1.5 bg-tagadod-gray/40'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Categories Strip                                                  */
+/* ------------------------------------------------------------------ */
+function CategoriesStrip() {
+  const { data: categories, isLoading } = useQuery({
+    queryKey: ['featuredCategories'],
+    queryFn: getFeaturedCategories,
+  })
+
+  if (isLoading) {
+    return (
+      <div className="mb-6">
+        <div className="px-4 mb-3">
+          <ShimmerBox className="w-24" height={20} />
+        </div>
+        <div className="flex gap-3 px-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <ShimmerBox key={i} className="flex-shrink-0 w-20 h-20" rounded="rounded-xl" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!categories?.length) return null
+
+  return (
+    <div className="mb-6">
+      <SectionHeader title="التصنيفات" viewAllLink="/allCategories" />
+      <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
+        {categories.map((cat) => (
+          <Link
+            key={cat.id}
+            to={`/categories/${cat.id}/products`}
+            className="flex-shrink-0 w-20 flex flex-col items-center gap-1.5"
+          >
+            <div className="w-20 h-20 rounded-xl bg-tagadod-bottom-bar-light dark:bg-tagadod-bottom-bar-dark overflow-hidden flex items-center justify-center">
+              {cat.image ? (
+                <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-tagadod-gray text-xl">{cat.icon ?? '📦'}</span>
+              )}
+            </div>
+            <span className="text-xs text-tagadod-titles dark:text-tagadod-dark-titles text-center line-clamp-1">
+              {cat.name}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Products Grid (reusable)                                           */
+/* ------------------------------------------------------------------ */
+function ProductsGrid({
+  queryKey,
+  queryFn,
+  title,
+  viewAllLink,
+}: {
+  queryKey: string[]
+  queryFn: () => Promise<{ data: import('../../types/product').Product[] }>
+  title: string
+  viewAllLink?: string
+}) {
+  const { data, isLoading } = useQuery({ queryKey, queryFn })
+
+  return (
+    <div className="mb-6">
+      <SectionHeader title={title} viewAllLink={viewAllLink} />
+      {isLoading ? (
+        <div className="grid grid-cols-4 gap-3 px-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <ProductCardShimmer key={i} />
+          ))}
+        </div>
+      ) : data?.data?.length ? (
+        <div className="grid grid-cols-4 gap-3 px-4">
+          {data.data.slice(0, 6).map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Home Page                                                         */
+/* ------------------------------------------------------------------ */
+export function HomePage() {
+  const { t } = useTranslation()
+  const isEngineer = useUserStore((s) => s.isEngineer())
+
+  return (
+    <div className="pb-24">
+      {/* Banner carousel */}
+      <BannerCarousel />
+
+      {/* Featured categories */}
+      <CategoriesStrip />
+
+      {/* New products */}
+      <ProductsGrid
+        queryKey={['newProducts']}
+        queryFn={() => getNewProducts({ limit: 6 })}
+        title={t('منتجات جديدة')}
+        viewAllLink="/products?type=new"
+      />
+
+      {/* Featured products */}
+      <ProductsGrid
+        queryKey={['featuredProducts']}
+        queryFn={() => getFeaturedProducts({ limit: 6 })}
+        title={t('منتجات مميزة')}
+        viewAllLink="/products?type=featured"
+      />
+
+      {/* FAB – حسب نوع المستخدم */}
+      <Link
+        to={isEngineer ? '/customers-orders' : '/maintenance-orders'}
+        className="fixed start-4 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 px-4 py-3 text-white font-semibold rounded-full shadow-lg transition-all hover:scale-105"
+        style={{ background: gradients.linerGreen }}
+      >
+        <span>{isEngineer ? 'طلبات العملاء' : 'اطلب مهندس'}</span>
+      </Link>
+    </div>
+  )
+}

@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+/* Tagadod Theme - Tailwind v4 */
+@theme {
+  --color-primary: #1E99D3;
+  --color-secondary: #159647;
+  --color-tagadod-gray: #8A8A8E;
+  --color-tagadod-titles: #56575C;
+  --color-tagadod-dark-titles: #D8D8DC;
+  --color-tagadod-light-bg: #FFFFFF;
+  --color-tagadod-dark-bg: #212124;
+  --color-tagadod-dark-gray: #1C1C1E;
+  --color-tagadod-bottom-bar-light: #F9F9F9;
+  --color-tagadod-bottom-bar-dark: #3A3A3C;
+  --color-tagadod-red: #E01B1B;
+  --color-tagadod-yellow: #FFB340;
+  --font-family-graphik: "Graphik Arabic", "Noto Sans Arabic", ui-sans-serif, sans-serif;
+}
+
+/* Tagadod Fonts */
+@font-face {
+  font-family: 'Graphik Arabic';
+  src: url('/assets/fonts/Graphik Arabic.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Graphik Arabic';
+  src: url('/assets/fonts/Graphik Arabic Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Graphik Arabic';
+  src: url('/assets/fonts/Graphik Arabic SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Graphik Arabic';
+  src: url('/assets/fonts/Graphik Arabic Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Somar Sans';
+  src: url('/assets/fonts/SomarSans-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@layer base {
+  :root {
+    font-family: var(--font-family-graphik);
+    color-scheme: light;
+    color: var(--color-tagadod-titles);
+    background-color: var(--color-tagadod-light-bg);
+  }
+
+  .dark {
+    color: var(--color-tagadod-dark-titles);
+    background-color: var(--color-tagadod-dark-bg);
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    font-family: var(--font-family-graphik);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
