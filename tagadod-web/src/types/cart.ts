@@ -46,7 +46,10 @@ export interface CheckoutPreview {
 export interface CheckoutConfirmRequest {
   addressId: string
   paymentMethod: string
+  currency?: string
   couponCode?: string
   notes?: string
   paymentReference?: string
+  paymentProvider?: string
+  localPaymentAccountId?: string
 }

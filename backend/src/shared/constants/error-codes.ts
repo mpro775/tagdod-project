@@ -1,7 +1,7 @@
 /**
  * نظام موحد لأكواد الأخطاء
  * Error Codes System
- * 
+ *
  * التنسيق: MODULE_XXX
  * حيث XXX رقم من 100-999
  */
@@ -211,10 +211,11 @@ export enum ErrorCode {
   UPLOAD_FILE_TOO_LARGE = 'UPLOAD_1051',
   UPLOAD_INVALID_FILE_TYPE = 'UPLOAD_1052',
   UPLOAD_NO_FILE = 'UPLOAD_1053',
-  MEDIA_NOT_FOUND = 'UPLOAD_1054',
-  MEDIA_DELETE_FAILED = 'UPLOAD_1055',
-  UPLOAD_IMAGE_TOO_SMALL = 'UPLOAD_1056',
-  UPLOAD_INVALID_ASPECT_RATIO = 'UPLOAD_1057',
+  UPLOAD_INVALID_FILE_SIZE = 'UPLOAD_1054',
+  MEDIA_NOT_FOUND = 'UPLOAD_1055',
+  MEDIA_DELETE_FAILED = 'UPLOAD_1056',
+  UPLOAD_IMAGE_TOO_SMALL = 'UPLOAD_1057',
+  UPLOAD_INVALID_ASPECT_RATIO = 'UPLOAD_1058',
 
   // ==================== أسعار الصرف (EXCHANGE_RATES: 1100-1149) ====================
   EXCHANGE_RATE_NOT_FOUND = 'EXCHANGE_1100',
@@ -466,10 +467,13 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.UPLOAD_FILE_TOO_LARGE]: 'حجم الملف كبير جداً',
   [ErrorCode.UPLOAD_INVALID_FILE_TYPE]: 'نوع الملف غير مدعوم',
   [ErrorCode.UPLOAD_NO_FILE]: 'لم يتم اختيار ملف',
+  [ErrorCode.UPLOAD_INVALID_FILE_SIZE]: 'حجم الملف غير صالح',
   [ErrorCode.MEDIA_NOT_FOUND]: 'الملف غير موجود',
   [ErrorCode.MEDIA_DELETE_FAILED]: 'فشل حذف الملف',
-  [ErrorCode.UPLOAD_IMAGE_TOO_SMALL]: 'أبعاد الصورة صغيرة جداً. متطلبات صور المنتجات: الحد الأدنى 400×400 بكسل، الحد الأقصى 2000×2000 بكسل، ويجب أن تكون الصورة مربعة (1:1)',
-  [ErrorCode.UPLOAD_INVALID_ASPECT_RATIO]: 'نسبة أبعاد الصورة غير صحيحة. متطلبات صور المنتجات: يجب أن تكون الصورة مربعة (1:1)، الحد الأدنى 400×400 بكسل، الحد الأقصى 2000×2000 بكسل',
+  [ErrorCode.UPLOAD_IMAGE_TOO_SMALL]:
+    'أبعاد الصورة صغيرة جداً. متطلبات صور المنتجات: الحد الأدنى 400×400 بكسل، الحد الأقصى 2000×2000 بكسل، ويجب أن تكون الصورة مربعة (1:1)',
+  [ErrorCode.UPLOAD_INVALID_ASPECT_RATIO]:
+    'نسبة أبعاد الصورة غير صحيحة. متطلبات صور المنتجات: يجب أن تكون الصورة مربعة (1:1)، الحد الأدنى 400×400 بكسل، الحد الأقصى 2000×2000 بكسل',
 
   // ==================== أسعار الصرف ====================
   [ErrorCode.EXCHANGE_RATE_NOT_FOUND]: 'سعر الصرف غير موجود',
@@ -525,53 +529,55 @@ export function getErrorMessage(code: ErrorCode): string {
 export function getHttpStatusCode(code: ErrorCode): number {
   // Auth errors - 401 Unauthorized
   // Check specific error codes first
-  if (code === ErrorCode.AUTH_UNAUTHORIZED || 
-      code === ErrorCode.AUTH_INVALID_TOKEN || 
-      code === ErrorCode.AUTH_TOKEN_EXPIRED ||
-      code === ErrorCode.AUTH_REFRESH_TOKEN_INVALID) {
+  if (
+    code === ErrorCode.AUTH_UNAUTHORIZED ||
+    code === ErrorCode.AUTH_INVALID_TOKEN ||
+    code === ErrorCode.AUTH_TOKEN_EXPIRED ||
+    code === ErrorCode.AUTH_REFRESH_TOKEN_INVALID
+  ) {
     return 401;
   }
-  
+
   // Check pattern-based auth errors
-  if (code.startsWith('AUTH_') && 
-      (code.includes('INVALID') || code.includes('EXPIRED'))) {
+  if (code.startsWith('AUTH_') && (code.includes('INVALID') || code.includes('EXPIRED'))) {
     return 401;
   }
-  
+
   // Forbidden - 403
-  if (code === ErrorCode.AUTH_FORBIDDEN || 
-      code.includes('FORBIDDEN') || 
-      code.includes('PERMISSION') || 
-      code.includes('NOT_ALLOWED')) {
+  if (
+    code === ErrorCode.AUTH_FORBIDDEN ||
+    code.includes('FORBIDDEN') ||
+    code.includes('PERMISSION') ||
+    code.includes('NOT_ALLOWED')
+  ) {
     return 403;
   }
-  
+
   // Not Found - 404
   if (code.includes('NOT_FOUND')) {
     return 404;
   }
-  
+
   // Conflict - 409
   if (code.includes('ALREADY_EXISTS') || code.includes('ALREADY_USED')) {
     return 409;
   }
-  
+
   // Too Many Requests - 429
   if (code.includes('RATE_LIMIT')) {
     return 429;
   }
-  
+
   // Internal Server Error - 500
   if (code.includes('INTERNAL') || code.includes('DATABASE') || code.includes('NETWORK')) {
     return 500;
   }
-  
+
   // Service Unavailable - 503
   if (code.includes('UNAVAILABLE') || code.includes('TIMEOUT')) {
     return 503;
   }
-  
+
   // Default - 400 Bad Request
   return 400;
 }
-

@@ -61,13 +61,50 @@ export async function rateOrder(orderId: string, body: OrderRating): Promise<voi
 }
 
 export async function getPaymentOptions(): Promise<PaymentOption[]> {
-  const { data } = await api.get<ApiResponse<PaymentOption[]>>('/orders/checkout/payment-options')
-  return data.data ?? []
+  const { data } = await api.get<unknown>('/orders/checkout/payment-options')
+  const root = (data ?? {}) as {
+    paymentOptions?: {
+      cod?: { method?: string; allowed?: boolean }
+      localPaymentProviders?: Array<{ providerId: string; providerName: string }>
+    }
+    data?: {
+      paymentOptions?: {
+        cod?: { method?: string; allowed?: boolean }
+        localPaymentProviders?: Array<{ providerId: string; providerName: string }>
+      }
+    }
+  }
+
+  const source = root.paymentOptions ?? root.data?.paymentOptions
+  if (!source) return []
+
+  const options: PaymentOption[] = []
+  if (source.cod?.allowed) {
+    options.push({
+      id: source.cod.method ?? 'COD',
+      type: source.cod.method ?? 'COD',
+      name: 'Cash on delivery',
+      nameAr: 'الدفع عند الاستلام',
+      isDefault: true,
+    })
+  }
+
+  if (Array.isArray(source.localPaymentProviders) && source.localPaymentProviders.length > 0) {
+    options.push({
+      id: 'BANK_TRANSFER',
+      type: 'BANK_TRANSFER',
+      name: 'Bank transfer',
+      nameAr: 'تحويل بنكي / محفظة',
+      isDefault: !source.cod?.allowed,
+    })
+  }
+
+  return options
 }
 
-export async function buildCheckoutSession(body: { addressId: string; paymentMethod: string }): Promise<{ sessionId: string }> {
-  const { data } = await api.post<ApiResponse<{ sessionId: string }>>('/orders/checkout/session', body)
-  return data.data
+export async function buildCheckoutSession(body: { couponCode?: string; couponCodes?: string[] }): Promise<unknown> {
+  const { data } = await api.post<unknown>('/orders/checkout/session', body)
+  return data
 }
 
 export async function getOrderTracking(orderId: string): Promise<OrderTracking> {

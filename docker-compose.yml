@@ -77,6 +77,28 @@ services:
       retries: 3
 
   # ========================================
+  # TAGDOD WEB APP (CUSTOMER FRONTEND)
+  # ========================================
+  web-app:
+    build:
+      context: ./tagadod-web
+      dockerfile: Dockerfile
+      args:
+        # Override with: WEB_API_BASE_URL=https://api.your-domain.com/api/v1
+        - VITE_API_BASE_URL=${WEB_API_BASE_URL:-https://api.allawzi.net/api/v1}
+    container_name: tagdod-web-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:80"
+    networks:
+      - tagdod-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================================
   # NGINX PROXY MANAGER
   # ========================================
   nginx-proxy-manager:
@@ -97,6 +119,7 @@ services:
     depends_on:
       - api
       - admin-dashboard
+      - web-app
     networks:
       - tagdod-network
     healthcheck:

@@ -7,21 +7,13 @@ import {
   CardContent,
   IconButton,
   LinearProgress,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
 } from '@mui/material';
-import {
-  CloudUpload,
-  Delete,
-  PlayArrow,
-  Stop,
-  VideoFile,
-  Close,
-} from '@mui/icons-material';
+import { CloudUpload, Delete, PlayArrow, Stop, VideoFile, Close } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { videoApi, VideoUploadResponse } from '../api/videoApi';
 import toast from 'react-hot-toast';
@@ -30,6 +22,7 @@ interface VideoUploaderProps {
   value?: string | null;
   onChange?: (videoId: string | null) => void;
   title?: string;
+  label?: string;
   disabled?: boolean;
 }
 
@@ -37,46 +30,57 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   value,
   onChange,
   title,
+  label,
   disabled = false,
 }) => {
   const { t } = useTranslation(['media', 'common']);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoTitle, setVideoTitle] = useState(title || '');
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [uploadedVideo, setUploadedVideo] = useState<VideoUploadResponse | null>(null);
 
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Check file type
-      const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv', 'video/webm', 'video/mkv', 'video/quicktime'];
-      if (!allowedTypes.includes(file.type)) {
-        toast.error(t('media:video.invalidType', 'نوع الفيديو غير مدعوم'));
-        return;
-      }
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        // Check file type
+        const allowedTypes = [
+          'video/mp4',
+          'video/avi',
+          'video/mov',
+          'video/wmv',
+          'video/flv',
+          'video/webm',
+          'video/mkv',
+          'video/quicktime',
+        ];
+        if (!allowedTypes.includes(file.type)) {
+          toast.error(t('media:video.invalidType', 'نوع الفيديو غير مدعوم'));
+          return;
+        }
 
-      // Check file size (max 500MB)
-      const maxSize = 500 * 1024 * 1024; // 500MB
-      if (file.size > maxSize) {
-        toast.error(t('media:video.tooLarge', 'حجم الفيديو كبير جداً. الحد الأقصى 500 ميجابايت'));
-        return;
-      }
+        // Check file size (max 500MB)
+        const maxSize = 500 * 1024 * 1024; // 500MB
+        if (file.size > maxSize) {
+          toast.error(t('media:video.tooLarge', 'حجم الفيديو كبير جداً. الحد الأقصى 500 ميجابايت'));
+          return;
+        }
 
-      setSelectedFile(file);
-      if (!videoTitle) {
-        setVideoTitle(file.name.replace(/\.[^/.]+$/, ''));
+        setSelectedFile(file);
+        if (!videoTitle) {
+          setVideoTitle(file.name.replace(/\.[^/.]+$/, ''));
+        }
+        setTitleDialogOpen(true);
       }
-      setTitleDialogOpen(true);
-    }
-  }, [videoTitle, t]);
+    },
+    [videoTitle, t]
+  );
 
   const handleUpload = useCallback(async () => {
     if (!selectedFile || !videoTitle.trim()) return;
 
     setIsUploading(true);
-    setUploadProgress(0);
 
     try {
       const result = await videoApi.upload(selectedFile, videoTitle.trim());
@@ -88,12 +92,11 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
       console.error('Video upload error:', error);
       toast.error(
         error?.response?.data?.message ||
-        error?.message ||
-        t('media:video.uploadError', 'فشل رفع الفيديو')
+          error?.message ||
+          t('media:video.uploadError', 'فشل رفع الفيديو')
       );
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
     }
   }, [selectedFile, videoTitle, onChange, t]);
 
@@ -109,8 +112,8 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
       console.error('Video delete error:', error);
       toast.error(
         error?.response?.data?.message ||
-        error?.message ||
-        t('media:video.deleteError', 'فشل حذف الفيديو')
+          error?.message ||
+          t('media:video.deleteError', 'فشل حذف الفيديو')
       );
     }
   }, [value, onChange, t]);
@@ -119,7 +122,6 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     setSelectedFile(null);
     setVideoTitle('');
     setTitleDialogOpen(false);
-    setUploadProgress(0);
   }, []);
 
   return (
@@ -145,13 +147,16 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
           <CardContent sx={{ p: 0 }}>
             <CloudUpload sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
             <Typography variant="h6" gutterBottom>
-              {t('media:video.uploadTitle', 'رفع فيديو')}
+              {label || t('media:video.uploadTitle', 'رفع فيديو')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {t('media:video.uploadDescription', 'اسحب وأفلت الفيديو هنا أو انقر للاختيار')}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              {t('media:video.supportedFormats', 'الصيغ المدعومة: MP4, AVI, MOV, WMV, FLV, WebM, MKV')}
+              {t(
+                'media:video.supportedFormats',
+                'الصيغ المدعومة: MP4, AVI, MOV, WMV, FLV, WebM, MKV'
+              )}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {t('media:video.maxSize', 'الحد الأقصى: 500 ميجابايت')}
@@ -181,12 +186,11 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                   {uploadedVideo?.title || t('media:video.uploadedVideo', 'فيديو مرفوع')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {uploadedVideo?.status === 'processing' 
+                  {uploadedVideo?.status === 'processing'
                     ? t('media:video.processing', 'جاري المعالجة...')
                     : uploadedVideo?.status === 'ready'
-                    ? t('media:video.ready', 'جاهز للعرض')
-                    : t('media:video.failed', 'فشلت المعالجة')
-                  }
+                      ? t('media:video.ready', 'جاهز للعرض')
+                      : t('media:video.failed', 'فشلت المعالجة')}
                 </Typography>
                 {uploadedVideo?.duration && (
                   <Typography variant="caption" color="text.secondary">
@@ -263,10 +267,9 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
             disabled={!videoTitle.trim() || isUploading}
             startIcon={isUploading ? <Stop /> : <PlayArrow />}
           >
-            {isUploading 
+            {isUploading
               ? t('media:video.uploading', 'جاري الرفع...')
-              : t('media:video.upload', 'رفع')
-            }
+              : t('media:video.upload', 'رفع')}
           </Button>
         </DialogActions>
       </Dialog>

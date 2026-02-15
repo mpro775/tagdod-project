@@ -114,23 +114,25 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center bg-tagadod-light-bg dark:bg-tagadod-dark-bg">
       <div className="w-full max-w-md flex flex-col flex-1 p-6">
-        {/* Logo */}
-        <div className="text-center py-8">
-          <h1 className="text-3xl font-bold text-primary mb-1">Tagadod</h1>
-          <p className="text-sm text-tagadod-gray">تجدُّد</p>
+        <div className="text-center pt-6 pb-5">
+          <img
+            src="/assets/icons/app_logo.png"
+            alt="تجدد - Tagadod"
+            className="mx-auto h-14 w-auto object-contain sm:h-16"
+          />
         </div>
 
-        {/* Tabs */}
-        <CustomTabBar
-          tabs={[
-            { key: 'login', label: t('auth.login') },
-            { key: 'register', label: t('auth.createAccount') },
-          ]}
-          activeTab={activeTab}
-          onTabChange={(k) => { setActiveTab(k as 'login' | 'register'); setError('') }}
-        />
+        <div className="flex-1 rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-tagadod-dark-gray shadow-[0_10px_32px_rgba(13,38,59,0.08)] p-4 sm:p-5">
+          <CustomTabBar
+            tabs={[
+              { key: 'login', label: t('auth.login') },
+              { key: 'register', label: t('auth.createAccount') },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(k) => { setActiveTab(k as 'login' | 'register'); setError('') }}
+          />
 
-        <div className="flex-1 pt-6">
+          <div className="pt-5">
           {activeTab === 'login' ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <PhoneNumberField
@@ -253,6 +255,7 @@ export function LoginPage() {
               </GlobalButton>
             </form>
           )}
+        </div>
         </div>
 
         <button

@@ -329,7 +329,7 @@ export class UploadController {
         itemsPerPage: { type: 'number', example: 20 },
         items: {
           type: 'array',
-          items: { type: VideoUploadResponseDto }
+          items: VideoUploadResponseDto
         }
       }
     }

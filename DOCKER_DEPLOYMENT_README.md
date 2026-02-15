@@ -6,6 +6,7 @@
 
 - **Backend API** مع Redis
 - **Admin Dashboard** (لوحة الإدارة - الموقع الرئيسي)
+- **Web App** (تطبيق الويب للعملاء)
 - **Nginx Reverse Proxy** لتوجيه الطلبات
 
 ## 🏗️ هيكل المشروع
@@ -18,6 +19,9 @@ tagdod-project/
 │   ├── Dockerfile
 │   └── .env
 ├── admin-dashboard/          # لوحة الإدارة (الموقع الرئيسي)
+│   ├── Dockerfile
+│   └── nginx.conf
+├── tagadod-web/              # تطبيق الويب (العملاء)
 │   ├── Dockerfile
 │   └── nginx.conf
 └── nginx/                    # إعدادات Nginx
@@ -69,6 +73,7 @@ docker-compose logs -f
 ```bash
 docker-compose restart api
 docker-compose restart admin-dashboard
+docker-compose restart web-app
 docker-compose restart nginx-proxy
 ```
 
@@ -98,11 +103,13 @@ docker-compose logs -f
 
 - **API**: http://localhost:3000
 - **Admin Dashboard**: http://localhost:8081
+- **Web App**: http://localhost:8082
 - **Nginx Proxy**: http://localhost (أو المنفذ 80)
 
 ### عبر الإنترنت (بعد إعداد DNS)
 
 - **لوحة الإدارة (الموقع الرئيسي)**: https://allawzi.net
+- **تطبيق الويب (العملاء)**: https://app.allawzi.net
 - **API**: https://api.allawzi.net
 
 ## 🔒 إعداد SSL
@@ -159,6 +166,7 @@ docker stats
 # فحص صحة الخدمات
 curl http://localhost:3000/health/live  # API
 curl http://localhost:8081/health       # Admin Dashboard
+curl http://localhost:8082/health       # Web App
 ```
 
 ### السجلات والتشخيص

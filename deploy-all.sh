@@ -2,7 +2,7 @@
 
 # ========================================
 # TAGDOD COMPLETE DEPLOYMENT SCRIPT
-# Deploys all services: API, Landing Page, Admin Dashboard, and Nginx Proxy
+# Deploys all services: API, Admin Dashboard, Web App, and Nginx Proxy
 # ========================================
 
 set -e
@@ -114,6 +114,7 @@ echo "========================"
 check_service "Redis" "tagdod-redis" ""
 check_service "API" "tagdod-api" "http://localhost:3000/health/live"
 check_service "Admin Dashboard" "tagdod-admin" "http://localhost:8081/health"
+check_service "Web App" "tagdod-web-app" "http://localhost:8082/health"
 check_service "Nginx Proxy Manager" "nginx-proxy-manager" ""
 
 # Show container status
@@ -142,6 +143,11 @@ echo ""
 echo "  2. Add Proxy Host for Admin Dashboard:"
 echo "     - Domain: allawzi.net"
 echo "     - Forward to: admin-dashboard:80"
+echo "     - Enable SSL with Let's Encrypt"
+echo ""
+echo "  3. Add Proxy Host for Web App:"
+echo "     - Domain: app.allawzi.net"
+echo "     - Forward to: web-app:80"
 echo "     - Enable SSL with Let's Encrypt"
 echo ""
 echo "📖 For detailed instructions, see: NGINX_PROXY_MANAGER_GUIDE.md"

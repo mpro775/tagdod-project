@@ -22,7 +22,7 @@ export function BottomSheet({ open, onClose, title, children, showClose = true }
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] flex items-end justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
         className="relative w-full max-w-md rounded-t-2xl bg-tagadod-light-bg dark:bg-tagadod-dark-bg p-6 animate-slide-up"

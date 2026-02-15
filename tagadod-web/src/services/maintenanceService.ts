@@ -12,6 +12,58 @@ import type {
 } from '../types/maintenance'
 import type { ApiResponse, PaginatedResponse, PaginationParams } from '../types/common'
 
+function normalizeServiceRequest(item: unknown): ServiceRequest {
+  const obj = (item ?? {}) as Record<string, unknown>
+  const offers = Array.isArray(obj.offers) ? obj.offers : undefined
+  return {
+    ...(obj as unknown as ServiceRequest),
+    id: (obj.id as string) ?? (obj._id as string) ?? '',
+    images: Array.isArray(obj.images) ? (obj.images as string[]) : [],
+    offersCount:
+      typeof obj.offersCount === 'number'
+        ? obj.offersCount
+        : offers?.length,
+  }
+}
+
+function parseServiceRequestsResponse(raw: unknown): PaginatedResponse<ServiceRequest> {
+  if (!raw || typeof raw !== 'object') {
+    return { data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 1 } }
+  }
+
+  const root = raw as Record<string, unknown>
+  const dataField = root.data
+  const dataObj = (dataField && typeof dataField === 'object' && !Array.isArray(dataField))
+    ? (dataField as Record<string, unknown>)
+    : undefined
+
+  const list = (
+    Array.isArray(dataField)
+      ? dataField
+      : Array.isArray(root.requests)
+        ? root.requests
+        : Array.isArray(dataObj?.requests)
+          ? (dataObj?.requests as unknown[])
+          : Array.isArray(dataObj?.data)
+            ? (dataObj?.data as unknown[])
+            : []
+  ) as unknown[]
+
+  const pagination = (root.pagination ?? dataObj?.pagination ?? root.meta ?? dataObj?.meta) as
+    | { page?: number; limit?: number; total?: number; totalPages?: number }
+    | undefined
+
+  return {
+    data: list.map(normalizeServiceRequest),
+    meta: {
+      page: pagination?.page ?? 1,
+      limit: pagination?.limit ?? 20,
+      total: pagination?.total ?? list.length,
+      totalPages: pagination?.totalPages ?? 1,
+    },
+  }
+}
+
 // ──────────────────────────── Customer Endpoints ────────────────────────────
 
 export async function createServiceRequest(body: CreateServiceRequestBody): Promise<ServiceRequest> {
@@ -25,23 +77,23 @@ export async function updateServiceRequest(id: string, body: UpdateServiceReques
 }
 
 export async function getMyRequests(params?: PaginationParams): Promise<PaginatedResponse<ServiceRequest>> {
-  const { data } = await api.get<PaginatedResponse<ServiceRequest>>('/services/customer/my', { params })
-  return data
+  const { data } = await api.get<unknown>('/services/customer/my', { params })
+  return parseServiceRequestsResponse(data)
 }
 
 export async function getMyRequestsNoOffers(params?: PaginationParams): Promise<PaginatedResponse<ServiceRequest>> {
-  const { data } = await api.get<PaginatedResponse<ServiceRequest>>('/services/customer/my/no-offers', { params })
-  return data
+  const { data } = await api.get<unknown>('/services/customer/my/no-offers', { params })
+  return parseServiceRequestsResponse(data)
 }
 
 export async function getMyRequestsWithOffers(params?: PaginationParams): Promise<PaginatedResponse<ServiceRequest>> {
-  const { data } = await api.get<PaginatedResponse<ServiceRequest>>('/services/customer/my/with-offers', { params })
-  return data
+  const { data } = await api.get<unknown>('/services/customer/my/with-offers', { params })
+  return parseServiceRequestsResponse(data)
 }
 
 export async function getMyRequestsWithAccepted(params?: PaginationParams): Promise<PaginatedResponse<ServiceRequest>> {
-  const { data } = await api.get<PaginatedResponse<ServiceRequest>>('/services/customer/my/with-accepted-offer', { params })
-  return data
+  const { data } = await api.get<unknown>('/services/customer/my/with-accepted-offer', { params })
+  return parseServiceRequestsResponse(data)
 }
 
 export async function getRequestDetails(id: string): Promise<ServiceRequest> {

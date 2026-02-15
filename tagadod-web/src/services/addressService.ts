@@ -20,6 +20,8 @@ interface ApiAddressItem {
 interface ApiAddressesResponse {
   success?: boolean
   data?: { addresses?: ApiAddressItem[]; count?: number }
+  addresses?: ApiAddressItem[]
+  address?: ApiAddressItem
 }
 
 function normalizeAddress(raw: ApiAddressItem): Address {
@@ -40,7 +42,7 @@ function normalizeAddress(raw: ApiAddressItem): Address {
 
 export async function getAddresses(): Promise<Address[]> {
   const { data } = await api.get<ApiAddressesResponse>('/addresses')
-  const list = data?.data?.addresses ?? []
+  const list = data?.data?.addresses ?? data?.addresses ?? []
   return list.map((a) => normalizeAddress(a))
 }
 
@@ -54,8 +56,24 @@ export async function createAddress(body: {
   lng?: number
   isDefault?: boolean
 }): Promise<Address> {
-  const { data } = await api.post<ApiResponse<Address>>('/addresses', body)
-  return data.data
+  const payload = {
+    label: body.label,
+    line1: body.line1 ?? body.street,
+    city: body.city,
+    coords:
+      typeof body.lat === 'number' && typeof body.lng === 'number'
+        ? { lat: body.lat, lng: body.lng }
+        : undefined,
+    notes: body.details,
+    isDefault: body.isDefault,
+  }
+
+  const { data } = await api.post<ApiAddressesResponse & ApiResponse<ApiAddressItem>>('/addresses', payload)
+  const raw = data?.address ?? data?.data
+  if (!raw) {
+    throw new Error('تعذر حفظ العنوان')
+  }
+  return normalizeAddress(raw)
 }
 
 export async function deleteAddress(id: string): Promise<void> {

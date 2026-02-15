@@ -4,6 +4,63 @@ import type { ApiResponse } from '../types/common'
 import { useCurrencyStore } from '../stores/currencyStore'
 import { useCartStore } from '../stores/cartStore'
 
+export interface CheckoutSessionAddress {
+  id: string
+  label?: string
+  line1?: string
+  city?: string
+  isDefault: boolean
+  isActive?: boolean
+  coords?: { lat: number; lng: number }
+}
+
+export interface CheckoutSessionPaymentOptionStatus {
+  method?: string
+  allowed?: boolean
+  reason?: string
+  codEligibility?: {
+    requiredOrders?: number
+    completedOrders?: number
+  }
+}
+
+export interface CheckoutSessionLocalPaymentProvider {
+  providerId: string
+  providerName: string
+  icon?: { url?: string }
+  supportedCurrencies?: string[]
+  sharedAccountNumber?: string
+  accounts?: Array<{
+    id: string
+    currency: string
+    accountNumber: string
+    isActive: boolean
+  }>
+}
+
+export interface CheckoutSessionData {
+  totals: {
+    subtotal: number
+    shipping: number
+    total: number
+    currency: string
+  }
+  discounts: {
+    itemsDiscount: number
+    couponDiscount: number
+    totalDiscount: number
+  }
+  addresses: CheckoutSessionAddress[]
+  paymentOptions: {
+    cod?: CheckoutSessionPaymentOptionStatus
+    localPaymentProviders?: CheckoutSessionLocalPaymentProvider[]
+    customerOrderStats?: {
+      requiredForCOD?: number
+      completedOrders?: number
+    }
+  }
+}
+
 /**
  * Returns cart from local storage (Local-first: no API call).
  * Use this for displaying cart in UI.
@@ -64,7 +121,35 @@ export async function checkoutPreview(body: { addressId: string; couponCode?: st
   return data.data
 }
 
+export async function checkoutSession(body: { couponCode?: string; couponCodes?: string[] }): Promise<CheckoutSessionData> {
+  const { data } = await api.post<unknown>('/orders/checkout/session', body)
+  const root = (data ?? {}) as {
+    session?: CheckoutSessionData
+    data?: { session?: CheckoutSessionData }
+  }
+  const session = root.session ?? root.data?.session
+  if (!session) {
+    return {
+      totals: { subtotal: 0, shipping: 0, total: 0, currency: 'USD' },
+      discounts: { itemsDiscount: 0, couponDiscount: 0, totalDiscount: 0 },
+      addresses: [],
+      paymentOptions: {},
+    }
+  }
+  return session
+}
+
 export async function checkoutConfirm(body: CheckoutConfirmRequest): Promise<CheckoutSession> {
-  const { data } = await api.post<ApiResponse<CheckoutSession>>('/orders/checkout/confirm', body)
+  const payload = {
+    deliveryAddressId: body.addressId,
+    currency: body.currency ?? useCurrencyStore.getState().currency ?? 'USD',
+    paymentMethod: body.paymentMethod,
+    paymentProvider: body.paymentProvider,
+    localPaymentAccountId: body.localPaymentAccountId,
+    couponCode: body.couponCode,
+    customerNotes: body.notes,
+    paymentReference: body.paymentReference,
+  }
+  const { data } = await api.post<ApiResponse<CheckoutSession>>('/orders/checkout/confirm', payload)
   return data.data
 }

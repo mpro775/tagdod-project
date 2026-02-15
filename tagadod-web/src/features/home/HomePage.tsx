@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react'
 import { gradients } from '../../theme'
-import { useUserStore } from '../../stores/userStore'
 import { getBanners } from '../../services/bannerService'
 import { getRootCategoriesForHome } from '../../services/categoryService'
 import { getNewProducts, getFeaturedProducts } from '../../services/productService'
@@ -59,9 +58,9 @@ function BannerCarousel() {
   if (!banners?.length) return null
 
   return (
-    <div className="relative px-4 mb-4 group max-w-7xl mx-auto">
+    <div className="relative px-4 mb-6 group max-w-7xl mx-auto">
       {/* Slide container */}
-      <div className="overflow-hidden rounded-2xl relative h-48 sm:h-56 md:h-72 lg:h-80 xl:h-96">
+      <div className="overflow-hidden rounded-3xl relative h-52 sm:h-60 md:h-72 lg:h-80 xl:h-96 border border-white/50 dark:border-white/10 shadow-[0_18px_45px_rgba(13,38,59,0.16)]">
         {banners.map((banner, idx) => (
           <div
             key={banner.id}
@@ -74,16 +73,17 @@ function BannerCarousel() {
                 <img
                   src={banner.imageUrl}
                   alt={banner.altText ?? ''}
-                  className="w-full h-full object-cover rounded-2xl"
+                  className="w-full h-full object-cover"
                 />
               </Link>
             ) : (
               <img
                 src={banner.imageUrl}
                 alt={banner.altText ?? ''}
-                className="w-full h-full object-cover rounded-2xl"
+                className="w-full h-full object-cover"
               />
             )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
           </div>
         ))}
       </div>
@@ -93,14 +93,14 @@ function BannerCarousel() {
         <>
           <button
             onClick={prev}
-            className="absolute start-6 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/70 dark:bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute start-7 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/85 dark:bg-black/45 backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow"
           >
             <ChevronRight size={20} className="rtl:hidden" />
             <ChevronLeft size={20} className="hidden rtl:block" />
           </button>
           <button
             onClick={next}
-            className="absolute end-6 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/70 dark:bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute end-7 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/85 dark:bg-black/45 backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow"
           >
             <ChevronLeft size={20} className="rtl:hidden" />
             <ChevronRight size={20} className="hidden rtl:block" />
@@ -110,16 +110,18 @@ function BannerCarousel() {
 
       {/* Dots */}
       {count > 1 && (
-        <div className="flex justify-center gap-1.5 mt-2">
+        <div className="absolute inset-x-0 bottom-3 z-20 flex justify-center">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/25 backdrop-blur-sm">
           {banners.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrent(idx)}
               className={`h-1.5 rounded-full transition-all ${
-                idx === current ? 'w-4 bg-primary' : 'w-1.5 bg-tagadod-gray/40'
+                idx === current ? 'w-5 bg-white' : 'w-1.5 bg-white/55'
               }`}
             />
           ))}
+          </div>
         </div>
       )}
     </div>
@@ -182,7 +184,7 @@ function CategoriesStrip() {
                 <span className="text-tagadod-gray text-4xl">{cat.icon ?? '📦'}</span>
               )}
             </div>
-            <span className="text-base font-semibold text-tagadod-titles dark:text-tagadod-titles text-center line-clamp-2 px-1">
+            <span className="text-base font-semibold text-tagadod-titles dark:text-tagadod-dark-titles text-center line-clamp-2 px-1">
               {cat.name}
             </span>
           </Link>
@@ -238,7 +240,6 @@ function ProductsGrid({
 /* ------------------------------------------------------------------ */
 export function HomePage() {
   const { t } = useTranslation()
-  const isEngineer = useUserStore((s) => s.isEngineer())
 
   return (
     <div className="pb-24">
@@ -264,14 +265,6 @@ export function HomePage() {
         viewAllLink="/products?type=featured"
       />
 
-      {/* FAB – حسب نوع المستخدم */}
-      <Link
-        to={isEngineer ? '/customers-orders' : '/maintenance-orders'}
-        className="fixed start-4 top-1/2 -translate-y-1/2 z-40 flex items-center gap-2 px-4 py-3 text-white font-semibold rounded-full shadow-lg transition-all hover:scale-105"
-        style={{ background: gradients.linerGreen }}
-      >
-        <span>{isEngineer ? 'طلبات العملاء' : 'اطلب مهندس'}</span>
-      </Link>
     </div>
   )
 }
