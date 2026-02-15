@@ -8,19 +8,16 @@
           var mode = 'auto';
           
           if (t) {
-            // Try to parse as JSON (zustand persist format)
             try {
               var parsed = JSON.parse(t);
               mode = parsed?.state?.mode || 'auto';
             } catch(e) {
-              // If not JSON, check if it's a direct theme value
               if (t === 'light' || t === 'dark' || t === 'auto') {
                 mode = t;
               }
             }
           }
           
-          // Apply theme based on mode
           var isDark = false;
           if (mode === 'dark') {
             isDark = true;
@@ -32,7 +29,6 @@
             document.documentElement.classList.add('dark');
           }
         } catch(e) {
-          // Fallback - check system preference
           if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
           }
@@ -40,10 +36,53 @@
       })();
     </script>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <link rel="apple-touch-icon" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tagadod</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>تجدد - Tagadod | متجر المنتجات الكهربائية والآلات</title>
+    <meta name="title" content="تجدد - Tagadod | متجر المنتجات الكهربائية والآلات" />
+    <meta name="description" content="تجدد - متجر يمني يوفر منتجات كهربائية وآلات عالية الجودة بمعايير عالمية. صيانة، تركيب، وإصلاح بواسطة مهندسين معتمدين. تسوق الآن!" />
+    <meta name="keywords" content="تجد, tagadod, متجر يمني, منتجات كهربائية, آلات, صيانة, تركيب, مهندسين, Yemen, electrical, engineering services" />
+    <meta name="author" content="Tagadod" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="Arabic" />
+    <meta name="revisit-after" content="7 days" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tagadod.com/" />
+    <meta property="og:title" content="تجدد - Tagadod | متجر المنتجات الكهربائية والآلات" />
+    <meta property="og:description" content="متجر يمني يوفر منتجات كهربائية وآلات عالية الجودة بمعايير عالمية. صيانة، تركيب، وإصلاح بواسطة مهندسين معتمدين." />
+    <meta property="og:image" content="https://tagadod.com/og-image.png" />
+    <meta property="og:site_name" content="تجدد - Tagadod" />
+    <meta property="og:locale" content="ar_YE" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://tagadod.com/" />
+    <meta property="twitter:title" content="تجدد - Tagadod | متجر المنتجات الكهربائية والآلات" />
+    <meta property="twitter:description" content="متجر يمني يوفر منتجات كهربائية وآلات عالية الجودة بمعايير عالمية. صيانة، تركيب، وإصلاح بواسطة مهندسين معتمدين." />
+    <meta property="twitter:image" content="https://tagadod.com/og-image.png" />
+    
+    <!-- Canonical -->
+    <link rel="canonical" href="https://tagadod.com/" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    
+    <!-- PWA Tags -->
+    <meta name="theme-color" content="#1E99D3" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="تجرد" />
+    <meta name="application-name" content="تجرد" />
+    <meta name="msapplication-TileColor" content="#1E99D3" />
+    <meta name="msapplication-config" content="none" />
+    
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://api.allawzi.net" />
   </head>
   <body>
     <div id="root"></div>

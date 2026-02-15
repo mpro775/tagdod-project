@@ -21,7 +21,26 @@ export interface Order {
   rating?: number
   ratingComment?: string
   createdAt: string
-  updatedAt: string
+  updatedAt?: string
+  // Tracking
+  trackingNumber?: string
+  trackingUrl?: string
+  estimatedDeliveryDate?: string
+  actualDeliveryDate?: string
+  // Invoice
+  invoiceNumber?: string
+  invoiceUrl?: string
+  // Timeline
+  timeline?: OrderTimelineItem[]
+}
+
+export interface OrderTimelineItem {
+  status: OrderStatus
+  label: string
+  labelAr?: string
+  timestamp: string
+  isCompleted: boolean
+  isCurrent: boolean
 }
 
 export interface OrderItem {

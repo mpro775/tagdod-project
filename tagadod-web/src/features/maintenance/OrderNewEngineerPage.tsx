@@ -21,9 +21,8 @@ export function OrderNewEngineerPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [addressId, setAddressId] = useState('')
-  const [scheduledAt, setScheduledAt] = useState('')
-  const [images, setImages] = useState<File[]>([])
-  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [image, setImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
 
   // ─── addresses ─────────────────────────────────────────────────────
@@ -42,17 +41,16 @@ export function OrderNewEngineerPage() {
   // ─── mutation ──────────────────────────────────────────────────────
   const mutation = useMutation({
     mutationFn: async () => {
-      // In a real app you'd upload images first, here we send base64/urls
       const imageUrls: string[] = []
-      for (const preview of imagePreviews) {
-        imageUrls.push(preview)
+      if (imagePreview) {
+        imageUrls.push(imagePreview)
       }
       return createServiceRequest({
         title: title.trim(),
         type,
         description: description.trim() || undefined,
         addressId,
-        scheduledAt: scheduledAt || undefined,
+        scheduledAt: new Date().toISOString(),
         images: imageUrls.length > 0 ? imageUrls : undefined,
       })
     },
@@ -63,22 +61,21 @@ export function OrderNewEngineerPage() {
 
   // ─── image handling ────────────────────────────────────────────────
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? [])
-    setImages((prev) => [...prev, ...files])
-    files.forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        setImagePreviews((prev) => [...prev, reader.result as string])
-      }
-      reader.readAsDataURL(file)
-    })
-    // reset input so same file can be re-selected
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    setImage(file)
+    const reader = new FileReader()
+    reader.onload = () => {
+      setImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
     e.target.value = ''
   }
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index))
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index))
+  const removeImage = () => {
+    setImage(null)
+    setImagePreview(null)
   }
 
   // ─── render ────────────────────────────────────────────────────────
@@ -191,52 +188,40 @@ export function OrderNewEngineerPage() {
             )}
           </div>
 
-          {/* Scheduled date/time */}
-          <div>
-            <label className="block text-sm font-medium text-tagadod-titles dark:text-tagadod-dark-titles mb-1.5">
-              {t('orderNewEngineer.scheduledAt', 'التاريخ والوقت المطلوب')}
-            </label>
-            <input
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles border-0 focus:ring-2 focus:ring-primary outline-none"
-            />
-          </div>
-
           {/* Images */}
           <div>
             <label className="block text-sm font-medium text-tagadod-titles dark:text-tagadod-dark-titles mb-1.5">
-              {t('orderNewEngineer.images', 'صور (اختياري)')}
+              {t('orderNewEngineer.images', 'صورة (اختياري)')}
             </label>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              multiple
               className="hidden"
               onChange={handleImageChange}
             />
             <div className="flex flex-wrap gap-2">
-              {imagePreviews.map((src, i) => (
-                <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden">
-                  <img src={src} alt="" className="w-full h-full object-cover" />
+              {imagePreview && (
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden">
+                  <img src={imagePreview} alt="" className="w-full h-full object-cover" />
                   <button
                     type="button"
-                    onClick={() => removeImage(i)}
+                    onClick={removeImage}
                     className="absolute top-1 end-1 p-0.5 rounded-full bg-black/50 text-white"
                   >
                     <X size={14} />
                   </button>
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 dark:border-white/20 flex items-center justify-center text-tagadod-gray hover:border-primary hover:text-primary transition-colors"
-              >
-                <ImagePlus size={24} />
-              </button>
+              )}
+              {!imagePreview && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 dark:border-white/20 flex items-center justify-center text-tagadod-gray hover:border-primary hover:text-primary transition-colors"
+                >
+                  <ImagePlus size={24} />
+                </button>
+              )}
             </div>
           </div>
 

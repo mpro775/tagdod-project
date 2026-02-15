@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -7,6 +7,9 @@ import {
   MapPin,
   Star,
   Package,
+  Download,
+  Share2,
+  Truck,
 } from 'lucide-react'
 import {
   GlobalButton,
@@ -125,6 +128,47 @@ export function OrderDetailsPage() {
             </p>
           )}
         </div>
+
+        {/* Tracking & Invoice Actions */}
+        <div className="flex gap-2">
+          <Link
+            to={`/order-tracking/${order.id}`}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
+          >
+            <Truck size={18} />
+            {t('orderDetails.track', 'تتبع الطلب')}
+          </Link>
+          {(order.invoiceUrl || order.invoiceNumber) && (
+            <div className="flex gap-2">
+              <a
+                href={orderService.getInvoiceUrl(order.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles text-sm font-medium hover:bg-gray-200 dark:hover:bg-white/15 transition-colors"
+              >
+                <Download size={18} />
+              </a>
+              <a
+                href={orderService.getInvoiceUrl(order.id)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles text-sm font-medium hover:bg-gray-200 dark:hover:bg-white/15 transition-colors"
+              >
+                <Share2 size={18} />
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Invoice Number */}
+        {order.invoiceNumber && (
+          <div className="rounded-xl bg-white dark:bg-tagadod-dark-gray shadow-sm p-3 flex items-center justify-between">
+            <span className="text-sm text-tagadod-gray">{t('orderDetails.invoiceNumber', 'رقم الفاتورة')}</span>
+            <span className="text-sm font-medium text-tagadod-titles dark:text-tagadod-dark-titles">
+              {order.invoiceNumber}
+            </span>
+          </div>
+        )}
 
         {/* Items list */}
         <div className="rounded-xl bg-white dark:bg-tagadod-dark-gray shadow-sm p-4">

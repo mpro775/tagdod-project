@@ -57,6 +57,7 @@ import { MultipleImagesSelector } from '../components/MultipleImagesSelector';
 import { RelatedProductsSelector } from '../components/RelatedProductsSelector';
 import { GenerateVariantsDialog } from '../components/GenerateVariantsDialog';
 import { SmartSkuInput } from '../components/SmartSkuInput';
+import { VideoUploader } from '@/features/media/components/VideoUploader';
 import { ProductStatus } from '../types/product.types';
 import type { CreateProductDto, UpdateProductDto } from '../types/product.types';
 
@@ -119,6 +120,7 @@ export const ProductFormPage: React.FC = () => {
   const [activeLanguageTab, setActiveLanguageTab] = React.useState(0);
   const [selectedImage, setSelectedImage] = React.useState<any>(null);
   const [selectedImages, setSelectedImages] = React.useState<any[]>([]);
+  const [selectedVideos, setSelectedVideos] = React.useState<string[]>([]);
   const [selectedAttributes, setSelectedAttributes] = React.useState<string[]>([]);
   const [relatedProducts, setRelatedProducts] = React.useState<string[]>([]);
 
@@ -372,6 +374,7 @@ export const ProductFormPage: React.FC = () => {
             : [],
           mainImageId: selectedImage?._id,
           imageIds: selectedImages.map((img: any) => img._id).filter(Boolean),
+          videoIds: selectedVideos.filter(Boolean),
           useManualRating: useManualRating,
           manualRating: useManualRating ? manualRating : undefined,
           manualReviewsCount: useManualRating ? manualReviewsCount : undefined,
@@ -866,6 +869,19 @@ export const ProductFormPage: React.FC = () => {
                   value={selectedImages}
                   onChange={setSelectedImages}
                   maxImages={8}
+                />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <VideoUploader
+                  label={t('products:form.videos', 'فيديوهات المنتج')}
+                  value={selectedVideos[0] || null}
+                  onChange={(videoId) => {
+                    if (videoId) {
+                      setSelectedVideos([videoId]);
+                    } else {
+                      setSelectedVideos([]);
+                    }
+                  }}
                 />
               </Grid>
             </Grid>

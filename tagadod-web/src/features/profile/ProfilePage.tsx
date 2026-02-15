@@ -30,6 +30,7 @@ import { useUserStore } from '../../stores/userStore'
 import { useThemeStore } from '../../stores/themeStore'
 import { useLanguageStore } from '../../stores/languageStore'
 import { useCurrencyStore } from '../../stores/currencyStore'
+import { useNotificationStore } from '../../stores/notificationStore'
 import { languages } from '../../i18n'
 import { gradients } from '../../theme'
 import { ConfirmationSheet, GlobalTextField, GlobalButton, BottomSheet } from '../../components/shared'
@@ -125,6 +126,7 @@ export function ProfilePage() {
 
   /* ---- أحداث ---- */
   const handleLogout = () => {
+    useNotificationStore.getState().destroyWebSocket()
     clearAuth()
     useUserStore.getState().setUser(null)
     navigate('/login', { replace: true })
@@ -135,6 +137,7 @@ export function ProfilePage() {
       authService.deleteAccount({ reason: deleteReason || undefined, password: deletePassword }),
     onSuccess: () => {
       setShowDeleteSheet(false)
+      useNotificationStore.getState().destroyWebSocket()
       clearAuth()
       useUserStore.getState().setUser(null)
       navigate('/login', { replace: true })

@@ -14,6 +14,7 @@ export class CreateProductDto {
   @IsOptional() @IsString() mainImageId?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) imageIds?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) images?: string[];
+  @IsOptional() @IsArray() @IsString({ each: true }) videoIds?: string[]; // Video IDs for product videos
   @IsOptional() @IsArray() @IsString({ each: true }) attributes?: string[]; // Attribute IDs
   
   @IsOptional() @IsString() metaTitle?: string;
@@ -62,6 +63,7 @@ export class UpdateProductDto {
   @IsOptional() @IsString() mainImageId?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) imageIds?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) images?: string[];
+  @IsOptional() @IsArray() @IsString({ each: true }) videoIds?: string[]; // Video IDs for product videos
   @IsOptional() @IsArray() @IsString({ each: true }) attributes?: string[];
   
   @IsOptional() @IsString() metaTitle?: string;

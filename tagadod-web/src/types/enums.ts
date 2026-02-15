@@ -6,7 +6,7 @@ export type ServiceRequestStatus =
   | 'RATED'
   | 'CANCELLED'
 
-export type RequestType = 'MAINTENANCE' | 'INSTALLATION' | 'CONSULTATION' | 'REPAIR' | 'OTHER'
+export type RequestType = 'MAINTENANCE' | 'INSTALLATION' | 'CONSULTATION' | 'OTHER'
 
 export type OrderStatus =
   | 'pending_payment'
@@ -49,6 +49,5 @@ export const REQUEST_TYPE_LABELS: Record<RequestType, string> = {
   MAINTENANCE: 'صيانة',
   INSTALLATION: 'تركيب',
   CONSULTATION: 'استشارة',
-  REPAIR: 'إصلاح',
   OTHER: 'أخرى',
 }

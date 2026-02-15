@@ -1,10 +1,21 @@
 import { api } from './api'
-import type { Order, PaymentOption, OrderRating } from '../types/order'
+import { API_BASE_URL } from '../config/env'
+import type { Order, PaymentOption, OrderRating, OrderTimelineItem } from '../types/order'
 import type { ApiResponse, PaginatedResponse, PaginationParams } from '../types/common'
 import type { OrderStatus } from '../types/enums'
 
 export interface OrderFilters extends PaginationParams {
   status?: OrderStatus
+}
+
+export interface OrderTracking {
+  orderNumber: string
+  currentStatus: OrderStatus
+  trackingNumber?: string
+  trackingUrl?: string
+  estimatedDelivery?: string
+  actualDelivery?: string
+  timeline: OrderTimelineItem[]
 }
 
 /** API يعيد { data: { orders: [], pagination: { total, page, limit, totalPages } } } */
@@ -57,4 +68,14 @@ export async function getPaymentOptions(): Promise<PaymentOption[]> {
 export async function buildCheckoutSession(body: { addressId: string; paymentMethod: string }): Promise<{ sessionId: string }> {
   const { data } = await api.post<ApiResponse<{ sessionId: string }>>('/orders/checkout/session', body)
   return data.data
+}
+
+export async function getOrderTracking(orderId: string): Promise<OrderTracking> {
+  const { data } = await api.get<ApiResponse<OrderTracking>>(`/orders/${orderId}/track`)
+  return data.data
+}
+
+export function getInvoiceUrl(orderId: string): string {
+  const baseUrl = API_BASE_URL.replace('/api/v1', '')
+  return `${baseUrl}/orders/${orderId}/invoice`
 }

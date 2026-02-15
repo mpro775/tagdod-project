@@ -5,6 +5,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowRight, Send } from 'lucide-react'
 import { ListShimmer } from '../../components/shared'
 import * as supportService from '../../services/supportService'
+import {
+  connectSupportWebSocket,
+  joinTicket,
+  leaveTicket,
+  onNewMessage,
+} from '../../services/supportWebSocket'
 import type { SupportMessage } from '../../types/support'
 
 function formatTime(dateStr: string): string {
@@ -87,6 +93,7 @@ export function ChatDetailPage() {
   const [messageText, setMessageText] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const hasJoinedRef = useRef(false)
 
   // Fetch ticket info
   const { data: ticket } = useQuery({
@@ -95,7 +102,7 @@ export function ChatDetailPage() {
     enabled: !!ticketId,
   })
 
-  // Fetch messages with polling
+  // Fetch messages without polling (WebSocket will handle real-time updates)
   const {
     data: messagesData,
     isLoading,
@@ -105,10 +112,34 @@ export function ChatDetailPage() {
     queryKey: ['ticketMessages', ticketId],
     queryFn: () => supportService.getTicketMessages(ticketId!),
     enabled: !!ticketId,
-    refetchInterval: 10000,
   })
 
   const messages = messagesData?.data ?? []
+
+  // Connect to WebSocket and handle incoming messages
+  useEffect(() => {
+    if (!ticketId) return
+
+    connectSupportWebSocket()
+
+    const unsubscribe = onNewMessage((msg) => {
+      const newMsg = msg as { ticketId?: string }
+      if (newMsg.ticketId === ticketId) {
+        queryClient.invalidateQueries({ queryKey: ['ticketMessages', ticketId] })
+        queryClient.invalidateQueries({ queryKey: ['supportTickets'] })
+      }
+    })
+
+    joinTicket(ticketId)
+    hasJoinedRef.current = true
+
+    return () => {
+      unsubscribe()
+      if (hasJoinedRef.current && ticketId) {
+        leaveTicket(ticketId)
+      }
+    }
+  }, [ticketId, queryClient])
 
   // Send message mutation
   const sendMutation = useMutation({

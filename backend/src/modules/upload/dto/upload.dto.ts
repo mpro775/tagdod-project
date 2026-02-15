@@ -63,6 +63,83 @@ export class DeleteFileDto {
   filePath!: string;
 }
 
+export class UploadVideoDto {
+  @ApiProperty({
+    type: 'string',
+    format: 'binary',
+    description: 'Video file to upload',
+  })
+  video!: { buffer: Buffer; originalname: string; mimetype: string; size: number };
+
+  @ApiProperty({
+    description: 'Video title (optional)',
+    example: 'Product Demo Video',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  title?: string;
+}
+
+export class VideoUploadResponseDto {
+  @ApiProperty({
+    description: 'Video ID',
+    example: '123456',
+  })
+  videoId!: string;
+
+  @ApiProperty({
+    description: 'Video GUID',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  guid!: string;
+
+  @ApiProperty({
+    description: 'Video title',
+    example: 'Product Demo Video',
+  })
+  title!: string;
+
+  @ApiProperty({
+    description: 'Video playback URL',
+    example: 'https://video.bunnycdn.com/600364/550e8400-e29b-41d4-a716-446655440000/playlist.m3u8',
+  })
+  url!: string;
+
+  @ApiProperty({
+    description: 'Video thumbnail URL',
+    example: 'https://video.bunnycdn.com/600364/550e8400-e29b-41d4-a716-446655440000/thumbnail.jpg',
+    required: false,
+  })
+  thumbnailUrl?: string;
+
+  @ApiProperty({
+    description: 'Video processing status',
+    enum: ['processing', 'ready', 'failed'],
+    example: 'processing',
+  })
+  status!: 'processing' | 'ready' | 'failed';
+
+  @ApiProperty({
+    description: 'Video duration in seconds',
+    example: 120,
+    required: false,
+  })
+  duration?: number;
+
+  @ApiProperty({
+    description: 'File size in bytes',
+    example: 10240000,
+  })
+  size!: number;
+
+  @ApiProperty({
+    description: 'File MIME type',
+    example: 'video/mp4',
+  })
+  mimeType!: string;
+}
+
 export class FileInfoResponseDto {
   @ApiProperty({
     description: 'Whether the file exists',

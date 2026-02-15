@@ -75,14 +75,14 @@ export interface CreateOfferBody {
   price: number
   currency?: CurrencyCode
   notes?: string
-  duration?: string
+  lat: number
+  lng: number
 }
 
 export interface UpdateOfferBody {
   price?: number
   currency?: CurrencyCode
   notes?: string
-  duration?: string
 }
 
 export interface RateServiceBody {

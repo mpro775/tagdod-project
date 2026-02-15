@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useMutation } from '@tanstack/react-query'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, MapPin, Loader2 } from 'lucide-react'
 import { GlobalButton, GlobalTextField } from '../../components/shared'
 import { createOffer } from '../../services/maintenanceService'
 import type { CurrencyCode } from '../../types/enums'
@@ -12,6 +12,11 @@ const CURRENCIES: { value: CurrencyCode; label: string }[] = [
   { value: 'SAR', label: 'ر.س (SAR)' },
   { value: 'USD', label: '$ (USD)' },
 ]
+
+interface LocationCoords {
+  lat: number
+  lng: number
+}
 
 export function MakeOfferPage() {
   const { t } = useTranslation()
@@ -29,7 +34,33 @@ export function MakeOfferPage() {
   const [price, setPrice] = useState('')
   const [currency, setCurrency] = useState<CurrencyCode>('YER')
   const [notes, setNotes] = useState('')
-  const [duration, setDuration] = useState('')
+  const [locationCoords, setLocationCoords] = useState<LocationCoords | null>(null)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationError, setLocationError] = useState('')
+
+  // ─── get location on mount ─────────────────────────────────────────
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationError('المتصفح لا يدعم تحديد الموقع')
+      return
+    }
+
+    setLocationLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationCoords({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        })
+        setLocationLoading(false)
+      },
+      () => {
+        setLocationError('لم يتم تحديد موقعك')
+        setLocationLoading(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }, [])
 
   // ─── mutation ──────────────────────────────────────────────────────
   const mutation = useMutation({
@@ -39,12 +70,13 @@ export function MakeOfferPage() {
         price: Number(price),
         currency,
         notes: notes.trim() || undefined,
-        duration: duration.trim() || undefined,
+        lat: locationCoords!.lat,
+        lng: locationCoords!.lng,
       }),
     onSuccess: () => navigate('/customers-orders?tab=offers', { replace: true }),
   })
 
-  const canSubmit = !!requestId && !!price && Number(price) > 0
+  const canSubmit = !!requestId && !!price && Number(price) > 0 && locationCoords
 
   // ─── render ────────────────────────────────────────────────────────
   return (
@@ -95,13 +127,60 @@ export function MakeOfferPage() {
           </select>
         </div>
 
-        {/* Duration */}
-        <GlobalTextField
-          label={t('makeOffer.duration', 'المدة المتوقعة')}
-          placeholder={t('makeOffer.durationHint', 'مثال: 3 ساعات')}
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-        />
+        {/* Location */}
+        <div>
+          <label className="block text-sm font-medium text-tagadod-titles dark:text-tagadod-dark-titles mb-1.5">
+            {t('makeOffer.location', 'موقعك')}
+          </label>
+          <div className="flex items-center gap-2">
+            <div className={`flex-1 px-4 py-3 rounded-xl bg-gray-100 dark:bg-white/10 flex items-center gap-2 ${locationCoords ? 'text-green-600' : locationError ? 'text-red-500' : 'text-tagadod-gray'}`}>
+              <MapPin size={20} />
+              {locationLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 size={16} className="animate-spin" />
+                  جاري تحديد الموقع...
+                </span>
+              ) : locationCoords ? (
+                <span>تم تحديد موقعك</span>
+              ) : locationError ? (
+                <span>{locationError}</span>
+              ) : (
+                <span>في انتظار تحديد الموقع...</span>
+              )}
+            </div>
+            {locationCoords && (
+              <div className="text-xs text-tagadod-gray">
+                {locationCoords.lat.toFixed(4)}, {locationCoords.lng.toFixed(4)}
+              </div>
+            )}
+          </div>
+          {locationError && (
+            <button
+              type="button"
+              onClick={() => {
+                setLocationError('')
+                setLocationLoading(true)
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    setLocationCoords({
+                      lat: position.coords.latitude,
+                      lng: position.coords.longitude,
+                    })
+                    setLocationLoading(false)
+                  },
+                  (error) => {
+                    setLocationError('لم يتم تحديد موقعك')
+                    setLocationLoading(false)
+                  },
+                  { enableHighAccuracy: true, timeout: 10000 }
+                )
+              }}
+              className="mt-2 text-sm text-primary hover:underline"
+            >
+              إعادة المحاولة
+            </button>
+          )}
+        </div>
 
         {/* Notes */}
         <GlobalTextField

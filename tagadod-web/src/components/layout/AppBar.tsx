@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Search, Bell } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
-import { isLoggedIn } from '../../stores/authStore'
-import * as notificationService from '../../services/notificationService'
+import { useNotificationStore } from '../../stores/notificationStore'
 
 interface AppBarProps {
   showLogo?: boolean
@@ -15,16 +13,7 @@ export function AppBar({
   showSearch = true,
   showNotifications = true,
 }: AppBarProps) {
-  const loggedIn = isLoggedIn()
-
-  const { data: unreadData } = useQuery({
-    queryKey: ['notifications', 'unread-count'],
-    queryFn: () => notificationService.getUnreadCount(),
-    enabled: loggedIn,
-    refetchInterval: 30000,
-  })
-
-  const unreadCount = unreadData?.count ?? 0
+  const unreadCount = useNotificationStore((s) => s.unreadCount)
 
   return (
     <header className="sticky top-0 z-40 bg-white dark:bg-tagadod-dark-gray shadow-sm">

@@ -61,6 +61,9 @@ const EngineerProfilePage = lazy(() => import('../features/maintenance/EngineerP
 const ChatPage = lazy(() => import('../features/chat/ChatPage').then((m) => ({ default: m.ChatPage })))
 const ChatDetailPage = lazy(() => import('../features/chat/ChatDetailPage').then((m) => ({ default: m.ChatDetailPage })))
 
+// Orders
+const OrderTrackingPage = lazy(() => import('../features/orders/OrderTrackingPage').then((m) => ({ default: m.OrderTrackingPage })))
+
 // App config
 const MaintenancePage = lazy(() => import('../features/app-config/MaintenancePage').then((m) => ({ default: m.MaintenancePage })))
 const ForceUpdatePage = lazy(() => import('../features/app-config/ForceUpdatePage').then((m) => ({ default: m.ForceUpdatePage })))
@@ -175,6 +178,7 @@ const router = createBrowserRouter([
 
       // Orders
       { path: 'order-details/:id', element: <ProtectedRoute><OrderDetailsPage /></ProtectedRoute> },
+      { path: 'order-tracking/:id', element: <ProtectedRoute><OrderTrackingPage /></ProtectedRoute> },
       { path: 'payment', element: <ProtectedRoute><PaymentPage /></ProtectedRoute> },
 
       // Maintenance - Customer

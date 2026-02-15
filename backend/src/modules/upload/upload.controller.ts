@@ -24,14 +24,18 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UploadService } from './upload.service';
-import { UploadFileDto, DeleteFileDto } from './dto/upload.dto';
+import { BunnyStreamService } from './bunny-stream.service';
+import { UploadFileDto, DeleteFileDto, UploadVideoDto, VideoUploadResponseDto } from './dto/upload.dto';
 
 @ApiTags('رفع-الملفات')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) {}
+  constructor(
+    private readonly uploadService: UploadService,
+    private readonly bunnyStreamService: BunnyStreamService,
+  ) {}
 
   @Post('file')
   @UseInterceptors(FileInterceptor('file'))
@@ -224,6 +228,118 @@ export class UploadController {
   async getFileInfo(@Param('filePath') filePath: string) {
     const info = await this.uploadService.getFileInfo(filePath);
     return info;
+  }
+
+  @Post('video')
+  @UseInterceptors(FileInterceptor('video'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'رفع فيديو',
+    description: 'رفع فيديو إلى Bunny Stream مع إمكانية تحديد العنوان'
+  })
+  @ApiBody({
+    description: 'رفع فيديو',
+    type: UploadVideoDto,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'تم رفع الفيديو بنجاح',
+    type: VideoUploadResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'خطأ في البيانات أو نوع الفيديو غير مدعوم'
+  })
+  @ApiResponse({
+    status: 413,
+    description: 'حجم الفيديو كبير جداً'
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'غير مصرح لك بالوصول'
+  })
+  async uploadVideo(
+    @UploadedFile() video: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    @Body() body: UploadVideoDto,
+  ) {
+    const result = await this.bunnyStreamService.uploadVideo(video, body.title);
+    return result;
+  }
+
+  @Get('video/:videoId')
+  @ApiOperation({
+    summary: 'معلومات الفيديو',
+    description: 'الحصول على معلومات مفصلة عن فيديو مرفوع'
+  })
+  @ApiParam({ name: 'videoId', description: 'معرف الفيديو', example: '123456' })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرجاع معلومات الفيديو بنجاح',
+    type: VideoUploadResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'الفيديو غير موجود'
+  })
+  async getVideoInfo(@Param('videoId') videoId: string) {
+    const info = await this.bunnyStreamService.getVideoInfo(videoId);
+    return info;
+  }
+
+  @Delete('video/:videoId')
+  @ApiOperation({
+    summary: 'حذف فيديو',
+    description: 'حذف فيديو مرفوع من خلال معرفه'
+  })
+  @ApiParam({ name: 'videoId', description: 'معرف الفيديو', example: '123456' })
+  @ApiResponse({
+    status: 200,
+    description: 'تم حذف الفيديو بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Video deleted successfully' }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'الفيديو غير موجود'
+  })
+  async deleteVideo(@Param('videoId') videoId: string) {
+    await this.bunnyStreamService.deleteVideo(videoId);
+    return { message: 'Video deleted successfully' };
+  }
+
+  @Get('videos')
+  @ApiOperation({
+    summary: 'قائمة الفيديوهات',
+    description: 'الحصول على قائمة الفيديوهات المرفوعة'
+  })
+  @ApiQuery({ name: 'page', required: false, description: 'رقم الصفحة', example: 1 })
+  @ApiQuery({ name: 'perPage', required: false, description: 'عدد الفيديوهات في الصفحة', example: 20 })
+  @ApiResponse({
+    status: 200,
+    description: 'تم استرجاع قائمة الفيديوهات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        totalItems: { type: 'number', example: 100 },
+        currentPage: { type: 'number', example: 1 },
+        itemsPerPage: { type: 'number', example: 20 },
+        items: {
+          type: 'array',
+          items: { type: VideoUploadResponseDto }
+        }
+      }
+    }
+  })
+  async listVideos(
+    @Query('page') page?: number,
+    @Query('perPage') perPage?: number,
+  ) {
+    const result = await this.bunnyStreamService.listVideos(page || 1, perPage || 20);
+    return result;
   }
 
   // Public endpoint for accessing uploaded files (if needed)

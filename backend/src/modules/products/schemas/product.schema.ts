@@ -47,6 +47,10 @@ export class Product {
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Media' }], default: [] })
   imageIds!: string[]; // صور إضافية
 
+  // الفيديوهات
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Media' }], default: [] })
+  videoIds!: string[]; // فيديوهات المنتج
+
   // السمات
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Attribute' }], default: [] })
   attributes!: string[]; // السمات التي يستخدمها هذا المنتج

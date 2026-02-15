@@ -257,6 +257,7 @@ export interface CreateProductDto {
   mainImageId?: string;
   imageIds?: string[];
   images?: string[];
+  videoIds?: string[]; // Video IDs for product videos
   attributes?: string[]; // Attribute IDs
   
   metaTitle?: string;
@@ -301,6 +302,7 @@ export interface UpdateProductDto {
   mainImageId?: string;
   imageIds?: string[];
   images?: string[];
+  videoIds?: string[]; // Video IDs for product videos
   attributes?: string[];
   
   metaTitle?: string;

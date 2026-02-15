@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MulterModule } from '@nestjs/platform-express';
+import { ConfigModule } from '@nestjs/config';
 import { UploadController } from './upload.controller';
 import { UploadService } from './upload.service';
+import { BunnyStreamService } from './bunny-stream.service';
 import { MediaController } from './media.controller';
 import { MediaAnalyticsController } from './media-analytics.controller';
 import { MediaService } from './media.service';
@@ -29,7 +31,7 @@ import { SharedModule } from '../../shared/shared.module';
     SharedModule,
   ],
   controllers: [UploadController, MediaController, MediaAnalyticsController],
-  providers: [UploadService, MediaService],
-  exports: [UploadService, MediaService], // Export services so other modules can use them
+  providers: [UploadService, MediaService, BunnyStreamService],
+  exports: [UploadService, MediaService, BunnyStreamService], // Export services so other modules can use them
 })
 export class UploadModule {}
