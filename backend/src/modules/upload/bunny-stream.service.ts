@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosResponse } from 'axios';
-import { 
+import {
   UploadFailedException,
   FileTooLargeException,
   InvalidFileTypeException,
   UploadException,
-  ErrorCode 
+  ErrorCode,
 } from '../../shared/exceptions';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -44,16 +44,22 @@ export class BunnyStreamService {
   constructor(private configService: ConfigService) {
     this.bunnyStreamCredentials = {
       libraryId: this.configService.get<string>('BUNNY_STREAM_LIBRARY_ID') || '600364',
-      apiKey: this.configService.get<string>('BUNNY_STREAM_API_KEY') || 'c1368f6a-4139-4169-84a66c6b0e63-e60b-42a9',
+      apiKey:
+        this.configService.get<string>('BUNNY_STREAM_API_KEY') ||
+        'c1368f6a-4139-4169-84a66c6b0e63-e60b-42a9',
       hostname: this.configService.get<string>('BUNNY_STREAM_HOSTNAME') || 'video.bunnycdn.com',
     };
 
     // Validate required credentials
     if (!this.bunnyStreamCredentials.libraryId) {
-      throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, { reason: 'BUNNY_STREAM_LIBRARY_ID not configured' });
+      throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, {
+        reason: 'BUNNY_STREAM_LIBRARY_ID not configured',
+      });
     }
     if (!this.bunnyStreamCredentials.apiKey) {
-      throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, { reason: 'BUNNY_STREAM_API_KEY not configured' });
+      throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, {
+        reason: 'BUNNY_STREAM_API_KEY not configured',
+      });
     }
   }
 
@@ -63,17 +69,19 @@ export class BunnyStreamService {
   async getVideoLibrary(): Promise<VideoLibrary> {
     try {
       const url = `https://${this.bunnyStreamCredentials.hostname}/library/${this.bunnyStreamCredentials.libraryId}`;
-      
+
       const response: AxiosResponse<VideoLibrary> = await axios.get(url, {
         headers: {
-          'AccessKey': this.bunnyStreamCredentials.apiKey,
+          AccessKey: this.bunnyStreamCredentials.apiKey,
         },
       });
 
       return response.data;
     } catch (error) {
       this.logger.error('Failed to get video library:', error);
-      throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, { reason: 'bunny_stream_library_error' });
+      throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, {
+        reason: 'bunny_stream_library_error',
+      });
     }
   }
 
@@ -91,7 +99,6 @@ export class BunnyStreamService {
       // Get video library info to check file size limits
       const library = await this.getVideoLibrary();
       if (file.size > library.MaxFileSize) {
-        const maxSizeMB = Math.round(library.MaxFileSize / (1024 * 1024));
         throw new FileTooLargeException({ size: file.size, maxSize: library.MaxFileSize });
       }
 
@@ -101,7 +108,7 @@ export class BunnyStreamService {
 
       // Step 1: Create video object
       const createVideoUrl = `https://${this.bunnyStreamCredentials.hostname}/library/${this.bunnyStreamCredentials.libraryId}/videos`;
-      
+
       const createResponse = await axios.post(
         createVideoUrl,
         {
@@ -110,27 +117,29 @@ export class BunnyStreamService {
         },
         {
           headers: {
-            'AccessKey': this.bunnyStreamCredentials.apiKey,
+            AccessKey: this.bunnyStreamCredentials.apiKey,
             'Content-Type': 'application/json',
           },
-        }
+        },
       );
 
       const videoId = createResponse.data.id;
 
       // Step 2: Upload video file
       const uploadUrl = `https://${this.bunnyStreamCredentials.hostname}/library/${this.bunnyStreamCredentials.libraryId}/videos/${videoGuid}`;
-      
+
       const uploadResponse = await axios.put(uploadUrl, file.buffer, {
         headers: {
-          'AccessKey': this.bunnyStreamCredentials.apiKey,
+          AccessKey: this.bunnyStreamCredentials.apiKey,
           'Content-Type': file.mimetype,
         },
         validateStatus: () => true,
       });
 
       if (uploadResponse.status !== 200) {
-        this.logger.error(`Bunny Stream upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+        this.logger.error(
+          `Bunny Stream upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`,
+        );
         throw new UploadFailedException({ status: uploadResponse.status });
       }
 
@@ -152,11 +161,17 @@ export class BunnyStreamService {
       };
     } catch (error) {
       this.logger.error('Video upload error:', error);
-      
+
       if (error instanceof UploadFailedException || error instanceof FileTooLargeException) {
         throw error;
-      } else if (error instanceof Error && ('code' in error) && (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')) {
-        throw new UploadException(ErrorCode.NETWORK_ERROR, { reason: 'bunny_stream_connection_failed' });
+      } else if (
+        error instanceof Error &&
+        'code' in error &&
+        (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')
+      ) {
+        throw new UploadException(ErrorCode.NETWORK_ERROR, {
+          reason: 'bunny_stream_connection_failed',
+        });
       } else {
         throw new UploadFailedException();
       }
@@ -182,10 +197,10 @@ export class BunnyStreamService {
   }> {
     try {
       const url = `https://${this.bunnyStreamCredentials.hostname}/library/${this.bunnyStreamCredentials.libraryId}/videos/${videoId}`;
-      
+
       const response = await axios.get(url, {
         headers: {
-          'AccessKey': this.bunnyStreamCredentials.apiKey,
+          AccessKey: this.bunnyStreamCredentials.apiKey,
         },
       });
 
@@ -205,7 +220,7 @@ export class BunnyStreamService {
 
       const response: AxiosResponse = await axios.delete(url, {
         headers: {
-          'AccessKey': this.bunnyStreamCredentials.apiKey,
+          AccessKey: this.bunnyStreamCredentials.apiKey,
         },
       });
 
@@ -223,7 +238,10 @@ export class BunnyStreamService {
   /**
    * List videos in the library
    */
-  async listVideos(page: number = 1, perPage: number = 100): Promise<{
+  async listVideos(
+    page: number = 1,
+    perPage: number = 100,
+  ): Promise<{
     totalItems: number;
     currentPage: number;
     itemsPerPage: number;
@@ -240,10 +258,10 @@ export class BunnyStreamService {
   }> {
     try {
       const url = `https://${this.bunnyStreamCredentials.hostname}/library/${this.bunnyStreamCredentials.libraryId}/videos`;
-      
+
       const response = await axios.get(url, {
         headers: {
-          'AccessKey': this.bunnyStreamCredentials.apiKey,
+          AccessKey: this.bunnyStreamCredentials.apiKey,
         },
         params: {
           page,
@@ -254,7 +272,9 @@ export class BunnyStreamService {
       return response.data;
     } catch (error) {
       this.logger.error('Failed to list videos:', error);
-      throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, { reason: 'bunny_stream_list_error' });
+      throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, {
+        reason: 'bunny_stream_list_error',
+      });
     }
   }
 
@@ -280,19 +300,19 @@ export class BunnyStreamService {
 
     // Check file type
     if (!allowedVideoTypes.includes(file.mimetype)) {
-      throw new InvalidFileTypeException({ 
-        type: file.mimetype, 
-        allowedTypes: allowedVideoTypes 
+      throw new InvalidFileTypeException({
+        type: file.mimetype,
+        allowedTypes: allowedVideoTypes,
       });
     }
 
     // Check minimum file size (1MB)
     const minSize = 1024 * 1024; // 1MB
     if (file.size < minSize) {
-      throw new UploadException(ErrorCode.INVALID_FILE_SIZE, { 
+      throw new UploadException(ErrorCode.UPLOAD_INVALID_FILE_SIZE, {
         reason: 'File too small for video',
         size: file.size,
-        minSize 
+        minSize,
       });
     }
   }

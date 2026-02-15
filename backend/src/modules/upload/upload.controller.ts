@@ -20,15 +20,23 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
-  ApiQuery
+  ApiQuery,
+  ApiExtraModels,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UploadService } from './upload.service';
 import { BunnyStreamService } from './bunny-stream.service';
-import { UploadFileDto, DeleteFileDto, UploadVideoDto, VideoUploadResponseDto } from './dto/upload.dto';
+import {
+  UploadFileDto,
+  DeleteFileDto,
+  UploadVideoDto,
+  VideoUploadResponseDto,
+} from './dto/upload.dto';
 
 @ApiTags('رفع-الملفات')
 @ApiBearerAuth()
+@ApiExtraModels(VideoUploadResponseDto)
 @UseGuards(JwtAuthGuard)
 @Controller('upload')
 export class UploadController {
@@ -42,14 +50,24 @@ export class UploadController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'رفع ملف واحد',
-    description: 'رفع ملف واحد مع إمكانية تحديد المجلد والاسم المخصص'
+    description: 'رفع ملف واحد مع إمكانية تحديد المجلد والاسم المخصص',
   })
   @ApiBody({
     description: 'رفع ملف',
     type: UploadFileDto,
   })
-  @ApiQuery({ name: 'folder', required: false, description: 'المجلد المراد رفع الملف إليه', example: 'products' })
-  @ApiQuery({ name: 'filename', required: false, description: 'اسم مخصص للملف', example: 'product-image-001.jpg' })
+  @ApiQuery({
+    name: 'folder',
+    required: false,
+    description: 'المجلد المراد رفع الملف إليه',
+    example: 'products',
+  })
+  @ApiQuery({
+    name: 'filename',
+    required: false,
+    description: 'اسم مخصص للملف',
+    example: 'product-image-001.jpg',
+  })
   @ApiResponse({
     status: 201,
     description: 'تم رفع الملف بنجاح',
@@ -59,28 +77,40 @@ export class UploadController {
         data: {
           type: 'object',
           properties: {
-            fileName: { type: 'string', example: 'product-image-001.jpg', description: 'اسم الملف' },
-            filePath: { type: 'string', example: 'products/product-image-001.jpg', description: 'مسار الملف' },
-            fileUrl: { type: 'string', example: 'https://cdn.example.com/products/product-image-001.jpg', description: 'رابط الملف' },
+            fileName: {
+              type: 'string',
+              example: 'product-image-001.jpg',
+              description: 'اسم الملف',
+            },
+            filePath: {
+              type: 'string',
+              example: 'products/product-image-001.jpg',
+              description: 'مسار الملف',
+            },
+            fileUrl: {
+              type: 'string',
+              example: 'https://cdn.example.com/products/product-image-001.jpg',
+              description: 'رابط الملف',
+            },
             fileSize: { type: 'number', example: 1024000, description: 'حجم الملف بالبايت' },
             mimeType: { type: 'string', example: 'image/jpeg', description: 'نوع الملف' },
-            uploadedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z' }
-          }
-        }
-      }
-    }
+            uploadedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
-    description: 'خطأ في البيانات أو نوع الملف غير مدعوم'
+    description: 'خطأ في البيانات أو نوع الملف غير مدعوم',
   })
   @ApiResponse({
     status: 413,
-    description: 'حجم الملف كبير جداً'
+    description: 'حجم الملف كبير جداً',
   })
   @ApiResponse({
     status: 401,
-    description: 'غير مصرح لك بالوصول'
+    description: 'غير مصرح لك بالوصول',
   })
   async uploadFile(
     @UploadedFile() file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
@@ -96,7 +126,7 @@ export class UploadController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'رفع ملفات متعددة',
-    description: 'رفع عدة ملفات في وقت واحد (حتى 10 ملفات) مع إمكانية تحديد المجلد'
+    description: 'رفع عدة ملفات في وقت واحد (حتى 10 ملفات) مع إمكانية تحديد المجلد',
   })
   @ApiBody({
     description: 'رفع ملفات متعددة',
@@ -117,7 +147,12 @@ export class UploadController {
       },
     },
   })
-  @ApiQuery({ name: 'folder', required: false, description: 'المجلد المراد رفع الملفات إليه', example: 'gallery' })
+  @ApiQuery({
+    name: 'folder',
+    required: false,
+    description: 'المجلد المراد رفع الملفات إليه',
+    example: 'gallery',
+  })
   @ApiResponse({
     status: 201,
     description: 'تم رفع الملفات بنجاح',
@@ -130,31 +165,40 @@ export class UploadController {
             type: 'object',
             properties: {
               fileName: { type: 'string', example: 'image1.jpg', description: 'اسم الملف' },
-              filePath: { type: 'string', example: 'gallery/image1.jpg', description: 'مسار الملف' },
-              fileUrl: { type: 'string', example: 'https://cdn.example.com/gallery/image1.jpg', description: 'رابط الملف' },
+              filePath: {
+                type: 'string',
+                example: 'gallery/image1.jpg',
+                description: 'مسار الملف',
+              },
+              fileUrl: {
+                type: 'string',
+                example: 'https://cdn.example.com/gallery/image1.jpg',
+                description: 'رابط الملف',
+              },
               fileSize: { type: 'number', example: 512000, description: 'حجم الملف بالبايت' },
               mimeType: { type: 'string', example: 'image/jpeg', description: 'نوع الملف' },
-              uploadedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z' }
-            }
-          }
-        }
-      }
-    }
+              uploadedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z' },
+            },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
-    description: 'خطأ في البيانات أو نوع أحد الملفات غير مدعوم'
+    description: 'خطأ في البيانات أو نوع أحد الملفات غير مدعوم',
   })
   @ApiResponse({
     status: 413,
-    description: 'حجم إحدى الملفات كبير جداً'
+    description: 'حجم إحدى الملفات كبير جداً',
   })
   @ApiResponse({
     status: 401,
-    description: 'غير مصرح لك بالوصول'
+    description: 'غير مصرح لك بالوصول',
   })
   async uploadFiles(
-    @UploadedFiles() files: { buffer: Buffer; originalname: string; mimetype: string; size: number }[],
+    @UploadedFiles()
+    files: { buffer: Buffer; originalname: string; mimetype: string; size: number }[],
     @Query('folder') folder?: string,
   ) {
     const results = await this.uploadService.uploadFiles(files, folder);
@@ -164,7 +208,7 @@ export class UploadController {
   @Delete('file')
   @ApiOperation({
     summary: 'حذف ملف',
-    description: 'حذف ملف مرفوع من خلال مساره'
+    description: 'حذف ملف مرفوع من خلال مساره',
   })
   @ApiBody({ type: DeleteFileDto })
   @ApiResponse({
@@ -173,17 +217,17 @@ export class UploadController {
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'File deleted successfully' }
-      }
-    }
+        message: { type: 'string', example: 'File deleted successfully' },
+      },
+    },
   })
   @ApiResponse({
     status: 404,
-    description: 'الملف غير موجود'
+    description: 'الملف غير موجود',
   })
   @ApiResponse({
     status: 403,
-    description: 'غير مصرح لك بحذف هذا الملف'
+    description: 'غير مصرح لك بحذف هذا الملف',
   })
   async deleteFile(@Body() dto: DeleteFileDto) {
     await this.uploadService.deleteFile(dto.filePath);
@@ -193,7 +237,7 @@ export class UploadController {
   @Get('file/:filePath(*)')
   @ApiOperation({
     summary: 'معلومات الملف',
-    description: 'الحصول على معلومات مفصلة عن ملف مرفوع'
+    description: 'الحصول على معلومات مفصلة عن ملف مرفوع',
   })
   @ApiParam({ name: 'filePath', description: 'مسار الملف', example: 'products/image.jpg' })
   @ApiResponse({
@@ -207,23 +251,27 @@ export class UploadController {
           properties: {
             fileName: { type: 'string', example: 'image.jpg', description: 'اسم الملف' },
             filePath: { type: 'string', example: 'products/image.jpg', description: 'مسار الملف' },
-            fileUrl: { type: 'string', example: 'https://cdn.example.com/products/image.jpg', description: 'رابط الملف' },
+            fileUrl: {
+              type: 'string',
+              example: 'https://cdn.example.com/products/image.jpg',
+              description: 'رابط الملف',
+            },
             fileSize: { type: 'number', example: 1024000, description: 'حجم الملف بالبايت' },
             mimeType: { type: 'string', example: 'image/jpeg', description: 'نوع الملف' },
             uploadedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z' },
-            lastModified: { type: 'string', format: 'date-time', example: '2024-01-15T11:00:00Z' }
-          }
-        }
-      }
-    }
+            lastModified: { type: 'string', format: 'date-time', example: '2024-01-15T11:00:00Z' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 404,
-    description: 'الملف غير موجود'
+    description: 'الملف غير موجود',
   })
   @ApiResponse({
     status: 403,
-    description: 'غير مصرح لك بالوصول إلى معلومات هذا الملف'
+    description: 'غير مصرح لك بالوصول إلى معلومات هذا الملف',
   })
   async getFileInfo(@Param('filePath') filePath: string) {
     const info = await this.uploadService.getFileInfo(filePath);
@@ -235,7 +283,7 @@ export class UploadController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'رفع فيديو',
-    description: 'رفع فيديو إلى Bunny Stream مع إمكانية تحديد العنوان'
+    description: 'رفع فيديو إلى Bunny Stream مع إمكانية تحديد العنوان',
   })
   @ApiBody({
     description: 'رفع فيديو',
@@ -248,15 +296,15 @@ export class UploadController {
   })
   @ApiResponse({
     status: 400,
-    description: 'خطأ في البيانات أو نوع الفيديو غير مدعوم'
+    description: 'خطأ في البيانات أو نوع الفيديو غير مدعوم',
   })
   @ApiResponse({
     status: 413,
-    description: 'حجم الفيديو كبير جداً'
+    description: 'حجم الفيديو كبير جداً',
   })
   @ApiResponse({
     status: 401,
-    description: 'غير مصرح لك بالوصول'
+    description: 'غير مصرح لك بالوصول',
   })
   async uploadVideo(
     @UploadedFile() video: { buffer: Buffer; originalname: string; mimetype: string; size: number },
@@ -269,7 +317,7 @@ export class UploadController {
   @Get('video/:videoId')
   @ApiOperation({
     summary: 'معلومات الفيديو',
-    description: 'الحصول على معلومات مفصلة عن فيديو مرفوع'
+    description: 'الحصول على معلومات مفصلة عن فيديو مرفوع',
   })
   @ApiParam({ name: 'videoId', description: 'معرف الفيديو', example: '123456' })
   @ApiResponse({
@@ -279,7 +327,7 @@ export class UploadController {
   })
   @ApiResponse({
     status: 404,
-    description: 'الفيديو غير موجود'
+    description: 'الفيديو غير موجود',
   })
   async getVideoInfo(@Param('videoId') videoId: string) {
     const info = await this.bunnyStreamService.getVideoInfo(videoId);
@@ -289,7 +337,7 @@ export class UploadController {
   @Delete('video/:videoId')
   @ApiOperation({
     summary: 'حذف فيديو',
-    description: 'حذف فيديو مرفوع من خلال معرفه'
+    description: 'حذف فيديو مرفوع من خلال معرفه',
   })
   @ApiParam({ name: 'videoId', description: 'معرف الفيديو', example: '123456' })
   @ApiResponse({
@@ -298,13 +346,13 @@ export class UploadController {
     schema: {
       type: 'object',
       properties: {
-        message: { type: 'string', example: 'Video deleted successfully' }
-      }
-    }
+        message: { type: 'string', example: 'Video deleted successfully' },
+      },
+    },
   })
   @ApiResponse({
     status: 404,
-    description: 'الفيديو غير موجود'
+    description: 'الفيديو غير موجود',
   })
   async deleteVideo(@Param('videoId') videoId: string) {
     await this.bunnyStreamService.deleteVideo(videoId);
@@ -314,10 +362,15 @@ export class UploadController {
   @Get('videos')
   @ApiOperation({
     summary: 'قائمة الفيديوهات',
-    description: 'الحصول على قائمة الفيديوهات المرفوعة'
+    description: 'الحصول على قائمة الفيديوهات المرفوعة',
   })
   @ApiQuery({ name: 'page', required: false, description: 'رقم الصفحة', example: 1 })
-  @ApiQuery({ name: 'perPage', required: false, description: 'عدد الفيديوهات في الصفحة', example: 20 })
+  @ApiQuery({
+    name: 'perPage',
+    required: false,
+    description: 'عدد الفيديوهات في الصفحة',
+    example: 20,
+  })
   @ApiResponse({
     status: 200,
     description: 'تم استرجاع قائمة الفيديوهات بنجاح',
@@ -329,15 +382,12 @@ export class UploadController {
         itemsPerPage: { type: 'number', example: 20 },
         items: {
           type: 'array',
-          items: VideoUploadResponseDto
-        }
-      }
-    }
+          items: { $ref: getSchemaPath(VideoUploadResponseDto) },
+        },
+      },
+    },
   })
-  async listVideos(
-    @Query('page') page?: number,
-    @Query('perPage') perPage?: number,
-  ) {
+  async listVideos(@Query('page') page?: number, @Query('perPage') perPage?: number) {
     const result = await this.bunnyStreamService.listVideos(page || 1, perPage || 20);
     return result;
   }
@@ -346,7 +396,7 @@ export class UploadController {
   @Get('public/*')
   @ApiOperation({
     summary: 'عرض ملف عام',
-    description: 'عرض ملف مرفوع بشكل عام (يُستخدم للاختبار - في الإنتاج يُفضل استخدام CDN مباشرة)'
+    description: 'عرض ملف مرفوع بشكل عام (يُستخدم للاختبار - في الإنتاج يُفضل استخدام CDN مباشرة)',
   })
   @ApiResponse({
     status: 200,
@@ -356,14 +406,14 @@ export class UploadController {
       properties: {
         data: {
           type: 'object',
-          description: 'معلومات الملف أو محتواه حسب النوع'
-        }
-      }
-    }
+          description: 'معلومات الملف أو محتواه حسب النوع',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 404,
-    description: 'الملف غير موجود'
+    description: 'الملف غير موجود',
   })
   async serveFile(@Param() params: Record<string, string>) {
     // This endpoint can be used for serving files through the API
