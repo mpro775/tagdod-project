@@ -9341,6 +9341,112 @@
           }
         },
         {
+          "name": "رفع فيديو",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/upload/video",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload",
+                "video"
+              ]
+            },
+            "description": "رفع فيديو إلى Bunny Stream مع إمكانية تحديد العنوان"
+          }
+        },
+        {
+          "name": "معلومات الفيديو",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/upload/video/{videoId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload",
+                "video",
+                "{videoId}"
+              ]
+            },
+            "description": "الحصول على معلومات مفصلة عن فيديو مرفوع"
+          }
+        },
+        {
+          "name": "حذف فيديو",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/upload/video/{videoId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload",
+                "video",
+                "{videoId}"
+              ]
+            },
+            "description": "حذف فيديو مرفوع من خلال معرفه"
+          }
+        },
+        {
+          "name": "قائمة الفيديوهات",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/upload/videos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "upload",
+                "videos"
+              ]
+            },
+            "description": "الحصول على قائمة الفيديوهات المرفوعة"
+          }
+        },
+        {
           "name": "عرض ملف عام",
           "request": {
             "method": "GET",

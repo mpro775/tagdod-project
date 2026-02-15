@@ -13404,6 +13404,136 @@ paths:
         - رفع-الملفات
       security:
         - bearer: []
+  /api/v1/upload/video:
+    post:
+      operationId: uploadVideo
+      summary: رفع فيديو
+      description: رفع فيديو إلى Bunny Stream مع إمكانية تحديد العنوان
+      parameters: []
+      requestBody:
+        required: true
+        description: رفع فيديو
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadVideoDto'
+      responses:
+        '201':
+          description: تم رفع الفيديو بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoUploadResponseDto'
+        '400':
+          description: خطأ في البيانات أو نوع الفيديو غير مدعوم
+        '401':
+          description: غير مصرح لك بالوصول
+        '413':
+          description: حجم الفيديو كبير جداً
+      tags:
+        - رفع-الملفات
+      security:
+        - bearer: []
+  /api/v1/upload/video/{videoId}:
+    get:
+      operationId: getVideoInfo
+      summary: معلومات الفيديو
+      description: الحصول على معلومات مفصلة عن فيديو مرفوع
+      parameters:
+        - name: videoId
+          required: true
+          in: path
+          description: معرف الفيديو
+          schema:
+            example: '123456'
+            type: string
+      responses:
+        '200':
+          description: تم استرجاع معلومات الفيديو بنجاح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoUploadResponseDto'
+        '404':
+          description: الفيديو غير موجود
+      tags:
+        - رفع-الملفات
+      security:
+        - bearer: []
+    delete:
+      operationId: deleteVideo
+      summary: حذف فيديو
+      description: حذف فيديو مرفوع من خلال معرفه
+      parameters:
+        - name: videoId
+          required: true
+          in: path
+          description: معرف الفيديو
+          schema:
+            example: '123456'
+            type: string
+      responses:
+        '200':
+          description: تم حذف الفيديو بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Video deleted successfully
+        '404':
+          description: الفيديو غير موجود
+      tags:
+        - رفع-الملفات
+      security:
+        - bearer: []
+  /api/v1/upload/videos:
+    get:
+      operationId: listVideos
+      summary: قائمة الفيديوهات
+      description: الحصول على قائمة الفيديوهات المرفوعة
+      parameters:
+        - name: page
+          required: false
+          in: query
+          description: رقم الصفحة
+          schema:
+            example: 1
+            type: number
+        - name: perPage
+          required: false
+          in: query
+          description: عدد الفيديوهات في الصفحة
+          schema:
+            example: 20
+            type: number
+      responses:
+        '200':
+          description: تم استرجاع قائمة الفيديوهات بنجاح
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalItems:
+                    type: number
+                    example: 100
+                  currentPage:
+                    type: number
+                    example: 1
+                  itemsPerPage:
+                    type: number
+                    example: 20
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VideoUploadResponseDto'
+      tags:
+        - رفع-الملفات
+      security:
+        - bearer: []
   /api/v1/upload/public/*:
     get:
       operationId: serveFile
@@ -25246,6 +25376,57 @@ components:
           description: الوصف
       required:
         - value
+    VideoUploadResponseDto:
+      type: object
+      properties:
+        videoId:
+          type: string
+          description: Video ID
+          example: '123456'
+        guid:
+          type: string
+          description: Video GUID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        title:
+          type: string
+          description: Video title
+          example: Product Demo Video
+        url:
+          type: string
+          description: Video playback URL
+          example: https://video.bunnycdn.com/600364/550e8400-e29b-41d4-a716-446655440000/playlist.m3u8
+        thumbnailUrl:
+          type: string
+          description: Video thumbnail URL
+          example: https://video.bunnycdn.com/600364/550e8400-e29b-41d4-a716-446655440000/thumbnail.jpg
+        status:
+          type: string
+          description: Video processing status
+          enum:
+            - processing
+            - ready
+            - failed
+          example: processing
+        duration:
+          type: number
+          description: Video duration in seconds
+          example: 120
+        size:
+          type: number
+          description: File size in bytes
+          example: 10240000
+        mimeType:
+          type: string
+          description: File MIME type
+          example: video/mp4
+      required:
+        - videoId
+        - guid
+        - title
+        - url
+        - status
+        - size
+        - mimeType
     UploadFileDto:
       type: object
       properties:
@@ -25272,6 +25453,19 @@ components:
           example: uploads/my-image.jpg
       required:
         - filePath
+    UploadVideoDto:
+      type: object
+      properties:
+        video:
+          type: string
+          format: binary
+          description: Video file to upload
+        title:
+          type: string
+          description: Video title (optional)
+          example: Product Demo Video
+      required:
+        - video
     UploadMediaDto:
       type: object
       properties: {}
