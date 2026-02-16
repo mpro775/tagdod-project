@@ -505,6 +505,32 @@
           }
         },
         {
+          "name": "التحقق من كود OTP لإعادة تعيين كلمة المرور",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/verify-reset-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-reset-otp"
+              ]
+            },
+            "description": "يتحقق من صحة كود OTP المرسل لإعادة تعيين كلمة المرور"
+          }
+        },
+        {
           "name": "POST /api/v1/auth/reset-password",
           "request": {
             "method": "POST",
@@ -15633,6 +15659,33 @@
               ]
             },
             "description": "الحصول على بيانات صفحة من نحن النشطة (عام - بدون مصادقة)"
+          }
+        },
+        {
+          "name": "جلب رقم الهاتف",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/about/public/phone",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "about",
+                "public",
+                "phone"
+              ]
+            },
+            "description": "الحصول على رقم الهاتف من صفحة من نحن"
           }
         }
       ],

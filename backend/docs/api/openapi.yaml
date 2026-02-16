@@ -250,6 +250,29 @@ paths:
           description: ''
       tags:
         - المصادقة
+  /api/v1/auth/verify-reset-otp:
+    post:
+      operationId: verifyResetOtp
+      summary: التحقق من كود OTP لإعادة تعيين كلمة المرور
+      description: يتحقق من صحة كود OTP المرسل لإعادة تعيين كلمة المرور
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyResetOtpDto'
+      responses:
+        '200':
+          description: OTP صحيح
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResetOtpResponse'
+        '400':
+          description: OTP غير صحيح
+      tags:
+        - المصادقة
   /api/v1/auth/reset-password:
     post:
       operationId: reset
@@ -22348,6 +22371,23 @@ paths:
           description: صفحة من نحن غير متوفرة
       tags:
         - من-نحن-العام
+  /api/v1/about/public/phone:
+    get:
+      operationId: getPhone
+      summary: جلب رقم الهاتف
+      description: الحصول على رقم الهاتف من صفحة من نحن
+      parameters: []
+      responses:
+        '200':
+          description: تم جلب رقم الهاتف بنجاح
+          content:
+            application/json:
+              schema:
+                type: string
+        '404':
+          description: صفحة من نحن غير متوفرة
+      tags:
+        - من-نحن-العام
   /api/v1/admin/commissions/reports:
     get:
       operationId: getCommissionsReport
@@ -23152,6 +23192,29 @@ components:
           maxLength: 15
       required:
         - phone
+    VerifyResetOtpDto:
+      type: object
+      properties:
+        phone:
+          type: string
+          description: رقم الهاتف المرتبط بالحساب
+          example: '+967777123456'
+          pattern: ^\+?[1-9]\d{1,14}$
+          minLength: 10
+          maxLength: 15
+        code:
+          type: string
+          description: كود التحقق المرسل عبر الرسائل النصية
+          example: '123456'
+          minLength: 6
+          maxLength: 6
+          pattern: ^[0-9]{6}$
+      required:
+        - phone
+        - code
+    VerifyResetOtpResponse:
+      type: object
+      properties: {}
     ResetPasswordDto:
       type: object
       properties:
@@ -23169,6 +23232,10 @@ components:
           minLength: 6
           maxLength: 6
           pattern: ^[0-9]{6}$
+        resetToken:
+          type: string
+          description: جلسة إعادة تعيين كلمة المرور بعد تحقق OTP
+          example: a3f3fef3d4f54a2ea2f47f5f1b8f4f45c520ff954b8d5bc6b65c6f6e653a90be
         newPassword:
           type: string
           description: كلمة المرور الجديدة
@@ -23177,7 +23244,6 @@ components:
           maxLength: 128
       required:
         - phone
-        - code
         - newPassword
     RefreshTokenDto:
       type: object
