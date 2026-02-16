@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { CloudUpload, Delete, PlayArrow, Stop, VideoFile, Close } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { videoApi, VideoUploadResponse } from '../api/videoApi';
+import { videoApi, VideoUploadResponse, VideoUploadProgress } from '../api/videoApi';
 import toast from 'react-hot-toast';
 
 interface VideoUploaderProps {
@@ -39,6 +39,27 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   const [videoTitle, setVideoTitle] = useState(title || '');
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [uploadedVideo, setUploadedVideo] = useState<VideoUploadResponse | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<VideoUploadProgress | null>(null);
+
+  const formatSize = (bytes: number): string => {
+    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let value = bytes;
+    let unitIndex = 0;
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex += 1;
+    }
+    return `${value.toFixed(unitIndex > 0 ? 1 : 0)} ${units[unitIndex]}`;
+  };
+
+  const formatEta = (seconds: number): string => {
+    if (!Number.isFinite(seconds) || seconds <= 0) return '0s';
+    if (seconds < 60) return `${Math.ceil(seconds)}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.ceil(seconds % 60);
+    return `${mins}m ${secs}s`;
+  };
 
   const handleFileSelect = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,9 +102,18 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     if (!selectedFile || !videoTitle.trim()) return;
 
     setIsUploading(true);
+    setUploadProgress({
+      loaded: 0,
+      total: selectedFile.size,
+      percent: 0,
+      speedBytesPerSec: 0,
+      etaSeconds: 0,
+    });
 
     try {
-      const result = await videoApi.upload(selectedFile, videoTitle.trim());
+      const result = await videoApi.upload(selectedFile, videoTitle.trim(), (progress) => {
+        setUploadProgress(progress);
+      });
       setUploadedVideo(result);
       onChange?.(result.videoId);
       setTitleDialogOpen(false);
@@ -97,6 +127,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
       );
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   }, [selectedFile, videoTitle, onChange, t]);
 
@@ -122,6 +153,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     setSelectedFile(null);
     setVideoTitle('');
     setTitleDialogOpen(false);
+    setUploadProgress(null);
   }, []);
 
   return (
@@ -253,7 +285,23 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
               <Typography variant="body2" gutterBottom>
                 {t('media:video.uploading', 'جاري رفع الفيديو...')}
               </Typography>
-              <LinearProgress variant="indeterminate" />
+              <LinearProgress
+                variant={uploadProgress ? 'determinate' : 'indeterminate'}
+                value={uploadProgress?.percent ?? 0}
+              />
+              {uploadProgress && (
+                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {uploadProgress.percent}% ({formatSize(uploadProgress.loaded)} / {formatSize(uploadProgress.total)})
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('media:video.speed', 'السرعة')}: {formatSize(uploadProgress.speedBytesPerSec)}/s
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('media:video.remaining', 'المتبقي')}: {formatEta(uploadProgress.etaSeconds)}
+                  </Typography>
+                </Box>
+              )}
             </Box>
           )}
         </DialogContent>

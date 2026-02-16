@@ -13,6 +13,14 @@ export interface VideoUploadResponse {
   mimeType: string;
 }
 
+export interface VideoUploadProgress {
+  loaded: number;
+  total: number;
+  percent: number;
+  speedBytesPerSec: number;
+  etaSeconds: number;
+}
+
 export interface VideoInfo {
   id: string;
   title: string;
@@ -40,19 +48,42 @@ export const videoApi = {
   /**
    * Upload video to Bunny Stream
    */
-  upload: async (file: File, title?: string): Promise<VideoUploadResponse> => {
+  upload: async (
+    file: File,
+    title?: string,
+    onProgress?: (progress: VideoUploadProgress) => void,
+  ): Promise<VideoUploadResponse> => {
     const formData = new FormData();
     formData.append('video', file);
     if (title) {
       formData.append('title', title);
     }
 
+    const startedAt = Date.now();
+    const uploadTimeout = Number(import.meta.env.VITE_VIDEO_UPLOAD_TIMEOUT ?? 600000);
+
     const response = await apiClient.post<ApiResponse<VideoUploadResponse>>(
       '/admin/upload/video',
       formData,
       {
+        timeout: uploadTimeout,
         headers: {
           'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (evt) => {
+          if (!onProgress || !evt.total) return;
+          const elapsedSeconds = Math.max((Date.now() - startedAt) / 1000, 0.001);
+          const speedBytesPerSec = evt.loaded / elapsedSeconds;
+          const remainingBytes = Math.max(evt.total - evt.loaded, 0);
+          const etaSeconds = speedBytesPerSec > 0 ? remainingBytes / speedBytesPerSec : 0;
+
+          onProgress({
+            loaded: evt.loaded,
+            total: evt.total,
+            percent: Math.min(100, Math.max(0, Math.round((evt.loaded / evt.total) * 100))),
+            speedBytesPerSec,
+            etaSeconds,
+          });
         },
       }
     );
