@@ -21,6 +21,7 @@ import {
   ApiUnauthorizedResponse,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { hash, compare } from 'bcrypt';
 import { OtpService } from './otp.service';
