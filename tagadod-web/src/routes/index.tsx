@@ -38,6 +38,16 @@ const SetPasswordPage = lazy(() =>
 const ResetPasswordPage = lazy(() =>
   import("../features/auth/ResetPasswordPage").then((m) => ({
     default: m.ResetPasswordPage,
+  }))
+);
+const ForgotPasswordPage = lazy(() =>
+  import("../features/auth/ForgotPasswordPage").then((m) => ({
+    default: m.ForgotPasswordPage,
+  })),
+);
+const VerifyResetOtpPage = lazy(() =>
+  import("../features/auth/VerifyResetOtpPage").then((m) => ({
+    default: m.VerifyResetOtpPage,
   })),
 );
 
@@ -327,6 +337,30 @@ const router = createBrowserRouter([
         element: (
           <LazyRoute>
             <SetPasswordPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "forgot-password",
+        element: (
+          <LazyRoute>
+            <ForgotPasswordPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "verify-reset-otp",
+        element: (
+          <LazyRoute>
+            <VerifyResetOtpPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "reset-password",
+        element: (
+          <LazyRoute>
+            <ResetPasswordPage />
           </LazyRoute>
         ),
       },

@@ -9,6 +9,7 @@ import type {
   SetPasswordRequest,
   ResetPasswordRequest,
   ForgotPasswordRequest,
+  VerifyResetOtpRequest,
   UpdateProfileRequest,
   DeleteAccountRequest,
 } from "../types/auth";
@@ -77,8 +78,20 @@ export async function checkPhone(
 
 export async function forgotPassword(
   body: ForgotPasswordRequest,
-): Promise<void> {
-  await publicApi.post("/auth/forgot-password", body);
+): Promise<{ sent: boolean; devCode?: string }> {
+  const { data } = await publicApi.post<{ success?: boolean; data?: { sent?: boolean; devCode?: string } }>("/auth/forgot-password", body);
+  return { sent: data?.data?.sent ?? true, devCode: data?.data?.devCode };
+}
+
+export async function verifyResetOtp(
+  body: VerifyResetOtpRequest,
+): Promise<{ valid: boolean; message?: string }> {
+  const { data } = await publicApi.post<{ success?: boolean; data?: { valid?: boolean; message?: string } }>("/auth/verify-reset-otp", body);
+  return { valid: data?.data?.valid ?? true, message: data?.data?.message };
+}
+
+export async function resetPasswordAfterOtp(body: ResetPasswordRequest): Promise<void> {
+  await publicApi.post("/auth/reset-password", body);
 }
 
 export async function resetPassword(body: ResetPasswordRequest): Promise<void> {

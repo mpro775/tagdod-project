@@ -30,6 +30,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { SetPasswordDto } from './dto/set-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
 import { UpdatePreferredCurrencyDto } from './dto/update-preferred-currency.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
@@ -656,6 +657,41 @@ export class AuthController {
     this.logger.log(`OTP sent for password reset to ${normalizedPhone}`);
 
     return { sent: result.sent, devCode: result.devCode };
+  }
+
+  @Post('verify-reset-otp')
+  @ApiOperation({
+    summary: 'التحقق من كود OTP لإعادة تعيين كلمة المرور',
+    description: 'يتحقق من صحة كود OTP المرسل لإعادة تعيين كلمة المرور',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP صحيح',
+    type: class VerifyResetOtpResponse {
+      valid!: boolean;
+      message!: string;
+    },
+  })
+  @ApiResponse({ status: 400, description: 'OTP غير صحيح' })
+  async verifyResetOtp(@Body() dto: VerifyResetOtpDto) {
+    this.logger.log(`Verify reset OTP for phone: ${dto.phone}`);
+
+    let normalizedPhone: string;
+    try {
+      normalizedPhone = normalizeYemeniPhone(dto.phone);
+    } catch (error) {
+      throw new InvalidPhoneException({
+        phone: dto.phone,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    const ok = await this.otp.verifyOtp(normalizedPhone, dto.code, 'reset');
+    if (!ok) {
+      throw new InvalidOTPException({ phone: dto.phone });
+    }
+
+    return { valid: true, message: 'OTP صحيح' };
   }
 
   @Post('reset-password') async reset(@Body() dto: ResetPasswordDto, @Req() req: Request) {
