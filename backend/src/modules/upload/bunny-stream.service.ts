@@ -123,34 +123,68 @@ export class BunnyStreamService {
         },
       );
 
-      const videoId = createResponse.data.id;
+      const createdVideoId = String(createResponse.data?.id ?? '');
+      const createdVideoGuid = String(createResponse.data?.guid ?? videoGuid);
 
-      // Step 2: Upload video file
-      const uploadUrl = `https://${this.bunnyStreamCredentials.hostname}/library/${this.bunnyStreamCredentials.libraryId}/videos/${videoGuid}`;
+      this.logger.debug(
+        `Bunny Stream video created. id=${createdVideoId || 'n/a'}, guid=${createdVideoGuid || 'n/a'}`,
+      );
 
-      const uploadResponse = await axios.put(uploadUrl, file.buffer, {
-        headers: {
-          AccessKey: this.bunnyStreamCredentials.apiKey,
-          'Content-Type': file.mimetype,
-        },
-        validateStatus: () => true,
-      });
+      const uploadTargets = [createdVideoGuid, createdVideoId].filter(
+        (value, index, arr) => Boolean(value) && arr.indexOf(value) === index,
+      );
 
-      if (uploadResponse.status !== 200) {
-        this.logger.error(
-          `Bunny Stream upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`,
+      if (uploadTargets.length === 0) {
+        throw new UploadFailedException({ reason: 'create_video_missing_id_and_guid' });
+      }
+
+      // Step 2: Upload video file (fallback between guid/id)
+      let uploadSucceeded = false;
+      let lastUploadStatus: number | undefined;
+      let lastUploadStatusText: string | undefined;
+
+      for (const target of uploadTargets) {
+        const uploadUrl = `https://${this.bunnyStreamCredentials.hostname}/library/${this.bunnyStreamCredentials.libraryId}/videos/${target}`;
+        const uploadResponse = await axios.put(uploadUrl, file.buffer, {
+          headers: {
+            AccessKey: this.bunnyStreamCredentials.apiKey,
+            'Content-Type': file.mimetype,
+          },
+          validateStatus: () => true,
+        });
+
+        if (uploadResponse.status >= 200 && uploadResponse.status < 300) {
+          uploadSucceeded = true;
+          break;
+        }
+
+        lastUploadStatus = uploadResponse.status;
+        lastUploadStatusText = uploadResponse.statusText;
+        this.logger.warn(
+          `Bunny Stream upload attempt failed for target=${target}: ${uploadResponse.status} ${uploadResponse.statusText}`,
         );
-        throw new UploadFailedException({ status: uploadResponse.status });
+      }
+
+      if (!uploadSucceeded) {
+        this.logger.error(
+          `Bunny Stream upload failed: ${lastUploadStatus ?? 'unknown'} ${lastUploadStatusText ?? ''}`,
+        );
+        throw new UploadFailedException({
+          status: lastUploadStatus,
+          reason: 'upload_failed_for_all_targets',
+          targetsTried: uploadTargets,
+        });
       }
 
       // Step 3: Get video info
-      const videoInfo = await this.getVideoInfo(videoId);
+      const infoTarget = createdVideoId || createdVideoGuid;
+      const videoInfo = await this.getVideoInfo(infoTarget);
 
-      this.logger.log(`Video uploaded successfully: ${videoInfo.title} (ID: ${videoId})`);
+      this.logger.log(`Video uploaded successfully: ${videoInfo.title} (ID: ${infoTarget})`);
 
       return {
-        videoId,
-        guid: videoGuid,
+        videoId: infoTarget,
+        guid: createdVideoGuid,
         title: videoInfo.title,
         url: videoInfo.url,
         thumbnailUrl: videoInfo.thumbnailUrl,
