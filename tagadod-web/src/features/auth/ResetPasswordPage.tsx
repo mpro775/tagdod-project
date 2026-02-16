@@ -9,6 +9,8 @@ import * as authService from '../../services/authService'
 interface ResetPasswordState {
   phone?: string
   fromOtp?: boolean
+  resetToken?: string
+  code?: string
 }
 
 export function ResetPasswordPage() {
@@ -17,6 +19,7 @@ export function ResetPasswordPage() {
   const location = useLocation()
   const state = (location.state as ResetPasswordState) ?? {}
   const fromOtp = state.fromOtp ?? false
+  const resetToken = state.resetToken
 
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -42,9 +45,14 @@ export function ResetPasswordPage() {
     setLoading(true)
     try {
       if (fromOtp) {
+        if (!state.phone || (!resetToken && !state.code)) {
+          setError(t('common.error'))
+          return
+        }
         await authService.resetPasswordAfterOtp({
           phone: state.phone!,
-          otp: '', // OTP already verified
+          resetToken,
+          otp: state.code,
           newPassword,
           confirmPassword: confirm,
         })

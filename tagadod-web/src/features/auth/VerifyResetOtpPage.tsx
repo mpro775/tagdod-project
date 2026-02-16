@@ -87,8 +87,15 @@ export function VerifyResetOtpPage() {
     setError('')
 
     try {
-      await authService.verifyResetOtp({ phone, code })
-      navigate('/reset-password', { state: { phone, fromOtp: true } })
+      const result = await authService.verifyResetOtp({ phone, code })
+      navigate('/reset-password', {
+        state: {
+          phone,
+          fromOtp: true,
+          resetToken: result.resetToken,
+          code,
+        },
+      })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
       setError(msg || t('common.error'))

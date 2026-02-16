@@ -1,4 +1,4 @@
-import { IsString, IsNumberString, Length, MinLength } from 'class-validator';
+import { IsString, IsNumberString, Length, MinLength, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ResetPasswordDto {
@@ -16,9 +16,17 @@ export class ResetPasswordDto {
     example: '123456',
     minLength: 6,
     maxLength: 6,
-    pattern: '^[0-9]{6}$'
+    pattern: '^[0-9]{6}$',
+    required: false,
   })
-  @IsNumberString() @Length(6, 6) code!: string;
+  @IsOptional() @IsNumberString() @Length(6, 6) code?: string;
+
+  @ApiProperty({
+    description: 'جلسة إعادة تعيين كلمة المرور بعد تحقق OTP',
+    example: 'a3f3fef3d4f54a2ea2f47f5f1b8f4f45c520ff954b8d5bc6b65c6f6e653a90be',
+    required: false,
+  })
+  @IsOptional() @IsString() resetToken?: string;
 
   @ApiProperty({
     description: 'كلمة المرور الجديدة',

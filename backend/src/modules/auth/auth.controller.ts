@@ -671,6 +671,7 @@ export class AuthController {
     type: class VerifyResetOtpResponse {
       valid!: boolean;
       message!: string;
+      resetToken!: string;
     },
   })
   @ApiResponse({ status: 400, description: 'OTP غير صحيح' })
@@ -692,7 +693,8 @@ export class AuthController {
       throw new InvalidOTPException({ phone: dto.phone });
     }
 
-    return { valid: true, message: 'OTP صحيح' };
+    const resetToken = await this.otp.createResetSession(normalizedPhone);
+    return { valid: true, message: 'OTP صحيح', resetToken };
   }
 
   @Post('reset-password') async reset(@Body() dto: ResetPasswordDto, @Req() req: Request) {
@@ -710,10 +712,27 @@ export class AuthController {
       });
     }
 
-    // Verify OTP using normalized phone (OTP was stored with normalized phone)
-    const ok = await this.otp.verifyOtp(normalizedPhone, dto.code, 'reset');
-    if (!ok) {
-      this.logger.warn(`Reset password failed - invalid OTP for ${dto.phone}`);
+    if (!dto.code && !dto.resetToken) {
+      throw new AuthException(ErrorCode.VALIDATION_ERROR, {
+        reason: 'missing_code_or_reset_token',
+        message: 'Either code or resetToken is required',
+      });
+    }
+
+    let verified = false;
+    if (dto.resetToken) {
+      verified = await this.otp.consumeResetSession(normalizedPhone, dto.resetToken);
+      if (!verified) {
+        this.logger.warn(`Reset password failed - invalid/expired reset session for ${dto.phone}`);
+      }
+    }
+
+    if (!verified && dto.code) {
+      verified = await this.otp.verifyOtp(normalizedPhone, dto.code, 'reset');
+    }
+
+    if (!verified) {
+      this.logger.warn(`Reset password failed - invalid OTP/resetToken for ${dto.phone}`);
       throw new InvalidOTPException({ phone: dto.phone });
     }
 

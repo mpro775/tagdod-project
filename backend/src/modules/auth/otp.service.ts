@@ -11,6 +11,7 @@ export class OtpService {
   private readonly logger = new Logger(OtpService.name);
   private readonly redis: Redis;
   private readonly ttl: number;
+  private readonly resetSessionTtl: number;
   private readonly length: number;
   private readonly devEcho: boolean;
 
@@ -21,6 +22,7 @@ export class OtpService {
   ) {
     this.redis = redisClient;
     this.ttl = Number(process.env.OTP_TTL_SECONDS || 300);
+    this.resetSessionTtl = Number(process.env.RESET_SESSION_TTL_SECONDS || 900);
     this.length = Number(process.env.OTP_LENGTH || 6);
     this.devEcho = (process.env.OTP_DEV_ECHO || 'false') === 'true';
   }
@@ -35,6 +37,9 @@ export class OtpService {
   }
   private hash(code: string) {
     return crypto.createHash('sha256').update(code).digest('hex');
+  }
+  private resetSessionKey(phone: string) {
+    return `reset-session:${phone}`;
   }
   private isReadOnlyError(error: string | Error): boolean {
     const message = error instanceof Error ? error.message : String(error);
@@ -192,5 +197,34 @@ export class OtpService {
       }
       return false;
     }
+  }
+
+  async createResetSession(phone: string): Promise<string> {
+    const normalizedPhone = normalizeYemeniPhone(phone);
+    const token = crypto.randomBytes(32).toString('hex');
+    const hashedToken = this.hash(token);
+
+    await this.setWithRetry(
+      this.resetSessionKey(normalizedPhone),
+      hashedToken,
+      this.resetSessionTtl,
+    );
+
+    return token;
+  }
+
+  async consumeResetSession(phone: string, token: string): Promise<boolean> {
+    const normalizedPhone = normalizeYemeniPhone(phone);
+    const key = this.resetSessionKey(normalizedPhone);
+
+    const storedHash = await this.redis.get(key);
+    if (!storedHash) return false;
+
+    const incomingHash = this.hash(token);
+    const valid = storedHash === incomingHash;
+    if (!valid) return false;
+
+    await this.redis.del(key);
+    return true;
   }
 }

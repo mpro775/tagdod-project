@@ -86,17 +86,30 @@ export async function forgotPassword(
 
 export async function verifyResetOtp(
   body: VerifyResetOtpRequest,
-): Promise<{ valid: boolean; message?: string }> {
-  const { data } = await publicApi.post<{ success?: boolean; data?: { valid?: boolean; message?: string } }>("/auth/verify-reset-otp", body);
-  return { valid: data?.data?.valid ?? true, message: data?.data?.message };
+): Promise<{ valid: boolean; message?: string; resetToken?: string }> {
+  const { data } = await publicApi.post<{
+    success?: boolean
+    data?: { valid?: boolean; message?: string; resetToken?: string }
+    valid?: boolean
+    message?: string
+    resetToken?: string
+  }>("/auth/verify-reset-otp", body);
+  const source = data?.data ?? data;
+  return {
+    valid: source?.valid ?? true,
+    message: source?.message,
+    resetToken: source?.resetToken,
+  };
 }
 
 export async function resetPasswordAfterOtp(body: ResetPasswordWithOtpRequest): Promise<void> {
-  await publicApi.post("/auth/reset-password", {
+  const payload = {
     phone: body.phone,
     code: body.otp,
+    resetToken: body.resetToken,
     newPassword: body.newPassword,
-  });
+  }
+  await publicApi.post("/auth/reset-password", payload);
 }
 
 export async function resetPassword(body: ResetPasswordRequest): Promise<void> {
