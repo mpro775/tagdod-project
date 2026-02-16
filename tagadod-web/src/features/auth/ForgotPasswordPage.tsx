@@ -22,7 +22,6 @@ export function ForgotPasswordPage() {
 
     try {
       await authService.forgotPassword({ phone: phone.trim() })
-      setSent(true)
       navigate('/verify-reset-otp', { state: { phone: phone.trim() } })
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
