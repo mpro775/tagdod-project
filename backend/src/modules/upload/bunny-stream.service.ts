@@ -14,6 +14,7 @@ export interface BunnyStreamCredentials {
   libraryId: string;
   apiKey: string;
   hostname?: string;
+  cdnHostname?: string;
 }
 
 export interface VideoUploadResult {
@@ -48,6 +49,9 @@ export class BunnyStreamService {
         this.configService.get<string>('BUNNY_STREAM_API_KEY') ||
         'c1368f6a-4139-4169-84a66c6b0e63-e60b-42a9',
       hostname: this.configService.get<string>('BUNNY_STREAM_HOSTNAME') || 'video.bunnycdn.com',
+      cdnHostname:
+        this.configService.get<string>('BUNNY_STREAM_CDN_HOSTNAME') ||
+        `${this.configService.get<string>('BUNNY_STREAM_LIBRARY_ID') || '600364'}.b-cdn.net`,
     };
 
     // Validate required credentials
@@ -61,6 +65,86 @@ export class BunnyStreamService {
         reason: 'BUNNY_STREAM_API_KEY not configured',
       });
     }
+  }
+
+  private normalizeVideoStatus(rawStatus: unknown): 'processing' | 'ready' | 'failed' {
+    if (typeof rawStatus === 'number') {
+      if (rawStatus <= 0) return 'processing';
+      if (rawStatus === 1) return 'ready';
+      if (rawStatus >= 2) return 'failed';
+    }
+
+    const status = String(rawStatus ?? '').toLowerCase();
+    if (!status) return 'processing';
+    if (
+      status.includes('ready') ||
+      status.includes('published') ||
+      status.includes('finished') ||
+      status.includes('completed')
+    ) {
+      return 'ready';
+    }
+    if (status.includes('fail') || status.includes('error')) {
+      return 'failed';
+    }
+    return 'processing';
+  }
+
+  private buildPlaybackUrl(guid: string): string {
+    return `https://${this.bunnyStreamCredentials.cdnHostname}/${guid}/playlist.m3u8`;
+  }
+
+  private buildThumbnailUrl(guid: string): string {
+    return `https://${this.bunnyStreamCredentials.cdnHostname}/${guid}/thumbnail.jpg`;
+  }
+
+  private normalizeVideoInfo(raw: Record<string, unknown>): {
+    id: string;
+    title: string;
+    guid: string;
+    url: string;
+    thumbnailUrl?: string;
+    status: 'processing' | 'ready' | 'failed';
+    duration?: number;
+    width?: number;
+    height?: number;
+    fps?: number;
+    bitrate?: number;
+    size?: number;
+  } {
+    const id = String(raw.id ?? raw.videoId ?? raw.videoLibraryId ?? raw.videoGuid ?? raw.guid ?? '');
+    const guid = String(raw.guid ?? raw.videoGuid ?? raw.Guid ?? '');
+    const title = String(raw.title ?? raw.Title ?? raw.name ?? raw.Name ?? '');
+
+    const url =
+      String(
+        raw.url ??
+          raw.playbackUrl ??
+          raw.directPlayUrl ??
+          raw.playUrl ??
+          raw.hlsUrl ??
+          raw.HLSUrl ??
+          '',
+      ) || (guid ? this.buildPlaybackUrl(guid) : '');
+
+    const thumbnailUrl =
+      String(raw.thumbnailUrl ?? raw.thumbnailURL ?? raw.thumbnailFileName ?? '') ||
+      (guid ? this.buildThumbnailUrl(guid) : '');
+
+    return {
+      id,
+      title,
+      guid,
+      url,
+      thumbnailUrl: thumbnailUrl || undefined,
+      status: this.normalizeVideoStatus(raw.status ?? raw.Status),
+      duration: typeof raw.length === 'number' ? raw.length : (raw.duration as number | undefined),
+      width: raw.width as number | undefined,
+      height: raw.height as number | undefined,
+      fps: raw.fps as number | undefined,
+      bitrate: raw.bitrate as number | undefined,
+      size: (raw.storageSize as number | undefined) ?? (raw.size as number | undefined),
+    };
   }
 
   /**
@@ -183,7 +267,7 @@ export class BunnyStreamService {
       this.logger.log(`Video uploaded successfully: ${videoInfo.title} (ID: ${infoTarget})`);
 
       return {
-        videoId: infoTarget,
+        videoId: videoInfo.id || infoTarget,
         guid: createdVideoGuid,
         title: videoInfo.title,
         url: videoInfo.url,
@@ -238,7 +322,7 @@ export class BunnyStreamService {
         },
       });
 
-      return response.data;
+      return this.normalizeVideoInfo((response.data ?? {}) as Record<string, unknown>);
     } catch (error) {
       this.logger.error('Failed to get video info:', error);
       throw new UploadException(ErrorCode.MEDIA_NOT_FOUND, { videoId });
@@ -303,7 +387,32 @@ export class BunnyStreamService {
         },
       });
 
-      return response.data;
+      const payload = (response.data ?? {}) as {
+        totalItems?: number;
+        currentPage?: number;
+        itemsPerPage?: number;
+        items?: unknown[];
+      };
+
+      const itemsRaw = Array.isArray(payload.items) ? payload.items : [];
+      return {
+        totalItems: payload.totalItems ?? itemsRaw.length,
+        currentPage: payload.currentPage ?? page,
+        itemsPerPage: payload.itemsPerPage ?? perPage,
+        items: itemsRaw.map((item) => {
+          const info = this.normalizeVideoInfo((item ?? {}) as Record<string, unknown>);
+          return {
+            id: info.id,
+            title: info.title,
+            guid: info.guid,
+            url: info.url,
+            thumbnailUrl: info.thumbnailUrl,
+            status: info.status,
+            duration: info.duration,
+            uploadedAt: String((item as Record<string, unknown>)?.dateUploaded ?? ''),
+          };
+        }),
+      };
     } catch (error) {
       this.logger.error('Failed to list videos:', error);
       throw new UploadException(ErrorCode.SERVICE_UNAVAILABLE, {

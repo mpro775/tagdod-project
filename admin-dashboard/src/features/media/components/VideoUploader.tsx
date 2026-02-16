@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -40,6 +40,47 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
   const [uploadedVideo, setUploadedVideo] = useState<VideoUploadResponse | null>(null);
   const [uploadProgress, setUploadProgress] = useState<VideoUploadProgress | null>(null);
+
+  useEffect(() => {
+    const targetVideoId = uploadedVideo?.videoId || value;
+    if (!targetVideoId) return;
+
+    let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
+    const syncVideoInfo = async () => {
+      try {
+        const info = await videoApi.getInfo(targetVideoId);
+        if (cancelled) return;
+
+        setUploadedVideo((prev) => ({
+          videoId: info.id,
+          guid: info.guid,
+          title: info.title,
+          url: info.url,
+          thumbnailUrl: info.thumbnailUrl,
+          status: info.status,
+          duration: info.duration,
+          size: prev?.size ?? 0,
+          mimeType: prev?.mimeType ?? 'video/mp4',
+        }));
+
+        if (info.status !== 'processing' && intervalId) {
+          clearInterval(intervalId);
+        }
+      } catch {
+        // ignore polling errors to avoid noisy UI
+      }
+    };
+
+    void syncVideoInfo();
+    intervalId = setInterval(syncVideoInfo, 8000);
+
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [uploadedVideo?.videoId, value]);
 
   const formatSize = (bytes: number): string => {
     if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
@@ -218,7 +259,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                   {uploadedVideo?.title || t('media:video.uploadedVideo', 'فيديو مرفوع')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {uploadedVideo?.status === 'processing'
+                  {uploadedVideo?.status === 'processing' || !uploadedVideo?.status
                     ? t('media:video.processing', 'جاري المعالجة...')
                     : uploadedVideo?.status === 'ready'
                       ? t('media:video.ready', 'جاهز للعرض')

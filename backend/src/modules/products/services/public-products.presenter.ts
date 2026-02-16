@@ -102,6 +102,7 @@ type VariantPricingInput = {
 export class PublicProductsPresenter {
   private readonly logger = new Logger(PublicProductsPresenter.name);
   private readonly BASE_PRICING_CURRENCIES = ['USD', 'YER', 'SAR'] as const;
+  private readonly bunnyStreamCdnHost = process.env.BUNNY_STREAM_CDN_HOSTNAME || '';
   private readonly ATTRIBUTE_SUMMARY_TTL_MS = 5 * 60 * 1000;
   private readonly attributeSummaryCache = new Map<
     string,
@@ -620,6 +621,23 @@ export class PublicProductsPresenter {
       .filter((item): item is AnyRecord => Boolean(item));
   }
 
+  private simplifyVideoIds(list: unknown): string[] {
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((item) => this.extractIdString(item) ?? (typeof item === 'string' ? item : null))
+      .filter((id): id is string => Boolean(id));
+  }
+
+  private buildVideoEntries(videoIds: string[]): AnyRecord[] {
+    if (!videoIds.length || !this.bunnyStreamCdnHost) return [];
+    return videoIds.map((id) => ({
+      id,
+      url: `https://${this.bunnyStreamCdnHost}/${id}/playlist.m3u8`,
+      thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg`,
+      status: 'processing',
+    }));
+  }
+
   private sanitizeVariant(rawVariant: AnyRecord): AnyRecord {
     const variantId =
       this.extractIdString(rawVariant._id) ??
@@ -712,6 +730,8 @@ export class PublicProductsPresenter {
     const brand = this.simplifyBrand(product.brand ?? product.brandId);
     let mainImage = this.simplifyMedia(product.mainImage ?? product.mainImageId);
     const images = this.simplifyMediaList(product.images ?? product.imageIds);
+    const videoIds = this.simplifyVideoIds(product.videoIds);
+    const videos = this.buildVideoEntries(videoIds);
 
     // إذا لم توجد صورة رئيسية وكانت هناك صور، استخدم أول صورة كصورة رئيسية
     if (!mainImage && images.length > 0) {
@@ -765,6 +785,8 @@ export class PublicProductsPresenter {
       ...(includeBrand && brand ? { brand } : {}),
       ...(mainImage ? { mainImage } : {}),
       ...(includeImages && images.length > 0 ? { images } : {}),
+      ...(videoIds.length > 0 ? { videoIds } : {}),
+      ...(videos.length > 0 ? { videos } : {}),
       ...(attributes.length > 0 ? { attributes } : {}),
       ...(typeof product.isActive === 'boolean' ? { isActive: product.isActive } : {}),
       ...(typeof product.isFeatured === 'boolean' ? { isFeatured: product.isFeatured } : {}),

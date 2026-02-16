@@ -80,6 +80,30 @@ function ImageGallery({ images }: { images: string[] }) {
   )
 }
 
+function VideoSection({ videos }: { videos?: Array<{ id: string; url: string; thumbnailUrl?: string; status?: 'processing' | 'ready' | 'failed' }> }) {
+  if (!videos || videos.length === 0) return null
+  const video = videos[0]
+
+  if (!video.url) return null
+
+  return (
+    <div className="mt-4 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-tagadod-dark-gray p-3">
+      <h4 className="text-sm font-semibold text-tagadod-titles dark:text-tagadod-dark-titles mb-2">فيديو المنتج</h4>
+      {video.status === 'processing' ? (
+        <div className="text-sm text-tagadod-gray">جاري معالجة الفيديو...</div>
+      ) : (
+        <video
+          controls
+          preload="metadata"
+          poster={video.thumbnailUrl}
+          className="w-full max-h-[360px] rounded-xl bg-black/80"
+          src={video.url}
+        />
+      )}
+    </div>
+  )
+}
+
 /* ------------------------------------------------------------------ */
 /*  Variant Selector                                                   */
 /* ------------------------------------------------------------------ */
@@ -235,6 +259,7 @@ export function ProductPage() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start">
           <div className="lg:sticky lg:top-20">
             <ImageGallery images={product.images} />
+            <VideoSection videos={product.videos} />
           </div>
 
           <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-tagadod-dark-gray p-4 md:p-5">

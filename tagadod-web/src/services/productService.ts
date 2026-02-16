@@ -119,6 +119,8 @@ interface ApiProductDetail extends ApiProductListItem {
   description?: string;
   descriptionEn?: string;
   images?: Array<{ _id?: string; url?: string }>;
+  videos?: Array<{ id?: string; url?: string; thumbnailUrl?: string; status?: 'processing' | 'ready' | 'failed' }>;
+  videoIds?: string[];
   category?: { _id?: string; name?: string; nameEn?: string };
 }
 
@@ -173,6 +175,15 @@ function normalizeProductDetail(
     ? [mainUrl, ...extraUrls.filter((u) => u !== mainUrl)]
     : extraUrls;
 
+  const videos = (rawProduct.videos ?? [])
+    .filter((v) => v?.url)
+    .map((v) => ({
+      id: v.id ?? '',
+      url: v.url ?? '',
+      thumbnailUrl: v.thumbnailUrl,
+      status: v.status,
+    }));
+
   const p = rawProduct.pricing;
   const price =
     p?.minPriceUSD ??
@@ -192,6 +203,7 @@ function normalizeProductDetail(
     name: rawProduct.name ?? rawProduct.nameEn ?? "",
     description: rawProduct.description ?? rawProduct.descriptionEn,
     images,
+    videos: videos.length ? videos : undefined,
     price: displayPrice,
     originalPrice:
       p?.discountPercent && p.discountPercent > 0 ? p.basePriceUSD : undefined,

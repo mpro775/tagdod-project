@@ -5,6 +5,7 @@ export interface Product {
   description?: string
   descriptionAr?: string
   images: string[]
+  videos?: ProductVideo[]
   price: number
   originalPrice?: number
   currency?: string
@@ -22,6 +23,13 @@ export interface Product {
   priceRange?: PriceRange
   createdAt?: string
   updatedAt?: string
+}
+
+export interface ProductVideo {
+  id: string
+  url: string
+  thumbnailUrl?: string
+  status?: 'processing' | 'ready' | 'failed'
 }
 
 export interface ProductVariant {
