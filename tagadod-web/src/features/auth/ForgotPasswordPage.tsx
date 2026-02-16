@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { GlobalButton } from '../../components/shared/GlobalButton'
-import { GlobalTextField } from '../../components/shared/GlobalTextField'
 import { PhoneNumberField } from '../../components/shared/PhoneNumberField'
 import * as authService from '../../services/authService'
 
@@ -13,7 +12,6 @@ export function ForgotPasswordPage() {
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [sent, setSent] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -5,6 +5,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { GlobalButton } from '../../components/shared/GlobalButton'
 import { GlobalTextField } from '../../components/shared/GlobalTextField'
 import * as authService from '../../services/authService'
+import type { ResetPasswordWithOtpRequest } from '../../types/auth'
 
 interface ResetPasswordState {
   phone?: string
@@ -44,7 +45,7 @@ export function ResetPasswordPage() {
       if (fromOtp) {
         await authService.resetPasswordAfterOtp({
           phone: state.phone!,
-          code: '', // OTP already verified
+          otp: '', // OTP already verified
           newPassword,
           confirmPassword: confirm,
         })

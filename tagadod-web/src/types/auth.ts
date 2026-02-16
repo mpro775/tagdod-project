@@ -65,6 +65,13 @@ export interface ResetPasswordRequest {
   confirmPassword: string
 }
 
+export interface ResetPasswordWithOtpRequest {
+  phone: string
+  otp: string
+  newPassword: string
+  confirmPassword: string
+}
+
 export interface VerifyResetOtpRequest {
   phone: string
   code: string
