@@ -63,7 +63,7 @@ export const videoApi = {
     const uploadTimeout = Number(import.meta.env.VITE_VIDEO_UPLOAD_TIMEOUT ?? 600000);
 
     const response = await apiClient.post<ApiResponse<VideoUploadResponse>>(
-      '/admin/upload/video',
+      '/upload/video',
       formData,
       {
         timeout: uploadTimeout,
@@ -95,7 +95,7 @@ export const videoApi = {
    */
   getInfo: async (videoId: string): Promise<VideoInfo> => {
     const response = await apiClient.get<ApiResponse<VideoInfo>>(
-      `/admin/upload/video/${videoId}`
+      `/upload/video/${videoId}`
     );
     return response.data.data;
   },
@@ -104,7 +104,7 @@ export const videoApi = {
    * Delete video
    */
   delete: async (videoId: string): Promise<void> => {
-    await apiClient.delete(`/admin/upload/video/${videoId}`);
+    await apiClient.delete(`/upload/video/${videoId}`);
   },
 
   /**
@@ -112,7 +112,7 @@ export const videoApi = {
    */
   list: async (page: number = 1, perPage: number = 20): Promise<VideoListResponse> => {
     const response = await apiClient.get<ApiResponse<VideoListResponse>>(
-      '/admin/upload/videos',
+      '/upload/videos',
       {
         params: { page, perPage }
       }
