@@ -33,7 +33,7 @@ export function OrderTrackingPage() {
   const navigate = useNavigate()
   const isArabic = i18n.language === 'ar'
 
-  const { data: tracking, isLoading } = useQuery({
+  const { data: tracking, isLoading, isError } = useQuery({
     queryKey: ['orderTracking', id],
     queryFn: () => orderService.getOrderTracking(id!),
     enabled: !!id,
@@ -61,7 +61,7 @@ export function OrderTrackingPage() {
     )
   }
 
-  if (!tracking) {
+  if (isError || !tracking) {
     return (
       <div className="min-h-screen bg-tagadod-light-bg dark:bg-tagadod-dark-bg">
         <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-tagadod-light-bg dark:bg-tagadod-dark-bg border-b border-gray-200 dark:border-white/10">
@@ -85,8 +85,8 @@ export function OrderTrackingPage() {
     )
   }
 
-  const isCancelled = tracking.currentStatus === 'cancelled'
-  const isCompleted = tracking.currentStatus === 'completed'
+  const isCancelled = tracking?.currentStatus === 'cancelled'
+  const isCompleted = tracking?.currentStatus === 'completed'
 
   return (
     <div className="min-h-screen bg-tagadod-light-bg dark:bg-tagadod-dark-bg pb-8">
@@ -113,7 +113,7 @@ export function OrderTrackingPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-tagadod-titles dark:text-tagadod-dark-titles">
-                {t('orderTracking.orderNumber', 'طلب #')}{tracking.orderNumber}
+                {t('orderTracking.orderNumber', 'طلب #')}{tracking?.orderNumber}
               </p>
               <p className="text-xs text-tagadod-gray">
                 {isCancelled
@@ -161,9 +161,9 @@ export function OrderTrackingPage() {
 
             <div className="space-y-6">
               {statusSteps.map((step, index) => {
-                const timelineItem = tracking.timeline?.find((t) => t.status === step.status)
-                const isStepCompleted = timelineItem?.isCompleted ?? (index < statusSteps.findIndex((s) => s.status === tracking.currentStatus))
-                const isStepCurrent = timelineItem?.isCurrent ?? (step.status === tracking.currentStatus)
+                const timelineItem = tracking?.timeline?.find((t) => t.status === step.status)
+                const isStepCompleted = timelineItem?.isCompleted ?? (index < statusSteps.findIndex((s) => s.status === tracking?.currentStatus))
+                const isStepCurrent = timelineItem?.isCurrent ?? (step.status === tracking?.currentStatus)
                 const isCancelledStep = isCancelled && step.status !== 'pending_payment'
 
                 return (
@@ -213,7 +213,7 @@ export function OrderTrackingPage() {
         </div>
 
         {/* Estimated Delivery */}
-        {tracking.estimatedDelivery && !isCancelled && (
+        {tracking?.estimatedDelivery && !isCancelled && (
           <div className="rounded-xl bg-white dark:bg-tagadod-dark-gray shadow-sm p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
@@ -236,7 +236,7 @@ export function OrderTrackingPage() {
         )}
 
         {/* Actual Delivery */}
-        {tracking.actualDelivery && (
+        {tracking?.actualDelivery && (
           <div className="rounded-xl bg-white dark:bg-tagadod-dark-gray shadow-sm p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
