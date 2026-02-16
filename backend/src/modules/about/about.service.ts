@@ -82,6 +82,17 @@ export class AboutService {
   }
 
   /**
+   * جلب رقم الهاتف فقط
+   */
+  async getPhone(): Promise<string> {
+    const about = await this.aboutModel.findOne({ isActive: true }).lean().exec();
+    if (!about) {
+      throw new NotFoundException('صفحة "من نحن" غير متوفرة حالياً');
+    }
+    return about.contactInfo?.phone ?? '';
+  }
+
+  /**
    * تحديث صفحة من نحن
    */
   async update(dto: UpdateAboutDto, userId: string): Promise<AboutResponseDto> {

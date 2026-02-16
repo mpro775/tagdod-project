@@ -108,7 +108,7 @@ export function OrderDetailsPage() {
               <div>
                 <p className="text-sm font-semibold text-tagadod-titles dark:text-tagadod-dark-titles">
                   {t('orderDetails.orderNumber', 'طلب #')}
-                  {order.orderNumber ?? order.id.slice(0, 8)}
+                  {order.orderNumber ?? (order.id?.slice(0, 8) ?? '')}
                 </p>
                 <p className="text-xs text-tagadod-gray">
                   {new Date(order.createdAt).toLocaleDateString('ar', {
@@ -131,14 +131,16 @@ export function OrderDetailsPage() {
 
         {/* Tracking & Invoice Actions */}
         <div className="flex gap-2">
-          <Link
-            to={`/order-tracking/${order.id}`}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
-          >
-            <Truck size={18} />
-            {t('orderDetails.track', 'تتبع الطلب')}
-          </Link>
-          {(order.invoiceUrl || order.invoiceNumber) && (
+          {order.id && (
+            <Link
+              to={`/order-tracking/${order.id}`}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
+            >
+              <Truck size={18} />
+              {t('orderDetails.track', 'تتبع الطلب')}
+            </Link>
+          )}
+          {(order.invoiceUrl || order.invoiceNumber) && order.id && (
             <div className="flex gap-2">
               <a
                 href={orderService.getInvoiceUrl(order.id)}

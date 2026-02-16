@@ -157,6 +157,16 @@ export function LoginPage() {
                 />
               </div>
 
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password')}
+                  className="text-sm text-primary hover:underline"
+                >
+                  {t('auth.forgotPassword', 'نسيت كلمة المرور؟')}
+                </button>
+              </div>
+
               {error && <p className="text-sm text-tagadod-red text-center">{error}</p>}
 
               <GlobalButton type="submit" loading={loading}>

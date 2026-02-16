@@ -1,14 +1,23 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { GlobalButton } from '../../components/shared/GlobalButton'
 import { GlobalTextField } from '../../components/shared/GlobalTextField'
 import * as authService from '../../services/authService'
+import type { ResetPasswordWithOtpRequest } from '../../types/auth'
+
+interface ResetPasswordState {
+  phone?: string
+  fromOtp?: boolean
+}
 
 export function ResetPasswordPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
+  const state = (location.state as ResetPasswordState) ?? {}
+  const fromOtp = state.fromOtp ?? false
 
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -33,13 +42,28 @@ export function ResetPasswordPage() {
 
     setLoading(true)
     try {
-      await authService.resetPassword({
-        oldPassword,
-        newPassword,
-        confirmPassword: confirm,
-      })
+      if (fromOtp) {
+        await authService.resetPasswordAfterOtp({
+          phone: state.phone!,
+          otp: '', // OTP already verified
+          newPassword,
+          confirmPassword: confirm,
+        })
+      } else {
+        await authService.resetPassword({
+          oldPassword,
+          newPassword,
+          confirmPassword: confirm,
+        })
+      }
       setSuccess(true)
-      setTimeout(() => navigate(-1), 1500)
+      setTimeout(() => {
+        if (fromOtp) {
+          navigate('/login', { replace: true })
+        } else {
+          navigate(-1)
+        }
+      }, 1500)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
       setError(msg || t('common.error'))
@@ -52,10 +76,12 @@ export function ResetPasswordPage() {
     <div className="p-4 pb-24">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10">
-          <ArrowRight size={20} className="text-tagadod-titles dark:text-tagadod-dark-titles rtl:rotate-180" />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-tagadod-titles dark:text-tagadod-dark-titles rtl:rotate-180">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
         </button>
         <h1 className="text-lg font-semibold text-tagadod-titles dark:text-tagadod-dark-titles">
-          {t('profile.changePassword')}
+          {fromOtp ? t('auth.setNewPassword') : t('profile.changePassword')}
         </h1>
       </div>
 
@@ -72,24 +98,31 @@ export function ResetPasswordPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
-          <GlobalTextField
-            label="كلمة المرور الحالية"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="كلمة المرور الحالية"
-            value={oldPassword}
-            onChange={(e) => setOldPassword((e.target as HTMLInputElement).value)}
-            endIcon={
-              <button type="button" onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            }
-          />
+          {!fromOtp && (
+            <GlobalTextField
+              label={t('auth.oldPassword')}
+              type={showPassword ? 'text' : 'password'}
+              placeholder={t('auth.oldPassword')}
+              value={oldPassword}
+              onChange={(e) => setOldPassword((e.target as HTMLInputElement).value)}
+              endIcon={
+                <button type="button" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              }
+            />
+          )}
           <GlobalTextField
             label={t('auth.newPassword')}
             type={showPassword ? 'text' : 'password'}
             placeholder={t('auth.newPassword')}
             value={newPassword}
             onChange={(e) => setNewPassword((e.target as HTMLInputElement).value)}
+            endIcon={
+              <button type="button" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            }
           />
           <GlobalTextField
             label={t('auth.confirmPassword')}
@@ -109,3 +142,5 @@ export function ResetPasswordPage() {
     </div>
   )
 }
+
+export default ResetPasswordPage
