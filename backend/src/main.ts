@@ -91,7 +91,10 @@ async function bootstrap() {
   );
 
   // CORS configuration
-  const allowed = (process.env.CORS_ORIGINS ?? '').split(',').filter(Boolean);
+  const allowed = (process.env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
   const corsOrigins = allowed.length
     ? allowed
     : [
@@ -101,6 +104,9 @@ async function bootstrap() {
       'http://localhost:8080',
       /^https?:\/\/localhost(:\d+)?$/,
       'https://api.allawzi.net', // تأكد من إضافته هنا أيضاً
+      'https://web.tagadod.app',
+      'https://allawzi.net',
+      'https://www.allawzi.net',
     ];
 
   app.enableCors({
