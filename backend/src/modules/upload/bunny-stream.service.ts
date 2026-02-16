@@ -112,7 +112,7 @@ export class BunnyStreamService {
     bitrate?: number;
     size?: number;
   } {
-    const id = String(raw.id ?? raw.videoId ?? raw.videoLibraryId ?? raw.videoGuid ?? raw.guid ?? '');
+    const id = String(raw.id ?? raw.videoId ?? raw.videoGuid ?? raw.guid ?? '');
     const guid = String(raw.guid ?? raw.videoGuid ?? raw.Guid ?? '');
     const title = String(raw.title ?? raw.Title ?? raw.name ?? raw.Name ?? '');
 
@@ -144,6 +144,37 @@ export class BunnyStreamService {
       fps: raw.fps as number | undefined,
       bitrate: raw.bitrate as number | undefined,
       size: (raw.storageSize as number | undefined) ?? (raw.size as number | undefined),
+    };
+  }
+
+  private isGuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    );
+  }
+
+  private buildProvisionalVideoInfo(identifier: string): {
+    id: string;
+    title: string;
+    guid: string;
+    url: string;
+    thumbnailUrl?: string;
+    status: 'processing' | 'ready' | 'failed';
+    duration?: number;
+    width?: number;
+    height?: number;
+    fps?: number;
+    bitrate?: number;
+    size?: number;
+  } {
+    const guid = this.isGuid(identifier) ? identifier : '';
+    return {
+      id: identifier,
+      title: '',
+      guid,
+      url: guid ? this.buildPlaybackUrl(guid) : '',
+      thumbnailUrl: guid ? this.buildThumbnailUrl(guid) : undefined,
+      status: 'processing',
     };
   }
 
@@ -261,14 +292,14 @@ export class BunnyStreamService {
       }
 
       // Step 3: Get video info
-      const infoTarget = createdVideoId || createdVideoGuid;
+      const infoTarget = createdVideoGuid || createdVideoId;
       const videoInfo = await this.getVideoInfo(infoTarget);
 
       this.logger.log(`Video uploaded successfully: ${videoInfo.title} (ID: ${infoTarget})`);
 
       return {
-        videoId: videoInfo.id || infoTarget,
-        guid: createdVideoGuid,
+        videoId: createdVideoGuid || videoInfo.guid || videoInfo.id || infoTarget,
+        guid: createdVideoGuid || videoInfo.guid || videoInfo.id || infoTarget,
         title: videoInfo.title,
         url: videoInfo.url,
         thumbnailUrl: videoInfo.thumbnailUrl,
@@ -324,6 +355,39 @@ export class BunnyStreamService {
 
       return this.normalizeVideoInfo((response.data ?? {}) as Record<string, unknown>);
     } catch (error) {
+      const status =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { status?: number } }).response?.status
+          : undefined;
+
+      if (status === 404) {
+        try {
+          const videos = await this.listVideos(1, 200);
+          const found = videos.items.find((item) => item.id === videoId || item.guid === videoId);
+          if (found) {
+            return {
+              id: found.id,
+              title: found.title,
+              guid: found.guid,
+              url: found.url,
+              thumbnailUrl: found.thumbnailUrl,
+              status: found.status,
+              duration: found.duration,
+            };
+          }
+
+          this.logger.warn(
+            `Video info 404 for ${videoId}; returning provisional processing status while Bunny sync catches up`,
+          );
+          return this.buildProvisionalVideoInfo(videoId);
+        } catch {
+          this.logger.warn(
+            `Video info lookup fallback failed for ${videoId}; returning provisional processing status`,
+          );
+          return this.buildProvisionalVideoInfo(videoId);
+        }
+      }
+
       this.logger.error('Failed to get video info:', error);
       throw new UploadException(ErrorCode.MEDIA_NOT_FOUND, { videoId });
     }
