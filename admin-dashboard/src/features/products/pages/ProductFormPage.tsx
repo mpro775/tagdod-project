@@ -739,6 +739,7 @@ export const ProductFormPage: React.FC = () => {
         relatedProducts: Array.isArray(currentRelatedProducts) ? currentRelatedProducts : [],
         mainImageId: selectedImage?._id,
         imageIds: selectedImages.map((img: any) => img._id).filter(Boolean),
+        videoIds: selectedVideos.filter(Boolean),
         // التقييم اليدوي
         useManualRating: useManualRating,
         manualRating: useManualRating ? manualRating : undefined,

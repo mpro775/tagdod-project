@@ -18,6 +18,31 @@ import { SyncStockDto } from '../dto/sync-stock.dto';
 @Injectable()
 export class ProductService {
   private readonly logger = new Logger(ProductService.name);
+  private readonly bunnyStreamLibraryId = process.env.BUNNY_STREAM_LIBRARY_ID || '';
+  private readonly bunnyStreamCdnHost = process.env.BUNNY_STREAM_CDN_HOSTNAME || '';
+
+  private buildProductVideos(videoIds: unknown): Array<{
+    id: string;
+    url: string;
+    thumbnailUrl?: string;
+    status: 'processing' | 'ready' | 'failed';
+  }> {
+    if (!this.bunnyStreamLibraryId || !Array.isArray(videoIds) || videoIds.length === 0) {
+      return [];
+    }
+
+    return videoIds
+      .map((raw) => (typeof raw === 'string' ? raw : String(raw ?? '')))
+      .filter(Boolean)
+      .map((id) => ({
+        id,
+        url: `https://iframe.mediadelivery.net/play/${this.bunnyStreamLibraryId}/${id}`,
+        ...(this.bunnyStreamCdnHost
+          ? { thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg` }
+          : {}),
+        status: 'processing' as const,
+      }));
+  }
 
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
@@ -245,6 +270,9 @@ export class ProductService {
           productWithAvailability.isAvailable = true;
         }
       }
+
+      (productWithAvailability as Product & { videos?: unknown[] }).videos =
+        this.buildProductVideos((productWithAvailability as Product & { videoIds?: unknown[] }).videoIds);
     }
 
     return productWithAvailability;
@@ -263,7 +291,10 @@ export class ProductService {
       throw new ProductNotFoundException({ slug });
     }
 
-    return product;
+    const productWithVideos = product as Product & { videos?: unknown[]; videoIds?: unknown[] };
+    productWithVideos.videos = this.buildProductVideos(productWithVideos.videoIds);
+
+    return productWithVideos;
   }
 
   async findByIds(ids: string[]): Promise<Product[]> {
