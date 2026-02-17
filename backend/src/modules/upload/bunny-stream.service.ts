@@ -93,7 +93,7 @@ export class BunnyStreamService {
   }
 
   private buildPlaybackUrl(guid: string): string {
-    return `https://${this.bunnyStreamCredentials.cdnHostname}/${guid}/playlist.m3u8`;
+    return `https://iframe.mediadelivery.net/play/${this.bunnyStreamCredentials.libraryId}/${guid}`;
   }
 
   private buildThumbnailUrl(guid: string): string {

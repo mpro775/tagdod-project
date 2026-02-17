@@ -102,7 +102,7 @@ export class VideoUploadResponseDto {
 
   @ApiProperty({
     description: 'Video playback URL',
-    example: 'https://video.bunnycdn.com/600364/550e8400-e29b-41d4-a716-446655440000/playlist.m3u8',
+    example: 'https://iframe.mediadelivery.net/play/600364/550e8400-e29b-41d4-a716-446655440000',
   })
   url!: string;
 

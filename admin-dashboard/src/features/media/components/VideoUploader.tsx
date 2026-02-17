@@ -286,13 +286,34 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
             {/* Video Preview */}
             {uploadedVideo?.url && (
               <Box sx={{ mt: 2 }}>
-                <video
-                  controls
-                  style={{ width: '100%', maxHeight: '200px' }}
-                  src={uploadedVideo.url}
-                >
-                  {t('media:video.notSupported', 'متصفحك لا يدعم تشغيل الفيديو')}
-                </video>
+                {uploadedVideo.url.includes('iframe.mediadelivery.net/play/') ? (
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: '100%',
+                      pt: '56.25%',
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      bgcolor: 'black',
+                    }}
+                  >
+                    <iframe
+                      src={uploadedVideo.url}
+                      title={uploadedVideo.title || 'Video preview'}
+                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                      allowFullScreen
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
+                    />
+                  </Box>
+                ) : (
+                  <video
+                    controls
+                    style={{ width: '100%', maxHeight: '200px' }}
+                    src={uploadedVideo.url}
+                  >
+                    {t('media:video.notSupported', 'متصفحك لا يدعم تشغيل الفيديو')}
+                  </video>
+                )}
               </Box>
             )}
           </CardContent>

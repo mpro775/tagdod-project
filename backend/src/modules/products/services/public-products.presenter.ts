@@ -102,6 +102,7 @@ type VariantPricingInput = {
 export class PublicProductsPresenter {
   private readonly logger = new Logger(PublicProductsPresenter.name);
   private readonly BASE_PRICING_CURRENCIES = ['USD', 'YER', 'SAR'] as const;
+  private readonly bunnyStreamLibraryId = process.env.BUNNY_STREAM_LIBRARY_ID || '';
   private readonly bunnyStreamCdnHost = process.env.BUNNY_STREAM_CDN_HOSTNAME || '';
   private readonly ATTRIBUTE_SUMMARY_TTL_MS = 5 * 60 * 1000;
   private readonly attributeSummaryCache = new Map<
@@ -629,11 +630,13 @@ export class PublicProductsPresenter {
   }
 
   private buildVideoEntries(videoIds: string[]): AnyRecord[] {
-    if (!videoIds.length || !this.bunnyStreamCdnHost) return [];
+    if (!videoIds.length || !this.bunnyStreamLibraryId) return [];
     return videoIds.map((id) => ({
       id,
-      url: `https://${this.bunnyStreamCdnHost}/${id}/playlist.m3u8`,
-      thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg`,
+      url: `https://iframe.mediadelivery.net/play/${this.bunnyStreamLibraryId}/${id}`,
+      ...(this.bunnyStreamCdnHost
+        ? { thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg` }
+        : {}),
       status: 'processing',
     }));
   }

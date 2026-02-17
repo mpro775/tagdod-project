@@ -85,12 +85,23 @@ function VideoSection({ videos }: { videos?: Array<{ id: string; url: string; th
   const video = videos[0]
 
   if (!video.url) return null
+  const isIframePlayer = video.url.includes('iframe.mediadelivery.net/play/')
 
   return (
     <div className="mt-4 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-tagadod-dark-gray p-3">
       <h4 className="text-sm font-semibold text-tagadod-titles dark:text-tagadod-dark-titles mb-2">فيديو المنتج</h4>
       {video.status === 'processing' ? (
         <div className="text-sm text-tagadod-gray">جاري معالجة الفيديو...</div>
+      ) : isIframePlayer ? (
+        <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ paddingTop: '56.25%' }}>
+          <iframe
+            src={video.url}
+            className="absolute inset-0 h-full w-full"
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+            title="Product video"
+          />
+        </div>
       ) : (
         <video
           controls
