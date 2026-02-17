@@ -85,7 +85,9 @@ function VideoSection({ videos }: { videos?: Array<{ id: string; url: string; th
   const video = videos[0]
 
   if (!video.url) return null
-  const isIframePlayer = video.url.includes('iframe.mediadelivery.net/play/')
+  const isIframePlayer =
+    video.url.includes('iframe.mediadelivery.net/embed/') ||
+    video.url.includes('iframe.mediadelivery.net/play/')
   const iframeSrc = isIframePlayer ? video.url.replace('/play/', '/embed/') : video.url
 
   return (

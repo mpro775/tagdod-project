@@ -633,7 +633,7 @@ export class PublicProductsPresenter {
     if (!videoIds.length || !this.bunnyStreamLibraryId) return [];
     return videoIds.map((id) => ({
       id,
-      url: `https://iframe.mediadelivery.net/play/${this.bunnyStreamLibraryId}/${id}`,
+      url: `https://iframe.mediadelivery.net/embed/${this.bunnyStreamLibraryId}/${id}`,
       ...(this.bunnyStreamCdnHost
         ? { thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg` }
         : {}),

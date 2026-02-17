@@ -93,7 +93,7 @@ export class BunnyStreamService {
   }
 
   private buildPlaybackUrl(guid: string): string {
-    return `https://iframe.mediadelivery.net/play/${this.bunnyStreamCredentials.libraryId}/${guid}`;
+    return `https://iframe.mediadelivery.net/embed/${this.bunnyStreamCredentials.libraryId}/${guid}`;
   }
 
   private buildThumbnailUrl(guid: string): string {

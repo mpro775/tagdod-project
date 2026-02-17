@@ -36,7 +36,7 @@ export class ProductService {
       .filter(Boolean)
       .map((id) => ({
         id,
-        url: `https://iframe.mediadelivery.net/play/${this.bunnyStreamLibraryId}/${id}`,
+        url: `https://iframe.mediadelivery.net/embed/${this.bunnyStreamLibraryId}/${id}`,
         ...(this.bunnyStreamCdnHost
           ? { thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg` }
           : {}),

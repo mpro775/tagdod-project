@@ -286,7 +286,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
             {/* Video Preview */}
             {uploadedVideo?.url && (
               <Box sx={{ mt: 2 }}>
-                {uploadedVideo.url.includes('iframe.mediadelivery.net/play/') ? (
+                {uploadedVideo.url.includes('iframe.mediadelivery.net/play/') || uploadedVideo.url.includes('iframe.mediadelivery.net/embed/') ? (
                   <Box
                     sx={{
                       position: 'relative',
