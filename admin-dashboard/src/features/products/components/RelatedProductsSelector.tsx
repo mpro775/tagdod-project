@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -33,77 +33,108 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Debug logging
-  console.log('🔍 RelatedProductsSelector render:', {
-    value,
-    selectedProductsCount: selectedProducts.length,
-    productsCount: products.length,
-  });
-
-  // Load available products
-  useEffect(() => {
-    loadProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Load selected products when value or products changes
-  useEffect(() => {
-    if (products.length > 0 && value && value.length > 0) {
-      const loadedProducts = products.filter((p: Product) => value.includes(p._id));
-      console.log('🔄 Loading selected products:', {
-        valueIds: value,
-        loadedProducts: loadedProducts.map(p => ({ id: p._id, name: p.name })),
-      });
-      setSelectedProducts(loadedProducts);
-    } else if (!value || value.length === 0) {
-      setSelectedProducts([]);
-    }
-  }, [value, products]);
-
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await productsApi.list({
-        page: 1,
-        limit: 100,
-        status: 'active' as any,
-      });
-      
-      // تحقق من أن response.data array
-      const productsData = Array.isArray(response.data) ? response.data : [];
-      
-      console.log('📦 Loaded products:', {
-        total: productsData.length,
-        currentProductId,
-      });
-      
-      // Filter out current product if in edit mode
-      const filteredProducts = currentProductId
-        ? productsData.filter((p: Product) => p._id !== currentProductId)
-        : productsData;
-      
-      setProducts(filteredProducts || []);
-    } catch (err) {
-      setError(t('products:messages.loadProductsFailed', 'فشل تحميل المنتجات'));
-      console.error('Error loading products:', err);
-      setProducts([]); // تعيين array فارغ عند الخطأ
-    } finally {
-      setLoading(false);
-    }
+  const mergeUniqueById = (items: Product[]) => {
+    const map = new Map<string, Product>();
+    items.forEach((item) => {
+      if (item?._id) map.set(item._id, item);
+    });
+    return Array.from(map.values());
   };
 
-  const handleChange = (_: any, newValue: Product[]) => {
-    console.log('✨ handleChange called:', {
-      newValueCount: newValue.length,
-      newValueIds: newValue.map(p => p._id),
-      newValueNames: newValue.map(p => p.name),
+  const fetchProducts = async (searchTerm = ''): Promise<Product[]> => {
+    const response = await productsApi.list({
+      page: 1,
+      limit: 30,
+      status: 'active' as any,
+      search: searchTerm.trim() || undefined,
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
     });
+
+    const data = Array.isArray(response.data) ? response.data : [];
+    return currentProductId ? data.filter((p) => p._id !== currentProductId) : data;
+  };
+
+  const resolveSelectedProducts = async (ids: string[]): Promise<Product[]> => {
+    if (!ids.length) return [];
+
+    const known = mergeUniqueById([...products, ...selectedProducts]);
+    const byId = new Map(known.map((p) => [p._id, p]));
+    const missingIds = ids.filter((id) => !byId.has(id));
+
+    if (missingIds.length > 0) {
+      const results = await Promise.allSettled(missingIds.map((id) => productsApi.getById(id)));
+      results.forEach((result) => {
+        if (result.status === 'fulfilled' && result.value?._id) {
+          byId.set(result.value._id, result.value);
+        }
+      });
+    }
+
+    return ids.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p));
+  };
+
+  // Initial load
+  useEffect(() => {
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const loaded = await fetchProducts('');
+        setProducts(loaded);
+      } catch (err) {
+        setError(t('products:messages.loadProductsFailed', 'فشل تحميل المنتجات'));
+        console.error('Error loading products:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void run();
+  }, []);
+
+  // Server-side search with debounce
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const loaded = await fetchProducts(inputValue);
+        setProducts((prev) => mergeUniqueById([...loaded, ...prev.filter((p) => value.includes(p._id))]));
+      } catch (err) {
+        setError(t('products:messages.loadProductsFailed', 'فشل تحميل المنتجات'));
+        console.error('Error searching products:', err);
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [inputValue, value, t]);
+
+  // Keep selected products synced with incoming IDs
+  useEffect(() => {
+    const run = async () => {
+      if (!value || value.length === 0) {
+        setSelectedProducts([]);
+        return;
+      }
+      const resolved = await resolveSelectedProducts(value);
+      setSelectedProducts(resolved);
+    };
+    void run();
+  }, [value]);
+
+  const options = useMemo(
+    () => mergeUniqueById([...products, ...selectedProducts]),
+    [products, selectedProducts],
+  );
+
+  const handleChange = (_: any, newValue: Product[]) => {
     setSelectedProducts(newValue);
     const productIds = newValue.map((p) => p._id);
-    console.log('📤 Calling onChange with:', productIds);
     onChange(productIds);
   };
 
@@ -129,9 +160,11 @@ export const RelatedProductsSelector: React.FC<RelatedProductsSelectorProps> = (
       <Autocomplete
         multiple
         id="related-products-selector"
-        options={products || []}
+        options={options}
         value={selectedProducts || []}
         onChange={handleChange}
+        inputValue={inputValue}
+        onInputChange={(_, value) => setInputValue(value)}
         loading={loading}
         getOptionLabel={(option: Product) => option ? `${option.name} (${option.nameEn})` : ''}
         isOptionEqualToValue={(option: Product, value: Product) => option?._id === value?._id}
