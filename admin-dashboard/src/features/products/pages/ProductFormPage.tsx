@@ -566,6 +566,12 @@ export const ProductFormPage: React.FC = () => {
         setSelectedImages(additionalImages);
       }
 
+      // Set product videos (Bunny video GUIDs)
+      const existingVideoIds = Array.isArray((product as any).videoIds)
+        ? (product as any).videoIds.filter(Boolean)
+        : [];
+      setSelectedVideos(existingVideoIds);
+
       // Set attributes and keywords
       setSelectedAttributes(product.attributes || []);
       setMetaKeywords(product.metaKeywords || []);
@@ -672,6 +678,7 @@ export const ProductFormPage: React.FC = () => {
         relatedProducts: Array.isArray(currentRelatedProducts) ? currentRelatedProducts : [],
         mainImageId: selectedImage?._id,
         imageIds: selectedImages.map((img: any) => img._id).filter(Boolean),
+        videoIds: selectedVideos.filter(Boolean),
         // التقييم اليدوي
         useManualRating: useManualRating,
         manualRating: useManualRating ? manualRating : undefined,

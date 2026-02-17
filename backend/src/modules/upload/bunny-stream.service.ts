@@ -69,9 +69,11 @@ export class BunnyStreamService {
 
   private normalizeVideoStatus(rawStatus: unknown): 'processing' | 'ready' | 'failed' {
     if (typeof rawStatus === 'number') {
-      if (rawStatus <= 0) return 'processing';
-      if (rawStatus === 1) return 'ready';
-      if (rawStatus >= 2) return 'failed';
+      // Bunny numeric states are often transitional before final encoding.
+      // Treat unknown/intermediate numbers as processing to avoid false "failed".
+      if (rawStatus === 4) return 'ready';
+      if (rawStatus === 5) return 'failed';
+      return 'processing';
     }
 
     const status = String(rawStatus ?? '').toLowerCase();
@@ -127,9 +129,16 @@ export class BunnyStreamService {
           '',
       ) || (guid ? this.buildPlaybackUrl(guid) : '');
 
-    const thumbnailUrl =
-      String(raw.thumbnailUrl ?? raw.thumbnailURL ?? raw.thumbnailFileName ?? '') ||
-      (guid ? this.buildThumbnailUrl(guid) : '');
+    const rawThumbnail = String(raw.thumbnailUrl ?? raw.thumbnailURL ?? raw.thumbnailFileName ?? '');
+    const thumbnailUrl = rawThumbnail
+      ? rawThumbnail.startsWith('http')
+        ? rawThumbnail
+        : guid
+          ? this.buildThumbnailUrl(guid)
+          : rawThumbnail
+      : guid
+        ? this.buildThumbnailUrl(guid)
+        : '';
 
     return {
       id,
