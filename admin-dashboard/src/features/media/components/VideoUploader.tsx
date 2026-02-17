@@ -298,7 +298,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                     }}
                   >
                     <iframe
-                      src={uploadedVideo.url}
+                      src={uploadedVideo.url.replace('/play/', '/embed/')}
                       title={uploadedVideo.title || 'Video preview'}
                       allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
                       allowFullScreen

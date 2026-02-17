@@ -637,7 +637,7 @@ export class PublicProductsPresenter {
       ...(this.bunnyStreamCdnHost
         ? { thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg` }
         : {}),
-      status: 'processing',
+      status: 'ready',
     }));
   }
 

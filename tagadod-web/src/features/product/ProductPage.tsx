@@ -86,6 +86,7 @@ function VideoSection({ videos }: { videos?: Array<{ id: string; url: string; th
 
   if (!video.url) return null
   const isIframePlayer = video.url.includes('iframe.mediadelivery.net/play/')
+  const iframeSrc = isIframePlayer ? video.url.replace('/play/', '/embed/') : video.url
 
   return (
     <div className="mt-4 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-tagadod-dark-gray p-3">
@@ -93,7 +94,7 @@ function VideoSection({ videos }: { videos?: Array<{ id: string; url: string; th
       {isIframePlayer ? (
         <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ paddingTop: '56.25%' }}>
           <iframe
-            src={video.url}
+            src={iframeSrc}
             className="absolute inset-0 h-full w-full"
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
             allowFullScreen

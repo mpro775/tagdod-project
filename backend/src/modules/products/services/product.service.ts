@@ -40,7 +40,7 @@ export class ProductService {
         ...(this.bunnyStreamCdnHost
           ? { thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg` }
           : {}),
-        status: 'processing' as const,
+        status: 'ready' as const,
       }));
   }
 
