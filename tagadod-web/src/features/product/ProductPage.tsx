@@ -90,9 +90,7 @@ function VideoSection({ videos }: { videos?: Array<{ id: string; url: string; th
   return (
     <div className="mt-4 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-tagadod-dark-gray p-3">
       <h4 className="text-sm font-semibold text-tagadod-titles dark:text-tagadod-dark-titles mb-2">فيديو المنتج</h4>
-      {video.status === 'processing' ? (
-        <div className="text-sm text-tagadod-gray">جاري معالجة الفيديو...</div>
-      ) : isIframePlayer ? (
+      {isIframePlayer ? (
         <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ paddingTop: '56.25%' }}>
           <iframe
             src={video.url}
@@ -110,6 +108,9 @@ function VideoSection({ videos }: { videos?: Array<{ id: string; url: string; th
           className="w-full max-h-[360px] rounded-xl bg-black/80"
           src={video.url}
         />
+      )}
+      {video.status === 'processing' && (
+        <div className="mt-2 text-xs text-tagadod-gray">جاري معالجة الفيديو... قد يستغرق ذلك بضع دقائق</div>
       )}
     </div>
   )
