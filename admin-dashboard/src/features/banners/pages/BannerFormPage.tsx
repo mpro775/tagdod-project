@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
@@ -77,8 +77,9 @@ export const BannerFormPage: React.FC = () => {
   const { mutate: updateBanner, isPending: updating } = useUpdateBanner();
 
   const [selectedImage, setSelectedImage] = useState<Media | null>(null);
-  const [products, setProducts] = useState<Array<{ _id: string; name: string }>>([]);
+  const [products, setProducts] = useState<Array<{ _id: string; name: string; nameEn?: string; sku?: string }>>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
   
   // Get categories for navigation
   const { data: categories = [] } = useCategories({ isActive: true });
@@ -115,26 +116,92 @@ export const BannerFormPage: React.FC = () => {
   });
 
   const watchedNavigationType = watch('navigationType');
+  const watchedNavigationTarget = watch('navigationTarget');
 
-  // Load products when navigation type is PRODUCT
-  useEffect(() => {
-    if (watchedNavigationType === BannerNavigationType.PRODUCT) {
-      loadProducts();
-    }
-  }, [watchedNavigationType]);
+  const mergeUniqueProducts = useCallback(
+    (items: Array<{ _id: string; name: string; nameEn?: string; sku?: string }>) => {
+      const map = new Map<string, { _id: string; name: string; nameEn?: string; sku?: string }>();
+      items.forEach((item) => {
+        if (item?._id) {
+          map.set(item._id, item);
+        }
+      });
+      return Array.from(map.values());
+    },
+    []
+  );
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async (searchTerm = '') => {
     try {
       setLoadingProducts(true);
-      const response = await productsApi.list({ page: 1, limit: 100, status: 'active' as any });
+      const response = await productsApi.list({
+        page: 1,
+        limit: 30,
+        status: 'active' as any,
+        search: searchTerm.trim() || undefined,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+      });
       const productsData = Array.isArray(response.data) ? response.data : [];
-      setProducts(productsData.map((p: any) => ({ _id: p._id, name: p.name || p.nameAr || '' })));
+      const mappedProducts = productsData.map((p: any) => ({
+        _id: p._id,
+        name: p.name || p.nameAr || p.nameEn || p.sku || 'بدون اسم',
+        nameEn: p.nameEn,
+        sku: p.sku,
+      }));
+      setProducts((prev) => mergeUniqueProducts([...mappedProducts, ...prev]));
     } catch (error) {
       console.error('Error loading products:', error);
     } finally {
       setLoadingProducts(false);
     }
-  };
+  }, [mergeUniqueProducts]);
+
+  // Load products with server-side search when navigation type is PRODUCT
+  useEffect(() => {
+    if (watchedNavigationType !== BannerNavigationType.PRODUCT) {
+      setProducts([]);
+      setProductSearch('');
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      void loadProducts(productSearch);
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [watchedNavigationType, productSearch, loadProducts]);
+
+  // Ensure selected product exists in options when editing
+  useEffect(() => {
+    const selectedId = watchedNavigationType === BannerNavigationType.PRODUCT ? watchedNavigationTarget : '';
+    if (!selectedId || products.some((p) => p._id === selectedId)) {
+      return;
+    }
+
+    const loadSelectedProduct = async () => {
+      try {
+        const product = await productsApi.getById(selectedId);
+        if (!product?._id) return;
+
+        setProducts((prev) =>
+          mergeUniqueProducts([
+            {
+              _id: product._id,
+              name: product.name || product.nameEn || product.sku || 'بدون اسم',
+              nameEn: product.nameEn,
+              sku: product.sku,
+            },
+            ...prev,
+          ])
+        );
+      } catch (error) {
+        console.error('Error loading selected product:', error);
+      }
+    };
+
+    void loadSelectedProduct();
+  }, [watchedNavigationType, watchedNavigationTarget, products, mergeUniqueProducts]);
 
   useEffect(() => {
     if (banner && isEditing) {
@@ -435,25 +502,44 @@ export const BannerFormPage: React.FC = () => {
                     }
                     if (watchedNavigationType === BannerNavigationType.PRODUCT) {
                       return (
-                        <FormControl fullWidth error={!!errors.navigationTarget}>
-                          <InputLabel>{t('form.navigationTarget.label', 'المنتج')}</InputLabel>
-                          <Select 
-                            {...field} 
-                            label={t('form.navigationTarget.label', 'المنتج')} 
-                            disabled={loadingProducts}
-                          >
-                            {products.map((prod) => (
-                              <MenuItem key={prod._id} value={prod._id}>
-                                {prod.name}
-                              </MenuItem>
-                            ))}
-                          </Select>
+                        <Box>
+                          <Autocomplete
+                            options={products}
+                            value={products.find((p) => p._id === field.value) || null}
+                            onChange={(_, value) => field.onChange(value?._id || '')}
+                            inputValue={productSearch}
+                            onInputChange={(_, value) => setProductSearch(value)}
+                            loading={loadingProducts}
+                            filterOptions={(options) => options}
+                            getOptionLabel={(option) => option.name || option.nameEn || option.sku || option._id}
+                            isOptionEqualToValue={(option, value) => option._id === value._id}
+                            noOptionsText={t('form.navigationTarget.noProducts', 'لا توجد منتجات متاحة')}
+                            loadingText={t('loading', 'جاري التحميل...')}
+                            renderOption={(props, option) => (
+                              <Box component="li" {...props} key={option._id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <Typography variant="body2">{option.name || option._id}</Typography>
+                                {(option.nameEn || option.sku) && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {[option.nameEn, option.sku].filter(Boolean).join(' - ')}
+                                  </Typography>
+                                )}
+                              </Box>
+                            )}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label={t('form.navigationTarget.label', 'المنتج')}
+                                placeholder={t('form.navigationTarget.searchPlaceholder', 'ابحث عن منتج...')}
+                                error={!!errors.navigationTarget}
+                              />
+                            )}
+                          />
                           {errors.navigationTarget && (
                             <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
                               {errors.navigationTarget.message}
                             </Typography>
                           )}
-                        </FormControl>
+                        </Box>
                       );
                     }
                     if (watchedNavigationType === BannerNavigationType.SECTION) {

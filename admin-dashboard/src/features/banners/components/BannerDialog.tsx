@@ -95,8 +95,9 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
   ];
 
   const [selectedImage, setSelectedImage] = useState<Media | null>(null);
-  const [products, setProducts] = useState<Array<{ _id: string; name: string }>>([]);
+  const [products, setProducts] = useState<Array<{ _id: string; name: string; nameEn?: string; sku?: string }>>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
   
   // Get categories for navigation
   const { data: categories = [] } = useCategories({ isActive: true });
@@ -134,19 +135,40 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
 
   const watchedIsActive = watch('isActive');
   const watchedNavigationType = watch('navigationType');
+  const watchedNavigationTarget = watch('navigationTarget');
 
-  // Load products when navigation type is PRODUCT
+  const mergeUniqueProducts = useCallback(
+    (items: Array<{ _id: string; name: string; nameEn?: string; sku?: string }>) => {
+      const map = new Map<string, { _id: string; name: string; nameEn?: string; sku?: string }>();
+      items.forEach((item) => {
+        if (item?._id) {
+          map.set(item._id, item);
+        }
+      });
+      return Array.from(map.values());
+    },
+    []
+  );
+
   const loadProducts = useCallback(async () => {
     try {
       setLoadingProducts(true);
-      const response = await productsApi.list({ page: 1, limit: 100, status: 'active' as any });
+      const response = await productsApi.list({
+        page: 1,
+        limit: 30,
+        status: 'active' as any,
+        search: productSearch.trim() || undefined,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+      });
       const productsData = Array.isArray(response.data) ? response.data : [];
-      setProducts(
-        productsData.map((p: any) => ({ 
+      const mappedProducts = productsData.map((p: any) => ({
           _id: p._id, 
-          name: p.name || p.nameEn || p.sku || 'بدون اسم' 
-        }))
-      );
+          name: p.name || p.nameEn || p.sku || 'بدون اسم',
+          nameEn: p.nameEn,
+          sku: p.sku,
+        }));
+      setProducts((prev) => mergeUniqueProducts([...mappedProducts, ...prev]));
     } catch (error) {
       console.error('Error loading products:', error);
       toast.error(t('messages.loadProductsFailed', 'فشل تحميل المنتجات'));
@@ -154,16 +176,51 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
     } finally {
       setLoadingProducts(false);
     }
-  }, [t]);
+  }, [mergeUniqueProducts, productSearch, t]);
 
   useEffect(() => {
-    if (watchedNavigationType === BannerNavigationType.PRODUCT) {
-      loadProducts();
-    } else {
-      // Reset products when navigation type changes away from PRODUCT
+    if (watchedNavigationType !== BannerNavigationType.PRODUCT) {
       setProducts([]);
+      setProductSearch('');
+      return;
     }
-  }, [watchedNavigationType, loadProducts]);
+
+    const timer = setTimeout(() => {
+      void loadProducts();
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [watchedNavigationType, productSearch, loadProducts]);
+
+  useEffect(() => {
+    const selectedId = watchedNavigationType === BannerNavigationType.PRODUCT ? watchedNavigationTarget : '';
+    if (!selectedId || products.some((p) => p._id === selectedId)) {
+      return;
+    }
+
+    const loadSelectedProduct = async () => {
+      try {
+        const product = await productsApi.getById(selectedId);
+        if (!product?._id) return;
+
+        setProducts((prev) =>
+          mergeUniqueProducts([
+            {
+              _id: product._id,
+              name: product.name || product.nameEn || product.sku || 'بدون اسم',
+              nameEn: product.nameEn,
+              sku: product.sku,
+            },
+            ...prev,
+          ])
+        );
+      } catch (error) {
+        console.error('Error loading selected product:', error);
+      }
+    };
+
+    void loadSelectedProduct();
+  }, [watchedNavigationType, watchedNavigationTarget, products, mergeUniqueProducts]);
 
   useEffect(() => {
     if (banner && isEditing) {
@@ -496,42 +553,39 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                     }
                     if (watchedNavigationType === BannerNavigationType.PRODUCT) {
                       return (
-                        <FormControl fullWidth error={!!errors.navigationTarget}>
-                          <InputLabel>{t('form.navigationTarget.label', 'المنتج')}</InputLabel>
-                          <Select 
-                            {...field} 
-                            label={t('form.navigationTarget.label', 'المنتج')} 
-                            disabled={isLoading || loadingProducts}
-                            displayEmpty
-                            renderValue={(selected) => {
-                              if (!selected) {
-                                return <Typography color="text.secondary">{t('form.navigationTarget.placeholder', 'اختر منتج')}</Typography>;
-                              }
-                              const selectedProduct = products.find(p => p._id === selected);
-                              return selectedProduct?.name || selected;
-                            }}
-                          >
-                            {loadingProducts ? (
-                              <MenuItem disabled>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                  <CircularProgress size={16} />
-                                  <Typography>{t('loading', 'جاري التحميل...')}</Typography>
-                                </Box>
-                              </MenuItem>
-                            ) : products.length === 0 ? (
-                              <MenuItem disabled>
-                                <Typography color="text.secondary">
-                                  {t('form.navigationTarget.noProducts', 'لا توجد منتجات متاحة')}
-                                </Typography>
-                              </MenuItem>
-                            ) : (
-                              products.map((prod) => (
-                                <MenuItem key={prod._id} value={prod._id}>
-                                  {prod.name || prod._id}
-                                </MenuItem>
-                              ))
+                        <Box>
+                          <Autocomplete
+                            options={products}
+                            value={products.find((p) => p._id === field.value) || null}
+                            onChange={(_, value) => field.onChange(value?._id || '')}
+                            inputValue={productSearch}
+                            onInputChange={(_, value) => setProductSearch(value)}
+                            loading={loadingProducts}
+                            filterOptions={(options) => options}
+                            getOptionLabel={(option) => option.name || option.nameEn || option.sku || option._id}
+                            isOptionEqualToValue={(option, value) => option._id === value._id}
+                            noOptionsText={t('form.navigationTarget.noProducts', 'لا توجد منتجات متاحة')}
+                            loadingText={t('loading', 'جاري التحميل...')}
+                            disabled={isLoading}
+                            renderOption={(props, option) => (
+                              <Box component="li" {...props} key={option._id} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <Typography variant="body2">{option.name || option._id}</Typography>
+                                {(option.nameEn || option.sku) && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {[option.nameEn, option.sku].filter(Boolean).join(' - ')}
+                                  </Typography>
+                                )}
+                              </Box>
                             )}
-                          </Select>
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label={t('form.navigationTarget.label', 'المنتج')}
+                                placeholder={t('form.navigationTarget.searchPlaceholder', 'ابحث عن منتج...')}
+                                error={!!errors.navigationTarget}
+                              />
+                            )}
+                          />
                           {errors.navigationTarget && (
                             <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
                               {errors.navigationTarget.message}
@@ -542,7 +596,7 @@ export const BannerDialog: React.FC<BannerDialogProps> = ({
                               {t('form.navigationTarget.noProductsHelper', 'لا توجد منتجات نشطة. يرجى التأكد من وجود منتجات نشطة أولاً.')}
                             </Typography>
                           )}
-                        </FormControl>
+                        </Box>
                       );
                     }
                     if (watchedNavigationType === BannerNavigationType.SECTION) {
