@@ -119,7 +119,15 @@ interface ApiProductDetail extends ApiProductListItem {
   description?: string;
   descriptionEn?: string;
   images?: Array<{ _id?: string; url?: string }>;
-  videos?: Array<{ id?: string; url?: string; thumbnailUrl?: string; status?: 'processing' | 'ready' | 'failed' }>;
+  videos?: Array<{
+    id?: string;
+    url?: string;
+    embedUrl?: string;
+    hlsUrl?: string;
+    mp4Url?: string;
+    thumbnailUrl?: string;
+    status?: 'processing' | 'ready' | 'failed';
+  }>;
   videoIds?: string[];
   category?: { _id?: string; name?: string; nameEn?: string };
 }
@@ -180,6 +188,9 @@ function normalizeProductDetail(
     .map((v) => ({
       id: v.id ?? '',
       url: v.url ?? '',
+      embedUrl: v.embedUrl,
+      hlsUrl: v.hlsUrl,
+      mp4Url: v.mp4Url,
       thumbnailUrl: v.thumbnailUrl,
       status: v.status,
     }));

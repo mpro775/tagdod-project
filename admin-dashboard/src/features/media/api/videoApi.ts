@@ -6,6 +6,9 @@ export interface VideoUploadResponse {
   guid: string;
   title: string;
   url: string;
+  embedUrl?: string;
+  hlsUrl?: string;
+  mp4Url?: string;
   thumbnailUrl?: string;
   status: 'processing' | 'ready' | 'failed';
   duration?: number;
@@ -26,6 +29,9 @@ export interface VideoInfo {
   title: string;
   guid: string;
   url: string;
+  embedUrl?: string;
+  hlsUrl?: string;
+  mp4Url?: string;
   thumbnailUrl?: string;
   status: 'processing' | 'ready' | 'failed';
   duration?: number;

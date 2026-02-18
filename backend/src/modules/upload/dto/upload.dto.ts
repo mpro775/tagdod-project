@@ -101,10 +101,31 @@ export class VideoUploadResponseDto {
   title!: string;
 
   @ApiProperty({
-    description: 'Video playback URL',
-    example: 'https://iframe.mediadelivery.net/play/600364/550e8400-e29b-41d4-a716-446655440000',
+    description: 'Primary video URL (backward compatible, usually embed URL)',
+    example: 'https://iframe.mediadelivery.net/embed/600364/550e8400-e29b-41d4-a716-446655440000',
   })
   url!: string;
+
+  @ApiProperty({
+    description: 'Iframe embed URL',
+    example: 'https://iframe.mediadelivery.net/embed/600364/550e8400-e29b-41d4-a716-446655440000',
+    required: false,
+  })
+  embedUrl?: string;
+
+  @ApiProperty({
+    description: 'HLS playlist URL (m3u8) for native/custom players',
+    example: 'https://vz-xxxxxxxx-xxx.b-cdn.net/550e8400-e29b-41d4-a716-446655440000/playlist.m3u8',
+    required: false,
+  })
+  hlsUrl?: string;
+
+  @ApiProperty({
+    description: 'Progressive MP4 URL (best effort, depends on transcoding profile)',
+    example: 'https://vz-xxxxxxxx-xxx.b-cdn.net/550e8400-e29b-41d4-a716-446655440000/play_720p.mp4',
+    required: false,
+  })
+  mp4Url?: string;
 
   @ApiProperty({
     description: 'Video thumbnail URL',

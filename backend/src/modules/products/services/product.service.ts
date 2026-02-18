@@ -19,11 +19,28 @@ import { SyncStockDto } from '../dto/sync-stock.dto';
 export class ProductService {
   private readonly logger = new Logger(ProductService.name);
   private readonly bunnyStreamLibraryId = process.env.BUNNY_STREAM_LIBRARY_ID || '';
-  private readonly bunnyStreamCdnHost = process.env.BUNNY_STREAM_CDN_HOSTNAME || '';
+  private readonly bunnyStreamCdnHost =
+    process.env.BUNNY_STREAM_CDN_HOSTNAME ||
+    (this.bunnyStreamLibraryId ? `${this.bunnyStreamLibraryId}.b-cdn.net` : '');
+
+  private buildVideoEmbedUrl(id: string): string {
+    return `https://iframe.mediadelivery.net/embed/${this.bunnyStreamLibraryId}/${id}`;
+  }
+
+  private buildVideoHlsUrl(id: string): string | undefined {
+    return this.bunnyStreamCdnHost ? `https://${this.bunnyStreamCdnHost}/${id}/playlist.m3u8` : undefined;
+  }
+
+  private buildVideoMp4Url(id: string): string | undefined {
+    return this.bunnyStreamCdnHost ? `https://${this.bunnyStreamCdnHost}/${id}/play_720p.mp4` : undefined;
+  }
 
   private buildProductVideos(videoIds: unknown): Array<{
     id: string;
     url: string;
+    embedUrl?: string;
+    hlsUrl?: string;
+    mp4Url?: string;
     thumbnailUrl?: string;
     status: 'processing' | 'ready' | 'failed';
   }> {
@@ -34,14 +51,23 @@ export class ProductService {
     return videoIds
       .map((raw) => (typeof raw === 'string' ? raw : String(raw ?? '')))
       .filter(Boolean)
-      .map((id) => ({
-        id,
-        url: `https://iframe.mediadelivery.net/embed/${this.bunnyStreamLibraryId}/${id}`,
-        ...(this.bunnyStreamCdnHost
-          ? { thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg` }
-          : {}),
-        status: 'ready' as const,
-      }));
+      .map((id) => {
+        const embedUrl = this.buildVideoEmbedUrl(id);
+        const hlsUrl = this.buildVideoHlsUrl(id);
+        const mp4Url = this.buildVideoMp4Url(id);
+
+        return {
+          id,
+          url: embedUrl,
+          embedUrl,
+          ...(hlsUrl ? { hlsUrl } : {}),
+          ...(mp4Url ? { mp4Url } : {}),
+          ...(this.bunnyStreamCdnHost
+            ? { thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg` }
+            : {}),
+          status: 'ready' as const,
+        };
+      });
   }
 
   constructor(

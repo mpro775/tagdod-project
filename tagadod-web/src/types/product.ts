@@ -28,6 +28,9 @@ export interface Product {
 export interface ProductVideo {
   id: string
   url: string
+  embedUrl?: string
+  hlsUrl?: string
+  mp4Url?: string
   thumbnailUrl?: string
   status?: 'processing' | 'ready' | 'failed'
 }

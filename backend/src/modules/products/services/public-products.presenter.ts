@@ -103,7 +103,9 @@ export class PublicProductsPresenter {
   private readonly logger = new Logger(PublicProductsPresenter.name);
   private readonly BASE_PRICING_CURRENCIES = ['USD', 'YER', 'SAR'] as const;
   private readonly bunnyStreamLibraryId = process.env.BUNNY_STREAM_LIBRARY_ID || '';
-  private readonly bunnyStreamCdnHost = process.env.BUNNY_STREAM_CDN_HOSTNAME || '';
+  private readonly bunnyStreamCdnHost =
+    process.env.BUNNY_STREAM_CDN_HOSTNAME ||
+    (this.bunnyStreamLibraryId ? `${this.bunnyStreamLibraryId}.b-cdn.net` : '');
   private readonly ATTRIBUTE_SUMMARY_TTL_MS = 5 * 60 * 1000;
   private readonly attributeSummaryCache = new Map<
     string,
@@ -629,16 +631,37 @@ export class PublicProductsPresenter {
       .filter((id): id is string => Boolean(id));
   }
 
+  private buildVideoEmbedUrl(id: string): string {
+    return `https://iframe.mediadelivery.net/embed/${this.bunnyStreamLibraryId}/${id}`;
+  }
+
+  private buildVideoHlsUrl(id: string): string | undefined {
+    return this.bunnyStreamCdnHost ? `https://${this.bunnyStreamCdnHost}/${id}/playlist.m3u8` : undefined;
+  }
+
+  private buildVideoMp4Url(id: string): string | undefined {
+    return this.bunnyStreamCdnHost ? `https://${this.bunnyStreamCdnHost}/${id}/play_720p.mp4` : undefined;
+  }
+
   private buildVideoEntries(videoIds: string[]): AnyRecord[] {
     if (!videoIds.length || !this.bunnyStreamLibraryId) return [];
-    return videoIds.map((id) => ({
-      id,
-      url: `https://iframe.mediadelivery.net/embed/${this.bunnyStreamLibraryId}/${id}`,
-      ...(this.bunnyStreamCdnHost
-        ? { thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg` }
-        : {}),
-      status: 'ready',
-    }));
+    return videoIds.map((id) => {
+      const embedUrl = this.buildVideoEmbedUrl(id);
+      const hlsUrl = this.buildVideoHlsUrl(id);
+      const mp4Url = this.buildVideoMp4Url(id);
+
+      return {
+        id,
+        url: embedUrl,
+        embedUrl,
+        ...(hlsUrl ? { hlsUrl } : {}),
+        ...(mp4Url ? { mp4Url } : {}),
+        ...(this.bunnyStreamCdnHost
+          ? { thumbnailUrl: `https://${this.bunnyStreamCdnHost}/${id}/thumbnail.jpg` }
+          : {}),
+        status: 'ready',
+      };
+    });
   }
 
   private sanitizeVariant(rawVariant: AnyRecord): AnyRecord {

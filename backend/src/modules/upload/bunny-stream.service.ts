@@ -22,6 +22,9 @@ export interface VideoUploadResult {
   guid: string;
   title: string;
   url: string;
+  embedUrl?: string;
+  hlsUrl?: string;
+  mp4Url?: string;
   thumbnailUrl?: string;
   status: 'processing' | 'ready' | 'failed';
   duration?: number;
@@ -92,8 +95,20 @@ export class BunnyStreamService {
     return 'processing';
   }
 
-  private buildPlaybackUrl(guid: string): string {
+  private buildEmbedUrl(guid: string): string {
     return `https://iframe.mediadelivery.net/embed/${this.bunnyStreamCredentials.libraryId}/${guid}`;
+  }
+
+  private buildHlsUrl(guid: string): string {
+    return `https://${this.bunnyStreamCredentials.cdnHostname}/${guid}/playlist.m3u8`;
+  }
+
+  private buildMp4Url(guid: string): string {
+    return `https://${this.bunnyStreamCredentials.cdnHostname}/${guid}/play_720p.mp4`;
+  }
+
+  private buildPlaybackUrl(guid: string): string {
+    return this.buildEmbedUrl(guid);
   }
 
   private buildThumbnailUrl(guid: string): string {
@@ -105,6 +120,9 @@ export class BunnyStreamService {
     title: string;
     guid: string;
     url: string;
+    embedUrl?: string;
+    hlsUrl?: string;
+    mp4Url?: string;
     thumbnailUrl?: string;
     status: 'processing' | 'ready' | 'failed';
     duration?: number;
@@ -118,16 +136,24 @@ export class BunnyStreamService {
     const guid = String(raw.guid ?? raw.videoGuid ?? raw.Guid ?? '');
     const title = String(raw.title ?? raw.Title ?? raw.name ?? raw.Name ?? '');
 
-    const url =
-      String(
-        raw.url ??
-          raw.playbackUrl ??
-          raw.directPlayUrl ??
-          raw.playUrl ??
-          raw.hlsUrl ??
-          raw.HLSUrl ??
-          '',
-      ) || (guid ? this.buildPlaybackUrl(guid) : '');
+    const rawUrl = String(
+      raw.url ?? raw.playbackUrl ?? raw.directPlayUrl ?? raw.playUrl ?? raw.hlsUrl ?? raw.HLSUrl ?? '',
+    );
+    const rawEmbedUrl = String(raw.embedUrl ?? raw.iframeUrl ?? raw.playerUrl ?? '');
+    const rawHlsUrl = String(raw.hlsUrl ?? raw.HLSUrl ?? raw.playlistUrl ?? raw.m3u8Url ?? '');
+    const rawMp4Url = String(raw.mp4Url ?? raw.MP4Url ?? '');
+
+    const inferredEmbedUrl =
+      rawUrl.includes('iframe.mediadelivery.net/embed/') || rawUrl.includes('iframe.mediadelivery.net/play/')
+        ? rawUrl.replace('/play/', '/embed/')
+        : '';
+    const inferredHlsUrl = rawUrl.endsWith('.m3u8') ? rawUrl : '';
+    const inferredMp4Url = rawUrl.endsWith('.mp4') ? rawUrl : '';
+
+    const embedUrl = rawEmbedUrl || inferredEmbedUrl || (guid ? this.buildEmbedUrl(guid) : '');
+    const hlsUrl = rawHlsUrl || inferredHlsUrl || (guid ? this.buildHlsUrl(guid) : '');
+    const mp4Url = rawMp4Url || inferredMp4Url || (guid ? this.buildMp4Url(guid) : '');
+    const url = embedUrl || hlsUrl || mp4Url || rawUrl || (guid ? this.buildPlaybackUrl(guid) : '');
 
     const rawThumbnail = String(raw.thumbnailUrl ?? raw.thumbnailURL ?? raw.thumbnailFileName ?? '');
     const thumbnailUrl = rawThumbnail
@@ -145,6 +171,9 @@ export class BunnyStreamService {
       title,
       guid,
       url,
+      embedUrl: embedUrl || undefined,
+      hlsUrl: hlsUrl || undefined,
+      mp4Url: mp4Url || undefined,
       thumbnailUrl: thumbnailUrl || undefined,
       status: this.normalizeVideoStatus(raw.status ?? raw.Status),
       duration: typeof raw.length === 'number' ? raw.length : (raw.duration as number | undefined),
@@ -167,6 +196,9 @@ export class BunnyStreamService {
     title: string;
     guid: string;
     url: string;
+    embedUrl?: string;
+    hlsUrl?: string;
+    mp4Url?: string;
     thumbnailUrl?: string;
     status: 'processing' | 'ready' | 'failed';
     duration?: number;
@@ -177,11 +209,17 @@ export class BunnyStreamService {
     size?: number;
   } {
     const guid = this.isGuid(identifier) ? identifier : '';
+    const embedUrl = guid ? this.buildEmbedUrl(guid) : '';
+    const hlsUrl = guid ? this.buildHlsUrl(guid) : '';
+    const mp4Url = guid ? this.buildMp4Url(guid) : '';
     return {
       id: identifier,
       title: '',
       guid,
-      url: guid ? this.buildPlaybackUrl(guid) : '',
+      url: embedUrl || hlsUrl || mp4Url,
+      embedUrl: embedUrl || undefined,
+      hlsUrl: hlsUrl || undefined,
+      mp4Url: mp4Url || undefined,
       thumbnailUrl: guid ? this.buildThumbnailUrl(guid) : undefined,
       status: 'processing',
     };
@@ -311,6 +349,9 @@ export class BunnyStreamService {
         guid: createdVideoGuid || videoInfo.guid || videoInfo.id || infoTarget,
         title: videoInfo.title,
         url: videoInfo.url,
+        embedUrl: videoInfo.embedUrl,
+        hlsUrl: videoInfo.hlsUrl,
+        mp4Url: videoInfo.mp4Url,
         thumbnailUrl: videoInfo.thumbnailUrl,
         status: videoInfo.status,
         duration: videoInfo.duration,
@@ -344,6 +385,9 @@ export class BunnyStreamService {
     title: string;
     guid: string;
     url: string;
+    embedUrl?: string;
+    hlsUrl?: string;
+    mp4Url?: string;
     thumbnailUrl?: string;
     status: 'processing' | 'ready' | 'failed';
     duration?: number;
@@ -379,6 +423,9 @@ export class BunnyStreamService {
               title: found.title,
               guid: found.guid,
               url: found.url,
+              embedUrl: found.embedUrl,
+              hlsUrl: found.hlsUrl,
+              mp4Url: found.mp4Url,
               thumbnailUrl: found.thumbnailUrl,
               status: found.status,
               duration: found.duration,
@@ -441,6 +488,9 @@ export class BunnyStreamService {
       title: string;
       guid: string;
       url: string;
+      embedUrl?: string;
+      hlsUrl?: string;
+      mp4Url?: string;
       thumbnailUrl?: string;
       status: 'processing' | 'ready' | 'failed';
       duration?: number;
@@ -479,6 +529,9 @@ export class BunnyStreamService {
             title: info.title,
             guid: info.guid,
             url: info.url,
+            embedUrl: info.embedUrl,
+            hlsUrl: info.hlsUrl,
+            mp4Url: info.mp4Url,
             thumbnailUrl: info.thumbnailUrl,
             status: info.status,
             duration: info.duration,
