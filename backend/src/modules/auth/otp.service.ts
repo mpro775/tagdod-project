@@ -14,6 +14,8 @@ export class OtpService {
   private readonly resetSessionTtl: number;
   private readonly length: number;
   private readonly devEcho: boolean;
+  private readonly androidSmsAppHashDebug?: string;
+  private readonly androidSmsAppHashRelease?: string;
 
   constructor(
     @Inject('REDIS_CLIENT') redisClient: Redis,
@@ -25,6 +27,8 @@ export class OtpService {
     this.resetSessionTtl = Number(process.env.RESET_SESSION_TTL_SECONDS || 900);
     this.length = Number(process.env.OTP_LENGTH || 6);
     this.devEcho = (process.env.OTP_DEV_ECHO || 'false') === 'true';
+    this.androidSmsAppHashDebug = process.env.ANDROID_SMS_APP_HASH_DEBUG?.trim();
+    this.androidSmsAppHashRelease = process.env.ANDROID_SMS_APP_HASH_RELEASE?.trim();
   }
   private key(phone: string, ctx: string) {
     return `otp:${ctx}:${phone}`;
@@ -40,6 +44,47 @@ export class OtpService {
   }
   private resetSessionKey(phone: string) {
     return `reset-session:${phone}`;
+  }
+  private getOtpMessageBody(code: string, ctx: 'register' | 'reset'): string {
+    if (ctx === 'reset') {
+      return `رمز التحقق لإعادة تعيين كلمة المرور في تطبيق تجدد هو: ${code}`;
+    }
+    return `رمز التحقق في تطبيق تجدد هو: ${code}`;
+  }
+  private getAndroidSmsAppHash(): string | null {
+    const isRelease = (process.env.NODE_ENV || '').toLowerCase() === 'production';
+    const preferredHash = isRelease
+      ? this.androidSmsAppHashRelease
+      : this.androidSmsAppHashDebug;
+    const fallbackHash = isRelease
+      ? this.androidSmsAppHashDebug
+      : this.androidSmsAppHashRelease;
+    const appHash = preferredHash || fallbackHash;
+
+    if (!appHash) {
+      this.logger.warn(
+        'ANDROID_SMS_APP_HASH_DEBUG/ANDROID_SMS_APP_HASH_RELEASE not configured. Sending fallback OTP SMS format.',
+      );
+      return null;
+    }
+
+    if (appHash.length !== 11) {
+      this.logger.warn(
+        `Android SMS app hash must be 11 characters, received ${appHash.length}. Sending fallback OTP SMS format.`,
+      );
+      return null;
+    }
+
+    return appHash;
+  }
+  private buildSmsMessage(code: string, ctx: 'register' | 'reset'): string {
+    const otpMessageBody = this.getOtpMessageBody(code, ctx);
+    const appHash = this.getAndroidSmsAppHash();
+    if (!appHash) {
+      return otpMessageBody;
+    }
+
+    return `<#> ${otpMessageBody}\n${appHash}`;
   }
   private isReadOnlyError(error: string | Error): boolean {
     const message = error instanceof Error ? error.message : String(error);
@@ -113,16 +158,13 @@ export class OtpService {
     // Store OTP in Redis using normalized phone with retry logic
     await this.setWithRetry(this.key(normalizedPhone, ctx), hashed, this.ttl);
 
-    const message =
-      ctx === 'reset'
-        ? `رمز التحقق لإعادة تعيين كلمة المرور في تطبيق تجدد هو: ${code}`
-        : `رمز التحقق الخاص بك في تطبيق تجدد هو: ${code}`;
+    const otpMessageBody = this.getOtpMessageBody(code, ctx);
 
     // 1. Send via WhatsApp (WAHA) if adapter is available — independent of SMS
     if (this.whatsAppAdapter?.isReady()) {
       try {
         this.logger.log(`Attempting to send OTP via WhatsApp to ${normalizedPhone}`);
-        const waResult = await this.whatsAppAdapter.sendMessage(normalizedPhone, message);
+        const waResult = await this.whatsAppAdapter.sendMessage(normalizedPhone, otpMessageBody);
         if (waResult.success) {
           this.logger.log(`OTP sent via WhatsApp successfully to ${normalizedPhone}`);
         } else {
@@ -139,9 +181,10 @@ export class OtpService {
     if (this.smsAdapter) {
       try {
         this.logger.log(`Sending OTP via SMS to ${normalizedPhone}`);
+        const smsMessage = this.buildSmsMessage(code, ctx);
         const smsResult = await this.smsAdapter.sendSMS({
           to: normalizedPhone,
-          message,
+          message: smsMessage,
         });
         if (smsResult.success) {
           this.logger.log(`OTP SMS sent successfully to ${normalizedPhone}`);
