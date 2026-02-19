@@ -347,7 +347,14 @@
     "deletionReason": "سبب الحذف",
     "deletedAt": "تاريخ الحذف",
     "restore": "استعادة",
+    "permanentDelete": "حذف نهائي",
     "confirmRestore": "هل أنت متأكد من استعادة هذا الحساب؟",
+    "confirmPermanentDeleteTitle": "تأكيد الحذف النهائي",
+    "confirmPermanentDeleteMessage": "سيتم حذف الحساب {{phone}} نهائياً من قاعدة البيانات. لا يمكن التراجع عن هذه العملية.",
+    "confirmPermanentDeleteWarning": "تحذير: هذا الإجراء غير قابل للاستعادة.",
+    "confirmPermanentDeleteHint": "للتأكيد، اكتب رقم هاتف الحساب كما هو:",
+    "confirmPermanentDeleteInputLabel": "رقم الهاتف للتأكيد",
+    "confirmPermanentDeleteInputPlaceholder": "{{phone}}",
     "noResults": "لا توجد حسابات محذوفة"
   },
   "verification": {

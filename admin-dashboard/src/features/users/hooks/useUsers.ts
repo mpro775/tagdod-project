@@ -151,6 +151,20 @@ export const useRestoreUser = () => {
   });
 };
 
+// Permanently delete user
+export const usePermanentDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => usersApi.permanentDelete(id),
+    onSuccess: () => {
+      toast.success('تم حذف المستخدم نهائياً');
+      queryClient.invalidateQueries({ queryKey: [USERS_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 // Get user stats
 export const useUserStats = () => {
   return useQuery({

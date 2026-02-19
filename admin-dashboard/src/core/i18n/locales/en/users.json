@@ -346,7 +346,14 @@
     "deletionReason": "Deletion Reason",
     "deletedAt": "Deleted At",
     "restore": "Restore",
+    "permanentDelete": "Permanent Delete",
     "confirmRestore": "Are you sure you want to restore this account?",
+    "confirmPermanentDeleteTitle": "Confirm Permanent Deletion",
+    "confirmPermanentDeleteMessage": "The account {{phone}} will be permanently removed from the database. This action cannot be undone.",
+    "confirmPermanentDeleteWarning": "Warning: this action is irreversible.",
+    "confirmPermanentDeleteHint": "To confirm, type the account phone number exactly:",
+    "confirmPermanentDeleteInputLabel": "Phone number confirmation",
+    "confirmPermanentDeleteInputPlaceholder": "{{phone}}",
     "noResults": "No deleted accounts"
   },
   "verification": {

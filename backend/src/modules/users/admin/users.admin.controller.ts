@@ -1209,19 +1209,49 @@ export class UsersAdminController {
   @RequirePermissions('users.delete', 'super_admin.access')
   @Roles(UserRole.SUPER_ADMIN) // فقط Super Admin
   @Delete(':id/permanent')
-  async permanentDelete(@Param('id') id: string) {
+  async permanentDelete(@Param('id') id: string, @Req() req: { user: { sub: string } } & Request) {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new UserNotFoundException({ userId: id });
+    }
+
+    if (!user.deletedAt && user.status !== UserStatus.DELETED) {
+      throw new AuthException(ErrorCode.USER_INVALID_DATA, {
+        userId: id,
+        reason: 'user_must_be_soft_deleted_first',
+      });
     }
 
     if (user.roles?.includes(UserRole.SUPER_ADMIN)) {
       throw new ForbiddenException({ reason: 'cannot_delete_super_admin' });
     }
 
-    // حذف نهائي
-    await this.userModel.deleteOne({ _id: id });
-    await this.capsModel.deleteOne({ userId: id });
+    const [userDeleteResult, capsDeleteResult, engineerProfileDeleteResult] = await Promise.all([
+      this.userModel.deleteOne({ _id: id }),
+      this.capsModel.deleteOne({ userId: id }),
+      this.engineerProfileModel.deleteOne({ userId: user._id }),
+    ]);
+
+    await this.auditService.logAdminAction({
+      adminId: req.user.sub,
+      action: 'permanent_delete_user',
+      resource: 'user',
+      resourceId: id,
+      details: {
+        phone: user.phone,
+        roles: user.roles,
+        previousStatus: user.status,
+        deletedAt: user.deletedAt,
+        deletedDocs: {
+          user: userDeleteResult.deletedCount || 0,
+          capabilities: capsDeleteResult.deletedCount || 0,
+          engineerProfile: engineerProfileDeleteResult.deletedCount || 0,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      reason: 'permanent_user_deletion_from_admin_dashboard',
+    });
 
     return {
       id,
