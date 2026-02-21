@@ -1970,12 +1970,13 @@ export class ServicesService {
     const doc = await this.offers.create({
       requestId: r._id,
       engineerId: new Types.ObjectId(engineerUserId),
-      amount: dto.amount,
+      amount: dto.amount ?? 0,
       currency: dto.currency,
       note: dto.note,
       distanceKm: Math.round(distanceKm * 100) / 100,
       status: 'OFFERED',
       updatesCount: 0,
+      isFreeOffer: dto.amount === undefined || dto.amount === 0,
     });
 
     await this.safeNotify(

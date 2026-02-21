@@ -4,13 +4,17 @@ import { Currency } from '../../users/schemas/user.schema';
 
 export class CreateOfferDto {
   @IsMongoId() requestId!: string;
-  @Type(() => Number) @IsNumber() @Min(0) amount!: number;
+  
+  @IsOptional() 
+  @Type(() => Number) 
+  @IsNumber() 
+  @Min(0) 
+  amount?: number;
+  
   @IsOptional() @IsString() note?: string;
 
-  // نوع العملة (YER, SAR, USD)
   @IsEnum(Currency) currency!: Currency;
 
-  // موقع المهندس لحساب المسافة
   @Type(() => Number) @IsNumber() lat!: number;
   @Type(() => Number) @IsNumber() lng!: number;
 }
