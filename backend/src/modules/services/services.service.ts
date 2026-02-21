@@ -99,12 +99,13 @@ type EngineerOfferPopulated = EngineerOfferLean & {
 export interface OfferListItem {
   _id: Types.ObjectId;
   requestId: string;
-  amount: number;
-  currency: string;
+  amount?: number;
+  currency?: string;
   note: string | null;
   status: EngineerOffer['status'];
   statusLabel: string;
   createdAt: Date;
+  isFreeOffer?: boolean;
   engineer: {
     id: string;
     name: string | null;
@@ -826,11 +827,12 @@ export class ServicesService {
         phone: string | null;
         whatsapp: string | null;
       } | null;
-      acceptedOffer: {
+acceptedOffer: {
         offerId: string;
-        amount: number;
-        currency: string;
+        amount?: number;
+        currency?: string;
         note?: string;
+        isFreeOffer?: boolean;
       } | null;
       rating?: ServiceRating;
     }>
@@ -1012,15 +1014,16 @@ export class ServicesService {
         : null;
       const whatsapp = engineerPhone ? this.makeWhatsappLink(engineerPhone) : null;
 
-      const formattedOffer: OfferListItem = {
+const formattedOffer: OfferListItem = {
         _id: offer._id,
         requestId: String(offer.requestId),
-        amount: offer.amount,
+        amount: offer.amount ?? 0,
         currency: offer.currency || 'YER',
         note: offer.note ?? null,
         status: offer.status,
         statusLabel: this.offerStatusLabel(offer.status),
         createdAt: offer.createdAt,
+        isFreeOffer: offer.isFreeOffer,
         engineer: engineerData
           ? {
               id: String(engineerData._id),
@@ -1096,11 +1099,12 @@ export class ServicesService {
         phone: string | null;
         whatsapp: string | null;
       } | null;
-      acceptedOffer: {
+acceptedOffer: {
         offerId: string;
-        amount: number;
-        currency: string;
+        amount?: number;
+        currency?: string;
         note?: string;
+        isFreeOffer?: boolean;
       } | null;
     }>
   > {
@@ -1370,15 +1374,16 @@ export class ServicesService {
       requestId: r._id,
       status: 'OFFERED',
     });
-    if (!offer) return { error: 'OFFER_NOT_FOUND' };
+if (!offer) return { error: 'OFFER_NOT_FOUND' };
 
     r.status = 'ASSIGNED';
     r.engineerId = offer.engineerId;
     r.acceptedOffer = {
       offerId: String(offer._id),
-      amount: offer.amount,
+      amount: offer.amount ?? 0,
       currency: offer.currency || 'YER',
       note: offer.note,
+      isFreeOffer: offer.isFreeOffer,
     };
     await r.save();
 
@@ -1496,17 +1501,18 @@ export class ServicesService {
     status?: string | string[],
   ): Promise<
     | { error: string }
-    | Array<{
+| Array<{
         _id: Types.ObjectId;
         requestId: string | Types.ObjectId;
-        amount: number;
-        currency: string;
+        amount?: number;
+        currency?: string;
         note?: string | null;
         distanceKm?: number;
         status: string;
         statusLabel: string;
         createdAt: Date;
         updatedAt: Date;
+        isFreeOffer?: boolean;
         engineerId?:
           | {
               _id: Types.ObjectId;
@@ -1604,15 +1610,16 @@ export class ServicesService {
 
     const addressData = this.extractAddress(request.addressId);
 
-    const formattedOffer: OfferListItem = {
+const formattedOffer: OfferListItem = {
       _id: offer._id,
       requestId: String(offer.requestId),
-      amount: offer.amount,
+      amount: offer.amount ?? 0,
       currency: offer.currency || 'YER',
       note: offer.note ?? null,
       status: offer.status,
       statusLabel: this.offerStatusLabel(offer.status),
       createdAt: offer.createdAt,
+      isFreeOffer: offer.isFreeOffer,
       engineer: engineerData
         ? {
             id: String(engineerData._id),
@@ -2274,8 +2281,8 @@ export class ServicesService {
     scheduledAt?: Date;
     createdAt: Date;
     updatedAt: Date;
-    location?: { type: string; coordinates: [number, number] };
-    acceptedOffer?: { offerId: string; amount: number; currency?: string; note?: string };
+location?: { type: string; coordinates: [number, number] };
+    acceptedOffer?: { offerId: string; amount?: number; currency?: string; note?: string; isFreeOffer?: boolean };
     rating?: { score?: number; comment?: string; at?: Date };
     cancellationReason?: string;
     cancelledAt?: Date;
@@ -2283,12 +2290,13 @@ export class ServicesService {
     offers: Array<{
       _id: Types.ObjectId;
       requestId: string | Types.ObjectId;
-      amount: number;
+      amount?: number;
       note?: string | null;
       distanceKm?: number;
       status: string;
       createdAt: Date;
       updatedAt: Date;
+      isFreeOffer?: boolean;
       engineerId?:
         | Types.ObjectId
         | {
@@ -2352,16 +2360,17 @@ export class ServicesService {
     return { ...request, offers: offersWithJobTitle };
   }
 
-  async adminGetRequestOffers(id: string): Promise<
+async adminGetRequestOffers(id: string): Promise<
     Array<{
       _id: Types.ObjectId;
       requestId: string | Types.ObjectId;
-      amount: number;
+      amount?: number;
       note?: string | null;
       distanceKm?: number;
       status: string;
       createdAt: Date;
       updatedAt: Date;
+      isFreeOffer?: boolean;
       engineerId?:
         | Types.ObjectId
         | {
@@ -3423,16 +3432,17 @@ export class ServicesService {
       status: 'OFFERED',
     });
 
-    if (!offer) return { error: 'OFFER_NOT_FOUND' };
+if (!offer) return { error: 'OFFER_NOT_FOUND' };
 
     // تحديث الطلب
     r.status = 'ASSIGNED';
     r.engineerId = offer.engineerId;
     r.acceptedOffer = {
       offerId: String(offer._id),
-      amount: offer.amount,
+      amount: offer.amount ?? 0,
       currency: offer.currency || 'YER',
       note: offer.note,
+      isFreeOffer: offer.isFreeOffer,
     };
     await r.save();
 
