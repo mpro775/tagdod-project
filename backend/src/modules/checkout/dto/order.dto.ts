@@ -81,6 +81,9 @@ export class CheckoutSessionTotalsDto {
   @ApiProperty({ example: 120000 })
   subtotal!: number;
 
+  @ApiProperty({ example: 0, description: 'رسوم التوصيل' })
+  deliveryFee!: number;
+
   @ApiProperty({ example: 0 })
   shipping!: number;
 

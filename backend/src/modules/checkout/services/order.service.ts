@@ -1961,6 +1961,7 @@ export class OrderService {
       },
       totals: {
         subtotal: computation.subtotal,
+        deliveryFee: computation.shipping,
         shipping: computation.shipping,
         total: computation.total,
         currency: normalizedCurrency,

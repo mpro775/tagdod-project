@@ -288,6 +288,7 @@ export class OrderController {
   ) {
     const orderDoc = await this.orderService.getOrderDetails(orderId, this.getUserId(req));
     const order = orderDoc.toObject();
+    const shippingCost = typeof order.shippingCost === 'number' ? order.shippingCost : 0;
 
     const userIdForStats = orderDoc.userId ? orderDoc.userId.toString() : undefined;
     let codEligibility;
@@ -309,6 +310,8 @@ export class OrderController {
     return {
       order: {
         ...order,
+        shippingCost,
+        deliveryFee: shippingCost,
         ...(codEligibility
           ? {
               codEligibility,
