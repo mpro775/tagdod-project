@@ -24,6 +24,7 @@ export {
   useGenerateFinancialReport,
   useOrderStats,
   useVerifyPayment,
+  useRestoreCancelledOrder,
 } from './hooks/useOrders';
 
 // API
@@ -57,6 +58,7 @@ export type {
   RevenueAnalytics,
   PerformanceAnalytics,
   VerifyPaymentDto,
+  RestoreCancelledOrderDto,
   OrdersFinancialReport,
   OrdersFinancialReportResponse,
 } from './types/order.types';

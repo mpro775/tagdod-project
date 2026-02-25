@@ -228,6 +228,7 @@ export interface Order extends BaseEntity {
   // Payment
   paymentMethod: PaymentMethod;
   paymentProvider?: string;
+  paymentProviderName?: string;
   paymentIntentId?: string;
   paymentTransactionId?: string;
   paidAt?: Date;
@@ -344,6 +345,11 @@ export interface AddOrderNotesDto {
 export interface VerifyPaymentDto {
   verifiedAmount: number;
   verifiedCurrency: 'YER' | 'SAR' | 'USD';
+  notes?: string;
+}
+
+export interface RestoreCancelledOrderDto {
+  targetStatus?: OrderStatus;
   notes?: string;
 }
 

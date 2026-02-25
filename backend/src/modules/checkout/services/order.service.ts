@@ -70,6 +70,7 @@ import {
   OrderAnalyticsDto,
   AddOrderNotesDto,
   VerifyPaymentDto,
+  RestoreCancelledOrderDto,
   CheckoutPaymentOptionsResponseDto,
   CheckoutPaymentOptionStatusDto,
   CheckoutCODEligibilityDto,
@@ -4094,6 +4095,124 @@ export class OrderService {
       'admin',
       dto.notes,
     );
+  }
+
+  async adminRestoreCancelledOrder(
+    orderId: string,
+    adminId: string,
+    dto: RestoreCancelledOrderDto,
+  ): Promise<OrderDocument> {
+    const order = await this.orderModel.findById(orderId);
+    if (!order) {
+      throw new OrderNotFoundException();
+    }
+
+    const targetStatus = dto.targetStatus ?? OrderStatus.PROCESSING;
+
+    if (order.status !== OrderStatus.CANCELLED) {
+      throw new OrderException(ErrorCode.ORDER_INVALID_STATUS, {
+        from: order.status,
+        to: targetStatus,
+        reason: 'restore_only_from_cancelled',
+      });
+    }
+
+    if (targetStatus === OrderStatus.CANCELLED) {
+      throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+        reason: 'invalid_restore_target_status',
+        message: 'حالة الاستعادة يجب أن تكون مختلفة عن cancelled',
+      });
+    }
+
+    const now = new Date();
+    const previousStatus = order.status;
+    const adminObjectId = new Types.ObjectId(adminId);
+
+    if (targetStatus !== OrderStatus.OUT_OF_STOCK) {
+      await this.reserveOrderInventory(order);
+
+      if (
+        [OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.COMPLETED].includes(targetStatus)
+      ) {
+        await this.commitInventoryReservations(orderId);
+      }
+    }
+
+    order.status = targetStatus;
+    order.cancelledAt = undefined;
+    order.cancelledBy = undefined;
+    order.cancellationReason = undefined;
+
+    await this.addStatusHistory(
+      order,
+      targetStatus,
+      adminObjectId,
+      'admin',
+      dto.notes || `تمت استعادة الطلب من ${previousStatus} إلى ${targetStatus}`,
+    );
+
+    switch (targetStatus) {
+      case OrderStatus.PENDING_PAYMENT:
+        break;
+      case OrderStatus.CONFIRMED:
+        order.confirmedAt = now;
+        break;
+      case OrderStatus.PROCESSING:
+        order.processingStartedAt = now;
+        break;
+      case OrderStatus.COMPLETED:
+        order.completedAt = now;
+        order.deliveredAt = now;
+        break;
+      case OrderStatus.ON_HOLD:
+      case OrderStatus.OUT_OF_STOCK:
+      case OrderStatus.RETURNED:
+      case OrderStatus.REFUNDED:
+        break;
+      default:
+        break;
+    }
+
+    await order.save();
+
+    if (this.auditService) {
+      this.auditService
+        .logOrderEvent({
+          userId: String(order.userId),
+          orderId: String(order._id),
+          action: 'restored_by_admin',
+          orderNumber: order.orderNumber,
+          oldStatus: previousStatus,
+          newStatus: targetStatus,
+          totalAmount: order.total,
+          currency: order.currency,
+          performedBy: adminId,
+          reason: dto.notes,
+        })
+        .catch((err) => this.logger.error('Failed to log order restore event', err));
+    }
+
+    await this.safeNotify(
+      String(order.userId),
+      NotificationType.ORDER_CONFIRMED,
+      'تمت استعادة طلبك',
+      `تمت استعادة طلبك رقم ${order.orderNumber} وتحديث حالته إلى ${targetStatus}`,
+      `Your order ${order.orderNumber} has been restored and moved to ${targetStatus}`,
+      {
+        orderId: String(order._id),
+        orderNumber: order.orderNumber,
+        status: targetStatus,
+        previousStatus,
+      },
+      NotificationNavigationType.ORDER,
+      String(order._id),
+    );
+
+    this.logger.log(
+      `Order ${order.orderNumber} restored from ${previousStatus} to ${targetStatus} by admin ${adminId}`,
+    );
+
+    return order;
   }
 
   // ===== Webhook Methods =====

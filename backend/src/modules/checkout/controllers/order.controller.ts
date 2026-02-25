@@ -288,6 +288,15 @@ export class OrderController {
   ) {
     const orderDoc = await this.orderService.getOrderDetails(orderId, this.getUserId(req));
     const order = orderDoc.toObject();
+    const localPaymentAccountType = (orderDoc as unknown as { localPaymentAccountType?: string })
+      .localPaymentAccountType;
+    const localPaymentProviderName = (orderDoc as unknown as { localPaymentProviderName?: string })
+      .localPaymentProviderName;
+    const localPaymentAccountNumber = (
+      orderDoc as unknown as { localPaymentAccountNumber?: string }
+    ).localPaymentAccountNumber;
+    const localPaymentProviderIcon = (orderDoc as unknown as { localPaymentProviderIcon?: unknown })
+      .localPaymentProviderIcon;
     const shippingCost = typeof order.shippingCost === 'number' ? order.shippingCost : 0;
 
     const userIdForStats = orderDoc.userId ? orderDoc.userId.toString() : undefined;
@@ -310,6 +319,15 @@ export class OrderController {
     return {
       order: {
         ...order,
+        ...(localPaymentAccountType ? { localPaymentAccountType } : {}),
+        ...(localPaymentProviderName
+          ? {
+              localPaymentProviderName,
+              paymentProviderName: localPaymentProviderName,
+            }
+          : {}),
+        ...(localPaymentAccountNumber ? { localPaymentAccountNumber } : {}),
+        ...(localPaymentProviderIcon ? { localPaymentProviderIcon } : {}),
         shippingCost,
         deliveryFee: shippingCost,
         ...(codEligibility

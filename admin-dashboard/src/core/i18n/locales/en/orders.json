@@ -233,6 +233,7 @@
     "shipOrder": "Ship Order",
     "refundOrder": "Refund Order",
     "cancelOrder": "Cancel Order",
+    "restoreToProcessing": "Restore to Processing",
     "addNotes": "Add Notes"
   },
   "bulk": {
@@ -290,6 +291,9 @@
     "noInternalNotes": "No internal notes",
     "postalCode": "Postal Code",
     "paymentReference": "Payment Reference",
+    "paymentProviderName": "Wallet / Provider Name",
+    "localPaymentType": "Account Type",
+    "localPaymentAccountNumber": "Account / Wallet Number",
     "verifiedAmount": "Verified Amount",
     "verificationDate": "Verification Date",
     "verificationNotes": "Verification Notes",

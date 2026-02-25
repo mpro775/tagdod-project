@@ -484,6 +484,22 @@ export class UpdateOrderStatusDto {
   notes?: string;
 }
 
+export class RestoreCancelledOrderDto {
+  @ApiPropertyOptional({
+    enum: OrderStatus,
+    description: 'الحالة الهدف بعد الاستعادة. الافتراضي: processing',
+    default: OrderStatus.PROCESSING,
+  })
+  @IsOptional()
+  @IsEnum(OrderStatus)
+  targetStatus?: OrderStatus;
+
+  @ApiPropertyOptional({ description: 'ملاحظات الاستعادة' })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
 export class CancelOrderDto {
   @ApiProperty({ example: 'تغيير رأيي في المنتج' })
   @IsString()
