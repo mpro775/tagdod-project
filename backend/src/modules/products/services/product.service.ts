@@ -373,11 +373,6 @@ export class ProductService {
     const newAttributes = (productUpdateDto.attributes || product.attributes || []).map(String).sort();
     const attributesChanged = JSON.stringify(oldAttributes) !== JSON.stringify(newAttributes);
 
-    // تحديث الـ slug إذا تغير الاسم
-    if (productUpdateDto.nameEn && productUpdateDto.nameEn !== product.nameEn) {
-      productUpdateDto.slug = slugify(productUpdateDto.nameEn);
-    }
-
     // إذا تغيرت الفئة
     const oldCategoryId = product.categoryId;
     if (productUpdateDto.categoryId && String(oldCategoryId) !== String(productUpdateDto.categoryId)) {
