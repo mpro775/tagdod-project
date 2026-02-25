@@ -32,6 +32,8 @@
   },
   "actions": {
     "addUser": "Add User / Admin",
+    "exportNames": "Export Names",
+    "exportingNames": "Exporting names...",
     "edit": "Edit",
     "delete": "Delete",
     "restore": "Restore",

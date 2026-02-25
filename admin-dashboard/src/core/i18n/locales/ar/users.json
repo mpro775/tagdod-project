@@ -32,6 +32,8 @@
   },
   "actions": {
     "addUser": "إضافة مستخدم / أدمن",
+    "exportNames": "تصدير الأسماء",
+    "exportingNames": "جاري تصدير الأسماء...",
     "edit": "تعديل",
     "delete": "حذف",
     "restore": "استعادة",

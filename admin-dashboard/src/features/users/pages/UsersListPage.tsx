@@ -8,11 +8,11 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import { PersonAdd } from '@mui/icons-material';
+import { PersonAdd, Download } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useUsers, useUserStats } from '../hooks/useUsers';
+import { useUsers, useUserStats, useExportUserNames } from '../hooks/useUsers';
 import type { User, UserStatus } from '../types/user.types';
 import { UserStatsCards } from '../components/UserStatsCards';
 import { UsersFilter } from '../components/UsersFilter';
@@ -74,6 +74,7 @@ export const UsersListPage: React.FC = () => {
   });
 
   const { data: stats, isLoading: statsLoading } = useUserStats();
+  const exportUserNamesMutation = useExportUserNames();
 
   // Table Actions Hook
   const {
@@ -117,6 +118,18 @@ export const UsersListPage: React.FC = () => {
       includeDeleted: false,
     });
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
+
+  const handleExportNames = () => {
+    exportUserNamesMutation.mutate({
+      search: filters.search,
+      status: filters.status,
+      role: filters.role,
+      verificationStatus: verificationStatusForApi,
+      includeDeleted: filters.includeDeleted,
+      sortBy: sortModel[0]?.field || 'createdAt',
+      sortOrder: sortModel[0]?.sort || 'desc',
+    });
   };
 
   // Table Columns
@@ -182,6 +195,17 @@ export const UsersListPage: React.FC = () => {
         >
           <Stack direction="row" spacing={2} justifyContent="flex-end">
             <Button
+              variant="outlined"
+              startIcon={<Download />}
+              onClick={handleExportNames}
+              size="medium"
+              disabled={exportUserNamesMutation.isPending}
+            >
+              {exportUserNamesMutation.isPending
+                ? t('users:actions.exportingNames', 'جاري تصدير الأسماء...')
+                : t('users:actions.exportNames', 'تصدير الأسماء')}
+            </Button>
+            <Button
               variant="contained"
               startIcon={<PersonAdd />}
               onClick={() => navigate('/users/new')}
@@ -230,6 +254,23 @@ export const UsersListPage: React.FC = () => {
           px: { xs: 1, sm: 2 },
         }}
       >
+        <Button
+          variant="outlined"
+          startIcon={<Download />}
+          onClick={handleExportNames}
+          fullWidth
+          size="large"
+          disabled={exportUserNamesMutation.isPending}
+          sx={{
+            py: 1.25,
+            mb: 1,
+            fontSize: '0.95rem',
+          }}
+        >
+          {exportUserNamesMutation.isPending
+            ? t('users:actions.exportingNames', 'جاري تصدير الأسماء...')
+            : t('users:actions.exportNames', 'تصدير الأسماء')}
+        </Button>
         <Button
           variant="contained"
           startIcon={<PersonAdd />}

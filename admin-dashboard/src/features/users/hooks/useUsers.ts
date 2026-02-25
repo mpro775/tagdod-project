@@ -182,6 +182,28 @@ export const useDeletedUsers = (params: ListDeletedUsersParams) => {
   });
 };
 
+// Export users names CSV
+export const useExportUserNames = () => {
+  return useMutation({
+    mutationFn: (params: ListUsersParams) => usersApi.exportNamesCsv(params),
+    onSuccess: ({ blob, fileName }) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.style.visibility = 'hidden';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('تم تصدير أسماء المستخدمين بنجاح');
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 // ==================== Verification Requests Hooks ====================
 
 // Get pending verification requests

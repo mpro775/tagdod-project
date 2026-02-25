@@ -11,6 +11,33 @@ import type {
 } from '../types/user.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
+const extractFileName = (contentDisposition?: string): string => {
+  if (!contentDisposition) {
+    return `user_names_${Date.now()}.csv`;
+  }
+
+  const utf8NameMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8NameMatch?.[1]) {
+    try {
+      return decodeURIComponent(utf8NameMatch[1]);
+    } catch {
+      return utf8NameMatch[1];
+    }
+  }
+
+  const quotedNameMatch = contentDisposition.match(/filename="([^"]+)"/i);
+  if (quotedNameMatch?.[1]) {
+    return quotedNameMatch[1];
+  }
+
+  const bareNameMatch = contentDisposition.match(/filename=([^;]+)/i);
+  if (bareNameMatch?.[1]) {
+    return bareNameMatch[1].trim();
+  }
+
+  return `user_names_${Date.now()}.csv`;
+};
+
 export const usersApi = {
   /**
    * Get list of users
@@ -46,6 +73,25 @@ export const usersApi = {
       params: sanitizePaginationParams(params),
     });
     return data.data.ids;
+  },
+
+  /**
+   * Export users first and last names as CSV
+   */
+  exportNamesCsv: async (
+    params: ListUsersParams,
+  ): Promise<{ blob: Blob; fileName: string }> => {
+    const response = await apiClient.get<Blob>('/admin/users/export/names', {
+      params: sanitizePaginationParams(params),
+      responseType: 'blob',
+    });
+
+    const contentDisposition = response.headers['content-disposition'] as string | undefined;
+
+    return {
+      blob: response.data,
+      fileName: extractFileName(contentDisposition),
+    };
   },
 
   /**

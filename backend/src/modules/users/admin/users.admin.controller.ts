@@ -8,12 +8,13 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
   Logger,
   Inject,
   forwardRef,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, FilterQuery, SortOrder } from 'mongoose';
@@ -479,6 +480,119 @@ export class UsersAdminController {
   }
 
   // ==================== عرض مستخدم واحد ====================
+  @RequirePermissions('users.read', 'admin.access')
+  @Get('export/names')
+  @ApiOperation({
+    summary: 'تصدير أسماء المستخدمين',
+    description: 'تصدير الأسماء الأولى والأخيرة للمستخدمين المطابقين للفلاتر بصيغة CSV',
+  })
+  @ApiQuery({ type: ListUsersDto })
+  async exportUserNames(@Query() dto: ListUsersDto, @Res() res: Response) {
+    const {
+      search,
+      status,
+      role,
+      verificationStatus,
+      isAdmin,
+      includeDeleted,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = dto;
+
+    const query: FilterQuery<User> = {};
+
+    if (!includeDeleted) {
+      query.deletedAt = null;
+      query.status = { $ne: UserStatus.DELETED };
+    }
+
+    if (search) {
+      const searchConditions: FilterQuery<User>[] = [
+        { phone: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+      ];
+
+      if (includeDeleted) {
+        searchConditions.push({ deletionReason: { $regex: search, $options: 'i' } });
+      }
+
+      query.$or = searchConditions;
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (role) {
+      query.roles = role;
+    }
+
+    if (verificationStatus && verificationStatus !== 'all') {
+      if (role === UserRole.MERCHANT) {
+        if (verificationStatus === 'verified') {
+          query.merchant_status = CapabilityStatus.APPROVED;
+        } else if (verificationStatus === 'unverified') {
+          query.merchant_status = {
+            $in: [
+              CapabilityStatus.NONE,
+              CapabilityStatus.UNVERIFIED,
+              CapabilityStatus.PENDING,
+              CapabilityStatus.REJECTED,
+            ],
+          };
+        }
+      } else if (role === UserRole.ENGINEER) {
+        if (verificationStatus === 'verified') {
+          query.engineer_status = CapabilityStatus.APPROVED;
+        } else if (verificationStatus === 'unverified') {
+          query.engineer_status = {
+            $in: [
+              CapabilityStatus.NONE,
+              CapabilityStatus.UNVERIFIED,
+              CapabilityStatus.PENDING,
+              CapabilityStatus.REJECTED,
+            ],
+          };
+        }
+      }
+    }
+
+    if (isAdmin !== undefined) {
+      if (isAdmin) {
+        query.roles = { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] };
+      } else {
+        query.roles = { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] };
+      }
+    }
+
+    const sort: Record<string, SortOrder> = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    const users = await this.userModel
+      .find(query)
+      .select('firstName lastName')
+      .sort(sort)
+      .lean<Array<{ firstName?: string; lastName?: string }>>();
+
+    const escapeCsvValue = (value?: string | null) => {
+      const text = String(value || '').replace(/\r?\n/g, ' ').trim();
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const rows = ['firstName,lastName'];
+    for (const user of users) {
+      rows.push(`${escapeCsvValue(user.firstName)},${escapeCsvValue(user.lastName)}`);
+    }
+
+    const csvContent = `\ufeff${rows.join('\n')}\n`;
+    const fileName = `user_names_${Date.now()}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.status(200).send(csvContent);
+  }
+
   @RequirePermissions('users.read', 'admin.access')
   @Get(':id')
   async getUser(@Param('id') id: string) {
