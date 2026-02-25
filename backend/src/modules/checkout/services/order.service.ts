@@ -4180,7 +4180,7 @@ export class OrderService {
         .logOrderEvent({
           userId: String(order.userId),
           orderId: String(order._id),
-          action: 'restored_by_admin',
+          action: 'updated_by_admin',
           orderNumber: order.orderNumber,
           oldStatus: previousStatus,
           newStatus: targetStatus,
