@@ -235,6 +235,7 @@
     "shipOrder": "شحن الطلب",
     "refundOrder": "استرداد الطلب",
     "cancelOrder": "إلغاء الطلب",
+    "restoreToProcessing": "استعادة إلى قيد التجهيز",
     "addNotes": "إضافة ملاحظات"
   },
   "bulk": {
@@ -299,6 +300,9 @@
     "noInternalNotes": "لا توجد ملاحظات داخلية",
     "postalCode": "الرمز البريدي",
     "paymentReference": "رقم الحوالة / المرجع",
+    "paymentProviderName": "اسم المحفظة / مزود الدفع",
+    "localPaymentType": "نوع الحساب",
+    "localPaymentAccountNumber": "رقم الحساب / المحفظة",
     "verifiedAmount": "المبلغ المطابق",
     "verificationDate": "تاريخ المطابقة",
     "verificationNotes": "ملاحظات المطابقة",

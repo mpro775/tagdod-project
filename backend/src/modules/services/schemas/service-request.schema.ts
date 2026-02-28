@@ -52,8 +52,8 @@ export class ServiceRequest {
   @Prop({ type: Types.ObjectId, ref: 'User', index: true, default: null })
   engineerId!: string | null;
 
-  @Prop({ type: Object, default: null })
-  acceptedOffer?: { offerId: string; amount: number; currency?: string; note?: string };
+@Prop({ type: Object, default: null })
+  acceptedOffer?: { offerId: string; amount?: number; currency?: string; note?: string; isFreeOffer?: boolean };
 
   @Prop({ type: ServiceRatingSchema, default: {} })
   rating?: ServiceRating;

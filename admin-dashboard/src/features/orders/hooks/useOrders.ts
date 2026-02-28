@@ -12,6 +12,7 @@ import type {
   BulkOrderUpdateDto,
   OrderAnalyticsParams,
   VerifyPaymentDto,
+  RestoreCancelledOrderDto,
 } from '../types/order.types';
 
 const ORDERS_KEY = 'orders';
@@ -608,6 +609,20 @@ export const useSendInvoice = () => {
       } else {
         toast.error(data.message || 'فشل في إرسال الفاتورة');
       }
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Restore cancelled order
+export const useRestoreCancelledOrder = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data?: RestoreCancelledOrderDto }) =>
+      ordersApi.restoreCancelledOrder(id, data),
+    onSuccess: () => {
+      toast.success('تمت استعادة الطلب بنجاح');
+      queryClient.invalidateQueries({ queryKey: [ORDERS_KEY] });
     },
     onError: ErrorHandler.showError,
   });

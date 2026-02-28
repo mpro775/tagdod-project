@@ -81,6 +81,9 @@ export class CheckoutSessionTotalsDto {
   @ApiProperty({ example: 120000 })
   subtotal!: number;
 
+  @ApiProperty({ example: 0, description: 'رسوم التوصيل' })
+  deliveryFee!: number;
+
   @ApiProperty({ example: 0 })
   shipping!: number;
 
@@ -476,6 +479,22 @@ export class UpdateOrderStatusDto {
   status!: OrderStatus;
 
   @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class RestoreCancelledOrderDto {
+  @ApiPropertyOptional({
+    enum: OrderStatus,
+    description: 'الحالة الهدف بعد الاستعادة. الافتراضي: processing',
+    default: OrderStatus.PROCESSING,
+  })
+  @IsOptional()
+  @IsEnum(OrderStatus)
+  targetStatus?: OrderStatus;
+
+  @ApiPropertyOptional({ description: 'ملاحظات الاستعادة' })
   @IsOptional()
   @IsString()
   notes?: string;

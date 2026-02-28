@@ -40,6 +40,7 @@ import {
   OrderAnalyticsDto,
   BulkOrderUpdateDto,
   VerifyPaymentDto,
+  RestoreCancelledOrderDto,
 } from '../dto/order.dto';
 import { PaymentStatus, OrderStatus } from '../schemas/order.schema';
 
@@ -95,9 +96,29 @@ export class AdminOrderController {
     const orderDoc = await this.orderService.getOrderDetails(orderId);
     const order =
       typeof (orderDoc as any).toObject === 'function' ? (orderDoc as any).toObject() : orderDoc;
+    const localPaymentAccountType = (orderDoc as unknown as { localPaymentAccountType?: string })
+      .localPaymentAccountType;
+    const localPaymentProviderName = (orderDoc as unknown as { localPaymentProviderName?: string })
+      .localPaymentProviderName;
+    const localPaymentAccountNumber = (
+      orderDoc as unknown as { localPaymentAccountNumber?: string }
+    ).localPaymentAccountNumber;
+    const localPaymentProviderIcon = (orderDoc as unknown as { localPaymentProviderIcon?: unknown })
+      .localPaymentProviderIcon;
 
     return {
-      order,
+      order: {
+        ...order,
+        ...(localPaymentAccountType ? { localPaymentAccountType } : {}),
+        ...(localPaymentProviderName
+          ? {
+              localPaymentProviderName,
+              paymentProviderName: localPaymentProviderName,
+            }
+          : {}),
+        ...(localPaymentAccountNumber ? { localPaymentAccountNumber } : {}),
+        ...(localPaymentProviderIcon ? { localPaymentProviderIcon } : {}),
+      },
       message: 'تم الحصول على تفاصيل الطلب',
     };
   }
@@ -241,6 +262,33 @@ export class AdminOrderController {
       verifiedAmount: order.verifiedPaymentAmount,
       orderAmount: order.total,
       currency: order.currency,
+    };
+  }
+
+  @Post(':id([0-9a-fA-F]{24})/restore')
+  @ApiOperation({
+    summary: 'استعادة طلب ملغي',
+    description: 'استعادة الطلب من حالة ملغي إلى حالة أخرى (الافتراضي: قيد التجهيز)',
+  })
+  @ApiParam({ name: 'id', description: 'معرف الطلب' })
+  @ApiBody({ type: RestoreCancelledOrderDto, required: false })
+  @ApiResponse({ status: 200, description: 'تمت استعادة الطلب بنجاح' })
+  @ApiResponse({ status: 400, description: 'تعذر استعادة الطلب' })
+  async restoreCancelledOrder(
+    @Req() req: ExpressRequest,
+    @Param('id') orderId: string,
+    @Body() dto: RestoreCancelledOrderDto = {},
+  ) {
+    const adminId = this.getUserId(req);
+    const targetStatus = dto.targetStatus ?? OrderStatus.PROCESSING;
+    const order = await this.orderService.adminRestoreCancelledOrder(orderId, adminId, {
+      targetStatus,
+      notes: dto.notes,
+    });
+
+    return {
+      order,
+      message: `تمت استعادة الطلب إلى ${targetStatus}`,
     };
   }
 

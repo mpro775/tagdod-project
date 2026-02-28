@@ -19,6 +19,7 @@ import type {
   RevenueAnalytics,
   PerformanceAnalytics,
   VerifyPaymentDto,
+  RestoreCancelledOrderDto,
   OrdersFinancialReportResponse,
 } from '../types/order.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
@@ -374,6 +375,21 @@ export const ordersApi = {
       data
     );
     return response.data.data;
+  },
+
+  /**
+   * Restore cancelled order
+   */
+  restoreCancelledOrder: async (id: string, data?: RestoreCancelledOrderDto): Promise<Order> => {
+    const response = await apiClient.post<ApiResponse<{ order: Order } | Order>>(
+      `/admin/orders/${id}/restore`,
+      data ?? {}
+    );
+    const payload = response.data.data;
+    if (payload && typeof payload === 'object' && 'order' in payload) {
+      return (payload as { order: Order }).order;
+    }
+    return payload as Order;
   },
 
   /**

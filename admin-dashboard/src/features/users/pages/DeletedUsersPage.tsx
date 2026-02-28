@@ -10,16 +10,22 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
 } from '@mui/material';
-import { Search, Restore, Info } from '@mui/icons-material';
+import { Search, Restore, Info, DeleteForever } from '@mui/icons-material';
 import { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useDeletedUsers } from '../hooks/useUsers';
+import { useDeletedUsers, usePermanentDeleteUser, useRestoreUser } from '../hooks/useUsers';
 import type { DeletedUser } from '../types/user.types';
-import { useRestoreUser } from '../hooks/useUsers';
 import { formatDate } from '@/shared/utils/formatters';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { useAuthStore } from '@/store/authStore';
 import '../styles/responsive-users.css';
 
 export const DeletedUsersPage: React.FC = () => {
@@ -34,6 +40,15 @@ export const DeletedUsersPage: React.FC = () => {
   });
   const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'deletedAt', sort: 'desc' }]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [permanentDeleteDialog, setPermanentDeleteDialog] = useState<{
+    open: boolean;
+    user: DeletedUser | null;
+    confirmPhone: string;
+  }>({
+    open: false,
+    user: null,
+    confirmPhone: '',
+  });
 
   // API
   const { data, isLoading, refetch } = useDeletedUsers({
@@ -44,7 +59,14 @@ export const DeletedUsersPage: React.FC = () => {
     sortOrder: sortModel[0]?.sort || 'desc',
   });
 
+  const { user: currentUser, hasPermission } = useAuthStore();
   const restoreUserMutation = useRestoreUser();
+  const permanentDeleteMutation = usePermanentDeleteUser();
+
+  const canPermanentDelete =
+    currentUser?.roles?.includes('super_admin') === true &&
+    hasPermission('users.delete') &&
+    hasPermission('super_admin.access');
 
   // Handle restore
   const handleRestore = (user: DeletedUser) => {
@@ -55,6 +77,39 @@ export const DeletedUsersPage: React.FC = () => {
         },
       });
     }
+  };
+
+  const openPermanentDeleteDialog = (user: DeletedUser) => {
+    setPermanentDeleteDialog({
+      open: true,
+      user,
+      confirmPhone: '',
+    });
+  };
+
+  const closePermanentDeleteDialog = () => {
+    if (permanentDeleteMutation.isPending) {
+      return;
+    }
+    setPermanentDeleteDialog({
+      open: false,
+      user: null,
+      confirmPhone: '',
+    });
+  };
+
+  const handlePermanentDelete = () => {
+    const targetUser = permanentDeleteDialog.user;
+    if (!targetUser) {
+      return;
+    }
+
+    permanentDeleteMutation.mutate(targetUser.id, {
+      onSuccess: () => {
+        closePermanentDeleteDialog();
+        refetch();
+      },
+    });
   };
 
   // Table Columns
@@ -156,7 +211,7 @@ export const DeletedUsersPage: React.FC = () => {
     {
       field: 'actions',
       headerName: t('common:actions.title', 'الإجراءات'),
-      minWidth: 120,
+      minWidth: canPermanentDelete ? 170 : 120,
       flex: 0.8,
       sortable: false,
       renderCell: (params: any) => (
@@ -179,10 +234,38 @@ export const DeletedUsersPage: React.FC = () => {
               <Restore fontSize="small" />
             </IconButton>
           </Tooltip>
+          {canPermanentDelete && (
+            <Tooltip title={t('users:deleted.permanentDelete')}>
+              <IconButton
+                size="small"
+                onClick={() => openPermanentDeleteDialog(params.row)}
+                disabled={permanentDeleteMutation.isPending}
+                color="error"
+                sx={{
+                  '&:hover': {
+                    backgroundColor:
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(211, 47, 47, 0.16)'
+                        : 'rgba(211, 47, 47, 0.08)',
+                  },
+                }}
+              >
+                <DeleteForever fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Stack>
       ),
     },
-  ], [t, restoreUserMutation.isPending, handleRestore]);
+  ], [
+    t,
+    theme.palette.mode,
+    canPermanentDelete,
+    handleRestore,
+    openPermanentDeleteDialog,
+    restoreUserMutation.isPending,
+    permanentDeleteMutation.isPending,
+  ]);
 
   // Calculate table height responsively
   const tableHeight = React.useMemo(() => {
@@ -190,6 +273,10 @@ export const DeletedUsersPage: React.FC = () => {
     if (isMobile) return 'calc(100vh - 300px)';
     return 'calc(100vh - 280px)';
   }, [isMobile, isXs]);
+
+  const isPermanentDeleteConfirmationValid =
+    !!permanentDeleteDialog.user &&
+    permanentDeleteDialog.confirmPhone.trim() === permanentDeleteDialog.user.phone;
 
   return (
     <Box
@@ -410,22 +497,42 @@ export const DeletedUsersPage: React.FC = () => {
                         {user.phone}
                       </Typography>
                     </Box>
-                    <IconButton
-                      size={isMobile ? 'small' : 'medium'}
-                      onClick={() => handleRestore(user)}
-                      disabled={restoreUserMutation.isPending}
-                      color="primary"
-                      sx={{
-                        '&:hover': {
-                          backgroundColor:
-                            theme.palette.mode === 'dark'
-                              ? 'rgba(255, 255, 255, 0.1)'
-                              : 'rgba(0, 0, 0, 0.04)',
-                        },
-                      }}
-                    >
-                      <Restore fontSize={isMobile ? 'small' : 'medium'} />
-                    </IconButton>
+                    <Stack direction="row" spacing={0.5}>
+                      <IconButton
+                        size={isMobile ? 'small' : 'medium'}
+                        onClick={() => handleRestore(user)}
+                        disabled={restoreUserMutation.isPending}
+                        color="primary"
+                        sx={{
+                          '&:hover': {
+                            backgroundColor:
+                              theme.palette.mode === 'dark'
+                                ? 'rgba(255, 255, 255, 0.1)'
+                                : 'rgba(0, 0, 0, 0.04)',
+                          },
+                        }}
+                      >
+                        <Restore fontSize={isMobile ? 'small' : 'medium'} />
+                      </IconButton>
+                      {canPermanentDelete && (
+                        <IconButton
+                          size={isMobile ? 'small' : 'medium'}
+                          onClick={() => openPermanentDeleteDialog(user)}
+                          disabled={permanentDeleteMutation.isPending}
+                          color="error"
+                          sx={{
+                            '&:hover': {
+                              backgroundColor:
+                                theme.palette.mode === 'dark'
+                                  ? 'rgba(211, 47, 47, 0.16)'
+                                  : 'rgba(211, 47, 47, 0.08)',
+                            },
+                          }}
+                        >
+                          <DeleteForever fontSize={isMobile ? 'small' : 'medium'} />
+                        </IconButton>
+                      )}
+                    </Stack>
                   </Box>
 
                   <Box>
@@ -494,6 +601,61 @@ export const DeletedUsersPage: React.FC = () => {
           </Box>
         )}
       </Box>
+
+      <Dialog
+        open={permanentDeleteDialog.open}
+        onClose={closePermanentDeleteDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: 'error.main', fontWeight: 700 }}>
+          {t('users:deleted.confirmPermanentDeleteTitle')}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: 'text.primary', mb: 2 }}>
+            {t('users:deleted.confirmPermanentDeleteMessage', {
+              phone: permanentDeleteDialog.user?.phone || '-',
+            })}
+          </DialogContentText>
+          <DialogContentText sx={{ color: 'error.main', mb: 2, fontWeight: 600 }}>
+            {t('users:deleted.confirmPermanentDeleteWarning')}
+          </DialogContentText>
+          <DialogContentText sx={{ color: 'text.secondary', mb: 1 }}>
+            {t('users:deleted.confirmPermanentDeleteHint')}
+          </DialogContentText>
+          <TextField
+            fullWidth
+            value={permanentDeleteDialog.confirmPhone}
+            onChange={(e) =>
+              setPermanentDeleteDialog((prev) => ({
+                ...prev,
+                confirmPhone: e.target.value,
+              }))
+            }
+            label={t('users:deleted.confirmPermanentDeleteInputLabel')}
+            placeholder={t('users:deleted.confirmPermanentDeleteInputPlaceholder', {
+              phone: permanentDeleteDialog.user?.phone || '',
+            })}
+            disabled={permanentDeleteMutation.isPending}
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closePermanentDeleteDialog} disabled={permanentDeleteMutation.isPending}>
+            {t('common:actions.cancel')}
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handlePermanentDelete}
+            disabled={!isPermanentDeleteConfirmationValid || permanentDeleteMutation.isPending}
+          >
+            {permanentDeleteMutation.isPending
+              ? t('common:loading')
+              : t('users:deleted.permanentDelete')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

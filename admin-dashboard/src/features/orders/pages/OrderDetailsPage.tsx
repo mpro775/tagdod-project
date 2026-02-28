@@ -87,6 +87,7 @@ import {
   useAddOrderNotes,
   useVerifyPayment,
   useSendInvoice,
+  useRestoreCancelledOrder,
 } from '../hooks/useOrders';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
 import {
@@ -159,6 +160,7 @@ export const OrderDetailsPage: React.FC = () => {
   const addNotesMutation = useAddOrderNotes();
   const verifyPaymentMutation = useVerifyPayment();
   const sendInvoiceMutation = useSendInvoice();
+  const restoreCancelledOrderMutation = useRestoreCancelledOrder();
   const { data: customer, isLoading: isCustomerLoading } = useUser(order?.userId ?? '');
 
   // Helper function to round to 2 decimal places
@@ -282,6 +284,29 @@ export const OrderDetailsPage: React.FC = () => {
             });
           } catch (error) {
             console.error('Confirm order failed:', error);
+          }
+        },
+      });
+    }
+
+    // 2.5 استعادة الطلب الملغي
+    if (currentStatus === OrderStatus.CANCELLED) {
+      actions.push({
+        label: t('actions.restoreToProcessing', {
+          defaultValue: 'استعادة إلى قيد التجهيز',
+        }),
+        icon: <Refresh />,
+        color: 'primary',
+        priority: 2,
+        onClick: async () => {
+          if (!id) return;
+          try {
+            await restoreCancelledOrderMutation.mutateAsync({
+              id,
+              data: { targetStatus: OrderStatus.PROCESSING },
+            });
+          } catch (error) {
+            console.error('Restore cancelled order failed:', error);
           }
         },
       });
@@ -454,7 +479,15 @@ export const OrderDetailsPage: React.FC = () => {
 
     // ترتيب الإجراءات حسب الأولوية
     return actions.sort((a, b) => (a.priority || 99) - (b.priority || 99));
-  }, [order, id, t, updateStatusMutation, handleQuickVerifyPayment, sendInvoiceMutation]);
+  }, [
+    order,
+    id,
+    t,
+    updateStatusMutation,
+    handleQuickVerifyPayment,
+    sendInvoiceMutation,
+    restoreCancelledOrderMutation,
+  ]);
 
   // Handle status change from chip
   const handleStatusChipClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -1917,6 +1950,42 @@ export const OrderDetailsPage: React.FC = () => {
                     )}
                   </Box>
                   <List dense>
+                    <ListItem>
+                      <ListItemText
+                        primary={t('details.paymentProviderName', {
+                          defaultValue: 'اسم المحفظة / مزود الدفع',
+                        })}
+                        secondary={order.localPaymentProviderName || t('details.notSpecified')}
+                        primaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
+                        secondaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemText
+                        primary={t('details.localPaymentType', {
+                          defaultValue: 'نوع الحساب',
+                        })}
+                        secondary={
+                          order.localPaymentAccountType === 'wallet'
+                            ? t('payment.method.WALLET', { defaultValue: 'محفظة' })
+                            : order.localPaymentAccountType === 'bank'
+                              ? t('payment.method.BANK_TRANSFER', { defaultValue: 'تحويل بنكي' })
+                              : t('details.notSpecified')
+                        }
+                        primaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
+                        secondaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemText
+                        primary={t('details.localPaymentAccountNumber', {
+                          defaultValue: 'رقم الحساب / المحفظة',
+                        })}
+                        secondary={order.localPaymentAccountNumber || t('details.notSpecified')}
+                        primaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
+                        secondaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
+                      />
+                    </ListItem>
                     <ListItem>
                       <ListItemText
                         primary={t('details.paymentReference')}

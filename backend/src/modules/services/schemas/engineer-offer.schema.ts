@@ -12,19 +12,20 @@ export class EngineerOffer {
   @Prop({ type: Types.ObjectId, ref: 'User', index: true })
   engineerId!: string;
 
-  @Prop({ required: true }) amount!: number;
+  @Prop({ required: false, default: 0 }) amount?: number;
   @Prop() note?: string;
 
-  // نوع العملة (YER, SAR, USD)
   @Prop({
     type: String,
     enum: Currency,
     default: Currency.YER,
-    required: true,
+    required: false,
   })
-  currency!: Currency;
+  currency?: Currency;
 
-  // المسافة بين المهندس والطلب (بالكيلومتر)
+  @Prop({ default: false })
+  isFreeOffer?: boolean;
+
   @Prop() distanceKm?: number;
 
   @Prop({

@@ -8,12 +8,13 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
   Logger,
   Inject,
   forwardRef,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, FilterQuery, SortOrder } from 'mongoose';
@@ -479,6 +480,119 @@ export class UsersAdminController {
   }
 
   // ==================== عرض مستخدم واحد ====================
+  @RequirePermissions('users.read', 'admin.access')
+  @Get('export/names')
+  @ApiOperation({
+    summary: 'تصدير أسماء المستخدمين',
+    description: 'تصدير الأسماء الأولى والأخيرة للمستخدمين المطابقين للفلاتر بصيغة CSV',
+  })
+  @ApiQuery({ type: ListUsersDto })
+  async exportUserNames(@Query() dto: ListUsersDto, @Res() res: Response) {
+    const {
+      search,
+      status,
+      role,
+      verificationStatus,
+      isAdmin,
+      includeDeleted,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = dto;
+
+    const query: FilterQuery<User> = {};
+
+    if (!includeDeleted) {
+      query.deletedAt = null;
+      query.status = { $ne: UserStatus.DELETED };
+    }
+
+    if (search) {
+      const searchConditions: FilterQuery<User>[] = [
+        { phone: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+      ];
+
+      if (includeDeleted) {
+        searchConditions.push({ deletionReason: { $regex: search, $options: 'i' } });
+      }
+
+      query.$or = searchConditions;
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (role) {
+      query.roles = role;
+    }
+
+    if (verificationStatus && verificationStatus !== 'all') {
+      if (role === UserRole.MERCHANT) {
+        if (verificationStatus === 'verified') {
+          query.merchant_status = CapabilityStatus.APPROVED;
+        } else if (verificationStatus === 'unverified') {
+          query.merchant_status = {
+            $in: [
+              CapabilityStatus.NONE,
+              CapabilityStatus.UNVERIFIED,
+              CapabilityStatus.PENDING,
+              CapabilityStatus.REJECTED,
+            ],
+          };
+        }
+      } else if (role === UserRole.ENGINEER) {
+        if (verificationStatus === 'verified') {
+          query.engineer_status = CapabilityStatus.APPROVED;
+        } else if (verificationStatus === 'unverified') {
+          query.engineer_status = {
+            $in: [
+              CapabilityStatus.NONE,
+              CapabilityStatus.UNVERIFIED,
+              CapabilityStatus.PENDING,
+              CapabilityStatus.REJECTED,
+            ],
+          };
+        }
+      }
+    }
+
+    if (isAdmin !== undefined) {
+      if (isAdmin) {
+        query.roles = { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] };
+      } else {
+        query.roles = { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] };
+      }
+    }
+
+    const sort: Record<string, SortOrder> = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    const users = await this.userModel
+      .find(query)
+      .select('firstName lastName')
+      .sort(sort)
+      .lean<Array<{ firstName?: string; lastName?: string }>>();
+
+    const escapeCsvValue = (value?: string | null) => {
+      const text = String(value || '').replace(/\r?\n/g, ' ').trim();
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const rows = ['firstName,lastName'];
+    for (const user of users) {
+      rows.push(`${escapeCsvValue(user.firstName)},${escapeCsvValue(user.lastName)}`);
+    }
+
+    const csvContent = `\ufeff${rows.join('\n')}\n`;
+    const fileName = `user_names_${Date.now()}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.status(200).send(csvContent);
+  }
+
   @RequirePermissions('users.read', 'admin.access')
   @Get(':id')
   async getUser(@Param('id') id: string) {
@@ -1209,19 +1323,49 @@ export class UsersAdminController {
   @RequirePermissions('users.delete', 'super_admin.access')
   @Roles(UserRole.SUPER_ADMIN) // فقط Super Admin
   @Delete(':id/permanent')
-  async permanentDelete(@Param('id') id: string) {
+  async permanentDelete(@Param('id') id: string, @Req() req: { user: { sub: string } } & Request) {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new UserNotFoundException({ userId: id });
+    }
+
+    if (!user.deletedAt && user.status !== UserStatus.DELETED) {
+      throw new AuthException(ErrorCode.USER_INVALID_DATA, {
+        userId: id,
+        reason: 'user_must_be_soft_deleted_first',
+      });
     }
 
     if (user.roles?.includes(UserRole.SUPER_ADMIN)) {
       throw new ForbiddenException({ reason: 'cannot_delete_super_admin' });
     }
 
-    // حذف نهائي
-    await this.userModel.deleteOne({ _id: id });
-    await this.capsModel.deleteOne({ userId: id });
+    const [userDeleteResult, capsDeleteResult, engineerProfileDeleteResult] = await Promise.all([
+      this.userModel.deleteOne({ _id: id }),
+      this.capsModel.deleteOne({ userId: id }),
+      this.engineerProfileModel.deleteOne({ userId: user._id }),
+    ]);
+
+    await this.auditService.logAdminAction({
+      adminId: req.user.sub,
+      action: 'permanent_delete_user',
+      resource: 'user',
+      resourceId: id,
+      details: {
+        phone: user.phone,
+        roles: user.roles,
+        previousStatus: user.status,
+        deletedAt: user.deletedAt,
+        deletedDocs: {
+          user: userDeleteResult.deletedCount || 0,
+          capabilities: capsDeleteResult.deletedCount || 0,
+          engineerProfile: engineerProfileDeleteResult.deletedCount || 0,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      reason: 'permanent_user_deletion_from_admin_dashboard',
+    });
 
     return {
       id,
