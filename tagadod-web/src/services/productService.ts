@@ -31,6 +31,26 @@ interface ApiProductListItem {
     discountPercent?: number;
     discountAmountUSD?: number;
   };
+  pricingByCurrency?: Record<
+    string,
+    {
+      basePrice?: number;
+      finalPrice?: number;
+      compareAtPrice?: number;
+      discountPercent?: number;
+      discountAmount?: number;
+      currency?: string;
+      exchangeRate?: number;
+    }
+  >;
+  defaultPricing?: {
+    basePrice?: number;
+    finalPrice?: number;
+    compareAtPrice?: number;
+    discountPercent?: number;
+    discountAmount?: number;
+    currency?: string;
+  };
   price?: number;
   isNew?: boolean;
   isFeatured?: boolean;
@@ -39,7 +59,30 @@ interface ApiProductListItem {
   hasVariants?: boolean;
 }
 
-function normalizeProduct(raw: ApiProductListItem): Product {
+function resolvePriceFromPricingByCurrency(
+  pricingByCurrency: ApiProductListItem['pricingByCurrency'],
+  preferredCurrency: string,
+): { price?: number; originalPrice?: number } {
+  if (!pricingByCurrency) return {};
+
+  const normalizedPreferred = preferredCurrency.toUpperCase();
+  const selected =
+    pricingByCurrency[normalizedPreferred] ??
+    pricingByCurrency.USD ??
+    Object.values(pricingByCurrency)[0];
+
+  if (!selected) return {};
+
+  const finalPrice = selected.finalPrice ?? selected.basePrice;
+  const originalPrice = selected.compareAtPrice;
+
+  return {
+    price: typeof finalPrice === 'number' ? finalPrice : undefined,
+    originalPrice: typeof originalPrice === 'number' ? originalPrice : undefined,
+  };
+}
+
+function normalizeProduct(raw: ApiProductListItem, preferredCurrency: string): Product {
   const id = raw._id ?? raw.id ?? "";
   const mainImageUrl =
     raw.mainImage?.url ??
@@ -48,11 +91,15 @@ function normalizeProduct(raw: ApiProductListItem): Product {
       : raw.images?.[0]?.url) ??
     "";
   const p = raw.pricing;
+  const byCurrency = resolvePriceFromPricingByCurrency(raw.pricingByCurrency, preferredCurrency);
+  const defaultPricingPrice = raw.defaultPricing?.finalPrice ?? raw.defaultPricing?.basePrice;
   const price =
+    byCurrency.price ??
     p?.minPriceUSD ??
     p?.finalPriceUSD ??
     p?.basePriceUSD ??
     p?.maxPriceUSD ??
+    defaultPricingPrice ??
     raw.price ??
     0;
 
@@ -61,8 +108,8 @@ function normalizeProduct(raw: ApiProductListItem): Product {
     name: raw.name ?? raw.nameEn ?? "",
     images: mainImageUrl ? [mainImageUrl] : [],
     price,
-    originalPrice:
-      p?.discountPercent && p.discountPercent > 0 ? p.basePriceUSD : undefined,
+    originalPrice: byCurrency.originalPrice ??
+      (p?.discountPercent && p.discountPercent > 0 ? p.basePriceUSD : undefined),
     inStock: raw.isAvailable ?? true,
     isNew: raw.isNew ?? false,
     isFeatured: raw.isFeatured ?? false,
@@ -85,10 +132,11 @@ interface ApiProductsListResponse {
 function parseProductsListResponse(
   res: ApiProductsListResponse,
 ): PaginatedResponse<Product> {
+  const preferredCurrency = useCurrencyStore.getState().currency;
   const inner = res.data;
   const items = inner?.data ?? [];
   return {
-    data: items.map(normalizeProduct),
+    data: items.map((item) => normalizeProduct(item, preferredCurrency)),
     meta: inner?.meta ?? { page: 1, limit: 12, total: 0, totalPages: 0 },
   };
 }
@@ -96,10 +144,11 @@ function parseProductsListResponse(
 export async function getProducts(
   params?: ProductFilters,
 ): Promise<PaginatedResponse<Product>> {
-  const { data } = await api.get<PaginatedResponse<Product>>("/products", {
-    params,
+  const currency = useCurrencyStore.getState().currency;
+  const { data } = await api.get<unknown>("/products", {
+    params: { ...params, currency },
   });
-  return data;
+  return parseCollectionProductsResponse(data);
 }
 
 /** API response for product details – wrapped with fx, product, variants, relatedProducts */
@@ -240,7 +289,10 @@ export async function getProductById(id: string): Promise<ProductDetailResult> {
   });
   const inner = data?.data;
   const product = normalizeProductDetail(inner?.product, inner?.variants);
-  const related = (inner?.relatedProducts ?? []).map(normalizeProduct);
+  const preferredCurrency = useCurrencyStore.getState().currency;
+  const related = (inner?.relatedProducts ?? []).map((item) =>
+    normalizeProduct(item, preferredCurrency),
+  );
   return { product, relatedProducts: related };
 }
 
@@ -341,6 +393,7 @@ interface ApiCollectionProduct {
 }
 
 function normalizeCollectionProduct(raw: ApiCollectionProduct): Product {
+  const preferredCurrency = useCurrencyStore.getState().currency;
   const id = raw._id ?? raw.id ?? "";
   const mainImg = raw.mainImage;
   const mainImageUrl =
@@ -352,16 +405,19 @@ function normalizeCollectionProduct(raw: ApiCollectionProduct): Product {
   const p = raw.pricing ?? {};
   const dp = raw.defaultPricing;
   const pc = raw.pricingByCurrency;
-  const usdPrice = pc?.USD;
+  const selectedPrice =
+    pc?.[preferredCurrency] ??
+    pc?.USD ??
+    (pc ? Object.values(pc)[0] : undefined);
   const price =
+    selectedPrice?.finalPrice ??
+    selectedPrice?.basePrice ??
     p.minPriceUSD ??
     p.finalPriceUSD ??
     p.basePriceUSD ??
     p.maxPriceUSD ??
     dp?.finalPrice ??
     dp?.basePrice ??
-    usdPrice?.finalPrice ??
-    usdPrice?.basePrice ??
     0;
 
   return {
@@ -377,7 +433,7 @@ function normalizeCollectionProduct(raw: ApiCollectionProduct): Product {
 }
 
 /** API يعيد { success, data: { data: [...], meta } } */
-function parseCategoryProductsResponse(
+function parseCollectionProductsResponse(
   raw: unknown,
 ): PaginatedResponse<Product> {
   const inner =
@@ -411,5 +467,5 @@ export async function getProductsByCategory(
       params: { ...params, currency },
     },
   );
-  return parseCategoryProductsResponse(data);
+  return parseCollectionProductsResponse(data);
 }
