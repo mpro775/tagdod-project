@@ -11,6 +11,7 @@ import { InventoryIntegrationService } from './services/inventory-integration.se
 import { PublicProductsPresenter } from './services/public-products.presenter';
 import { ProductsController } from './controllers/products.controller';
 import { PublicProductsController } from './controllers/public-products.controller';
+import { PublicProductsV2Controller } from './controllers/public-products-v2.controller';
 // 2. استيراد الكنترولر الجديد
 import { InventoryIntegrationController } from './controllers/inventory-integration.controller';
 import { Product, ProductSchema } from './schemas/product.schema';
@@ -50,6 +51,7 @@ import { MarketingModule } from '../marketing/marketing.module';
   controllers: [
     ProductsController,
     PublicProductsController,
+    PublicProductsV2Controller,
     // 5. إضافة الكنترولر الجديد
     InventoryIntegrationController
   ],

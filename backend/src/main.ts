@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger, LogLevel, RequestMethod } from '@nestjs/common';
+import { ValidationPipe, Logger, LogLevel, RequestMethod, VersioningType } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
 import * as compression from 'compression';
@@ -47,12 +47,17 @@ async function bootstrap() {
   }
 
   // Global prefix
-  app.setGlobalPrefix('api/v1', {
+  app.setGlobalPrefix('api', {
     exclude: [
       { path: '.well-known/assetlinks.json', method: RequestMethod.GET },
       { path: '.well-known/apple-app-site-association', method: RequestMethod.GET },
       { path: 'p/:id', method: RequestMethod.GET }, // لجعل رابط المشاركة قصيراً
     ],
+  });
+
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
   });
   // Security and performance middleware
   app.use(
