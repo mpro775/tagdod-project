@@ -57,6 +57,7 @@ export type AttributeSummary = {
   id: string;
   name: string;
   nameEn: string;
+  type?: string;
   values: Array<{
     id: string;
     value: string;
@@ -102,6 +103,7 @@ type VariantPricingInput = {
 export class PublicProductsPresenter {
   private readonly logger = new Logger(PublicProductsPresenter.name);
   private readonly BASE_PRICING_CURRENCIES = ['USD', 'YER', 'SAR'] as const;
+  private readonly HEX_COLOR_REGEX = /^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
   private readonly bunnyStreamLibraryId = process.env.BUNNY_STREAM_LIBRARY_ID || '';
   private readonly bunnyStreamCdnHost =
     process.env.BUNNY_STREAM_CDN_HOSTNAME ||
@@ -377,6 +379,7 @@ export class PublicProductsPresenter {
             id,
             name: (attributeRecordWithId.name as string) ?? '',
             nameEn: (attributeRecordWithId.nameEn as string) ?? '',
+            type: (attributeRecordWithId.type as string | undefined) ?? 'text',
             values,
           } as AttributeSummary;
         });
@@ -409,6 +412,235 @@ export class PublicProductsPresenter {
     return uniqueIds
       .map((attributeId) => summariesById.get(attributeId))
       .filter((summary): summary is AttributeSummary => Boolean(summary));
+  }
+
+  private normalizeV2OptionType(type?: string): 'color' | 'text' {
+    return type === 'color' ? 'color' : 'text';
+  }
+
+  private isValidHexColor(value?: string): boolean {
+    if (!value) {
+      return false;
+    }
+    return this.HEX_COLOR_REGEX.test(value.trim());
+  }
+
+  async buildProductDetailContractV2(
+    productId: string,
+    product: AnyRecord,
+    variants: Array<WithId & AnyRecord>,
+    discountPercent: number,
+  ): Promise<{
+    product: {
+      id: string;
+      name: string;
+      hasVariants: boolean;
+      pricing?: { finalPriceUSD: number };
+      stock?: number;
+      isAvailable?: boolean;
+    };
+    optionDefinitions: Array<{
+      id: string;
+      label: string;
+      type: 'color' | 'text';
+      values: Array<{ id: string; label: string; hexCode?: string }>;
+    }>;
+    variants: Array<{
+      id: string;
+      valueIds: Record<string, string>;
+      pricing: { finalPriceUSD: number };
+      stock: number;
+      isAvailable: boolean;
+    }>;
+  }> {
+    const allVariants = this.filterVariantsWithStock(variants);
+    const { variantsWithPricing } = await this.enrichVariantsPricing(
+      productId,
+      allVariants,
+      discountPercent,
+      'USD',
+      false,
+      { currenciesOverride: ['USD'] },
+    );
+
+    const attributeIds = this.resolveAttributeIdsForSummaries(product, allVariants);
+    const attributeSummaries = await this.getAttributeSummaries(attributeIds);
+
+    const optionDefinitions = attributeSummaries
+      .map((attribute) => {
+        const optionType = this.normalizeV2OptionType(attribute.type);
+        const values = (attribute.values ?? [])
+          .map((value) => {
+            const valueId = typeof value.id === 'string' ? value.id : '';
+            const valueLabel =
+              (typeof value.value === 'string' && value.value.trim().length > 0
+                ? value.value.trim()
+                : typeof value.valueEn === 'string' && value.valueEn.trim().length > 0
+                  ? value.valueEn.trim()
+                  : '') || '';
+
+            if (!valueId || !valueLabel) {
+              return null;
+            }
+
+            if (optionType === 'color') {
+              if (!this.isValidHexColor(value.hexCode)) {
+                this.logger.warn(
+                  `Invalid or missing hexCode for color option value ${valueId} (attribute: ${attribute.id})`,
+                );
+                return null;
+              }
+
+              return {
+                id: valueId,
+                label: valueLabel,
+                hexCode: value.hexCode!.trim().toUpperCase(),
+              };
+            }
+
+            return {
+              id: valueId,
+              label: valueLabel,
+            };
+          })
+          .filter((value): value is { id: string; label: string; hexCode?: string } =>
+            Boolean(value),
+          );
+
+        const optionId = typeof attribute.id === 'string' ? attribute.id : '';
+        const optionLabel =
+          (typeof attribute.name === 'string' && attribute.name.trim().length > 0
+            ? attribute.name.trim()
+            : typeof attribute.nameEn === 'string'
+              ? attribute.nameEn.trim()
+              : '') || '';
+
+        if (!optionId || !optionLabel) {
+          return null;
+        }
+
+        return {
+          id: optionId,
+          label: optionLabel,
+          type: optionType,
+          values,
+        };
+      })
+      .filter(
+        (
+          definition,
+        ): definition is {
+          id: string;
+          label: string;
+          type: 'color' | 'text';
+          values: Array<{ id: string; label: string; hexCode?: string }>;
+        } => Boolean(definition),
+      );
+
+    const variantsPayload = variantsWithPricing
+      .map((variant) => {
+        const variantId =
+          this.extractIdString(variant._id) ?? this.extractIdString(variant.id) ?? String(variant._id ?? '');
+
+        if (!variantId) {
+          return null;
+        }
+
+        const valueIds = (Array.isArray(variant.attributeValues)
+          ? variant.attributeValues
+          : []
+        ).reduce<Record<string, string>>((acc, rawValue) => {
+          const value = rawValue as AnyRecord;
+          const attributeId = this.extractIdString(value.attributeId);
+          const valueId = this.extractIdString(value.valueId);
+
+          if (attributeId && valueId) {
+            acc[attributeId] = valueId;
+          }
+
+          return acc;
+        }, {});
+
+        const pricing = variant.pricing as PriceWithDiscount | undefined;
+        const finalPriceUSD =
+          this.normalizePrice(pricing?.finalPrice) ??
+          this.normalizePrice(pricing?.basePrice) ??
+          this.normalizePrice(variant.basePriceUSD) ??
+          0;
+
+        return {
+          id: variantId,
+          valueIds,
+          pricing: {
+            finalPriceUSD,
+          },
+          stock: this.normalizePrice(variant.stock) ?? 0,
+          isAvailable: variant.isAvailable === true,
+        };
+      })
+      .filter(
+        (
+          variant,
+        ): variant is {
+          id: string;
+          valueIds: Record<string, string>;
+          pricing: { finalPriceUSD: number };
+          stock: number;
+          isAvailable: boolean;
+        } => Boolean(variant),
+      );
+
+    const hasVariants = variantsPayload.length > 0;
+    const productPayload: {
+      id: string;
+      name: string;
+      hasVariants: boolean;
+      pricing?: { finalPriceUSD: number };
+      stock?: number;
+      isAvailable?: boolean;
+    } = {
+      id: productId,
+      name: (typeof product.name === 'string' ? product.name : '').trim(),
+      hasVariants,
+    };
+
+    if (!hasVariants && this.hasSimplePricing(product)) {
+      const basePriceUSD =
+        this.normalizePrice(product.basePriceUSD ?? product.basePrice) ??
+        this.normalizePrice(product.compareAtPriceUSD ?? product.compareAtPrice) ??
+        this.normalizePrice(product.costPriceUSD ?? product.costPrice) ??
+        0;
+      const compareAtPriceUSD = this.normalizePrice(
+        product.compareAtPriceUSD ?? product.compareAtPrice,
+      );
+      const costPriceUSD = this.normalizePrice(product.costPriceUSD ?? product.costPrice);
+      const derivedPricing = this.buildSimpleProductDerivedPricing(product);
+      const simpleUsd = await this.pricingService.getSimpleProductPricingByCurrencies(
+        basePriceUSD,
+        compareAtPriceUSD,
+        costPriceUSD,
+        ['USD'],
+        discountPercent,
+        derivedPricing,
+      );
+
+      const finalPriceUSD =
+        this.normalizePrice(simpleUsd?.USD?.finalPrice) ??
+        this.normalizePrice(simpleUsd?.USD?.basePrice) ??
+        basePriceUSD;
+
+      const stock = this.normalizePrice(product.stock) ?? 0;
+
+      productPayload.pricing = { finalPriceUSD };
+      productPayload.stock = stock;
+      productPayload.isAvailable = stock > 0 && product.isActive !== false;
+    }
+
+    return {
+      product: productPayload,
+      optionDefinitions,
+      variants: variantsPayload,
+    };
   }
 
   private normalizePrice(value: unknown): number | undefined {

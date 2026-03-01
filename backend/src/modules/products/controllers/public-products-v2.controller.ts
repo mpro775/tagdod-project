@@ -1,6 +1,7 @@
-import { Controller, Get, Query, UseInterceptors, Req, Version } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Query, UseInterceptors, Req, Version, Param } from '@nestjs/common';
+import { ApiResponse, ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { ProductService } from '../services/product.service';
+import { VariantService } from '../services/variant.service';
 import {
   ResponseCacheInterceptor,
   CacheResponse,
@@ -23,6 +24,7 @@ interface RequestWithUser {
 export class PublicProductsV2Controller {
   constructor(
     private productService: ProductService,
+    private variantService: VariantService,
     private publicProductsPresenter: PublicProductsPresenter,
   ) {}
 
@@ -130,5 +132,33 @@ export class PublicProductsV2Controller {
       );
 
     return { fx, rounding, userDiscount, data, meta: result.meta };
+  }
+
+  @Get(':id')
+  @Version('2')
+  @ApiOperation({
+    summary: 'Get product details (v2 options contract)',
+    description:
+      'Returns product details in v2 compact contract: product + optionDefinitions + variants.',
+  })
+  @ApiParam({ name: 'id', description: 'Product ID', example: '507f1f77bcf86cd799439011' })
+  @ApiResponse({ status: 200, description: 'Product details (v2) retrieved successfully' })
+  @CacheResponse({ ttl: 120 })
+  async getProductDetailsV2(@Param('id') id: string, @Req() req?: RequestWithUser) {
+    const product = await this.productService.findById(id);
+    const variants = await this.variantService.findByProductId(id);
+
+    await this.productService.incrementViews(id);
+
+    const discountPercent = await this.publicProductsPresenter.getUserMerchantDiscount(
+      req?.user?.sub,
+    );
+
+    return this.publicProductsPresenter.buildProductDetailContractV2(
+      id,
+      product as unknown as Record<string, unknown>,
+      variants as unknown as Array<Record<string, unknown> & { _id: string }>,
+      discountPercent,
+    );
   }
 }
