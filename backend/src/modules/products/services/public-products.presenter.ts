@@ -2303,9 +2303,33 @@ export class PublicProductsPresenter {
         : (productStock > 0 && product.isActive !== false) as boolean;
 
     const attributeIds = this.resolveAttributeIdsForSummaries(product, allVariants);
+    const attributesDetails = (await this.getAttributeSummaries(attributeIds)).map((attribute) => {
+      const optionType = this.normalizeV2OptionType(attribute.type);
+      return {
+        ...attribute,
+        type: optionType,
+        values: (attribute.values ?? []).map((value) => {
+          if (optionType !== 'color') {
+            return value;
+          }
+
+          if (!this.isValidHexColor(value.hexCode)) {
+            return {
+              ...value,
+              hexCode: undefined,
+            };
+          }
+
+          return {
+            ...value,
+            hexCode: value.hexCode?.trim().toUpperCase(),
+          };
+        }),
+      };
+    });
     const productPayload: AnyRecord = {
       ...simplifiedProduct,
-      attributesDetails: await this.getAttributeSummaries(attributeIds),
+      attributesDetails,
       stock: productStock,
       isAvailable: productIsAvailable,
     };
