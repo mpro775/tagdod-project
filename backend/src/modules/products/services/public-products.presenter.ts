@@ -425,81 +425,145 @@ export class PublicProductsPresenter {
     return this.HEX_COLOR_REGEX.test(value.trim());
   }
 
-  async buildProductDetailContractV2(
-    productId: string,
+  private collectVariantAttributeSelectionsV2(variants: Array<WithId & AnyRecord>): {
+    attributeOrder: string[];
+    byAttribute: Map<
+      string,
+      {
+        label: string;
+        valueIds: Set<string>;
+        valueLabels: Map<string, string>;
+      }
+    >;
+  } {
+    const attributeOrder: string[] = [];
+    const byAttribute = new Map<
+      string,
+      {
+        label: string;
+        valueIds: Set<string>;
+        valueLabels: Map<string, string>;
+      }
+    >();
+
+    for (const variant of variants) {
+      const attributeValues = Array.isArray(variant.attributeValues)
+        ? (variant.attributeValues as Array<AnyRecord>)
+        : [];
+
+      for (const attributeValue of attributeValues) {
+        const attributeId = this.extractIdString(attributeValue.attributeId);
+        const valueId = this.extractIdString(attributeValue.valueId);
+
+        if (!attributeId || !valueId) {
+          continue;
+        }
+
+        if (!byAttribute.has(attributeId)) {
+          attributeOrder.push(attributeId);
+          const label =
+            (typeof attributeValue.name === 'string' && attributeValue.name.trim().length > 0
+              ? attributeValue.name.trim()
+              : typeof attributeValue.nameEn === 'string' && attributeValue.nameEn.trim().length > 0
+                ? attributeValue.nameEn.trim()
+                : attributeId) || attributeId;
+
+          byAttribute.set(attributeId, {
+            label,
+            valueIds: new Set<string>(),
+            valueLabels: new Map<string, string>(),
+          });
+        }
+
+        const entry = byAttribute.get(attributeId)!;
+        entry.valueIds.add(valueId);
+
+        const valueLabel =
+          (typeof attributeValue.value === 'string' && attributeValue.value.trim().length > 0
+            ? attributeValue.value.trim()
+            : typeof attributeValue.valueEn === 'string' && attributeValue.valueEn.trim().length > 0
+              ? attributeValue.valueEn.trim()
+              : valueId) || valueId;
+
+        if (!entry.valueLabels.has(valueId)) {
+          entry.valueLabels.set(valueId, valueLabel);
+        }
+      }
+    }
+
+    return { attributeOrder, byAttribute };
+  }
+
+  private async buildOptionDefinitionsV2(
     product: AnyRecord,
     variants: Array<WithId & AnyRecord>,
-    discountPercent: number,
-  ): Promise<{
-    product: {
-      id: string;
-      name: string;
-      hasVariants: boolean;
-      pricing?: { finalPriceUSD: number };
-      stock?: number;
-      isAvailable?: boolean;
-    };
-    optionDefinitions: Array<{
+  ): Promise<
+    Array<{
       id: string;
       label: string;
       type: 'color' | 'text';
       values: Array<{ id: string; label: string; hexCode?: string }>;
-    }>;
-    variants: Array<{
-      id: string;
-      valueIds: Record<string, string>;
-      pricing: { finalPriceUSD: number };
-      stock: number;
-      isAvailable: boolean;
-    }>;
-  }> {
-    const allVariants = this.filterVariantsWithStock(variants);
-    const { variantsWithPricing } = await this.enrichVariantsPricing(
-      productId,
-      allVariants,
-      discountPercent,
-      'USD',
-      false,
-      { currenciesOverride: ['USD'] },
-    );
+    }>
+  > {
+    const selections = this.collectVariantAttributeSelectionsV2(variants);
 
-    const attributeIds = this.resolveAttributeIdsForSummaries(product, allVariants);
-    const attributeSummaries = await this.getAttributeSummaries(attributeIds);
+    const productAttributeIds = Array.isArray(product.attributes)
+      ? product.attributes
+          .map((id) => this.extractIdString(id))
+          .filter((id): id is string => Boolean(id))
+      : [];
 
-    const optionDefinitions = attributeSummaries
-      .map((attribute) => {
-        const optionType = this.normalizeV2OptionType(attribute.type);
-        const values = (attribute.values ?? [])
+    const preferredAttributeIds =
+      selections.attributeOrder.length > 0 ? selections.attributeOrder : productAttributeIds;
+
+    const attributeSummaries = await this.getAttributeSummaries(preferredAttributeIds);
+    const summariesById = new Map(attributeSummaries.map((summary) => [summary.id, summary]));
+
+    const optionIds =
+      preferredAttributeIds.length > 0
+        ? preferredAttributeIds
+        : attributeSummaries.map((summary) => summary.id).filter(Boolean);
+
+    return optionIds
+      .map((optionId) => {
+        const summary = summariesById.get(optionId);
+        const selection = selections.byAttribute.get(optionId);
+        const optionType = this.normalizeV2OptionType(summary?.type);
+
+        const label =
+          (typeof summary?.name === 'string' && summary.name.trim().length > 0
+            ? summary.name.trim()
+            : typeof summary?.nameEn === 'string' && summary.nameEn.trim().length > 0
+              ? summary.nameEn.trim()
+              : selection?.label ?? optionId) || optionId;
+
+        let values = (summary?.values ?? [])
           .map((value) => {
-            const valueId = typeof value.id === 'string' ? value.id : '';
+            if (!value.id) {
+              return null;
+            }
+
             const valueLabel =
               (typeof value.value === 'string' && value.value.trim().length > 0
                 ? value.value.trim()
                 : typeof value.valueEn === 'string' && value.valueEn.trim().length > 0
                   ? value.valueEn.trim()
-                  : '') || '';
-
-            if (!valueId || !valueLabel) {
-              return null;
-            }
+                  : value.id) || value.id;
 
             if (optionType === 'color') {
               if (!this.isValidHexColor(value.hexCode)) {
-                this.logger.warn(
-                  `Invalid or missing hexCode for color option value ${valueId} (attribute: ${attribute.id})`,
-                );
                 return null;
               }
 
               return {
-                id: valueId,
+                id: value.id,
                 label: valueLabel,
                 hexCode: value.hexCode!.trim().toUpperCase(),
               };
             }
 
             return {
-              id: valueId,
+              id: value.id,
               label: valueLabel,
             };
           })
@@ -507,139 +571,130 @@ export class PublicProductsPresenter {
             Boolean(value),
           );
 
-        const optionId = typeof attribute.id === 'string' ? attribute.id : '';
-        const optionLabel =
-          (typeof attribute.name === 'string' && attribute.name.trim().length > 0
-            ? attribute.name.trim()
-            : typeof attribute.nameEn === 'string'
-              ? attribute.nameEn.trim()
-              : '') || '';
+        if (selection && selection.valueIds.size > 0) {
+          values = values.filter((value) => selection.valueIds.has(value.id));
 
-        if (!optionId || !optionLabel) {
-          return null;
+          selection.valueLabels.forEach((selectionLabel, valueId) => {
+            if (values.some((value) => value.id === valueId)) {
+              return;
+            }
+
+            if (optionType === 'color') {
+              this.logger.warn(
+                `Missing valid hexCode for color option value ${valueId} (attribute: ${optionId})`,
+              );
+              return;
+            }
+
+            values.push({
+              id: valueId,
+              label: selectionLabel,
+            });
+          });
         }
 
         return {
           id: optionId,
-          label: optionLabel,
+          label,
           type: optionType,
           values,
         };
       })
-      .filter(
-        (
-          definition,
-        ): definition is {
-          id: string;
-          label: string;
-          type: 'color' | 'text';
-          values: Array<{ id: string; label: string; hexCode?: string }>;
-        } => Boolean(definition),
-      );
+      .filter((option) => Boolean(option.id));
+  }
 
-    const variantsPayload = variantsWithPricing
-      .map((variant) => {
-        const variantId =
-          this.extractIdString(variant._id) ?? this.extractIdString(variant.id) ?? String(variant._id ?? '');
+  async buildProductDetailContractV2(
+    productId: string,
+    product: AnyRecord,
+    variants: Array<WithId & AnyRecord>,
+    discountPercent: number,
+  ): Promise<{
+    fx: FxPayload;
+    rounding: RoundingPayload;
+    userDiscount: { isMerchant: boolean; discountPercent: number };
+    product: AnyRecord;
+    optionDefinitions: Array<{
+      id: string;
+      label: string;
+      type: 'color' | 'text';
+      values: Array<{ id: string; label: string; hexCode?: string }>;
+    }>;
+    variants: AnyRecord[];
+    relatedProducts: RelatedProductUsdFxPayload[];
+  }> {
+    const detailResponse = await this.buildProductDetailResponseUsdFx(
+      productId,
+      product,
+      variants,
+      discountPercent,
+    );
+    const optionDefinitions = await this.buildOptionDefinitionsV2(product, variants);
 
-        if (!variantId) {
-          return null;
+    const variantsPayload = (detailResponse.data.variants ?? []).map((variantRaw) => {
+      const variant = variantRaw as AnyRecord;
+      const variantId =
+        this.extractIdString(variant.id) ??
+        this.extractIdString(variant._id) ??
+        String(variant.id ?? variant._id ?? '');
+
+      const valueIds = (Array.isArray(variant.attributeValues)
+        ? variant.attributeValues
+        : []
+      ).reduce<Record<string, string>>((acc, valueRaw) => {
+        const value = valueRaw as AnyRecord;
+        const attributeId = this.extractIdString(value.attributeId);
+        const valueId = this.extractIdString(value.valueId);
+
+        if (attributeId && valueId) {
+          acc[attributeId] = valueId;
         }
 
-        const valueIds = (Array.isArray(variant.attributeValues)
-          ? variant.attributeValues
-          : []
-        ).reduce<Record<string, string>>((acc, rawValue) => {
-          const value = rawValue as AnyRecord;
-          const attributeId = this.extractIdString(value.attributeId);
-          const valueId = this.extractIdString(value.valueId);
+        return acc;
+      }, {});
 
-          if (attributeId && valueId) {
-            acc[attributeId] = valueId;
-          }
+      const nextVariant: AnyRecord = {
+        ...variant,
+        ...(variantId ? { id: variantId } : {}),
+        valueIds,
+      };
 
-          return acc;
-        }, {});
+      delete nextVariant.attributeValues;
 
-        const pricing = variant.pricing as PriceWithDiscount | undefined;
-        const finalPriceUSD =
-          this.normalizePrice(pricing?.finalPrice) ??
-          this.normalizePrice(pricing?.basePrice) ??
-          this.normalizePrice(variant.basePriceUSD) ??
-          0;
+      return nextVariant;
+    });
 
-        return {
-          id: variantId,
-          valueIds,
-          pricing: {
-            finalPriceUSD,
-          },
-          stock: this.normalizePrice(variant.stock) ?? 0,
-          isAvailable: variant.isAvailable === true,
-        };
-      })
-      .filter(
-        (
-          variant,
-        ): variant is {
-          id: string;
-          valueIds: Record<string, string>;
-          pricing: { finalPriceUSD: number };
-          stock: number;
-          isAvailable: boolean;
-        } => Boolean(variant),
-      );
-
-    const hasVariants = variantsPayload.length > 0;
-    const productPayload: {
-      id: string;
-      name: string;
-      hasVariants: boolean;
-      pricing?: { finalPriceUSD: number };
-      stock?: number;
-      isAvailable?: boolean;
-    } = {
-      id: productId,
-      name: (typeof product.name === 'string' ? product.name : '').trim(),
-      hasVariants,
+    const productPayload: AnyRecord = {
+      ...(detailResponse.data.product as AnyRecord),
+      id:
+        this.extractIdString((detailResponse.data.product as AnyRecord)?._id) ??
+        this.extractIdString((detailResponse.data.product as AnyRecord)?.id) ??
+        productId,
     };
 
-    if (!hasVariants && this.hasSimplePricing(product)) {
-      const basePriceUSD =
-        this.normalizePrice(product.basePriceUSD ?? product.basePrice) ??
-        this.normalizePrice(product.compareAtPriceUSD ?? product.compareAtPrice) ??
-        this.normalizePrice(product.costPriceUSD ?? product.costPrice) ??
-        0;
-      const compareAtPriceUSD = this.normalizePrice(
-        product.compareAtPriceUSD ?? product.compareAtPrice,
-      );
-      const costPriceUSD = this.normalizePrice(product.costPriceUSD ?? product.costPrice);
-      const derivedPricing = this.buildSimpleProductDerivedPricing(product);
-      const simpleUsd = await this.pricingService.getSimpleProductPricingByCurrencies(
-        basePriceUSD,
-        compareAtPriceUSD,
-        costPriceUSD,
-        ['USD'],
-        discountPercent,
-        derivedPricing,
-      );
-
-      const finalPriceUSD =
-        this.normalizePrice(simpleUsd?.USD?.finalPrice) ??
-        this.normalizePrice(simpleUsd?.USD?.basePrice) ??
-        basePriceUSD;
-
-      const stock = this.normalizePrice(product.stock) ?? 0;
-
-      productPayload.pricing = { finalPriceUSD };
-      productPayload.stock = stock;
-      productPayload.isAvailable = stock > 0 && product.isActive !== false;
+    if (optionDefinitions.length > 0) {
+      productPayload.attributes = optionDefinitions.map((option) => option.id);
+      productPayload.attributesDetails = optionDefinitions.map((option) => ({
+        id: option.id,
+        name: option.label,
+        nameEn: option.label,
+        type: option.type,
+        values: option.values.map((value) => ({
+          id: value.id,
+          value: value.label,
+          valueEn: value.label,
+          ...(value.hexCode ? { hexCode: value.hexCode } : {}),
+        })),
+      }));
     }
 
     return {
+      fx: detailResponse.data.fx,
+      rounding: detailResponse.data.rounding,
+      userDiscount: detailResponse.data.userDiscount,
       product: productPayload,
       optionDefinitions,
       variants: variantsPayload,
+      relatedProducts: detailResponse.data.relatedProducts,
     };
   }
 
