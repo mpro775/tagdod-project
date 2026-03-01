@@ -4,8 +4,10 @@ import {
   Navigate,
   Outlet,
   RouterProvider,
+  useRouteError,
   useLocation,
 } from "react-router-dom";
+import { useEffect } from "react";
 import { AppShell } from "../components/layout";
 import { PageLoader } from "../components/PageLoader";
 import { isLoggedIn, isGuestMode } from "../stores/authStore";
@@ -291,10 +293,59 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
+function RouteErrorBoundary() {
+  const error = useRouteError();
+
+  useEffect(() => {
+    const key = "tagadod-chunk-reload-attempted";
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : "";
+
+    const isChunkLoadError =
+      message.includes("Failed to fetch dynamically imported module") ||
+      message.includes("Importing a module script failed");
+
+    if (!isChunkLoadError) return;
+    if (sessionStorage.getItem(key) === "1") return;
+
+    sessionStorage.setItem(key, "1");
+    window.location.reload();
+  }, [error]);
+
+  const message =
+    error instanceof Error
+      ? error.message
+      : "حدث خطا غير متوقع. يرجى تحديث الصفحة والمحاولة مرة اخرى.";
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6 text-center">
+      <div>
+        <h1 className="text-lg font-semibold mb-2">تعذر تحميل الصفحة</h1>
+        <p className="text-sm text-tagadod-gray mb-4">{message}</p>
+        <button
+          type="button"
+          onClick={() => {
+            sessionStorage.removeItem("tagadod-chunk-reload-attempted");
+            window.location.reload();
+          }}
+          className="px-4 py-2 rounded-lg bg-primary text-white"
+        >
+          اعادة تحميل الصفحة
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const router = createBrowserRouter([
   {
     path: "/",
     element: <LayoutWrapper />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       // Root
       { index: true, element: <RootRedirect /> },

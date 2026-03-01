@@ -9,7 +9,12 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'og-image.png'],
+      includeAssets: [
+        'favicon.svg',
+        'apple-touch-icon.svg',
+        'og-image.svg',
+        'assets/icons/app_icon.png',
+      ],
       manifest: {
         name: 'تجدد - Tagadod',
         short_name: 'تجرد',
@@ -29,63 +34,65 @@ export default defineConfig({
             short_name: 'الرئيسية',
             description: 'الصفحة الرئيسية',
             url: '/home',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            icons: [
+              {
+                src: 'assets/icons/app_icon.png',
+                sizes: '192x192',
+                type: 'image/png',
+              },
+            ]
           },
           {
             name: 'طلبات الصيانة',
             short_name: 'الصيانة',
             description: 'طلبات الصيانة',
             url: '/maintenance-orders',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            icons: [
+              {
+                src: 'assets/icons/app_icon.png',
+                sizes: '192x192',
+                type: 'image/png',
+              },
+            ]
           },
           {
             name: 'طلباتي',
             short_name: 'طلباتي',
             description: 'طلباتي',
             url: '/orders',
-            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+            icons: [
+              {
+                src: 'assets/icons/app_icon.png',
+                sizes: '192x192',
+                type: 'image/png',
+              },
+            ]
           }
         ],
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'assets/icons/app_icon.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'assets/icons/app_icon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'pwa-192x192.png',
+            src: 'assets/icons/app_icon.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'assets/icons/app_icon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
-          }
-        ],
-        screenshots: [
-          {
-            src: 'screenshot-desktop.png',
-            sizes: '1280x720',
-            type: 'image/png',
-            form_factor: 'wide',
-            label: 'واجهة المتجر على سطح المكتب'
-          },
-          {
-            src: 'screenshot-mobile.png',
-            sizes: '390x844',
-            type: 'image/png',
-            form_factor: 'narrow',
-            label: 'واجهة المتجر على الهاتف'
           }
         ]
       },
