@@ -13,7 +13,9 @@ export class CreateOfferDto {
   
   @IsOptional() @IsString() note?: string;
 
-  @IsEnum(Currency) currency!: Currency;
+  @IsOptional()
+  @IsEnum(Currency)
+  currency?: Currency;
 
   @Type(() => Number) @IsNumber() lat!: number;
   @Type(() => Number) @IsNumber() lng!: number;

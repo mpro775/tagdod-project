@@ -12,7 +12,7 @@ import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
 import { ServiceRequest, ServiceRating } from './schemas/service-request.schema';
 import { EngineerOffer } from './schemas/engineer-offer.schema';
-import { User, CapabilityStatus, UserStatus } from '../users/schemas/user.schema';
+import { User, CapabilityStatus, UserStatus, Currency } from '../users/schemas/user.schema';
 import { EngineerProfile } from '../users/schemas/engineer-profile.schema';
 import { Coupon, CouponDocument } from '../marketing/schemas/coupon.schema';
 import { AddressesService } from '../addresses/addresses.service';
@@ -1978,7 +1978,7 @@ const formattedOffer: OfferListItem = {
       requestId: r._id,
       engineerId: new Types.ObjectId(engineerUserId),
       amount: dto.amount ?? 0,
-      currency: dto.currency,
+      currency: dto.currency ?? Currency.YER,
       note: dto.note,
       distanceKm: Math.round(distanceKm * 100) / 100,
       status: 'OFFERED',
