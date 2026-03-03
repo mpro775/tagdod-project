@@ -12,7 +12,7 @@ import { Types } from 'mongoose';
 export class DateTimezoneInterceptor implements NestInterceptor {
   /**
    * Convert a date to Yemen timezone ISO string
-   * Returns the date as ISO string with Yemen timezone offset (+03:00)
+   * Returns the date as Yemen local datetime string without timezone offset
    */
   private convertDateToYemenTime(date: Date | string | number): string {
     if (!date) return null as any;
@@ -49,10 +49,10 @@ export class DateTimezoneInterceptor implements NestInterceptor {
     // Get milliseconds from original date (milliseconds don't change with timezone)
     const milliseconds = dateObj.getMilliseconds().toString().padStart(3, '0');
 
-    // Return as ISO string with Yemen timezone offset (+03:00)
-    // Format: YYYY-MM-DDTHH:mm:ss.SSS+03:00
-    // Note: This represents the same moment in time but displayed in Yemen local time
-    return `${year}-${month}-${day}T${hour}:${minute}:${second}.${milliseconds}+03:00`;
+    // Return as local datetime string (without offset) to avoid client-side
+    // re-conversion when parsing timestamps that already represent Yemen local time.
+    // Format: YYYY-MM-DDTHH:mm:ss.SSS
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}.${milliseconds}`;
   }
 
   /**
