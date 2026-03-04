@@ -12,11 +12,15 @@ import {
   ListItemButton,
   ListItemText,
   useScrollTrigger,
+  useTheme,
 } from "@mui/material";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
 import logoImage from "../assets/images/logo.png";
+import { useThemeContext } from "../theme/ThemeContext";
 
 const navLinks = [
   { title: "الرئيسية", path: "/" },
@@ -27,6 +31,11 @@ const navLinks = [
 
 const Navbar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { mode, toggleColorMode } = useThemeContext();
+  const theme = useTheme();
+  const location = useLocation();
+  const isDark = theme.palette.mode === "dark";
+  const isHomePage = location.pathname === "/";
 
   const trigger = useScrollTrigger({
     disableHysteresis: true,
@@ -48,18 +57,32 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const isSolidNavbar = trigger || !isHomePage;
+  const appBarBackground = isSolidNavbar
+    ? isDark
+      ? "rgba(15, 23, 35, 0.9)"
+      : "rgba(255, 255, 255, 0.94)"
+    : "transparent";
+  const navTextColor = isDark
+    ? isSolidNavbar
+      ? "text.primary"
+      : "white"
+    : "text.primary";
+
   return (
     <>
       <AppBar
         position="fixed"
         elevation={trigger ? 2 : 0}
         sx={{
-          background: trigger
-            ? "rgba(255, 255, 255, 0.95)"
-            : "transparent",
-          backdropFilter: trigger ? "blur(20px)" : "none",
+          background: appBarBackground,
+          backdropFilter: isSolidNavbar ? "blur(20px)" : "none",
           transition: "all 0.3s ease",
-          borderBottom: trigger ? "1px solid rgba(26, 139, 194, 0.1)" : "none",
+          borderBottom: isSolidNavbar
+            ? isDark
+              ? "1px solid rgba(255, 255, 255, 0.08)"
+              : "1px solid rgba(26, 139, 194, 0.12)"
+            : "none",
         }}
       >
         <Container maxWidth="lg">
@@ -111,7 +134,7 @@ const Navbar: React.FC = () => {
                   to={link.path.includes("#") ? undefined : link.path}
                   onClick={() => handleNavClick(link.path)}
                   sx={{
-                    color: trigger ? "text.primary" : "white",
+                    color: navTextColor,
                     fontWeight: 500,
                     fontSize: "0.95rem",
                     px: 2,
@@ -132,9 +155,13 @@ const Navbar: React.FC = () => {
                       transition: "transform 0.3s ease",
                     },
                     "&:hover": {
-                      bgcolor: trigger
-                        ? "rgba(26, 139, 194, 0.08)"
-                        : "rgba(255, 255, 255, 0.1)",
+                      bgcolor: isSolidNavbar
+                        ? isDark
+                          ? "rgba(255, 255, 255, 0.08)"
+                          : "rgba(26, 139, 194, 0.08)"
+                        : isDark
+                          ? "rgba(255, 255, 255, 0.12)"
+                          : "rgba(26, 139, 194, 0.08)",
                       "&::after": {
                         transform: "translateX(-50%) scaleX(1)",
                       },
@@ -144,6 +171,15 @@ const Navbar: React.FC = () => {
                   {link.title}
                 </Button>
               ))}
+              <IconButton 
+                onClick={toggleColorMode} 
+                sx={{ 
+                  color: navTextColor,
+                  mr: 1 
+                }}
+              >
+                {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+              </IconButton>
               <Button
                 variant="contained"
                 href="#download"
@@ -177,10 +213,22 @@ const Navbar: React.FC = () => {
               onClick={handleDrawerToggle}
               sx={{
                 display: { md: "none" },
-                color: trigger ? "primary.main" : "white",
-                bgcolor: trigger ? "rgba(26, 139, 194, 0.08)" : "rgba(255, 255, 255, 0.1)",
+                color: isSolidNavbar ? "primary.main" : "white",
+                bgcolor: isSolidNavbar
+                  ? isDark
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "rgba(26, 139, 194, 0.08)"
+                  : isDark
+                    ? "rgba(255, 255, 255, 0.12)"
+                    : "rgba(26, 139, 194, 0.08)",
                 "&:hover": {
-                  bgcolor: trigger ? "rgba(26, 139, 194, 0.15)" : "rgba(255, 255, 255, 0.2)",
+                  bgcolor: isSolidNavbar
+                    ? isDark
+                      ? "rgba(255, 255, 255, 0.16)"
+                      : "rgba(26, 139, 194, 0.15)"
+                    : isDark
+                      ? "rgba(255, 255, 255, 0.2)"
+                      : "rgba(26, 139, 194, 0.15)",
                 },
               }}
             >
@@ -200,7 +248,10 @@ const Navbar: React.FC = () => {
           "& .MuiDrawer-paper": {
             boxSizing: "border-box",
             width: 280,
-            background: "linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)",
+            background: isDark
+              ? "linear-gradient(180deg, #121822 0%, #0f1723 100%)"
+              : "linear-gradient(180deg, #f7fbff 0%, #edf5fc 100%)",
+            color: isDark ? "#ffffff" : theme.palette.text.primary,
           },
         }}
       >
@@ -220,12 +271,17 @@ const Navbar: React.FC = () => {
               alt="تجدد"
               sx={{ height: 40 }}
             />
-            <IconButton
-              onClick={handleDrawerToggle}
-              sx={{ color: "white" }}
-            >
-              <CloseIcon />
-            </IconButton>
+            <Box>
+              <IconButton onClick={toggleColorMode} sx={{ color: "inherit", mr: 1 }}>
+                {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+              </IconButton>
+              <IconButton
+                onClick={handleDrawerToggle}
+                sx={{ color: "inherit" }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
           </Box>
 
           {/* Drawer Links */}
@@ -239,9 +295,9 @@ const Navbar: React.FC = () => {
                   sx={{
                     borderRadius: 2,
                     mb: 1,
-                    color: "white",
+                    color: "inherit",
                     "&:hover": {
-                      bgcolor: "rgba(26, 139, 194, 0.2)",
+                      bgcolor: isDark ? "rgba(26, 139, 194, 0.2)" : "rgba(26, 139, 194, 0.08)",
                     },
                   }}
                 >

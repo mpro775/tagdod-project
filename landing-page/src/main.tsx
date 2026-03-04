@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { lightTheme } from './theme/theme';
+import { CssBaseline } from '@mui/material';
+import { ThemeContextProvider } from './theme/ThemeContext';
 import App from './App';
 import './index.css';
 
@@ -11,11 +11,11 @@ document.dir = 'rtl';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider theme={lightTheme}>
+    <ThemeContextProvider>
       <CssBaseline />
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    </ThemeProvider>
+    </ThemeContextProvider>
   </React.StrictMode>,
 );

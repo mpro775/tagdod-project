@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Container, Typography, Grid, Paper, Avatar } from '@mui/material';
+import { Box, Container, Typography, Grid, Paper, Avatar, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
@@ -69,12 +69,15 @@ const itemVariants = {
 };
 
 const Features: React.FC = () => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   return (
     <Box
       id="features"
       sx={{
         py: { xs: 10, md: 14 },
-        bgcolor: '#fafafa',
+        bgcolor: 'background.default',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -134,7 +137,9 @@ const Features: React.FC = () => {
             sx={{
               fontWeight: 800,
               mb: 2,
-              background: 'linear-gradient(135deg, #1a1a2e 0%, #1A8BC2 100%)',
+              background: isDark 
+                ? 'linear-gradient(135deg, #ffffff 0%, #4DB8E6 100%)' 
+                : 'linear-gradient(135deg, #1a1a2e 0%, #1A8BC2 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
@@ -178,9 +183,9 @@ const Features: React.FC = () => {
                   p: 4,
                   height: '100%',
                   borderRadius: 4,
-                  bgcolor: 'white',
+                  bgcolor: 'background.paper',
                   border: '1px solid',
-                  borderColor: 'rgba(0, 0, 0, 0.06)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
                   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   cursor: 'pointer',
                   position: 'relative',
@@ -198,7 +203,7 @@ const Features: React.FC = () => {
                   },
                   '&:hover': {
                     transform: 'translateY(-8px)',
-                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+                    boxShadow: isDark ? '0 20px 40px rgba(0, 0, 0, 0.4)' : '0 20px 40px rgba(0, 0, 0, 0.1)',
                     borderColor: 'transparent',
                     '&::before': {
                       opacity: 1,
@@ -227,7 +232,7 @@ const Features: React.FC = () => {
                   variant="h5"
                   fontWeight={700}
                   gutterBottom
-                  sx={{ color: '#1a1a2e' }}
+                  sx={{ color: 'text.primary' }}
                 >
                   {feature.title}
                 </Typography>

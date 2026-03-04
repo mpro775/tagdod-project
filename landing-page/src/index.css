@@ -28,6 +28,12 @@
   --glass-border: rgba(255, 255, 255, 0.2);
   --glass-shadow: 0 8px 32px rgba(26, 139, 194, 0.15);
 
+  /* Semantic Surface Colors */
+  --page-bg: #ffffff;
+  --page-text: #0f172a;
+  --page-muted: #5f6b7a;
+  --scrollbar-track: #eef3f7;
+
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -39,6 +45,24 @@
   --transition-fast: 0.2s ease;
   --transition-normal: 0.3s ease;
   --transition-slow: 0.5s ease;
+}
+
+/* Dark Mode Variables */
+[data-theme='dark'] {
+  --glass-bg: rgba(30, 30, 30, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  --page-bg: #121212;
+  --page-text: #f2f5f9;
+  --page-muted: #a2adbb;
+  --scrollbar-track: #1b232f;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-primary: 0 4px 20px rgba(26, 139, 194, 0.5);
+  --shadow-secondary: 0 4px 20px rgba(144, 238, 144, 0.2);
 }
 
 /* Global Reset and Base Styles */
@@ -61,10 +85,11 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--tagadodo-white);
-  color: var(--tagadodo-dark);
   line-height: 1.6;
   direction: rtl;
+  background-color: var(--page-bg);
+  color: var(--page-text);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* Smooth Scrollbar */
@@ -73,7 +98,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--tagadodo-light);
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {

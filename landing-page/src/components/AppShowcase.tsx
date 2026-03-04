@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Container, Typography, Grid, Paper } from '@mui/material';
+import { Box, Container, Typography, Grid, Paper, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import SearchIcon from '@mui/icons-material/Search';
@@ -35,12 +35,15 @@ const steps = [
 ];
 
 const AppShowcase: React.FC = () => {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+
     return (
         <Box
             id="about"
             sx={{
                 py: { xs: 10, md: 14 },
-                bgcolor: 'white',
+                bgcolor: 'background.default',
                 position: 'relative',
                 overflow: 'hidden',
             }}
@@ -191,7 +194,7 @@ const AppShowcase: React.FC = () => {
                                 component="h2"
                                 sx={{
                                     fontWeight: 800,
-                                    color: '#1a1a2e',
+                                    color: 'text.primary',
                                     mb: 2,
                                 }}
                             >
@@ -219,12 +222,13 @@ const AppShowcase: React.FC = () => {
                                             sx={{
                                                 p: 3,
                                                 borderRadius: 3,
-                                                bgcolor: '#fafafa',
-                                                border: '1px solid rgba(0,0,0,0.06)',
+                                                bgcolor: 'background.paper',
+                                                border: '1px solid',
+                                                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                                                 transition: 'all 0.3s ease',
                                                 '&:hover': {
-                                                    bgcolor: 'white',
-                                                    boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                                                    bgcolor: isDark ? 'background.default' : 'white',
+                                                    boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.4)' : '0 10px 30px rgba(0,0,0,0.08)',
                                                     transform: 'translateY(-4px)',
                                                 },
                                             }}
@@ -260,7 +264,7 @@ const AppShowcase: React.FC = () => {
                                                         variant="h6"
                                                         sx={{
                                                             fontWeight: 700,
-                                                            color: '#1a1a2e',
+                                                            color: 'text.primary',
                                                             mb: 0.5,
                                                             fontSize: '1rem',
                                                         }}
