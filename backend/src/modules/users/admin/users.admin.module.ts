@@ -13,6 +13,7 @@ import { AuthModule } from '../../auth/auth.module';
 import { SharedModule } from '../../../shared/shared.module';
 import { NotificationsCompleteModule } from '../../notifications/notifications-complete.module';
 import { ExchangeRatesModule } from '../../exchange-rates/exchange-rates.module';
+import { UploadModule } from '../../upload/upload.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ExchangeRatesModule } from '../../exchange-rates/exchange-rates.module'
     ]),
     AuthModule,
     SharedModule,
+    UploadModule,
     forwardRef(() => NotificationsCompleteModule),
     ExchangeRatesModule,
   ],

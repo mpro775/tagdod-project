@@ -13,12 +13,24 @@ import {
   Logger,
   Inject,
   forwardRef,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, FilterQuery, SortOrder } from 'mongoose';
 import { hash } from 'bcrypt';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
@@ -50,6 +62,7 @@ import {
   NotificationPriority,
   NotificationCategory,
 } from '../../notifications/enums/notification.enums';
+import { UploadService } from '../../upload/upload.service';
 
 @ApiTags('إدارة-المستخدمين')
 @ApiBearerAuth()
@@ -64,6 +77,7 @@ export class UsersAdminController {
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
     private auditService: AuditService,
     private engineerProfileService: EngineerProfileService,
+    private uploadService: UploadService,
     @Inject(forwardRef(() => NotificationService))
     private notificationService?: NotificationService,
   ) {}
@@ -1567,6 +1581,197 @@ export class UsersAdminController {
         merchantStatus: user.merchant_status,
         createdAt: userWithTimestamps.createdAt,
         updatedAt: userWithTimestamps.updatedAt,
+      },
+    };
+  }
+
+  // ==================== رفع ملفات التحقق (بدون اعتماد مباشر) ====================
+  @RequirePermissions('upload.manage', 'admin.access')
+  @Post('verification/:userId/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'رفع ملف التحقق من قبل الأدمن',
+    description:
+      'رفع CV للمهندس أو صورة المحل للتاجر وتحديث الحالة تلقائياً إلى PENDING بدون اعتماد مباشر',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['verificationType', 'file'],
+      properties: {
+        verificationType: {
+          type: 'string',
+          enum: ['engineer', 'merchant'],
+          description: 'نوع التحقق المستهدف',
+        },
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'CV للمهندس أو صورة المحل للتاجر',
+        },
+        storeName: {
+          type: 'string',
+          description: 'اسم المحل (اختياري للتاجر)',
+        },
+        note: {
+          type: 'string',
+          description: 'ملاحظة تحقق اختيارية',
+        },
+      },
+    },
+  })
+  async uploadVerificationFile(
+    @Param('userId') userId: string,
+    @UploadedFile() file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    @Body() body: { verificationType: 'engineer' | 'merchant'; storeName?: string; note?: string },
+    @Req() req: { user: { sub: string } } & Request,
+  ) {
+    if (!file) {
+      throw new BadRequestException('الملف مطلوب');
+    }
+
+    const verificationType = body?.verificationType;
+    if (verificationType !== 'engineer' && verificationType !== 'merchant') {
+      throw new BadRequestException('نوع التحقق غير صالح');
+    }
+
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new UserNotFoundException({ userId });
+    }
+
+    const oldValues: Record<string, unknown> = {};
+    const newValues: Record<string, unknown> = {};
+
+    if (verificationType === 'engineer') {
+      const allowedCvTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+
+      if (!allowedCvTypes.includes(file.mimetype)) {
+        throw new BadRequestException('صيغة ملف السيرة الذاتية غير مدعومة');
+      }
+
+      const uploaded = await this.uploadService.uploadFile(file, 'users/verification/engineers/cv');
+
+      let profile = await this.engineerProfileModel.findOne({ userId: user._id });
+      if (!profile) {
+        profile = await this.engineerProfileService.createProfile(userId);
+      }
+
+      oldValues.cvFileUrl = profile.cvFileUrl;
+      profile.cvFileUrl = uploaded.url;
+      await profile.save();
+
+      oldValues.engineer_status = user.engineer_status;
+      oldValues.engineer_capable = user.engineer_capable;
+      user.engineer_status = CapabilityStatus.PENDING;
+      user.engineer_capable = true;
+      if (!user.roles.includes(UserRole.ENGINEER)) {
+        user.roles.push(UserRole.ENGINEER);
+      }
+
+      newValues.cvFileUrl = uploaded.url;
+      newValues.engineer_status = user.engineer_status;
+      newValues.engineer_capable = user.engineer_capable;
+    }
+
+    if (verificationType === 'merchant') {
+      const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedImageTypes.includes(file.mimetype)) {
+        throw new BadRequestException('صيغة صورة المحل غير مدعومة');
+      }
+
+      const uploaded = await this.uploadService.uploadFile(file, 'users/verification/merchants/store');
+
+      oldValues.storePhotoUrl = user.storePhotoUrl;
+      oldValues.storeName = user.storeName;
+      oldValues.merchant_status = user.merchant_status;
+      oldValues.merchant_capable = user.merchant_capable;
+
+      user.storePhotoUrl = uploaded.url;
+      if (body.storeName) {
+        user.storeName = body.storeName;
+      }
+      user.merchant_status = CapabilityStatus.PENDING;
+      user.merchant_capable = true;
+      if (!user.roles.includes(UserRole.MERCHANT)) {
+        user.roles.push(UserRole.MERCHANT);
+      }
+
+      newValues.storePhotoUrl = user.storePhotoUrl;
+      newValues.storeName = user.storeName;
+      newValues.merchant_status = user.merchant_status;
+      newValues.merchant_capable = user.merchant_capable;
+    }
+
+    if (body.note) {
+      oldValues.verificationNote = user.verificationNote;
+      user.verificationNote = body.note;
+      newValues.verificationNote = user.verificationNote;
+    }
+
+    await user.save();
+
+    const caps = await this.capsModel.findOne({ userId });
+    if (caps) {
+      if (verificationType === 'engineer') {
+        caps.engineer_status = CapabilityStatus.PENDING;
+        caps.engineer_capable = true;
+      }
+      if (verificationType === 'merchant') {
+        caps.merchant_status = CapabilityStatus.PENDING;
+        caps.merchant_capable = true;
+      }
+      await caps.save();
+    }
+
+    this.auditService
+      .logUserEvent({
+        userId,
+        action: 'updated',
+        performedBy: req.user.sub,
+        oldValues,
+        newValues,
+        reason: `رفع ملف تحقق (${verificationType}) من قبل الأدمن`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log verification upload', err));
+
+    if (this.notificationService) {
+      const typeLabel = verificationType === 'engineer' ? 'مهندس' : 'تاجر';
+      try {
+        await this.notificationService.createNotification({
+          recipientId: userId,
+          type: NotificationType.VERIFICATION_REQUEST_PENDING,
+          title: 'تم رفع مستندات التحقق',
+          message: `تم رفع مستندات التحقق الخاصة بك كـ ${typeLabel} وهي الآن قيد المراجعة.`,
+          messageEn: `Your ${verificationType} verification documents were uploaded and are now pending review.`,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.MEDIUM,
+          category: NotificationCategory.ACCOUNT,
+          data: {
+            verificationType,
+            uploadedByAdmin: true,
+          },
+          isSystemGenerated: true,
+        });
+      } catch (err) {
+        this.logger.error('Failed to send verification pending notification', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'تم رفع الملف وتحويل الحالة إلى قيد المراجعة',
+      data: {
+        userId,
+        verificationType,
+        status: 'pending',
       },
     };
   }

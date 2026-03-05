@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,9 +22,10 @@ import {
   VerifiedUser,
   Store,
   Visibility,
+  UploadFile,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { useUser, useCreateUser, useUpdateUser } from '../hooks/useUsers';
+import { useUser, useCreateUser, useUpdateUser, useUploadVerificationFile } from '../hooks/useUsers';
 import { UserRole, UserStatus, CapabilityStatus, getPrimaryRole } from '../types/user.types';
 import { useAuthStore } from '@/store/authStore';
 import { createUserFormSchema, type UserFormData } from '../schemas/userFormSchema';
@@ -37,6 +38,7 @@ import { ResetPasswordDialog } from '../components/ResetPasswordDialog';
 import { StatusControlDialog } from '../components/StatusControlDialog';
 import { EngineerDetailsDialog } from '@/features/services/components/EngineerDetailsDialog';
 import { mapCityToArabic } from '@/shared/utils/cityMapper';
+import { PERMISSIONS } from '@/shared/constants/permissions';
 import '../styles/responsive-users.css';
 
 export const UserFormPage: React.FC = () => {
@@ -53,6 +55,8 @@ export const UserFormPage: React.FC = () => {
   const [engineerStatusOpen, setEngineerStatusOpen] = useState(false);
   const [merchantStatusOpen, setMerchantStatusOpen] = useState(false);
   const [engineerProfileDialogOpen, setEngineerProfileDialogOpen] = useState(false);
+  const engineerCvInputRef = useRef<HTMLInputElement | null>(null);
+  const merchantStoreImageInputRef = useRef<HTMLInputElement | null>(null);
 
   // Form
   const schema = createUserFormSchema(t);
@@ -154,7 +158,10 @@ export const UserFormPage: React.FC = () => {
   const { data: user, isLoading } = useUser(id!);
   const { mutate: createUser, isPending: isCreating } = useCreateUser();
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
+  const { mutate: uploadVerificationFile, isPending: isUploadingVerificationFile } =
+    useUploadVerificationFile();
   const userCapabilities = user?.capabilities;
+  const canUploadVerificationFile = hasPermission(PERMISSIONS.UPLOAD_MANAGE);
 
   // Load user data in edit mode
   useEffect(() => {
@@ -276,6 +283,40 @@ export const UserFormPage: React.FC = () => {
         }
       );
     }
+  };
+
+  const handleUploadEngineerCv = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!selectedFile || !id) {
+      return;
+    }
+
+    uploadVerificationFile({
+      userId: id,
+      data: {
+        verificationType: 'engineer',
+        file: selectedFile,
+      },
+    });
+  };
+
+  const handleUploadMerchantStoreImage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!selectedFile || !id) {
+      return;
+    }
+
+    uploadVerificationFile({
+      userId: id,
+      data: {
+        verificationType: 'merchant',
+        file: selectedFile,
+      },
+    });
   };
 
   if (isEditMode && isLoading) {
@@ -403,6 +444,21 @@ export const UserFormPage: React.FC = () => {
                   </Typography>
 
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                    <input
+                      ref={engineerCvInputRef}
+                      type="file"
+                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      style={{ display: 'none' }}
+                      onChange={handleUploadEngineerCv}
+                    />
+                    <input
+                      ref={merchantStoreImageInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      style={{ display: 'none' }}
+                      onChange={handleUploadMerchantStoreImage}
+                    />
+
                     {/* Reset Password Button */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                       <Button
@@ -440,6 +496,18 @@ export const UserFormPage: React.FC = () => {
                         >
                           {t('users:actions.manageEngineerStatus', 'إدارة حالة المهندس')}
                         </Button>
+                        {canUploadVerificationFile && (
+                          <Button
+                            variant="outlined"
+                            color="secondary"
+                            startIcon={<UploadFile />}
+                            onClick={() => engineerCvInputRef.current?.click()}
+                            size="small"
+                            disabled={isUploadingVerificationFile}
+                          >
+                            {t('users:actions.uploadEngineerCv', 'رفع السيرة الذاتية')}
+                          </Button>
+                        )}
                         <Chip
                           label={getStatusLabel(
                             userCapabilities?.engineer_status || CapabilityStatus.NONE
@@ -467,6 +535,18 @@ export const UserFormPage: React.FC = () => {
                         >
                           {t('users:actions.manageMerchantStatus', 'إدارة حالة التاجر')}
                         </Button>
+                        {canUploadVerificationFile && (
+                          <Button
+                            variant="outlined"
+                            color="secondary"
+                            startIcon={<UploadFile />}
+                            onClick={() => merchantStoreImageInputRef.current?.click()}
+                            size="small"
+                            disabled={isUploadingVerificationFile}
+                          >
+                            {t('users:actions.uploadMerchantStorePhoto', 'رفع صورة المحل')}
+                          </Button>
+                        )}
                         <Chip
                           label={getStatusLabel(
                             userCapabilities?.merchant_status || CapabilityStatus.NONE

@@ -206,6 +206,23 @@ export interface ApproveVerificationDto {
   reason?: string;
 }
 
+export interface UploadVerificationFileDto {
+  verificationType: 'engineer' | 'merchant';
+  file: File;
+  storeName?: string;
+  note?: string;
+}
+
+export interface UploadVerificationFileResponse {
+  success: boolean;
+  message: string;
+  data: {
+    userId: string;
+    verificationType: 'engineer' | 'merchant';
+    status: 'pending';
+  };
+}
+
 // Engineer Profile Types
 export interface EngineerRating {
   score: number; // 1-5

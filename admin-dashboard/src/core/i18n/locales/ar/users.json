@@ -42,7 +42,9 @@
     "resetPassword": "إعادة تعيين كلمة المرور",
     "viewEngineerProfile": "عرض البروفايل",
     "manageEngineerStatus": "إدارة حالة المهندس",
-    "manageMerchantStatus": "إدارة حالة التاجر"
+    "manageMerchantStatus": "إدارة حالة التاجر",
+    "uploadEngineerCv": "رفع السيرة الذاتية",
+    "uploadMerchantStorePhoto": "رفع صورة المحل"
   },
   "dialog": {
     "delete": {

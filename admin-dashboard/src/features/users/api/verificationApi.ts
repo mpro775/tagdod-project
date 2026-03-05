@@ -4,6 +4,8 @@ import type {
   VerificationRequest,
   VerificationDetails,
   ApproveVerificationDto,
+  UploadVerificationFileDto,
+  UploadVerificationFileResponse,
 } from '../types/user.types';
 
 export const verificationApi = {
@@ -78,6 +80,36 @@ export const verificationApi = {
         reason?: string;
       };
     }>>(`/admin/users/verification/${userId}/reject`, rejectData);
+    return data.data;
+  },
+
+  /**
+   * رفع ملف تحقق بواسطة الأدمن (بدون اعتماد مباشر)
+   */
+  uploadVerificationFile: async (
+    userId: string,
+    payload: UploadVerificationFileDto,
+  ): Promise<UploadVerificationFileResponse> => {
+    const formData = new FormData();
+    formData.append('verificationType', payload.verificationType);
+    formData.append('file', payload.file);
+    if (payload.storeName) {
+      formData.append('storeName', payload.storeName);
+    }
+    if (payload.note) {
+      formData.append('note', payload.note);
+    }
+
+    const { data } = await apiClient.post<ApiResponse<UploadVerificationFileResponse>>(
+      `/admin/users/verification/${userId}/upload`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
+
     return data.data;
   },
 };

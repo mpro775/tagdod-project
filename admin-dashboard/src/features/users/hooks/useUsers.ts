@@ -10,6 +10,7 @@ import type {
   SuspendUserDto,
   ListDeletedUsersParams,
   ApproveVerificationDto,
+  UploadVerificationFileDto,
 } from '../types/user.types';
 
 // Query Keys
@@ -248,6 +249,23 @@ export const useRejectVerification = () => {
     onSuccess: () => {
       toast.success('تم رفض التحقق بنجاح');
       queryClient.invalidateQueries({ queryKey: [VERIFICATION_KEY] });
+      queryClient.invalidateQueries({ queryKey: [USERS_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// Upload verification file (admin, no direct approval)
+export const useUploadVerificationFile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: UploadVerificationFileDto }) =>
+      verificationApi.uploadVerificationFile(userId, data),
+    onSuccess: (_data, variables) => {
+      toast.success('تم رفع الملف وتحويل الحالة إلى قيد المراجعة');
+      queryClient.invalidateQueries({ queryKey: [VERIFICATION_KEY] });
+      queryClient.invalidateQueries({ queryKey: [USERS_KEY, variables.userId] });
       queryClient.invalidateQueries({ queryKey: [USERS_KEY] });
     },
     onError: ErrorHandler.showError,
