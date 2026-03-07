@@ -889,20 +889,13 @@ export class UsersAdminController {
 
     await this.capsModel.create(capsData);
 
-    // إنشاء بروفايل المهندس إذا كان مهندساً
-    if (dto.capabilityRequest === 'engineer' && dto.jobTitle) {
-      await this.engineerProfileModel.create({
-        userId: user._id,
-        jobTitle: dto.jobTitle,
-        ratings: [],
-        totalRatings: 0,
-        averageRating: 0,
-        ratingDistribution: [0, 0, 0, 0, 0],
-        totalCompletedServices: 0,
-        totalEarnings: 0,
-        walletBalance: 0,
-        commissionTransactions: [],
-      });
+    // إنشاء بروفايل المهندس إذا كان مهندساً (حتى بدون jobTitle)
+    if (dto.capabilityRequest === 'engineer') {
+      const profile = await this.engineerProfileService.createProfile(user._id.toString());
+      if (dto.jobTitle) {
+        profile.jobTitle = dto.jobTitle;
+        await profile.save();
+      }
     }
 
     // تسجيل حدث إنشاء المستخدم
@@ -1842,23 +1835,24 @@ export class UsersAdminController {
         caps.engineer_status = CapabilityStatus.APPROVED;
         caps.engineer_capable = true;
         await caps.save();
-
-        // إنشاء بروفايل المهندس تلقائياً عند الموافقة
-        const existingProfile = await this.engineerProfileModel.findOne({ userId });
-        if (!existingProfile) {
-          try {
-            await this.engineerProfileService.createProfile(userId);
-            this.logger.log(`Created engineer profile for approved user ${userId}`);
-          } catch (error) {
-            this.logger.error(`Failed to create engineer profile for user ${userId}:`, error);
-            // لا نرمي خطأ هنا لأن الموافقة تمت بنجاح، فقط نسجل الخطأ
-          }
-        }
       }
       if (isMerchantPending) {
         caps.merchant_status = CapabilityStatus.APPROVED;
         caps.merchant_capable = true;
         await caps.save();
+      }
+    }
+
+    // إنشاء بروفايل المهندس تلقائياً عند الموافقة (حتى لو لم يكن caps موجوداً)
+    if (isEngineerPending) {
+      const existingProfile = await this.engineerProfileModel.findOne({ userId });
+      if (!existingProfile) {
+        try {
+          await this.engineerProfileService.createProfile(userId);
+          this.logger.log(`Created engineer profile for approved user ${userId}`);
+        } catch (error) {
+          this.logger.error(`Failed to create engineer profile for user ${userId}:`, error);
+        }
       }
     }
 
@@ -2110,6 +2104,19 @@ export class UsersAdminController {
       caps.engineer_status = user.engineer_status;
       caps.engineer_capable = user.engineer_capable;
       await caps.save();
+    }
+
+    // إنشاء بروفايل المهندس تلقائياً عند تغيير الحالة إلى APPROVED
+    if (dto.status === CapabilityStatus.APPROVED) {
+      const existingProfile = await this.engineerProfileModel.findOne({ userId: user._id });
+      if (!existingProfile) {
+        try {
+          await this.engineerProfileService.createProfile(userId);
+          this.logger.log(`Created engineer profile for user ${userId} (engineer-status approved)`);
+        } catch (error) {
+          this.logger.error(`Failed to create engineer profile for user ${userId}:`, error);
+        }
+      }
     }
 
     return {
