@@ -12,7 +12,11 @@
  * المتطلبات: MONGO_URI في .env أو متغير البيئة
  */
 
-const mongoose = require('mongoose');
+const path = require('path');
+
+// تحميل mongoose من node_modules في مجلد backend (يعمل داخل Docker/الحاوية)
+const backendDir = path.resolve(__dirname, '..');
+const mongoose = require(path.join(backendDir, 'node_modules', 'mongoose'));
 
 // تحميل .env إن وجد
 try {

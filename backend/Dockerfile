@@ -70,6 +70,9 @@ RUN npm install --only=production && npm cache clean --force
 # نسخ الملفات المبنية من مرحلة build
 COPY --from=build /app/dist ./dist
 
+# نسخ سكربتات الصيانة (repair:engineer-profiles وغيرها)
+COPY --from=build /app/scripts ./scripts
+
 # نسخ assets
 RUN mkdir -p /app/assets
 COPY --from=build /app/assets /app/assets
