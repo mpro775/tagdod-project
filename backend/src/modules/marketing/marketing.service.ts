@@ -772,9 +772,9 @@ export class MarketingService {
         }
       }
 
-      // Check usage limit per user (for engineer coupons)
-      // ملاحظة: هذا ينطبق على جميع المستخدمين بما في ذلك المهندس المالك
-      if (coupon.usageLimitPerUser && coupon.engineerId) {
+      // Check usage limit per user when enabled for this coupon
+      // ملاحظة: هذا ينطبق على جميع أنواع الكوبونات
+      if (coupon.usageLimitPerUser) {
         const userUsageCount =
           coupon.usageHistory?.filter((usage) => String(usage.userId) === userId).length || 0;
 
@@ -962,15 +962,26 @@ export class MarketingService {
       deletedAt: null,
     });
 
-    if (!coupon || !coupon.engineerId || !coupon.commissionRate) {
-      return null; // ليس كوبون مهندس
+    if (!coupon) {
+      return null;
     }
 
-    // حساب العمولة (نسبة من إجمالي قيمة الطلب الأصلي)
-    const commissionAmount = (params.orderTotal * coupon.commissionRate) / 100;
+    coupon.usageHistory = coupon.usageHistory || [];
+
+    const alreadyRecorded = coupon.usageHistory.some(
+      (usage) =>
+        String(usage.orderId) === params.orderId && String(usage.userId) === params.userId,
+    );
+
+    if (alreadyRecorded) {
+      return null;
+    }
+
+    const isEngineerCoupon = !!coupon.engineerId;
+    const commissionRate = isEngineerCoupon ? coupon.commissionRate || 0 : 0;
+    const commissionAmount = (params.orderTotal * commissionRate) / 100;
 
     // تحديث سجل الاستخدام
-    coupon.usageHistory = coupon.usageHistory || [];
     coupon.usageHistory.push({
       orderId: new Types.ObjectId(params.orderId),
       userId: new Types.ObjectId(params.userId),
@@ -987,6 +998,10 @@ export class MarketingService {
     coupon.totalRevenue = (coupon.totalRevenue || 0) + params.orderTotal;
 
     await coupon.save();
+
+    if (!isEngineerCoupon || !coupon.commissionRate) {
+      return null;
+    }
 
     return {
       commissionAmount,

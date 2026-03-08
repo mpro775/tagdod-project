@@ -4097,6 +4097,20 @@ export class OrderService {
     );
   }
 
+  private invalidateCouponValidationCache(userId: string, couponCode?: string): void {
+    const normalizedCode = couponCode?.trim().toUpperCase();
+    const prefix = normalizedCode ? `${userId}:${normalizedCode}:` : `${userId}:`;
+    const keysToDelete: string[] = [];
+
+    for (const key of this.couponValidationCache.keys()) {
+      if (key.startsWith(prefix)) {
+        keysToDelete.push(key);
+      }
+    }
+
+    keysToDelete.forEach((key) => this.couponValidationCache.delete(key));
+  }
+
   async adminRestoreCancelledOrder(
     orderId: string,
     adminId: string,
@@ -5402,6 +5416,8 @@ export class OrderService {
                 discountAmount: couponInfo.discount,
                 orderTotal: order.subtotal, // الإجمالي الأصلي قبل الخصم
               });
+
+              this.invalidateCouponValidationCache(String(order.userId), couponCode);
 
               if (commissionResult) {
                 // إضافة العمولة لرصيد المهندس
