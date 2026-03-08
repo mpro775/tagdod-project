@@ -205,8 +205,8 @@ export const CouponFormPage: React.FC = () => {
         const today = new Date().toISOString().split('T')[0];
         setValue('validFrom', today);
         setValue('validUntil', '');
-        setValue('usageLimit', undefined);
-        setValue('usageLimitPerUser', undefined);
+        setValue('usageLimit', 0);
+        setValue('usageLimitPerUser', 0);
         setValue('type', 'percentage');
         setValue('appliesTo', 'all_products');
         setValue('applicableProductIds', []);
@@ -243,8 +243,8 @@ export const CouponFormPage: React.FC = () => {
           commissionRate: formData.commissionRate!, // Commission rate is entered manually
           type: formData.type || 'percentage',
           discountValue: formData.discountValue!,
-          usageLimit: undefined, // No limits for engineer coupons
-          usageLimitPerUser: undefined, // No limits for engineer coupons
+          usageLimit: formData.usageLimit,
+          usageLimitPerUser: formData.usageLimitPerUser,
           validFrom: formData.validFrom || new Date().toISOString(),
           validUntil: undefined, // Unlimited for engineer coupons
           minimumOrderAmount: formData.minimumOrderAmount,
@@ -763,61 +763,59 @@ export const CouponFormPage: React.FC = () => {
             )}
 
             {/* Usage Limits */}
-            {!isEngineerCoupon && (
-              <>
-                <Grid size={{ xs: 12 }}>
-                  <Typography
-                    variant="h6"
-                    gutterBottom
-                    sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
-                  >
-                    {t('form.usageLimits')}
-                  </Typography>
-                </Grid>
+            <>
+              <Grid size={{ xs: 12 }}>
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                >
+                  {t('form.usageLimits')}
+                </Typography>
+              </Grid>
 
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Controller
-                    name="usageLimit"
-                    control={control}
-                    rules={{
-                      min: { value: 0, message: t('validation.usageLimitMin') },
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        label={t('form.usageLimit')}
-                        type="number"
-                        error={!!error}
-                        helperText={error?.message}
-                        fullWidth
-                        size={isMobile ? 'small' : 'medium'}
-                      />
-                    )}
-                  />
-                </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="usageLimit"
+                  control={control}
+                  rules={{
+                    min: { value: 0, message: t('validation.usageLimitMin') },
+                  }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      label={t('form.usageLimit')}
+                      type="number"
+                      error={!!error}
+                      helperText={error?.message}
+                      fullWidth
+                      size={isMobile ? 'small' : 'medium'}
+                    />
+                  )}
+                />
+              </Grid>
 
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Controller
-                    name="usageLimitPerUser"
-                    control={control}
-                    rules={{
-                      min: { value: 0, message: t('validation.usageLimitPerUserMin') },
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <TextField
-                        {...field}
-                        label={t('form.usageLimitPerUser')}
-                        type="number"
-                        error={!!error}
-                        helperText={error?.message}
-                        fullWidth
-                        size={isMobile ? 'small' : 'medium'}
-                      />
-                    )}
-                  />
-                </Grid>
-              </>
-            )}
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="usageLimitPerUser"
+                  control={control}
+                  rules={{
+                    min: { value: 0, message: t('validation.usageLimitPerUserMin') },
+                  }}
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      label={t('form.usageLimitPerUser')}
+                      type="number"
+                      error={!!error}
+                      helperText={error?.message}
+                      fullWidth
+                      size={isMobile ? 'small' : 'medium'}
+                    />
+                  )}
+                />
+              </Grid>
+            </>
 
             {/* Validity Period */}
             <Grid size={{ xs: 12 }}>
