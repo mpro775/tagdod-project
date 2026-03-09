@@ -27,10 +27,6 @@ export const ThemeContextProvider: React.FC<ThemeContextProviderProps> = ({ chil
     if (savedMode === 'light' || savedMode === 'dark') {
       return savedMode;
     }
-    // If not in local storage, check system preferences
-    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
     return 'light'; // default
   });
 

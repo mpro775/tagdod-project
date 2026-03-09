@@ -5,6 +5,17 @@
     <link rel="icon" type="image/png" href="/icon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+
+    <script>
+      (function () {
+        var savedMode = localStorage.getItem('themeMode');
+        var mode = savedMode === 'dark' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', mode);
+        document.documentElement.style.colorScheme = mode;
+      })();
+    </script>
     
     <!-- Primary Meta Tags -->
     <title>تجدد - الطاقة الشمسية والكهربائيات | Tagadod Yemen</title>

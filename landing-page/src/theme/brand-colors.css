@@ -154,10 +154,8 @@
 }
 
 /* وضع الظلام */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --tagadodo-bg-light: #1a1a1a;
-    --tagadodo-text-primary: #ffffff;
-    --tagadodo-text-secondary: #cccccc;
-  }
+[data-theme='dark'] {
+  --tagadodo-bg-light: #1a1a1a;
+  --tagadodo-text-primary: #ffffff;
+  --tagadodo-text-secondary: #cccccc;
 }
