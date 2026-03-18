@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flutter Refactor"
+  short_description: "Safe Flutter and Dart refactor workflow"
+  default_prompt: "Use $flutter-refactor to review this Flutter code and implement the safest high-value refactor."
