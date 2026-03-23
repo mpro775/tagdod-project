@@ -30,18 +30,28 @@ export const ActivityKPICards: React.FC<ActivityKPICardsProps> = ({ stats }) => 
 
   if (!stats) return null;
 
+  const safeStats = {
+    totalUsers: stats.totalUsers ?? 0,
+    activeNow: stats.activeNow ?? 0,
+    activeToday: stats.activeToday ?? 0,
+    activeThisWeek: stats.activeThisWeek ?? 0,
+    inactiveUsers: stats.inactiveUsers ?? 0,
+    neverLoggedIn: stats.neverLoggedIn ?? 0,
+    activityRate: stats.activityRate ?? 0,
+  };
+
   const cards = [
     {
       title: t('users:activity.kpi.totalUsers', 'إجمالي المستخدمين'),
-      value: stats.totalUsers.toLocaleString('en-US'),
+      value: safeStats.totalUsers.toLocaleString('en-US'),
       icon: People,
       color: 'primary',
-      chip: `${stats.activityRate}% ${t('users:activity.kpi.activeRate', 'نشط')}`,
+      chip: `${safeStats.activityRate}% ${t('users:activity.kpi.activeRate', 'نشط')}`,
       chipColor: 'success' as const,
     },
     {
       title: t('users:activity.kpi.activeNow', 'نشطين الآن'),
-      value: stats.activeNow.toLocaleString('en-US'),
+      value: safeStats.activeNow.toLocaleString('en-US'),
       icon: OnlinePrediction,
       color: 'success',
       chip: t('users:activity.kpi.last15min', 'آخر 15 دقيقة'),
@@ -49,7 +59,7 @@ export const ActivityKPICards: React.FC<ActivityKPICardsProps> = ({ stats }) => 
     },
     {
       title: t('users:activity.kpi.activeToday', 'نشطين اليوم'),
-      value: stats.activeToday.toLocaleString('en-US'),
+      value: safeStats.activeToday.toLocaleString('en-US'),
       icon: Today,
       color: 'info',
       chip: t('users:activity.kpi.last24hours', 'آخر 24 ساعة'),
@@ -57,7 +67,7 @@ export const ActivityKPICards: React.FC<ActivityKPICardsProps> = ({ stats }) => 
     },
     {
       title: t('users:activity.kpi.activeThisWeek', 'نشطين هذا الأسبوع'),
-      value: stats.activeThisWeek.toLocaleString('en-US'),
+      value: safeStats.activeThisWeek.toLocaleString('en-US'),
       icon: Schedule,
       color: 'warning',
       chip: t('users:activity.kpi.last7days', 'آخر 7 أيام'),
@@ -65,7 +75,7 @@ export const ActivityKPICards: React.FC<ActivityKPICardsProps> = ({ stats }) => 
     },
     {
       title: t('users:activity.kpi.inactive', 'غير نشطين'),
-      value: stats.inactiveUsers.toLocaleString('en-US'),
+      value: safeStats.inactiveUsers.toLocaleString('en-US'),
       icon: PersonOff,
       color: 'error',
       chip: t('users:activity.kpi.moreThan30days', 'أكثر من 30 يوم'),
@@ -73,7 +83,7 @@ export const ActivityKPICards: React.FC<ActivityKPICardsProps> = ({ stats }) => 
     },
     {
       title: t('users:activity.kpi.neverLoggedIn', 'لم يدخلوا أبداً'),
-      value: stats.neverLoggedIn.toLocaleString('en-US'),
+      value: safeStats.neverLoggedIn.toLocaleString('en-US'),
       icon: Login,
       color: 'default',
       chip: t('users:activity.kpi.registeredOnly', 'مسجلين فقط'),

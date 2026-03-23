@@ -72,7 +72,8 @@ export const useUserActivity = () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/admin/user-analytics/activity/stats');
-      setActivityStats(response.data);
+      const stats = response.data?.data || response.data;
+      setActivityStats(stats);
     } catch {
       toast.error(t('users:activity.errors.loadStats', 'فشل تحميل إحصائيات النشاط'));
     } finally {
@@ -87,7 +88,8 @@ export const useUserActivity = () => {
         const response = await apiClient.get('/admin/user-analytics/activity/online-now', {
           params: { minutes, page, limit },
         });
-        setActiveUsers(response.data);
+        const result = response.data?.data || response.data;
+        setActiveUsers(result);
       } catch {
         toast.error(t('users:activity.errors.loadActive', 'فشل تحميل المستخدمين النشطين'));
       } finally {
@@ -104,7 +106,8 @@ export const useUserActivity = () => {
         const response = await apiClient.get('/admin/user-analytics/activity/recent', {
           params: { days, page, limit },
         });
-        setActiveUsers(response.data);
+        const result = response.data?.data || response.data;
+        setActiveUsers(result);
       } catch {
         toast.error(t('users:activity.errors.loadRecent', 'فشل تحميل المستخدمين النشطين مؤخراً'));
       } finally {
@@ -121,7 +124,8 @@ export const useUserActivity = () => {
         const response = await apiClient.get('/admin/user-analytics/activity/inactive', {
           params: { days, page, limit },
         });
-        setInactiveUsers(response.data);
+        const result = response.data?.data || response.data;
+        setInactiveUsers(result);
       } catch {
         toast.error(t('users:activity.errors.loadInactive', 'فشل تحميل المستخدمين غير النشطين'));
       } finally {
@@ -138,7 +142,8 @@ export const useUserActivity = () => {
         const response = await apiClient.get('/admin/user-analytics/activity/never-logged-in', {
           params: { page, limit },
         });
-        setNeverLoggedInUsers(response.data);
+        const result = response.data?.data || response.data;
+        setNeverLoggedInUsers(result);
       } catch {
         toast.error(t('users:activity.errors.loadNeverLoggedIn', 'فشل تحميل المستخدمين الذين لم يدخلوا أبداً'));
       } finally {
