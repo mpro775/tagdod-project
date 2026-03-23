@@ -457,5 +457,49 @@
         "capable": "Will automatically get \"customer\" capability (customer_capable)"
       }
     }
+  },
+  "activity": {
+    "title": "User Activity Tracking",
+    "subtitle": "Track active and inactive users in the application",
+    "search": "Search by phone number or name...",
+    "kpi": {
+      "totalUsers": "Total Users",
+      "activeNow": "Active Now",
+      "activeToday": "Active Today",
+      "activeThisWeek": "Active This Week",
+      "inactive": "Inactive Users",
+      "neverLoggedIn": "Never Logged In",
+      "activeRate": "active",
+      "last15min": "Last 15 minutes",
+      "last24hours": "Last 24 hours",
+      "last7days": "Last 7 days",
+      "moreThan30days": "More than 30 days",
+      "registeredOnly": "Registered only"
+    },
+    "tabs": {
+      "activeNow": "Active Now",
+      "inactive": "Inactive",
+      "neverLoggedIn": "Never Logged In"
+    },
+    "table": {
+      "phone": "Phone",
+      "name": "Name",
+      "roles": "Roles",
+      "lastActivity": "Last Activity",
+      "minutesAgo": "Minutes Ago",
+      "daysAgo": "Days Ago",
+      "registeredAt": "Registered At",
+      "daysSinceRegistration": "Days Since Registration"
+    },
+    "noActiveUsers": "No active users at the moment",
+    "noInactiveUsers": "All users are active!",
+    "noNeverLoggedInUsers": "All users have logged in!",
+    "errors": {
+      "loadStats": "Failed to load activity statistics",
+      "loadActive": "Failed to load active users",
+      "loadRecent": "Failed to load recently active users",
+      "loadInactive": "Failed to load inactive users",
+      "loadNeverLoggedIn": "Failed to load never logged in users"
+    }
   }
 }

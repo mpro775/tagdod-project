@@ -34,6 +34,16 @@ import {
   UserStatsFilterDto,
   PaginatedUserStatsDto,
 } from '../dto/user-analytics.dto';
+import {
+  GetActiveUsersDto,
+  GetInactiveUsersDto,
+  GetRecentlyActiveUsersDto,
+  UserActivityStatsDto,
+  PaginatedActiveUsersDto,
+  PaginatedInactiveUsersDto,
+  PaginatedNeverLoggedInUsersDto,
+} from '../dto/user-activity.dto';
+import { UserActivityTrackingService } from '../services/user-activity-tracking.service';
 
 @ApiTags('تحليلات-المستخدمين')
 @ApiBearerAuth()
@@ -47,6 +57,7 @@ export class UserAnalyticsController {
     private readonly userBehaviorService: UserBehaviorService,
     private readonly userCacheService: UserCacheService,
     private readonly userErrorService: UserErrorService,
+    private readonly userActivityTrackingService: UserActivityTrackingService,
   ) {}
 
   // ==================== تفاصيل مستخدم واحد ====================
@@ -385,6 +396,126 @@ export class UserAnalyticsController {
     return {
       message: `تم مسح بيانات المستخدم ${userId} من التخزين المؤقت بنجاح`
     };
+  }
+
+  // ==================== تتبع نشاط المستخدمين ====================
+
+  @Get('activity/stats')
+  @ApiOperation({
+    summary: 'إحصائيات نشاط المستخدمين',
+    description: 'يعرض إحصائيات شاملة عن نشاط المستخدمين في التطبيق',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم جلب الإحصائيات بنجاح',
+    type: UserActivityStatsDto,
+  })
+  async getActivityStats(): Promise<UserActivityStatsDto> {
+    try {
+      return await this.userActivityTrackingService.getActivityStats();
+    } catch (error) {
+      throw this.userErrorService.handleAnalyticsError(error as Error, {
+        operation: 'getActivityStats',
+      });
+    }
+  }
+
+  @Get('activity/online-now')
+  @ApiOperation({
+    summary: 'المستخدمين النشطين الآن',
+    description: 'يعرض قائمة المستخدمين النشطين في آخر X دقيقة (افتراضياً 15 دقيقة)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم جلب المستخدمين النشطين بنجاح',
+    type: PaginatedActiveUsersDto,
+  })
+  async getActiveUsersNow(@Query() dto: GetActiveUsersDto): Promise<PaginatedActiveUsersDto> {
+    try {
+      return await this.userActivityTrackingService.getActiveUsersNow(
+        dto.minutes,
+        dto.page,
+        dto.limit,
+      );
+    } catch (error) {
+      throw this.userErrorService.handleAnalyticsError(error as Error, {
+        operation: 'getActiveUsersNow',
+        additionalInfo: { minutes: dto.minutes },
+      });
+    }
+  }
+
+  @Get('activity/recent')
+  @ApiOperation({
+    summary: 'المستخدمين النشطين مؤخراً',
+    description: 'يعرض قائمة المستخدمين النشطين في آخر X يوم (افتراضياً 7 أيام)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم جلب المستخدمين النشطين مؤخراً بنجاح',
+    type: PaginatedActiveUsersDto,
+  })
+  async getRecentlyActiveUsers(@Query() dto: GetRecentlyActiveUsersDto): Promise<PaginatedActiveUsersDto> {
+    try {
+      return await this.userActivityTrackingService.getRecentlyActiveUsers(
+        dto.days,
+        dto.page,
+        dto.limit,
+      );
+    } catch (error) {
+      throw this.userErrorService.handleAnalyticsError(error as Error, {
+        operation: 'getRecentlyActiveUsers',
+        additionalInfo: { days: dto.days },
+      });
+    }
+  }
+
+  @Get('activity/inactive')
+  @ApiOperation({
+    summary: 'المستخدمين غير النشطين',
+    description: 'يعرض قائمة المستخدمين الذين لم يدخلوا التطبيق لفترة X يوم (افتراضياً 30 يوم)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم جلب المستخدمين غير النشطين بنجاح',
+    type: PaginatedInactiveUsersDto,
+  })
+  async getInactiveUsers(@Query() dto: GetInactiveUsersDto): Promise<PaginatedInactiveUsersDto> {
+    try {
+      return await this.userActivityTrackingService.getInactiveUsers(
+        dto.days,
+        dto.page,
+        dto.limit,
+      );
+    } catch (error) {
+      throw this.userErrorService.handleAnalyticsError(error as Error, {
+        operation: 'getInactiveUsers',
+        additionalInfo: { days: dto.days },
+      });
+    }
+  }
+
+  @Get('activity/never-logged-in')
+  @ApiOperation({
+    summary: 'المستخدمين الذين لم يدخلوا التطبيق إطلاقاً',
+    description: 'يعرض قائمة المستخدمين المسجلين لكنهم لم يقوموا بأي نشاط في التطبيق',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم جلب المستخدمين بنجاح',
+    type: PaginatedNeverLoggedInUsersDto,
+  })
+  async getNeverLoggedInUsers(@Query() dto: GetActiveUsersDto): Promise<PaginatedNeverLoggedInUsersDto> {
+    try {
+      return await this.userActivityTrackingService.getNeverLoggedInUsers(
+        dto.page,
+        dto.limit,
+      );
+    } catch (error) {
+      throw this.userErrorService.handleAnalyticsError(error as Error, {
+        operation: 'getNeverLoggedInUsers',
+      });
+    }
   }
 
   // ==================== Private Methods ====================

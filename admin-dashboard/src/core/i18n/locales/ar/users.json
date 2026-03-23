@@ -458,5 +458,49 @@
         "capable": "سيحصل تلقائياً على قدرة \"عميل\" (customer_capable)"
       }
     }
+  },
+  "activity": {
+    "title": "تتبع نشاط المستخدمين",
+    "subtitle": "متابعة المستخدمين النشطين وغير النشطين في التطبيق",
+    "search": "بحث برقم الهاتف أو الاسم...",
+    "kpi": {
+      "totalUsers": "إجمالي المستخدمين",
+      "activeNow": "نشطين الآن",
+      "activeToday": "نشطين اليوم",
+      "activeThisWeek": "نشطين هذا الأسبوع",
+      "inactive": "غير نشطين",
+      "neverLoggedIn": "لم يدخلوا أبداً",
+      "activeRate": "نشط",
+      "last15min": "آخر 15 دقيقة",
+      "last24hours": "آخر 24 ساعة",
+      "last7days": "آخر 7 أيام",
+      "moreThan30days": "أكثر من 30 يوم",
+      "registeredOnly": "مسجلين فقط"
+    },
+    "tabs": {
+      "activeNow": "نشطين الآن",
+      "inactive": "غير نشطين",
+      "neverLoggedIn": "لم يدخلوا أبداً"
+    },
+    "table": {
+      "phone": "رقم الهاتف",
+      "name": "الاسم",
+      "roles": "الأدوار",
+      "lastActivity": "آخر نشاط",
+      "minutesAgo": "منذ (دقيقة)",
+      "daysAgo": "منذ (يوم)",
+      "registeredAt": "تاريخ التسجيل",
+      "daysSinceRegistration": "منذ التسجيل (يوم)"
+    },
+    "noActiveUsers": "لا يوجد مستخدمين نشطين حالياً",
+    "noInactiveUsers": "جميع المستخدمين نشطين!",
+    "noNeverLoggedInUsers": "جميع المستخدمين دخلوا التطبيق!",
+    "errors": {
+      "loadStats": "فشل تحميل إحصائيات النشاط",
+      "loadActive": "فشل تحميل المستخدمين النشطين",
+      "loadRecent": "فشل تحميل المستخدمين النشطين مؤخراً",
+      "loadInactive": "فشل تحميل المستخدمين غير النشطين",
+      "loadNeverLoggedIn": "فشل تحميل المستخدمين الذين لم يدخلوا أبداً"
+    }
   }
 }

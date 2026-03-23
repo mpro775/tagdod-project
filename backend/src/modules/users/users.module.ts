@@ -13,6 +13,7 @@ import { UserCacheService } from './services/user-cache.service';
 import { UserErrorService } from './services/user-error.service';
 import { UserQueryService } from './services/user-query.service';
 import { EngineerProfileService } from './services/engineer-profile.service';
+import { UserActivityTrackingService } from './services/user-activity-tracking.service';
 import { UserAnalyticsController } from './controllers/user-analytics.controller';
 import { UserVerificationController } from './controllers/user-verification.controller';
 import { EngineerProfileController } from './controllers/engineer-profile.controller';
@@ -60,6 +61,7 @@ import { NotificationsCompleteModule } from '../notifications/notifications-comp
     UserErrorService,
     UserQueryService,
     EngineerProfileService,
+    UserActivityTrackingService,
   ],
   exports: [
     MongooseModule,
@@ -70,6 +72,7 @@ import { NotificationsCompleteModule } from '../notifications/notifications-comp
     UserErrorService,
     UserQueryService,
     EngineerProfileService,
+    UserActivityTrackingService,
   ],
 })
 export class UsersModule {}
