@@ -3,6 +3,7 @@ import { Response, NextFunction } from 'express';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../../modules/users/schemas/user.schema';
+import { TokensService } from '../../modules/auth/tokens.service';
 
 // JWT Payload interface
 interface JwtUser {
@@ -25,13 +26,30 @@ export class ActivityTrackingMiddleware implements NestMiddleware {
 
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private readonly tokensService: TokensService,
   ) {}
 
   async use(req: RequestWithUser, res: Response, next: NextFunction) {
     try {
-      // Only track activity for authenticated users
-      if (req.user?.sub) {
-        await this.updateUserActivity(req.user.sub);
+      let userId = req.user?.sub;
+
+      // Middleware runs before guards, so req.user is usually empty here.
+      // Decode Bearer token directly to identify authenticated user activity.
+      if (!userId) {
+        const authHeader = (req as unknown as { headers?: Record<string, string | string[] | undefined> }).headers?.authorization;
+        const headerValue = Array.isArray(authHeader) ? authHeader[0] : authHeader;
+
+        if (headerValue?.startsWith('Bearer ')) {
+          const token = headerValue.slice(7).trim();
+          if (token) {
+            const payload = this.tokensService.verifyAccess(token) as { sub?: string };
+            userId = payload?.sub;
+          }
+        }
+      }
+
+      if (userId) {
+        await this.updateUserActivity(userId);
       }
     } catch (error) {
       // Don't block the request if activity tracking fails

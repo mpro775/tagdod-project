@@ -28,6 +28,7 @@ import { UploadModule } from '../upload/upload.module';
 import { Coupon, CouponSchema } from '../marketing/schemas/coupon.schema';
 import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
+import { AuditLog, AuditLogSchema } from '../audit/schemas/audit-log.schema';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { NotificationsCompleteModule } from '../notifications/notifications-comp
       { name: Favorite.name, schema: FavoriteSchema },
       { name: SupportTicket.name, schema: SupportTicketSchema },
       { name: Coupon.name, schema: CouponSchema },
+      { name: AuditLog.name, schema: AuditLogSchema },
     ]),
     // استيراد الوحدات المطلوبة
     forwardRef(() => AuthModule),

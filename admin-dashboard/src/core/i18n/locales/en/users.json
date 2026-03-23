@@ -467,17 +467,22 @@
       "activeNow": "Active Now",
       "activeToday": "Active Today",
       "activeThisWeek": "Active This Week",
+      "activeThisMonth": "Active This Month",
       "inactive": "Inactive Users",
       "neverLoggedIn": "Never Logged In",
       "activeRate": "active",
       "last15min": "Last 15 minutes",
       "last24hours": "Last 24 hours",
       "last7days": "Last 7 days",
+      "last30days": "Last 30 days",
       "moreThan30days": "More than 30 days",
       "registeredOnly": "Registered only"
     },
     "tabs": {
       "activeNow": "Active Now",
+      "activeToday": "Active Today",
+      "activeThisWeek": "Active This Week",
+      "activeThisMonth": "Active This Month",
       "inactive": "Inactive",
       "neverLoggedIn": "Never Logged In"
     },
@@ -492,6 +497,7 @@
       "daysSinceRegistration": "Days Since Registration"
     },
     "noActiveUsers": "No active users at the moment",
+    "noActiveUsersPeriod": "No active users in {{period}}",
     "noInactiveUsers": "All users are active!",
     "noNeverLoggedInUsers": "All users have logged in!",
     "errors": {

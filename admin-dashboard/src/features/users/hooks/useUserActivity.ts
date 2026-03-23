@@ -39,6 +39,7 @@ export interface UserActivityStats {
   activeNow: number;
   activeToday: number;
   activeThisWeek: number;
+  activeThisMonth: number;
   inactiveUsers: number;
   neverLoggedIn: number;
   activityRate: number;

@@ -1319,7 +1319,7 @@ export class AuthController {
   })
   @ApiBadRequestResponse({ description: 'بيانات غير صحيحة' })
   @ApiUnauthorizedResponse({ description: 'كلمة المرور غير صحيحة' })
-  async adminLogin(@Body() body: AdminLoginDto) {
+  async adminLogin(@Body() body: AdminLoginDto, @Req() req: Request) {
     this.logger.log(`Admin login attempt for phone: ${body.phone}`);
 
     // البحث عن المستخدم
@@ -1373,6 +1373,15 @@ export class AuthController {
     const refresh = this.tokens.signRefresh(payload);
 
     this.logger.log(`Admin login successful: ${body.phone}`);
+
+    this.auditService
+      .logAuthEvent({
+        userId: String(user._id),
+        action: 'login_success',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger.error('Failed to log auth event', err));
 
     return {
       tokens: { access, refresh },
@@ -1730,7 +1739,7 @@ export class AuthController {
       },
     },
   })
-  async verifyBiometricRegister(@Body() body: BiometricRegisterVerifyDto) {
+  async verifyBiometricRegister(@Body() body: BiometricRegisterVerifyDto, @Req() req: Request) {
     this.logger.log(`Biometric register verify for phone: ${body.phone}`);
 
     const user = await this.userModel.findOne({ phone: body.phone });
@@ -1751,6 +1760,15 @@ export class AuthController {
       deviceName: body.deviceName,
       userAgent: body.userAgent,
     });
+
+    this.auditService
+      .logAuthEvent({
+        userId: String(user._id),
+        action: 'login_success',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger.error('Failed to log auth event', err));
 
     this.logger.log(`Biometric registration successful: ${body.phone}`);
     return await this.buildAuthResponse(user);
@@ -1901,7 +1919,7 @@ export class AuthController {
       },
     },
   })
-  async verifyBiometricLogin(@Body() body: BiometricLoginVerifyDto) {
+  async verifyBiometricLogin(@Body() body: BiometricLoginVerifyDto, @Req() req: Request) {
     this.logger.log(`Biometric login attempt for phone: ${body.phone}`);
 
     const user = await this.userModel.findOne({ phone: body.phone });
@@ -1921,6 +1939,15 @@ export class AuthController {
     await this.biometric.verifyLogin(user, body.response, {
       userAgent: body.userAgent,
     });
+
+    this.auditService
+      .logAuthEvent({
+        userId: String(user._id),
+        action: 'login_success',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger.error('Failed to log auth event', err));
 
     this.logger.log(`Biometric login successful: ${body.phone}`);
     return await this.buildAuthResponse(user);

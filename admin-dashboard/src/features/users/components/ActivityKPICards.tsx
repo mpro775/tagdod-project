@@ -5,6 +5,7 @@ import {
   OnlinePrediction,
   Today,
   Schedule,
+  DateRange,
   PersonOff,
   Login,
 } from '@mui/icons-material';
@@ -15,6 +16,7 @@ interface UserActivityStats {
   activeNow: number;
   activeToday: number;
   activeThisWeek: number;
+  activeThisMonth: number;
   inactiveUsers: number;
   neverLoggedIn: number;
   activityRate: number;
@@ -35,6 +37,7 @@ export const ActivityKPICards: React.FC<ActivityKPICardsProps> = ({ stats }) => 
     activeNow: stats.activeNow ?? 0,
     activeToday: stats.activeToday ?? 0,
     activeThisWeek: stats.activeThisWeek ?? 0,
+    activeThisMonth: stats.activeThisMonth ?? 0,
     inactiveUsers: stats.inactiveUsers ?? 0,
     neverLoggedIn: stats.neverLoggedIn ?? 0,
     activityRate: stats.activityRate ?? 0,
@@ -74,6 +77,14 @@ export const ActivityKPICards: React.FC<ActivityKPICardsProps> = ({ stats }) => 
       chipColor: 'warning' as const,
     },
     {
+      title: t('users:activity.kpi.activeThisMonth', 'نشطين هذا الشهر'),
+      value: safeStats.activeThisMonth.toLocaleString('en-US'),
+      icon: DateRange,
+      color: 'secondary',
+      chip: t('users:activity.kpi.last30days', 'آخر 30 يوم'),
+      chipColor: 'secondary' as const,
+    },
+    {
       title: t('users:activity.kpi.inactive', 'غير نشطين'),
       value: safeStats.inactiveUsers.toLocaleString('en-US'),
       icon: PersonOff,
@@ -94,7 +105,7 @@ export const ActivityKPICards: React.FC<ActivityKPICardsProps> = ({ stats }) => 
   return (
     <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
       {cards.map((card, index) => (
-        <Grid key={index} size={{ xs: 6, sm: 6, md: 4, lg: 2 }}>
+        <Grid key={index} size={{ xs: 6, sm: 6, md: 4, lg: 3, xl: 2 }}>
           <Card
             sx={{
               bgcolor: 'background.paper',

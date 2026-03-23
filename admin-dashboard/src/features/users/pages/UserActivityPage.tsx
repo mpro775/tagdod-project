@@ -17,12 +17,15 @@ import {
 } from '@mui/material';
 import {
   OnlinePrediction,
+  Today,
+  Schedule,
+  DateRange,
   PersonOff,
   Login,
   Refresh,
   Search,
 } from '@mui/icons-material';
-import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
+import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { ActivityKPICards } from '../components/ActivityKPICards';
@@ -55,9 +58,13 @@ export const UserActivityPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
-    pageSize: 10,
+    pageSize: 25,
   });
   const [searchQuery, setSearchQuery] = useState('');
+
+  const activeSortModel: GridSortModel = [{ field: 'lastActivityAt', sort: 'desc' }];
+  const inactiveSortModel: GridSortModel = [{ field: 'lastActivityAt', sort: 'desc' }];
+  const neverLoggedInSortModel: GridSortModel = [{ field: 'createdAt', sort: 'desc' }];
 
   const {
     loading,
@@ -67,6 +74,7 @@ export const UserActivityPage: React.FC = () => {
     neverLoggedInUsers,
     fetchActivityStats,
     fetchActiveUsersNow,
+    fetchRecentlyActiveUsers,
     fetchInactiveUsers,
     fetchNeverLoggedInUsers,
   } = useUserActivity();
@@ -84,13 +92,29 @@ export const UserActivityPage: React.FC = () => {
         fetchActiveUsersNow(15, page, limit);
         break;
       case 1:
-        fetchInactiveUsers(30, page, limit);
+        fetchRecentlyActiveUsers(1, page, limit);
         break;
       case 2:
+        fetchRecentlyActiveUsers(7, page, limit);
+        break;
+      case 3:
+        fetchRecentlyActiveUsers(30, page, limit);
+        break;
+      case 4:
+        fetchInactiveUsers(30, page, limit);
+        break;
+      case 5:
         fetchNeverLoggedInUsers(page, limit);
         break;
     }
-  }, [selectedTab, paginationModel, fetchActiveUsersNow, fetchInactiveUsers, fetchNeverLoggedInUsers]);
+  }, [
+    selectedTab,
+    paginationModel,
+    fetchActiveUsersNow,
+    fetchRecentlyActiveUsers,
+    fetchInactiveUsers,
+    fetchNeverLoggedInUsers,
+  ]);
 
   const handleRefresh = () => {
     fetchActivityStats();
@@ -101,12 +125,29 @@ export const UserActivityPage: React.FC = () => {
         fetchActiveUsersNow(15, page, limit);
         break;
       case 1:
-        fetchInactiveUsers(30, page, limit);
+        fetchRecentlyActiveUsers(1, page, limit);
         break;
       case 2:
+        fetchRecentlyActiveUsers(7, page, limit);
+        break;
+      case 3:
+        fetchRecentlyActiveUsers(30, page, limit);
+        break;
+      case 4:
+        fetchInactiveUsers(30, page, limit);
+        break;
+      case 5:
         fetchNeverLoggedInUsers(page, limit);
         break;
     }
+  };
+
+  const getActiveTabTitle = () => {
+    if (selectedTab === 0) return t('users:activity.tabs.activeNow', 'نشطين الآن');
+    if (selectedTab === 1) return t('users:activity.tabs.activeToday', 'نشطين اليوم');
+    if (selectedTab === 2) return t('users:activity.tabs.activeThisWeek', 'نشطين هذا الأسبوع');
+    if (selectedTab === 3) return t('users:activity.tabs.activeThisMonth', 'نشطين هذا الشهر');
+    return t('users:activity.tabs.activeNow', 'نشطين الآن');
   };
 
   const getRoleColor = (role: string): 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'default' => {
@@ -436,6 +477,21 @@ export const UserActivityPage: React.FC = () => {
             iconPosition="start"
           />
           <Tab
+            icon={<Today />}
+            label={t('users:activity.tabs.activeToday', 'نشطين اليوم')}
+            iconPosition="start"
+          />
+          <Tab
+            icon={<Schedule />}
+            label={t('users:activity.tabs.activeThisWeek', 'نشطين هذا الأسبوع')}
+            iconPosition="start"
+          />
+          <Tab
+            icon={<DateRange />}
+            label={t('users:activity.tabs.activeThisMonth', 'نشطين هذا الشهر')}
+            iconPosition="start"
+          />
+          <Tab
             icon={<PersonOff />}
             label={t('users:activity.tabs.inactive', 'غير نشطين')}
             iconPosition="start"
@@ -460,6 +516,10 @@ export const UserActivityPage: React.FC = () => {
             loading={loading}
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
+            paginationMode="server"
+            rowCount={activeUsers.meta?.total || 0}
+            sortingMode="server"
+            sortModel={activeSortModel}
             getRowId={(row) => (row as ActiveUser).userId}
             height={500}
             searchPlaceholder={t('users:activity.search', 'بحث...')}
@@ -467,12 +527,104 @@ export const UserActivityPage: React.FC = () => {
           />
         ) : (
           <Alert severity="info">
-            {t('users:activity.noActiveUsers', 'لا يوجد مستخدمين نشطين حالياً')}
+            {t('users:activity.noActiveUsersPeriod', 'لا يوجد مستخدمين نشطين في الفترة المحددة', {
+              period: getActiveTabTitle(),
+            })}
           </Alert>
         )}
       </TabPanel>
 
       <TabPanel value={selectedTab} index={1}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+            <CircularProgress />
+          </Box>
+        ) : activeUsers?.data && activeUsers.data.length > 0 ? (
+          <DataTable
+            columns={activeUsersColumns}
+            rows={filterData(activeUsers.data)}
+            loading={loading}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            paginationMode="server"
+            rowCount={activeUsers.meta?.total || 0}
+            sortingMode="server"
+            sortModel={activeSortModel}
+            getRowId={(row) => (row as ActiveUser).userId}
+            height={500}
+            searchPlaceholder={t('users:activity.search', 'بحث...')}
+            onSearch={() => {}}
+          />
+        ) : (
+          <Alert severity="info">
+            {t('users:activity.noActiveUsersPeriod', 'لا يوجد مستخدمين نشطين في الفترة المحددة', {
+              period: getActiveTabTitle(),
+            })}
+          </Alert>
+        )}
+      </TabPanel>
+
+      <TabPanel value={selectedTab} index={2}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+            <CircularProgress />
+          </Box>
+        ) : activeUsers?.data && activeUsers.data.length > 0 ? (
+          <DataTable
+            columns={activeUsersColumns}
+            rows={filterData(activeUsers.data)}
+            loading={loading}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            paginationMode="server"
+            rowCount={activeUsers.meta?.total || 0}
+            sortingMode="server"
+            sortModel={activeSortModel}
+            getRowId={(row) => (row as ActiveUser).userId}
+            height={500}
+            searchPlaceholder={t('users:activity.search', 'بحث...')}
+            onSearch={() => {}}
+          />
+        ) : (
+          <Alert severity="info">
+            {t('users:activity.noActiveUsersPeriod', 'لا يوجد مستخدمين نشطين في الفترة المحددة', {
+              period: getActiveTabTitle(),
+            })}
+          </Alert>
+        )}
+      </TabPanel>
+
+      <TabPanel value={selectedTab} index={3}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+            <CircularProgress />
+          </Box>
+        ) : activeUsers?.data && activeUsers.data.length > 0 ? (
+          <DataTable
+            columns={activeUsersColumns}
+            rows={filterData(activeUsers.data)}
+            loading={loading}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            paginationMode="server"
+            rowCount={activeUsers.meta?.total || 0}
+            sortingMode="server"
+            sortModel={activeSortModel}
+            getRowId={(row) => (row as ActiveUser).userId}
+            height={500}
+            searchPlaceholder={t('users:activity.search', 'بحث...')}
+            onSearch={() => {}}
+          />
+        ) : (
+          <Alert severity="info">
+            {t('users:activity.noActiveUsersPeriod', 'لا يوجد مستخدمين نشطين في الفترة المحددة', {
+              period: getActiveTabTitle(),
+            })}
+          </Alert>
+        )}
+      </TabPanel>
+
+      <TabPanel value={selectedTab} index={4}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
             <CircularProgress />
@@ -484,6 +636,10 @@ export const UserActivityPage: React.FC = () => {
             loading={loading}
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
+            paginationMode="server"
+            rowCount={inactiveUsers.meta?.total || 0}
+            sortingMode="server"
+            sortModel={inactiveSortModel}
             getRowId={(row) => (row as InactiveUser).userId}
             height={500}
             searchPlaceholder={t('users:activity.search', 'بحث...')}
@@ -496,7 +652,7 @@ export const UserActivityPage: React.FC = () => {
         )}
       </TabPanel>
 
-      <TabPanel value={selectedTab} index={2}>
+      <TabPanel value={selectedTab} index={5}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
             <CircularProgress />
@@ -508,6 +664,10 @@ export const UserActivityPage: React.FC = () => {
             loading={loading}
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
+            paginationMode="server"
+            rowCount={neverLoggedInUsers.meta?.total || 0}
+            sortingMode="server"
+            sortModel={neverLoggedInSortModel}
             getRowId={(row) => (row as NeverLoggedInUser).userId}
             height={500}
             searchPlaceholder={t('users:activity.search', 'بحث...')}

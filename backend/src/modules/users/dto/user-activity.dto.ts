@@ -166,6 +166,9 @@ export class UserActivityStatsDto {
   @ApiProperty({ description: 'المستخدمين النشطين هذا الأسبوع (آخر 7 أيام)' })
   activeThisWeek!: number;
 
+  @ApiProperty({ description: 'المستخدمين النشطين هذا الشهر (آخر 30 يوم)' })
+  activeThisMonth!: number;
+
   @ApiProperty({ description: 'المستخدمين غير النشطين (أكثر من 30 يوم)' })
   inactiveUsers!: number;
 
