@@ -51,6 +51,7 @@ import {
   Sync,
   AddCircleOutline,
   Backup as BackupIcon,
+  OnlinePrediction,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -123,6 +124,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             label: t('navigation.verificationRequests', 'طلبات التحقق'),
             icon: <VerifiedUser />,
             path: '/users/verification-requests',
+          },
+          {
+            id: 'users-activity',
+            label: t('navigation.usersActivity', 'تتبع النشاط'),
+            icon: <OnlinePrediction />,
+            path: '/users/activity',
           },
           {
             id: 'users-addresses',
