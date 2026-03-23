@@ -215,7 +215,7 @@ export class UserCacheService {
   /**
    * إنشاء مفتاح كاش للإحصائيات العامة
    */
-  createOverviewKey(): string {
-    return 'analytics:overview';
+  createOverviewKey(suffix?: string): string {
+    return suffix ? `analytics:overview:${suffix}` : 'analytics:overview';
   }
 }
