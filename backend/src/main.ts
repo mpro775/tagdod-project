@@ -51,7 +51,7 @@ async function bootstrap() {
     exclude: [
       { path: '.well-known/assetlinks.json', method: RequestMethod.GET },
       { path: '.well-known/apple-app-site-association', method: RequestMethod.GET },
-      { path: 'p/:id', method: RequestMethod.GET }, // لجعل رابط المشاركة قصيراً
+      { path: 'p/:id', method: RequestMethod.GET },
     ],
   });
 

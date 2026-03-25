@@ -1,15 +1,20 @@
-import { Controller, Get, Header, Res } from '@nestjs/common';
+import { Controller, Get, Header, Res, VERSION_NEUTRAL } from '@nestjs/common';
 import { Response } from 'express';
 
-@Controller('.well-known')
+@Controller({
+  path: '.well-known',
+  version: VERSION_NEUTRAL,
+})
 export class WellKnownController {
-  // تعديل: استخدام @Res() لإرسال المصفوفة الخام بدون تغليف
   @Get('assetlinks.json')
   @Header('Content-Type', 'application/json')
   getAndroidAssetLinks(@Res() res: Response) {
-    const data = [
+    return res.send([
       {
-        relation: ['delegate_permission/common.handle_all_urls'],
+        relation: [
+          'delegate_permission/common.handle_all_urls',
+          'delegate_permission/common.get_login_creds',
+        ],
         target: {
           namespace: 'android_app',
           package_name: 'com.tagadod.app',
@@ -19,29 +24,22 @@ export class WellKnownController {
           ],
         },
       },
-    ];
-
-    // استخدام send مباشرة يمنع الـ Interceptor من تعديل الشكل
-    res.send(data);
+    ]);
   }
 
-  // نفس الشيء للآيفون لتجنب المشاكل
   @Get('apple-app-site-association')
   @Header('Content-Type', 'application/json')
   getIosAppleAppSiteAssociation(@Res() res: Response) {
-    const data = {
+    return res.send({
       applinks: {
         apps: [],
         details: [
           {
-            // استبدل XXXXXXXXXX بالـ Team ID الخاص بك
             appID: 'XXXXXXXXXX.com.tagadod.app',
             paths: ['/p/*', '*'],
           },
         ],
       },
-    };
-
-    res.send(data);
+    });
   }
 }
