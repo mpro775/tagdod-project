@@ -52,6 +52,11 @@ const VerificationRequestsPage = lazy(() =>
     default: m.VerificationRequestsPage,
   }))
 );
+const UserActivityPage = lazy(() =>
+  import('@/features/users/pages/UserActivityPage').then((m) => ({
+    default: m.UserActivityPage,
+  }))
+);
 const ProductsListPage = lazy(() =>
   import('@/features/products/pages/ProductsListPage').then((m) => ({
     default: m.ProductsListPage,
@@ -478,6 +483,10 @@ export const routes: RouteObject[] = [
       {
         path: 'users/verification-requests',
         element: <VerificationRequestsPage />,
+      },
+      {
+        path: 'users/activity',
+        element: <UserActivityPage />,
       },
       {
         path: 'users/:id',
