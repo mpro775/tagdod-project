@@ -28,14 +28,20 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, FilterQuery, SortOrder } from 'mongoose';
+import { Model, FilterQuery, SortOrder, Types } from 'mongoose';
 import { hash } from 'bcrypt';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
-import { User, UserRole, UserStatus, CapabilityStatus } from '../schemas/user.schema';
+import {
+  User,
+  UserRole,
+  UserStatus,
+  CapabilityStatus,
+  AcquisitionChannel,
+} from '../schemas/user.schema';
 import { EngineerProfile } from '../schemas/engineer-profile.schema';
 import { Capabilities } from '../../capabilities/schemas/capabilities.schema';
 import {
@@ -47,6 +53,11 @@ import {
 import { AdminPermission, PERMISSION_GROUPS } from '../../../shared/constants/permissions';
 import { CreateUserAdminDto } from './dto/create-user-admin.dto';
 import { CreateAdminDto, CreateRoleBasedAdminDto } from './dto/create-admin.dto';
+import { CreateMarketerAdminDto } from './dto/create-marketer-admin.dto';
+import {
+  CreateMarketerEngineerDto,
+  CreateMarketerMerchantDto,
+} from './dto/create-marketer-lead.dto';
 import { UpdateUserAdminDto } from './dto/update-user-admin.dto';
 import { ListUsersDto } from './dto/list-users.dto';
 import { SuspendUserDto } from './dto/suspend-user.dto';
@@ -63,6 +74,13 @@ import {
   NotificationCategory,
 } from '../../notifications/enums/notification.enums';
 import { UploadService } from '../../upload/upload.service';
+import {
+  Coupon,
+  CouponType,
+  CouponStatus,
+  CouponVisibility,
+  DiscountAppliesTo,
+} from '../../marketing/schemas/coupon.schema';
 
 @ApiTags('إدارة-المستخدمين')
 @ApiBearerAuth()
@@ -71,10 +89,19 @@ import { UploadService } from '../../upload/upload.service';
 @Controller('admin/users')
 export class UsersAdminController {
   private readonly logger = new Logger(UsersAdminController.name);
+  private readonly defaultEngineerCouponTag = 'AUTO_ENGINEER_DEFAULT_COUPON';
+  private readonly defaultEngineerCouponDiscountPercent = 5;
+  private readonly defaultEngineerCouponCommissionPercent = 5;
+  private readonly defaultMerchantDiscountPercent = 15;
+  private readonly marketerRequiredPermissions: AdminPermission[] = [
+    AdminPermission.ADMIN_ACCESS,
+    AdminPermission.MARKETER_PORTAL_ACCESS,
+  ];
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(EngineerProfile.name) private engineerProfileModel: Model<EngineerProfile>,
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
+    @InjectModel(Coupon.name) private couponModel: Model<Coupon>,
     private auditService: AuditService,
     private engineerProfileService: EngineerProfileService,
     private uploadService: UploadService,
@@ -649,6 +676,7 @@ export class UsersAdminController {
       permissions: dto.permissions,
       passwordHash,
       status: dto.activateImmediately ? UserStatus.ACTIVE : UserStatus.PENDING,
+      acquisitionChannel: AcquisitionChannel.ADMIN,
     });
 
     // إنشاء Capabilities
@@ -730,6 +758,9 @@ export class UsersAdminController {
       case 'view_only':
         permissions = [...PERMISSION_GROUPS.VIEW_ONLY_ADMIN];
         break;
+      case 'marketer':
+        permissions = [...PERMISSION_GROUPS.MARKETER];
+        break;
       default:
         throw new AuthException(ErrorCode.VALIDATION_ERROR, { field: 'adminType' });
     }
@@ -755,6 +786,903 @@ export class UsersAdminController {
     };
 
     return await this.createAdmin(adminDto, req);
+  }
+
+  private buildMarketersQuery(search?: string): FilterQuery<User> {
+    const query: FilterQuery<User> = {
+      deletedAt: null,
+      roles: { $in: [UserRole.ADMIN] },
+      permissions: { $all: this.marketerRequiredPermissions },
+    };
+
+    if (search) {
+      query.$or = [
+        { phone: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    return query;
+  }
+
+  @RequirePermissions('marketers.create', 'super_admin.access')
+  @Post('marketers')
+  @ApiOperation({
+    summary: 'إنشاء حساب مسوق',
+    description: 'إنشاء حساب مسوق بصلاحيات تشغيلية مخصصة مع كلمة مرور مؤقتة.',
+  })
+  async createMarketer(
+    @Body() dto: CreateMarketerAdminDto,
+    @Req() req: { user: { sub: string } } & Request,
+  ) {
+    const marketerAdminDto: CreateAdminDto = {
+      phone: dto.phone,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      gender: dto.gender,
+      roles: [UserRole.ADMIN],
+      permissions: [...PERMISSION_GROUPS.MARKETER],
+      temporaryPassword:
+        dto.temporaryPassword || `Mkt${Math.random().toString(36).substring(2, 8)}!A1`,
+      activateImmediately: dto.activateImmediately ?? true,
+      description: 'Marketer account',
+    };
+
+    return this.createAdmin(marketerAdminDto, req);
+  }
+
+  @RequirePermissions('marketers.read', 'super_admin.access')
+  @Get('marketers/list')
+  @ApiOperation({
+    summary: 'قائمة المسوقين',
+    description: 'عرض قائمة حسابات المسوقين مع الترقيم والبحث.',
+  })
+  async listMarketers(
+    @Query('page') pageParam = '1',
+    @Query('limit') limitParam = '20',
+    @Query('search') search?: string,
+  ) {
+    const page = Math.max(1, Number(pageParam) || 1);
+    const limit = Math.min(100, Math.max(1, Number(limitParam) || 20));
+    const skip = (page - 1) * limit;
+
+    const query = this.buildMarketersQuery(search);
+
+    const [items, total] = await Promise.all([
+      this.userModel
+        .find(query)
+        .select(
+          '_id phone firstName lastName status roles permissions createdAt updatedAt lastActivityAt',
+        )
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.userModel.countDocuments(query),
+    ]);
+
+    return {
+      items,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+      hasPrevPage: page > 1,
+    };
+  }
+
+  @RequirePermissions('marketers.analytics', 'super_admin.access')
+  @Get('marketers/stats/summary')
+  @ApiOperation({
+    summary: 'ملخص إحصائيات المسوقين',
+    description: 'إحصائيات سريعة لعدد المسوقين حسب الحالة.',
+  })
+  async getMarketersStatsSummary() {
+    const baseQuery = this.buildMarketersQuery();
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [total, active, suspended, pending, createdThisMonth] = await Promise.all([
+      this.userModel.countDocuments(baseQuery),
+      this.userModel.countDocuments({ ...baseQuery, status: UserStatus.ACTIVE }),
+      this.userModel.countDocuments({ ...baseQuery, status: UserStatus.SUSPENDED }),
+      this.userModel.countDocuments({ ...baseQuery, status: UserStatus.PENDING }),
+      this.userModel.countDocuments({ ...baseQuery, createdAt: { $gte: monthStart } }),
+    ]);
+
+    return {
+      total,
+      active,
+      suspended,
+      pending,
+      createdThisMonth,
+      inactive: Math.max(0, total - active),
+    };
+  }
+
+  private parseAnalyticsDateRange(from?: string, to?: string) {
+    const now = new Date();
+    const defaultFrom = new Date(now);
+    defaultFrom.setDate(defaultFrom.getDate() - 29);
+    defaultFrom.setHours(0, 0, 0, 0);
+
+    const start = from ? new Date(from) : defaultFrom;
+    const end = to ? new Date(to) : now;
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new BadRequestException('صيغة التاريخ غير صحيحة');
+    }
+
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    if (start > end) {
+      throw new BadRequestException('تاريخ البداية يجب أن يكون قبل تاريخ النهاية');
+    }
+
+    return { start, end };
+  }
+
+  private buildMarketerAnalyticsMatch(start: Date, end: Date): FilterQuery<User> {
+    return {
+      acquisitionChannel: AcquisitionChannel.MARKETER,
+      createdByMarketerId: { $ne: null },
+      deletedAt: null,
+      status: { $ne: UserStatus.DELETED },
+      marketerCreatedAt: { $gte: start, $lte: end },
+    };
+  }
+
+  private async aggregateMarketerSummary(match: FilterQuery<User>) {
+    const [summary] = await this.userModel.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: null,
+          totalLeads: { $sum: 1 },
+          engineers: {
+            $sum: { $cond: [{ $eq: ['$engineer_capable', true] }, 1, 0] },
+          },
+          merchants: {
+            $sum: { $cond: [{ $eq: ['$merchant_capable', true] }, 1, 0] },
+          },
+          approvedEngineers: {
+            $sum: { $cond: [{ $eq: ['$engineer_status', CapabilityStatus.APPROVED] }, 1, 0] },
+          },
+          approvedMerchants: {
+            $sum: { $cond: [{ $eq: ['$merchant_status', CapabilityStatus.APPROVED] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalLeads: 1,
+          engineers: 1,
+          merchants: 1,
+          approvedEngineers: 1,
+          approvedMerchants: 1,
+          approvedTotal: { $add: ['$approvedEngineers', '$approvedMerchants'] },
+          overallConversionRate: {
+            $cond: [
+              { $eq: ['$totalLeads', 0] },
+              0,
+              {
+                $round: [
+                  {
+                    $multiply: [
+                      {
+                        $divide: [
+                          { $add: ['$approvedEngineers', '$approvedMerchants'] },
+                          '$totalLeads',
+                        ],
+                      },
+                      100,
+                    ],
+                  },
+                  2,
+                ],
+              },
+            ],
+          },
+        },
+      },
+    ]);
+
+    return (
+      summary || {
+        totalLeads: 0,
+        engineers: 0,
+        merchants: 0,
+        approvedEngineers: 0,
+        approvedMerchants: 0,
+        approvedTotal: 0,
+        overallConversionRate: 0,
+      }
+    );
+  }
+
+  private async aggregateMarketerDailyTrend(match: FilterQuery<User>) {
+    return this.userModel.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: {
+            day: {
+              $dateToString: {
+                format: '%Y-%m-%d',
+                date: '$marketerCreatedAt',
+              },
+            },
+          },
+          leads: { $sum: 1 },
+          engineers: {
+            $sum: { $cond: [{ $eq: ['$engineer_capable', true] }, 1, 0] },
+          },
+          merchants: {
+            $sum: { $cond: [{ $eq: ['$merchant_capable', true] }, 1, 0] },
+          },
+          approvedLeads: {
+            $sum: {
+              $cond: [
+                {
+                  $or: [
+                    { $eq: ['$engineer_status', CapabilityStatus.APPROVED] },
+                    { $eq: ['$merchant_status', CapabilityStatus.APPROVED] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      { $sort: { '_id.day': 1 } },
+      {
+        $project: {
+          _id: 0,
+          day: '$_id.day',
+          leads: 1,
+          engineers: 1,
+          merchants: 1,
+          approvedLeads: 1,
+        },
+      },
+    ]);
+  }
+
+  @RequirePermissions('marketers.analytics', 'super_admin.access')
+  @Get('marketers/analytics/overview')
+  @ApiOperation({
+    summary: 'نظرة عامة لتحليلات المسوقين',
+    description: 'إحصائيات التحويل العامة للمسوقين ضمن فترة زمنية.',
+  })
+  async getMarketersAnalyticsOverview(@Query('from') from?: string, @Query('to') to?: string) {
+    const { start, end } = this.parseAnalyticsDateRange(from, to);
+    const match = this.buildMarketerAnalyticsMatch(start, end);
+    const periodMs = end.getTime() - start.getTime() + 1;
+    const prevEnd = new Date(start.getTime() - 1);
+    const prevStart = new Date(prevEnd.getTime() - periodMs + 1);
+    const previousMatch = this.buildMarketerAnalyticsMatch(prevStart, prevEnd);
+
+    const [overview, previousOverview, dailyTrend] = await Promise.all([
+      this.aggregateMarketerSummary(match),
+      this.aggregateMarketerSummary(previousMatch),
+      this.aggregateMarketerDailyTrend(match),
+    ]);
+
+    const leadsGrowthPercent =
+      previousOverview.totalLeads === 0
+        ? overview.totalLeads > 0
+          ? 100
+          : 0
+        : Number(
+            (((overview.totalLeads - previousOverview.totalLeads) / previousOverview.totalLeads) * 100).toFixed(2),
+          );
+
+    const conversionGrowthPercent = Number(
+      (overview.overallConversionRate - previousOverview.overallConversionRate).toFixed(2),
+    );
+
+    return {
+      from: start,
+      to: end,
+      ...overview,
+      previousPeriod: {
+        from: prevStart,
+        to: prevEnd,
+        ...previousOverview,
+      },
+      comparison: {
+        leadsGrowthPercent,
+        conversionGrowthPercent,
+      },
+      dailyTrend,
+    };
+  }
+
+  @RequirePermissions('marketers.analytics', 'super_admin.access')
+  @Get('marketers/analytics/ranking')
+  @ApiOperation({
+    summary: 'ترتيب المسوقين حسب الأداء',
+    description: 'ترتيب المسوقين حسب عدد العملاء ومعدل التحويل في فترة زمنية.',
+  })
+  async getMarketersAnalyticsRanking(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('limit') limitParam = '20',
+  ) {
+    const { start, end } = this.parseAnalyticsDateRange(from, to);
+    const limit = Math.min(100, Math.max(1, Number(limitParam) || 20));
+    const match = this.buildMarketerAnalyticsMatch(start, end);
+
+    const ranking = await this.userModel.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: '$createdByMarketerId',
+          totalLeads: { $sum: 1 },
+          engineers: {
+            $sum: { $cond: [{ $eq: ['$engineer_capable', true] }, 1, 0] },
+          },
+          merchants: {
+            $sum: { $cond: [{ $eq: ['$merchant_capable', true] }, 1, 0] },
+          },
+          approvedEngineers: {
+            $sum: { $cond: [{ $eq: ['$engineer_status', CapabilityStatus.APPROVED] }, 1, 0] },
+          },
+          approvedMerchants: {
+            $sum: { $cond: [{ $eq: ['$merchant_status', CapabilityStatus.APPROVED] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $addFields: {
+          approvedTotal: { $add: ['$approvedEngineers', '$approvedMerchants'] },
+          conversionRate: {
+            $cond: [
+              { $eq: ['$totalLeads', 0] },
+              0,
+              {
+                $round: [
+                  {
+                    $multiply: [
+                      { $divide: [{ $add: ['$approvedEngineers', '$approvedMerchants'] }, '$totalLeads'] },
+                      100,
+                    ],
+                  },
+                  2,
+                ],
+              },
+            ],
+          },
+        },
+      },
+      { $sort: { totalLeads: -1, conversionRate: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'marketer',
+        },
+      },
+      {
+        $unwind: {
+          path: '$marketer',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          marketerId: '$_id',
+          _id: 0,
+          totalLeads: 1,
+          engineers: 1,
+          merchants: 1,
+          approvedEngineers: 1,
+          approvedMerchants: 1,
+          approvedTotal: 1,
+          conversionRate: 1,
+          marketer: {
+            id: '$marketer._id',
+            phone: '$marketer.phone',
+            firstName: '$marketer.firstName',
+            lastName: '$marketer.lastName',
+            status: '$marketer.status',
+          },
+        },
+      },
+    ]);
+
+    return {
+      from: start,
+      to: end,
+      items: ranking.map((item, index) => ({ ...item, rank: index + 1 })),
+    };
+  }
+
+  @RequirePermissions('marketers.analytics', 'super_admin.access')
+  @Get('marketers/analytics/:marketerId')
+  @ApiOperation({
+    summary: 'تحليل مسوق محدد',
+    description: 'تفاصيل أداء مسوق محدد مع منحنى يومي خلال فترة زمنية.',
+  })
+  async getMarketerAnalyticsDetails(
+    @Param('marketerId') marketerId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    if (!Types.ObjectId.isValid(marketerId)) {
+      throw new BadRequestException('معرف المسوق غير صالح');
+    }
+
+    const { start, end } = this.parseAnalyticsDateRange(from, to);
+    const marketerObjectId = new Types.ObjectId(marketerId);
+    const match: FilterQuery<User> = {
+      ...this.buildMarketerAnalyticsMatch(start, end),
+      createdByMarketerId: marketerObjectId,
+    };
+
+    const [summary, dailyTrend] = await Promise.all([
+      this.aggregateMarketerSummary(match),
+      this.aggregateMarketerDailyTrend(match),
+    ]);
+
+    const latestLeads = await this.userModel
+      .find(match)
+      .select('phone firstName lastName roles engineer_status merchant_status marketerCreatedAt createdAt')
+      .sort({ marketerCreatedAt: -1, createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    const marketer = await this.userModel
+      .findById(marketerId)
+      .select('_id phone firstName lastName status')
+      .lean();
+
+    return {
+      marketer,
+      from: start,
+      to: end,
+      summary:
+        {
+          totalLeads: summary.totalLeads,
+          engineers: summary.engineers,
+          merchants: summary.merchants,
+          approvedEngineers: summary.approvedEngineers,
+          approvedMerchants: summary.approvedMerchants,
+          conversionRate: summary.overallConversionRate,
+        },
+      dailyTrend,
+      latestLeads,
+    };
+  }
+
+  private async isSuperAdmin(userId: string): Promise<boolean> {
+    if (!Types.ObjectId.isValid(userId)) {
+      return false;
+    }
+
+    const user = await this.userModel.findById(userId).select('roles').lean();
+    return !!user?.roles?.includes(UserRole.SUPER_ADMIN);
+  }
+
+  private async buildMarketerScopeQuery(requesterId: string): Promise<FilterQuery<User>> {
+    const isRequesterSuperAdmin = await this.isSuperAdmin(requesterId);
+    if (isRequesterSuperAdmin) {
+      return {};
+    }
+
+    if (!Types.ObjectId.isValid(requesterId)) {
+      return { _id: null };
+    }
+
+    return {
+      acquisitionChannel: AcquisitionChannel.MARKETER,
+      createdByMarketerId: new Types.ObjectId(requesterId),
+      deletedAt: null,
+      status: { $ne: UserStatus.DELETED },
+    };
+  }
+
+  private generateMarketerTempPassword(): string {
+    return `Mkt${Math.random().toString(36).substring(2, 8)}!A1`;
+  }
+
+  private async createDefaultEngineerCouponIfMissing(engineerId: string, adminId?: string): Promise<void> {
+    if (!Types.ObjectId.isValid(engineerId)) {
+      this.logger.warn(`Skip default coupon creation: invalid engineer id ${engineerId}`);
+      return;
+    }
+
+    const engineerObjectId = new Types.ObjectId(engineerId);
+    const existingDefaultCoupon = await this.couponModel
+      .findOne({
+        engineerId: engineerObjectId,
+        deletedAt: null,
+        description: { $regex: `^${this.defaultEngineerCouponTag}` },
+      })
+      .select('_id code')
+      .lean();
+
+    if (existingDefaultCoupon) {
+      return;
+    }
+
+    const couponCode = await this.generateUniqueDefaultEngineerCouponCode();
+    const now = new Date();
+
+    await this.couponModel.create({
+      code: couponCode,
+      name: 'الكوبون الافتراضي للمهندس',
+      description: `${this.defaultEngineerCouponTag}: تم إنشاؤه تلقائياً عند اعتماد المهندس`,
+      type: CouponType.PERCENTAGE,
+      status: CouponStatus.ACTIVE,
+      visibility: CouponVisibility.PUBLIC,
+      discountValue: this.defaultEngineerCouponDiscountPercent,
+      commissionRate: this.defaultEngineerCouponCommissionPercent,
+      engineerId: engineerObjectId,
+      usageLimit: null,
+      usageLimitPerUser: null,
+      validFrom: now,
+      validUntil: null,
+      appliesTo: DiscountAppliesTo.ALL_PRODUCTS,
+      usedCount: 0,
+      totalRedemptions: 0,
+      totalDiscountGiven: 0,
+      totalRevenue: 0,
+      totalCommissionEarned: 0,
+      usageHistory: [],
+      createdBy: adminId,
+    });
+  }
+
+  private async generateUniqueDefaultEngineerCouponCode(): Promise<string> {
+    const maxAttempts = 10;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+      const code = `ENG5-${randomPart}`;
+      const exists = await this.couponModel.exists({ code, deletedAt: null });
+      if (!exists) {
+        return code;
+      }
+    }
+
+    return `ENG5-${Date.now().toString().slice(-8)}`.toUpperCase();
+  }
+
+  @RequirePermissions('marketer.portal.access', 'admin.access')
+  @Post('marketer-portal/engineers')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'إنشاء مهندس من بوابة المسوق',
+    description: 'إنشاء حساب مهندس مع اعتماد مباشر ورفع ملف التوثيق وربط الحساب بالمسوق.',
+  })
+  async createEngineerFromMarketerPortal(
+    @Body() dto: CreateMarketerEngineerDto,
+    @UploadedFile() file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    @Req() req: { user: { sub: string } } & Request,
+  ) {
+    if (!Types.ObjectId.isValid(req.user.sub)) {
+      throw new BadRequestException('معرف المسوق غير صالح');
+    }
+
+    if (!file) {
+      throw new BadRequestException('ملف السيرة الذاتية مطلوب');
+    }
+
+    const allowedCvTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    if (!allowedCvTypes.includes(file.mimetype)) {
+      throw new BadRequestException('صيغة ملف السيرة الذاتية غير مدعومة');
+    }
+
+    const existingUser = await this.userModel.findOne({ phone: dto.phone, deletedAt: null });
+    if (existingUser) {
+      throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
+    }
+
+    const generatedPassword = dto.password || this.generateMarketerTempPassword();
+    const uploaded = await this.uploadService.uploadFile(file, 'users/verification/engineers/cv');
+
+    const userData: Partial<User> & { passwordHash?: string } = {
+      phone: dto.phone,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      gender: dto.gender,
+      city: dto.city || 'صنعاء',
+      roles: [UserRole.USER, UserRole.ENGINEER],
+      permissions: [],
+      status: UserStatus.ACTIVE,
+      passwordHash: await hash(generatedPassword, 10),
+      customer_capable: true,
+      engineer_capable: true,
+      engineer_status: CapabilityStatus.APPROVED,
+      merchant_capable: false,
+      merchant_status: CapabilityStatus.NONE,
+      merchant_discount_percent: 0,
+      admin_capable: false,
+      admin_status: CapabilityStatus.NONE,
+      verificationNote: dto.note,
+      acquisitionChannel: AcquisitionChannel.MARKETER,
+      createdByMarketerId: new Types.ObjectId(req.user.sub),
+      marketerCreatedAt: new Date(),
+    };
+
+    const user = await this.userModel.create(userData);
+
+    const profile = await this.engineerProfileService.createProfile(user._id.toString());
+    profile.cvFileUrl = uploaded.url;
+    if (dto.jobTitle) {
+      profile.jobTitle = dto.jobTitle;
+    }
+    await profile.save();
+
+    await this.capsModel.create({
+      userId: user._id.toString(),
+      customer_capable: true,
+      engineer_capable: true,
+      engineer_status: CapabilityStatus.APPROVED,
+      merchant_capable: false,
+      merchant_status: CapabilityStatus.NONE,
+      merchant_discount_percent: 0,
+      admin_capable: false,
+      admin_status: CapabilityStatus.NONE,
+    });
+
+    await this.createDefaultEngineerCouponIfMissing(user._id.toString(), req.user.sub);
+
+    this.auditService
+      .logUserEvent({
+        userId: String(user._id),
+        action: 'created',
+        performedBy: req.user.sub,
+        newValues: {
+          phone: user.phone,
+          roles: user.roles,
+          engineerStatus: user.engineer_status,
+          source: AcquisitionChannel.MARKETER,
+        },
+        reason: 'إنشاء مهندس مباشر من بوابة المسوق مع اعتماد التوثيق',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log marketer engineer creation', err));
+
+    return {
+      id: user._id,
+      phone: user.phone,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roles: user.roles,
+      engineerStatus: user.engineer_status,
+      temporaryPassword: dto.password ? undefined : generatedPassword,
+      source: AcquisitionChannel.MARKETER,
+      createdByMarketerId: req.user.sub,
+      verificationFileUrl: uploaded.url,
+    };
+  }
+
+  @RequirePermissions('marketer.portal.access', 'admin.access')
+  @Post('marketer-portal/merchants')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'إنشاء تاجر من بوابة المسوق',
+    description: 'إنشاء حساب تاجر مع اعتماد مباشر ورفع صورة المحل وربط الحساب بالمسوق.',
+  })
+  async createMerchantFromMarketerPortal(
+    @Body() dto: CreateMarketerMerchantDto,
+    @UploadedFile() file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    @Req() req: { user: { sub: string } } & Request,
+  ) {
+    if (!Types.ObjectId.isValid(req.user.sub)) {
+      throw new BadRequestException('معرف المسوق غير صالح');
+    }
+
+    if (!file) {
+      throw new BadRequestException('صورة المحل مطلوبة');
+    }
+
+    const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedImageTypes.includes(file.mimetype)) {
+      throw new BadRequestException('صيغة صورة المحل غير مدعومة');
+    }
+
+    const existingUser = await this.userModel.findOne({ phone: dto.phone, deletedAt: null });
+    if (existingUser) {
+      throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
+    }
+
+    const generatedPassword = dto.password || this.generateMarketerTempPassword();
+    const uploaded = await this.uploadService.uploadFile(file, 'users/verification/merchants/store');
+
+    const userData: Partial<User> & { passwordHash?: string } = {
+      phone: dto.phone,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      gender: dto.gender,
+      city: dto.city || 'صنعاء',
+      roles: [UserRole.USER, UserRole.MERCHANT],
+      permissions: [],
+      status: UserStatus.ACTIVE,
+      passwordHash: await hash(generatedPassword, 10),
+      customer_capable: true,
+      engineer_capable: false,
+      engineer_status: CapabilityStatus.NONE,
+      merchant_capable: true,
+      merchant_status: CapabilityStatus.APPROVED,
+      merchant_discount_percent: this.defaultMerchantDiscountPercent,
+      admin_capable: false,
+      admin_status: CapabilityStatus.NONE,
+      storeName: dto.storeName,
+      storePhotoUrl: uploaded.url,
+      verificationNote: dto.note,
+      acquisitionChannel: AcquisitionChannel.MARKETER,
+      createdByMarketerId: new Types.ObjectId(req.user.sub),
+      marketerCreatedAt: new Date(),
+    };
+
+    const user = await this.userModel.create(userData);
+
+    await this.capsModel.create({
+      userId: user._id.toString(),
+      customer_capable: true,
+      engineer_capable: false,
+      engineer_status: CapabilityStatus.NONE,
+      merchant_capable: true,
+      merchant_status: CapabilityStatus.APPROVED,
+      merchant_discount_percent: this.defaultMerchantDiscountPercent,
+      admin_capable: false,
+      admin_status: CapabilityStatus.NONE,
+    });
+
+    this.auditService
+      .logUserEvent({
+        userId: String(user._id),
+        action: 'created',
+        performedBy: req.user.sub,
+        newValues: {
+          phone: user.phone,
+          roles: user.roles,
+          merchantStatus: user.merchant_status,
+          merchantDiscountPercent: user.merchant_discount_percent,
+          source: AcquisitionChannel.MARKETER,
+        },
+        reason: 'إنشاء تاجر مباشر من بوابة المسوق مع اعتماد التوثيق',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      })
+      .catch((err) => this.logger?.error('Failed to log marketer merchant creation', err));
+
+    return {
+      id: user._id,
+      phone: user.phone,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roles: user.roles,
+      merchantStatus: user.merchant_status,
+      merchantDiscountPercent: user.merchant_discount_percent,
+      temporaryPassword: dto.password ? undefined : generatedPassword,
+      source: AcquisitionChannel.MARKETER,
+      createdByMarketerId: req.user.sub,
+      verificationFileUrl: uploaded.url,
+    };
+  }
+
+  @RequirePermissions('marketer.portal.access', 'admin.access')
+  @Get('marketer-portal/my-users')
+  @ApiOperation({
+    summary: 'مستخدمي المسوق',
+    description: 'عرض المستخدمين الذين تم إنشاؤهم عبر حساب المسوق الحالي.',
+  })
+  async listMyMarketerUsers(
+    @Query('page') pageParam = '1',
+    @Query('limit') limitParam = '20',
+    @Req() req: { user: { sub: string } } & Request,
+    @Query('search') search?: string,
+    @Query('type') type: 'all' | 'engineer' | 'merchant' = 'all',
+  ) {
+    const page = Math.max(1, Number(pageParam) || 1);
+    const limit = Math.min(100, Math.max(1, Number(limitParam) || 20));
+    const skip = (page - 1) * limit;
+
+    const scopeQuery = await this.buildMarketerScopeQuery(req.user.sub);
+    const query: FilterQuery<User> = { ...scopeQuery };
+
+    if (search) {
+      query.$or = [
+        { phone: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    if (type === 'engineer') {
+      query.engineer_capable = true;
+    } else if (type === 'merchant') {
+      query.merchant_capable = true;
+    }
+
+    const [items, total] = await Promise.all([
+      this.userModel
+        .find(query)
+        .select(
+          '_id phone firstName lastName city roles status engineer_status merchant_status merchant_discount_percent createdAt',
+        )
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.userModel.countDocuments(query),
+    ]);
+
+    return {
+      items,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+      hasPrevPage: page > 1,
+    };
+  }
+
+  @RequirePermissions('marketer.portal.access', 'admin.access')
+  @Get('marketer-portal/my-users/stats')
+  @ApiOperation({
+    summary: 'إحصائيات المسوق',
+    description: 'ملخص إحصائي للمستخدمين الذين تمت إضافتهم بواسطة المسوق الحالي.',
+  })
+  async getMyMarketerUsersStats(@Req() req: { user: { sub: string } } & Request) {
+    const scopeQuery = await this.buildMarketerScopeQuery(req.user.sub);
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [
+      total,
+      engineers,
+      merchants,
+      approvedEngineers,
+      approvedMerchants,
+      createdThisMonth,
+    ] = await Promise.all([
+      this.userModel.countDocuments(scopeQuery),
+      this.userModel.countDocuments({ ...scopeQuery, engineer_capable: true }),
+      this.userModel.countDocuments({ ...scopeQuery, merchant_capable: true }),
+      this.userModel.countDocuments({
+        ...scopeQuery,
+        engineer_status: CapabilityStatus.APPROVED,
+      }),
+      this.userModel.countDocuments({
+        ...scopeQuery,
+        merchant_status: CapabilityStatus.APPROVED,
+      }),
+      this.userModel.countDocuments({ ...scopeQuery, createdAt: { $gte: monthStart } }),
+    ]);
+
+    return {
+      total,
+      engineers,
+      merchants,
+      approvedEngineers,
+      approvedMerchants,
+      createdThisMonth,
+      approvalRate:
+        total === 0
+          ? 0
+          : Math.round(((approvedEngineers + approvedMerchants) / (engineers + merchants || 1)) * 100),
+    };
   }
 
   /**
@@ -830,6 +1758,7 @@ export class UsersAdminController {
       merchant_discount_percent: 0,
       admin_capable: false,
       admin_status: CapabilityStatus.NONE,
+      acquisitionChannel: AcquisitionChannel.ADMIN,
     };
 
     // معالجة طلبات القدرات - تحديث userData مباشرة
@@ -2147,6 +3076,7 @@ export class UsersAdminController {
 
     // تحديث حالة التاجر
     const oldStatus = user.merchant_status;
+    const oldDiscountPercent = user.merchant_discount_percent || 0;
     user.merchant_status = dto.status;
 
     // تحديث نسبة الخصم إذا تم توفيرها
@@ -2194,6 +3124,30 @@ export class UsersAdminController {
       caps.merchant_capable = user.merchant_capable;
       caps.merchant_discount_percent = user.merchant_discount_percent;
       await caps.save();
+    }
+
+    const newDiscountPercent = user.merchant_discount_percent || 0;
+    if (this.notificationService && oldDiscountPercent !== newDiscountPercent) {
+      try {
+        await this.notificationService.createNotification({
+          recipientId: userId,
+          type: NotificationType.MERCHANT_DISCOUNT_ASSIGNED,
+          title: 'تم تحديث نسبة خصم التاجر',
+          message: `تم تحديث نسبة خصم حسابك التجاري من ${oldDiscountPercent}% إلى ${newDiscountPercent}%.`,
+          messageEn: `Your merchant discount was updated from ${oldDiscountPercent}% to ${newDiscountPercent}%.`,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+          category: NotificationCategory.PROMOTION,
+          data: {
+            oldDiscountPercent,
+            newDiscountPercent,
+            merchantStatus: user.merchant_status,
+          },
+          isSystemGenerated: true,
+        });
+      } catch (err) {
+        this.logger.error('Failed to send merchant discount update notification', err);
+      }
     }
 
     return {

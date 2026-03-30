@@ -5,6 +5,7 @@ import { MarketingAdminController } from './admin.controller';
 import { MarketingPublicController } from './public.controller';
 import { MarketingCronService } from './marketing.cron';
 import { AuthModule } from '../auth/auth.module';
+import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 import { SharedModule } from '../../shared/shared.module';
 import { CacheModule } from '../../shared/cache/cache.module';
 
@@ -27,6 +28,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
       { name: User.name, schema: UserSchema },
     ]),
     forwardRef(() => AuthModule),
+    forwardRef(() => NotificationsCompleteModule),
     SharedModule,
     CacheModule,
   ],

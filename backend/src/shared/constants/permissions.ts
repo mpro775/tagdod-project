@@ -95,6 +95,13 @@ export enum AdminPermission {
   ADMIN_ACCESS = 'admin.access',
   SUPER_ADMIN_ACCESS = 'super_admin.access',
 
+  // إدارة المسوقين
+  MARKETERS_READ = 'marketers.read',
+  MARKETERS_CREATE = 'marketers.create',
+  MARKETERS_UPDATE = 'marketers.update',
+  MARKETERS_ANALYTICS = 'marketers.analytics',
+  MARKETER_PORTAL_ACCESS = 'marketer.portal.access',
+
   // التحقق من القدرات
   CAPABILITIES_READ = 'capabilities.read',
   CAPABILITIES_UPDATE = 'capabilities.update',
@@ -207,6 +214,13 @@ export const PERMISSION_GROUPS = {
     AdminPermission.ANALYTICS_READ,
     AdminPermission.REPORTS_GENERATE,
     AdminPermission.ADMIN_ACCESS,
+  ],
+
+  // حساب المسوق (تشغيلي)
+  MARKETER: [
+    AdminPermission.ADMIN_ACCESS,
+    AdminPermission.MARKETER_PORTAL_ACCESS,
+    AdminPermission.UPLOAD_MANAGE,
   ],
 
   // أدمن محدود (قراءة فقط)

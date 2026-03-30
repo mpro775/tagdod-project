@@ -39,6 +39,8 @@ export const NOTIFICATION_TYPE_ROLES: Record<NotificationType, UserRole[]> = {
   [NotificationType.PROMOTION_STARTED]: [UserRole.USER],
   [NotificationType.PROMOTION_ENDING]: [UserRole.USER],
   [NotificationType.COUPON_USED]: [UserRole.USER],
+  [NotificationType.ENGINEER_COUPON_ASSIGNED]: [UserRole.ENGINEER],
+  [NotificationType.MERCHANT_DISCOUNT_ASSIGNED]: [UserRole.MERCHANT],
 
   // ===== Account & Security Notifications - للمستخدمين =====
   [NotificationType.ACCOUNT_VERIFIED]: [UserRole.USER],
@@ -123,6 +125,8 @@ export const NOTIFICATION_TYPE_CHANNELS: Record<NotificationType, NotificationCh
   [NotificationType.PROMOTION_STARTED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
   [NotificationType.PROMOTION_ENDING]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
   [NotificationType.COUPON_USED]: [NotificationChannel.IN_APP],
+  [NotificationType.ENGINEER_COUPON_ASSIGNED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+  [NotificationType.MERCHANT_DISCOUNT_ASSIGNED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
 
   // ===== Account & Security Notifications =====
   [NotificationType.ACCOUNT_VERIFIED]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
@@ -210,6 +214,8 @@ export const NOTIFICATION_TYPE_DEFAULT_CHANNEL: Record<NotificationType, Notific
   [NotificationType.PROMOTION_STARTED]: NotificationChannel.IN_APP,
   [NotificationType.PROMOTION_ENDING]: NotificationChannel.IN_APP,
   [NotificationType.COUPON_USED]: NotificationChannel.IN_APP,
+  [NotificationType.ENGINEER_COUPON_ASSIGNED]: NotificationChannel.IN_APP,
+  [NotificationType.MERCHANT_DISCOUNT_ASSIGNED]: NotificationChannel.IN_APP,
 
   // ===== Account & Security Notifications =====
   [NotificationType.ACCOUNT_VERIFIED]: NotificationChannel.IN_APP,

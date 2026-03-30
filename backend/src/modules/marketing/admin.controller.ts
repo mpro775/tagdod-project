@@ -24,6 +24,13 @@ import { Request } from 'express';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Coupon, CouponDocument } from './schemas/coupon.schema';
+import { NotificationService } from '../notifications/services/notification.service';
+import {
+  NotificationType,
+  NotificationChannel,
+  NotificationPriority,
+  NotificationCategory,
+} from '../notifications/enums/notification.enums';
 
 @ApiTags('إدارة-التسويق')
 @ApiBearerAuth()
@@ -36,6 +43,7 @@ export class MarketingAdminController {
   constructor(
     private svc: MarketingService,
     private auditService: AuditService,
+    private readonly notificationService: NotificationService,
     @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
   ) {}
 
@@ -662,6 +670,32 @@ export class MarketingAdminController {
   ) {
     const adminId = (req as unknown as { user: { sub: string } }).user.sub;
     const coupon = await this.svc.createEngineerCoupon(dto, adminId);
+
+    try {
+      await this.notificationService.createNotification({
+        recipientId: dto.engineerId,
+        type: NotificationType.ENGINEER_COUPON_ASSIGNED,
+        title: 'تم إضافة كوبون جديد لك',
+        message: `تم إضافة كوبون ${coupon.code} إلى حسابك. يمكنك مشاركته الآن مع العملاء.`,
+        messageEn: `A new coupon ${coupon.code} was assigned to your account. You can now share it with customers.`,
+        channel: NotificationChannel.IN_APP,
+        priority: NotificationPriority.HIGH,
+        category: NotificationCategory.PROMOTION,
+        data: {
+          couponId: String((coupon as unknown as { _id: unknown })._id || ''),
+          code: coupon.code,
+          name: coupon.name,
+          discountValue: coupon.discountValue ?? dto.discountValue ?? null,
+          commissionRate: coupon.commissionRate ?? dto.commissionRate,
+          validFrom: coupon.validFrom,
+          validUntil: coupon.validUntil ?? null,
+        },
+        isSystemGenerated: true,
+        createdBy: adminId,
+      });
+    } catch (err) {
+      this.logger.error('Failed to send engineer coupon assignment notification', err);
+    }
     
     // تسجيل إنشاء الكوبون في audit
     this.auditService.logCouponEvent({

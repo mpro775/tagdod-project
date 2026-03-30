@@ -310,6 +310,8 @@ UnifiedNotificationSchema.pre('save', function (next) {
       [NotificationType.ENGINEER_COMMISSION_ADDED]: NotificationCategory.PAYMENT,
       [NotificationType.INVOICE_CREATED]: NotificationCategory.ORDER,
       [NotificationType.COUPON_USED]: NotificationCategory.PROMOTION,
+      [NotificationType.ENGINEER_COUPON_ASSIGNED]: NotificationCategory.PROMOTION,
+      [NotificationType.MERCHANT_DISCOUNT_ASSIGNED]: NotificationCategory.PROMOTION,
     };
 
     this.category = typeToCategoryMap[this.type] || NotificationCategory.SYSTEM;
