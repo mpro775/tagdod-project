@@ -319,7 +319,7 @@ export const MENU_PERMISSIONS = {
 
   // Admin Management section
   'admin-management': [PERMISSIONS.ADMIN_ACCESS],
-  'admin-search': [PERMISSIONS.ADMIN_ACCESS],
+  'admin-search': [PERMISSIONS.SUPER_ADMIN_ACCESS, PERMISSIONS.ADMIN_ACCESS],
   'admin-marketers': [PERMISSIONS.SUPER_ADMIN_ACCESS, PERMISSIONS.ADMIN_ACCESS],
   'marketer-portal': [PERMISSIONS.MARKETER_PORTAL_ACCESS, PERMISSIONS.ADMIN_ACCESS],
 } as const;
@@ -375,8 +375,14 @@ export const filterMenuByPermissions = (
   menuItems: any[],
   userPermissions: string[]
 ): any[] => {
+  const isMarketerAccount = userPermissions.includes(PERMISSIONS.MARKETER_PORTAL_ACCESS);
+
   return menuItems
     .map(item => {
+      if (isMarketerAccount && (item.id === 'dashboard' || item.id === 'admin-search')) {
+        return null;
+      }
+
       // Check if user has permission for this menu item
       const itemPermissions = MENU_PERMISSIONS[item.id as keyof typeof MENU_PERMISSIONS];
       // If item not found in MENU_PERMISSIONS, require ADMIN_ACCESS by default

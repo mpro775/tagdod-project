@@ -84,7 +84,10 @@ export const LoginPage: React.FC = () => {
       });
 
       toast.success(t('messages.loginSuccess'));
-      navigate('/dashboard');
+      const target = (data.me.permissions || []).includes('marketer.portal.access')
+        ? '/marketer/portal'
+        : '/dashboard';
+      navigate(target);
     },
     onError: (error) => {
       setOtpError(t('messages.otpInvalid'));
@@ -157,7 +160,10 @@ export const LoginPage: React.FC = () => {
       });
 
       toast.success(t('messages.loginSuccess'));
-      navigate('/dashboard');
+      const target = (data.me.permissions || []).includes('marketer.portal.access')
+        ? '/marketer/portal'
+        : '/dashboard';
+      navigate(target);
     },
     onError: (error) => {
       setPasswordError(t('messages.loginFailed'));
@@ -202,7 +208,10 @@ export const LoginPage: React.FC = () => {
       });
 
       toast.success(t('messages.loginSuccess'));
-      navigate('/dashboard');
+      const target = (data.me.permissions || []).includes('marketer.portal.access')
+        ? '/marketer/portal'
+        : '/dashboard';
+      navigate(target);
     },
     onError: (error) => {
       setDevLoginError(t('messages.devLoginFailed'));

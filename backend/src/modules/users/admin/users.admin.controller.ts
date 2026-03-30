@@ -1290,6 +1290,19 @@ export class UsersAdminController {
     };
   }
 
+  private buildStrictMarketerScopeQuery(requesterId: string): FilterQuery<User> {
+    if (!Types.ObjectId.isValid(requesterId)) {
+      return { _id: null };
+    }
+
+    return {
+      acquisitionChannel: AcquisitionChannel.MARKETER,
+      createdByMarketerId: new Types.ObjectId(requesterId),
+      deletedAt: null,
+      status: { $ne: UserStatus.DELETED },
+    };
+  }
+
   private generateMarketerTempPassword(): string {
     return `Mkt${Math.random().toString(36).substring(2, 8)}!A1`;
   }
@@ -1597,7 +1610,7 @@ export class UsersAdminController {
     const limit = Math.min(100, Math.max(1, Number(limitParam) || 20));
     const skip = (page - 1) * limit;
 
-    const scopeQuery = await this.buildMarketerScopeQuery(req.user.sub);
+    const scopeQuery = this.buildStrictMarketerScopeQuery(req.user.sub);
     const query: FilterQuery<User> = { ...scopeQuery };
 
     if (search) {
@@ -1645,7 +1658,7 @@ export class UsersAdminController {
     description: 'ملخص إحصائي للمستخدمين الذين تمت إضافتهم بواسطة المسوق الحالي.',
   })
   async getMyMarketerUsersStats(@Req() req: { user: { sub: string } } & Request) {
-    const scopeQuery = await this.buildMarketerScopeQuery(req.user.sub);
+    const scopeQuery = this.buildStrictMarketerScopeQuery(req.user.sub);
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
