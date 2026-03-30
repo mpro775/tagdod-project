@@ -1,9 +1,10 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, Res, Version, VERSION_NEUTRAL } from '@nestjs/common';
 import { Response } from 'express';
 
 @Controller('p') // الرابط سيكون /p/123
 export class ShareProductController {
   @Get(':id')
+  @Version([VERSION_NEUTRAL, '1'])
   async redirectUser(@Param('id') id: string, @Res() res: Response) {
     // إعدادات الروابط
     const androidPackage = 'com.tagadod.app';

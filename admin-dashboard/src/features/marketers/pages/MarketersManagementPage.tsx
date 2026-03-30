@@ -6,18 +6,16 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
   Typography,
   Chip,
-  Pagination,
   FormControlLabel,
   Switch,
   MenuItem,
@@ -52,11 +50,15 @@ import {
   exportMarketerFullReport,
   exportMarketersAnalyticsPdf,
 } from '../utils/marketersAnalyticsExport';
+import { DataTable } from '@/shared/components/DataTable/DataTable';
+import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 
 const PAGE_SIZE = 10;
 
 export const MarketersManagementPage = () => {
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(PAGE_SIZE);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({
     phone: '',
@@ -73,12 +75,16 @@ export const MarketersManagementPage = () => {
   });
   const [toDate, setToDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedMarketerId, setSelectedMarketerId] = useState<string>('');
+  const [rankingPaginationModel, setRankingPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 10,
+  });
 
   const { hasPermission } = useAuthStore();
   const canCreateMarketers =
     hasPermission(PERMISSIONS.MARKETERS_CREATE) || hasPermission(PERMISSIONS.SUPER_ADMIN_ACCESS);
 
-  const marketersQuery = useMarketers({ page, limit: PAGE_SIZE, search: search || undefined });
+  const marketersQuery = useMarketers({ page, limit, search: search || undefined });
   const summaryQuery = useMarketersSummary();
   const overviewQuery = useMarketersAnalyticsOverview({ from: fromDate, to: toDate });
   const rankingQuery = useMarketersAnalyticsRanking({ from: fromDate, to: toDate, limit: 15 });
@@ -139,12 +145,73 @@ export const MarketersManagementPage = () => {
 
   const dailyTrendData = overviewQuery.data?.dailyTrend || [];
 
-  const statusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
+  function statusColor(status: string): 'success' | 'warning' | 'error' | 'default' {
     if (status === 'active') return 'success';
     if (status === 'pending') return 'warning';
     if (status === 'suspended') return 'error';
     return 'default';
-  };
+  }
+
+  const marketersColumns = useMemo<GridColDef[]>(
+    () => [
+      {
+        field: 'name',
+        headerName: 'الاسم',
+        flex: 1,
+        minWidth: 180,
+        valueGetter: (_value, row) => `${row.firstName || ''} ${row.lastName || ''}`.trim() || '-',
+      },
+      { field: 'phone', headerName: 'الهاتف', flex: 1, minWidth: 140 },
+      {
+        field: 'status',
+        headerName: 'الحالة',
+        flex: 0.8,
+        minWidth: 120,
+        renderCell: (params) => (
+          <Chip size="small" label={params.value} color={statusColor(String(params.value))} variant="outlined" />
+        ),
+      },
+      {
+        field: 'lastActivityAt',
+        headerName: 'آخر نشاط',
+        flex: 1.2,
+        minWidth: 160,
+        valueGetter: (value) => (value ? new Date(String(value)).toLocaleString('ar-YE') : '-'),
+      },
+      {
+        field: 'createdAt',
+        headerName: 'تاريخ الإنشاء',
+        flex: 1,
+        minWidth: 150,
+        valueGetter: (value) => (value ? new Date(String(value)).toLocaleDateString('ar-YE') : '-'),
+      },
+    ],
+    [],
+  );
+
+  const rankingColumns = useMemo<GridColDef[]>(
+    () => [
+      { field: 'rank', headerName: 'الترتيب', flex: 0.6, minWidth: 90, valueGetter: (v) => `#${v}` },
+      {
+        field: 'name',
+        headerName: 'المسوق',
+        flex: 1.3,
+        minWidth: 170,
+        valueGetter: (_value, row) => `${row.marketer?.firstName || ''} ${row.marketer?.lastName || ''}`.trim() || '-',
+      },
+      { field: 'phone', headerName: 'الهاتف', flex: 1, minWidth: 130, valueGetter: (_v, row) => row.marketer?.phone || '-' },
+      { field: 'totalLeads', headerName: 'إجمالي العملاء', flex: 0.9, minWidth: 120 },
+      { field: 'approvedTotal', headerName: 'المعتمدون', flex: 0.8, minWidth: 110 },
+      {
+        field: 'conversionRate',
+        headerName: 'معدل التحويل',
+        flex: 0.9,
+        minWidth: 120,
+        valueGetter: (value) => `${value ?? 0}%`,
+      },
+    ],
+    [],
+  );
 
   const stats = useMemo(
     () => [
@@ -169,6 +236,7 @@ export const MarketersManagementPage = () => {
 
   const handleCreate = () => {
     if (!form.phone.trim() || !form.firstName.trim()) {
+      toast.error('الرجاء إدخال رقم الهاتف والاسم الأول');
       return;
     }
 
@@ -183,6 +251,7 @@ export const MarketersManagementPage = () => {
       {
         onSuccess: (result) => {
           setCreatedPassword(result.temporaryPassword || null);
+          setCreateDialogOpen(false);
           setForm({
             phone: '',
             firstName: '',
@@ -198,14 +267,21 @@ export const MarketersManagementPage = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Stack spacing={3}>
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            إدارة المسوقين
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            إنشاء حسابات مسوقين ومتابعة بياناتهم الأساسية بشكل آمن.
-          </Typography>
-        </Box>
+        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1}>
+          <Box>
+            <Typography variant="h5" fontWeight={700}>
+              إدارة المسوقين
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              إنشاء حسابات مسوقين ومتابعة بياناتهم الأساسية بشكل آمن.
+            </Typography>
+          </Box>
+          {canCreateMarketers && (
+            <Button variant="contained" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>
+              إنشاء حساب مسوق
+            </Button>
+          )}
+        </Stack>
 
         <Grid container spacing={2}>
           {stats.map((stat) => (
@@ -432,36 +508,17 @@ export const MarketersManagementPage = () => {
               ترتيب المسوقين حسب الأداء
             </Typography>
 
-            {rankingQuery.isLoading ? (
-              <Box sx={{ py: 4, textAlign: 'center' }}>
-                <CircularProgress size={26} />
-              </Box>
-            ) : (
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>الترتيب</TableCell>
-                    <TableCell>المسوق</TableCell>
-                    <TableCell>الهاتف</TableCell>
-                    <TableCell>إجمالي العملاء</TableCell>
-                    <TableCell>المعتمدون</TableCell>
-                    <TableCell>معدل التحويل</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {(rankingQuery.data?.items || []).map((item) => (
-                    <TableRow key={item.marketerId} hover>
-                      <TableCell>#{item.rank}</TableCell>
-                      <TableCell>{`${item.marketer.firstName || ''} ${item.marketer.lastName || ''}`.trim() || '-'}</TableCell>
-                      <TableCell>{item.marketer.phone || '-'}</TableCell>
-                      <TableCell>{item.totalLeads}</TableCell>
-                      <TableCell>{item.approvedTotal}</TableCell>
-                      <TableCell>{item.conversionRate}%</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <DataTable
+              columns={rankingColumns}
+              rows={rankingQuery.data?.items || []}
+              loading={rankingQuery.isLoading}
+              paginationModel={rankingPaginationModel}
+              onPaginationModelChange={setRankingPaginationModel}
+              rowCount={rankingQuery.data?.items?.length || 0}
+              paginationMode="client"
+              getRowId={(row: any) => row.marketerId}
+              height={440}
+            />
 
             <Divider />
 
@@ -546,10 +603,15 @@ export const MarketersManagementPage = () => {
           </Stack>
         </Paper>
 
-        {canCreateMarketers && (
-          <Paper sx={{ p: 2 }}>
-            <Stack spacing={2}>
-              <Typography variant="h6">إضافة مسوق جديد</Typography>
+        <Dialog
+          open={createDialogOpen}
+          onClose={() => setCreateDialogOpen(false)}
+          fullWidth
+          maxWidth="md"
+        >
+          <DialogTitle>إضافة مسوق جديد</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ pt: 1 }}>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
@@ -589,103 +651,61 @@ export const MarketersManagementPage = () => {
                 </Grid>
               </Grid>
 
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={form.activateImmediately}
-                      onChange={(event) =>
-                        setForm((prev) => ({ ...prev, activateImmediately: event.target.checked }))
-                      }
-                    />
-                  }
-                  label="تفعيل الحساب مباشرة"
-                />
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={handleCreate}
-                  disabled={createMarketerMutation.isPending}
-                >
-                  إنشاء حساب المسوق
-                </Button>
-              </Stack>
-
-              {createdPassword && (
-                <Alert severity="success">
-                  تم إنشاء الحساب. كلمة المرور المؤقتة: <strong>{createdPassword}</strong>
-                </Alert>
-              )}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.activateImmediately}
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, activateImmediately: event.target.checked }))
+                    }
+                  />
+                }
+                label="تفعيل الحساب مباشرة"
+              />
             </Stack>
-          </Paper>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setCreateDialogOpen(false)}>إلغاء</Button>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleCreate}
+              disabled={createMarketerMutation.isPending}
+            >
+              إنشاء الحساب
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {createdPassword && (
+          <Alert severity="success">
+            تم إنشاء الحساب. كلمة المرور المؤقتة: <strong>{createdPassword}</strong>
+          </Alert>
         )}
 
         <Paper sx={{ p: 2 }}>
           <Stack spacing={2}>
-            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
-              <Typography variant="h6">قائمة المسوقين</Typography>
-              <TextField
-                label="بحث (اسم/هاتف)"
-                size="small"
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                sx={{ minWidth: { xs: '100%', md: 280 } }}
-              />
-            </Stack>
-
-            {marketersQuery.isLoading ? (
-              <Box sx={{ py: 6, textAlign: 'center' }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>الاسم</TableCell>
-                      <TableCell>الهاتف</TableCell>
-                      <TableCell>الحالة</TableCell>
-                      <TableCell>آخر نشاط</TableCell>
-                      <TableCell>تاريخ الإنشاء</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {(marketersQuery.data?.items || []).map((marketer) => (
-                      <TableRow key={marketer._id} hover>
-                        <TableCell>{`${marketer.firstName || ''} ${marketer.lastName || ''}`.trim() || '-'}</TableCell>
-                        <TableCell>{marketer.phone}</TableCell>
-                        <TableCell>
-                          <Chip
-                            size="small"
-                            label={marketer.status}
-                            color={statusColor(marketer.status)}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {marketer.lastActivityAt
-                            ? new Date(marketer.lastActivityAt).toLocaleString('ar-YE')
-                            : '-'}
-                        </TableCell>
-                        <TableCell>{new Date(marketer.createdAt).toLocaleDateString('ar-YE')}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                <Stack direction="row" justifyContent="center" sx={{ pt: 1 }}>
-                  <Pagination
-                    page={page}
-                    count={marketersQuery.data?.totalPages || 1}
-                    onChange={(_event, value) => setPage(value)}
-                    color="primary"
-                  />
-                </Stack>
-              </>
-            )}
+            <Typography variant="h6">قائمة المسوقين</Typography>
+            <DataTable
+              columns={marketersColumns}
+              rows={marketersQuery.data?.items || []}
+              loading={marketersQuery.isLoading}
+              title={undefined}
+              onSearch={(query) => {
+                setSearch(query);
+                setPage(1);
+              }}
+              searchPlaceholder="بحث (اسم/هاتف)"
+              paginationModel={{ page: page - 1, pageSize: limit }}
+              onPaginationModelChange={(model) => {
+                setPage(model.page + 1);
+                setLimit(model.pageSize);
+              }}
+              rowCount={marketersQuery.data?.total || 0}
+              paginationMode="server"
+              getRowId={(row: any) => row._id}
+              height={520}
+            />
           </Stack>
         </Paper>
       </Stack>
