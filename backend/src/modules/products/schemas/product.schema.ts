@@ -33,6 +33,9 @@ export class Product {
   @Prop({ required: true })
   descriptionEn!: string; // الوصف بالإنجليزية
 
+  @Prop({ type: Number, min: 0, default: 0 })
+  warrantyDurationYears!: number; // مدة الضمان بالسنوات
+
   // التصنيف
   @Prop({ type: Types.ObjectId, ref: 'Category', required: true, index: true })
   categoryId!: string;

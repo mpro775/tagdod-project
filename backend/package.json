@@ -34,6 +34,7 @@
     "migrate:capabilities": "ts-node scripts/run-migration.ts",
     "migrate:cleanup": "ts-node scripts/cleanup-capabilities.ts",
     "db:backfill-product-timestamps": "ts-node scripts/backfill-product-timestamps.ts",
+    "db:backfill-product-warranty-years": "ts-node scripts/backfill-product-warranty-years.ts",
     "migration:full": "npm run migrate:capabilities && echo 'Migration completed. Run npm run migrate:cleanup to remove old data.'",
     "update:super-admin": "ts-node scripts/update-super-admin-permissions.ts",
     "fix-nan-values": "ts-node scripts/fix-nan-stock-values.ts",

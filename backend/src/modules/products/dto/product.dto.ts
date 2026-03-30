@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional, IsBoolean, IsNumber, IsArray, Min } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsBoolean, IsNumber, IsArray, Min, IsInt } from 'class-validator';
 import { ProductStatus } from '../schemas/product.schema';
 
 export class CreateProductDto {
@@ -6,6 +6,7 @@ export class CreateProductDto {
   @IsString() nameEn!: string; // الاسم بالإنجليزية
   @IsString() description!: string; // الوصف بالعربية
   @IsString() descriptionEn!: string; // الوصف بالإنجليزية
+  @IsOptional() @IsNumber() @IsInt() @Min(0) warrantyDurationYears?: number;
   @IsString() categoryId!: string;
   
   @IsOptional() @IsString() brandId?: string;
@@ -56,6 +57,7 @@ export class UpdateProductDto {
   @IsOptional() @IsString() nameEn?: string; // الاسم بالإنجليزية
   @IsOptional() @IsString() description?: string; // الوصف بالعربية
   @IsOptional() @IsString() descriptionEn?: string; // الوصف بالإنجليزية
+  @IsOptional() @IsNumber() @IsInt() @Min(0) warrantyDurationYears?: number;
   @IsOptional() @IsString() categoryId?: string;
   @IsOptional() @IsString() brandId?: string;
   @IsOptional() @IsString() sku?: string;

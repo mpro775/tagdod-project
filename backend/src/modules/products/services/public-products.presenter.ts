@@ -1094,6 +1094,10 @@ export class PublicProductsPresenter {
       ...(includeDescriptions && product.descriptionEn
         ? { descriptionEn: product.descriptionEn }
         : {}),
+      warrantyDurationYears:
+        typeof product.warrantyDurationYears === 'number' && !isNaN(product.warrantyDurationYears)
+          ? Math.max(0, product.warrantyDurationYears)
+          : 0,
       ...(includeCategory && category ? { category } : {}),
       ...(includeBrand && brand ? { brand } : {}),
       ...(mainImage ? { mainImage } : {}),

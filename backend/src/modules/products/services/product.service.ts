@@ -299,6 +299,11 @@ export class ProductService {
 
       (productWithAvailability as Product & { videos?: unknown[] }).videos =
         this.buildProductVideos((productWithAvailability as Product & { videoIds?: unknown[] }).videoIds);
+
+      (productWithAvailability as Product & { warrantyDurationYears?: number }).warrantyDurationYears =
+        typeof (productWithAvailability as Product & { warrantyDurationYears?: number }).warrantyDurationYears === 'number'
+          ? Math.max(0, (productWithAvailability as Product & { warrantyDurationYears?: number }).warrantyDurationYears as number)
+          : 0;
     }
 
     return productWithAvailability;
@@ -917,6 +922,10 @@ export class ProductService {
               product.isAvailable = true;
             }
           }
+          (product as Product & { warrantyDurationYears?: number }).warrantyDurationYears =
+            typeof (product as Product & { warrantyDurationYears?: number }).warrantyDurationYears === 'number'
+              ? Math.max(0, (product as Product & { warrantyDurationYears?: number }).warrantyDurationYears as number)
+              : 0;
           return product;
         });
         return {
@@ -1009,6 +1018,10 @@ export class ProductService {
           product.isAvailable = true;
         }
       }
+      (product as Product & { warrantyDurationYears?: number }).warrantyDurationYears =
+        typeof (product as Product & { warrantyDurationYears?: number }).warrantyDurationYears === 'number'
+          ? Math.max(0, (product as Product & { warrantyDurationYears?: number }).warrantyDurationYears as number)
+          : 0;
       return product;
     });
 

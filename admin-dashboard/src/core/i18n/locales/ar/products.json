@@ -55,6 +55,7 @@
     "description": "وصف المنتج",
     "descriptionAr": "وصف المنتج (عربي)",
     "descriptionEn": "وصف المنتج (إنجليزي)",
+    "warrantyDurationYears": "مدة الضمان (سنة)",
     "category": "الفئة",
     "selectCategory": "اختر الفئة",
     "brand": "العلامة التجارية",
@@ -306,6 +307,7 @@
     "productNotFound": "المنتج غير موجود أو تم حذفه",
     "productImage": "صورة المنتج",
     "sku": "رقم المنتج (SKU)",
+    "warrantyDurationYears": "مدة الضمان (سنة)",
     "skuNotSpecified": "غير محدد",
     "price": "السعر",
     "priceNotSpecified": "غير محدد",
@@ -337,7 +339,8 @@
       "keywords": "الكلمات المفتاحية",
       "noKeywords": "لا توجد كلمات مفتاحية",
       "notSpecified": "غير محدد"
-    }
+    },
+    "notSpecified": "غير محدد"
   },
   "integration": {
     "title": "لوحة ربط المخزون",
@@ -403,6 +406,4 @@
     }
   }
 }
-
-
 

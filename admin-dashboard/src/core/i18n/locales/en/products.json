@@ -55,6 +55,7 @@
     "description": "Product Description",
     "descriptionAr": "Product Description (Arabic)",
     "descriptionEn": "Product Description (English)",
+    "warrantyDurationYears": "Warranty Duration (Years)",
     "category": "Category",
     "selectCategory": "Select Category",
     "brand": "Brand",
@@ -306,6 +307,7 @@
     "productNotFound": "Product not found or has been deleted",
     "productImage": "Product Image",
     "sku": "Product SKU",
+    "warrantyDurationYears": "Warranty Duration (Years)",
     "skuNotSpecified": "Not specified",
     "price": "Price",
     "priceNotSpecified": "Not specified",
@@ -337,7 +339,7 @@
       "keywords": "Keywords",
       "noKeywords": "No keywords",
       "notSpecified": "Not specified"
-    }
+    },
+    "notSpecified": "Not specified"
   }
 }
-
