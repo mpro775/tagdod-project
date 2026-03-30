@@ -67,6 +67,7 @@ const productSchema = z.object({
   nameEn: z.string().min(2, 'الاسم بالإنجليزية يجب أن يكون حرفين على الأقل'),
   description: z.string().min(10, 'الوصف يجب أن يكون 10 أحرف على الأقل'),
   descriptionEn: z.string().min(10, 'الوصف بالإنجليزية يجب أن يكون 10 أحرف على الأقل'),
+  warrantyDurationYears: z.coerce.number().min(0).optional(),
   categoryId: z.string().min(1, 'يجب اختيار فئة'),
   brandId: z.string().optional(),
   sku: z.string().optional(),
@@ -163,6 +164,7 @@ export const ProductFormPage: React.FC = () => {
       nameEn: '',
       description: '',
       descriptionEn: '',
+      warrantyDurationYears: 0,
       categoryId: '',
       status: ProductStatus.ACTIVE, // ✅ نشط بشكل افتراضي
       isFeatured: false,
@@ -357,6 +359,7 @@ export const ProductFormPage: React.FC = () => {
           nameEn: formData.nameEn,
           description: formData.description,
           descriptionEn: formData.descriptionEn,
+          warrantyDurationYears: Math.max(0, Number(formData.warrantyDurationYears ?? 0)),
           categoryId: formData.categoryId,
           brandId: formData.brandId,
           sku: formData.sku,
@@ -528,6 +531,7 @@ export const ProductFormPage: React.FC = () => {
         nameEn: product.nameEn,
         description: product.description,
         descriptionEn: product.descriptionEn,
+        warrantyDurationYears: Math.max(0, Number(product.warrantyDurationYears ?? 0)),
         categoryId: categoryId || '',
         brandId: brandId || '',
         sku: product.sku,
@@ -663,6 +667,7 @@ export const ProductFormPage: React.FC = () => {
         nameEn: data.nameEn,
         description: data.description,
         descriptionEn: data.descriptionEn,
+        warrantyDurationYears: Math.max(0, Number(data.warrantyDurationYears ?? 0)),
         categoryId: data.categoryId,
         brandId: data.brandId,
         sku: data.sku,
@@ -724,6 +729,7 @@ export const ProductFormPage: React.FC = () => {
         nameEn: data.nameEn,
         description: data.description,
         descriptionEn: data.descriptionEn,
+        warrantyDurationYears: Math.max(0, Number(data.warrantyDurationYears ?? 0)),
         categoryId: data.categoryId,
         brandId: data.brandId,
         sku: data.sku,
@@ -844,6 +850,25 @@ export const ProductFormPage: React.FC = () => {
                   </Grid>
                 </Grid>
               )}
+
+              <Grid container spacing={3} sx={{ mt: 0.5 }}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Controller
+                    name="warrantyDurationYears"
+                    control={methods.control}
+                    render={({ field }) => (
+                      <TextField
+                        label={t('products:form.warrantyDurationYears', 'مدة الضمان (سنة)')}
+                        type="number"
+                        value={field.value ?? 0}
+                        onChange={(e) => field.onChange(Math.max(0, Number(e.target.value || 0)))}
+                        fullWidth
+                        inputProps={{ min: 0, step: 1 }}
+                      />
+                    )}
+                  />
+                </Grid>
+              </Grid>
             </Box>
           </Box>
         );

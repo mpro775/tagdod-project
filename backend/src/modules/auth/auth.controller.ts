@@ -46,7 +46,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UserSignupDto } from './dto/user-signup.dto';
 import { CheckPhoneDto } from './dto/check-phone.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import {
   User,
   UserRole,
@@ -81,12 +81,24 @@ import {
   NotificationType,
   NotificationChannel,
   NotificationPriority,
+  NotificationCategory,
 } from '../notifications/enums/notification.enums';
+import {
+  Coupon,
+  CouponStatus,
+  CouponType,
+  CouponVisibility,
+  DiscountAppliesTo,
+} from '../marketing/schemas/coupon.schema';
 
 @ApiTags('المصادقة')
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
+  private readonly defaultEngineerCouponTag = 'AUTO_ENGINEER_DEFAULT_COUPON';
+  private readonly defaultEngineerCouponDiscountPercent = 5;
+  private readonly defaultEngineerCouponCommissionPercent = 5;
+  private readonly defaultMerchantDiscountPercent = 15;
 
   constructor(
     private otp: OtpService,
@@ -95,12 +107,83 @@ export class AuthController {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(EngineerProfile.name) private engineerProfileModel: Model<EngineerProfile>,
     @InjectModel(Capabilities.name) private capsModel: Model<Capabilities>,
+    @InjectModel(Coupon.name) private couponModel: Model<Coupon>,
     private favoritesService: FavoritesService,
     private auditService: AuditService,
     private engineerProfileService: EngineerProfileService,
     @Inject(forwardRef(() => NotificationService))
     private notificationService?: NotificationService,
   ) { }
+
+  private async createDefaultEngineerCouponIfMissing(engineerId: string, adminId?: string): Promise<void> {
+    if (!Types.ObjectId.isValid(engineerId)) {
+      this.logger.warn(`Skip default coupon creation: invalid engineer id ${engineerId}`);
+      return;
+    }
+
+    const engineerObjectId = new Types.ObjectId(engineerId);
+
+    const existingDefaultCoupon = await this.couponModel
+      .findOne({
+        engineerId: engineerObjectId,
+        deletedAt: null,
+        description: { $regex: `^${this.defaultEngineerCouponTag}` },
+      })
+      .select('_id code')
+      .lean();
+
+    if (existingDefaultCoupon) {
+      this.logger.log(
+        `Default engineer coupon already exists for ${engineerId}: ${existingDefaultCoupon.code}`,
+      );
+      return;
+    }
+
+    const couponCode = await this.generateUniqueDefaultEngineerCouponCode();
+    const now = new Date();
+
+    await this.couponModel.create({
+      code: couponCode,
+      name: 'الكوبون الافتراضي للمهندس',
+      description: `${this.defaultEngineerCouponTag}: تم إنشاؤه تلقائياً عند توثيق المهندس`,
+      type: CouponType.PERCENTAGE,
+      status: CouponStatus.ACTIVE,
+      visibility: CouponVisibility.PUBLIC,
+      discountValue: this.defaultEngineerCouponDiscountPercent,
+      commissionRate: this.defaultEngineerCouponCommissionPercent,
+      engineerId: engineerObjectId,
+      usageLimit: null,
+      usageLimitPerUser: null,
+      validFrom: now,
+      validUntil: null,
+      appliesTo: DiscountAppliesTo.ALL_PRODUCTS,
+      usedCount: 0,
+      totalRedemptions: 0,
+      totalDiscountGiven: 0,
+      totalRevenue: 0,
+      totalCommissionEarned: 0,
+      usageHistory: [],
+      createdBy: adminId,
+    });
+
+    this.logger.log(`Created default engineer coupon for ${engineerId}: ${couponCode}`);
+  }
+
+  private async generateUniqueDefaultEngineerCouponCode(): Promise<string> {
+    const maxAttempts = 10;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+      const code = `ENG5-${randomPart}`;
+      const exists = await this.couponModel.exists({ code, deletedAt: null });
+      if (!exists) {
+        return code;
+      }
+    }
+
+    const fallbackCode = `ENG5-${Date.now().toString().slice(-8)}`;
+    return fallbackCode.toUpperCase();
+  }
 
   /**
    * تحديد الأدوار بناءً على capabilityRequest أو roles المرسلة
@@ -1121,6 +1204,12 @@ export class AuthController {
             // لا نرمي خطأ هنا لأن الموافقة تمت بنجاح، فقط نسجل الخطأ
           }
         }
+
+        try {
+          await this.createDefaultEngineerCouponIfMissing(body.userId, req.user.sub);
+        } catch (error) {
+          this.logger.error(`Failed to create default engineer coupon for user ${body.userId}:`, error);
+        }
       }
     }
 
@@ -1133,16 +1222,17 @@ export class AuthController {
 
       // تعيين نسبة الخصم عند الموافقة على التاجر
       if (body.approve) {
+        const resolvedDiscountPercent = this.defaultMerchantDiscountPercent;
+
         if (
-          body.merchantDiscountPercent === undefined ||
-          body.merchantDiscountPercent < 0 ||
-          body.merchantDiscountPercent > 100
+          resolvedDiscountPercent < 0 ||
+          resolvedDiscountPercent > 100
         ) {
           throw new AuthException(ErrorCode.AUTH_INVALID_DISCOUNT, {
-            discount: body.merchantDiscountPercent,
+            discount: resolvedDiscountPercent,
           });
         }
-        caps.merchant_discount_percent = body.merchantDiscountPercent;
+        caps.merchant_discount_percent = resolvedDiscountPercent;
       } else {
         // إزالة الخصم عند الرفض
         caps.merchant_discount_percent = 0;
@@ -1153,6 +1243,34 @@ export class AuthController {
     }
 
     await caps.save();
+
+    if (body.capability === 'merchant' && this.notificationService) {
+      const oldDiscountPercent = Number(oldValues.merchant_discount_percent ?? 0);
+      const newDiscountPercent = Number(newValues.merchant_discount_percent ?? 0);
+
+      if (oldDiscountPercent !== newDiscountPercent) {
+        try {
+          await this.notificationService.createNotification({
+            recipientId: body.userId,
+            type: NotificationType.MERCHANT_DISCOUNT_ASSIGNED,
+            title: 'تم تحديث نسبة خصم التاجر',
+            message: `تم تحديث نسبة خصم حسابك التجاري من ${oldDiscountPercent}% إلى ${newDiscountPercent}%.`,
+            messageEn: `Your merchant discount was updated from ${oldDiscountPercent}% to ${newDiscountPercent}%.`,
+            channel: NotificationChannel.IN_APP,
+            priority: NotificationPriority.HIGH,
+            category: NotificationCategory.PROMOTION,
+            data: {
+              oldDiscountPercent,
+              newDiscountPercent,
+              merchantStatus: caps.merchant_status,
+            },
+            isSystemGenerated: true,
+          });
+        } catch (err) {
+          this.logger.error('Failed to send merchant discount update notification', err);
+        }
+      }
+    }
 
     // تسجيل حدث الموافقة/الرفض على capability
     this.auditService

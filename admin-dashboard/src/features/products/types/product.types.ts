@@ -26,6 +26,7 @@ export interface Product extends BaseEntity {
   slug: string;
   description: string; // الوصف بالعربية
   descriptionEn: string; // الوصف بالإنجليزية
+  warrantyDurationYears?: number; // مدة الضمان بالسنوات
 
   // التصنيف
   categoryId: string | {
@@ -249,6 +250,7 @@ export interface CreateProductDto {
   nameEn: string; // الاسم بالإنجليزية
   description: string; // الوصف بالعربية
   descriptionEn: string; // الوصف بالإنجليزية
+  warrantyDurationYears?: number;
   categoryId: string;
   
   brandId?: string;
@@ -295,6 +297,7 @@ export interface UpdateProductDto {
   nameEn?: string; // الاسم بالإنجليزية
   description?: string; // الوصف بالعربية
   descriptionEn?: string; // الوصف بالإنجليزية
+  warrantyDurationYears?: number;
   categoryId?: string;
   brandId?: string;
   sku?: string;

@@ -47,6 +47,10 @@ export const useCreateProduct = () => {
         basePriceUSD: data.basePriceUSD ? Number(data.basePriceUSD) : undefined,
         compareAtPriceUSD: data.compareAtPriceUSD ? Number(data.compareAtPriceUSD) : undefined,
         costPriceUSD: data.costPriceUSD ? Number(data.costPriceUSD) : undefined,
+        warrantyDurationYears:
+          data.warrantyDurationYears !== undefined
+            ? Math.max(0, Number(data.warrantyDurationYears))
+            : undefined,
         sku: data.sku?.trim() || undefined,
       };
       return productsApi.create(payload);

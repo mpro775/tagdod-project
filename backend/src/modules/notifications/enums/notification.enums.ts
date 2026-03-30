@@ -71,6 +71,8 @@ export enum NotificationType {
   // Invoice & Coupons
   INVOICE_CREATED = 'INVOICE_CREATED',
   COUPON_USED = 'COUPON_USED',
+  ENGINEER_COUPON_ASSIGNED = 'ENGINEER_COUPON_ASSIGNED',
+  MERCHANT_DISCOUNT_ASSIGNED = 'MERCHANT_DISCOUNT_ASSIGNED',
 }
 
 export enum NotificationStatus {

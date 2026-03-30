@@ -63,6 +63,11 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
   // Get required permissions for this route
   const requiredPermissions = getRoutePermissions(location.pathname);
 
+  const isMarketerAccount = hasPermission('marketer.portal.access');
+  if (isMarketerAccount && (location.pathname === '/' || location.pathname === '/dashboard')) {
+    return <Navigate to="/marketer/portal" replace />;
+  }
+
   // If no specific permissions required, allow access
   if (requiredPermissions.length === 0) {
     return <>{children}</>;

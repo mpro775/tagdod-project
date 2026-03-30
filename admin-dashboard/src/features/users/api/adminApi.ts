@@ -15,7 +15,15 @@ export interface CreateAdminDto {
 }
 
 export interface CreateRoleBasedAdminDto {
-  adminType: 'full_admin' | 'product_manager' | 'sales_manager' | 'support_manager' | 'marketing_manager' | 'content_manager' | 'view_only';
+  adminType:
+    | 'full_admin'
+    | 'product_manager'
+    | 'sales_manager'
+    | 'support_manager'
+    | 'marketing_manager'
+    | 'content_manager'
+    | 'view_only'
+    | 'marketer';
   phone: string;
   firstName: string;
   lastName?: string;

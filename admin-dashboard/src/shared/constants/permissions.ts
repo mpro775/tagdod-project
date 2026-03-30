@@ -135,6 +135,13 @@ export const PERMISSIONS = {
   // Admin Access
   ADMIN_ACCESS: 'admin.access',
   SUPER_ADMIN_ACCESS: 'super_admin.access',
+
+  // Marketers
+  MARKETERS_READ: 'marketers.read',
+  MARKETERS_CREATE: 'marketers.create',
+  MARKETERS_UPDATE: 'marketers.update',
+  MARKETERS_ANALYTICS: 'marketers.analytics',
+  MARKETER_PORTAL_ACCESS: 'marketer.portal.access',
 } as const;
 
 // Permission Groups - Presets for different admin roles
@@ -177,6 +184,11 @@ export const PERMISSION_GROUPS = {
     PERMISSIONS.MARKETING_DELETE,
     PERMISSIONS.CARTS_SEND_REMINDERS,
     PERMISSIONS.ANALYTICS_READ,
+  ],
+  MARKETER: [
+    PERMISSIONS.ADMIN_ACCESS,
+    PERMISSIONS.MARKETER_PORTAL_ACCESS,
+    PERMISSIONS.UPLOAD_MANAGE,
   ],
   CONTENT_MANAGER: [
     PERMISSIONS.ADMIN_ACCESS,
@@ -307,7 +319,9 @@ export const MENU_PERMISSIONS = {
 
   // Admin Management section
   'admin-management': [PERMISSIONS.ADMIN_ACCESS],
-  'admin-search': [PERMISSIONS.ADMIN_ACCESS],
+  'admin-search': [PERMISSIONS.SUPER_ADMIN_ACCESS, PERMISSIONS.ADMIN_ACCESS],
+  'admin-marketers': [PERMISSIONS.SUPER_ADMIN_ACCESS, PERMISSIONS.ADMIN_ACCESS],
+  'marketer-portal': [PERMISSIONS.MARKETER_PORTAL_ACCESS, PERMISSIONS.ADMIN_ACCESS],
 } as const;
 
 // Helper function to check if user has any of the required permissions
@@ -361,8 +375,14 @@ export const filterMenuByPermissions = (
   menuItems: any[],
   userPermissions: string[]
 ): any[] => {
+  const isMarketerAccount = userPermissions.includes(PERMISSIONS.MARKETER_PORTAL_ACCESS);
+
   return menuItems
     .map(item => {
+      if (isMarketerAccount && (item.id === 'dashboard' || item.id === 'admin-search')) {
+        return null;
+      }
+
       // Check if user has permission for this menu item
       const itemPermissions = MENU_PERMISSIONS[item.id as keyof typeof MENU_PERMISSIONS];
       // If item not found in MENU_PERMISSIONS, require ADMIN_ACCESS by default

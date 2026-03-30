@@ -1,0 +1,77 @@
+services:
+  redis-stg:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis-stg-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - tagdod-stg-network
+
+  api-stg:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.stg
+    environment:
+      - NODE_ENV=staging
+      - PORT=3000
+      - REDIS_URL=redis://redis-stg:6379
+      - REDIS_TLS=false
+      - TZ=Asia/Aden
+    ports:
+      - "127.0.0.1:3100:3000"
+    depends_on:
+      redis-stg:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/health/live',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - tagdod-stg-network
+
+  admin-dashboard-stg:
+    build:
+      context: ./admin-dashboard
+      dockerfile: Dockerfile.stg
+      args:
+        - VITE_API_BASE_URL=${STG_ADMIN_API_BASE_URL:-https://api-stg.allawzi.net/api/v1}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8181:80"
+    depends_on:
+      api-stg:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - tagdod-stg-network
+
+volumes:
+  redis-stg-data:
+    driver: local
+
+networks:
+  tagdod-stg-network:
+    driver: bridge

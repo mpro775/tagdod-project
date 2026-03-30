@@ -55,6 +55,7 @@ interface ApiProductListItem {
   isNew?: boolean;
   isFeatured?: boolean;
   isAvailable?: boolean;
+  warrantyDurationYears?: number;
   /** من الـ API: هل المنتج له متغيرات */
   hasVariants?: boolean;
 }
@@ -113,6 +114,7 @@ function normalizeProduct(raw: ApiProductListItem, preferredCurrency: string): P
     inStock: raw.isAvailable ?? true,
     isNew: raw.isNew ?? false,
     isFeatured: raw.isFeatured ?? false,
+    warrantyDurationYears: typeof raw.warrantyDurationYears === 'number' ? raw.warrantyDurationYears : 0,
     hasVariants: raw.hasVariants ?? false,
   };
 }
@@ -269,6 +271,8 @@ function normalizeProductDetail(
       p?.discountPercent && p.discountPercent > 0 ? p.basePriceUSD : undefined,
     categoryId: rawProduct.category?._id,
     categoryName: rawProduct.category?.name ?? rawProduct.category?.nameEn,
+    warrantyDurationYears:
+      typeof rawProduct.warrantyDurationYears === 'number' ? rawProduct.warrantyDurationYears : 0,
     inStock: rawProduct.isAvailable ?? true,
     isNew: rawProduct.isNew ?? false,
     isFeatured: rawProduct.isFeatured ?? false,
@@ -379,6 +383,7 @@ interface ApiCollectionProduct {
   isAvailable?: boolean;
   isFeatured?: boolean;
   isNew?: boolean;
+  warrantyDurationYears?: number;
   pricing?: {
     minPriceUSD?: number;
     maxPriceUSD?: number;
@@ -426,6 +431,7 @@ function normalizeCollectionProduct(raw: ApiCollectionProduct): Product {
     images: mainImageUrl ? [mainImageUrl] : [],
     price,
     inStock: raw.isAvailable ?? true,
+    warrantyDurationYears: typeof raw.warrantyDurationYears === 'number' ? raw.warrantyDurationYears : 0,
     hasVariants: raw.hasVariants ?? false,
     isFeatured: raw.isFeatured ?? false,
     isNew: raw.isNew ?? false,

@@ -90,11 +90,19 @@ export class CreateAdminDto {
 export class CreateRoleBasedAdminDto {
   @ApiProperty({
     description: 'نوع الأدمن المطلوب',
-    enum: ['full_admin', 'product_manager', 'sales_manager', 'support_manager', 'marketing_manager', 'content_manager', 'view_only'],
+    enum: ['full_admin', 'product_manager', 'sales_manager', 'support_manager', 'marketing_manager', 'content_manager', 'view_only', 'marketer'],
     example: 'product_manager',
   })
   @IsString()
-  adminType!: 'full_admin' | 'product_manager' | 'sales_manager' | 'support_manager' | 'marketing_manager' | 'content_manager' | 'view_only';
+  adminType!:
+    | 'full_admin'
+    | 'product_manager'
+    | 'sales_manager'
+    | 'support_manager'
+    | 'marketing_manager'
+    | 'content_manager'
+    | 'view_only'
+    | 'marketer';
 
   @ApiProperty({
     description: 'رقم هاتف الأدمن',

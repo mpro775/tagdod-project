@@ -57,6 +57,16 @@ const UserActivityPage = lazy(() =>
     default: m.UserActivityPage,
   }))
 );
+const MarketersManagementPage = lazy(() =>
+  import('@/features/marketers/pages/MarketersManagementPage').then((m) => ({
+    default: m.MarketersManagementPage,
+  }))
+);
+const MarketerPortalPage = lazy(() =>
+  import('@/features/marketers/pages/MarketerPortalPage').then((m) => ({
+    default: m.MarketerPortalPage,
+  }))
+);
 const ProductsListPage = lazy(() =>
   import('@/features/products/pages/ProductsListPage').then((m) => ({
     default: m.ProductsListPage,
@@ -899,6 +909,14 @@ export const routes: RouteObject[] = [
       {
         path: 'admin/search',
         element: <SearchDashboardPage />,
+      },
+      {
+        path: 'admin/marketers',
+        element: <MarketersManagementPage />,
+      },
+      {
+        path: 'marketer/portal',
+        element: <MarketerPortalPage />,
       },
     ],
   },

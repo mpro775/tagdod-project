@@ -279,6 +279,14 @@ export const ProductViewPage: React.FC = () => {
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="body2" color="text.secondary">
+                    {t('view.warrantyDurationYears', 'مدة الضمان (سنة)')}
+                  </Typography>
+                  <Typography variant="body1">
+                    {(product.warrantyDurationYears ?? 0).toLocaleString('ar-SA')}
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography variant="body2" color="text.secondary">
                     {t('view.variantsCount')}
                   </Typography>
                   <Typography variant="body1">{product.variantsCount || 0}</Typography>

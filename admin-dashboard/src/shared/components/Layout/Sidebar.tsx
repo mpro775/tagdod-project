@@ -562,6 +562,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             icon: <SearchIcon />,
             path: '/admin/search',
           },
+          {
+            id: 'marketer-portal',
+            label: t('navigation.marketerPortal', 'بوابة المسوق'),
+            icon: <AddCircleOutline />,
+            path: '/marketer/portal',
+          },
+          {
+            id: 'admin-marketers',
+            label: t('navigation.marketersManagement', 'إدارة المسوقين'),
+            icon: <Campaign />,
+            path: '/admin/marketers',
+          },
         ],
       },
     ],
