@@ -79,3 +79,4 @@ networks:
     driver: bridge
   tagdod-network:
     external: true
+    name: ${PROD_DOCKER_NETWORK:-tagdod-project_tagdod-network}
