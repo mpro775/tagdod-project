@@ -39,7 +39,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "require('http').get('http://localhost:3000/health/live',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+          "require('http').get('http://localhost:3000/api/v1/health/live',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
         ]
       interval: 30s
       timeout: 10s
@@ -47,6 +47,7 @@ services:
       start_period: 40s
     networks:
       - tagdod-stg-network
+      - tagdod-network
 
   admin-dashboard-stg:
     build:
@@ -67,6 +68,7 @@ services:
       retries: 3
     networks:
       - tagdod-stg-network
+      - tagdod-network
 
 volumes:
   redis-stg-data:
@@ -75,3 +77,6 @@ volumes:
 networks:
   tagdod-stg-network:
     driver: bridge
+  tagdod-network:
+    external: true
+    name: ${PROD_DOCKER_NETWORK:-tagdod-project_tagdod-network}
