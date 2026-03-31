@@ -47,6 +47,7 @@ services:
       start_period: 40s
     networks:
       - tagdod-stg-network
+      - tagdod-network
 
   admin-dashboard-stg:
     build:
@@ -67,6 +68,7 @@ services:
       retries: 3
     networks:
       - tagdod-stg-network
+      - tagdod-network
 
 volumes:
   redis-stg-data:
@@ -75,3 +77,5 @@ volumes:
 networks:
   tagdod-stg-network:
     driver: bridge
+  tagdod-network:
+    external: true
