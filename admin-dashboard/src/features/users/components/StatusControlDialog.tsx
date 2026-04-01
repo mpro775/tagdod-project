@@ -44,6 +44,7 @@ export const StatusControlDialog: React.FC<StatusControlDialogProps> = ({
 }) => {
   const { t } = useTranslation(['users', 'common']);
   const queryClient = useQueryClient();
+  const defaultMerchantDiscountPercent = 15;
   const [newStatus, setNewStatus] = useState<CapabilityStatus>(currentStatus as CapabilityStatus);
   const [discountPercent, setDiscountPercent] = useState<number>(currentDiscountPercent);
 
@@ -90,6 +91,18 @@ export const StatusControlDialog: React.FC<StatusControlDialogProps> = ({
         status: newStatus, 
         discount: newStatus === CapabilityStatus.APPROVED ? discountPercent : undefined,
       });
+    }
+  };
+
+  const handleStatusChange = (status: CapabilityStatus) => {
+    setNewStatus(status);
+
+    if (
+      type === 'merchant' &&
+      status === CapabilityStatus.APPROVED &&
+      (!discountPercent || discountPercent <= 0)
+    ) {
+      setDiscountPercent(defaultMerchantDiscountPercent);
     }
   };
 
@@ -169,7 +182,7 @@ export const StatusControlDialog: React.FC<StatusControlDialogProps> = ({
             <Select
               value={newStatus}
               label={t('users:labels.newStatus', 'الحالة الجديدة')}
-              onChange={(e) => setNewStatus(e.target.value as CapabilityStatus)}
+              onChange={(e) => handleStatusChange(e.target.value as CapabilityStatus)}
               disabled={isPending}
             >
               <MenuItem value={CapabilityStatus.NONE}>

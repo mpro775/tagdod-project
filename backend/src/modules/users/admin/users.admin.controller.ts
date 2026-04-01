@@ -2796,6 +2796,12 @@ export class UsersAdminController {
           this.logger.error(`Failed to create engineer profile for user ${userId}:`, error);
         }
       }
+
+      try {
+        await this.createDefaultEngineerCouponIfMissing(userId, req.user.sub);
+      } catch (error) {
+        this.logger.error(`Failed to create default engineer coupon for user ${userId}:`, error);
+      }
     }
 
     // تسجيل حدث الموافقة على capability
@@ -3059,6 +3065,12 @@ export class UsersAdminController {
           this.logger.error(`Failed to create engineer profile for user ${userId}:`, error);
         }
       }
+
+      try {
+        await this.createDefaultEngineerCouponIfMissing(userId);
+      } catch (error) {
+        this.logger.error(`Failed to create default engineer coupon for user ${userId}:`, error);
+      }
     }
 
     return {
@@ -3093,13 +3105,21 @@ export class UsersAdminController {
     user.merchant_status = dto.status;
 
     // تحديث نسبة الخصم إذا تم توفيرها
-    if (dto.merchantDiscountPercent !== undefined) {
+    if (
+      dto.merchantDiscountPercent !== undefined &&
+      dto.status !== CapabilityStatus.APPROVED
+    ) {
       user.merchant_discount_percent = dto.merchantDiscountPercent;
     }
 
     // تحديث القدرة والدور حسب الحالة
     if (dto.status === CapabilityStatus.APPROVED) {
       user.merchant_capable = true;
+      const resolvedDiscountPercent =
+        dto.merchantDiscountPercent !== undefined && dto.merchantDiscountPercent > 0
+          ? dto.merchantDiscountPercent
+          : this.defaultMerchantDiscountPercent;
+      user.merchant_discount_percent = resolvedDiscountPercent;
       if (!user.roles.includes(UserRole.MERCHANT)) {
         user.roles.push(UserRole.MERCHANT);
       }
