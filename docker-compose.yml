@@ -1,9 +1,4 @@
-# Docker Compose configuration for Tagdod Project with Nginx Proxy Manager
-
 services:
-  # ========================================
-  # REDIS CACHE SERVICE
-  # ========================================
   redis:
     image: redis:7-alpine
     container_name: tagdod-redis
@@ -19,11 +14,8 @@ services:
       timeout: 3s
       retries: 3
     networks:
-      - tagdod-network
+      - tagdod-network-v2
 
-  # ========================================
-  # TAGDOD API BACKEND
-  # ========================================
   api:
     build:
       context: ./backend
@@ -43,23 +35,20 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - tagdod-network
+      - tagdod-network-v2
     healthcheck:
       test:
         [
           "CMD",
           "node",
           "-e",
-          "require('http').get('http://localhost:3000/health/live',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+          "require('http').get('http://localhost:3000/api/v1/health/live',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
-  # ========================================
-  # ADMIN DASHBOARD (MAIN SITE)
-  # ========================================
   admin-dashboard:
     build:
       context: ./admin-dashboard
@@ -69,49 +58,41 @@ services:
     ports:
       - "127.0.0.1:8081:80"
     networks:
-      - tagdod-network
+      - tagdod-network-v2
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # ========================================
-  # TAGDOD WEB APP (CUSTOMER FRONTEND)
-  # ========================================
   web-app:
     build:
       context: ./tagadod-web
       dockerfile: Dockerfile
       args:
-        # Override with: WEB_API_BASE_URL=https://api.your-domain.com/api/v1
         - VITE_API_BASE_URL=${WEB_API_BASE_URL:-https://api.allawzi.net/api/v1}
     container_name: tagdod-web-app
     restart: unless-stopped
     ports:
       - "127.0.0.1:8082:80"
     networks:
-      - tagdod-network
+      - tagdod-network-v2
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # ========================================
-  # NGINX PROXY MANAGER
-  # ========================================
   nginx-proxy-manager:
     image: jc21/nginx-proxy-manager:latest
     container_name: nginx-proxy-manager
     restart: unless-stopped
     ports:
-      - "80:80" # HTTP
-      - "443:443" # HTTPS
-      - "81:81" # Admin Web Interface
+      - "80:80"
+      - "443:443"
+      - "81:81"
     environment:
       - TZ=Asia/Aden
-      # قاعدة بيانات داخلية (SQLite)
       - DB_SQLITE_FILE=/data/database.sqlite
     volumes:
       - npm-data:/data
@@ -121,16 +102,13 @@ services:
       - admin-dashboard
       - web-app
     networks:
-      - tagdod-network
+      - tagdod-network-v2
     healthcheck:
       test: ["CMD", "/bin/check-health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # ========================================
-  # WAHA - WHATSAPP SERVICE
-  # ========================================
   waha:
     image: devlikeapro/waha:latest
     container_name: tagdod-waha
@@ -146,7 +124,7 @@ services:
     volumes:
       - ./waha-sessions:/app/.waha/sessions
     networks:
-      - tagdod-network
+      - tagdod-network-v2
 
 volumes:
   redis-data:
@@ -157,5 +135,6 @@ volumes:
     driver: local
 
 networks:
-  tagdod-network:
+  tagdod-network-v2:
+    name: tagdod-network-v2
     driver: bridge
