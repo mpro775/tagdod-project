@@ -104,6 +104,31 @@
           }
         },
         {
+          "name": "GET /v1/p/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/p/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "p",
+                "{id}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
           "name": "POST /api/v1/inventory/integration/sync-batch",
           "request": {
             "method": "POST",
@@ -2484,6 +2509,117 @@
         }
       ],
       "description": "Endpoints for المنتجات functionality"
+    },
+    {
+      "name": "المنتجات V2",
+      "item": [
+        {
+          "name": "GET /api/v2/products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "products"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v2/products/featured/list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/products/featured/list",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "products",
+                "featured",
+                "list"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v2/products/new/list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/products/new/list",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "products",
+                "new",
+                "list"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get product details (v2 options contract)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/products/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "products",
+                "{id}"
+              ]
+            },
+            "description": "Returns product details in v2 compact contract: product + optionDefinitions + variants."
+          }
+        }
+      ],
+      "description": "Endpoints for المنتجات V2 functionality"
     },
     {
       "name": "إدارة-السمات",
@@ -6315,6 +6451,146 @@
             },
             "description": "مسح جميع البيانات المخزنة مؤقتاً لمستخدم معين"
           }
+        },
+        {
+          "name": "إحصائيات نشاط المستخدمين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/user-analytics/activity/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "user-analytics",
+                "activity",
+                "stats"
+              ]
+            },
+            "description": "يعرض إحصائيات شاملة عن نشاط المستخدمين في التطبيق"
+          }
+        },
+        {
+          "name": "المستخدمين النشطين الآن",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/user-analytics/activity/online-now",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "user-analytics",
+                "activity",
+                "online-now"
+              ]
+            },
+            "description": "يعرض قائمة المستخدمين النشطين في آخر X دقيقة (افتراضياً 15 دقيقة)"
+          }
+        },
+        {
+          "name": "المستخدمين النشطين مؤخراً",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/user-analytics/activity/recent",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "user-analytics",
+                "activity",
+                "recent"
+              ]
+            },
+            "description": "يعرض قائمة المستخدمين النشطين في آخر X يوم (افتراضياً 7 أيام)"
+          }
+        },
+        {
+          "name": "المستخدمين غير النشطين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/user-analytics/activity/inactive",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "user-analytics",
+                "activity",
+                "inactive"
+              ]
+            },
+            "description": "يعرض قائمة المستخدمين الذين لم يدخلوا التطبيق لفترة X يوم (افتراضياً 30 يوم)"
+          }
+        },
+        {
+          "name": "المستخدمين الذين لم يدخلوا التطبيق إطلاقاً",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/user-analytics/activity/never-logged-in",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "user-analytics",
+                "activity",
+                "never-logged-in"
+              ]
+            },
+            "description": "يعرض قائمة المستخدمين المسجلين لكنهم لم يقوموا بأي نشاط في التطبيق"
+          }
         }
       ],
       "description": "Endpoints for تحليلات-المستخدمين functionality"
@@ -7041,6 +7317,34 @@
               ]
             },
             "description": "مطابقة الدفع للطلبات المحلية (إدخال المبلغ والعملة)"
+          }
+        },
+        {
+          "name": "استعادة طلب ملغي",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/{id}/restore",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders",
+                "{id}",
+                "restore"
+              ]
+            },
+            "description": "استعادة الطلب من حالة ملغي إلى حالة أخرى (الافتراضي: قيد التجهيز)"
           }
         },
         {
@@ -10823,6 +11127,34 @@
           }
         },
         {
+          "name": "تصدير أسماء المستخدمين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/export/names",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "export",
+                "names"
+              ]
+            },
+            "description": "تصدير الأسماء الأولى والأخيرة للمستخدمين المطابقين للفلاتر بصيغة CSV"
+          }
+        },
+        {
           "name": "GET /api/v1/admin/users/{id}",
           "request": {
             "method": "GET",
@@ -10955,6 +11287,290 @@
               ]
             },
             "description": ""
+          }
+        },
+        {
+          "name": "إنشاء حساب مسوق",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/marketers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "marketers"
+              ]
+            },
+            "description": "إنشاء حساب مسوق بصلاحيات تشغيلية مخصصة مع كلمة مرور مؤقتة."
+          }
+        },
+        {
+          "name": "قائمة المسوقين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/marketers/list",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "marketers",
+                "list"
+              ]
+            },
+            "description": "عرض قائمة حسابات المسوقين مع الترقيم والبحث."
+          }
+        },
+        {
+          "name": "ملخص إحصائيات المسوقين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/marketers/stats/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "marketers",
+                "stats",
+                "summary"
+              ]
+            },
+            "description": "إحصائيات سريعة لعدد المسوقين حسب الحالة."
+          }
+        },
+        {
+          "name": "نظرة عامة لتحليلات المسوقين",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/marketers/analytics/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "marketers",
+                "analytics",
+                "overview"
+              ]
+            },
+            "description": "إحصائيات التحويل العامة للمسوقين ضمن فترة زمنية."
+          }
+        },
+        {
+          "name": "ترتيب المسوقين حسب الأداء",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/marketers/analytics/ranking",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "marketers",
+                "analytics",
+                "ranking"
+              ]
+            },
+            "description": "ترتيب المسوقين حسب عدد العملاء ومعدل التحويل في فترة زمنية."
+          }
+        },
+        {
+          "name": "تحليل مسوق محدد",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/marketers/analytics/{marketerId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "marketers",
+                "analytics",
+                "{marketerId}"
+              ]
+            },
+            "description": "تفاصيل أداء مسوق محدد مع منحنى يومي خلال فترة زمنية."
+          }
+        },
+        {
+          "name": "إنشاء مهندس من بوابة المسوق",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/marketer-portal/engineers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "marketer-portal",
+                "engineers"
+              ]
+            },
+            "description": "إنشاء حساب مهندس مع اعتماد مباشر ورفع ملف التوثيق وربط الحساب بالمسوق."
+          }
+        },
+        {
+          "name": "إنشاء تاجر من بوابة المسوق",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/marketer-portal/merchants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "marketer-portal",
+                "merchants"
+              ]
+            },
+            "description": "إنشاء حساب تاجر مع اعتماد مباشر ورفع صورة المحل وربط الحساب بالمسوق."
+          }
+        },
+        {
+          "name": "مستخدمي المسوق",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/marketer-portal/my-users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "marketer-portal",
+                "my-users"
+              ]
+            },
+            "description": "عرض المستخدمين الذين تم إنشاؤهم عبر حساب المسوق الحالي."
+          }
+        },
+        {
+          "name": "إحصائيات المسوق",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/marketer-portal/my-users/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "marketer-portal",
+                "my-users",
+                "stats"
+              ]
+            },
+            "description": "ملخص إحصائي للمستخدمين الذين تمت إضافتهم بواسطة المسوق الحالي."
           }
         },
         {
@@ -11151,6 +11767,35 @@
               ]
             },
             "description": "عرض تفاصيل كاملة لطلب التحقق لمستخدم محدد"
+          }
+        },
+        {
+          "name": "رفع ملف التحقق من قبل الأدمن",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/verification/{userId}/upload",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "verification",
+                "{userId}",
+                "upload"
+              ]
+            },
+            "description": "رفع CV للمهندس أو صورة المحل للتاجر وتحديث الحالة تلقائياً إلى PENDING بدون اعتماد مباشر"
           }
         },
         {

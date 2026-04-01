@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
@@ -7,6 +7,10 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   MenuItem,
   Pagination,
@@ -19,10 +23,11 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableContainer,
   TextField,
   Typography,
 } from '@mui/material';
-import { Add, Engineering, Storefront } from '@mui/icons-material';
+import { Add, CameraAlt, CheckCircle, Engineering, Replay, Storefront } from '@mui/icons-material';
 import {
   useCreateEngineerLead,
   useCreateMerchantLead,
@@ -61,6 +66,12 @@ export const MarketerPortalPage = () => {
   });
 
   const [lastCredential, setLastCredential] = useState<{ phone: string; password?: string } | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const statsQuery = useMarketerPortalStats();
   const usersQuery = useMarketerPortalUsers({
@@ -71,6 +82,88 @@ export const MarketerPortalPage = () => {
   });
   const createEngineerMutation = useCreateEngineerLead();
   const createMerchantMutation = useCreateMerchantLead();
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  const handleOpenCamera = async () => {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setCameraOpen(true);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          void videoRef.current.play();
+        }
+      }, 0);
+    } catch {
+      setCameraError('تعذر الوصول إلى الكاميرا. تأكد من منح الصلاحية أو استخدام متصفح يدعم الكاميرا.');
+    }
+  };
+
+  const handleCloseCamera = () => {
+    setCameraOpen(false);
+    setIsCapturing(false);
+    stopCamera();
+  };
+
+  const handleCapturePhoto = async () => {
+    if (!videoRef.current || !canvasRef.current) {
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+
+    if (!width || !height) {
+      setCameraError('لم يتم تجهيز الكاميرا بعد، حاول مرة أخرى بعد ثوانٍ.');
+      return;
+    }
+
+    setIsCapturing(true);
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      setIsCapturing(false);
+      return;
+    }
+
+    context.drawImage(video, 0, 0, width, height);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setIsCapturing(false);
+          setCameraError('فشل التقاط الصورة. حاول مرة أخرى.');
+          return;
+        }
+
+        const file = new File([blob], `store-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        setMerchantForm((prev) => ({ ...prev, file }));
+        setIsCapturing(false);
+        handleCloseCamera();
+      },
+      'image/jpeg',
+      0.92,
+    );
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   const handleCreateEngineer = () => {
     if (!engineerForm.phone || !engineerForm.firstName || !engineerForm.file) {
@@ -141,9 +234,9 @@ export const MarketerPortalPage = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2, md: 3 } }}>
       <Stack spacing={3}>
-        <Box>
+        <Box sx={{ px: { xs: 0.5, sm: 0 } }}>
           <Typography variant="h5" fontWeight={700}>
             بوابة المسوق
           </Typography>
@@ -152,9 +245,9 @@ export const MarketerPortalPage = () => {
           </Typography>
         </Box>
 
-        <Grid container spacing={2}>
+        <Grid container spacing={{ xs: 1.5, md: 2 }}>
           <Grid size={{ xs: 12, md: 3 }}>
-            <Card>
+            <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
                   إجمالي المضافين
@@ -166,7 +259,7 @@ export const MarketerPortalPage = () => {
             </Card>
           </Grid>
           <Grid size={{ xs: 12, md: 3 }}>
-            <Card>
+            <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
                   المهندسون
@@ -178,7 +271,7 @@ export const MarketerPortalPage = () => {
             </Card>
           </Grid>
           <Grid size={{ xs: 12, md: 3 }}>
-            <Card>
+            <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
                   التجار
@@ -190,7 +283,7 @@ export const MarketerPortalPage = () => {
             </Card>
           </Grid>
           <Grid size={{ xs: 12, md: 3 }}>
-            <Card>
+            <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
                   هذا الشهر
@@ -203,10 +296,12 @@ export const MarketerPortalPage = () => {
           </Grid>
         </Grid>
 
-        <Paper sx={{ p: 2 }}>
+        <Paper sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 3 }}>
           <Tabs
             value={activeTab}
             onChange={(_e, value) => setActiveTab(value)}
+            variant="scrollable"
+            allowScrollButtonsMobile
             sx={{ mb: 2 }}
           >
             <Tab
@@ -388,19 +483,55 @@ export const MarketerPortalPage = () => {
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <Button variant="outlined" component="label" fullWidth sx={{ height: '56px' }}>
-                    {merchantForm.file ? merchantForm.file.name : 'رفع صورة المحل'}
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/jpeg,image/jpg,image/png,image/webp"
-                      onChange={(event) =>
-                        setMerchantForm((prev) => ({ ...prev, file: event.target.files?.[0] || null }))
-                      }
-                    />
-                  </Button>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                    <Button
+                      variant="contained"
+                      startIcon={<CameraAlt />}
+                      fullWidth
+                      sx={{ height: '56px' }}
+                      onClick={handleOpenCamera}
+                    >
+                      فتح الكاميرا وتصوير المحل
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="inherit"
+                      component="label"
+                      fullWidth
+                      sx={{ height: '56px' }}
+                    >
+                      اختيار من الجهاز
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={(event) =>
+                          setMerchantForm((prev) => ({ ...prev, file: event.target.files?.[0] || null }))
+                        }
+                      />
+                    </Button>
+                  </Stack>
                 </Grid>
               </Grid>
+              {merchantForm.file && (
+                <Alert
+                  severity="success"
+                  icon={<CheckCircle fontSize="inherit" />}
+                  action={
+                    <Button
+                      size="small"
+                      color="inherit"
+                      startIcon={<Replay fontSize="small" />}
+                      onClick={handleOpenCamera}
+                    >
+                      إعادة تصوير
+                    </Button>
+                  }
+                >
+                  تم تجهيز صورة المحل: <strong>{merchantForm.file.name}</strong>
+                </Alert>
+              )}
+              {cameraError && <Alert severity="warning">{cameraError}</Alert>}
               <TextField
                 label="ملاحظة"
                 multiline
@@ -432,9 +563,52 @@ export const MarketerPortalPage = () => {
               ) : null}
             </Alert>
           )}
+
+          <Dialog
+            open={cameraOpen}
+            onClose={handleCloseCamera}
+            fullWidth
+            maxWidth="sm"
+          >
+            <DialogTitle>تصوير واجهة المحل</DialogTitle>
+            <DialogContent>
+              <Box
+                sx={{
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  bgcolor: 'grey.900',
+                  mt: 1,
+                }}
+              >
+                <video
+                  ref={videoRef}
+                  playsInline
+                  muted
+                  style={{ width: '100%', display: 'block', maxHeight: '60vh', objectFit: 'cover' }}
+                />
+              </Box>
+              <canvas ref={canvasRef} style={{ display: 'none' }} />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                وجه الكاميرا نحو صورة المحل ثم اضغط "التقاط الصورة".
+              </Typography>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button onClick={handleCloseCamera} color="inherit">
+                إلغاء
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleCapturePhoto}
+                startIcon={isCapturing ? <CircularProgress size={16} color="inherit" /> : <CameraAlt />}
+                disabled={isCapturing}
+              >
+                {isCapturing ? 'جاري الالتقاط...' : 'التقاط الصورة'}
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Paper>
 
-        <Paper sx={{ p: 2 }}>
+        <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 3 }}>
           <Stack spacing={2}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
               <Typography variant="h6">المستخدمون الذين أضفتهم</Typography>
@@ -472,7 +646,8 @@ export const MarketerPortalPage = () => {
               </Box>
             ) : (
               <>
-                <Table size="small">
+                <TableContainer sx={{ overflowX: 'auto' }}>
+                <Table size="small" sx={{ minWidth: 680 }}>
                   <TableHead>
                     <TableRow>
                       <TableCell>الاسم</TableCell>
@@ -506,6 +681,7 @@ export const MarketerPortalPage = () => {
                     })}
                   </TableBody>
                 </Table>
+                </TableContainer>
 
                 <Stack direction="row" justifyContent="center" sx={{ pt: 1 }}>
                   <Pagination

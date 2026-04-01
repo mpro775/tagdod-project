@@ -43,6 +43,26 @@
         }
       }
     },
+    "/v1/p/{id}": {
+      "get": {
+        "operationId": "redirectUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/v1/auth/send-otp": {
       "post": {
         "operationId": "sendOtp",
@@ -4251,6 +4271,156 @@
         ]
       }
     },
+    "/api/v2/products": {
+      "get": {
+        "operationId": "listProducts",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeSubcategories",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brandId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isFeatured",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isNew",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Products list (USD + fx) retrieved successfully"
+          }
+        },
+        "tags": [
+          "المنتجات V2"
+        ]
+      }
+    },
+    "/api/v2/products/featured/list": {
+      "get": {
+        "operationId": "getFeatured",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Featured products (USD + fx) retrieved successfully"
+          }
+        },
+        "tags": [
+          "المنتجات V2"
+        ]
+      }
+    },
+    "/api/v2/products/new/list": {
+      "get": {
+        "operationId": "getNew",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "New products (USD + fx) retrieved successfully"
+          }
+        },
+        "tags": [
+          "المنتجات V2"
+        ]
+      }
+    },
+    "/api/v2/products/{id}": {
+      "get": {
+        "operationId": "getProductDetailsV2",
+        "summary": "Get product details (v2 options contract)",
+        "description": "Returns product details in v2 compact contract: product + optionDefinitions + variants.",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Product ID",
+            "schema": {
+              "example": "507f1f77bcf86cd799439011",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product details (v2) retrieved successfully"
+          }
+        },
+        "tags": [
+          "المنتجات V2"
+        ]
+      }
+    },
     "/api/v1/inventory/integration/sync-batch": {
       "post": {
         "operationId": "syncBatch",
@@ -6045,7 +6215,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -6123,7 +6295,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -6211,7 +6385,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -8153,7 +8329,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -8278,7 +8456,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -8425,7 +8605,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -8550,7 +8732,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -8697,7 +8881,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -8822,7 +9008,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -8969,7 +9157,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -9094,7 +9284,9 @@
                 "ENGINEER_WALLET_DEPOSITED",
                 "ENGINEER_COMMISSION_ADDED",
                 "INVOICE_CREATED",
-                "COUPON_USED"
+                "COUPON_USED",
+                "ENGINEER_COUPON_ASSIGNED",
+                "MERCHANT_DISCOUNT_ASSIGNED"
               ],
               "type": "string"
             }
@@ -13407,6 +13599,270 @@
         ]
       }
     },
+    "/api/v1/admin/user-analytics/activity/stats": {
+      "get": {
+        "operationId": "getActivityStats",
+        "summary": "إحصائيات نشاط المستخدمين",
+        "description": "يعرض إحصائيات شاملة عن نشاط المستخدمين في التطبيق",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "تم جلب الإحصائيات بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserActivityStatsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "تحليلات-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/user-analytics/activity/online-now": {
+      "get": {
+        "operationId": "getActiveUsersNow",
+        "summary": "المستخدمين النشطين الآن",
+        "description": "يعرض قائمة المستخدمين النشطين في آخر X دقيقة (افتراضياً 15 دقيقة)",
+        "parameters": [
+          {
+            "name": "minutes",
+            "required": false,
+            "in": "query",
+            "description": "عدد الدقائق للاعتبار نشط",
+            "schema": {
+              "default": 15,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد النتائج",
+            "schema": {
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب المستخدمين النشطين بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedActiveUsersDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "تحليلات-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/user-analytics/activity/recent": {
+      "get": {
+        "operationId": "getRecentlyActiveUsers",
+        "summary": "المستخدمين النشطين مؤخراً",
+        "description": "يعرض قائمة المستخدمين النشطين في آخر X يوم (افتراضياً 7 أيام)",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "عدد الأيام",
+            "schema": {
+              "default": 7,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد النتائج",
+            "schema": {
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب المستخدمين النشطين مؤخراً بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedActiveUsersDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "تحليلات-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/user-analytics/activity/inactive": {
+      "get": {
+        "operationId": "getInactiveUsers",
+        "summary": "المستخدمين غير النشطين",
+        "description": "يعرض قائمة المستخدمين الذين لم يدخلوا التطبيق لفترة X يوم (افتراضياً 30 يوم)",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "عدد الأيام للاعتبار غير نشط",
+            "schema": {
+              "default": 30,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد النتائج",
+            "schema": {
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب المستخدمين غير النشطين بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedInactiveUsersDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "تحليلات-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/user-analytics/activity/never-logged-in": {
+      "get": {
+        "operationId": "getNeverLoggedInUsers",
+        "summary": "المستخدمين الذين لم يدخلوا التطبيق إطلاقاً",
+        "description": "يعرض قائمة المستخدمين المسجلين لكنهم لم يقوموا بأي نشاط في التطبيق",
+        "parameters": [
+          {
+            "name": "minutes",
+            "required": false,
+            "in": "query",
+            "description": "عدد الدقائق للاعتبار نشط",
+            "schema": {
+              "default": 15,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "عدد النتائج",
+            "schema": {
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "رقم الصفحة",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "تم جلب المستخدمين بنجاح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedNeverLoggedInUsersDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "تحليلات-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/verification/submit": {
       "post": {
         "operationId": "submitVerification",
@@ -14667,6 +15123,50 @@
           },
           "400": {
             "description": "فشل في مطابقة الدفع"
+          }
+        },
+        "tags": [
+          "إدارة-الطلبات"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{id}/restore": {
+      "post": {
+        "operationId": "restoreCancelledOrder",
+        "summary": "استعادة طلب ملغي",
+        "description": "استعادة الطلب من حالة ملغي إلى حالة أخرى (الافتراضي: قيد التجهيز)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "معرف الطلب",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreCancelledOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "تمت استعادة الطلب بنجاح"
+          },
+          "400": {
+            "description": "تعذر استعادة الطلب"
           }
         },
         "tags": [
@@ -23387,6 +23887,27 @@
         ]
       }
     },
+    "/api/v1/admin/users/export/names": {
+      "get": {
+        "operationId": "exportUserNames",
+        "summary": "تصدير أسماء المستخدمين",
+        "description": "تصدير الأسماء الأولى والأخيرة للمستخدمين المطابقين للفلاتر بصيغة CSV",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/admin/users/{id}": {
       "get": {
         "operationId": "getUser",
@@ -23522,6 +24043,331 @@
         },
         "responses": {
           "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/marketers": {
+      "post": {
+        "operationId": "createMarketer",
+        "summary": "إنشاء حساب مسوق",
+        "description": "إنشاء حساب مسوق بصلاحيات تشغيلية مخصصة مع كلمة مرور مؤقتة.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMarketerAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/marketers/list": {
+      "get": {
+        "operationId": "listMarketers",
+        "summary": "قائمة المسوقين",
+        "description": "عرض قائمة حسابات المسوقين مع الترقيم والبحث.",
+        "parameters": [
+          {
+            "name": "search",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/marketers/stats/summary": {
+      "get": {
+        "operationId": "getMarketersStatsSummary",
+        "summary": "ملخص إحصائيات المسوقين",
+        "description": "إحصائيات سريعة لعدد المسوقين حسب الحالة.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/marketers/analytics/overview": {
+      "get": {
+        "operationId": "getMarketersAnalyticsOverview",
+        "summary": "نظرة عامة لتحليلات المسوقين",
+        "description": "إحصائيات التحويل العامة للمسوقين ضمن فترة زمنية.",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/marketers/analytics/ranking": {
+      "get": {
+        "operationId": "getMarketersAnalyticsRanking",
+        "summary": "ترتيب المسوقين حسب الأداء",
+        "description": "ترتيب المسوقين حسب عدد العملاء ومعدل التحويل في فترة زمنية.",
+        "parameters": [
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/marketers/analytics/{marketerId}": {
+      "get": {
+        "operationId": "getMarketerAnalyticsDetails",
+        "summary": "تحليل مسوق محدد",
+        "description": "تفاصيل أداء مسوق محدد مع منحنى يومي خلال فترة زمنية.",
+        "parameters": [
+          {
+            "name": "marketerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/marketer-portal/engineers": {
+      "post": {
+        "operationId": "createEngineerFromMarketerPortal",
+        "summary": "إنشاء مهندس من بوابة المسوق",
+        "description": "إنشاء حساب مهندس مع اعتماد مباشر ورفع ملف التوثيق وربط الحساب بالمسوق.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMarketerEngineerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/marketer-portal/merchants": {
+      "post": {
+        "operationId": "createMerchantFromMarketerPortal",
+        "summary": "إنشاء تاجر من بوابة المسوق",
+        "description": "إنشاء حساب تاجر مع اعتماد مباشر ورفع صورة المحل وربط الحساب بالمسوق.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMarketerMerchantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/marketer-portal/my-users": {
+      "get": {
+        "operationId": "listMyMarketerUsers",
+        "summary": "مستخدمي المسوق",
+        "description": "عرض المستخدمين الذين تم إنشاؤهم عبر حساب المسوق الحالي.",
+        "parameters": [
+          {
+            "name": "search",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/marketer-portal/my-users/stats": {
+      "get": {
+        "operationId": "getMyMarketerUsersStats",
+        "summary": "إحصائيات المسوق",
+        "description": "ملخص إحصائي للمستخدمين الذين تمت إضافتهم بواسطة المسوق الحالي.",
+        "parameters": [],
+        "responses": {
+          "200": {
             "description": ""
           }
         },
@@ -23718,6 +24564,73 @@
           },
           "404": {
             "description": "المستخدم غير موجود أو ليس لديه طلب تحقق قيد المراجعة"
+          }
+        },
+        "tags": [
+          "إدارة-المستخدمين"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/verification/{userId}/upload": {
+      "post": {
+        "operationId": "uploadVerificationFile",
+        "summary": "رفع ملف التحقق من قبل الأدمن",
+        "description": "رفع CV للمهندس أو صورة المحل للتاجر وتحديث الحالة تلقائياً إلى PENDING بدون اعتماد مباشر",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "verificationType",
+                  "file"
+                ],
+                "properties": {
+                  "verificationType": {
+                    "type": "string",
+                    "enum": [
+                      "engineer",
+                      "merchant"
+                    ],
+                    "description": "نوع التحقق المستهدف"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CV للمهندس أو صورة المحل للتاجر"
+                  },
+                  "storeName": {
+                    "type": "string",
+                    "description": "اسم المحل (اختياري للتاجر)"
+                  },
+                  "note": {
+                    "type": "string",
+                    "description": "ملاحظة تحقق اختيارية"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
           }
         },
         "tags": [
@@ -36153,6 +37066,256 @@
           "meta"
         ]
       },
+      "UserActivityStatsDto": {
+        "type": "object",
+        "properties": {
+          "totalUsers": {
+            "type": "number",
+            "description": "إجمالي المستخدمين"
+          },
+          "activeNow": {
+            "type": "number",
+            "description": "المستخدمين النشطين الآن (آخر 15 دقيقة)"
+          },
+          "activeToday": {
+            "type": "number",
+            "description": "المستخدمين النشطين اليوم"
+          },
+          "activeThisWeek": {
+            "type": "number",
+            "description": "المستخدمين النشطين هذا الأسبوع (آخر 7 أيام)"
+          },
+          "activeThisMonth": {
+            "type": "number",
+            "description": "المستخدمين النشطين هذا الشهر (آخر 30 يوم)"
+          },
+          "inactiveUsers": {
+            "type": "number",
+            "description": "المستخدمين غير النشطين (أكثر من 30 يوم)"
+          },
+          "neverLoggedIn": {
+            "type": "number",
+            "description": "المستخدمين الذين لم يدخلوا أبداً"
+          },
+          "activityRate": {
+            "type": "number",
+            "description": "نسبة النشاط (0-100)"
+          },
+          "distribution": {
+            "type": "object",
+            "description": "توزيع المستخدمين حسب النشاط"
+          }
+        },
+        "required": [
+          "totalUsers",
+          "activeNow",
+          "activeToday",
+          "activeThisWeek",
+          "activeThisMonth",
+          "inactiveUsers",
+          "neverLoggedIn",
+          "activityRate",
+          "distribution"
+        ]
+      },
+      "ActiveUserDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "معرف المستخدم"
+          },
+          "phone": {
+            "type": "string",
+            "description": "رقم الهاتف"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "الاسم الأول"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "الاسم الأخير"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "آخر نشاط"
+          },
+          "minutesSinceActivity": {
+            "type": "number",
+            "description": "الدقائق منذ آخر نشاط"
+          },
+          "roles": {
+            "description": "أدوار المستخدم",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "userId",
+          "phone",
+          "lastActivityAt",
+          "minutesSinceActivity",
+          "roles"
+        ]
+      },
+      "PaginatedActiveUsersDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "قائمة المستخدمين النشطين",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActiveUserDto"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "description": "معلومات الصفحة"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "InactiveUserDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "معرف المستخدم"
+          },
+          "phone": {
+            "type": "string",
+            "description": "رقم الهاتف"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "الاسم الأول"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "الاسم الأخير"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "آخر نشاط"
+          },
+          "daysSinceActivity": {
+            "type": "number",
+            "description": "الأيام منذ آخر نشاط"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "تاريخ التسجيل"
+          },
+          "roles": {
+            "description": "أدوار المستخدم",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "userId",
+          "phone",
+          "lastActivityAt",
+          "daysSinceActivity",
+          "createdAt",
+          "roles"
+        ]
+      },
+      "PaginatedInactiveUsersDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "قائمة المستخدمين غير النشطين",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InactiveUserDto"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "description": "معلومات الصفحة"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "NeverLoggedInUserDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "معرف المستخدم"
+          },
+          "phone": {
+            "type": "string",
+            "description": "رقم الهاتف"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "الاسم الأول"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "الاسم الأخير"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "تاريخ التسجيل"
+          },
+          "daysSinceRegistration": {
+            "type": "number",
+            "description": "الأيام منذ التسجيل"
+          },
+          "roles": {
+            "description": "أدوار المستخدم",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "userId",
+          "phone",
+          "createdAt",
+          "daysSinceRegistration",
+          "roles"
+        ]
+      },
+      "PaginatedNeverLoggedInUsersDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "قائمة المستخدمين الذين لم يدخلوا أبداً",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NeverLoggedInUserDto"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "description": "معلومات الصفحة"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
       "UpdateEngineerProfileDto": {
         "type": "object",
         "properties": {
@@ -36265,6 +37428,11 @@
             "type": "number",
             "example": 120000
           },
+          "deliveryFee": {
+            "type": "number",
+            "example": 0,
+            "description": "رسوم التوصيل"
+          },
           "shipping": {
             "type": "number",
             "example": 0
@@ -36280,6 +37448,7 @@
         },
         "required": [
           "subtotal",
+          "deliveryFee",
           "shipping",
           "total",
           "currency"
@@ -36988,6 +38157,31 @@
           "verifiedAmount",
           "verifiedCurrency"
         ]
+      },
+      "RestoreCancelledOrderDto": {
+        "type": "object",
+        "properties": {
+          "targetStatus": {
+            "type": "string",
+            "enum": [
+              "pending_payment",
+              "confirmed",
+              "processing",
+              "completed",
+              "on_hold",
+              "cancelled",
+              "returned",
+              "refunded",
+              "out_of_stock"
+            ],
+            "description": "الحالة الهدف بعد الاستعادة. الافتراضي: processing",
+            "default": "processing"
+          },
+          "notes": {
+            "type": "string",
+            "description": "ملاحظات الاستعادة"
+          }
+        }
       },
       "BulkOrderUpdateDto": {
         "type": "object",
@@ -37974,8 +39168,23 @@
           },
           "url": {
             "type": "string",
-            "description": "Video playback URL",
-            "example": "https://video.bunnycdn.com/600364/550e8400-e29b-41d4-a716-446655440000/playlist.m3u8"
+            "description": "Primary video URL (backward compatible, usually embed URL)",
+            "example": "https://iframe.mediadelivery.net/embed/600364/550e8400-e29b-41d4-a716-446655440000"
+          },
+          "embedUrl": {
+            "type": "string",
+            "description": "Iframe embed URL",
+            "example": "https://iframe.mediadelivery.net/embed/600364/550e8400-e29b-41d4-a716-446655440000"
+          },
+          "hlsUrl": {
+            "type": "string",
+            "description": "HLS playlist URL (m3u8) for native/custom players",
+            "example": "https://vz-xxxxxxxx-xxx.b-cdn.net/550e8400-e29b-41d4-a716-446655440000/playlist.m3u8"
+          },
+          "mp4Url": {
+            "type": "string",
+            "description": "Progressive MP4 URL (best effort, depends on transcoding profile)",
+            "example": "https://vz-xxxxxxxx-xxx.b-cdn.net/550e8400-e29b-41d4-a716-446655440000/play_720p.mp4"
           },
           "thumbnailUrl": {
             "type": "string",
@@ -38373,6 +39582,11 @@
                 "system.logs",
                 "admin.access",
                 "super_admin.access",
+                "marketers.read",
+                "marketers.create",
+                "marketers.update",
+                "marketers.analytics",
+                "marketer.portal.access",
                 "capabilities.read",
                 "capabilities.update",
                 "capabilities.approve",
@@ -38438,7 +39652,8 @@
               "support_manager",
               "marketing_manager",
               "content_manager",
-              "view_only"
+              "view_only",
+              "marketer"
             ],
             "example": "product_manager"
           },
@@ -38543,6 +39758,11 @@
                 "system.logs",
                 "admin.access",
                 "super_admin.access",
+                "marketers.read",
+                "marketers.create",
+                "marketers.update",
+                "marketers.analytics",
+                "marketer.portal.access",
                 "capabilities.read",
                 "capabilities.update",
                 "capabilities.approve",
@@ -38581,6 +39801,158 @@
           "adminType",
           "phone",
           "firstName"
+        ]
+      },
+      "CreateMarketerAdminDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "رقم هاتف المسوق",
+            "example": "777123456"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "الاسم الأول",
+            "example": "محمد"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "الاسم الأخير",
+            "example": "أحمد"
+          },
+          "gender": {
+            "type": "string",
+            "description": "الجنس",
+            "enum": [
+              "male",
+              "female",
+              "other"
+            ],
+            "example": "male"
+          },
+          "temporaryPassword": {
+            "type": "string",
+            "description": "كلمة مرور مؤقتة",
+            "example": "TempPass123!",
+            "minLength": 8
+          },
+          "activateImmediately": {
+            "type": "boolean",
+            "description": "تفعيل الحساب مباشرة",
+            "default": true
+          }
+        },
+        "required": [
+          "phone",
+          "firstName"
+        ]
+      },
+      "CreateMarketerEngineerDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "777123456",
+            "description": "رقم هاتف المستخدم"
+          },
+          "firstName": {
+            "type": "string",
+            "example": "أحمد",
+            "description": "الاسم الأول"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "محمد",
+            "description": "الاسم الأخير"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female",
+              "other"
+            ],
+            "example": "male"
+          },
+          "city": {
+            "type": "string",
+            "example": "صنعاء",
+            "description": "المدينة"
+          },
+          "jobTitle": {
+            "type": "string",
+            "example": "مهندس كهرباء",
+            "description": "المسمى الوظيفي"
+          },
+          "password": {
+            "type": "string",
+            "example": "Pass1234!",
+            "description": "كلمة مرور المستخدم"
+          },
+          "note": {
+            "type": "string",
+            "example": "تم التحقق ميدانياً",
+            "description": "ملاحظة التحقق"
+          }
+        },
+        "required": [
+          "phone",
+          "firstName"
+        ]
+      },
+      "CreateMarketerMerchantDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "777123456",
+            "description": "رقم هاتف المستخدم"
+          },
+          "firstName": {
+            "type": "string",
+            "example": "محمد",
+            "description": "الاسم الأول"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "صالح",
+            "description": "الاسم الأخير"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female",
+              "other"
+            ],
+            "example": "male"
+          },
+          "city": {
+            "type": "string",
+            "example": "صنعاء",
+            "description": "المدينة"
+          },
+          "storeName": {
+            "type": "string",
+            "example": "محل الطاقة الشمسية",
+            "description": "اسم المحل"
+          },
+          "password": {
+            "type": "string",
+            "example": "Pass1234!",
+            "description": "كلمة مرور المستخدم"
+          },
+          "note": {
+            "type": "string",
+            "example": "تم التحقق ميدانياً",
+            "description": "ملاحظة التحقق"
+          }
+        },
+        "required": [
+          "phone",
+          "firstName",
+          "storeName"
         ]
       },
       "CreateUserAdminDto": {
