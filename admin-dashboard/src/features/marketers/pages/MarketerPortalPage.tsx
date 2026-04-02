@@ -36,6 +36,68 @@ import {
 } from '../hooks/useMarketerPortal';
 
 const PAGE_SIZE = 10;
+const CAPTURE_MAX_WIDTH = 1280;
+const UPLOAD_MAX_WIDTH = 1600;
+
+const compressImageFile = async (file: File, maxWidth: number, quality = 0.82): Promise<File> => {
+  if (!file.type.startsWith('image/')) {
+    return file;
+  }
+
+  const imageUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('image_load_failed'));
+      img.src = imageUrl;
+    });
+
+    const sourceWidth = image.naturalWidth;
+    const sourceHeight = image.naturalHeight;
+
+    if (!sourceWidth || !sourceHeight) {
+      return file;
+    }
+
+    const ratio = sourceWidth > maxWidth ? maxWidth / sourceWidth : 1;
+    const targetWidth = Math.round(sourceWidth * ratio);
+    const targetHeight = Math.round(sourceHeight * ratio);
+
+    if (ratio === 1 && file.size <= 1.5 * 1024 * 1024) {
+      return file;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return file;
+    }
+
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((result) => resolve(result), 'image/jpeg', quality);
+    });
+
+    if (!blob) {
+      return file;
+    }
+
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, '') || 'store-photo'}.jpg`, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    });
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+};
 
 export const MarketerPortalPage = () => {
   const [activeTab, setActiveTab] = useState<'engineer' | 'merchant'>('engineer');
@@ -92,19 +154,39 @@ export const MarketerPortalPage = () => {
 
   const handleOpenCamera = async () => {
     setCameraError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError('المتصفح لا يدعم فتح الكاميرا. استخدم Chrome/Safari حديث أو اختر صورة من الجهاز.');
+      return;
+    }
+
+    const constraintsList: MediaStreamConstraints[] = [
+      {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
         audio: false,
-      });
-      streamRef.current = stream;
-      setCameraOpen(true);
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          void videoRef.current.play();
+      },
+      { video: { facingMode: 'environment' }, audio: false },
+      { video: { facingMode: 'user' }, audio: false },
+      { video: true, audio: false },
+    ];
+
+    try {
+      for (const constraints of constraintsList) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          streamRef.current = stream;
+          setCameraOpen(true);
+          return;
+        } catch {
+          // Try next fallback constraints
         }
-      }, 0);
+      }
+
+      setCameraError('تعذر تشغيل الكاميرا على هذا الجهاز. يمكنك اختيار الصورة من الجهاز مباشرة.');
     } catch {
       setCameraError('تعذر الوصول إلى الكاميرا. تأكد من منح الصلاحية أو استخدام متصفح يدعم الكاميرا.');
     }
@@ -132,15 +214,19 @@ export const MarketerPortalPage = () => {
     }
 
     setIsCapturing(true);
-    canvas.width = width;
-    canvas.height = height;
+    const ratio = width > CAPTURE_MAX_WIDTH ? CAPTURE_MAX_WIDTH / width : 1;
+    const targetWidth = Math.round(width * ratio);
+    const targetHeight = Math.round(height * ratio);
+
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
     const context = canvas.getContext('2d');
     if (!context) {
       setIsCapturing(false);
       return;
     }
 
-    context.drawImage(video, 0, 0, width, height);
+    context.drawImage(video, 0, 0, targetWidth, targetHeight);
     canvas.toBlob(
       (blob) => {
         if (!blob) {
@@ -155,8 +241,18 @@ export const MarketerPortalPage = () => {
         handleCloseCamera();
       },
       'image/jpeg',
-      0.92,
+      0.82,
     );
+  };
+
+  const handleMerchantFileChange = async (file: File | null) => {
+    if (!file) {
+      setMerchantForm((prev) => ({ ...prev, file: null }));
+      return;
+    }
+
+    const preparedFile = await compressImageFile(file, UPLOAD_MAX_WIDTH);
+    setMerchantForm((prev) => ({ ...prev, file: preparedFile }));
   };
 
   useEffect(() => {
@@ -164,6 +260,27 @@ export const MarketerPortalPage = () => {
       stopCamera();
     };
   }, []);
+
+  useEffect(() => {
+    if (!cameraOpen || !streamRef.current || !videoRef.current) {
+      return;
+    }
+
+    const video = videoRef.current;
+    video.srcObject = streamRef.current;
+
+    const startPlayback = () => {
+      void video.play().catch(() => {
+        setCameraError('تم فتح الكاميرا لكن تعذر عرض الصورة. حاول إعادة الفتح أو استخدام اختيار من الجهاز.');
+      });
+    };
+
+    video.onloadedmetadata = startPlayback;
+
+    return () => {
+      video.onloadedmetadata = null;
+    };
+  }, [cameraOpen]);
 
   const handleCreateEngineer = () => {
     if (!engineerForm.phone || !engineerForm.firstName || !engineerForm.file) {
@@ -505,9 +622,10 @@ export const MarketerPortalPage = () => {
                         type="file"
                         hidden
                         accept="image/jpeg,image/jpg,image/png,image/webp"
-                        onChange={(event) =>
-                          setMerchantForm((prev) => ({ ...prev, file: event.target.files?.[0] || null }))
-                        }
+                        capture="environment"
+                        onChange={(event) => {
+                          void handleMerchantFileChange(event.target.files?.[0] || null);
+                        }}
                       />
                     </Button>
                   </Stack>
@@ -582,6 +700,7 @@ export const MarketerPortalPage = () => {
               >
                 <video
                   ref={videoRef}
+                  autoPlay
                   playsInline
                   muted
                   style={{ width: '100%', display: 'block', maxHeight: '60vh', objectFit: 'cover' }}

@@ -6,7 +6,7 @@ import {
   GridSortModel,
   GridPaginationModel,
 } from '@mui/x-data-grid';
-import { Box, Paper, TextField, InputAdornment, Button } from '@mui/material';
+import { Box, Paper, TextField, InputAdornment, Button, Pagination, Typography } from '@mui/material';
 import { Search, Add } from '@mui/icons-material';
 import './DataTable.css';
 
@@ -22,6 +22,7 @@ export interface DataTableProps {
   // Server-side pagination support
   rowCount?: number; // Total number of rows (for server-side pagination)
   paginationMode?: 'client' | 'server'; // Default: 'client'
+  customPagination?: boolean;
 
   // Sorting
   sortModel?: GridSortModel;
@@ -67,6 +68,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   onPaginationModelChange,
   rowCount,
   paginationMode = 'client',
+  customPagination = false,
   sortModel,
   onSortModelChange,
   sortingMode = 'client',
@@ -98,6 +100,9 @@ export const DataTable: React.FC<DataTableProps> = ({
     : typeof height === 'number' 
       ? `${height}px` 
       : height || '600px';
+
+  const totalRows = paginationMode === 'server' ? (rowCount ?? 0) : rows.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / Math.max(1, paginationModel.pageSize)));
 
   return (
     <Paper sx={{ width: '100%', height: actualHeight, display: 'flex', flexDirection: 'column', minHeight: typeof height === 'string' && height === '100%' ? 600 : undefined }}>
@@ -188,6 +193,7 @@ export const DataTable: React.FC<DataTableProps> = ({
           onPaginationModelChange={onPaginationModelChange}
           rowCount={rowCount ?? rows.length}
           pageSizeOptions={[10, 20, 30, 50, 75, 100]}
+          hideFooterPagination={customPagination}
           // Sorting
           sortingMode={sortingMode}
           sortModel={sortModel}
@@ -293,6 +299,43 @@ export const DataTable: React.FC<DataTableProps> = ({
         disableColumnSelector={false}
         />
       </Box>
+
+      {customPagination && totalRows > 0 && (
+        <Box
+          sx={{
+            px: { xs: 1.5, sm: 2 },
+            py: 1.25,
+            borderTop: 1,
+            borderColor: 'divider',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            {Math.min(paginationModel.page + 1, totalPages)} / {totalPages}
+          </Typography>
+          <Pagination
+            count={totalPages}
+            page={Math.min(paginationModel.page + 1, totalPages)}
+            onChange={(_event, page) =>
+              onPaginationModelChange({
+                ...paginationModel,
+                page: Math.max(0, page - 1),
+              })
+            }
+            color="primary"
+            shape="rounded"
+            showFirstButton
+            showLastButton
+            siblingCount={1}
+            boundaryCount={1}
+            size="small"
+          />
+        </Box>
+      )}
     </Paper>
   );
 };

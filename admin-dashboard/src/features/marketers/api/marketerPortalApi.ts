@@ -8,6 +8,11 @@ import type {
   MarketerPortalUsersResponse,
 } from '../types/marketer-portal.types';
 
+const MARKETER_PORTAL_UPLOAD_TIMEOUT =
+  Number(import.meta.env.VITE_MARKETER_PORTAL_UPLOAD_TIMEOUT) ||
+  Number(import.meta.env.VITE_API_TIMEOUT) ||
+  120000;
+
 const toFormData = <T extends object>(payload: T) => {
   const formData = new FormData();
 
@@ -32,7 +37,10 @@ export const marketerPortalApi = {
     const { data } = await apiClient.post<ApiResponse<MarketerLeadCreationResponse>>(
       '/admin/users/marketer-portal/engineers',
       toFormData(payload),
-      { headers: { 'Content-Type': 'multipart/form-data' } },
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: MARKETER_PORTAL_UPLOAD_TIMEOUT,
+      },
     );
 
     return data.data;
@@ -42,7 +50,10 @@ export const marketerPortalApi = {
     const { data } = await apiClient.post<ApiResponse<MarketerLeadCreationResponse>>(
       '/admin/users/marketer-portal/merchants',
       toFormData(payload),
-      { headers: { 'Content-Type': 'multipart/form-data' } },
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: MARKETER_PORTAL_UPLOAD_TIMEOUT,
+      },
     );
 
     return data.data;
