@@ -44,7 +44,8 @@
     "fix:product-attributes": "ts-node src/scripts/fix-product-attributes-from-variants.ts",
     "notifications:delete-all": "ts-node scripts/delete-all-notifications.ts",
     "repair:engineer-profiles": "node scripts/repair-missing-engineer-profiles.js",
-    "coupons:engineers": "ts-node scripts/generate-engineer-coupons.ts"
+    "coupons:engineers": "ts-node scripts/generate-engineer-coupons.ts",
+    "coupons:engineers:phone": "ts-node scripts/generate-engineer-coupons.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

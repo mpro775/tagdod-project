@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 
 import { AppModule } from '../src/app.module';
+import { normalizeYemeniPhone } from '../src/shared/utils/phone.util';
 import {
   CapabilityStatus,
   User,
@@ -18,9 +19,11 @@ import {
 } from '../src/modules/marketing/schemas/coupon.schema';
 
 const DEFAULT_ENGINEER_COUPON_TAG = 'AUTO_ENGINEER_DEFAULT_COUPON';
+const DEFAULT_ENGINEER_COUPON_NAME = 'الكوبون الافتراضي للمهندس';
+const DEFAULT_ENGINEER_COUPON_MARKETING_DESCRIPTION =
+  'قم بمشاركة الكوبون مع عملائك واحصل على خصم لهم وعمولة  لك على كل طلب مكتمل.';
 const DEFAULT_ENGINEER_COUPON_DISCOUNT_PERCENT = 5;
 const DEFAULT_ENGINEER_COUPON_COMMISSION_PERCENT = 5;
-const COUPON_PREFIX = 'ENG5';
 
 type LeanEngineerUser = {
   _id: Types.ObjectId;
@@ -32,25 +35,22 @@ type LeanEngineerUser = {
 interface GenerationStats {
   totalEngineers: number;
   created: number;
-  skippedAlreadyHasDefault: number;
+  updated: number;
+  skippedInvalidPhone: number;
+  conflicts: number;
   errors: number;
 }
 
-async function generateUniqueDefaultEngineerCouponCode(
-  couponModel: Model<Coupon>,
-): Promise<string> {
-  const maxAttempts = 10;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
-    const code = `${COUPON_PREFIX}-${randomPart}`;
-    const exists = await couponModel.exists({ code, deletedAt: null });
-    if (!exists) {
-      return code;
-    }
+function buildDefaultEngineerCouponCodeFromPhone(phone?: string): string | null {
+  if (!phone) {
+    return null;
   }
 
-  return `${COUPON_PREFIX}-${Date.now().toString().slice(-8)}`.toUpperCase();
+  try {
+    return normalizeYemeniPhone(phone).replace(/^\+967/, '');
+  } catch {
+    return null;
+  }
 }
 
 async function generateEngineerCoupons() {
@@ -59,7 +59,9 @@ async function generateEngineerCoupons() {
   const stats: GenerationStats = {
     totalEngineers: 0,
     created: 0,
-    skippedAlreadyHasDefault: 0,
+    updated: 0,
+    skippedInvalidPhone: 0,
+    conflicts: 0,
     errors: 0,
   };
 
@@ -92,30 +94,59 @@ async function generateEngineerCoupons() {
 
     for (const engineer of engineers) {
       const engineerId = engineer._id.toString();
+      const couponCode = buildDefaultEngineerCouponCodeFromPhone(engineer.phone);
+
+      if (!couponCode) {
+        stats.skippedInvalidPhone += 1;
+        console.log(`⏭️ تم التخطي: ${engineerId} رقم الهاتف غير صالح`);
+        continue;
+      }
 
       try {
         const existingDefaultCoupon = await couponModel
           .findOne({
             engineerId: new Types.ObjectId(engineerId),
             deletedAt: null,
-            description: { $regex: `^${DEFAULT_ENGINEER_COUPON_TAG}` },
+            $or: [
+              { description: { $regex: `^${DEFAULT_ENGINEER_COUPON_TAG}` } },
+              { name: DEFAULT_ENGINEER_COUPON_NAME },
+            ],
           })
-          .select('_id code')
-          .lean<{ _id: Types.ObjectId; code: string } | null>();
+          .select('_id code validFrom')
+          .lean<{ _id: Types.ObjectId; code: string; validFrom?: Date } | null>();
 
-        if (existingDefaultCoupon) {
-          stats.skippedAlreadyHasDefault += 1;
-          console.log(`⏭️ تم التخطي: ${engineerId} لديه كوبون افتراضي (${existingDefaultCoupon.code})`);
+        const couponWithTargetCode = await couponModel
+          .findOne({
+            code: couponCode,
+            deletedAt: null,
+          })
+          .select('_id engineerId')
+          .lean<{ _id: Types.ObjectId; engineerId?: Types.ObjectId | null } | null>();
+
+        if (
+          couponWithTargetCode &&
+          couponWithTargetCode.engineerId &&
+          String(couponWithTargetCode.engineerId) !== engineerId
+        ) {
+          stats.conflicts += 1;
+          console.log(
+            `⚠️ تعارض: ${engineerId} لا يمكن تحديثه لأن الكود ${couponCode} مستخدم لمهندس آخر`,
+          );
           continue;
         }
 
-        const couponCode = await generateUniqueDefaultEngineerCouponCode(couponModel);
+        const targetCouponId =
+          existingDefaultCoupon?._id ||
+          (couponWithTargetCode && String(couponWithTargetCode.engineerId) === engineerId
+            ? couponWithTargetCode._id
+            : null);
+
         const now = new Date();
 
-        await couponModel.create({
+        const upsertPayload = {
           code: couponCode,
-          name: 'الكوبون الافتراضي للمهندس',
-          description: `${DEFAULT_ENGINEER_COUPON_TAG}: تم إنشاؤه عبر سكربت توليد الكوبونات`,
+          name: DEFAULT_ENGINEER_COUPON_NAME,
+          description: DEFAULT_ENGINEER_COUPON_MARKETING_DESCRIPTION,
           type: CouponType.PERCENTAGE,
           status: CouponStatus.ACTIVE,
           visibility: CouponVisibility.PUBLIC,
@@ -124,9 +155,28 @@ async function generateEngineerCoupons() {
           engineerId: new Types.ObjectId(engineerId),
           usageLimit: null,
           usageLimitPerUser: null,
-          validFrom: now,
           validUntil: null,
           appliesTo: DiscountAppliesTo.ALL_PRODUCTS,
+        };
+
+        if (targetCouponId) {
+          await couponModel.updateOne(
+            { _id: targetCouponId },
+            {
+              $set: {
+                ...upsertPayload,
+                validFrom: existingDefaultCoupon?.validFrom || now,
+              },
+            },
+          );
+          stats.updated += 1;
+          console.log(`♻️ تم التحديث: ${engineerId} -> ${couponCode}`);
+          continue;
+        }
+
+        await couponModel.create({
+          ...upsertPayload,
+          validFrom: now,
           usedCount: 0,
           totalRedemptions: 0,
           totalDiscountGiven: 0,
@@ -146,7 +196,9 @@ async function generateEngineerCoupons() {
     console.log('\n📊 التقرير النهائي');
     console.log(`- إجمالي المهندسين الموثقين: ${stats.totalEngineers}`);
     console.log(`- تم إنشاء كوبونات: ${stats.created}`);
-    console.log(`- تم التخطي (لديهم كوبون افتراضي): ${stats.skippedAlreadyHasDefault}`);
+    console.log(`- تم تحديث كوبونات: ${stats.updated}`);
+    console.log(`- تم التخطي (هاتف غير صالح): ${stats.skippedInvalidPhone}`);
+    console.log(`- تعارضات كود الكوبون: ${stats.conflicts}`);
     console.log(`- أخطاء: ${stats.errors}`);
   } catch (error) {
     console.error('❌ حدث خطأ أثناء تشغيل السكربت:', error);
