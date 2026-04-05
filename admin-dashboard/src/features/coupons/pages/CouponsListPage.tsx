@@ -520,6 +520,8 @@ export const CouponsListPage: React.FC = () => {
           loading={isLoading}
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
+          paginationMode="server"
+          rowCount={data?.meta?.total ?? 0}
           getRowId={(row) => (row as Coupon)._id}
           onAdd={() => navigate('/coupons/new')}
           addButtonText={t('table.addButton')}

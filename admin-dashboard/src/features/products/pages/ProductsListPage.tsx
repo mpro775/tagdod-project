@@ -23,6 +23,7 @@ import {
   Link,
   TextField,
   InputAdornment,
+  Pagination,
 } from '@mui/material';
 import {
   Edit,
@@ -57,6 +58,8 @@ import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { ProductCard } from '@/shared/components/Cards/ProductCard';
 import { useProducts, useDeleteProduct, useRestoreProduct, useClearCache } from '../hooks/useProducts';
+import { useCategories } from '@/features/categories/hooks/useCategories';
+import { useBrands } from '@/features/brands/hooks/useBrands';
 import { formatDate } from '@/shared/utils/formatters';
 import { CurrencySelector } from '@/shared/components/CurrencySelector';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
@@ -124,6 +127,8 @@ export const ProductsListPage: React.FC = () => {
   const [newFilter, setNewFilter] = useState<boolean | 'all'>(() => getParamBoolean('isNew'));
   const [bestsellerFilter, setBestsellerFilter] = useState<boolean | 'all'>(() => getParamBoolean('isBestseller'));
   const [hasOfferFilter, setHasOfferFilter] = useState<boolean | 'all'>(() => getParamBoolean('hasOffer'));
+  const [categoryFilter, setCategoryFilter] = useState(() => getParamString('categoryId', 'all'));
+  const [brandFilter, setBrandFilter] = useState(() => getParamString('brandId', 'all'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => {
@@ -158,10 +163,25 @@ export const ProductsListPage: React.FC = () => {
     if (newFilter !== 'all') params.set('isNew', newFilter.toString());
     if (bestsellerFilter !== 'all') params.set('isBestseller', bestsellerFilter.toString());
     if (hasOfferFilter !== 'all') params.set('hasOffer', hasOfferFilter.toString());
+    if (categoryFilter !== 'all') params.set('categoryId', categoryFilter);
+    if (brandFilter !== 'all') params.set('brandId', brandFilter);
 
     // Update URL without navigation (replace to avoid history pollution)
     setSearchParams(params, { replace: true });
-  }, [paginationModel, search, sortModel, statusFilter, featuredFilter, newFilter, bestsellerFilter, hasOfferFilter, setSearchParams]);
+  }, [paginationModel, search, sortModel, statusFilter, featuredFilter, newFilter, bestsellerFilter, hasOfferFilter, categoryFilter, brandFilter, setSearchParams]);
+
+  const { data: categoriesData = [] } = useCategories({ isActive: true, limit: 500 });
+  const { data: brandsData } = useBrands({
+    isActive: true,
+    limit: 500,
+    sortBy: 'name',
+    sortOrder: 'asc',
+  });
+  const brands = brandsData?.data ?? [];
+
+  const selectedCategoryName =
+    categoriesData.find((category) => category._id === categoryFilter)?.name ?? '';
+  const selectedBrandName = brands.find((brand) => brand._id === brandFilter)?.name ?? '';
 
   // Count active filters
   const activeFiltersCount = React.useMemo(() => {
@@ -171,8 +191,10 @@ export const ProductsListPage: React.FC = () => {
     if (newFilter !== 'all') count++;
     if (bestsellerFilter !== 'all') count++;
     if (hasOfferFilter !== 'all') count++;
+    if (categoryFilter !== 'all') count++;
+    if (brandFilter !== 'all') count++;
     return count;
-  }, [statusFilter, featuredFilter, newFilter, bestsellerFilter, hasOfferFilter]);
+  }, [statusFilter, featuredFilter, newFilter, bestsellerFilter, hasOfferFilter, categoryFilter, brandFilter]);
 
   // Clear all filters (also reset to first page)
   const clearAllFilters = () => {
@@ -181,6 +203,8 @@ export const ProductsListPage: React.FC = () => {
     setNewFilter('all');
     setBestsellerFilter('all');
     setHasOfferFilter('all');
+    setCategoryFilter('all');
+    setBrandFilter('all');
     setPaginationModel(prev => ({ ...prev, page: 0 }));
   };
 
@@ -195,6 +219,8 @@ export const ProductsListPage: React.FC = () => {
     isFeatured: featuredFilter !== 'all' ? featuredFilter : undefined,
     isNew: newFilter !== 'all' ? newFilter : undefined,
     isBestseller: bestsellerFilter !== 'all' ? bestsellerFilter : undefined,
+    categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
+    brandId: brandFilter !== 'all' ? brandFilter : undefined,
   });
 
   // Apply hasOffer filter client-side
@@ -1034,6 +1060,22 @@ export const ProductsListPage: React.FC = () => {
                   icon={<LocalOffer />}
                 />
               )}
+              {categoryFilter !== 'all' && (
+                <Chip
+                  label={`${t('list.columns.category', 'الفئة')}: ${selectedCategoryName || '-'}`}
+                  size="small"
+                  onDelete={() => setCategoryFilter('all')}
+                  color="primary"
+                />
+              )}
+              {brandFilter !== 'all' && (
+                <Chip
+                  label={`${t('list.columns.brand', 'العلامة التجارية')}: ${selectedBrandName || '-'}`}
+                  size="small"
+                  onDelete={() => setBrandFilter('all')}
+                  color="secondary"
+                />
+              )}
             </Box>
           </Alert>
         </Box>
@@ -1116,33 +1158,33 @@ export const ProductsListPage: React.FC = () => {
 
           {/* Pagination */}
           {data?.meta && data.meta.total > paginationModel.pageSize && (
-            <Box mt={3} display="flex" justifyContent="center" alignItems="center" gap={1}>
-              <Button
-                variant="outlined"
-                disabled={paginationModel.page === 0}
-                onClick={() =>
-                  setPaginationModel({ ...paginationModel, page: paginationModel.page - 1 })
-                }
-                size="small"
-              >
-                {t('common.previous', { ns: 'common' })}
-              </Button>
-              <Typography variant="body2">
-                {paginationModel.page + 1} {t('common.of', { ns: 'common' })}{' '}
-                {Math.ceil((data.meta.total || 0) / paginationModel.pageSize)}
+            <Box
+              mt={3}
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              flexWrap="wrap"
+              gap={1}
+            >
+              <Typography variant="body2" color="text.secondary">
+                {t('common.page', { ns: 'common', defaultValue: 'صفحة' })} {paginationModel.page + 1}{' '}
+                {t('common.of', { ns: 'common' })}{' '}
+                {Math.max(1, Math.ceil((data.meta.total || 0) / paginationModel.pageSize))}
               </Typography>
-              <Button
-                variant="outlined"
-                disabled={
-                  (paginationModel.page + 1) * paginationModel.pageSize >= (data.meta.total || 0)
+              <Pagination
+                count={Math.max(1, Math.ceil((data.meta.total || 0) / paginationModel.pageSize))}
+                page={paginationModel.page + 1}
+                onChange={(_event, page) =>
+                  setPaginationModel((prev) => ({ ...prev, page: Math.max(0, page - 1) }))
                 }
-                onClick={() =>
-                  setPaginationModel({ ...paginationModel, page: paginationModel.page + 1 })
-                }
+                showFirstButton
+                showLastButton
+                siblingCount={1}
+                boundaryCount={1}
+                color="primary"
+                shape="rounded"
                 size="small"
-              >
-                {t('common.next', { ns: 'common' })}
-              </Button>
+              />
             </Box>
           )}
         </Box>
@@ -1157,6 +1199,7 @@ export const ProductsListPage: React.FC = () => {
           onPaginationModelChange={setPaginationModel}
           rowCount={data?.meta?.total ?? 0}
           paginationMode="server"
+          customPagination
           sortModel={sortModel}
           onSortModelChange={setSortModel}
           sortingMode="server"
@@ -1250,6 +1293,46 @@ export const ProductsListPage: React.FC = () => {
                 <MenuItem value="all">{t('common.all', 'الكل')}</MenuItem>
                 <MenuItem value="true">{t('common.yes', 'نعم')}</MenuItem>
                 <MenuItem value="false">{t('common.no', 'لا')}</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Category Filter */}
+            <FormControl fullWidth>
+              <InputLabel>{t('list.columns.category', 'الفئة')}</InputLabel>
+              <Select
+                value={categoryFilter}
+                label={t('list.columns.category', 'الفئة')}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                }}
+              >
+                <MenuItem value="all">{t('common.all', 'الكل')}</MenuItem>
+                {categoriesData.map((category) => (
+                  <MenuItem key={category._id} value={category._id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Brand Filter */}
+            <FormControl fullWidth>
+              <InputLabel>{t('list.columns.brand', 'العلامة التجارية')}</InputLabel>
+              <Select
+                value={brandFilter}
+                label={t('list.columns.brand', 'العلامة التجارية')}
+                onChange={(e) => {
+                  setBrandFilter(e.target.value);
+                  setPaginationModel((prev) => ({ ...prev, page: 0 }));
+                }}
+              >
+                <MenuItem value="all">{t('common.all', 'الكل')}</MenuItem>
+                {brands.map((brand) => (
+                  <MenuItem key={brand._id} value={brand._id}>
+                    {brand.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 

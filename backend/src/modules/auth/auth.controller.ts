@@ -96,6 +96,9 @@ import {
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
   private readonly defaultEngineerCouponTag = 'AUTO_ENGINEER_DEFAULT_COUPON';
+  private readonly defaultEngineerCouponName = 'الكوبون الافتراضي للمهندس';
+  private readonly defaultEngineerCouponMarketingDescription =
+    'قم بمشاركة الكوبون مع عملائك واحصل على خصم لهم وعمولة  لك على كل طلب مكتمل.';
   private readonly defaultEngineerCouponDiscountPercent = 5;
   private readonly defaultEngineerCouponCommissionPercent = 5;
   private readonly defaultMerchantDiscountPercent = 15;
@@ -122,30 +125,78 @@ export class AuthController {
     }
 
     const engineerObjectId = new Types.ObjectId(engineerId);
+    const engineer = await this.userModel
+      .findById(engineerObjectId)
+      .select('phone')
+      .lean<{ phone?: string } | null>();
+
+    const couponCode = this.buildDefaultEngineerCouponCodeFromPhone(engineer?.phone);
+    if (!couponCode) {
+      this.logger.warn(`Skip default coupon creation/update: invalid engineer phone for ${engineerId}`);
+      return;
+    }
+
+    const conflictingCoupon = await this.couponModel
+      .findOne({
+        code: couponCode,
+        deletedAt: null,
+        engineerId: { $ne: engineerObjectId },
+      })
+      .select('_id engineerId')
+      .lean();
+
+    if (conflictingCoupon) {
+      this.logger.warn(
+        `Skip default coupon creation/update for ${engineerId}: coupon code ${couponCode} already assigned to another coupon`,
+      );
+      return;
+    }
 
     const existingDefaultCoupon = await this.couponModel
       .findOne({
         engineerId: engineerObjectId,
         deletedAt: null,
-        description: { $regex: `^${this.defaultEngineerCouponTag}` },
+        $or: [
+          { description: { $regex: `^${this.defaultEngineerCouponTag}` } },
+          { name: this.defaultEngineerCouponName },
+        ],
       })
-      .select('_id code')
+      .select('_id code validFrom')
       .lean();
 
     if (existingDefaultCoupon) {
-      this.logger.log(
-        `Default engineer coupon already exists for ${engineerId}: ${existingDefaultCoupon.code}`,
+      await this.couponModel.updateOne(
+        { _id: existingDefaultCoupon._id },
+        {
+          $set: {
+            code: couponCode,
+            name: this.defaultEngineerCouponName,
+            description: this.defaultEngineerCouponMarketingDescription,
+            type: CouponType.PERCENTAGE,
+            status: CouponStatus.ACTIVE,
+            visibility: CouponVisibility.PUBLIC,
+            discountValue: this.defaultEngineerCouponDiscountPercent,
+            commissionRate: this.defaultEngineerCouponCommissionPercent,
+            usageLimit: null,
+            usageLimitPerUser: null,
+            validFrom: existingDefaultCoupon.validFrom || new Date(),
+            validUntil: null,
+            appliesTo: DiscountAppliesTo.ALL_PRODUCTS,
+            lastModifiedBy: adminId,
+          },
+        },
       );
+
+      this.logger.log(`Updated default engineer coupon for ${engineerId}: ${couponCode}`);
       return;
     }
 
-    const couponCode = await this.generateUniqueDefaultEngineerCouponCode();
     const now = new Date();
 
     await this.couponModel.create({
       code: couponCode,
-      name: 'الكوبون الافتراضي للمهندس',
-      description: `${this.defaultEngineerCouponTag}: تم إنشاؤه تلقائياً عند توثيق المهندس`,
+      name: this.defaultEngineerCouponName,
+      description: this.defaultEngineerCouponMarketingDescription,
       type: CouponType.PERCENTAGE,
       status: CouponStatus.ACTIVE,
       visibility: CouponVisibility.PUBLIC,
@@ -169,20 +220,16 @@ export class AuthController {
     this.logger.log(`Created default engineer coupon for ${engineerId}: ${couponCode}`);
   }
 
-  private async generateUniqueDefaultEngineerCouponCode(): Promise<string> {
-    const maxAttempts = 10;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
-      const code = `ENG5-${randomPart}`;
-      const exists = await this.couponModel.exists({ code, deletedAt: null });
-      if (!exists) {
-        return code;
-      }
+  private buildDefaultEngineerCouponCodeFromPhone(phone?: string): string | null {
+    if (!phone) {
+      return null;
     }
 
-    const fallbackCode = `ENG5-${Date.now().toString().slice(-8)}`;
-    return fallbackCode.toUpperCase();
+    try {
+      return normalizeYemeniPhone(phone).replace(/^\+967/, '');
+    } catch {
+      return null;
+    }
   }
 
   /**
