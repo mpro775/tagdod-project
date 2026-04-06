@@ -195,7 +195,7 @@ export class EngineerProfileService {
 
     // جلب الكوبون المرتبط بالمهندس مع إحصائياته
     const coupon = await this.couponModel
-      .findOne({ engineerId: actualUserId, status: 'active' })
+      .findOne({ engineerId: actualUserId, status: 'active', deletedAt: null })
       .select(
         'code name description discountValue type commissionRate usedCount totalCommissionEarned totalDiscountGiven totalRevenue',
       )
