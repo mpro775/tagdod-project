@@ -57,6 +57,7 @@ export enum NotificationType {
   // Marketing
   WELCOME_NEW_USER = 'WELCOME_NEW_USER',
   BIRTHDAY_GREETING = 'BIRTHDAY_GREETING',
+  GREETING = 'GREETING',
   CART_ABANDONMENT = 'CART_ABANDONMENT',
   
   // Payment
