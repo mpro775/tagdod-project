@@ -77,9 +77,9 @@ export const NotificationEditForm: React.FC<NotificationEditFormProps> = ({
   const loadProducts = async () => {
     try {
       setLoadingProducts(true);
-      const response = await productsApi.list({ page: 1, limit: 100, status: 'active' as any });
+      const response = await productsApi.list({ page: 1, limit: 500 });
       const productsData = Array.isArray(response.data) ? response.data : [];
-      setProducts(productsData.map((p: any) => ({ _id: p._id, name: p.name || p.nameAr || '' })));
+      setProducts(productsData.map((p: any) => ({ _id: p._id, name: p.name || p.nameEn || '' })));
     } catch (error) {
       console.error('Error loading products:', error);
     } finally {
