@@ -30,6 +30,7 @@ import {
 } from '../types/notification.types';
 import { getCategoryLabel, getNotificationTypeLabel } from './notificationHelpers';
 import { NotificationUserSelector } from './NotificationUserSelector';
+import { NotificationPersonalizationHint } from './NotificationPersonalizationHint';
 import { useCategories } from '@/features/categories/hooks/useCategories';
 import { productsApi } from '@/features/products/api/productsApi';
 import { ordersApi } from '@/features/orders/api/ordersApi';
@@ -295,6 +296,8 @@ export const NotificationCreateWizard: React.FC<NotificationCreateWizardProps> =
       {/* Step 2: Content */}
       {activeStep === 1 && (
         <Stack spacing={3}>
+          <NotificationPersonalizationHint />
+
           <TextField
             fullWidth
             label={t('forms.title')}

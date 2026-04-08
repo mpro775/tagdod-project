@@ -302,6 +302,7 @@ UnifiedNotificationSchema.pre('save', function (next) {
       [NotificationType.SYSTEM_ALERT]: NotificationCategory.SYSTEM,
       [NotificationType.WELCOME_NEW_USER]: NotificationCategory.MARKETING,
       [NotificationType.BIRTHDAY_GREETING]: NotificationCategory.MARKETING,
+      [NotificationType.GREETING]: NotificationCategory.MARKETING,
       [NotificationType.CART_ABANDONMENT]: NotificationCategory.MARKETING,
       [NotificationType.PAYMENT_FAILED]: NotificationCategory.PAYMENT,
       [NotificationType.PAYMENT_SUCCESS]: NotificationCategory.PAYMENT,

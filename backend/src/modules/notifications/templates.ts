@@ -135,6 +135,11 @@ export const TEMPLATES: Record<string, Tpl> = {
     body: 'عيد ميلاد سعيد {{userName}}! إليك خصم خاص {{discount}}% على طلبك التالي',
     link: () => '/offers',
   },
+  GREETING: {
+    title: 'تهنئة',
+    body: 'مبروك {{userName}}! نتمنى لك المزيد من النجاح والتميز',
+    link: () => '/',
+  },
   CART_ABANDONMENT: {
     title: 'لا تنسى سلة التسوق الخاصة بك',
     body: 'لديك {{itemCount}} عنصر في سلة التسوق. أكمل طلبك الآن!',

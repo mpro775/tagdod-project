@@ -27,6 +27,7 @@ import {
 } from '../types/notification.types';
 import { getCategoryLabel, getNotificationTypeLabel } from './notificationHelpers';
 import { NotificationUserSelector } from './NotificationUserSelector';
+import { NotificationPersonalizationHint } from './NotificationPersonalizationHint';
 import { useCategories } from '@/features/categories/hooks/useCategories';
 import { productsApi } from '@/features/products/api/productsApi';
 import { ordersApi } from '@/features/orders/api/ordersApi';
@@ -277,6 +278,8 @@ export const NotificationCreateForm: React.FC<NotificationCreateFormProps> = ({
           size={isMobile ? 'small' : 'medium'}
           aria-label={t('forms.title')}
         />
+
+        <NotificationPersonalizationHint />
 
         <TextField
           fullWidth

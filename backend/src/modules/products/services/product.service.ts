@@ -727,16 +727,9 @@ export class ProductService {
       if (validObjectIds.length === 0) {
         this.logger.warn(`No valid ObjectIds found for categoryId: ${categoryId}`);
       } else {
-        // استخدام $in مع string فقط لأن MongoDB قد لا يطابق ObjectId مع string بشكل موثوق في $in
-        // المنتجات في قاعدة البيانات تحتوي على categoryId كـ string
-        const categoryIdStrs = validObjectIds.map(id => id.toString());
-        
-        // استخدام $in مع string فقط للتأكد من المطابقة
-        if (categoryIdStrs.length === 1) {
-          filter.categoryId = categoryIdStrs[0];
-        } else {
-          filter.categoryId = { $in: categoryIdStrs };
-        }
+        // دعم البيانات القديمة والجديدة: categoryId قد يكون ObjectId أو string
+        const categoryFilterValues = validObjectIds.flatMap((id) => [id, id.toString()]);
+        filter.categoryId = { $in: categoryFilterValues };
       }
       
       this.logger.debug(`Final categoryId filter:`, {
@@ -749,9 +742,9 @@ export class ProductService {
     }
 
     if (brandId) {
-      // تحويل brandId إلى ObjectId أيضاً للتأكد من التطابق
+      // دعم البيانات القديمة والجديدة: brandId قد يكون ObjectId أو string
       if (Types.ObjectId.isValid(brandId)) {
-        filter.brandId = new Types.ObjectId(brandId);
+        filter.brandId = { $in: [new Types.ObjectId(brandId), brandId] };
       } else {
         filter.brandId = brandId;
       }

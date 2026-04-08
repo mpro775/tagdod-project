@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Chip,
@@ -19,6 +19,8 @@ import {
   Divider,
   Fab,
   useTheme,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
   Edit,
@@ -31,6 +33,7 @@ import {
   ContentCopy,
   Add,
   Engineering,
+  Search,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -93,6 +96,8 @@ export const CouponsListPage: React.FC = () => {
   const theme = useTheme();
   const { isMobile, isXs } = useBreakpoint();
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [bulkGenerateOpen, setBulkGenerateOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [couponToDelete, setCouponToDelete] = useState<Coupon | null>(null);
@@ -103,12 +108,25 @@ export const CouponsListPage: React.FC = () => {
     location.pathname === '/services/engineers/coupons' ? true : null
   );
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+    }, 350);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  }, [debouncedSearch]);
+
   const couponTypeLabels = createCouponTypeLabels(t);
   const couponVisibilityLabels = createCouponVisibilityLabels(t);
 
   const { data, isLoading } = useCoupons({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
+    search: debouncedSearch || undefined,
   });
 
   const { mutate: deleteCoupon, isPending: deleting } = useDeleteCoupon();
@@ -153,6 +171,10 @@ export const CouponsListPage: React.FC = () => {
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     toast.success(t('messages.copySuccess'));
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
   };
 
   const columns: GridColDef[] = [
@@ -375,10 +397,10 @@ export const CouponsListPage: React.FC = () => {
     },
     {
       field: 'engineer',
-      headerName: t('table.columns.engineer', 'المهندس'),
-      width: 150,
-      flex: 0.15,
-      minWidth: 130,
+      headerName: t('table.columns.engineer', 'اسم المهندس'),
+      width: 220,
+      flex: 0.2,
+      minWidth: 180,
       renderCell: (params) => {
         const coupon = params.row as Coupon;
         if (!coupon.engineerId) {
@@ -390,15 +412,15 @@ export const CouponsListPage: React.FC = () => {
             </Box>
           );
         }
+
+        const engineerName = coupon.engineerName?.trim();
+
         return (
           <Box sx={{ py: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Engineering fontSize="small" color="primary" />
-            <Chip
-              label={t('table.columns.engineerCoupon', 'كوبون مهندس')}
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
+            <Typography variant="body2" fontWeight="medium">
+              {engineerName || t('table.columns.engineerUnnamed', 'مهندس بدون اسم')}
+            </Typography>
           </Box>
         );
       },
@@ -488,6 +510,23 @@ export const CouponsListPage: React.FC = () => {
 
   return (
     <Box>
+      <Box mb={2}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder={t('filters.searchPlaceholder', 'ابحث بالكود أو اسم الكوبون أو اسم المهندس...')}
+          value={searchTerm}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
       {/* Filters */}
       <Box display="flex" gap={2} mb={2} flexWrap="wrap" alignItems="center">
         <Chip
@@ -703,7 +742,7 @@ export const CouponsListPage: React.FC = () => {
 
                       {/* Engineer Badge */}
                       {coupon.engineerId && (
-                        <Box display="flex" alignItems="center" gap={0.5} mt={0.5}>
+                        <Box display="flex" alignItems="center" gap={0.5} mt={0.5} flexWrap="wrap">
                           <Engineering fontSize="small" color="primary" />
                           <Chip
                             label={t('table.columns.engineerCoupon', 'كوبون مهندس')}
@@ -712,6 +751,9 @@ export const CouponsListPage: React.FC = () => {
                             variant="outlined"
                             sx={{ fontSize: '0.65rem' }}
                           />
+                          <Typography variant="caption" color="text.primary" fontWeight={600}>
+                            {coupon.engineerName || t('table.columns.engineerUnnamed', 'مهندس بدون اسم')}
+                          </Typography>
                           {coupon.commissionRate && (
                             <Typography variant="caption" color="text.secondary">
                               ({coupon.commissionRate}%)

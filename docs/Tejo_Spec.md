@@ -1,4 +1,4 @@
-# Tejo (تيجو) — مواصفة تطوير/توثيق (NestJS + MongoDB + n8n + WebSocket)
+# Tejo (تيجو) — مواصفة تطوير/توثيق (NestJS + MongoDB + WebSocket)
 
 > هذا المستند هو المرجع الرسمي لتطوير مساعد الشات الذكي **تيجو** داخل مشروع **تجدد**.
 > يهدف لتوحيد الفهم المعماري، الـ APIs، التخزين، إدارة البرومبت، والـ Vector/Hybrid Search، مع إعادة استخدام نظام الدعم الحالي بدون تكرار.
@@ -237,14 +237,17 @@
 
 ---
 
-## 10) الـ Vector Data & Embeddings (دور n8n)
+## 10) الـ Vector Data & Embeddings (بدون n8n)
 
-### 10.1 لماذا n8n؟
-- توليد embeddings “خلفيًا” دون إبطاء الشات.
-- تحديث embeddings عند تعديل المنتجات/KB.
+### 10.1 المبدأ الجديد
+- **لا يوجد أي اعتماد على n8n** في هذا المسار.
+- توليد embeddings يتم داخل الباك اند نفسه عبر:
+  - Queue/Worker داخلي (BullMQ أو Job Scheduler مشابه)
+  - أو Cron jobs داخل NestJS
+- الهدف: توليد embeddings “خلفيًا” دون إبطاء الشات، مع تحكم كامل داخل نفس المنظومة.
 
 ### 10.2 Flow: Products Embeddings
-- Trigger: منتج جديد أو تحديث (Webhook أو Cron)
+- Trigger: منتج جديد أو تحديث (Domain Event داخلي أو Cron)
 - Steps:
   1. Build `embeddingText` (name + description + keywords + category + brand…)
   2. Generate embedding
@@ -390,7 +393,7 @@ src/
   - handoff flags
 - ابدأ بـ Hybrid تدريجيًا:
   - Text search + intent rules (مبدئيًا)
-  - ثم فعّل Vector عبر embeddings من n8n
+  - ثم فعّل Vector عبر embeddings من Queue/Worker داخلي في الباك اند
 
 ---
 
@@ -406,6 +409,62 @@ src/
 - عناوين الفروع
 - أرقام التواصل
 - أسئلة شائعة وسياسات
+
+---
+
+## 18) خطة التنفيذ المقترحة (بدون n8n)
+
+### المرحلة 1 — MVP (1-2 أسبوع)
+1. إنشاء Tejo module/controller/service وربطه بخدمات الدعم الحالية.
+2. إضافة endpoint إنشاء محادثة + إرسال رسالة + جلب الرسائل.
+3. إضافة `messageType=ai_reply` وحقول `payload/intent/confidence/entities/promptVersionId`.
+4. تفعيل بث WebSocket للرسائل عبر `ticket-message` داخل نفس room.
+5. تطبيق Intent rules مبدئية + Text Search فقط (بدون Vector).
+6. إخراج Structured Response للمنتجات وFAQ الأساسي.
+
+**معيار نجاح المرحلة:**
+- المستخدم يقدر يرسل/يستقبل رسائل تيجو داخل نفس ticket.
+- المنتجات الأساسية (قواطع/لمبات/مفاتيح) تظهر كـ cards منظمة.
+
+### المرحلة 2 — Prompt Management + Handoff (3-5 أيام)
+1. إنشاء `TejoPrompt` collection + Admin APIs (list/create/update/activate/duplicate).
+2. بناء `TejoPromptService` مع cache TTL.
+3. حفظ `promptVersionId` مع كل رد ai.
+4. تطبيق Handoff داخل نفس ticket مع تحديث status + handoffReason + بث WS.
+
+**معيار نجاح المرحلة:**
+- تعديل البرومبت من لوحة التحكم بدون إعادة نشر.
+- انتقال سلس للدعم البشري داخل نفس المحادثة.
+
+### المرحلة 3 — Vector Search داخلي (بدون n8n) (1 أسبوع)
+1. إنشاء `EmbeddingsModule` داخلي في NestJS:
+   - `EmbeddingsService`
+   - `EmbeddingsWorker` (Queue consumer)
+   - `EmbeddingsScheduler` (اختياري للـ reindex الدوري)
+2. إطلاق Jobs عند تحديث Product/KB عبر domain events.
+3. بناء Vector store strategy (داخل MongoDB أو collection vectors منفصلة).
+4. تفعيل Hybrid Search: Text + Vector + Re-rank + filters.
+5. إضافة fallback واضح: إذا Vector غير جاهز، يرجع Text results فقط.
+
+**معيار نجاح المرحلة:**
+- تحسن جودة الاسترجاع للأسئلة الطبيعية.
+- عدم تأثر زمن استجابة الشات بسبب توليد embeddings.
+
+### المرحلة 4 — Observability + Quality Guardrails (3-4 أيام)
+1. تسجيل metrics: `intent`, `confidence`, `resultCount`, `handoff`, latency.
+2. حفظ `retrievalTrace` (اختياري) لأغراض التحليل.
+3. إضافة قواعد منع الهلوسة كـ checks قبل الإرسال النهائي.
+4. تجهيز dashboard متابعة أداء تيجو في Admin.
+
+**معيار نجاح المرحلة:**
+- قابلية قياس واضحة لجودة الردود ونقاط الفشل.
+- سهولة تحسين البرومبت والبحث بناءً على البيانات.
+
+### تسلسل تقني موصى به
+1. ابدأ بالمرحلة 1 كاملة.
+2. نفّذ المرحلة 2 قبل توسيع Vector.
+3. فعّل المرحلة 3 تدريجيًا مع feature flag.
+4. ثبّت المرحلة 4 بالتوازي مع الإطلاق التجريبي.
 
 ---
 
