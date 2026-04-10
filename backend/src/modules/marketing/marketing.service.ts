@@ -64,6 +64,10 @@ type PublicBannerResponse = {
 export class MarketingService {
   private readonly logger = new Logger(MarketingService.name);
 
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   constructor(
     @InjectModel(PriceRule.name) private priceRuleModel: Model<PriceRuleDocument>,
     @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
@@ -683,10 +687,49 @@ export class MarketingService {
     const query: Record<string, unknown> = { deletedAt: null };
 
     if (search) {
-      query.$or = [
-        { code: { $regex: search, $options: 'i' } },
-        { name: { $regex: search, $options: 'i' } },
+      const safeSearch = this.escapeRegex(search.trim());
+
+      const engineerMatches = await this.userModel
+        .find({
+          role: UserRole.ENGINEER,
+          $or: [
+            { firstName: { $regex: safeSearch, $options: 'i' } },
+            { lastName: { $regex: safeSearch, $options: 'i' } },
+            {
+              $expr: {
+                $regexMatch: {
+                  input: {
+                    $trim: {
+                      input: {
+                        $concat: [
+                          { $ifNull: ['$firstName', ''] },
+                          ' ',
+                          { $ifNull: ['$lastName', ''] },
+                        ],
+                      },
+                    },
+                  },
+                  regex: safeSearch,
+                  options: 'i',
+                },
+              },
+            },
+          ],
+        })
+        .select('_id')
+        .lean();
+
+      const matchedEngineerIds = engineerMatches.map((engineer) => engineer._id);
+      const searchOrConditions: Array<Record<string, unknown>> = [
+        { code: { $regex: safeSearch, $options: 'i' } },
+        { name: { $regex: safeSearch, $options: 'i' } },
       ];
+
+      if (matchedEngineerIds.length > 0) {
+        searchOrConditions.push({ engineerId: { $in: matchedEngineerIds } });
+      }
+
+      query.$or = searchOrConditions;
     }
 
     if (status) query.status = status;
@@ -694,12 +737,44 @@ export class MarketingService {
     if (visibility) query.visibility = visibility;
 
     const [coupons, total] = await Promise.all([
-      this.couponModel.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }),
+      this.couponModel.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
       this.couponModel.countDocuments(query),
     ]);
 
+    const engineerIds = Array.from(
+      new Set(coupons.map((coupon) => coupon.engineerId).filter(Boolean).map((id) => String(id)))
+    );
+
+    const engineers =
+      engineerIds.length > 0
+        ? await this.userModel
+          .find({ _id: { $in: engineerIds } })
+          .select('_id firstName lastName')
+          .lean()
+        : [];
+
+    const engineerNameById = new Map(
+      engineers.map((engineer) => {
+        const firstName = engineer.firstName ?? '';
+        const lastName = engineer.lastName ?? '';
+        const engineerName = `${firstName} ${lastName}`.trim();
+        return [String(engineer._id), engineerName || undefined] as const;
+      })
+    );
+
+    const couponsWithEngineerName = coupons.map((coupon) => {
+      if (!coupon.engineerId) {
+        return coupon;
+      }
+
+      return {
+        ...coupon,
+        engineerName: engineerNameById.get(String(coupon.engineerId)),
+      };
+    });
+
     return {
-      data: coupons,
+      data: couponsWithEngineerName,
       pagination: {
         page,
         limit,

@@ -242,8 +242,17 @@
       "period": "Period",
       "status": "Status",
       "visibility": "Visibility",
+      "engineer": "Engineer Name",
+      "engineerCoupon": "Engineer Coupon",
+      "engineerUnnamed": "Unnamed Engineer",
       "actions": "Actions"
     }
+  },
+  "filters": {
+    "all": "All",
+    "engineerCoupons": "Engineer Coupons",
+    "regularCoupons": "Regular Coupons",
+    "searchPlaceholder": "Search by code, coupon name, or engineer name..."
   },
   "dialogs": {
     "createTitle": "Add New Coupon",

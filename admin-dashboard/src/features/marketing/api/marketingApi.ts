@@ -172,6 +172,7 @@ export interface Coupon {
   updatedAt: Date;
   // Engineer Coupon Fields
   engineerId?: string;
+  engineerName?: string;
   commissionRate?: number;
   usageHistory?: Array<{
     orderId: string;

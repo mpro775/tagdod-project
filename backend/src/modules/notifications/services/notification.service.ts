@@ -46,6 +46,9 @@ import type { BulkNotificationJobData } from '../queue/notification-bulk.process
 export class NotificationService implements OnModuleInit {
   private readonly logger = new Logger(NotificationService.name);
 
+  private static readonly PLACEHOLDER_REGEX = /{{\s*(\w+)\s*}}/g;
+  private static readonly NAME_ALIAS_REGEX = /@name\b/g;
+
   constructor(
     @InjectModel(UnifiedNotification.name)
     private notificationModel: Model<UnifiedNotificationDocument>,
@@ -84,6 +87,94 @@ export class NotificationService implements OnModuleInit {
       data: notification.data,
       priority: notification.priority,
       actionUrl: (notification as any).actionUrl,
+    };
+  }
+
+  private resolveRecipientName(user?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  }): string {
+    const firstName = user?.firstName?.trim() || '';
+    const lastName = user?.lastName?.trim() || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    if (fullName) return fullName;
+    if (firstName) return firstName;
+    if (user?.phone) return user.phone;
+    return 'مهندسنا';
+  }
+
+  private buildPersonalizationContext(
+    userId: string,
+    user?: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+    },
+  ): Record<string, unknown> {
+    const firstName = user?.firstName?.trim() || '';
+    const lastName = user?.lastName?.trim() || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    const name = this.resolveRecipientName(user);
+
+    return {
+      name,
+      fullName: fullName || name,
+      firstName: firstName || name,
+      lastName,
+      phone: user?.phone || '',
+      userId,
+      recipientName: name,
+      recipientFullName: fullName || name,
+      recipientFirstName: firstName || name,
+      recipientLastName: lastName,
+      recipientPhone: user?.phone || '',
+    };
+  }
+
+  private renderPersonalizedText(text: string, context: Record<string, unknown>): string {
+    if (!text) return text;
+
+    const rendered = text.replace(NotificationService.PLACEHOLDER_REGEX, (_match, key: string) => {
+      const value = context[key];
+      if (value === null || value === undefined) return '';
+      return String(value);
+    });
+
+    const name = context.name;
+    if (typeof name !== 'string' || !name.trim()) {
+      return rendered;
+    }
+
+    return rendered.replace(NotificationService.NAME_ALIAS_REGEX, name);
+  }
+
+  private personalizeBulkPayload(
+    dto: BulkSendNotificationDto,
+    userId: string,
+    user?: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+    },
+  ): Pick<CreateNotificationDto, 'title' | 'message' | 'messageEn' | 'data'> {
+    const personalizationContext = this.buildPersonalizationContext(userId, user);
+    const renderContext = {
+      ...(dto.data || {}),
+      ...personalizationContext,
+    };
+
+    return {
+      title: this.renderPersonalizedText(dto.title, renderContext),
+      message: this.renderPersonalizedText(dto.message, renderContext),
+      messageEn: this.renderPersonalizedText(dto.messageEn, renderContext),
+      data: {
+        ...(dto.data || {}),
+        recipientName: personalizationContext.recipientName,
+        recipientFirstName: personalizationContext.recipientFirstName,
+        recipientLastName: personalizationContext.recipientLastName,
+      },
     };
   }
 
@@ -1087,15 +1178,35 @@ export class NotificationService implements OnModuleInit {
     let failed = 0;
 
     const batchId = dto.batchId || `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const targetUserIds = Array.from(new Set(dto.targetUserIds.filter(Boolean)));
 
-    for (const userId of dto.targetUserIds) {
+    const validObjectIds = targetUserIds
+      .filter((id) => Types.ObjectId.isValid(id))
+      .map((id) => new Types.ObjectId(id));
+
+    const users = await this.userModel
+      .find({ _id: { $in: validObjectIds } })
+      .select('_id firstName lastName phone')
+      .lean();
+
+    const usersById = new Map(
+      users.map((user) => {
+        const userId =
+          user._id instanceof Types.ObjectId ? user._id.toString() : String(user._id);
+        return [userId, user];
+      }),
+    );
+
+    for (const userId of targetUserIds) {
       try {
+        const personalizedPayload = this.personalizeBulkPayload(dto, userId, usersById.get(userId));
+
         const notificationData: CreateNotificationDto = {
           type: dto.type,
-          title: dto.title,
-          message: dto.message,
-          messageEn: dto.messageEn,
-          data: dto.data,
+          title: personalizedPayload.title,
+          message: personalizedPayload.message,
+          messageEn: personalizedPayload.messageEn,
+          data: personalizedPayload.data,
           channel: dto.channel,
           priority: dto.priority,
           category: dto.category,

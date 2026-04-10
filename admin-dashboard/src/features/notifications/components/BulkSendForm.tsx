@@ -22,6 +22,7 @@ import {
 } from '../types/notification.types';
 import { getNotificationTypeLabel } from './notificationHelpers';
 import { NotificationUserSelector } from './NotificationUserSelector';
+import { NotificationPersonalizationHint } from './NotificationPersonalizationHint';
 
 interface BulkSendFormProps {
   onSave: (data: BulkSendNotificationDto) => void;
@@ -132,6 +133,8 @@ export const BulkSendForm: React.FC<BulkSendFormProps> = ({ onSave, onCancel, is
           size={isMobile ? 'small' : 'medium'}
           aria-label={t('forms.title')}
         />
+
+        <NotificationPersonalizationHint />
 
         <TextField
           fullWidth

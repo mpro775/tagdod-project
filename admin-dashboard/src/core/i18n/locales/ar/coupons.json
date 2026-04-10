@@ -243,8 +243,17 @@
       "period": "الفترة",
       "status": "الحالة",
       "visibility": "الرؤية",
+      "engineer": "اسم المهندس",
+      "engineerCoupon": "كوبون مهندس",
+      "engineerUnnamed": "مهندس بدون اسم",
       "actions": "الإجراءات"
     }
+  },
+  "filters": {
+    "all": "الكل",
+    "engineerCoupons": "كوبونات المهندسين",
+    "regularCoupons": "كوبونات عادية",
+    "searchPlaceholder": "ابحث بالكود أو اسم الكوبون أو اسم المهندس..."
   },
   "dialogs": {
     "createTitle": "إضافة كوبون جديد",

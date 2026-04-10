@@ -170,7 +170,7 @@ export const ProductsListPage: React.FC = () => {
     setSearchParams(params, { replace: true });
   }, [paginationModel, search, sortModel, statusFilter, featuredFilter, newFilter, bestsellerFilter, hasOfferFilter, categoryFilter, brandFilter, setSearchParams]);
 
-  const { data: categoriesData = [] } = useCategories({ isActive: true, limit: 500 });
+  const { data: categoriesData = [] } = useCategories({ isActive: true });
   const { data: brandsData } = useBrands({
     isActive: true,
     limit: 500,

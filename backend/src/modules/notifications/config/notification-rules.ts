@@ -73,6 +73,7 @@ export const NOTIFICATION_TYPE_ROLES: Record<NotificationType, UserRole[]> = {
   // ===== Marketing Notifications - للمستخدمين =====
   [NotificationType.WELCOME_NEW_USER]: [UserRole.USER],
   [NotificationType.BIRTHDAY_GREETING]: [UserRole.USER],
+  [NotificationType.GREETING]: [UserRole.USER],
   [NotificationType.CART_ABANDONMENT]: [UserRole.USER],
 
   // ===== Payment Notifications - للمستخدمين =====
@@ -169,6 +170,7 @@ export const NOTIFICATION_TYPE_CHANNELS: Record<NotificationType, NotificationCh
   // ===== Marketing Notifications =====
   [NotificationType.WELCOME_NEW_USER]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
   [NotificationType.BIRTHDAY_GREETING]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+  [NotificationType.GREETING]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
   [NotificationType.CART_ABANDONMENT]: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
 
   // ===== Payment Notifications =====
@@ -242,6 +244,7 @@ export const NOTIFICATION_TYPE_DEFAULT_CHANNEL: Record<NotificationType, Notific
   // ===== Marketing Notifications =====
   [NotificationType.WELCOME_NEW_USER]: NotificationChannel.IN_APP,
   [NotificationType.BIRTHDAY_GREETING]: NotificationChannel.IN_APP,
+  [NotificationType.GREETING]: NotificationChannel.IN_APP,
   [NotificationType.CART_ABANDONMENT]: NotificationChannel.IN_APP,
 
   // ===== Payment Notifications =====
