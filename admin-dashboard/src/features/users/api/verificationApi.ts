@@ -66,7 +66,7 @@ export const verificationApi = {
     data: {
       userId: string;
       verificationType: 'engineer' | 'merchant';
-      status: 'rejected';
+      status: 'unverified';
       reason?: string;
     };
   }> => {
@@ -76,7 +76,7 @@ export const verificationApi = {
       data: {
         userId: string;
         verificationType: 'engineer' | 'merchant';
-        status: 'rejected';
+        status: 'unverified';
         reason?: string;
       };
     }>>(`/admin/users/verification/${userId}/reject`, rejectData);

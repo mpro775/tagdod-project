@@ -226,6 +226,10 @@ export class UsersAdminController {
               CapabilityStatus.REJECTED,
             ],
           };
+        } else if (verificationStatus === 'pending') {
+          query.merchant_status = CapabilityStatus.PENDING;
+        } else if (verificationStatus === 'rejected') {
+          query.merchant_status = CapabilityStatus.REJECTED;
         }
       } else if (role === UserRole.ENGINEER) {
         if (verificationStatus === 'verified') {
@@ -239,6 +243,10 @@ export class UsersAdminController {
               CapabilityStatus.REJECTED,
             ],
           };
+        } else if (verificationStatus === 'pending') {
+          query.engineer_status = CapabilityStatus.PENDING;
+        } else if (verificationStatus === 'rejected') {
+          query.engineer_status = CapabilityStatus.REJECTED;
         }
       }
     }
@@ -352,6 +360,10 @@ export class UsersAdminController {
               CapabilityStatus.REJECTED,
             ],
           };
+        } else if (verificationStatus === 'pending') {
+          query.merchant_status = CapabilityStatus.PENDING;
+        } else if (verificationStatus === 'rejected') {
+          query.merchant_status = CapabilityStatus.REJECTED;
         }
       } else if (role === UserRole.ENGINEER) {
         if (verificationStatus === 'verified') {
@@ -365,6 +377,10 @@ export class UsersAdminController {
               CapabilityStatus.REJECTED,
             ],
           };
+        } else if (verificationStatus === 'pending') {
+          query.engineer_status = CapabilityStatus.PENDING;
+        } else if (verificationStatus === 'rejected') {
+          query.engineer_status = CapabilityStatus.REJECTED;
         }
       }
     }
@@ -586,6 +602,10 @@ export class UsersAdminController {
               CapabilityStatus.REJECTED,
             ],
           };
+        } else if (verificationStatus === 'pending') {
+          query.merchant_status = CapabilityStatus.PENDING;
+        } else if (verificationStatus === 'rejected') {
+          query.merchant_status = CapabilityStatus.REJECTED;
         }
       } else if (role === UserRole.ENGINEER) {
         if (verificationStatus === 'verified') {
@@ -599,6 +619,10 @@ export class UsersAdminController {
               CapabilityStatus.REJECTED,
             ],
           };
+        } else if (verificationStatus === 'pending') {
+          query.engineer_status = CapabilityStatus.PENDING;
+        } else if (verificationStatus === 'rejected') {
+          query.engineer_status = CapabilityStatus.REJECTED;
         }
       }
     }
@@ -2912,7 +2936,7 @@ export class UsersAdminController {
   @Post('verification/:userId/reject')
   @ApiOperation({
     summary: 'رفض التحقق',
-    description: 'رفض طلب التحقق للمهندس أو التاجر وتحديث الحالة إلى REJECTED',
+    description: 'رفض طلب التحقق للمهندس أو التاجر وإرجاع الحالة إلى UNVERIFIED لإتاحة إعادة الرفع',
   })
   @ApiResponse({
     status: 200,
@@ -2946,12 +2970,12 @@ export class UsersAdminController {
     const oldValues: Record<string, unknown> = {};
     const newValues: Record<string, unknown> = {};
 
-    // رفض التحقق
+    // رفض التحقق (إرجاع الحالة إلى UNVERIFIED ليتمكن المستخدم من إعادة الرفع)
     if (isEngineerPending) {
       oldValues.engineer_status = user.engineer_status;
-      user.engineer_status = CapabilityStatus.REJECTED;
+      user.engineer_status = CapabilityStatus.UNVERIFIED;
       newValues.engineer_status = user.engineer_status;
-      // لا نحذف الدور - المستخدم يبقى مهندساً لكن بحالة REJECTED
+      // لا نحذف الدور - المستخدم يبقى مهندساً ويمكنه إعادة رفع الوثائق
       // مسح ملف السيرة الذاتية من بروفايل المهندس
       const profile = await this.engineerProfileModel.findOne({ userId: user._id });
       if (profile) {
@@ -2962,9 +2986,9 @@ export class UsersAdminController {
 
     if (isMerchantPending) {
       oldValues.merchant_status = user.merchant_status;
-      user.merchant_status = CapabilityStatus.REJECTED;
+      user.merchant_status = CapabilityStatus.UNVERIFIED;
       newValues.merchant_status = user.merchant_status;
-      // لا نحذف الدور - المستخدم يبقى تاجراً لكن بحالة REJECTED
+      // لا نحذف الدور - المستخدم يبقى تاجراً ويمكنه إعادة رفع الوثائق
       // مسح صورة المحل واسم المحل
       user.storePhotoUrl = undefined;
       user.storeName = undefined;
@@ -2981,11 +3005,11 @@ export class UsersAdminController {
     const caps = await this.capsModel.findOne({ userId });
     if (caps) {
       if (isEngineerPending) {
-        caps.engineer_status = CapabilityStatus.REJECTED;
+        caps.engineer_status = CapabilityStatus.UNVERIFIED;
         caps.engineer_capable = false;
       }
       if (isMerchantPending) {
-        caps.merchant_status = CapabilityStatus.REJECTED;
+        caps.merchant_status = CapabilityStatus.UNVERIFIED;
         caps.merchant_capable = false;
       }
       await caps.save();
@@ -3041,7 +3065,7 @@ export class UsersAdminController {
       data: {
         userId: user._id,
         verificationType: capabilityType,
-        status: 'rejected',
+        status: 'unverified',
         reason: dto.reason,
       },
     };

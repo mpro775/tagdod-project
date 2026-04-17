@@ -40,7 +40,13 @@ export const UsersListPage: React.FC = () => {
     search: '',
     status: undefined as UserStatus | undefined,
     role: undefined as any,
-    verificationStatus: undefined as 'all' | 'verified' | 'unverified' | undefined,
+    verificationStatus: undefined as
+      | 'all'
+      | 'verified'
+      | 'unverified'
+      | 'pending'
+      | 'rejected'
+      | undefined,
     includeDeleted: false,
   });
 
