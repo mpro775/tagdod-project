@@ -361,6 +361,12 @@ export const hasMenuAccess = (userPermissions: string[], requiredPermissions: st
 
   // Check if user has ADMIN_ACCESS
   const hasAdminAccess = userPermissions.includes(PERMISSIONS.ADMIN_ACCESS);
+  const hasSuperAdminAccess = userPermissions.includes(PERMISSIONS.SUPER_ADMIN_ACCESS);
+
+  // Super admin can access all admin menu items.
+  if (hasSuperAdminAccess && hasAdminAccess) {
+    return true;
+  }
   
   // Filter out ADMIN_ACCESS from required permissions to get specific permissions
   const specificPermissions = requiredPermissions.filter(
