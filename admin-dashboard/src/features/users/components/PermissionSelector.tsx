@@ -173,6 +173,9 @@ const getPermissionCategories = (t: any): PermissionCategory[] => [
       { key: 'SUPPORT_UPDATE', label: t('users:permissions.actions.update', 'تعديل'), value: PERMISSIONS.SUPPORT_UPDATE },
       { key: 'SUPPORT_ASSIGN', label: t('users:permissions.actions.assign', 'إسناد'), value: PERMISSIONS.SUPPORT_ASSIGN },
       { key: 'SUPPORT_CLOSE', label: t('users:permissions.actions.close', 'إغلاق'), value: PERMISSIONS.SUPPORT_CLOSE },
+      { key: 'TEJO_READ', label: t('users:permissions.actions.read', 'عرض'), value: PERMISSIONS.TEJO_READ },
+      { key: 'TEJO_MANAGE', label: t('users:permissions.actions.manage', 'إدارة'), value: PERMISSIONS.TEJO_MANAGE },
+      { key: 'TEJO_ANALYTICS', label: t('users:permissions.actions.analyze', 'تحليل'), value: PERMISSIONS.TEJO_ANALYTICS },
     ],
   },
   {

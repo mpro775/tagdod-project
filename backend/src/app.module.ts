@@ -13,6 +13,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { CartModule } from './modules/cart/cart.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { SupportModule } from './modules/support/support.module';
+import { TejoModule } from './modules/tejo/tejo.module';
 import { ServicesModule } from './modules/services/services.module';
 import { MarketingModule } from './modules/marketing/marketing.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
@@ -32,6 +33,7 @@ import { I18nModule } from './modules/i18n/i18n.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
 import { PoliciesModule } from './modules/policies/policies.module';
 import { AboutModule } from './modules/about/about.module';
+import { InstallationGuidesModule } from './modules/installation-guides/installation-guides.module';
 import { CommissionsModule } from './modules/commissions/commissions.module';
 import { BackupsModule } from './modules/backups/backups.module';
 import { AppConfigModule } from './modules/app-config/app-config.module';
@@ -100,6 +102,7 @@ import { ShareProductController } from './deep-linking/share-product.controller'
     CartModule,
     CheckoutModule,
     SupportModule,
+    TejoModule,
     ServicesModule,
     MarketingModule,
     AddressesModule,
@@ -119,6 +122,7 @@ import { ShareProductController } from './deep-linking/share-product.controller'
     SystemSettingsModule,
     PoliciesModule,
     AboutModule,
+    InstallationGuidesModule,
     CommissionsModule,
     BackupsModule,
     AppConfigModule,

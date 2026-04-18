@@ -30,14 +30,14 @@ interface UsersFilterProps {
     search: string;
     status?: UserStatus;
     role?: UserRole;
-    verificationStatus?: 'all' | 'verified' | 'unverified';
+    verificationStatus?: 'all' | 'verified' | 'unverified' | 'pending' | 'rejected';
     includeDeleted?: boolean;
   };
   onFiltersChange: (filters: {
     search: string;
     status?: UserStatus;
     role?: UserRole;
-    verificationStatus?: 'all' | 'verified' | 'unverified';
+    verificationStatus?: 'all' | 'verified' | 'unverified' | 'pending' | 'rejected';
     includeDeleted?: boolean;
   }) => void;
   onClearFilters: () => void;
@@ -105,10 +105,15 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
     return count;
   };
 
-  const VERIFICATION_LABELS: Record<'all' | 'verified' | 'unverified', string> = {
+  const VERIFICATION_LABELS: Record<
+    'all' | 'verified' | 'unverified' | 'pending' | 'rejected',
+    string
+  > = {
     all: t('users:filter.allVerification', 'الكل'),
     verified: t('users:filter.verifiedOnly', 'موثقون فقط'),
     unverified: t('users:filter.unverifiedOnly', 'غير موثقين'),
+    pending: t('users:filter.pendingOnly', 'قيد الانتظار'),
+    rejected: t('users:filter.rejectedOnly', 'مرفوض'),
   };
 
   return (
@@ -258,6 +263,8 @@ export const UsersFilter: React.FC<UsersFilterProps> = ({
                       <MenuItem value="all">{VERIFICATION_LABELS.all}</MenuItem>
                       <MenuItem value="verified">{VERIFICATION_LABELS.verified}</MenuItem>
                       <MenuItem value="unverified">{VERIFICATION_LABELS.unverified}</MenuItem>
+                      <MenuItem value="pending">{VERIFICATION_LABELS.pending}</MenuItem>
+                      <MenuItem value="rejected">{VERIFICATION_LABELS.rejected}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>

@@ -7,6 +7,9 @@ export enum MessageType {
   USER_MESSAGE = 'user_message',
   ADMIN_REPLY = 'admin_reply',
   SYSTEM_MESSAGE = 'system_message',
+  AI_REPLY = 'ai_reply',
+  AI_ACTION = 'ai_action',
+  AI_HANDOFF = 'ai_handoff',
 }
 
 @Schema({ timestamps: true })
@@ -14,8 +17,8 @@ export class SupportMessage {
   @Prop({ type: Types.ObjectId, ref: 'SupportTicket', required: true, index: true })
   ticketId!: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  senderId!: string;
+  @Prop({ type: Types.ObjectId, ref: 'User', default: null })
+  senderId?: string | null;
 
   @Prop({
     type: String,
@@ -40,6 +43,9 @@ export class SupportMessage {
 
   @Prop({ type: Object, default: {} })
   metadata?: Record<string, unknown>;
+
+  @Prop({ type: Object, default: null })
+  payload?: Record<string, unknown> | null;
 }
 
 export const SupportMessageSchema = SchemaFactory.createForClass(SupportMessage);

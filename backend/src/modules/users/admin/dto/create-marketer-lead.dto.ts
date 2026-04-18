@@ -4,7 +4,7 @@ import { IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class
 export class CreateMarketerEngineerDto {
   @ApiProperty({ example: '777123456', description: 'رقم هاتف المستخدم' })
   @IsString()
-  @Matches(/^(05|5|7|0)?\d{8,10}$/, { message: 'رقم الهاتف غير صحيح' })
+  @Matches(/^\d{9}$/, { message: 'رقم الهاتف يجب أن يتكون من 9 أرقام' })
   phone!: string;
 
   @ApiProperty({ example: 'أحمد', description: 'الاسم الأول' })
@@ -51,7 +51,7 @@ export class CreateMarketerEngineerDto {
 export class CreateMarketerMerchantDto {
   @ApiProperty({ example: '777123456', description: 'رقم هاتف المستخدم' })
   @IsString()
-  @Matches(/^(05|5|7|0)?\d{8,10}$/, { message: 'رقم الهاتف غير صحيح' })
+  @Matches(/^\d{9}$/, { message: 'رقم الهاتف يجب أن يتكون من 9 أرقام' })
   phone!: string;
 
   @ApiProperty({ example: 'محمد', description: 'الاسم الأول' })
@@ -81,6 +81,32 @@ export class CreateMarketerMerchantDto {
   @MinLength(2)
   @MaxLength(100)
   storeName!: string;
+
+  @ApiProperty({ example: 'شارع الزبيري - صنعاء', description: 'عنوان المحل (الموقع الجغرافي)' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(200)
+  storeAddress!: string;
+
+  @ApiProperty({ enum: ['small', 'medium', 'large'], example: 'medium', description: 'حجم المحل' })
+  @IsString()
+  @IsIn(['small', 'medium', 'large'])
+  storeSize!: 'small' | 'medium' | 'large';
+
+  @ApiProperty({ enum: ['yes', 'no'], example: 'no', description: 'هل هو عميل سابق لدينا؟' })
+  @IsString()
+  @IsIn(['yes', 'no'])
+  previousCustomer!: 'yes' | 'no';
+
+  @ApiPropertyOptional({
+    enum: ['knows', 'heard_only', 'none'],
+    example: 'heard_only',
+    description: 'هل لديه معرفة بتجدد؟ (مطلوب فقط عند previousCustomer = no)',
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['knows', 'heard_only', 'none'])
+  tejadodAwareness?: 'knows' | 'heard_only' | 'none';
 
   @ApiPropertyOptional({ example: 'Pass1234!', description: 'كلمة مرور المستخدم' })
   @IsOptional()

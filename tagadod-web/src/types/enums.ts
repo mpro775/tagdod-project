@@ -23,8 +23,25 @@ export type VerificationStatus = 'verified' | 'unverified' | 'underReview'
 
 export type SupportCategory = 'technical' | 'billing' | 'products' | 'services' | 'account' | 'other'
 export type SupportPriority = 'low' | 'medium' | 'high' | 'urgent'
-export type SupportStatus = 'open' | 'inProgress' | 'waitingForUser' | 'resolved' | 'closed'
-export type MessageType = 'userMessage' | 'adminReply' | 'systemMessage'
+export type SupportStatus =
+  | 'open'
+  | 'inProgress'
+  | 'waitingForUser'
+  | 'in_progress'
+  | 'waiting_for_user'
+  | 'resolved'
+  | 'closed'
+
+export type MessageType =
+  | 'userMessage'
+  | 'adminReply'
+  | 'systemMessage'
+  | 'user_message'
+  | 'admin_reply'
+  | 'system_message'
+  | 'ai_reply'
+  | 'ai_action'
+  | 'ai_handoff'
 
 export type Gender = 'male' | 'female'
 

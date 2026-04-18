@@ -22,7 +22,15 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
     label: 'قيد المعالجة',
     color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
   },
+  in_progress: {
+    label: 'قيد المعالجة',
+    color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+  },
   waitingForUser: {
+    label: 'بانتظار ردك',
+    color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+  },
+  waiting_for_user: {
     label: 'بانتظار ردك',
     color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
   },

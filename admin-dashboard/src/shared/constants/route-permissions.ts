@@ -65,6 +65,7 @@ export const ROUTE_PERMISSIONS = {
   // Marketing
   '/marketing': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
   '/marketing/price-rules': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
+  '/marketing/installation-guides': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
 
   // Services
   '/services': [PERMISSIONS.SERVICES_READ, PERMISSIONS.ADMIN_ACCESS],
@@ -93,6 +94,12 @@ export const ROUTE_PERMISSIONS = {
   '/support': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
   '/support/stats': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   '/support/canned-responses': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/prompts': [PERMISSIONS.TEJO_READ, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/analytics': [PERMISSIONS.TEJO_ANALYTICS, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/conversations': [PERMISSIONS.TEJO_READ, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/conversations/:id': [PERMISSIONS.TEJO_READ, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/settings': [PERMISSIONS.TEJO_MANAGE, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/knowledge': [PERMISSIONS.TEJO_MANAGE, PERMISSIONS.ADMIN_ACCESS],
 
   // Notifications
   '/my-notifications': [PERMISSIONS.NOTIFICATIONS_READ], // User's own notifications - no admin access required

@@ -182,7 +182,9 @@
     "verificationLabel": "Verification:",
     "allVerification": "All",
     "verifiedOnly": "Verified only",
-    "unverifiedOnly": "Unverified"
+    "unverifiedOnly": "Unverified",
+    "pendingOnly": "Pending",
+    "rejectedOnly": "Rejected"
   },
   "stats": {
     "title": "User Statistics",

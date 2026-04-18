@@ -40,6 +40,21 @@ export enum SupportStatus {
   CLOSED = 'closed',
 }
 
+export enum SupportChannel {
+  WEB = 'web',
+  MOBILE = 'mobile',
+  ADMIN = 'admin',
+  WHATSAPP = 'whatsapp',
+  API = 'api',
+  UNKNOWN = 'unknown',
+}
+
+export enum SupportAiStatus {
+  INACTIVE = 'inactive',
+  ACTIVE = 'active',
+  HANDED_OFF = 'handed_off',
+}
+
 export enum MessageType {
   // eslint-disable-next-line no-unused-vars
   USER_MESSAGE = 'user_message',
@@ -47,6 +62,12 @@ export enum MessageType {
   ADMIN_REPLY = 'admin_reply',
   // eslint-disable-next-line no-unused-vars
   SYSTEM_MESSAGE = 'system_message',
+  // eslint-disable-next-line no-unused-vars
+  AI_REPLY = 'ai_reply',
+  // eslint-disable-next-line no-unused-vars
+  AI_ACTION = 'ai_action',
+  // eslint-disable-next-line no-unused-vars
+  AI_HANDOFF = 'ai_handoff',
 }
 
 // Support Message Sender Info
@@ -91,6 +112,10 @@ export interface SupportTicket extends BaseEntity {
   category: SupportCategory;
   priority: SupportPriority;
   status: SupportStatus;
+  channel: SupportChannel;
+  isAiHandled: boolean;
+  aiStatus: SupportAiStatus;
+  handoffReason?: string;
   assignedTo: {
     _id: string;
     firstName?: string;
@@ -129,12 +154,13 @@ export interface SupportTicket extends BaseEntity {
 // Support Message Interface - متطابق 100% مع Backend Schema
 export interface SupportMessage extends BaseEntity {
   ticketId: string;
-  senderId: string;
+  senderId?: string | null;
   messageType: MessageType;
   content: string;
   attachments: string[];
   isInternal: boolean;
   metadata?: Record<string, unknown>;
+  payload?: Record<string, unknown> | null;
 }
 
 // Canned Response Interface - متطابق 100% مع Backend Schema
@@ -154,6 +180,7 @@ export interface CreateSupportTicketDto {
   title: string;
   description: string;
   category?: SupportCategory;
+  channel?: SupportChannel;
   priority?: SupportPriority;
   attachments?: string[];
   metadata?: Record<string, unknown>;
@@ -163,10 +190,14 @@ export interface UpdateSupportTicketDto {
   status?: SupportStatus;
   priority?: SupportPriority;
   category?: SupportCategory;
+  channel?: SupportChannel;
   assignedTo?: string;
   resolvedAt?: Date;
   closedAt?: Date;
   firstResponseAt?: Date;
+  isAiHandled?: boolean;
+  aiStatus?: SupportAiStatus;
+  handoffReason?: string;
 }
 
 export interface AddSupportMessageDto {
@@ -174,6 +205,7 @@ export interface AddSupportMessageDto {
   attachments?: string[];
   isInternal?: boolean;
   metadata?: Record<string, unknown>;
+  payload?: Record<string, unknown>;
 }
 
 export interface CreateCannedResponseDto {

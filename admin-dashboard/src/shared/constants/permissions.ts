@@ -61,6 +61,9 @@ export const PERMISSIONS = {
   SUPPORT_UPDATE: 'support.update',
   SUPPORT_ASSIGN: 'support.assign',
   SUPPORT_CLOSE: 'support.close',
+  TEJO_READ: 'tejo.read',
+  TEJO_MANAGE: 'tejo.manage',
+  TEJO_ANALYTICS: 'tejo.analytics',
 
   // Marketing
   MARKETING_READ: 'marketing.read',
@@ -174,6 +177,9 @@ export const PERMISSION_GROUPS = {
     PERMISSIONS.SUPPORT_READ,
     PERMISSIONS.SUPPORT_UPDATE,
     PERMISSIONS.SUPPORT_ASSIGN,
+    PERMISSIONS.TEJO_READ,
+    PERMISSIONS.TEJO_MANAGE,
+    PERMISSIONS.TEJO_ANALYTICS,
     PERMISSIONS.USERS_READ,
   ],
   MARKETING_MANAGER: [
@@ -198,6 +204,8 @@ export const PERMISSION_GROUPS = {
     PERMISSIONS.CATEGORIES_UPDATE,
     PERMISSIONS.BRANDS_READ,
     PERMISSIONS.BRANDS_UPDATE,
+    PERMISSIONS.MARKETING_READ,
+    PERMISSIONS.MARKETING_UPDATE,
     PERMISSIONS.MEDIA_MANAGE,
   ],
   VIEW_ONLY_ADMIN: [
@@ -252,6 +260,7 @@ export const MENU_PERMISSIONS = {
   'marketing-dashboard': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
   'price-rules': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
   banners: [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
+  'installation-guides': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
   promotions: [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
   'coupons-list': [PERMISSIONS.MARKETING_READ, PERMISSIONS.ADMIN_ACCESS],
   'coupons-analytics': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
@@ -294,6 +303,11 @@ export const MENU_PERMISSIONS = {
   'support-tickets': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
   'support-stats': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   'support-canned-responses': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
+  'support-tejo-prompts': [PERMISSIONS.TEJO_READ, PERMISSIONS.ADMIN_ACCESS],
+  'support-tejo-analytics': [PERMISSIONS.TEJO_ANALYTICS, PERMISSIONS.ADMIN_ACCESS],
+  'support-tejo-conversations': [PERMISSIONS.TEJO_READ, PERMISSIONS.ADMIN_ACCESS],
+  'support-tejo-settings': [PERMISSIONS.TEJO_MANAGE, PERMISSIONS.ADMIN_ACCESS],
+  'support-tejo-knowledge': [PERMISSIONS.TEJO_MANAGE, PERMISSIONS.ADMIN_ACCESS],
 
   // Notifications section
   notifications: [PERMISSIONS.ADMIN_ACCESS], // Parent menu - visible if any child is visible
@@ -347,6 +361,12 @@ export const hasMenuAccess = (userPermissions: string[], requiredPermissions: st
 
   // Check if user has ADMIN_ACCESS
   const hasAdminAccess = userPermissions.includes(PERMISSIONS.ADMIN_ACCESS);
+  const hasSuperAdminAccess = userPermissions.includes(PERMISSIONS.SUPER_ADMIN_ACCESS);
+
+  // Super admin can access all admin menu items.
+  if (hasSuperAdminAccess && hasAdminAccess) {
+    return true;
+  }
   
   // Filter out ADMIN_ACCESS from required permissions to get specific permissions
   const specificPermissions = requiredPermissions.filter(

@@ -62,10 +62,18 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({
 
   // Get required permissions for this route
   const requiredPermissions = getRoutePermissions(location.pathname);
+  const isSuperAdmin =
+    Boolean(user?.roles?.includes('super_admin')) ||
+    Boolean(user?.permissions?.includes('super_admin.access'));
 
   const isMarketerAccount = hasPermission('marketer.portal.access');
   if (isMarketerAccount && (location.pathname === '/' || location.pathname === '/dashboard')) {
     return <Navigate to="/marketer/portal" replace />;
+  }
+
+  // Super admin has full access to admin routes.
+  if (isSuperAdmin) {
+    return <>{children}</>;
   }
 
   // If no specific permissions required, allow access

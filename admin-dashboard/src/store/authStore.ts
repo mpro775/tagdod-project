@@ -3,6 +3,11 @@ import { TokenService } from '@/core/auth/tokenService';
 import { STORAGE_KEYS } from '@/config/constants';
 import { setUser as setSentryUser, clearUser as clearSentryUser } from '@/core/sentry';
 
+const extractProfileUser = (profileResponse: unknown): { roles?: string[]; permissions?: string[] } => {
+  const payload = profileResponse as any;
+  return payload?.user || payload?.data?.user || {};
+};
+
 interface User {
   _id: string;
   phone: string;
@@ -84,7 +89,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   hasPermission: (permission) => {
     const { user } = get();
-    return user && user.permissions ? user.permissions.includes(permission) : false;
+    if (!user) return false;
+
+    const userPermissions = user.permissions || [];
+    const isSuperAdminRole = Array.isArray(user.roles) && user.roles.includes('super_admin');
+    const hasSuperAdminPermission = userPermissions.includes('super_admin.access');
+    const hasAdminAccess = userPermissions.includes('admin.access');
+
+    // Super admin bypass for admin dashboard permissions.
+    if (isSuperAdminRole || (hasSuperAdminPermission && hasAdminAccess)) {
+      // Keep marketer portal opt-in, to avoid forcing admin users into marketer flow.
+      if (permission === 'marketer.portal.access') {
+        return userPermissions.includes(permission);
+      }
+      return true;
+    }
+
+    return userPermissions.includes(permission);
   },
 
   refreshProfile: async () => {
@@ -92,13 +113,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { authApi } = await import('@/features/auth/api/authApi');
       const profileResponse = await authApi.getProfile();
       const currentUser = get().user;
+      const profileUser = extractProfileUser(profileResponse);
 
       if (currentUser) {
         // Update user data with fresh data from server
         const updatedUser = {
           ...currentUser,
-          roles: profileResponse.user?.roles || currentUser.roles || [],
-          permissions: profileResponse.user?.permissions || currentUser.permissions || [],
+          roles: profileUser.roles || currentUser.roles || [],
+          permissions: profileUser.permissions || currentUser.permissions || [],
         };
 
         localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));
@@ -132,12 +154,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
           const { authApi } = await import('@/features/auth/api/authApi');
           const profileResponse = await authApi.getProfile();
+          const profileUser = extractProfileUser(profileResponse);
 
           // Update user data with fresh data from server
           const updatedUser = {
             ...user,
-            roles: profileResponse.user?.roles || user.roles || [],
-            permissions: profileResponse.user?.permissions || user.permissions || [],
+            roles: profileUser.roles || user.roles || [],
+            permissions: profileUser.permissions || user.permissions || [],
           };
 
           localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));

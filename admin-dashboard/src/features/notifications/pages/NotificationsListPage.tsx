@@ -28,6 +28,7 @@ import {
 } from '../hooks/useNotifications';
 import { isBatchRow } from '../components/notificationHelpers';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
+import { ConfirmDialog } from '@/shared/components';
 import type {
   Notification,
   CreateNotificationDto,
@@ -49,7 +50,7 @@ import type { NotificationActionTab } from '../components/NotificationActionsDra
 export const NotificationsListPage: React.FC = () => {
   const { t } = useTranslation('notifications');
   const { isMobile } = useBreakpoint();
-  const { confirmDialog } = useConfirmDialog();
+  const { confirmDialog, dialogProps } = useConfirmDialog();
 
   const [filters, setFilters] = useState<ListNotificationsParams>({
     search: '',
@@ -610,6 +611,8 @@ export const NotificationsListPage: React.FC = () => {
           <Add />
         </Fab>
       )}
+
+      <ConfirmDialog {...dialogProps} />
     </Box>
   );
 };

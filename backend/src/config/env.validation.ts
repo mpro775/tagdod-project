@@ -67,6 +67,16 @@ export const envSchema = z.object({
   // Sales Manager Contact Information
   SALES_MANAGER_EMAIL: z.string().email().optional(),
   SALES_MANAGER_WHATSAPP: z.string().optional(),
+
+  // Tejo AI Assistant
+  TEJO_ENABLED: z.coerce.boolean().optional(),
+  TEJO_WEB_PILOT_ENABLED: z.coerce.boolean().optional(),
+  TEJO_PROVIDER_ORDER: z.string().optional(),
+  TEJO_HANDOFF_THRESHOLD: z.coerce.number().optional(),
+  TEJO_GEMINI_API_KEY: z.string().optional(),
+  TEJO_GEMINI_CHAT_MODEL: z.string().optional(),
+  TEJO_GEMINI_EMBEDDING_MODEL: z.string().optional(),
+  TEJO_GEMINI_BASE_URL: z.string().url().optional(),
 });
 
 export type EnvType = z.infer<typeof envSchema>;

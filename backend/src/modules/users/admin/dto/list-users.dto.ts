@@ -29,8 +29,8 @@ export class ListUsersDto {
   role?: UserRole;
 
   @IsOptional()
-  @IsIn(['all', 'verified', 'unverified'])
-  verificationStatus?: 'all' | 'verified' | 'unverified'; // يظهر عند role=merchant أو role=engineer
+  @IsIn(['all', 'verified', 'unverified', 'pending', 'rejected'])
+  verificationStatus?: 'all' | 'verified' | 'unverified' | 'pending' | 'rejected'; // يظهر عند role=merchant أو role=engineer
 
   @IsOptional()
   @Type(() => Boolean)

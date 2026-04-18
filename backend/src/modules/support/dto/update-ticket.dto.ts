@@ -1,65 +1,108 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsEnum, IsString } from 'class-validator';
-import { SupportStatus, SupportPriority, SupportCategory } from '../schemas/support-ticket.schema';
+﻿import { ApiProperty } from '@nestjs/swagger';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  SupportAiStatus,
+  SupportCategory,
+  SupportChannel,
+  SupportPriority,
+  SupportStatus,
+} from '../schemas/support-ticket.schema';
 
 export class UpdateSupportTicketDto {
   @ApiProperty({
-    description: 'حالة التذكرة',
+    description: 'Ticket status',
     enum: SupportStatus,
-    example: SupportStatus.IN_PROGRESS,
     required: false,
+    example: SupportStatus.IN_PROGRESS,
   })
   @IsOptional()
   @IsEnum(SupportStatus)
   status?: SupportStatus;
 
   @ApiProperty({
-    description: 'أولوية التذكرة',
+    description: 'Ticket priority',
     enum: SupportPriority,
-    example: SupportPriority.HIGH,
     required: false,
+    example: SupportPriority.HIGH,
   })
   @IsOptional()
   @IsEnum(SupportPriority)
   priority?: SupportPriority;
 
   @ApiProperty({
-    description: 'تصنيف التذكرة',
+    description: 'Ticket category',
     enum: SupportCategory,
-    example: SupportCategory.TECHNICAL,
     required: false,
+    example: SupportCategory.TECHNICAL,
   })
   @IsOptional()
   @IsEnum(SupportCategory)
   category?: SupportCategory;
 
   @ApiProperty({
-    description: 'معرف المشرف المسؤول',
-    example: '507f1f77bcf86cd799439011',
+    description: 'Ticket channel',
+    enum: SupportChannel,
     required: false,
+    example: SupportChannel.WEB,
+  })
+  @IsOptional()
+  @IsEnum(SupportChannel)
+  channel?: SupportChannel;
+
+  @ApiProperty({
+    description: 'Assigned admin id',
+    required: false,
+    example: '507f1f77bcf86cd799439011',
   })
   @IsOptional()
   @IsString()
   assignedTo?: string;
 
   @ApiProperty({
-    description: 'تاريخ الحل (يتم تعيينه تلقائياً عند تغيير الحالة إلى RESOLVED)',
+    description: 'Resolved timestamp',
     required: false,
   })
   @IsOptional()
   resolvedAt?: Date;
 
   @ApiProperty({
-    description: 'تاريخ الإغلاق (يتم تعيينه تلقائياً عند تغيير الحالة إلى CLOSED)',
+    description: 'Closed timestamp',
     required: false,
   })
   @IsOptional()
   closedAt?: Date;
 
   @ApiProperty({
-    description: 'تاريخ أول رد (يتم تعيينه تلقائياً عند تغيير الحالة إلى IN_PROGRESS)',
+    description: 'First response timestamp',
     required: false,
   })
   @IsOptional()
   firstResponseAt?: Date;
+
+  @ApiProperty({
+    description: 'Whether this ticket is handled by AI',
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isAiHandled?: boolean;
+
+  @ApiProperty({
+    description: 'AI handling status',
+    enum: SupportAiStatus,
+    required: false,
+    example: SupportAiStatus.ACTIVE,
+  })
+  @IsOptional()
+  @IsEnum(SupportAiStatus)
+  aiStatus?: SupportAiStatus;
+
+  @ApiProperty({
+    description: 'Reason for handoff to human support',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  handoffReason?: string;
 }
+

@@ -182,7 +182,9 @@
     "verificationLabel": "توثيق:",
     "allVerification": "الكل",
     "verifiedOnly": "موثقون فقط",
-    "unverifiedOnly": "غير موثقين"
+    "unverifiedOnly": "غير موثقين",
+    "pendingOnly": "قيد الانتظار",
+    "rejectedOnly": "مرفوض"
   },
   "stats": {
     "title": "إحصائيات المستخدمين",

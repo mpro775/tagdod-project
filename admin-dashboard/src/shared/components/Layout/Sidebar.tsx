@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import {
   Drawer,
   List,
@@ -52,11 +52,13 @@ import {
   AddCircleOutline,
   Backup as BackupIcon,
   OnlinePrediction,
+  SmartToy,
+  MenuBook,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
-import { filterMenuByPermissions } from '@/shared/constants/permissions';
+import { PERMISSIONS, filterMenuByPermissions } from '@/shared/constants/permissions';
 import { useUnreadSupportCount } from '@/features/support/hooks/useSupport';
 import { usePendingOrdersCount } from '@/features/orders/hooks/useOrders';
 
@@ -76,12 +78,110 @@ interface SidebarProps {
   variant: 'permanent' | 'temporary';
 }
 
+const AR_NAV_LABELS: Record<string, string> = {
+  'navigation.about': 'من نحن',
+  'navigation.addresses': 'العناوين',
+  'navigation.adminManagement': 'إدارة المشرفين',
+  'navigation.analytics': 'الإحصائيات',
+  'navigation.analyticsAdvanced': 'إحصائيات متقدمة',
+  'navigation.analyticsDashboard': 'لوحة الإحصائيات',
+  'navigation.analyticsExport': 'تصدير البيانات',
+  'navigation.analyticsMain': 'نظام التحليلات الشامل',
+  'navigation.analyticsReports': 'إدارة التقارير',
+  'navigation.attributes': 'السمات',
+  'navigation.audit': 'السجلات والتدقيق',
+  'navigation.auditAnalytics': 'تحليلات التدقيق',
+  'navigation.auditLogs': 'سجلات التدقيق',
+  'navigation.auditMain': 'نظام التدقيق الشامل',
+  'navigation.backups': 'النسخ الاحتياطي',
+  'navigation.banners': 'البنرات',
+  'navigation.brands': 'العلامات التجارية',
+  'navigation.cartsAnalytics': 'تحليلات السلة',
+  'navigation.cartsList': 'قائمة السلال',
+  'navigation.cartsManagement': 'إدارة السلال',
+  'navigation.catalog': 'الكتالوج',
+  'navigation.categories': 'الفئات',
+  'navigation.coupons': 'الكوبونات',
+  'navigation.couponsAnalytics': 'تحليلات الكوبونات',
+  'navigation.couponsList': 'قائمة الكوبونات',
+  'navigation.dashboard': 'لوحة التحكم',
+  'navigation.engineerCoupons': 'كوبونات المهندسين',
+  'navigation.engineers': 'المهندسين',
+  'navigation.engineersCommissions': 'تقرير عمولات المهندسين',
+  'navigation.errorLogs': 'سجلات الأخطاء',
+  'navigation.exchangeRates': 'أسعار الصرف',
+  'navigation.favorites': 'المفضلة',
+  'navigation.installationGuides': 'طرق التركيب',
+  'navigation.marketerPortal': 'بوابة المسوّق',
+  'navigation.marketersManagement': 'إدارة المسوّقين',
+  'navigation.marketing': 'التسويق',
+  'navigation.marketingDashboard': 'لوحة التسويق',
+  'navigation.media': 'مكتبة الوسائط',
+  'navigation.mediaAnalytics': 'إحصائيات الوسائط',
+  'navigation.mediaLibrary': 'مكتبة الوسائط',
+  'navigation.notifications': 'الإشعارات',
+  'navigation.notificationsAnalytics': 'إحصائيات الإشعارات',
+  'navigation.notificationsChannelConfigs': 'إعدادات القنوات',
+  'navigation.notificationsList': 'قائمة الإشعارات',
+  'navigation.notificationsTemplates': 'قوالب الإشعارات',
+  'navigation.orders': 'الطلبات',
+  'navigation.ordersAnalytics': 'تحليلات الطلبات',
+  'navigation.ordersList': 'قائمة الطلبات',
+  'navigation.ordersOutOfStock': 'الطلبات غير المتوفرة',
+  'navigation.policies': 'السياسات',
+  'navigation.priceRules': 'قواعد الأسعار',
+  'navigation.products': 'المنتجات',
+  'navigation.productsAnalytics': 'تحليلات المنتجات',
+  'navigation.productsIntegration': 'ربط المخزون',
+  'navigation.productsInventory': 'إدارة المخزون',
+  'navigation.productsLinked': 'المنتجات المربوطة',
+  'navigation.productsList': 'قائمة المنتجات',
+  'navigation.productsUnlinked': 'فرص الإضافة',
+  'navigation.sales': 'المبيعات',
+  'navigation.search': 'البحث',
+  'navigation.services': 'الخدمات',
+  'navigation.servicesAnalytics': 'تحليلات الخدمات',
+  'navigation.servicesEngineers': 'إدارة المهندسين',
+  'navigation.servicesOffers': 'إدارة العروض',
+  'navigation.servicesOverview': 'نظرة عامة',
+  'navigation.servicesRequests': 'طلبات الخدمات',
+  'navigation.support': 'الدعم الفني',
+  'navigation.supportCannedResponses': 'الردود الجاهزة',
+  'navigation.supportStats': 'إحصائيات الدعم',
+  'navigation.supportTickets': 'قائمة التذاكر',
+  'navigation.systemManagement': 'إدارة النظام',
+  'navigation.systemMonitoring': 'مراقبة الأداء',
+  'navigation.systemSettings': 'إعدادات النظام',
+  'navigation.tejoAnalytics': 'تحليلات Tejo',
+  'navigation.tejoConversations': 'محادثات Tejo',
+  'navigation.tejoKnowledge': 'معرفة Tejo',
+  'navigation.tejoPrompts': 'موجّهات Tejo',
+  'navigation.tejoSettings': 'إعدادات Tejo',
+  'navigation.users': 'المستخدمون',
+  'navigation.usersActivity': 'تتبع النشاط',
+  'navigation.usersAnalytics': 'تحليلات المستخدمين',
+  'navigation.usersDeleted': 'الحسابات المحذوفة',
+  'navigation.usersList': 'قائمة المستخدمين',
+  'navigation.verificationRequests': 'طلبات التحقق',
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
   const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
+  const isArabicLocale = i18n.language.toLowerCase().startsWith('ar');
+  const navLabel = React.useCallback(
+    (key: string) => {
+      if (isArabicLocale && AR_NAV_LABELS[key]) {
+        return AR_NAV_LABELS[key];
+      }
+      return t(key);
+    },
+    [isArabicLocale, t]
+  );
+  const appName = isArabicLocale ? 'لوحة تحكم تجدد' : t('app.name');
   const activeItemRef = useRef<HTMLDivElement | null>(null);
   const { data: unreadSupport } = useUnreadSupportCount(60000);
   const unreadSupportCount = unreadSupport?.unreadTicketsCount ?? 0;
@@ -92,54 +192,54 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     () => [
       {
         id: 'dashboard',
-        label: t('navigation.dashboard'),
+        label: navLabel('navigation.dashboard'),
         icon: <Dashboard />,
         path: '/dashboard',
       },
       {
         id: 'users',
-        label: t('navigation.users'),
+        label: navLabel('navigation.users'),
         icon: <People />,
         children: [
           {
             id: 'users-list',
-            label: t('navigation.usersList', 'قائمة المستخدمين'),
+            label: navLabel('navigation.usersList'),
             icon: <People />,
             path: '/users',
           },
           {
             id: 'users-analytics',
-            label: t('navigation.usersAnalytics', 'تحليلات المستخدمين'),
+            label: navLabel('navigation.usersAnalytics'),
             icon: <Assessment />,
             path: '/users/analytics',
           },
           {
             id: 'users-deleted',
-            label: t('navigation.usersDeleted', 'الحسابات المحذوفة'),
+            label: navLabel('navigation.usersDeleted'),
             icon: <DeleteForever />,
             path: '/users/deleted',
           },
           {
             id: 'users-verification',
-            label: t('navigation.verificationRequests', 'طلبات التحقق'),
+            label: navLabel('navigation.verificationRequests'),
             icon: <VerifiedUser />,
             path: '/users/verification-requests',
           },
           {
             id: 'users-activity',
-            label: t('navigation.usersActivity', 'تتبع النشاط'),
+            label: navLabel('navigation.usersActivity'),
             icon: <OnlinePrediction />,
             path: '/users/activity',
           },
           {
             id: 'users-addresses',
-            label: t('navigation.addresses', 'العناوين'),
+            label: navLabel('navigation.addresses'),
             icon: <LocationOn />,
             path: '/admin/addresses',
           },
           {
             id: 'users-favorites',
-            label: t('navigation.favorites', 'المفضلة'),
+            label: navLabel('navigation.favorites'),
             icon: <Favorite />,
             path: '/admin/favorites',
           },
@@ -147,47 +247,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'catalog',
-        label: t('navigation.catalog'),
+        label: navLabel('navigation.catalog'),
         icon: <Inventory />,
         children: [
           {
             id: 'products',
-            label: t('navigation.products'),
+            label: navLabel('navigation.products'),
             icon: <Inventory />,
             children: [
               {
                 id: 'products-list',
-                label: t('navigation.productsList', 'قائمة المنتجات'),
+                label: navLabel('navigation.productsList'),
                 icon: <Inventory />,
                 path: '/products',
               },
               {
                 id: 'products-analytics',
-                label: t('navigation.productsAnalytics', 'تحليلات المنتجات'),
+                label: navLabel('navigation.productsAnalytics'),
                 icon: <Assessment />,
                 path: '/products/analytics',
               },
               {
                 id: 'products-inventory',
-                label: t('navigation.productsInventory', 'إدارة المخزون'),
+                label: navLabel('navigation.productsInventory'),
                 icon: <ViewModule />,
                 path: '/products/inventory',
               },
               {
                 id: 'products-integration',
-                label: t('navigation.productsIntegration', 'ربط المخزون'),
+                label: navLabel('navigation.productsIntegration'),
                 icon: <Sync />,
                 path: '/products/integration',
               },
               {
                 id: 'products-unlinked',
-                label: t('navigation.productsUnlinked', 'فرص الإضافة'),
+                label: navLabel('navigation.productsUnlinked'),
                 icon: <AddCircleOutline />,
                 path: '/products/unlinked',
               },
               {
                 id: 'products-linked',
-                label: t('navigation.productsLinked', 'المربوطة'),
+                label: navLabel('navigation.productsLinked'),
                 icon: <Sync />,
                 path: '/products/linked',
               },
@@ -195,19 +295,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           },
           {
             id: 'categories',
-            label: t('navigation.categories'),
+            label: navLabel('navigation.categories'),
             icon: <Category />,
             path: '/categories',
           },
           {
             id: 'attributes',
-            label: t('navigation.attributes'),
+            label: navLabel('navigation.attributes'),
             icon: <Tune />,
             path: '/attributes',
           },
           {
             id: 'brands',
-            label: t('navigation.brands'),
+            label: navLabel('navigation.brands'),
             icon: <Storefront />,
             path: '/brands',
           },
@@ -215,29 +315,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'sales',
-        label: t('navigation.sales'),
+        label: navLabel('navigation.sales'),
         icon: <ShoppingCart />,
         children: [
           {
             id: 'orders',
-            label: t('navigation.orders'),
+            label: navLabel('navigation.orders'),
             icon: <Receipt />,
             children: [
               {
                 id: 'orders-list',
-                label: t('navigation.ordersList', 'قائمة الطلبات'),
+                label: navLabel('navigation.ordersList'),
                 icon: <Receipt />,
                 path: '/orders',
               },
               {
                 id: 'orders-out-of-stock',
-                label: t('navigation.ordersOutOfStock', 'الطلبات غير المتوفرة'),
+                label: navLabel('navigation.ordersOutOfStock'),
                 icon: <Inventory2 />,
                 path: '/orders/out-of-stock',
               },
               {
                 id: 'orders-analytics',
-                label: t('navigation.ordersAnalytics', 'تحليلات الطلبات'),
+                label: navLabel('navigation.ordersAnalytics'),
                 icon: <Assessment />,
                 path: '/orders/analytics',
               },
@@ -245,18 +345,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           },
           {
             id: 'carts',
-            label: t('navigation.cartsManagement', 'إدارة السلال'),
+            label: navLabel('navigation.cartsManagement'),
             icon: <ShoppingCart />,
             children: [
               {
                 id: 'carts-list',
-                label: t('navigation.cartsList', 'قائمة السلال'),
+                label: navLabel('navigation.cartsList'),
                 icon: <ShoppingCart />,
                 path: '/carts',
               },
               {
                 id: 'carts-analytics',
-                label: t('navigation.cartsAnalytics', 'تحليلات السلة'),
+                label: navLabel('navigation.cartsAnalytics'),
                 icon: <Assessment />,
                 path: '/carts/analytics',
               },
@@ -266,41 +366,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'marketing',
-        label: t('navigation.marketing', 'التسويق'),
+        label: navLabel('navigation.marketing'),
         icon: <Campaign />,
         children: [
           {
             id: 'marketing-dashboard',
-            label: t('navigation.marketingDashboard', 'لوحة التسويق'),
+            label: navLabel('navigation.marketingDashboard'),
             icon: <Dashboard />,
             path: '/marketing',
           },
           {
             id: 'price-rules',
-            label: t('navigation.priceRules', 'قواعد الأسعار'),
+            label: navLabel('navigation.priceRules'),
             icon: <LocalOffer />,
             path: '/marketing/price-rules',
           },
           {
             id: 'banners',
-            label: t('navigation.banners', 'البنرات'),
+            label: navLabel('navigation.banners'),
             icon: <Campaign />,
             path: '/banners',
           },
           {
+            id: 'installation-guides',
+            label: navLabel('navigation.installationGuides'),
+            icon: <MenuBook />,
+            path: '/marketing/installation-guides',
+          },
+          {
             id: 'coupons',
-            label: t('navigation.coupons', 'الكوبونات'),
+            label: navLabel('navigation.coupons'),
             icon: <LocalOffer />,
             children: [
               {
                 id: 'coupons-list',
-                label: t('navigation.couponsList', 'قائمة الكوبونات'),
+                label: navLabel('navigation.couponsList'),
                 icon: <LocalOffer />,
                 path: '/coupons',
               },
               {
                 id: 'coupons-analytics',
-                label: t('navigation.couponsAnalytics', 'تحليلات الكوبونات'),
+                label: navLabel('navigation.couponsAnalytics'),
                 icon: <Assessment />,
                 path: '/coupons/analytics',
               },
@@ -310,30 +416,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'services',
-        label: t('navigation.services', 'الخدمات'),
+        label: navLabel('navigation.services'),
         icon: <Build />,
         children: [
           {
             id: 'services-overview',
-            label: t('navigation.servicesOverview', 'نظرة عامة'),
+            label: navLabel('navigation.servicesOverview'),
             icon: <Dashboard />,
             path: '/services',
           },
           {
             id: 'services-requests',
-            label: t('navigation.servicesRequests', 'طلبات الخدمات'),
+            label: navLabel('navigation.servicesRequests'),
             icon: <Build />,
             path: '/services/requests',
           },
           {
             id: 'services-offers',
-            label: t('navigation.servicesOffers', 'إدارة العروض'),
+            label: navLabel('navigation.servicesOffers'),
             icon: <LocalOffer />,
             path: '/services/offers',
           },
           {
             id: 'services-analytics',
-            label: t('navigation.servicesAnalytics', 'تحليلات الخدمات'),
+            label: navLabel('navigation.servicesAnalytics'),
             icon: <Analytics />,
             path: '/services/analytics',
           },
@@ -341,24 +447,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'engineers',
-        label: t('navigation.engineers', 'المهندسين'),
+        label: navLabel('navigation.engineers'),
         icon: <People />,
         children: [
           {
             id: 'engineers-management',
-            label: t('navigation.servicesEngineers', 'إدارة المهندسين'),
+            label: navLabel('navigation.servicesEngineers'),
             icon: <People />,
             path: '/services/engineers',
           },
           {
             id: 'engineers-coupons',
-            label: t('navigation.engineerCoupons', 'كوبونات المهندسين'),
+            label: navLabel('navigation.engineerCoupons'),
             icon: <LocalOffer />,
             path: '/services/engineers/coupons',
           },
           {
             id: 'engineers-commissions',
-            label: t('navigation.engineersCommissions', 'تقرير عمولات المهندسين'),
+            label: navLabel('navigation.engineersCommissions'),
             icon: <Receipt />,
             path: '/commissions/reports',
           },
@@ -366,18 +472,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'media',
-        label: t('navigation.media', 'مكتبة الوسائط'),
+        label: navLabel('navigation.media'),
         icon: <PhotoLibrary />,
         children: [
           {
             id: 'media-library',
-            label: t('navigation.mediaLibrary', 'مكتبة الوسائط'),
+            label: navLabel('navigation.mediaLibrary'),
             icon: <PhotoLibrary />,
             path: '/media',
           },
           {
             id: 'media-analytics',
-            label: t('navigation.mediaAnalytics', 'إحصائيات الوسائط'),
+            label: navLabel('navigation.mediaAnalytics'),
             icon: <Assessment />,
             path: '/media/analytics',
           },
@@ -385,36 +491,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'analytics',
-        label: t('navigation.analytics', 'الإحصائيات'),
+        label: navLabel('navigation.analytics'),
         icon: <Analytics />,
         children: [
           {
             id: 'analytics-dashboard',
-            label: t('navigation.analyticsDashboard', 'لوحة الإحصائيات'),
+            label: navLabel('navigation.analyticsDashboard'),
             icon: <Analytics />,
             path: '/analytics',
           },
           {
             id: 'analytics-main',
-            label: t('navigation.analyticsMain', 'نظام التحليلات الشامل'),
+            label: navLabel('navigation.analyticsMain'),
             icon: <Dashboard />,
             path: '/analytics/main',
           },
           {
             id: 'analytics-advanced',
-            label: t('navigation.analyticsAdvanced', 'إحصائيات متقدمة'),
+            label: navLabel('navigation.analyticsAdvanced'),
             icon: <Assessment />,
             path: '/analytics/advanced',
           },
           {
             id: 'analytics-export',
-            label: t('navigation.analyticsExport', 'تصدير البيانات'),
+            label: navLabel('navigation.analyticsExport'),
             icon: <GetApp />,
             path: '/analytics/export',
           },
           {
             id: 'analytics-reports',
-            label: t('navigation.analyticsReports', 'إدارة التقارير'),
+            label: navLabel('navigation.analyticsReports'),
             icon: <Description />,
             path: '/analytics/reports',
           },
@@ -422,24 +528,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'audit',
-        label: t('navigation.audit', 'السجلات والتدقيق'),
+        label: navLabel('navigation.audit'),
         icon: <Security />,
         children: [
           {
             id: 'audit-logs',
-            label: t('navigation.auditLogs', 'سجلات التدقيق'),
+            label: navLabel('navigation.auditLogs'),
             icon: <Security />,
             path: '/audit',
           },
           {
             id: 'audit-main',
-            label: t('navigation.auditMain', 'نظام التدقيق الشامل'),
+            label: navLabel('navigation.auditMain'),
             icon: <Dashboard />,
             path: '/audit/main',
           },
           {
             id: 'audit-analytics',
-            label: t('navigation.auditAnalytics', 'تحليلات التدقيق'),
+            label: navLabel('navigation.auditAnalytics'),
             icon: <Assessment />,
             path: '/audit/analytics',
           },
@@ -447,55 +553,85 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'support',
-        label: t('navigation.support', 'الدعم الفني'),
+        label: navLabel('navigation.support'),
         icon: <Support />,
         children: [
           {
             id: 'support-tickets',
-            label: t('navigation.supportTickets', 'قائمة التذاكر'),
+            label: navLabel('navigation.supportTickets'),
             icon: <Support />,
             path: '/support',
           },
           {
             id: 'support-stats',
-            label: t('navigation.supportStats', 'إحصائيات الدعم'),
+            label: navLabel('navigation.supportStats'),
             icon: <Assessment />,
             path: '/support/stats',
           },
           {
             id: 'support-canned-responses',
-            label: t('navigation.supportCannedResponses', 'الردود الجاهزة'),
+            label: navLabel('navigation.supportCannedResponses'),
             icon: <ViewModule />,
             path: '/support/canned-responses',
+          },
+          {
+            id: 'support-tejo-prompts',
+            label: navLabel('navigation.tejoPrompts'),
+            icon: <SmartToy />,
+            path: '/support/tejo/prompts',
+          },
+          {
+            id: 'support-tejo-analytics',
+            label: navLabel('navigation.tejoAnalytics'),
+            icon: <Assessment />,
+            path: '/support/tejo/analytics',
+          },
+          {
+            id: 'support-tejo-conversations',
+            label: navLabel('navigation.tejoConversations'),
+            icon: <Support />,
+            path: '/support/tejo/conversations',
+          },
+          {
+            id: 'support-tejo-settings',
+            label: navLabel('navigation.tejoSettings'),
+            icon: <Settings />,
+            path: '/support/tejo/settings',
+          },
+          {
+            id: 'support-tejo-knowledge',
+            label: navLabel('navigation.tejoKnowledge'),
+            icon: <SmartToy />,
+            path: '/support/tejo/knowledge',
           },
         ],
       },
       {
         id: 'notifications',
-        label: t('navigation.notifications', 'الإشعارات'),
+        label: navLabel('navigation.notifications'),
         icon: <Notifications />,
         children: [
           {
             id: 'notifications-list',
-            label: t('navigation.notificationsList', 'قائمة الإشعارات'),
+            label: navLabel('navigation.notificationsList'),
             icon: <Notifications />,
             path: '/notifications',
           },
           {
             id: 'notifications-analytics',
-            label: t('navigation.notificationsAnalytics', 'إحصائيات الإشعارات'),
+            label: navLabel('navigation.notificationsAnalytics'),
             icon: <Assessment />,
             path: '/notifications/analytics',
           },
           {
             id: 'notifications-templates',
-            label: t('navigation.notificationsTemplates', 'قوالب الإشعارات'),
+            label: navLabel('navigation.notificationsTemplates'),
             icon: <ViewModule />,
             path: '/notifications/templates',
           },
           {
             id: 'notifications-channel-configs',
-            label: t('navigation.notificationsChannelConfigs', 'إعدادات القنوات'),
+            label: navLabel('navigation.notificationsChannelConfigs'),
             icon: <Settings />,
             path: '/notifications/channel-configs',
           },
@@ -503,43 +639,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'system-management',
-        label: t('navigation.systemManagement', 'إدارة النظام'),
+        label: navLabel('navigation.systemManagement'),
         icon: <AdminPanelSettings />,
         children: [
           {
             id: 'system-monitoring',
-            label: t('navigation.systemMonitoring', 'مراقبة الأداء'),
+            label: navLabel('navigation.systemMonitoring'),
             icon: <Monitor />,
             path: '/system/monitoring',
           },
           {
             id: 'error-logs',
-            label: t('navigation.errorLogs', 'سجلات الأخطاء'),
+            label: navLabel('navigation.errorLogs'),
             icon: <BugReport />,
             path: '/system/error-logs',
           },
 
           {
             id: 'system-settings',
-            label: t('navigation.systemSettings', 'إعدادات النظام'),
+            label: navLabel('navigation.systemSettings'),
             icon: <Settings />,
             path: '/system/settings',
           },
           {
             id: 'backups',
-            label: t('navigation.backups', 'النسخ الاحتياطي'),
+            label: navLabel('navigation.backups'),
             icon: <BackupIcon />,
             path: '/system/backups',
           },
           {
             id: 'policies',
-            label: t('navigation.policies', 'السياسات'),
+            label: navLabel('navigation.policies'),
             icon: <Policy />,
             path: '/policies',
           },
           {
             id: 'about',
-            label: t('navigation.about', 'من نحن'),
+            label: navLabel('navigation.about'),
             icon: <Info />,
             path: '/about',
           },
@@ -547,30 +683,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'exchange-rates',
-        label: t('navigation.exchangeRates', 'أسعار الصرف'),
+        label: navLabel('navigation.exchangeRates'),
         icon: <Assessment />,
         path: '/exchange-rates',
       },
       {
         id: 'admin-management',
-        label: t('navigation.adminManagement'),
+        label: navLabel('navigation.adminManagement'),
         icon: <AdminPanelSettings />,
         children: [
           {
             id: 'admin-search',
-            label: t('navigation.search'),
+            label: navLabel('navigation.search'),
             icon: <SearchIcon />,
             path: '/admin/search',
           },
           {
             id: 'marketer-portal',
-            label: t('navigation.marketerPortal', 'بوابة المسوق'),
+            label: navLabel('navigation.marketerPortal'),
             icon: <AddCircleOutline />,
             path: '/marketer/portal',
           },
           {
             id: 'admin-marketers',
-            label: t('navigation.marketersManagement', 'إدارة المسوقين'),
+            label: navLabel('navigation.marketersManagement'),
             icon: <Campaign />,
             path: '/admin/marketers',
           },
@@ -608,8 +744,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     return addBadges(menuItems);
   }, [menuItems, pendingOrdersCount, unreadSupportCount]);
 
-  // Filter menu items based on user permissions
-  const userPermissions = user?.permissions || [];
+  // Build effective permissions so super_admin role can always see admin menus.
+  const userPermissions = React.useMemo(() => {
+    const normalized = Array.isArray(user?.permissions) ? [...user.permissions] : [];
+    const roles = Array.isArray(user?.roles) ? user.roles : [];
+    const isSuperAdminRole = roles.includes('super_admin');
+    const hasSuperAdminPermission = normalized.includes(PERMISSIONS.SUPER_ADMIN_ACCESS);
+
+    if (isSuperAdminRole || hasSuperAdminPermission) {
+      if (!normalized.includes(PERMISSIONS.ADMIN_ACCESS)) {
+        normalized.push(PERMISSIONS.ADMIN_ACCESS);
+      }
+      if (!normalized.includes(PERMISSIONS.SUPER_ADMIN_ACCESS)) {
+        normalized.push(PERMISSIONS.SUPER_ADMIN_ACCESS);
+      }
+    }
+
+    return normalized;
+  }, [user?.permissions, user?.roles]);
+
   const filteredMenuItems = React.useMemo(() => {
     return filterMenuByPermissions(menuItemsWithBadges, userPermissions);
   }, [menuItemsWithBadges, userPermissions]);
@@ -770,7 +923,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           }}
         />
         <Typography variant="h6" fontWeight="bold">
-          {t('app.name')}
+          {appName}
         </Typography>
       </Box>
 
@@ -810,3 +963,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     </Drawer>
   );
 };
+

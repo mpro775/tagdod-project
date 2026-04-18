@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IconButton,
   Badge,
@@ -28,6 +28,7 @@ import { NotificationType } from '@/features/notifications/types/notification.ty
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface NotificationBellProps {
   className?: string;
@@ -35,19 +36,17 @@ interface NotificationBellProps {
 
 export const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [notifications, setNotifications] = useState<NotificationPayload[]>([]);
+  const processedNotificationIdRef = useRef<string | null>(null);
   const open = Boolean(anchorEl);
 
   const { data: notificationsData, isLoading } = useUserNotifications({ limit: 10, offset: 0 });
   const { unreadCount: apiUnreadCount } = useUnreadNotifications(true);
   const { mutate: markAsRead } = useMarkAsRead();
 
-  const { latestNotification, unreadCount: socketUnreadCount } = useNotificationsSocket(
-    (notification) => {
-      setNotifications((prev) => [notification, ...prev].slice(0, 10));
-    }
-  );
+  const { latestNotification, unreadCount: socketUnreadCount } = useNotificationsSocket();
 
   useEffect(() => {
     console.log('NotificationBell - notificationsData:', notificationsData);
@@ -282,11 +281,12 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
       return;
     }
 
-    // إذا كان الإشعار مقروءاً بالفعل أو موجوداً مسبقاً في القائمة، لا نعيد تشغيل الصوت أو إظهار التوست
-    const alreadyExists = notifications.some((n) => n.id === latestNotification.id);
-    if (alreadyExists || latestNotification.isRead) {
+    // امنع تشغيل التوست مرتين لنفس الإشعار
+    if (processedNotificationIdRef.current === latestNotification.id || latestNotification.isRead) {
       return;
     }
+
+    processedNotificationIdRef.current = latestNotification.id;
 
     {
       // Show toast notification
@@ -351,8 +351,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         if (exists) return prev;
         return [latestNotification, ...prev].slice(0, 10);
       });
+
+      if (
+        latestNotification.type === NotificationType.SUPPORT_MESSAGE_RECEIVED ||
+        latestNotification.type === NotificationType.TICKET_CREATED
+      ) {
+        queryClient.invalidateQueries({ queryKey: ['support', 'unread-count'] });
+      }
     }
-  }, [latestNotification, navigate, notifications]);
+  }, [latestNotification, navigate, queryClient]);
 
   const handleNotificationClick = (notification: NotificationPayload) => {
     if (!notification.isRead) {

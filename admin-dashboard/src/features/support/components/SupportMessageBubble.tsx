@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   Box,
   Typography,
@@ -16,9 +16,11 @@ import {
   SystemUpdate,
   Attachment,
   VisibilityOff,
+  SmartToy,
+  Handshake,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { SupportMessage, MessageType } from '../types/support.types';
+import { MessageType, SupportMessage } from '../types/support.types';
 
 interface SupportMessageBubbleProps {
   message: SupportMessage;
@@ -34,6 +36,11 @@ const getMessageTypeIcon = (messageType: MessageType) => {
       return <AdminPanelSettings />;
     case MessageType.SYSTEM_MESSAGE:
       return <SystemUpdate />;
+    case MessageType.AI_REPLY:
+    case MessageType.AI_ACTION:
+      return <SmartToy />;
+    case MessageType.AI_HANDOFF:
+      return <Handshake />;
     default:
       return <Person />;
   }
@@ -42,17 +49,25 @@ const getMessageTypeIcon = (messageType: MessageType) => {
 const getMessageTypeLabel = (messageType: MessageType): string => {
   switch (messageType) {
     case MessageType.USER_MESSAGE:
-      return 'رسالة من المستخدم';
+      return 'User Message';
     case MessageType.ADMIN_REPLY:
-      return 'رد من الدعم';
+      return 'Admin Reply';
     case MessageType.SYSTEM_MESSAGE:
-      return 'رسالة النظام';
+      return 'System Message';
+    case MessageType.AI_REPLY:
+      return 'Tejo Reply';
+    case MessageType.AI_ACTION:
+      return 'Tejo Action';
+    case MessageType.AI_HANDOFF:
+      return 'Tejo Handoff';
     default:
-      return 'رسالة';
+      return 'Message';
   }
 };
 
-const getMessageTypeColor = (messageType: MessageType): 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' => {
+const getMessageTypeColor = (
+  messageType: MessageType,
+): 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' => {
   switch (messageType) {
     case MessageType.USER_MESSAGE:
       return 'primary';
@@ -60,6 +75,12 @@ const getMessageTypeColor = (messageType: MessageType): 'primary' | 'secondary' 
       return 'success';
     case MessageType.SYSTEM_MESSAGE:
       return 'warning';
+    case MessageType.AI_REPLY:
+      return 'info';
+    case MessageType.AI_ACTION:
+      return 'secondary';
+    case MessageType.AI_HANDOFF:
+      return 'error';
     default:
       return 'primary';
   }
@@ -75,31 +96,23 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
   const isInternal = message.isInternal;
   const hasAttachments = message.attachments && message.attachments.length > 0;
 
-  // حساب لون الخلفية بناءً على الوضع (فاتح/داكن) ونوع الرسالة
   const getBubbleBackgroundColor = () => {
     if (isCurrentUser) {
-      // رسالة المدير/الدعم
-      return isDarkMode 
-        ? theme.palette.primary.dark 
-        : theme.palette.primary.main;
+      return isDarkMode ? theme.palette.primary.dark : theme.palette.primary.main;
     }
+
     if (isInternal) {
-      // رسالة داخلية
-      return isDarkMode 
-        ? alpha(theme.palette.warning.dark, 0.3) 
-        : theme.palette.warning.light;
+      return isDarkMode ? alpha(theme.palette.warning.dark, 0.3) : theme.palette.warning.light;
     }
-    // رسالة المستخدم
-    return isDarkMode 
-      ? theme.palette.grey[800] 
-      : theme.palette.grey[100];
+
+    return isDarkMode ? theme.palette.grey[800] : theme.palette.grey[100];
   };
 
-  // حساب لون النص
   const getTextColor = () => {
     if (isCurrentUser) {
       return theme.palette.primary.contrastText;
     }
+
     return theme.palette.text.primary;
   };
 
@@ -146,14 +159,14 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
               color={getMessageTypeColor(message.messageType)}
               variant="outlined"
               sx={{
-                borderColor: isDarkMode 
-                  ? alpha(theme.palette[getMessageTypeColor(message.messageType)].main, 0.5) 
+                borderColor: isDarkMode
+                  ? alpha(theme.palette[getMessageTypeColor(message.messageType)].main, 0.5)
                   : undefined,
               }}
             />
             {isInternal && (
               <Chip
-                label="داخلي"
+                label="Internal"
                 size="small"
                 color="warning"
                 variant="outlined"
@@ -173,10 +186,10 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
             bgcolor: getBubbleBackgroundColor(),
             color: getTextColor(),
             borderRadius: 2,
-            border: isInternal 
-              ? `1px dashed ${isDarkMode ? theme.palette.warning.dark : theme.palette.warning.main}` 
-              : isDarkMode 
-                ? `1px solid ${theme.palette.divider}` 
+            border: isInternal
+              ? `1px dashed ${isDarkMode ? theme.palette.warning.dark : theme.palette.warning.main}`
+              : isDarkMode
+                ? `1px solid ${theme.palette.divider}`
                 : 'none',
           }}
         >
@@ -184,40 +197,62 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
             {message.content}
           </Typography>
 
+          {message.payload && (
+            <Box mt={1}>
+              <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
+                Payload
+              </Typography>
+              <Box
+                component="pre"
+                sx={{
+                  m: 0,
+                  p: 1,
+                  borderRadius: 1,
+                  bgcolor: isCurrentUser
+                    ? alpha(theme.palette.primary.contrastText, 0.12)
+                    : alpha(theme.palette.text.primary, 0.06),
+                  fontSize: '0.7rem',
+                  whiteSpace: 'pre-wrap',
+                  direction: 'ltr',
+                }}
+              >
+                {JSON.stringify(message.payload, null, 2)}
+              </Box>
+            </Box>
+          )}
+
           {hasAttachments && (
             <>
-              <Divider 
-                sx={{ 
-                  my: 1, 
+              <Divider
+                sx={{
+                  my: 1,
                   opacity: 0.5,
-                  borderColor: isCurrentUser 
-                    ? alpha(theme.palette.primary.contrastText, 0.3) 
+                  borderColor: isCurrentUser
+                    ? alpha(theme.palette.primary.contrastText, 0.3)
                     : theme.palette.divider,
-                }} 
+                }}
               />
               <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
                 <Attachment fontSize="small" />
-                <Typography variant="caption">
-                  {message.attachments.length} مرفق
-                </Typography>
+                <Typography variant="caption">{message.attachments.length} attachments</Typography>
                 {message.attachments.map((attachment, index) => (
                   <Chip
                     key={index}
-                    label={`مرفق ${index + 1}`}
+                    label={`Attachment ${index + 1}`}
                     size="small"
                     variant="outlined"
                     clickable
                     onClick={() => window.open(attachment, '_blank')}
                     sx={{
-                      borderColor: isCurrentUser 
-                        ? alpha(theme.palette.primary.contrastText, 0.5) 
+                      borderColor: isCurrentUser
+                        ? alpha(theme.palette.primary.contrastText, 0.5)
                         : theme.palette.divider,
-                      color: isCurrentUser 
-                        ? theme.palette.primary.contrastText 
+                      color: isCurrentUser
+                        ? theme.palette.primary.contrastText
                         : theme.palette.text.primary,
                       '&:hover': {
-                        bgcolor: isCurrentUser 
-                          ? alpha(theme.palette.primary.contrastText, 0.1) 
+                        bgcolor: isCurrentUser
+                          ? alpha(theme.palette.primary.contrastText, 0.1)
                           : theme.palette.action.hover,
                       },
                     }}
@@ -238,7 +273,7 @@ export const SupportMessageBubble: React.FC<SupportMessageBubbleProps> = ({
               textAlign: isCurrentUser ? 'right' : 'left',
             }}
           >
-            تم التعديل: {format(new Date(message.updatedAt), 'dd/MM/yyyy HH:mm')}
+            Edited: {format(new Date(message.updatedAt), 'dd/MM/yyyy HH:mm')}
           </Typography>
         )}
       </Box>

@@ -1,5 +1,5 @@
 services:
-  redis:
+  tagdod-redis:
     image: redis:7-alpine
     container_name: tagdod-redis
     restart: unless-stopped
@@ -16,7 +16,7 @@ services:
     networks:
       - tagdod-network-v2
 
-  api:
+  tagdod-api:
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -25,14 +25,14 @@ services:
     env_file: ./backend/.env
     environment:
       - TZ=Asia/Aden
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://tagdod-redis:6379
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
-      redis:
+      tagdod-redis:
         condition: service_healthy
     networks:
       - tagdod-network-v2
@@ -49,7 +49,7 @@ services:
       retries: 3
       start_period: 40s
 
-  admin-dashboard:
+  tagdod-admin-dashboard:
     build:
       context: ./admin-dashboard
       dockerfile: Dockerfile
@@ -65,7 +65,7 @@ services:
       timeout: 10s
       retries: 3
 
-  web-app:
+  tagdod-web-app:
     build:
       context: ./tagadod-web
       dockerfile: Dockerfile
@@ -83,9 +83,9 @@ services:
       timeout: 10s
       retries: 3
 
-  nginx-proxy-manager:
+  tagdod-npm:
     image: jc21/nginx-proxy-manager:latest
-    container_name: nginx-proxy-manager
+    container_name: tagdod-npm
     restart: unless-stopped
     ports:
       - "80:80"
@@ -98,9 +98,9 @@ services:
       - npm-data:/data
       - npm-letsencrypt:/etc/letsencrypt
     depends_on:
-      - api
-      - admin-dashboard
-      - web-app
+      - tagdod-api
+      - tagdod-admin-dashboard
+      - tagdod-web-app
     networks:
       - tagdod-network-v2
     healthcheck:

@@ -267,6 +267,13 @@ const BannerAnalyticsPage = lazy(() =>
     default: m.BannerAnalyticsPage,
   }))
 );
+const InstallationGuidesManagementPage = lazy(() =>
+  import('@/features/installation-guides/pages/InstallationGuidesManagementPage').then(
+    (m) => ({
+      default: m.InstallationGuidesManagementPage,
+    }),
+  )
+);
 const SupportTicketsListPage = lazy(() =>
   import('@/features/support/pages/SupportTicketsListPage').then((m) => ({
     default: m.SupportTicketsListPage,
@@ -285,6 +292,36 @@ const SupportStatsPage = lazy(() =>
 const CannedResponsesPage = lazy(() =>
   import('@/features/support/pages/CannedResponsesPage').then((m) => ({
     default: m.CannedResponsesPage,
+  }))
+);
+const TejoPromptsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoPromptsPage').then((m) => ({
+    default: m.TejoPromptsPage,
+  }))
+);
+const TejoAnalyticsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoAnalyticsPage').then((m) => ({
+    default: m.TejoAnalyticsPage,
+  }))
+);
+const TejoConversationsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoConversationsPage').then((m) => ({
+    default: m.TejoConversationsPage,
+  }))
+);
+const TejoConversationDetailsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoConversationDetailsPage').then((m) => ({
+    default: m.TejoConversationDetailsPage,
+  }))
+);
+const TejoSettingsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoSettingsPage').then((m) => ({
+    default: m.TejoSettingsPage,
+  }))
+);
+const TejoKnowledgePage = lazy(() =>
+  import('@/features/tejo/pages/TejoKnowledgePage').then((m) => ({
+    default: m.TejoKnowledgePage,
   }))
 );
 const NotificationsListPage = lazy(() =>
@@ -667,6 +704,10 @@ export const routes: RouteObject[] = [
         path: 'marketing/price-rules/:id',
         element: <CreatePriceRulePage />,
       },
+      {
+        path: 'marketing/installation-guides',
+        element: <InstallationGuidesManagementPage />,
+      },
 
       // Coupons
       {
@@ -767,6 +808,30 @@ export const routes: RouteObject[] = [
       {
         path: 'support/canned-responses',
         element: <CannedResponsesPage />,
+      },
+      {
+        path: 'support/tejo/prompts',
+        element: <TejoPromptsPage />,
+      },
+      {
+        path: 'support/tejo/analytics',
+        element: <TejoAnalyticsPage />,
+      },
+      {
+        path: 'support/tejo/conversations',
+        element: <TejoConversationsPage />,
+      },
+      {
+        path: 'support/tejo/conversations/:id',
+        element: <TejoConversationDetailsPage />,
+      },
+      {
+        path: 'support/tejo/settings',
+        element: <TejoSettingsPage />,
+      },
+      {
+        path: 'support/tejo/knowledge',
+        element: <TejoKnowledgePage />,
       },
       {
         path: 'support/:id',

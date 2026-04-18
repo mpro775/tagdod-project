@@ -21,6 +21,7 @@ import {
   Pending,
   Assignment,
   AdminPanelSettings,
+  SmartToy,
 } from '@mui/icons-material';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -218,17 +219,23 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
               }}
             >
               <Stack direction="row" spacing={1} alignItems="flex-start">
-                <Avatar
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    bgcolor:
-                      ticket.lastMessage.messageType === MessageType.ADMIN_REPLY
+                  <Avatar
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      bgcolor:
+                      [MessageType.ADMIN_REPLY, MessageType.AI_REPLY, MessageType.AI_ACTION].includes(
+                        ticket.lastMessage.messageType,
+                      )
                         ? 'success.main'
                         : 'primary.main',
-                  }}
-                >
-                  {ticket.lastMessage.messageType === MessageType.ADMIN_REPLY ? (
+                    }}
+                  >
+                  {[MessageType.AI_REPLY, MessageType.AI_ACTION, MessageType.AI_HANDOFF].includes(
+                    ticket.lastMessage.messageType,
+                  ) ? (
+                    <SmartToy sx={{ fontSize: 14 }} />
+                  ) : ticket.lastMessage.messageType === MessageType.ADMIN_REPLY ? (
                     <AdminPanelSettings sx={{ fontSize: 14 }} />
                   ) : (
                     <Person sx={{ fontSize: 14 }} />
@@ -242,7 +249,9 @@ export const SupportTicketCard: React.FC<SupportTicketCardProps> = ({
                     mb={0.5}
                   >
                     <Typography variant="caption" fontWeight="bold" color="text.secondary">
-                      {ticket.lastMessage.messageType === MessageType.ADMIN_REPLY
+                      {[MessageType.ADMIN_REPLY, MessageType.AI_REPLY, MessageType.AI_ACTION, MessageType.AI_HANDOFF].includes(
+                        ticket.lastMessage.messageType,
+                      )
                         ? ticket.lastMessage.sender?.name || t('labels.support')
                         : ticket.lastMessage.sender?.name || t('labels.customer')}
                     </Typography>

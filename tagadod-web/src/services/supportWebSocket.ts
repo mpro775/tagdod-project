@@ -40,6 +40,11 @@ export function connectSupportWebSocket(): void {
     listeners.onMessage.forEach((cb) => cb(message))
   })
 
+  socket.on('ticket-message', (message) => {
+    console.log('[SupportWS] ticket-message:', message)
+    listeners.onMessage.forEach((cb) => cb(message))
+  })
+
   socket.on('support:new-message', (message) => {
     console.log('[SupportWS] New message (alt):', message)
     listeners.onMessage.forEach((cb) => cb(message))

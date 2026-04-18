@@ -123,6 +123,13 @@ export class User {
   // حقول التحقق (Verification)
   @Prop() storePhotoUrl?: string; // رابط صورة المحل للتاجر (URL من Bunny.net)
   @Prop() storeName?: string; // اسم المحل للتاجر
+  @Prop() storeAddress?: string; // عنوان المحل للتاجر (موقع جغرافي نصي)
+  @Prop({ type: String, enum: ['small', 'medium', 'large'] })
+  storeSize?: 'small' | 'medium' | 'large';
+  @Prop({ type: String, enum: ['yes', 'no'] })
+  previousCustomer?: 'yes' | 'no';
+  @Prop({ type: String, enum: ['knows', 'heard_only', 'none'] })
+  tejadodAwareness?: 'knows' | 'heard_only' | 'none';
   @Prop() verificationNote?: string; // ملاحظة التحقق (اختياري)
 
   // مصدر اكتساب المستخدم
