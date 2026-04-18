@@ -78,12 +78,110 @@ interface SidebarProps {
   variant: 'permanent' | 'temporary';
 }
 
+const AR_NAV_LABELS: Record<string, string> = {
+  'navigation.about': 'من نحن',
+  'navigation.addresses': 'العناوين',
+  'navigation.adminManagement': 'إدارة المشرفين',
+  'navigation.analytics': 'الإحصائيات',
+  'navigation.analyticsAdvanced': 'إحصائيات متقدمة',
+  'navigation.analyticsDashboard': 'لوحة الإحصائيات',
+  'navigation.analyticsExport': 'تصدير البيانات',
+  'navigation.analyticsMain': 'نظام التحليلات الشامل',
+  'navigation.analyticsReports': 'إدارة التقارير',
+  'navigation.attributes': 'السمات',
+  'navigation.audit': 'السجلات والتدقيق',
+  'navigation.auditAnalytics': 'تحليلات التدقيق',
+  'navigation.auditLogs': 'سجلات التدقيق',
+  'navigation.auditMain': 'نظام التدقيق الشامل',
+  'navigation.backups': 'النسخ الاحتياطي',
+  'navigation.banners': 'البنرات',
+  'navigation.brands': 'العلامات التجارية',
+  'navigation.cartsAnalytics': 'تحليلات السلة',
+  'navigation.cartsList': 'قائمة السلال',
+  'navigation.cartsManagement': 'إدارة السلال',
+  'navigation.catalog': 'الكتالوج',
+  'navigation.categories': 'الفئات',
+  'navigation.coupons': 'الكوبونات',
+  'navigation.couponsAnalytics': 'تحليلات الكوبونات',
+  'navigation.couponsList': 'قائمة الكوبونات',
+  'navigation.dashboard': 'لوحة التحكم',
+  'navigation.engineerCoupons': 'كوبونات المهندسين',
+  'navigation.engineers': 'المهندسين',
+  'navigation.engineersCommissions': 'تقرير عمولات المهندسين',
+  'navigation.errorLogs': 'سجلات الأخطاء',
+  'navigation.exchangeRates': 'أسعار الصرف',
+  'navigation.favorites': 'المفضلة',
+  'navigation.installationGuides': 'طرق التركيب',
+  'navigation.marketerPortal': 'بوابة المسوّق',
+  'navigation.marketersManagement': 'إدارة المسوّقين',
+  'navigation.marketing': 'التسويق',
+  'navigation.marketingDashboard': 'لوحة التسويق',
+  'navigation.media': 'مكتبة الوسائط',
+  'navigation.mediaAnalytics': 'إحصائيات الوسائط',
+  'navigation.mediaLibrary': 'مكتبة الوسائط',
+  'navigation.notifications': 'الإشعارات',
+  'navigation.notificationsAnalytics': 'إحصائيات الإشعارات',
+  'navigation.notificationsChannelConfigs': 'إعدادات القنوات',
+  'navigation.notificationsList': 'قائمة الإشعارات',
+  'navigation.notificationsTemplates': 'قوالب الإشعارات',
+  'navigation.orders': 'الطلبات',
+  'navigation.ordersAnalytics': 'تحليلات الطلبات',
+  'navigation.ordersList': 'قائمة الطلبات',
+  'navigation.ordersOutOfStock': 'الطلبات غير المتوفرة',
+  'navigation.policies': 'السياسات',
+  'navigation.priceRules': 'قواعد الأسعار',
+  'navigation.products': 'المنتجات',
+  'navigation.productsAnalytics': 'تحليلات المنتجات',
+  'navigation.productsIntegration': 'ربط المخزون',
+  'navigation.productsInventory': 'إدارة المخزون',
+  'navigation.productsLinked': 'المنتجات المربوطة',
+  'navigation.productsList': 'قائمة المنتجات',
+  'navigation.productsUnlinked': 'فرص الإضافة',
+  'navigation.sales': 'المبيعات',
+  'navigation.search': 'البحث',
+  'navigation.services': 'الخدمات',
+  'navigation.servicesAnalytics': 'تحليلات الخدمات',
+  'navigation.servicesEngineers': 'إدارة المهندسين',
+  'navigation.servicesOffers': 'إدارة العروض',
+  'navigation.servicesOverview': 'نظرة عامة',
+  'navigation.servicesRequests': 'طلبات الخدمات',
+  'navigation.support': 'الدعم الفني',
+  'navigation.supportCannedResponses': 'الردود الجاهزة',
+  'navigation.supportStats': 'إحصائيات الدعم',
+  'navigation.supportTickets': 'قائمة التذاكر',
+  'navigation.systemManagement': 'إدارة النظام',
+  'navigation.systemMonitoring': 'مراقبة الأداء',
+  'navigation.systemSettings': 'إعدادات النظام',
+  'navigation.tejoAnalytics': 'تحليلات Tejo',
+  'navigation.tejoConversations': 'محادثات Tejo',
+  'navigation.tejoKnowledge': 'معرفة Tejo',
+  'navigation.tejoPrompts': 'موجّهات Tejo',
+  'navigation.tejoSettings': 'إعدادات Tejo',
+  'navigation.users': 'المستخدمون',
+  'navigation.usersActivity': 'تتبع النشاط',
+  'navigation.usersAnalytics': 'تحليلات المستخدمين',
+  'navigation.usersDeleted': 'الحسابات المحذوفة',
+  'navigation.usersList': 'قائمة المستخدمين',
+  'navigation.verificationRequests': 'طلبات التحقق',
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
   const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
+  const isArabicLocale = i18n.language.toLowerCase().startsWith('ar');
+  const navLabel = React.useCallback(
+    (key: string) => {
+      if (isArabicLocale && AR_NAV_LABELS[key]) {
+        return AR_NAV_LABELS[key];
+      }
+      return t(key);
+    },
+    [isArabicLocale, t]
+  );
+  const appName = isArabicLocale ? 'لوحة تحكم تجدد' : t('app.name');
   const activeItemRef = useRef<HTMLDivElement | null>(null);
   const { data: unreadSupport } = useUnreadSupportCount(60000);
   const unreadSupportCount = unreadSupport?.unreadTicketsCount ?? 0;
@@ -94,54 +192,54 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     () => [
       {
         id: 'dashboard',
-        label: t('navigation.dashboard'),
+        label: navLabel('navigation.dashboard'),
         icon: <Dashboard />,
         path: '/dashboard',
       },
       {
         id: 'users',
-        label: t('navigation.users'),
+        label: navLabel('navigation.users'),
         icon: <People />,
         children: [
           {
             id: 'users-list',
-            label: t('navigation.usersList', 'ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ط³طھط®ط¯ظ…ظٹظ†'),
+            label: navLabel('navigation.usersList'),
             icon: <People />,
             path: '/users',
           },
           {
             id: 'users-analytics',
-            label: t('navigation.usersAnalytics', 'طھط­ظ„ظٹظ„ط§طھ ط§ظ„ظ…ط³طھط®ط¯ظ…ظٹظ†'),
+            label: navLabel('navigation.usersAnalytics'),
             icon: <Assessment />,
             path: '/users/analytics',
           },
           {
             id: 'users-deleted',
-            label: t('navigation.usersDeleted', 'ط§ظ„ط­ط³ط§ط¨ط§طھ ط§ظ„ظ…ط­ط°ظˆظپط©'),
+            label: navLabel('navigation.usersDeleted'),
             icon: <DeleteForever />,
             path: '/users/deleted',
           },
           {
             id: 'users-verification',
-            label: t('navigation.verificationRequests', 'ط·ظ„ط¨ط§طھ ط§ظ„طھط­ظ‚ظ‚'),
+            label: navLabel('navigation.verificationRequests'),
             icon: <VerifiedUser />,
             path: '/users/verification-requests',
           },
           {
             id: 'users-activity',
-            label: t('navigation.usersActivity', 'طھطھط¨ط¹ ط§ظ„ظ†ط´ط§ط·'),
+            label: navLabel('navigation.usersActivity'),
             icon: <OnlinePrediction />,
             path: '/users/activity',
           },
           {
             id: 'users-addresses',
-            label: t('navigation.addresses', 'ط§ظ„ط¹ظ†ط§ظˆظٹظ†'),
+            label: navLabel('navigation.addresses'),
             icon: <LocationOn />,
             path: '/admin/addresses',
           },
           {
             id: 'users-favorites',
-            label: t('navigation.favorites', 'ط§ظ„ظ…ظپط¶ظ„ط©'),
+            label: navLabel('navigation.favorites'),
             icon: <Favorite />,
             path: '/admin/favorites',
           },
@@ -149,47 +247,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'catalog',
-        label: t('navigation.catalog'),
+        label: navLabel('navigation.catalog'),
         icon: <Inventory />,
         children: [
           {
             id: 'products',
-            label: t('navigation.products'),
+            label: navLabel('navigation.products'),
             icon: <Inventory />,
             children: [
               {
                 id: 'products-list',
-                label: t('navigation.productsList', 'ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ظ†طھط¬ط§طھ'),
+                label: navLabel('navigation.productsList'),
                 icon: <Inventory />,
                 path: '/products',
               },
               {
                 id: 'products-analytics',
-                label: t('navigation.productsAnalytics', 'طھط­ظ„ظٹظ„ط§طھ ط§ظ„ظ…ظ†طھط¬ط§طھ'),
+                label: navLabel('navigation.productsAnalytics'),
                 icon: <Assessment />,
                 path: '/products/analytics',
               },
               {
                 id: 'products-inventory',
-                label: t('navigation.productsInventory', 'ط¥ط¯ط§ط±ط© ط§ظ„ظ…ط®ط²ظˆظ†'),
+                label: navLabel('navigation.productsInventory'),
                 icon: <ViewModule />,
                 path: '/products/inventory',
               },
               {
                 id: 'products-integration',
-                label: t('navigation.productsIntegration', 'ط±ط¨ط· ط§ظ„ظ…ط®ط²ظˆظ†'),
+                label: navLabel('navigation.productsIntegration'),
                 icon: <Sync />,
                 path: '/products/integration',
               },
               {
                 id: 'products-unlinked',
-                label: t('navigation.productsUnlinked', 'ظپط±طµ ط§ظ„ط¥ط¶ط§ظپط©'),
+                label: navLabel('navigation.productsUnlinked'),
                 icon: <AddCircleOutline />,
                 path: '/products/unlinked',
               },
               {
                 id: 'products-linked',
-                label: t('navigation.productsLinked', 'ط§ظ„ظ…ط±ط¨ظˆط·ط©'),
+                label: navLabel('navigation.productsLinked'),
                 icon: <Sync />,
                 path: '/products/linked',
               },
@@ -197,19 +295,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           },
           {
             id: 'categories',
-            label: t('navigation.categories'),
+            label: navLabel('navigation.categories'),
             icon: <Category />,
             path: '/categories',
           },
           {
             id: 'attributes',
-            label: t('navigation.attributes'),
+            label: navLabel('navigation.attributes'),
             icon: <Tune />,
             path: '/attributes',
           },
           {
             id: 'brands',
-            label: t('navigation.brands'),
+            label: navLabel('navigation.brands'),
             icon: <Storefront />,
             path: '/brands',
           },
@@ -217,29 +315,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'sales',
-        label: t('navigation.sales'),
+        label: navLabel('navigation.sales'),
         icon: <ShoppingCart />,
         children: [
           {
             id: 'orders',
-            label: t('navigation.orders'),
+            label: navLabel('navigation.orders'),
             icon: <Receipt />,
             children: [
               {
                 id: 'orders-list',
-                label: t('navigation.ordersList', 'ظ‚ط§ط¦ظ…ط© ط§ظ„ط·ظ„ط¨ط§طھ'),
+                label: navLabel('navigation.ordersList'),
                 icon: <Receipt />,
                 path: '/orders',
               },
               {
                 id: 'orders-out-of-stock',
-                label: t('navigation.ordersOutOfStock', 'ط§ظ„ط·ظ„ط¨ط§طھ ط؛ظٹط± ط§ظ„ظ…طھظˆظپط±ط©'),
+                label: navLabel('navigation.ordersOutOfStock'),
                 icon: <Inventory2 />,
                 path: '/orders/out-of-stock',
               },
               {
                 id: 'orders-analytics',
-                label: t('navigation.ordersAnalytics', 'طھط­ظ„ظٹظ„ط§طھ ط§ظ„ط·ظ„ط¨ط§طھ'),
+                label: navLabel('navigation.ordersAnalytics'),
                 icon: <Assessment />,
                 path: '/orders/analytics',
               },
@@ -247,18 +345,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           },
           {
             id: 'carts',
-            label: t('navigation.cartsManagement', 'ط¥ط¯ط§ط±ط© ط§ظ„ط³ظ„ط§ظ„'),
+            label: navLabel('navigation.cartsManagement'),
             icon: <ShoppingCart />,
             children: [
               {
                 id: 'carts-list',
-                label: t('navigation.cartsList', 'ظ‚ط§ط¦ظ…ط© ط§ظ„ط³ظ„ط§ظ„'),
+                label: navLabel('navigation.cartsList'),
                 icon: <ShoppingCart />,
                 path: '/carts',
               },
               {
                 id: 'carts-analytics',
-                label: t('navigation.cartsAnalytics', 'طھط­ظ„ظٹظ„ط§طھ ط§ظ„ط³ظ„ط©'),
+                label: navLabel('navigation.cartsAnalytics'),
                 icon: <Assessment />,
                 path: '/carts/analytics',
               },
@@ -268,47 +366,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'marketing',
-        label: t('navigation.marketing', 'ط§ظ„طھط³ظˆظٹظ‚'),
+        label: navLabel('navigation.marketing'),
         icon: <Campaign />,
         children: [
           {
             id: 'marketing-dashboard',
-            label: t('navigation.marketingDashboard', 'ظ„ظˆط­ط© ط§ظ„طھط³ظˆظٹظ‚'),
+            label: navLabel('navigation.marketingDashboard'),
             icon: <Dashboard />,
             path: '/marketing',
           },
           {
             id: 'price-rules',
-            label: t('navigation.priceRules', 'ظ‚ظˆط§ط¹ط¯ ط§ظ„ط£ط³ط¹ط§ط±'),
+            label: navLabel('navigation.priceRules'),
             icon: <LocalOffer />,
             path: '/marketing/price-rules',
           },
           {
             id: 'banners',
-            label: t('navigation.banners', 'ط§ظ„ط¨ظ†ط±ط§طھ'),
+            label: navLabel('navigation.banners'),
             icon: <Campaign />,
             path: '/banners',
           },
           {
             id: 'installation-guides',
-            label: t('navigation.installationGuides', 'ط·ط±ظ‚ ط§ظ„طھط±ظƒظٹط¨'),
+            label: navLabel('navigation.installationGuides'),
             icon: <MenuBook />,
             path: '/marketing/installation-guides',
           },
           {
             id: 'coupons',
-            label: t('navigation.coupons', 'ط§ظ„ظƒظˆط¨ظˆظ†ط§طھ'),
+            label: navLabel('navigation.coupons'),
             icon: <LocalOffer />,
             children: [
               {
                 id: 'coupons-list',
-                label: t('navigation.couponsList', 'ظ‚ط§ط¦ظ…ط© ط§ظ„ظƒظˆط¨ظˆظ†ط§طھ'),
+                label: navLabel('navigation.couponsList'),
                 icon: <LocalOffer />,
                 path: '/coupons',
               },
               {
                 id: 'coupons-analytics',
-                label: t('navigation.couponsAnalytics', 'طھط­ظ„ظٹظ„ط§طھ ط§ظ„ظƒظˆط¨ظˆظ†ط§طھ'),
+                label: navLabel('navigation.couponsAnalytics'),
                 icon: <Assessment />,
                 path: '/coupons/analytics',
               },
@@ -318,30 +416,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'services',
-        label: t('navigation.services', 'ط§ظ„ط®ط¯ظ…ط§طھ'),
+        label: navLabel('navigation.services'),
         icon: <Build />,
         children: [
           {
             id: 'services-overview',
-            label: t('navigation.servicesOverview', 'ظ†ط¸ط±ط© ط¹ط§ظ…ط©'),
+            label: navLabel('navigation.servicesOverview'),
             icon: <Dashboard />,
             path: '/services',
           },
           {
             id: 'services-requests',
-            label: t('navigation.servicesRequests', 'ط·ظ„ط¨ط§طھ ط§ظ„ط®ط¯ظ…ط§طھ'),
+            label: navLabel('navigation.servicesRequests'),
             icon: <Build />,
             path: '/services/requests',
           },
           {
             id: 'services-offers',
-            label: t('navigation.servicesOffers', 'ط¥ط¯ط§ط±ط© ط§ظ„ط¹ط±ظˆط¶'),
+            label: navLabel('navigation.servicesOffers'),
             icon: <LocalOffer />,
             path: '/services/offers',
           },
           {
             id: 'services-analytics',
-            label: t('navigation.servicesAnalytics', 'طھط­ظ„ظٹظ„ط§طھ ط§ظ„ط®ط¯ظ…ط§طھ'),
+            label: navLabel('navigation.servicesAnalytics'),
             icon: <Analytics />,
             path: '/services/analytics',
           },
@@ -349,24 +447,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'engineers',
-        label: t('navigation.engineers', 'ط§ظ„ظ…ظ‡ظ†ط¯ط³ظٹظ†'),
+        label: navLabel('navigation.engineers'),
         icon: <People />,
         children: [
           {
             id: 'engineers-management',
-            label: t('navigation.servicesEngineers', 'ط¥ط¯ط§ط±ط© ط§ظ„ظ…ظ‡ظ†ط¯ط³ظٹظ†'),
+            label: navLabel('navigation.servicesEngineers'),
             icon: <People />,
             path: '/services/engineers',
           },
           {
             id: 'engineers-coupons',
-            label: t('navigation.engineerCoupons', 'ظƒظˆط¨ظˆظ†ط§طھ ط§ظ„ظ…ظ‡ظ†ط¯ط³ظٹظ†'),
+            label: navLabel('navigation.engineerCoupons'),
             icon: <LocalOffer />,
             path: '/services/engineers/coupons',
           },
           {
             id: 'engineers-commissions',
-            label: t('navigation.engineersCommissions', 'طھظ‚ط±ظٹط± ط¹ظ…ظˆظ„ط§طھ ط§ظ„ظ…ظ‡ظ†ط¯ط³ظٹظ†'),
+            label: navLabel('navigation.engineersCommissions'),
             icon: <Receipt />,
             path: '/commissions/reports',
           },
@@ -374,18 +472,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'media',
-        label: t('navigation.media', 'ظ…ظƒطھط¨ط© ط§ظ„ظˆط³ط§ط¦ط·'),
+        label: navLabel('navigation.media'),
         icon: <PhotoLibrary />,
         children: [
           {
             id: 'media-library',
-            label: t('navigation.mediaLibrary', 'ظ…ظƒطھط¨ط© ط§ظ„ظˆط³ط§ط¦ط·'),
+            label: navLabel('navigation.mediaLibrary'),
             icon: <PhotoLibrary />,
             path: '/media',
           },
           {
             id: 'media-analytics',
-            label: t('navigation.mediaAnalytics', 'ط¥ط­طµط§ط¦ظٹط§طھ ط§ظ„ظˆط³ط§ط¦ط·'),
+            label: navLabel('navigation.mediaAnalytics'),
             icon: <Assessment />,
             path: '/media/analytics',
           },
@@ -393,36 +491,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'analytics',
-        label: t('navigation.analytics', 'ط§ظ„ط¥ط­طµط§ط¦ظٹط§طھ'),
+        label: navLabel('navigation.analytics'),
         icon: <Analytics />,
         children: [
           {
             id: 'analytics-dashboard',
-            label: t('navigation.analyticsDashboard', 'ظ„ظˆط­ط© ط§ظ„ط¥ط­طµط§ط¦ظٹط§طھ'),
+            label: navLabel('navigation.analyticsDashboard'),
             icon: <Analytics />,
             path: '/analytics',
           },
           {
             id: 'analytics-main',
-            label: t('navigation.analyticsMain', 'ظ†ط¸ط§ظ… ط§ظ„طھط­ظ„ظٹظ„ط§طھ ط§ظ„ط´ط§ظ…ظ„'),
+            label: navLabel('navigation.analyticsMain'),
             icon: <Dashboard />,
             path: '/analytics/main',
           },
           {
             id: 'analytics-advanced',
-            label: t('navigation.analyticsAdvanced', 'ط¥ط­طµط§ط¦ظٹط§طھ ظ…طھظ‚ط¯ظ…ط©'),
+            label: navLabel('navigation.analyticsAdvanced'),
             icon: <Assessment />,
             path: '/analytics/advanced',
           },
           {
             id: 'analytics-export',
-            label: t('navigation.analyticsExport', 'طھطµط¯ظٹط± ط§ظ„ط¨ظٹط§ظ†ط§طھ'),
+            label: navLabel('navigation.analyticsExport'),
             icon: <GetApp />,
             path: '/analytics/export',
           },
           {
             id: 'analytics-reports',
-            label: t('navigation.analyticsReports', 'ط¥ط¯ط§ط±ط© ط§ظ„طھظ‚ط§ط±ظٹط±'),
+            label: navLabel('navigation.analyticsReports'),
             icon: <Description />,
             path: '/analytics/reports',
           },
@@ -430,24 +528,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'audit',
-        label: t('navigation.audit', 'ط§ظ„ط³ط¬ظ„ط§طھ ظˆط§ظ„طھط¯ظ‚ظٹظ‚'),
+        label: navLabel('navigation.audit'),
         icon: <Security />,
         children: [
           {
             id: 'audit-logs',
-            label: t('navigation.auditLogs', 'ط³ط¬ظ„ط§طھ ط§ظ„طھط¯ظ‚ظٹظ‚'),
+            label: navLabel('navigation.auditLogs'),
             icon: <Security />,
             path: '/audit',
           },
           {
             id: 'audit-main',
-            label: t('navigation.auditMain', 'ظ†ط¸ط§ظ… ط§ظ„طھط¯ظ‚ظٹظ‚ ط§ظ„ط´ط§ظ…ظ„'),
+            label: navLabel('navigation.auditMain'),
             icon: <Dashboard />,
             path: '/audit/main',
           },
           {
             id: 'audit-analytics',
-            label: t('navigation.auditAnalytics', 'طھط­ظ„ظٹظ„ط§طھ ط§ظ„طھط¯ظ‚ظٹظ‚'),
+            label: navLabel('navigation.auditAnalytics'),
             icon: <Assessment />,
             path: '/audit/analytics',
           },
@@ -455,54 +553,54 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'support',
-        label: t('navigation.support', 'ط§ظ„ط¯ط¹ظ… ط§ظ„ظپظ†ظٹ'),
+        label: navLabel('navigation.support'),
         icon: <Support />,
         children: [
           {
             id: 'support-tickets',
-            label: t('navigation.supportTickets', 'ظ‚ط§ط¦ظ…ط© ط§ظ„طھط°ط§ظƒط±'),
+            label: navLabel('navigation.supportTickets'),
             icon: <Support />,
             path: '/support',
           },
           {
             id: 'support-stats',
-            label: t('navigation.supportStats', 'ط¥ط­طµط§ط¦ظٹط§طھ ط§ظ„ط¯ط¹ظ…'),
+            label: navLabel('navigation.supportStats'),
             icon: <Assessment />,
             path: '/support/stats',
           },
           {
             id: 'support-canned-responses',
-            label: t('navigation.supportCannedResponses', 'ط§ظ„ط±ط¯ظˆط¯ ط§ظ„ط¬ط§ظ‡ط²ط©'),
+            label: navLabel('navigation.supportCannedResponses'),
             icon: <ViewModule />,
             path: '/support/canned-responses',
           },
           {
             id: 'support-tejo-prompts',
-            label: t('navigation.tejoPrompts', 'Tejo Prompts'),
+            label: navLabel('navigation.tejoPrompts'),
             icon: <SmartToy />,
             path: '/support/tejo/prompts',
           },
           {
             id: 'support-tejo-analytics',
-            label: t('navigation.tejoAnalytics', 'Tejo Analytics'),
+            label: navLabel('navigation.tejoAnalytics'),
             icon: <Assessment />,
             path: '/support/tejo/analytics',
           },
           {
             id: 'support-tejo-conversations',
-            label: t('navigation.tejoConversations', 'Tejo Conversations'),
+            label: navLabel('navigation.tejoConversations'),
             icon: <Support />,
             path: '/support/tejo/conversations',
           },
           {
             id: 'support-tejo-settings',
-            label: t('navigation.tejoSettings', 'Tejo Settings'),
+            label: navLabel('navigation.tejoSettings'),
             icon: <Settings />,
             path: '/support/tejo/settings',
           },
           {
             id: 'support-tejo-knowledge',
-            label: t('navigation.tejoKnowledge', 'Tejo Knowledge'),
+            label: navLabel('navigation.tejoKnowledge'),
             icon: <SmartToy />,
             path: '/support/tejo/knowledge',
           },
@@ -510,30 +608,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'notifications',
-        label: t('navigation.notifications', 'ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ'),
+        label: navLabel('navigation.notifications'),
         icon: <Notifications />,
         children: [
           {
             id: 'notifications-list',
-            label: t('navigation.notificationsList', 'ظ‚ط§ط¦ظ…ط© ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ'),
+            label: navLabel('navigation.notificationsList'),
             icon: <Notifications />,
             path: '/notifications',
           },
           {
             id: 'notifications-analytics',
-            label: t('navigation.notificationsAnalytics', 'ط¥ط­طµط§ط¦ظٹط§طھ ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ'),
+            label: navLabel('navigation.notificationsAnalytics'),
             icon: <Assessment />,
             path: '/notifications/analytics',
           },
           {
             id: 'notifications-templates',
-            label: t('navigation.notificationsTemplates', 'ظ‚ظˆط§ظ„ط¨ ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ'),
+            label: navLabel('navigation.notificationsTemplates'),
             icon: <ViewModule />,
             path: '/notifications/templates',
           },
           {
             id: 'notifications-channel-configs',
-            label: t('navigation.notificationsChannelConfigs', 'ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„ظ‚ظ†ظˆط§طھ'),
+            label: navLabel('navigation.notificationsChannelConfigs'),
             icon: <Settings />,
             path: '/notifications/channel-configs',
           },
@@ -541,43 +639,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'system-management',
-        label: t('navigation.systemManagement', 'ط¥ط¯ط§ط±ط© ط§ظ„ظ†ط¸ط§ظ…'),
+        label: navLabel('navigation.systemManagement'),
         icon: <AdminPanelSettings />,
         children: [
           {
             id: 'system-monitoring',
-            label: t('navigation.systemMonitoring', 'ظ…ط±ط§ظ‚ط¨ط© ط§ظ„ط£ط¯ط§ط،'),
+            label: navLabel('navigation.systemMonitoring'),
             icon: <Monitor />,
             path: '/system/monitoring',
           },
           {
             id: 'error-logs',
-            label: t('navigation.errorLogs', 'ط³ط¬ظ„ط§طھ ط§ظ„ط£ط®ط·ط§ط،'),
+            label: navLabel('navigation.errorLogs'),
             icon: <BugReport />,
             path: '/system/error-logs',
           },
 
           {
             id: 'system-settings',
-            label: t('navigation.systemSettings', 'ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„ظ†ط¸ط§ظ…'),
+            label: navLabel('navigation.systemSettings'),
             icon: <Settings />,
             path: '/system/settings',
           },
           {
             id: 'backups',
-            label: t('navigation.backups', 'ط§ظ„ظ†ط³ط® ط§ظ„ط§ط­طھظٹط§ط·ظٹ'),
+            label: navLabel('navigation.backups'),
             icon: <BackupIcon />,
             path: '/system/backups',
           },
           {
             id: 'policies',
-            label: t('navigation.policies', 'ط§ظ„ط³ظٹط§ط³ط§طھ'),
+            label: navLabel('navigation.policies'),
             icon: <Policy />,
             path: '/policies',
           },
           {
             id: 'about',
-            label: t('navigation.about', 'ظ…ظ† ظ†ط­ظ†'),
+            label: navLabel('navigation.about'),
             icon: <Info />,
             path: '/about',
           },
@@ -585,30 +683,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       },
       {
         id: 'exchange-rates',
-        label: t('navigation.exchangeRates', 'ط£ط³ط¹ط§ط± ط§ظ„طµط±ظپ'),
+        label: navLabel('navigation.exchangeRates'),
         icon: <Assessment />,
         path: '/exchange-rates',
       },
       {
         id: 'admin-management',
-        label: t('navigation.adminManagement'),
+        label: navLabel('navigation.adminManagement'),
         icon: <AdminPanelSettings />,
         children: [
           {
             id: 'admin-search',
-            label: t('navigation.search'),
+            label: navLabel('navigation.search'),
             icon: <SearchIcon />,
             path: '/admin/search',
           },
           {
             id: 'marketer-portal',
-            label: t('navigation.marketerPortal', 'ط¨ظˆط§ط¨ط© ط§ظ„ظ…ط³ظˆظ‚'),
+            label: navLabel('navigation.marketerPortal'),
             icon: <AddCircleOutline />,
             path: '/marketer/portal',
           },
           {
             id: 'admin-marketers',
-            label: t('navigation.marketersManagement', 'ط¥ط¯ط§ط±ط© ط§ظ„ظ…ط³ظˆظ‚ظٹظ†'),
+            label: navLabel('navigation.marketersManagement'),
             icon: <Campaign />,
             path: '/admin/marketers',
           },
@@ -825,7 +923,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           }}
         />
         <Typography variant="h6" fontWeight="bold">
-          {t('app.name')}
+          {appName}
         </Typography>
       </Box>
 
@@ -841,7 +939,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       {/* Footer */}
       <Box sx={{ p: 2, textAlign: 'center' }}>
         <Typography variant="caption" color="text.secondary">
-          آ© 2025 Tagadod
+          © 2025 Tagadod
         </Typography>
       </Box>
     </Box>
