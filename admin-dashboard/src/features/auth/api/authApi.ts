@@ -61,8 +61,20 @@ export const authApi = {
    * الحصول على بيانات المستخدم الحالي
    */
   getProfile: async () => {
-    const response = await apiClient.get<UserProfile>('/auth/me');
-    return response.data;
+    const response = await apiClient.get<ApiResponse<UserProfile> | UserProfile>('/auth/me');
+    const payload = response.data as any;
+
+    // Support both wrapped responses: { success, data: { user... } }
+    // and direct responses: { user... }.
+    if (payload?.data?.user) {
+      return payload.data as UserProfile;
+    }
+
+    if (payload?.user) {
+      return payload as UserProfile;
+    }
+
+    throw new Error('Unexpected /auth/me response shape');
   },
 
   /**

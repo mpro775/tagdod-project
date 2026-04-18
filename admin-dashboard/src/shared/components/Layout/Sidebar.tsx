@@ -58,7 +58,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
-import { filterMenuByPermissions } from '@/shared/constants/permissions';
+import { PERMISSIONS, filterMenuByPermissions } from '@/shared/constants/permissions';
 import { useUnreadSupportCount } from '@/features/support/hooks/useSupport';
 import { usePendingOrdersCount } from '@/features/orders/hooks/useOrders';
 
@@ -646,8 +646,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     return addBadges(menuItems);
   }, [menuItems, pendingOrdersCount, unreadSupportCount]);
 
-  // Filter menu items based on user permissions
-  const userPermissions = user?.permissions || [];
+  // Build effective permissions so super_admin role can always see admin menus.
+  const userPermissions = React.useMemo(() => {
+    const normalized = Array.isArray(user?.permissions) ? [...user.permissions] : [];
+    const roles = Array.isArray(user?.roles) ? user.roles : [];
+    const isSuperAdminRole = roles.includes('super_admin');
+    const hasSuperAdminPermission = normalized.includes(PERMISSIONS.SUPER_ADMIN_ACCESS);
+
+    if (isSuperAdminRole || hasSuperAdminPermission) {
+      if (!normalized.includes(PERMISSIONS.ADMIN_ACCESS)) {
+        normalized.push(PERMISSIONS.ADMIN_ACCESS);
+      }
+      if (!normalized.includes(PERMISSIONS.SUPER_ADMIN_ACCESS)) {
+        normalized.push(PERMISSIONS.SUPER_ADMIN_ACCESS);
+      }
+    }
+
+    return normalized;
+  }, [user?.permissions, user?.roles]);
+
   const filteredMenuItems = React.useMemo(() => {
     return filterMenuByPermissions(menuItemsWithBadges, userPermissions);
   }, [menuItemsWithBadges, userPermissions]);
