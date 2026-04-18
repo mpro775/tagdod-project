@@ -267,6 +267,13 @@ const BannerAnalyticsPage = lazy(() =>
     default: m.BannerAnalyticsPage,
   }))
 );
+const InstallationGuidesManagementPage = lazy(() =>
+  import('@/features/installation-guides/pages/InstallationGuidesManagementPage').then(
+    (m) => ({
+      default: m.InstallationGuidesManagementPage,
+    }),
+  )
+);
 const SupportTicketsListPage = lazy(() =>
   import('@/features/support/pages/SupportTicketsListPage').then((m) => ({
     default: m.SupportTicketsListPage,
@@ -696,6 +703,10 @@ export const routes: RouteObject[] = [
       {
         path: 'marketing/price-rules/:id',
         element: <CreatePriceRulePage />,
+      },
+      {
+        path: 'marketing/installation-guides',
+        element: <InstallationGuidesManagementPage />,
       },
 
       // Coupons

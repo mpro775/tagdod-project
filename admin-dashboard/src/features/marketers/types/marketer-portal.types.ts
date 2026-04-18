@@ -51,6 +51,10 @@ export interface CreateMerchantLeadPayload {
   gender?: 'male' | 'female' | 'other';
   city?: string;
   storeName: string;
+  storeAddress: string;
+  storeSize: 'small' | 'medium' | 'large';
+  previousCustomer: 'yes' | 'no';
+  tejadodAwareness?: 'knows' | 'heard_only' | 'none';
   password?: string;
   note?: string;
   file: File;

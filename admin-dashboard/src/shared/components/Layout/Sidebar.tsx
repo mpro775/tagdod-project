@@ -53,6 +53,7 @@ import {
   Backup as BackupIcon,
   OnlinePrediction,
   SmartToy,
+  MenuBook,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -287,6 +288,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             label: t('navigation.banners', 'ط§ظ„ط¨ظ†ط±ط§طھ'),
             icon: <Campaign />,
             path: '/banners',
+          },
+          {
+            id: 'installation-guides',
+            label: t('navigation.installationGuides', 'ط·ط±ظ‚ ط§ظ„طھط±ظƒظٹط¨'),
+            icon: <MenuBook />,
+            path: '/marketing/installation-guides',
           },
           {
             id: 'coupons',

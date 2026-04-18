@@ -1589,6 +1589,11 @@ export class UsersAdminController {
       throw new BadRequestException('صيغة صورة المحل غير مدعومة');
     }
 
+    const tejadodAwareness = dto.previousCustomer === 'no' ? dto.tejadodAwareness : undefined;
+    if (dto.previousCustomer === 'no' && !tejadodAwareness) {
+      throw new BadRequestException('حقل معرفة العميل بتجدد مطلوب عندما لا يكون عميلًا سابقًا');
+    }
+
     const existingUser = await this.userModel.findOne({ phone: dto.phone, deletedAt: null });
     if (existingUser) {
       throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
@@ -1616,6 +1621,10 @@ export class UsersAdminController {
       admin_capable: false,
       admin_status: CapabilityStatus.NONE,
       storeName: dto.storeName,
+      storeAddress: dto.storeAddress,
+      storeSize: dto.storeSize,
+      previousCustomer: dto.previousCustomer,
+      tejadodAwareness,
       storePhotoUrl: uploaded.url,
       verificationNote: dto.note,
       acquisitionChannel: AcquisitionChannel.MARKETER,

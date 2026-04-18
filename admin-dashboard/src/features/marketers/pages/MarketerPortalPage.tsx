@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   Box,
@@ -7,10 +7,6 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Grid,
   MenuItem,
   Pagination,
@@ -36,7 +32,6 @@ import {
 } from '../hooks/useMarketerPortal';
 
 const PAGE_SIZE = 10;
-const CAPTURE_MAX_WIDTH = 1280;
 const UPLOAD_MAX_WIDTH = 1600;
 
 const compressImageFile = async (file: File, maxWidth: number, quality = 0.82): Promise<File> => {
@@ -122,18 +117,16 @@ export const MarketerPortalPage = () => {
     lastName: '',
     city: 'صنعاء',
     storeName: '',
+    storeAddress: '',
+    storeSize: '' as '' | 'large' | 'medium' | 'small',
+    previousCustomer: '' as '' | 'yes' | 'no',
+    tejadodAwareness: '' as '' | 'knows' | 'heard_only' | 'none',
     note: '',
     password: '',
     file: null as File | null,
   });
 
   const [lastCredential, setLastCredential] = useState<{ phone: string; password?: string } | null>(null);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
   const statsQuery = useMarketerPortalStats();
   const usersQuery = useMarketerPortalUsers({
@@ -145,106 +138,6 @@ export const MarketerPortalPage = () => {
   const createEngineerMutation = useCreateEngineerLead();
   const createMerchantMutation = useCreateMerchantLead();
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-  };
-
-  const handleOpenCamera = async () => {
-    setCameraError(null);
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError('المتصفح لا يدعم فتح الكاميرا. استخدم Chrome/Safari حديث أو اختر صورة من الجهاز.');
-      return;
-    }
-
-    const constraintsList: MediaStreamConstraints[] = [
-      {
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      },
-      { video: { facingMode: 'environment' }, audio: false },
-      { video: { facingMode: 'user' }, audio: false },
-      { video: true, audio: false },
-    ];
-
-    try {
-      for (const constraints of constraintsList) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          streamRef.current = stream;
-          setCameraOpen(true);
-          return;
-        } catch {
-          // Try next fallback constraints
-        }
-      }
-
-      setCameraError('تعذر تشغيل الكاميرا على هذا الجهاز. يمكنك اختيار الصورة من الجهاز مباشرة.');
-    } catch {
-      setCameraError('تعذر الوصول إلى الكاميرا. تأكد من منح الصلاحية أو استخدام متصفح يدعم الكاميرا.');
-    }
-  };
-
-  const handleCloseCamera = () => {
-    setCameraOpen(false);
-    setIsCapturing(false);
-    stopCamera();
-  };
-
-  const handleCapturePhoto = async () => {
-    if (!videoRef.current || !canvasRef.current) {
-      return;
-    }
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const width = video.videoWidth;
-    const height = video.videoHeight;
-
-    if (!width || !height) {
-      setCameraError('لم يتم تجهيز الكاميرا بعد، حاول مرة أخرى بعد ثوانٍ.');
-      return;
-    }
-
-    setIsCapturing(true);
-    const ratio = width > CAPTURE_MAX_WIDTH ? CAPTURE_MAX_WIDTH / width : 1;
-    const targetWidth = Math.round(width * ratio);
-    const targetHeight = Math.round(height * ratio);
-
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
-    const context = canvas.getContext('2d');
-    if (!context) {
-      setIsCapturing(false);
-      return;
-    }
-
-    context.drawImage(video, 0, 0, targetWidth, targetHeight);
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          setIsCapturing(false);
-          setCameraError('فشل التقاط الصورة. حاول مرة أخرى.');
-          return;
-        }
-
-        const file = new File([blob], `store-${Date.now()}.jpg`, { type: 'image/jpeg' });
-        setMerchantForm((prev) => ({ ...prev, file }));
-        setIsCapturing(false);
-        handleCloseCamera();
-      },
-      'image/jpeg',
-      0.82,
-    );
-  };
-
   const handleMerchantFileChange = async (file: File | null) => {
     if (!file) {
       setMerchantForm((prev) => ({ ...prev, file: null }));
@@ -255,37 +148,27 @@ export const MarketerPortalPage = () => {
     setMerchantForm((prev) => ({ ...prev, file: preparedFile }));
   };
 
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
+  const isEngineerFormValid =
+    !!engineerForm.phone && !!engineerForm.firstName && !!engineerForm.password && !!engineerForm.file;
 
-  useEffect(() => {
-    if (!cameraOpen || !streamRef.current || !videoRef.current) {
-      return;
-    }
-
-    const video = videoRef.current;
-    video.srcObject = streamRef.current;
-
-    const startPlayback = () => {
-      void video.play().catch(() => {
-        setCameraError('تم فتح الكاميرا لكن تعذر عرض الصورة. حاول إعادة الفتح أو استخدام اختيار من الجهاز.');
-      });
-    };
-
-    video.onloadedmetadata = startPlayback;
-
-    return () => {
-      video.onloadedmetadata = null;
-    };
-  }, [cameraOpen]);
+  const requiresTejadodAwareness = merchantForm.previousCustomer === 'no';
+  const isMerchantFormValid =
+    !!merchantForm.phone &&
+    !!merchantForm.firstName &&
+    !!merchantForm.storeName &&
+    !!merchantForm.storeAddress &&
+    !!merchantForm.storeSize &&
+    !!merchantForm.previousCustomer &&
+    !!merchantForm.password &&
+    !!merchantForm.file &&
+    (!requiresTejadodAwareness || !!merchantForm.tejadodAwareness);
 
   const handleCreateEngineer = () => {
-    if (!engineerForm.phone || !engineerForm.firstName || !engineerForm.file) {
+    if (!isEngineerFormValid || !engineerForm.file) {
       return;
     }
+
+    const file = engineerForm.file;
 
     createEngineerMutation.mutate(
       {
@@ -295,8 +178,8 @@ export const MarketerPortalPage = () => {
         city: engineerForm.city || undefined,
         jobTitle: engineerForm.jobTitle || undefined,
         note: engineerForm.note || undefined,
-        password: engineerForm.password || undefined,
-        file: engineerForm.file,
+        password: engineerForm.password,
+        file,
       },
       {
         onSuccess: (result) => {
@@ -317,9 +200,21 @@ export const MarketerPortalPage = () => {
   };
 
   const handleCreateMerchant = () => {
-    if (!merchantForm.phone || !merchantForm.firstName || !merchantForm.storeName || !merchantForm.file) {
+    if (!isMerchantFormValid) {
       return;
     }
+
+    if (merchantForm.storeSize === '' || merchantForm.previousCustomer === '') {
+      return;
+    }
+
+    if (!merchantForm.file) {
+      return;
+    }
+
+    const storeSize = merchantForm.storeSize;
+    const previousCustomer = merchantForm.previousCustomer;
+    const file = merchantForm.file;
 
     createMerchantMutation.mutate(
       {
@@ -328,9 +223,15 @@ export const MarketerPortalPage = () => {
         lastName: merchantForm.lastName || undefined,
         city: merchantForm.city || undefined,
         storeName: merchantForm.storeName,
+        storeAddress: merchantForm.storeAddress,
+        storeSize,
+        previousCustomer,
+        tejadodAwareness: requiresTejadodAwareness
+          ? merchantForm.tejadodAwareness || undefined
+          : undefined,
         note: merchantForm.note || undefined,
         password: merchantForm.password || undefined,
-        file: merchantForm.file,
+        file,
       },
       {
         onSuccess: (result) => {
@@ -341,6 +242,10 @@ export const MarketerPortalPage = () => {
             lastName: '',
             city: 'صنعاء',
             storeName: '',
+            storeAddress: '',
+            storeSize: '',
+            previousCustomer: '',
+            tejadodAwareness: '',
             note: '',
             password: '',
             file: null,
@@ -492,8 +397,10 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="كلمة مرور (اختياري)"
+                    label="كلمة المرور"
                     fullWidth
+                    required
+                    type="password"
                     value={engineerForm.password}
                     onChange={(event) =>
                       setEngineerForm((prev) => ({ ...prev, password: event.target.value }))
@@ -527,7 +434,7 @@ export const MarketerPortalPage = () => {
                 variant="contained"
                 startIcon={<Add />}
                 onClick={handleCreateEngineer}
-                disabled={createEngineerMutation.isPending}
+                disabled={createEngineerMutation.isPending || !isEngineerFormValid}
               >
                 إنشاء مهندس مع اعتماد مباشر
               </Button>
@@ -583,6 +490,7 @@ export const MarketerPortalPage = () => {
                   <TextField
                     label="اسم المحل"
                     fullWidth
+                    required
                     value={merchantForm.storeName}
                     onChange={(event) =>
                       setMerchantForm((prev) => ({ ...prev, storeName: event.target.value }))
@@ -591,8 +499,86 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="كلمة مرور (اختياري)"
+                    label="عنوان المحل"
                     fullWidth
+                    required
+                    value={merchantForm.storeAddress}
+                    onChange={(event) =>
+                      setMerchantForm((prev) => ({ ...prev, storeAddress: event.target.value }))
+                    }
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    label="حجم المحل"
+                    fullWidth
+                    select
+                    required
+                    value={merchantForm.storeSize}
+                    onChange={(event) =>
+                      setMerchantForm((prev) => ({
+                        ...prev,
+                        storeSize: event.target.value as 'small' | 'medium' | 'large' | '',
+                      }))
+                    }
+                  >
+                    <MenuItem value="large">كبير</MenuItem>
+                    <MenuItem value="medium">متوسط</MenuItem>
+                    <MenuItem value="small">صغير</MenuItem>
+                  </TextField>
+                </Grid>
+              </Grid>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    label="هل هو عميل سابق لدينا؟"
+                    fullWidth
+                    select
+                    required
+                    value={merchantForm.previousCustomer}
+                    onChange={(event) =>
+                      setMerchantForm((prev) => {
+                        const previousCustomer = event.target.value as 'yes' | 'no' | '';
+
+                        return {
+                          ...prev,
+                          previousCustomer,
+                          tejadodAwareness: previousCustomer === 'yes' ? '' : prev.tejadodAwareness,
+                        };
+                      })
+                    }
+                  >
+                    <MenuItem value="yes">نعم</MenuItem>
+                    <MenuItem value="no">لا</MenuItem>
+                  </TextField>
+                </Grid>
+                {merchantForm.previousCustomer === 'no' && (
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <TextField
+                      label="هل لديه معرفة بتجدد؟"
+                      fullWidth
+                      select
+                      required
+                      value={merchantForm.tejadodAwareness}
+                      onChange={(event) =>
+                        setMerchantForm((prev) => ({
+                          ...prev,
+                          tejadodAwareness: event.target.value as 'knows' | 'heard_only' | 'none' | '',
+                        }))
+                      }
+                    >
+                      <MenuItem value="knows">نعم يوجد معرفة</MenuItem>
+                      <MenuItem value="heard_only">سمعت عنها فقط</MenuItem>
+                      <MenuItem value="none">لا</MenuItem>
+                    </TextField>
+                  </Grid>
+                )}
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    label="كلمة المرور"
+                    fullWidth
+                    required
+                    type="password"
                     value={merchantForm.password}
                     onChange={(event) =>
                       setMerchantForm((prev) => ({ ...prev, password: event.target.value }))
@@ -600,35 +586,25 @@ export const MarketerPortalPage = () => {
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                    <Button
-                      variant="contained"
-                      startIcon={<CameraAlt />}
-                      fullWidth
-                      sx={{ height: '56px' }}
-                      onClick={handleOpenCamera}
-                    >
-                      فتح الكاميرا وتصوير المحل
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="inherit"
-                      component="label"
-                      fullWidth
-                      sx={{ height: '56px' }}
-                    >
-                      اختيار من الجهاز
-                      <input
-                        type="file"
-                        hidden
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
-                        capture="environment"
-                        onChange={(event) => {
-                          void handleMerchantFileChange(event.target.files?.[0] || null);
-                        }}
-                      />
-                    </Button>
-                  </Stack>
+                  <Button
+                    variant="outlined"
+                    color="inherit"
+                    component="label"
+                    fullWidth
+                    startIcon={<CameraAlt />}
+                    sx={{ height: '56px' }}
+                  >
+                    تصوير أو اختيار صورة المحل
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      capture="environment"
+                      onChange={(event) => {
+                        void handleMerchantFileChange(event.target.files?.[0] || null);
+                      }}
+                    />
+                  </Button>
                 </Grid>
               </Grid>
               {merchantForm.file && (
@@ -640,16 +616,24 @@ export const MarketerPortalPage = () => {
                       size="small"
                       color="inherit"
                       startIcon={<Replay fontSize="small" />}
-                      onClick={handleOpenCamera}
+                      component="label"
                     >
-                      إعادة تصوير
+                      تغيير الصورة
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        capture="environment"
+                        onChange={(event) => {
+                          void handleMerchantFileChange(event.target.files?.[0] || null);
+                        }}
+                      />
                     </Button>
                   }
                 >
                   تم تجهيز صورة المحل: <strong>{merchantForm.file.name}</strong>
                 </Alert>
               )}
-              {cameraError && <Alert severity="warning">{cameraError}</Alert>}
               <TextField
                 label="ملاحظة"
                 multiline
@@ -663,7 +647,7 @@ export const MarketerPortalPage = () => {
                 variant="contained"
                 startIcon={<Add />}
                 onClick={handleCreateMerchant}
-                disabled={createMerchantMutation.isPending}
+                disabled={createMerchantMutation.isPending || !isMerchantFormValid}
               >
                 إنشاء تاجر مع اعتماد مباشر
               </Button>
@@ -682,49 +666,6 @@ export const MarketerPortalPage = () => {
             </Alert>
           )}
 
-          <Dialog
-            open={cameraOpen}
-            onClose={handleCloseCamera}
-            fullWidth
-            maxWidth="sm"
-          >
-            <DialogTitle>تصوير واجهة المحل</DialogTitle>
-            <DialogContent>
-              <Box
-                sx={{
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  bgcolor: 'grey.900',
-                  mt: 1,
-                }}
-              >
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={{ width: '100%', display: 'block', maxHeight: '60vh', objectFit: 'cover' }}
-                />
-              </Box>
-              <canvas ref={canvasRef} style={{ display: 'none' }} />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-                وجه الكاميرا نحو صورة المحل ثم اضغط "التقاط الصورة".
-              </Typography>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button onClick={handleCloseCamera} color="inherit">
-                إلغاء
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleCapturePhoto}
-                startIcon={isCapturing ? <CircularProgress size={16} color="inherit" /> : <CameraAlt />}
-                disabled={isCapturing}
-              >
-                {isCapturing ? 'جاري الالتقاط...' : 'التقاط الصورة'}
-              </Button>
-            </DialogActions>
-          </Dialog>
         </Paper>
 
         <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 3 }}>
