@@ -4,7 +4,7 @@ import { IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class
 export class CreateMarketerEngineerDto {
   @ApiProperty({ example: '777123456', description: 'رقم هاتف المستخدم' })
   @IsString()
-  @Matches(/^(05|5|7|0)?\d{8,10}$/, { message: 'رقم الهاتف غير صحيح' })
+  @Matches(/^\d{9}$/, { message: 'رقم الهاتف يجب أن يتكون من 9 أرقام' })
   phone!: string;
 
   @ApiProperty({ example: 'أحمد', description: 'الاسم الأول' })
@@ -51,7 +51,7 @@ export class CreateMarketerEngineerDto {
 export class CreateMarketerMerchantDto {
   @ApiProperty({ example: '777123456', description: 'رقم هاتف المستخدم' })
   @IsString()
-  @Matches(/^(05|5|7|0)?\d{8,10}$/, { message: 'رقم الهاتف غير صحيح' })
+  @Matches(/^\d{9}$/, { message: 'رقم الهاتف يجب أن يتكون من 9 أرقام' })
   phone!: string;
 
   @ApiProperty({ example: 'محمد', description: 'الاسم الأول' })
