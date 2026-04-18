@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, IsObject } from 'class-validator';
-import { SupportCategory, SupportPriority } from '../schemas/support-ticket.schema';
+import { SupportCategory, SupportChannel, SupportPriority } from '../schemas/support-ticket.schema';
 
 export class CreateSupportTicketDto {
   @ApiProperty({
@@ -58,4 +58,14 @@ export class CreateSupportTicketDto {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, unknown>;
+
+  @ApiProperty({
+    description: 'قناة إنشاء التذكرة',
+    enum: SupportChannel,
+    required: false,
+    example: SupportChannel.WEB,
+  })
+  @IsOptional()
+  @IsEnum(SupportChannel)
+  channel?: SupportChannel;
 }

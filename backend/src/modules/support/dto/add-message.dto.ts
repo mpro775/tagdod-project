@@ -37,4 +37,13 @@ export class AddSupportMessageDto {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, unknown>;
+
+  @ApiProperty({
+    description: 'حمولة منظمة للرسالة',
+    required: false,
+    example: { cards: [{ title: 'Solar Kit 5KW' }] },
+  })
+  @IsOptional()
+  @IsObject()
+  payload?: Record<string, unknown>;
 }

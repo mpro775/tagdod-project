@@ -70,6 +70,10 @@ export enum AdminPermission {
   SUPPORT_ASSIGN = 'support.assign',
   SUPPORT_CLOSE = 'support.close',
 
+  TEJO_READ = 'tejo.read',
+  TEJO_MANAGE = 'tejo.manage',
+  TEJO_ANALYTICS = 'tejo.analytics',
+
   // التسويق والعروض
   MARKETING_READ = 'marketing.read',
   MARKETING_CREATE = 'marketing.create',
@@ -197,6 +201,9 @@ export const PERMISSION_GROUPS = {
     AdminPermission.SUPPORT_UPDATE,
     AdminPermission.SUPPORT_ASSIGN,
     AdminPermission.SUPPORT_CLOSE,
+    AdminPermission.TEJO_READ,
+    AdminPermission.TEJO_MANAGE,
+    AdminPermission.TEJO_ANALYTICS,
     AdminPermission.USERS_READ,
     AdminPermission.USERS_UPDATE,
     AdminPermission.ADDRESSES_READ,

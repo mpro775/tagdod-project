@@ -10,7 +10,9 @@ import mongoose, { FilterQuery, Model } from 'mongoose';
 import {
   SupportTicket,
   SupportTicketDocument,
+  SupportAiStatus,
   SupportStatus,
+  SupportChannel,
   SupportPriority,
   SupportCategory,
 } from './schemas/support-ticket.schema';
@@ -104,6 +106,7 @@ export class SupportService {
       description: dto.description,
       category: dto.category || SupportCategory.OTHER,
       priority,
+      channel: dto.channel || SupportChannel.WEB,
       attachments: dto.attachments || [],
       metadata: dto.metadata || {},
       slaHours,
@@ -584,7 +587,85 @@ export class SupportService {
       messageType,
       isInternal: dto.isInternal,
       metadata: dto.metadata,
+      payload: dto.payload,
     });
+  }
+
+  /**
+   * Add automated/AI message to ticket without requiring a human sender.
+   */
+  async addAutomatedMessage(
+    ticketId: string,
+    data: {
+      content: string;
+      messageType: MessageType.AI_REPLY | MessageType.AI_ACTION | MessageType.AI_HANDOFF | MessageType.SYSTEM_MESSAGE;
+      attachments?: string[];
+      metadata?: Record<string, unknown>;
+      payload?: Record<string, unknown> | null;
+      handoffReason?: string;
+    },
+  ): Promise<SupportMessageDocument> {
+    const ticket = await this.ticketModel.findById(ticketId);
+    if (!ticket) {
+      throw new TicketNotFoundException({ ticketId });
+    }
+
+    if (data.messageType === MessageType.AI_HANDOFF) {
+      await this.ticketModel.updateOne(
+        { _id: ticketId },
+        {
+          $set: {
+            isAiHandled: true,
+            aiStatus: SupportAiStatus.HANDED_OFF,
+            handoffReason: data.handoffReason || 'low_confidence',
+            status: SupportStatus.IN_PROGRESS,
+          },
+        },
+      );
+    } else {
+      await this.ticketModel.updateOne(
+        { _id: ticketId },
+        {
+          $set: {
+            isAiHandled: true,
+            aiStatus: SupportAiStatus.ACTIVE,
+          },
+        },
+      );
+    }
+
+    return this.createMessage(ticketId, null, {
+      content: data.content,
+      attachments: data.attachments,
+      messageType: data.messageType,
+      metadata: data.metadata,
+      payload: data.payload,
+    });
+  }
+
+  /**
+   * Update AI state on ticket without touching other fields.
+   */
+  async updateTicketAiState(
+    ticketId: string,
+    state: {
+      isAiHandled?: boolean;
+      aiStatus?: SupportAiStatus;
+      handoffReason?: string;
+      channel?: SupportChannel;
+    },
+  ): Promise<void> {
+    await this.ticketModel.updateOne(
+      { _id: ticketId },
+      {
+        $set: {
+          ...(state.isAiHandled !== undefined ? { isAiHandled: state.isAiHandled } : {}),
+          ...(state.aiStatus ? { aiStatus: state.aiStatus } : {}),
+          ...(state.handoffReason ? { handoffReason: state.handoffReason } : {}),
+          ...(state.channel ? { channel: state.channel } : {}),
+        },
+      },
+    );
   }
 
   /**
@@ -1034,23 +1115,25 @@ export class SupportService {
    */
   private async createMessage(
     ticketId: string,
-    senderId: string,
+    senderId: string | null,
     data: {
       content: string;
       attachments?: string[];
       messageType: MessageType;
       isInternal?: boolean;
       metadata?: Record<string, unknown>;
+      payload?: Record<string, unknown> | null;
     },
   ): Promise<SupportMessageDocument> {
     const message = new this.messageModel({
       ticketId,
-      senderId,
+      senderId: senderId || null,
       content: data.content,
       attachments: data.attachments || [],
       messageType: data.messageType,
       isInternal: data.isInternal || false,
       metadata: data.metadata || {},
+      payload: data.payload || null,
     });
 
     const savedMessage = await message.save();
@@ -1071,18 +1154,30 @@ export class SupportService {
         const messageData = {
           id: savedMessage._id.toString(),
           ticketId: ticketId,
-          senderId: senderId,
+          senderId: senderId || null,
           content: data.content,
           attachments: data.attachments || [],
           messageType: data.messageType,
+          payload: data.payload || null,
           createdAt: (messageObj as { createdAt?: Date }).createdAt || new Date(),
         };
 
         // إرسال إلى room التذكرة (استثناء المرسل)
-        this.webSocketService.sendToTicket(ticketId, 'message:new', messageData, senderId);
+        this.webSocketService.sendToTicket(
+          ticketId,
+          'message:new',
+          messageData,
+          senderId || undefined,
+        );
+        this.webSocketService.sendToTicket(
+          ticketId,
+          'ticket-message',
+          messageData,
+          senderId || undefined,
+        );
 
         // إرسال إشعار للمستخدم الآخر إذا لم يكن هو المرسل
-        if (ticket.userId.toString() !== senderId) {
+        if (!senderId || ticket.userId.toString() !== senderId) {
           this.webSocketService.sendToUser(ticket.userId.toString(), 'support:new-message', {
             ticketId: ticketId,
             ticketTitle: ticket.title,
@@ -1091,7 +1186,10 @@ export class SupportService {
         }
 
         // إرسال إشعار موحد للمستخدم عند رد الأدمن (يعمل حتى لو التطبيق مغلق)
-        if (data.messageType === MessageType.ADMIN_REPLY && this.notificationService) {
+        if (
+          [MessageType.ADMIN_REPLY, MessageType.AI_REPLY].includes(data.messageType) &&
+          this.notificationService
+        ) {
           try {
             await this.notificationService.createNotification({
               recipientId: ticket.userId.toString(),

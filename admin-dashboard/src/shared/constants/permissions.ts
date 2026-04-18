@@ -61,6 +61,9 @@ export const PERMISSIONS = {
   SUPPORT_UPDATE: 'support.update',
   SUPPORT_ASSIGN: 'support.assign',
   SUPPORT_CLOSE: 'support.close',
+  TEJO_READ: 'tejo.read',
+  TEJO_MANAGE: 'tejo.manage',
+  TEJO_ANALYTICS: 'tejo.analytics',
 
   // Marketing
   MARKETING_READ: 'marketing.read',
@@ -174,6 +177,9 @@ export const PERMISSION_GROUPS = {
     PERMISSIONS.SUPPORT_READ,
     PERMISSIONS.SUPPORT_UPDATE,
     PERMISSIONS.SUPPORT_ASSIGN,
+    PERMISSIONS.TEJO_READ,
+    PERMISSIONS.TEJO_MANAGE,
+    PERMISSIONS.TEJO_ANALYTICS,
     PERMISSIONS.USERS_READ,
   ],
   MARKETING_MANAGER: [
@@ -294,6 +300,11 @@ export const MENU_PERMISSIONS = {
   'support-tickets': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
   'support-stats': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   'support-canned-responses': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
+  'support-tejo-prompts': [PERMISSIONS.TEJO_READ, PERMISSIONS.ADMIN_ACCESS],
+  'support-tejo-analytics': [PERMISSIONS.TEJO_ANALYTICS, PERMISSIONS.ADMIN_ACCESS],
+  'support-tejo-conversations': [PERMISSIONS.TEJO_READ, PERMISSIONS.ADMIN_ACCESS],
+  'support-tejo-settings': [PERMISSIONS.TEJO_MANAGE, PERMISSIONS.ADMIN_ACCESS],
+  'support-tejo-knowledge': [PERMISSIONS.TEJO_MANAGE, PERMISSIONS.ADMIN_ACCESS],
 
   // Notifications section
   notifications: [PERMISSIONS.ADMIN_ACCESS], // Parent menu - visible if any child is visible

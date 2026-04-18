@@ -32,8 +32,9 @@ function formatDay(dateStr: string): string {
 }
 
 function MessageBubble({ msg }: { msg: SupportMessage }) {
-  const isUser = msg.type === 'userMessage'
-  const isSystem = msg.type === 'systemMessage'
+  const isUser = msg.type === 'userMessage' || msg.type === 'user_message'
+  const isSystem = msg.type === 'systemMessage' || msg.type === 'system_message'
+  const isAi = msg.type === 'ai_reply' || msg.type === 'ai_action' || msg.type === 'ai_handoff'
 
   if (isSystem) {
     return (
@@ -54,10 +55,26 @@ function MessageBubble({ msg }: { msg: SupportMessage }) {
             : 'bg-gray-100 dark:bg-white/10 text-tagadod-titles dark:text-tagadod-dark-titles rounded-bl-md'
         }`}
       >
-        {!isUser && msg.senderName && (
-          <p className="text-xs font-medium text-primary mb-1">{msg.senderName}</p>
+        {!isUser && (msg.senderName || isAi) && (
+          <p className="text-xs font-medium text-primary mb-1">{msg.senderName || 'Tejo'}</p>
         )}
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+
+        {isAi && msg.payload && Array.isArray(msg.payload.cards) && msg.payload.cards.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {(msg.payload.cards as Array<{ title?: string; subtitle?: string }>)
+              .slice(0, 3)
+              .map((card, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-lg bg-white/10 dark:bg-black/20 px-2 py-1"
+                >
+                  <p className="text-xs font-semibold">{card.title || 'Product'}</p>
+                  {card.subtitle && <p className="text-[10px] opacity-80">{card.subtitle}</p>}
+                </div>
+              ))}
+          </div>
+        )}
         <p
           className={`text-[10px] mt-1 ${
             isUser ? 'text-white/70' : 'text-tagadod-gray'
@@ -175,7 +192,9 @@ export function ChatDetailPage() {
   const statusLabels: Record<string, string> = {
     open: 'مفتوحة',
     inProgress: 'قيد المعالجة',
+    in_progress: 'قيد المعالجة',
     waitingForUser: 'بانتظار ردك',
+    waiting_for_user: 'بانتظار ردك',
     resolved: 'تم الحل',
     closed: 'مغلقة',
   }

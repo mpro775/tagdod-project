@@ -27,6 +27,21 @@ export enum SupportStatus {
   CLOSED = 'closed',
 }
 
+export enum SupportChannel {
+  WEB = 'web',
+  MOBILE = 'mobile',
+  ADMIN = 'admin',
+  WHATSAPP = 'whatsapp',
+  API = 'api',
+  UNKNOWN = 'unknown',
+}
+
+export enum SupportAiStatus {
+  INACTIVE = 'inactive',
+  ACTIVE = 'active',
+  HANDED_OFF = 'handed_off',
+}
+
 @Schema({ timestamps: true })
 export class SupportTicket {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
@@ -61,6 +76,28 @@ export class SupportTicket {
     index: true
   })
   status!: SupportStatus;
+
+  @Prop({
+    type: String,
+    enum: SupportChannel,
+    default: SupportChannel.WEB,
+    index: true,
+  })
+  channel!: SupportChannel;
+
+  @Prop({ default: false, index: true })
+  isAiHandled!: boolean;
+
+  @Prop({
+    type: String,
+    enum: SupportAiStatus,
+    default: SupportAiStatus.INACTIVE,
+    index: true,
+  })
+  aiStatus!: SupportAiStatus;
+
+  @Prop()
+  handoffReason?: string;
 
   @Prop({ type: Types.ObjectId, ref: 'User', default: null })
   assignedTo!: string | null;
@@ -119,4 +156,6 @@ SupportTicketSchema.index({ status: 1, priority: 1, createdAt: -1 });
 SupportTicketSchema.index({ lastMessageAt: -1 });
 SupportTicketSchema.index({ assignedTo: 1, status: 1 });
 SupportTicketSchema.index({ category: 1, status: 1 });
+SupportTicketSchema.index({ channel: 1, status: 1, createdAt: -1 });
+SupportTicketSchema.index({ aiStatus: 1, updatedAt: -1 });
 SupportTicketSchema.index({ title: 'text', description: 'text' });

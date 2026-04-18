@@ -287,6 +287,36 @@ const CannedResponsesPage = lazy(() =>
     default: m.CannedResponsesPage,
   }))
 );
+const TejoPromptsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoPromptsPage').then((m) => ({
+    default: m.TejoPromptsPage,
+  }))
+);
+const TejoAnalyticsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoAnalyticsPage').then((m) => ({
+    default: m.TejoAnalyticsPage,
+  }))
+);
+const TejoConversationsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoConversationsPage').then((m) => ({
+    default: m.TejoConversationsPage,
+  }))
+);
+const TejoConversationDetailsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoConversationDetailsPage').then((m) => ({
+    default: m.TejoConversationDetailsPage,
+  }))
+);
+const TejoSettingsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoSettingsPage').then((m) => ({
+    default: m.TejoSettingsPage,
+  }))
+);
+const TejoKnowledgePage = lazy(() =>
+  import('@/features/tejo/pages/TejoKnowledgePage').then((m) => ({
+    default: m.TejoKnowledgePage,
+  }))
+);
 const NotificationsListPage = lazy(() =>
   import('@/features/notifications/pages/NotificationsListPage').then((m) => ({
     default: m.NotificationsListPage,
@@ -767,6 +797,30 @@ export const routes: RouteObject[] = [
       {
         path: 'support/canned-responses',
         element: <CannedResponsesPage />,
+      },
+      {
+        path: 'support/tejo/prompts',
+        element: <TejoPromptsPage />,
+      },
+      {
+        path: 'support/tejo/analytics',
+        element: <TejoAnalyticsPage />,
+      },
+      {
+        path: 'support/tejo/conversations',
+        element: <TejoConversationsPage />,
+      },
+      {
+        path: 'support/tejo/conversations/:id',
+        element: <TejoConversationDetailsPage />,
+      },
+      {
+        path: 'support/tejo/settings',
+        element: <TejoSettingsPage />,
+      },
+      {
+        path: 'support/tejo/knowledge',
+        element: <TejoKnowledgePage />,
       },
       {
         path: 'support/:id',

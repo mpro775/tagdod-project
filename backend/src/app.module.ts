@@ -13,6 +13,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { CartModule } from './modules/cart/cart.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { SupportModule } from './modules/support/support.module';
+import { TejoModule } from './modules/tejo/tejo.module';
 import { ServicesModule } from './modules/services/services.module';
 import { MarketingModule } from './modules/marketing/marketing.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
@@ -100,6 +101,7 @@ import { ShareProductController } from './deep-linking/share-product.controller'
     CartModule,
     CheckoutModule,
     SupportModule,
+    TejoModule,
     ServicesModule,
     MarketingModule,
     AddressesModule,

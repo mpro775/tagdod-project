@@ -93,6 +93,12 @@ export const ROUTE_PERMISSIONS = {
   '/support': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
   '/support/stats': [PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS],
   '/support/canned-responses': [PERMISSIONS.SUPPORT_READ, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/prompts': [PERMISSIONS.TEJO_READ, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/analytics': [PERMISSIONS.TEJO_ANALYTICS, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/conversations': [PERMISSIONS.TEJO_READ, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/conversations/:id': [PERMISSIONS.TEJO_READ, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/settings': [PERMISSIONS.TEJO_MANAGE, PERMISSIONS.ADMIN_ACCESS],
+  '/support/tejo/knowledge': [PERMISSIONS.TEJO_MANAGE, PERMISSIONS.ADMIN_ACCESS],
 
   // Notifications
   '/my-notifications': [PERMISSIONS.NOTIFICATIONS_READ], // User's own notifications - no admin access required
