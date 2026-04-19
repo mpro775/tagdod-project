@@ -167,9 +167,16 @@ export const exportMarketerFullReport = (payload: {
     phone: lead.phone,
     firstName: lead.firstName || '',
     lastName: lead.lastName || '',
+    city: lead.city || '',
     type: lead.roles?.includes('engineer') ? 'engineer' : 'merchant',
     engineerStatus: lead.engineer_status || '',
     merchantStatus: lead.merchant_status || '',
+    storeName: lead.storeName || '',
+    storeAddress: lead.storeAddress || '',
+    storeSize: lead.storeSize || '',
+    previousCustomer: lead.previousCustomer || '',
+    tejadodAwareness: lead.tejadodAwareness || '',
+    verificationNote: lead.verificationNote || '',
     marketerCreatedAt: lead.marketerCreatedAt || lead.createdAt || '',
   }));
   const leadsSheet = XLSX.utils.json_to_sheet(
@@ -180,14 +187,21 @@ export const exportMarketerFullReport = (payload: {
             phone: '-',
             firstName: '',
             lastName: '',
+            city: '',
             type: '',
             engineerStatus: '',
             merchantStatus: '',
+            storeName: '',
+            storeAddress: '',
+            storeSize: '',
+            previousCustomer: '',
+            tejadodAwareness: '',
+            verificationNote: '',
             marketerCreatedAt: '',
           },
         ],
   );
-  XLSX.utils.book_append_sheet(workbook, leadsSheet, 'LatestLeads');
+  XLSX.utils.book_append_sheet(workbook, leadsSheet, 'AllLeads');
 
   const fileBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([fileBuffer], {

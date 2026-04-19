@@ -13,6 +13,12 @@ import {
   Grid,
   Paper,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
   Chip,
@@ -21,7 +27,7 @@ import {
   MenuItem,
   Divider,
 } from '@mui/material';
-import { Add, Campaign, Insights, People, PictureAsPdf, TableView, Download } from '@mui/icons-material';
+import { Add, Campaign, Insights, People, PictureAsPdf, TableView, Download, Visibility } from '@mui/icons-material';
 import {
   ResponsiveContainer,
   LineChart,
@@ -75,6 +81,7 @@ export const MarketersManagementPage = () => {
   });
   const [toDate, setToDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedMarketerId, setSelectedMarketerId] = useState<string>('');
+  const [selectedLeadId, setSelectedLeadId] = useState<string>('');
   const [rankingPaginationModel, setRankingPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
@@ -85,6 +92,7 @@ export const MarketersManagementPage = () => {
     hasPermission(PERMISSIONS.MARKETERS_CREATE) || hasPermission(PERMISSIONS.SUPER_ADMIN_ACCESS);
 
   const marketersQuery = useMarketers({ page, limit, search: search || undefined });
+  const marketersSelectionQuery = useMarketers({ page: 1, limit: 100 });
   const summaryQuery = useMarketersSummary();
   const overviewQuery = useMarketersAnalyticsOverview({ from: fromDate, to: toDate });
   const rankingQuery = useMarketersAnalyticsRanking({ from: fromDate, to: toDate, limit: 15 });
@@ -144,6 +152,8 @@ export const MarketersManagementPage = () => {
   };
 
   const dailyTrendData = overviewQuery.data?.dailyTrend || [];
+  const selectedLead =
+    marketerDetailsQuery.data?.latestLeads.find((lead) => lead._id === selectedLeadId) || null;
 
   function statusColor(status: string): 'success' | 'warning' | 'error' | 'default' {
     if (status === 'active') return 'success';
@@ -151,6 +161,26 @@ export const MarketersManagementPage = () => {
     if (status === 'suspended') return 'error';
     return 'default';
   }
+
+  const mapStoreSize = (value?: string) => {
+    if (value === 'small') return 'صغير';
+    if (value === 'medium') return 'متوسط';
+    if (value === 'large') return 'كبير';
+    return '-';
+  };
+
+  const mapPreviousCustomer = (value?: string) => {
+    if (value === 'yes') return 'نعم';
+    if (value === 'no') return 'لا';
+    return '-';
+  };
+
+  const mapAwareness = (value?: string) => {
+    if (value === 'knows') return 'يعرف تجدد';
+    if (value === 'heard_only') return 'سمع عنها فقط';
+    if (value === 'none') return 'لا يعرف';
+    return '-';
+  };
 
   const marketersColumns = useMemo<GridColDef[]>(
     () => [
@@ -535,7 +565,7 @@ export const MarketersManagementPage = () => {
                   onChange={(event) => setSelectedMarketerId(event.target.value)}
                   sx={{ maxWidth: 360 }}
                 >
-                  {(marketersQuery.data?.items || []).map((marketer) => (
+                  {(marketersSelectionQuery.data?.items || []).map((marketer) => (
                     <MenuItem value={marketer._id} key={marketer._id}>
                       {`${marketer.firstName || ''} ${marketer.lastName || ''}`.trim() || marketer.phone}
                     </MenuItem>
@@ -554,54 +584,150 @@ export const MarketersManagementPage = () => {
             </Stack>
 
             {selectedMarketerId && (
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="body2" color="text.secondary">
-                        إجمالي العملاء
-                      </Typography>
-                      <Typography variant="h6" fontWeight={700}>
-                        {marketerDetailsQuery.isLoading
-                          ? '...'
-                          : marketerDetailsQuery.data?.summary.totalLeads ?? 0}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+              <Stack spacing={2}>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="body2" color="text.secondary">
+                          إجمالي العملاء
+                        </Typography>
+                        <Typography variant="h6" fontWeight={700}>
+                          {marketerDetailsQuery.isLoading
+                            ? '...'
+                            : marketerDetailsQuery.data?.summary.totalLeads ?? 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="body2" color="text.secondary">
+                          معتمدون (مهندسون + تجار)
+                        </Typography>
+                        <Typography variant="h6" fontWeight={700}>
+                          {marketerDetailsQuery.isLoading
+                            ? '...'
+                            : (marketerDetailsQuery.data?.summary.approvedEngineers || 0) +
+                              (marketerDetailsQuery.data?.summary.approvedMerchants || 0)}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="body2" color="text.secondary">
+                          معدل التحويل للمسوق
+                        </Typography>
+                        <Typography variant="h6" fontWeight={700}>
+                          {marketerDetailsQuery.isLoading
+                            ? '...'
+                            : `${marketerDetailsQuery.data?.summary.conversionRate ?? 0}%`}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
                 </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="body2" color="text.secondary">
-                        معتمدون (مهندسون + تجار)
-                      </Typography>
-                      <Typography variant="h6" fontWeight={700}>
-                        {marketerDetailsQuery.isLoading
-                          ? '...'
-                          : (marketerDetailsQuery.data?.summary.approvedEngineers || 0) +
-                            (marketerDetailsQuery.data?.summary.approvedMerchants || 0)}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="body2" color="text.secondary">
-                        معدل التحويل للمسوق
-                      </Typography>
-                      <Typography variant="h6" fontWeight={700}>
-                        {marketerDetailsQuery.isLoading
-                          ? '...'
-                          : `${marketerDetailsQuery.data?.summary.conversionRate ?? 0}%`}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
+
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      جميع العملاء الذين سجّلهم هذا المسوق
+                    </Typography>
+                    <TableContainer sx={{ maxHeight: 360 }}>
+                      <Table size="small" stickyHeader>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>الاسم</TableCell>
+                            <TableCell>الهاتف</TableCell>
+                            <TableCell>النوع</TableCell>
+                            <TableCell>الحالة</TableCell>
+                            <TableCell>تاريخ التسجيل</TableCell>
+                            <TableCell align="center">عرض</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {(marketerDetailsQuery.data?.latestLeads || []).map((lead) => {
+                            const isEngineer = lead.roles?.includes('engineer');
+                            const verification = isEngineer ? lead.engineer_status : lead.merchant_status;
+
+                            return (
+                              <TableRow key={lead._id} hover>
+                                <TableCell>{`${lead.firstName || ''} ${lead.lastName || ''}`.trim() || '-'}</TableCell>
+                                <TableCell>{lead.phone}</TableCell>
+                                <TableCell>{isEngineer ? 'مهندس' : 'تاجر'}</TableCell>
+                                <TableCell>
+                                  <Chip
+                                    size="small"
+                                    label={verification || '-'}
+                                    color={verification === 'approved' ? 'success' : 'warning'}
+                                    variant="outlined"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  {lead.marketerCreatedAt || lead.createdAt
+                                    ? new Date(lead.marketerCreatedAt || lead.createdAt || '').toLocaleDateString('ar-YE')
+                                    : '-'}
+                                </TableCell>
+                                <TableCell align="center">
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    startIcon={<Visibility fontSize="small" />}
+                                    onClick={() => setSelectedLeadId(lead._id)}
+                                  >
+                                    عرض
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                          {!marketerDetailsQuery.isLoading && (marketerDetailsQuery.data?.latestLeads || []).length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={6} align="center">
+                                لا توجد سجلات ضمن الفترة المحددة
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </CardContent>
+                </Card>
+              </Stack>
             )}
           </Stack>
         </Paper>
+
+        <Dialog
+          open={!!selectedLead}
+          onClose={() => setSelectedLeadId('')}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle>تفاصيل السجل</DialogTitle>
+          <DialogContent>
+            <Stack spacing={1.25} sx={{ pt: 1 }}>
+              <Typography variant="body2"><strong>الاسم:</strong> {`${selectedLead?.firstName || ''} ${selectedLead?.lastName || ''}`.trim() || '-'}</Typography>
+              <Typography variant="body2"><strong>الهاتف:</strong> {selectedLead?.phone || '-'}</Typography>
+              <Typography variant="body2"><strong>المدينة:</strong> {selectedLead?.city || '-'}</Typography>
+              <Typography variant="body2"><strong>النوع:</strong> {selectedLead?.roles?.includes('engineer') ? 'مهندس' : 'تاجر'}</Typography>
+              <Typography variant="body2"><strong>حالة المهندس:</strong> {selectedLead?.engineer_status || '-'}</Typography>
+              <Typography variant="body2"><strong>حالة التاجر:</strong> {selectedLead?.merchant_status || '-'}</Typography>
+              <Typography variant="body2"><strong>اسم المحل:</strong> {selectedLead?.storeName || '-'}</Typography>
+              <Typography variant="body2"><strong>عنوان المحل:</strong> {selectedLead?.storeAddress || '-'}</Typography>
+              <Typography variant="body2"><strong>حجم المحل:</strong> {mapStoreSize(selectedLead?.storeSize)}</Typography>
+              <Typography variant="body2"><strong>عميل سابق:</strong> {mapPreviousCustomer(selectedLead?.previousCustomer)}</Typography>
+              <Typography variant="body2"><strong>المعرفة بتجدد:</strong> {mapAwareness(selectedLead?.tejadodAwareness)}</Typography>
+              <Typography variant="body2"><strong>ملاحظة التحقق:</strong> {selectedLead?.verificationNote || '-'}</Typography>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setSelectedLeadId('')}>إغلاق</Button>
+          </DialogActions>
+        </Dialog>
 
         <Dialog
           open={createDialogOpen}

@@ -1263,9 +1263,10 @@ export class UsersAdminController {
 
     const latestLeads = await this.userModel
       .find(match)
-      .select('phone firstName lastName roles engineer_status merchant_status marketerCreatedAt createdAt')
+      .select(
+        'phone firstName lastName city roles engineer_status merchant_status marketerCreatedAt createdAt storeName storeAddress storeSize previousCustomer tejadodAwareness verificationNote',
+      )
       .sort({ marketerCreatedAt: -1, createdAt: -1 })
-      .limit(10)
       .lean();
 
     const marketer = await this.userModel
@@ -1288,6 +1289,102 @@ export class UsersAdminController {
         },
       dailyTrend,
       latestLeads,
+    };
+  }
+
+  @RequirePermissions('marketers.analytics', 'super_admin.access')
+  @Get('marketers/survey/stats')
+  @ApiOperation({
+    summary: 'إحصائيات استبيان التجار من المسوقين',
+    description: 'تجميع إجابات استبيان التجار مثل المعرفة بتجدد وحجم المحل ضمن فترة زمنية.',
+  })
+  async getMarketersSurveyStats(@Query('from') from?: string, @Query('to') to?: string) {
+    const { start, end } = this.parseAnalyticsDateRange(from, to);
+    const match: FilterQuery<User> = {
+      ...this.buildMarketerAnalyticsMatch(start, end),
+      merchant_capable: true,
+    };
+
+    const [
+      totalMerchantLeads,
+      storeSizeRows,
+      previousCustomerRows,
+      awarenessRows,
+      cityRows,
+    ] = await Promise.all([
+      this.userModel.countDocuments(match),
+      this.userModel.aggregate<{ _id: string | null; count: number }>([
+        { $match: match },
+        { $group: { _id: '$storeSize', count: { $sum: 1 } } },
+      ]),
+      this.userModel.aggregate<{ _id: string | null; count: number }>([
+        { $match: match },
+        { $group: { _id: '$previousCustomer', count: { $sum: 1 } } },
+      ]),
+      this.userModel.aggregate<{ _id: string | null; count: number }>([
+        { $match: match },
+        { $group: { _id: '$tejadodAwareness', count: { $sum: 1 } } },
+      ]),
+      this.userModel.aggregate<{ _id: string | null; count: number }>([
+        { $match: match },
+        {
+          $group: {
+            _id: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: ['$city', null] },
+                    { $ne: ['$city', ''] },
+                  ],
+                },
+                '$city',
+                'غير محدد',
+              ],
+            },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]),
+    ]);
+
+    const toCountMap = (rows: Array<{ _id: string | null; count: number }>) => {
+      const map: Record<string, number> = {};
+      rows.forEach((row) => {
+        map[row._id || 'unknown'] = row.count;
+      });
+      return map;
+    };
+
+    const storeSizeMap = toCountMap(storeSizeRows);
+    const previousCustomerMap = toCountMap(previousCustomerRows);
+    const awarenessMap = toCountMap(awarenessRows);
+
+    return {
+      from: start,
+      to: end,
+      totalMerchantLeads,
+      storeSize: {
+        small: storeSizeMap.small || 0,
+        medium: storeSizeMap.medium || 0,
+        large: storeSizeMap.large || 0,
+        unknown: storeSizeMap.unknown || 0,
+      },
+      previousCustomer: {
+        yes: previousCustomerMap.yes || 0,
+        no: previousCustomerMap.no || 0,
+        unknown: previousCustomerMap.unknown || 0,
+      },
+      tejadodAwareness: {
+        knows: awarenessMap.knows || 0,
+        heard_only: awarenessMap.heard_only || 0,
+        none: awarenessMap.none || 0,
+        unknown: awarenessMap.unknown || 0,
+      },
+      cities: cityRows.map((row) => ({
+        city: row._id || 'غير محدد',
+        count: row.count,
+      })),
     };
   }
 
