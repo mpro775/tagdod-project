@@ -19,6 +19,13 @@ export interface PaginatedResponse<T> {
     total: number;
 }
 
+export interface LinkedPaginatedResponse extends PaginatedResponse<LinkedItem> {
+    matchedTotal?: number;
+    mismatchedTotal?: number;
+    page?: number;
+    limit?: number;
+}
+
 // نتيجة فحص SKU
 export interface SkuCheckResult {
     existsInOnyx: boolean;

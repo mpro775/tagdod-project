@@ -4,7 +4,13 @@
  */
 
 import { apiClient } from '@/core/api/client';
-import type { IntegrationStats, LinkedItem, PaginatedResponse, SkuCheckResult, UnlinkedItem } from '../types/inventory-integration.types';
+import type {
+    IntegrationStats,
+    PaginatedResponse,
+    SkuCheckResult,
+    UnlinkedItem,
+    LinkedPaginatedResponse,
+} from '../types/inventory-integration.types';
 
 export const inventoryIntegrationApi = {
     /**
@@ -20,7 +26,7 @@ export const inventoryIntegrationApi = {
     /**
      * جلب المنتجات المربوطة
      */
-    getLinkedProducts: async (limit = 50, page = 1): Promise<PaginatedResponse<LinkedItem>> => {
+    getLinkedProducts: async (limit = 50, page = 1): Promise<LinkedPaginatedResponse> => {
         const response = await apiClient.get('/inventory/integration/linked', {
             params: { limit, page }
         });
@@ -28,7 +34,11 @@ export const inventoryIntegrationApi = {
         const result = response.data?.data ?? response.data;
         return {
             data: Array.isArray(result?.data) ? result.data : [],
-            total: result?.total ?? 0
+            total: result?.total ?? 0,
+            matchedTotal: result?.matchedTotal ?? undefined,
+            mismatchedTotal: result?.mismatchedTotal ?? undefined,
+            page: result?.page ?? undefined,
+            limit: result?.limit ?? undefined,
         };
     },
 

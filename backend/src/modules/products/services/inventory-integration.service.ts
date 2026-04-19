@@ -179,10 +179,36 @@ export class InventoryIntegrationService {
         },
       },
 
+      {
+        $addFields: {
+          appStockComparable: {
+            $cond: [
+              { $gt: [{ $size: '$p' }, 0] },
+              { $ifNull: [{ $arrayElemAt: ['$p.stock', 0] }, 0] },
+              { $ifNull: [{ $arrayElemAt: ['$v.stock', 0] }, 0] },
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          isStockMatch: { $eq: ['$quantity', '$appStockComparable'] },
+        },
+      },
+
       // 3. ✅ التغيير الجوهري: استخدام $facet لفصل العد عن البيانات
       {
         $facet: {
-          metadata: [{ $count: 'total' }], // حساب العدد الكلي
+          metadata: [
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                matchedTotal: { $sum: { $cond: ['$isStockMatch', 1, 0] } },
+                mismatchedTotal: { $sum: { $cond: ['$isStockMatch', 0, 1] } },
+              },
+            },
+          ],
           data: [
             { $skip: skip },
             { $limit: limit },
@@ -207,6 +233,8 @@ export class InventoryIntegrationService {
 
     // استخراج النتائج
     const total = result[0].metadata[0]?.total || 0;
+    const matchedTotal = result[0].metadata[0]?.matchedTotal || 0;
+    const mismatchedTotal = result[0].metadata[0]?.mismatchedTotal || 0;
     const items = result[0].data;
 
     // تنسيق البيانات (Map)
@@ -254,6 +282,8 @@ export class InventoryIntegrationService {
     return {
       data: formattedItems,
       total: total,
+      matchedTotal,
+      mismatchedTotal,
       page: page,
       limit: limit,
     };
