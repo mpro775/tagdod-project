@@ -16,6 +16,9 @@ import {
 import { CloudUpload, Delete, PlayArrow, Stop, VideoFile, Close } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { videoApi, VideoUploadResponse, VideoUploadProgress } from '../api/videoApi';
+import { MediaCategory, MediaType } from '../types/media.types';
+import type { Media } from '../types/media.types';
+import { MediaPicker } from './MediaPicker';
 import toast from 'react-hot-toast';
 
 interface VideoUploaderProps {
@@ -24,6 +27,7 @@ interface VideoUploaderProps {
   title?: string;
   label?: string;
   disabled?: boolean;
+  mediaCategory?: MediaCategory;
 }
 
 export const VideoUploader: React.FC<VideoUploaderProps> = ({
@@ -32,14 +36,61 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   title,
   label,
   disabled = false,
+  mediaCategory = MediaCategory.OTHER,
 }) => {
   const { t } = useTranslation(['media', 'common']);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoTitle, setVideoTitle] = useState(title || '');
   const [titleDialogOpen, setTitleDialogOpen] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadedVideo, setUploadedVideo] = useState<VideoUploadResponse | null>(null);
   const [uploadProgress, setUploadProgress] = useState<VideoUploadProgress | null>(null);
+
+  const extractVideoIdFromMedia = useCallback((media: Media): string | null => {
+    if (media.storedFilename?.startsWith('bunny-stream/')) {
+      return media.storedFilename.replace('bunny-stream/', '').trim() || null;
+    }
+
+    const tagVideoId = media.tags?.find((tag) => tag.startsWith('videoId:'));
+    if (tagVideoId) {
+      return tagVideoId.replace('videoId:', '').trim() || null;
+    }
+
+    return null;
+  }, []);
+
+  const handleSelectFromLibrary = useCallback(
+    (selected: Media | Media[]) => {
+      const media = Array.isArray(selected) ? selected[0] : selected;
+      if (!media) {
+        return;
+      }
+
+      const videoId = extractVideoIdFromMedia(media);
+      if (!videoId) {
+        toast.error(t('media:video.invalidLibraryItem', 'هذا العنصر غير مرتبط بمعرف فيديو صالح'));
+        return;
+      }
+
+      setUploadedVideo((prev) => ({
+        videoId,
+        guid: prev?.guid || '',
+        title: media.name || prev?.title || 'Video',
+        url: prev?.url || '',
+        thumbnailUrl: media.url || prev?.thumbnailUrl,
+        status: prev?.status || 'processing',
+        duration: prev?.duration,
+        size: media.size || prev?.size || 0,
+        mimeType: media.mimeType || prev?.mimeType || 'video/mp4',
+      }));
+
+      onChange?.(videoId);
+      setMediaPickerOpen(false);
+      toast.success(t('media:video.selectedFromLibrary', 'تم اختيار الفيديو من المكتبة'));
+    },
+    [extractVideoIdFromMedia, onChange, t]
+  );
 
   useEffect(() => {
     const targetVideoId = uploadedVideo?.videoId || value;
@@ -152,7 +203,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     });
 
     try {
-      const result = await videoApi.upload(selectedFile, videoTitle.trim(), (progress) => {
+      const result = await videoApi.upload(selectedFile, videoTitle.trim(), mediaCategory, (progress) => {
         setUploadProgress(progress);
       });
       setUploadedVideo(result);
@@ -170,7 +221,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
       setIsUploading(false);
       setUploadProgress(null);
     }
-  }, [selectedFile, videoTitle, onChange, t]);
+  }, [selectedFile, videoTitle, onChange, mediaCategory, t]);
 
   const handleDelete = useCallback(async () => {
     if (!value) return;
@@ -201,41 +252,53 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     <Box>
       {/* Upload Area */}
       {!value && !uploadedVideo && (
-        <Card
-          variant="outlined"
-          sx={{
-            border: '2px dashed',
-            borderColor: 'grey.300',
-            textAlign: 'center',
-            p: 3,
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-            '&:hover': {
-              borderColor: disabled ? 'grey.300' : 'primary.main',
-              bgcolor: disabled ? 'transparent' : 'action.hover',
-            },
-          }}
-          onClick={() => !disabled && document.getElementById('video-upload-input')?.click()}
-        >
-          <CardContent sx={{ p: 0 }}>
-            <CloudUpload sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              {label || t('media:video.uploadTitle', 'رفع فيديو')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('media:video.uploadDescription', 'اسحب وأفلت الفيديو هنا أو انقر للاختيار')}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              {t(
-                'media:video.supportedFormats',
-                'الصيغ المدعومة: MP4, AVI, MOV, WMV, FLV, WebM, MKV'
-              )}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {t('media:video.maxSize', 'الحد الأقصى: 500 ميجابايت')}
-            </Typography>
-          </CardContent>
-        </Card>
+        <>
+          <Card
+            variant="outlined"
+            sx={{
+              border: '2px dashed',
+              borderColor: 'grey.300',
+              textAlign: 'center',
+              p: 3,
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+              '&:hover': {
+                borderColor: disabled ? 'grey.300' : 'primary.main',
+                bgcolor: disabled ? 'transparent' : 'action.hover',
+              },
+            }}
+            onClick={() => !disabled && document.getElementById('video-upload-input')?.click()}
+          >
+            <CardContent sx={{ p: 0 }}>
+              <CloudUpload sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                {label || t('media:video.uploadTitle', 'رفع فيديو')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('media:video.uploadDescription', 'اسحب وأفلت الفيديو هنا أو انقر للاختيار')}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                {t(
+                  'media:video.supportedFormats',
+                  'الصيغ المدعومة: MP4, AVI, MOV, WMV, FLV, WebM, MKV'
+                )}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {t('media:video.maxSize', 'الحد الأقصى: 500 ميجابايت')}
+              </Typography>
+            </CardContent>
+          </Card>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1.5 }}>
+            <Button
+              variant="text"
+              disabled={disabled}
+              onClick={() => setMediaPickerOpen(true)}
+            >
+              {t('media:video.pickFromLibrary', 'اختيار فيديو من المكتبة')}
+            </Button>
+          </Box>
+        </>
       )}
 
       {/* Hidden File Input */}
@@ -316,6 +379,12 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                 )}
               </Box>
             )}
+
+            <Box sx={{ mt: 1.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button size="small" onClick={() => setMediaPickerOpen(true)} disabled={disabled}>
+                {t('media:video.changeFromLibrary', 'تغيير من المكتبة')}
+              </Button>
+            </Box>
           </CardContent>
         </Card>
       )}
@@ -365,6 +434,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                 </Box>
               )}
             </Box>
+
           )}
         </DialogContent>
         <DialogActions>
@@ -383,6 +453,16 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <MediaPicker
+        open={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        onSelect={handleSelectFromLibrary}
+        acceptTypes={[MediaType.VIDEO]}
+        category={mediaCategory === MediaCategory.OTHER ? undefined : mediaCategory}
+        showUpload={false}
+        title={t('media:video.pickFromLibrary', 'اختيار فيديو من المكتبة')}
+      />
     </Box>
   );
 };

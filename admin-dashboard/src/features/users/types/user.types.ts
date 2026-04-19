@@ -104,6 +104,7 @@ export interface User extends BaseEntity {
   cvFileUrl?: string; // رابط ملف السيرة الذاتية للمهندس
   storePhotoUrl?: string; // رابط صورة المحل للتاجر
   storeName?: string; // اسم المحل للتاجر
+  storeAddress?: string; // عنوان المحل الجغرافي للتاجر
   verificationNote?: string; // ملاحظة التحقق
 }
 

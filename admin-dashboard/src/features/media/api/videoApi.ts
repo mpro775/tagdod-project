@@ -14,6 +14,7 @@ export interface VideoUploadResponse {
   duration?: number;
   size: number;
   mimeType: string;
+  mediaId?: string;
 }
 
 export interface VideoUploadProgress {
@@ -57,12 +58,16 @@ export const videoApi = {
   upload: async (
     file: File,
     title?: string,
+    category?: 'banner' | 'product' | 'category' | 'brand' | 'other',
     onProgress?: (progress: VideoUploadProgress) => void,
   ): Promise<VideoUploadResponse> => {
     const formData = new FormData();
     formData.append('video', file);
     if (title) {
       formData.append('title', title);
+    }
+    if (category) {
+      formData.append('category', category);
     }
 
     const startedAt = Date.now();

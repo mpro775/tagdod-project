@@ -274,6 +274,7 @@ export class InventoryIntegrationService {
         $facet: {
           metadata: [{ $count: 'total' }],
           data: [
+            { $sort: { quantity: -1, sku: 1 } },
             { $skip: skip },
             { $limit: limit },
             {

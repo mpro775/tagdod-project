@@ -11,7 +11,7 @@ import {
   useTheme,
   Paper,
 } from '@mui/material';
-import { Description, Store, Note } from '@mui/icons-material';
+import { Description, Store, Note, LocationOn } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import type { User } from '../types/user.types';
 import { UserRole } from '../types/user.types';
@@ -106,36 +106,59 @@ export const VerificationFilesSection: React.FC<VerificationFilesSectionProps> =
                       {t('users:verification.storePhoto', 'صورة المحل')}
                     </Typography>
                   </Stack>
-                  {user.storeName && (
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>{t('users:verification.storeName', 'اسم المحل:')}</strong>{' '}
-                      {user.storeName}
-                    </Typography>
-                  )}
-                  <Box>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: { xs: 'column', md: 'row' },
+                      gap: 2,
+                      alignItems: { xs: 'stretch', md: 'flex-start' },
+                    }}
+                  >
                     <Box
                       component="img"
                       src={user.storePhotoUrl}
                       alt={t('users:verification.storePhoto', 'صورة المحل')}
                       sx={{
+                        width: { xs: '100%', md: 280 },
                         maxWidth: '100%',
                         maxHeight: 300,
+                        objectFit: 'cover',
                         borderRadius: 1,
                         border: '1px solid',
                         borderColor: 'divider',
-                        mb: 1,
                       }}
                     />
-                    <Link
-                      href={user.storePhotoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{ textDecoration: 'none' }}
-                    >
-                      <Button variant="outlined" size="small" sx={{ mt: 1 }}>
-                        {t('users:verification.openImage', 'فتح الصورة في نافذة جديدة')}
-                      </Button>
-                    </Link>
+                    <Stack spacing={1.5} sx={{ flex: 1 }}>
+                      {user.storeName && (
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>{t('users:verification.storeName', 'اسم المحل:')}</strong>{' '}
+                          {user.storeName}
+                        </Typography>
+                      )}
+
+                      {user.storeAddress && (
+                        <Stack direction="row" spacing={1} alignItems="flex-start">
+                          <LocationOn color="action" sx={{ mt: 0.2 }} fontSize="small" />
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>{t('users:verification.storeAddress', 'عنوان المحل:')}</strong>{' '}
+                            {user.storeAddress}
+                          </Typography>
+                        </Stack>
+                      )}
+
+                      <Box>
+                        <Link
+                          href={user.storePhotoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{ textDecoration: 'none' }}
+                        >
+                          <Button variant="outlined" size="small" sx={{ mt: 1 }}>
+                            {t('users:verification.openImage', 'فتح الصورة في نافذة جديدة')}
+                          </Button>
+                        </Link>
+                      </Box>
+                    </Stack>
                   </Box>
                 </Stack>
               </Paper>

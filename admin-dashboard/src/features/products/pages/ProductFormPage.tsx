@@ -907,6 +907,7 @@ export const ProductFormPage: React.FC = () => {
               <Grid size={{ xs: 12 }}>
                 <VideoUploader
                   label={t('products:form.videos', 'فيديوهات المنتج')}
+                  mediaCategory={MediaCategory.PRODUCT}
                   value={selectedVideos[0] || null}
                   onChange={(videoId) => {
                     if (videoId) {
