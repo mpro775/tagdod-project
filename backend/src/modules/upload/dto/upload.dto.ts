@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { MediaCategory } from '../schemas/media.schema';
 
 export class UploadFileDto {
   @ApiProperty({
@@ -79,6 +80,16 @@ export class UploadVideoDto {
   @IsOptional()
   @IsString()
   title?: string;
+
+  @ApiProperty({
+    description: 'فئة الفيديو داخل مكتبة الوسائط',
+    enum: MediaCategory,
+    required: false,
+    default: MediaCategory.OTHER,
+  })
+  @IsOptional()
+  @IsEnum(MediaCategory)
+  category?: MediaCategory;
 }
 
 export class VideoUploadResponseDto {
@@ -159,6 +170,13 @@ export class VideoUploadResponseDto {
     example: 'video/mp4',
   })
   mimeType!: string;
+
+  @ApiProperty({
+    description: 'Media Library ID المرتبط بالفيديو',
+    example: '665f4c2d9a8b2f0012aa88d1',
+    required: false,
+  })
+  mediaId?: string;
 }
 
 export class FileInfoResponseDto {

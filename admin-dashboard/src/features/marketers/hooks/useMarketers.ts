@@ -41,6 +41,12 @@ export const useMarketerAnalyticsDetails = (
     enabled: !!marketerId,
   });
 
+export const useMarketersSurveyStats = (params?: { from?: string; to?: string }) =>
+  useQuery({
+    queryKey: [MARKETERS_QUERY_KEY, 'survey-stats', params],
+    queryFn: () => marketersApi.surveyStats(params),
+  });
+
 export const useCreateMarketer = () => {
   const queryClient = useQueryClient();
 

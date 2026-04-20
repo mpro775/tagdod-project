@@ -10,6 +10,8 @@ import {
   UploadedFiles,
   UseGuards,
   Query,
+  Req,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -27,12 +29,14 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UploadService } from './upload.service';
 import { BunnyStreamService } from './bunny-stream.service';
+import { MediaService } from './media.service';
 import {
   UploadFileDto,
   DeleteFileDto,
   UploadVideoDto,
   VideoUploadResponseDto,
 } from './dto/upload.dto';
+import { MediaCategory } from './schemas/media.schema';
 
 @ApiTags('رفع-الملفات')
 @ApiBearerAuth()
@@ -40,9 +44,12 @@ import {
 @UseGuards(JwtAuthGuard)
 @Controller('upload')
 export class UploadController {
+  private readonly logger = new Logger(UploadController.name);
+
   constructor(
     private readonly uploadService: UploadService,
     private readonly bunnyStreamService: BunnyStreamService,
+    private readonly mediaService: MediaService,
   ) {}
 
   @Post('file')
@@ -309,9 +316,42 @@ export class UploadController {
   async uploadVideo(
     @UploadedFile() video: { buffer: Buffer; originalname: string; mimetype: string; size: number },
     @Body() body: UploadVideoDto,
+    @Req() req: { user?: { sub?: string } },
   ) {
     const result = await this.bunnyStreamService.uploadVideo(video, body.title);
-    return result;
+    const uploaderId = req.user?.sub;
+
+    if (!uploaderId) {
+      this.logger.warn(
+        `Video uploaded without authenticated user, skipping media library registration. videoId=${result.videoId}`,
+      );
+      return result;
+    }
+
+    try {
+      const media = await this.mediaService.registerVideoInLibrary({
+        videoId: result.videoId,
+        guid: result.guid,
+        title: result.title,
+        thumbnailUrl: result.thumbnailUrl,
+        playbackUrl: result.embedUrl || result.url,
+        mimeType: result.mimeType,
+        size: result.size,
+        category: body.category || MediaCategory.OTHER,
+        uploadedBy: uploaderId,
+      });
+
+      return {
+        ...result,
+        mediaId: String(media._id),
+      };
+    } catch (error) {
+      this.logger.warn(
+        `Video uploaded but failed to register in media library. videoId=${result.videoId}`,
+      );
+      this.logger.warn(String(error));
+      return result;
+    }
   }
 
   @Get('video/:videoId')
@@ -354,8 +394,9 @@ export class UploadController {
     status: 404,
     description: 'الفيديو غير موجود',
   })
-  async deleteVideo(@Param('videoId') videoId: string) {
+  async deleteVideo(@Param('videoId') videoId: string, @Req() req: { user?: { sub?: string } }) {
     await this.bunnyStreamService.deleteVideo(videoId);
+    await this.mediaService.softDeleteVideoFromLibrary(videoId, req.user?.sub);
     return { message: 'Video deleted successfully' };
   }
 

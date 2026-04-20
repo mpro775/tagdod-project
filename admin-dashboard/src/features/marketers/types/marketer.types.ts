@@ -141,10 +141,44 @@ export interface MarketerAnalyticsDetails {
     phone: string;
     firstName?: string;
     lastName?: string;
+    city?: string;
     roles: string[];
     engineer_status?: string;
     merchant_status?: string;
+    storeName?: string;
+    storeAddress?: string;
+    storeSize?: 'small' | 'medium' | 'large';
+    previousCustomer?: 'yes' | 'no';
+    tejadodAwareness?: 'knows' | 'heard_only' | 'none';
+    verificationNote?: string;
     marketerCreatedAt?: string;
     createdAt?: string;
+  }>;
+}
+
+export interface MarketersSurveyStats {
+  from: string;
+  to: string;
+  totalMerchantLeads: number;
+  storeSize: {
+    small: number;
+    medium: number;
+    large: number;
+    unknown: number;
+  };
+  previousCustomer: {
+    yes: number;
+    no: number;
+    unknown: number;
+  };
+  tejadodAwareness: {
+    knows: number;
+    heard_only: number;
+    none: number;
+    unknown: number;
+  };
+  cities: Array<{
+    city: string;
+    count: number;
   }>;
 }

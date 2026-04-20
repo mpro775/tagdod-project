@@ -19,6 +19,7 @@ import {
     CircularProgress,
     TextField,
     InputAdornment,
+    Pagination,
 } from '@mui/material';
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import {
@@ -43,8 +44,11 @@ export const UnlinkedProductsPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = React.useState('');
     const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 25 });
 
-    // استدعاء الـ Hook سيعيد الآن كائناً فيه data و total
-    const { data: response, isLoading, error, refetch } = useUnlinkedItems(200);
+    // تحميل البيانات من السيرفر حسب الصفحة الحالية
+    const { data: response, isLoading, error, refetch } = useUnlinkedItems(
+        paginationModel.pageSize,
+        paginationModel.page + 1
+    );
 
     // استخراج البيانات من الاستجابة الجديدة
     const items = response?.data || [];
@@ -326,21 +330,40 @@ export const UnlinkedProductsPage: React.FC = () => {
                 </Box>
             ) : isMobile ? (
                 /* Mobile Card Layout */
-                <Grid container spacing={2}>
-                    {filteredItems.length > 0 ? (
-                        filteredItems.map((item) => (
-                            <Grid size={{ xs: 12 }} key={item._id || item.sku}>
-                                <UnlinkedItemCard item={item} />
+                <>
+                    <Grid container spacing={2}>
+                        {filteredItems.length > 0 ? (
+                            filteredItems.map((item) => (
+                                <Grid size={{ xs: 12 }} key={item._id || item.sku}>
+                                    <UnlinkedItemCard item={item} />
+                                </Grid>
+                            ))
+                        ) : (
+                            <Grid size={{ xs: 12 }}>
+                                <Alert severity="info">
+                                    {t('products:integration.unlinked.noResults', 'لا توجد نتائج')}
+                                </Alert>
                             </Grid>
-                        ))
-                    ) : (
-                        <Grid size={{ xs: 12 }}>
-                            <Alert severity="info">
-                                {t('products:integration.unlinked.noResults', 'لا توجد نتائج')}
-                            </Alert>
-                        </Grid>
+                        )}
+                    </Grid>
+
+                    {!searchQuery.trim() && totalCount > paginationModel.pageSize && (
+                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                            <Pagination
+                                count={Math.max(1, Math.ceil(totalCount / paginationModel.pageSize))}
+                                page={paginationModel.page + 1}
+                                onChange={(_event, page) =>
+                                    setPaginationModel((prev) => ({ ...prev, page: Math.max(0, page - 1) }))
+                                }
+                                color="primary"
+                                shape="rounded"
+                                showFirstButton
+                                showLastButton
+                                size="small"
+                            />
+                        </Box>
                     )}
-                </Grid>
+                </>
             ) : (
                 /* Desktop DataTable */
                 <DataTable
@@ -349,9 +372,13 @@ export const UnlinkedProductsPage: React.FC = () => {
                     loading={isLoading}
                     paginationModel={paginationModel}
                     onPaginationModelChange={setPaginationModel}
+                    paginationMode={searchQuery.trim() ? 'client' : 'server'}
+                    rowCount={searchQuery.trim() ? filteredItems.length : totalCount}
                     getRowId={(row) => (row as UnlinkedItem)._id || (row as UnlinkedItem).sku}
                     onSearch={setSearchQuery}
                     searchPlaceholder={t('products:integration.unlinked.search', 'بحث برمز الصنف...')}
+                    sortingMode="client"
+                    sortModel={[{ field: 'quantity', sort: 'desc' }]}
                     height={600}
                 />
             )}

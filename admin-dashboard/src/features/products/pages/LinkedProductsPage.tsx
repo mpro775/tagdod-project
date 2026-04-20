@@ -20,6 +20,7 @@ import {
     CircularProgress,
     TextField,
     InputAdornment,
+    Pagination,
 } from '@mui/material';
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import {
@@ -44,12 +45,17 @@ export const LinkedProductsPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
 
-    // استدعاء الـ Hook سيعيد الآن كائناً فيه data و total
-    const { data: response, isLoading, refetch } = useLinkedProducts(100);
+    // تحميل البيانات من السيرفر حسب الصفحة الحالية
+    const { data: response, isLoading, refetch } = useLinkedProducts(
+        paginationModel.pageSize,
+        paginationModel.page + 1
+    );
 
     // استخراج البيانات من الاستجابة الجديدة
     const items = response?.data || [];
     const totalCount = response?.total || 0;
+    const matchedCount = response?.matchedTotal ?? items.filter((i) => i.appStock === i.onyxStock).length;
+    const mismatchedCount = response?.mismatchedTotal ?? items.filter((i) => i.appStock !== i.onyxStock).length;
 
     // Filter items based on search
     const filteredItems = React.useMemo(() => {
@@ -285,12 +291,12 @@ export const LinkedProductsPage: React.FC = () => {
                     size="small"
                 />
                 <Chip
-                    label={`${t('products:integration.linked.matchedLabel', 'متطابق')}: ${items.filter((i) => i.appStock === i.onyxStock).length}`}
+                    label={`${t('products:integration.linked.matchedLabel', 'متطابق')}: ${matchedCount}`}
                     color="success"
                     size="small"
                 />
                 <Chip
-                    label={`${t('products:integration.linked.mismatchedLabel', 'اختلاف')}: ${items.filter((i) => i.appStock !== i.onyxStock).length}`}
+                    label={`${t('products:integration.linked.mismatchedLabel', 'اختلاف')}: ${mismatchedCount}`}
                     color="warning"
                     size="small"
                 />
@@ -322,21 +328,40 @@ export const LinkedProductsPage: React.FC = () => {
                 </Box>
             ) : isMobile ? (
                 /* Mobile Card Layout */
-                <Grid container spacing={2}>
-                    {filteredItems.length > 0 ? (
-                        filteredItems.map((item) => (
-                            <Grid size={{ xs: 12 }} key={item.sku}>
-                                <LinkedItemCard item={item} />
+                <>
+                    <Grid container spacing={2}>
+                        {filteredItems.length > 0 ? (
+                            filteredItems.map((item) => (
+                                <Grid size={{ xs: 12 }} key={item.sku}>
+                                    <LinkedItemCard item={item} />
+                                </Grid>
+                            ))
+                        ) : (
+                            <Grid size={{ xs: 12 }}>
+                                <Alert severity="info">
+                                    {t('products:integration.linked.noResults', 'لا توجد نتائج')}
+                                </Alert>
                             </Grid>
-                        ))
-                    ) : (
-                        <Grid size={{ xs: 12 }}>
-                            <Alert severity="info">
-                                {t('products:integration.linked.noResults', 'لا توجد نتائج')}
-                            </Alert>
-                        </Grid>
+                        )}
+                    </Grid>
+
+                    {!searchQuery.trim() && totalCount > paginationModel.pageSize && (
+                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                            <Pagination
+                                count={Math.max(1, Math.ceil(totalCount / paginationModel.pageSize))}
+                                page={paginationModel.page + 1}
+                                onChange={(_event, page) =>
+                                    setPaginationModel((prev) => ({ ...prev, page: Math.max(0, page - 1) }))
+                                }
+                                color="primary"
+                                shape="rounded"
+                                showFirstButton
+                                showLastButton
+                                size="small"
+                            />
+                        </Box>
                     )}
-                </Grid>
+                </>
             ) : (
                 /* Desktop DataTable */
                 <DataTable
@@ -345,6 +370,8 @@ export const LinkedProductsPage: React.FC = () => {
                     loading={isLoading}
                     paginationModel={paginationModel}
                     onPaginationModelChange={setPaginationModel}
+                    paginationMode={searchQuery.trim() ? 'client' : 'server'}
+                    rowCount={searchQuery.trim() ? filteredItems.length : totalCount}
                     getRowId={(row) => (row as LinkedItem).sku}
                     onSearch={setSearchQuery}
                     searchPlaceholder={t('products:integration.linked.search', 'بحث برمز SKU أو اسم المنتج...')}

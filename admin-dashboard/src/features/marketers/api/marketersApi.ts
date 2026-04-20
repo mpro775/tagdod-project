@@ -8,6 +8,7 @@ import type {
   MarketersAnalyticsOverview,
   MarketersRankingResponse,
   MarketerAnalyticsDetails,
+  MarketersSurveyStats,
 } from '../types/marketer.types';
 
 export const marketersApi = {
@@ -46,6 +47,13 @@ export const marketersApi = {
       `/admin/users/marketers/analytics/${marketerId}`,
       { params },
     );
+    return data.data;
+  },
+
+  surveyStats: async (params?: { from?: string; to?: string }) => {
+    const { data } = await apiClient.get<ApiResponse<MarketersSurveyStats>>('/admin/users/marketers/survey/stats', {
+      params,
+    });
     return data.data;
   },
 

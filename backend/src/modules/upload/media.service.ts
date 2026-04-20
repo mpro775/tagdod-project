@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Media, MediaCategory } from './schemas/media.schema';
+import { Media, MediaCategory, MediaType } from './schemas/media.schema';
 import { 
   MediaNotFoundException,
   UploadException,
@@ -149,6 +149,77 @@ export class MediaService {
         ? 'تم رفع الصورة بنجاح (تم تصغيرها تلقائياً)' 
         : 'تم رفع الصورة بنجاح',
     };
+  }
+
+  async registerVideoInLibrary(params: {
+    videoId: string;
+    guid?: string;
+    title?: string;
+    thumbnailUrl?: string;
+    playbackUrl?: string;
+    mimeType?: string;
+    size?: number;
+    category?: MediaCategory;
+    uploadedBy: string;
+  }) {
+    const storedFilename = `bunny-stream/${params.videoId}`;
+    const category = params.category ?? MediaCategory.OTHER;
+    const fallbackUrl = params.playbackUrl || '';
+    const mediaUrl = params.thumbnailUrl || fallbackUrl;
+
+    const existingMedia = await this.mediaModel.findOne({ storedFilename }).exec();
+    if (existingMedia) {
+      existingMedia.name = params.title || existingMedia.name;
+      existingMedia.url = mediaUrl || existingMedia.url;
+      existingMedia.category = category;
+      existingMedia.type = MediaType.VIDEO;
+      existingMedia.mimeType = params.mimeType || existingMedia.mimeType || 'video/mp4';
+      existingMedia.size = params.size ?? existingMedia.size ?? 0;
+      existingMedia.deletedAt = null;
+      existingMedia.deletedBy = undefined;
+      existingMedia.description = params.guid
+        ? `Bunny Stream GUID: ${params.guid}`
+        : existingMedia.description || '';
+      existingMedia.tags = [
+        `videoId:${params.videoId}`,
+        ...(params.guid ? [`guid:${params.guid}`] : []),
+      ];
+      await existingMedia.save();
+      return existingMedia;
+    }
+
+    const media = await this.mediaModel.create({
+      url: mediaUrl,
+      filename: `${params.title || params.videoId}.mp4`,
+      storedFilename,
+      name: params.title || `Video ${params.videoId}`,
+      category,
+      type: MediaType.VIDEO,
+      mimeType: params.mimeType || 'video/mp4',
+      size: params.size || 0,
+      description: params.guid ? `Bunny Stream GUID: ${params.guid}` : '',
+      tags: [`videoId:${params.videoId}`, ...(params.guid ? [`guid:${params.guid}`] : [])],
+      uploadedBy: params.uploadedBy,
+      isPublic: true,
+      usageCount: 0,
+      usedIn: [],
+    });
+
+    return media;
+  }
+
+  async softDeleteVideoFromLibrary(videoId: string, deletedBy?: string) {
+    const media = await this.mediaModel
+      .findOne({ storedFilename: `bunny-stream/${videoId}`, deletedAt: null })
+      .exec();
+
+    if (!media) {
+      return;
+    }
+
+    media.deletedAt = new Date();
+    media.deletedBy = deletedBy;
+    await media.save();
   }
 
   /**
