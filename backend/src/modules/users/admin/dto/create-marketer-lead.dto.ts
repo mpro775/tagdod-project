@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsArray, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class CreateMarketerEngineerDto {
   @ApiProperty({ example: '777123456', description: 'رقم هاتف المستخدم' })
@@ -107,6 +108,70 @@ export class CreateMarketerMerchantDto {
   @IsString()
   @IsIn(['knows', 'heard_only', 'none'])
   tejadodAwareness?: 'knows' | 'heard_only' | 'none';
+
+  @ApiProperty({ enum: ['yes', 'no'], example: 'yes', description: 'هل المحل يتعامل مع القواطع؟' })
+  @IsString()
+  @IsIn(['yes', 'no'])
+  dealsWithBreakers!: 'yes' | 'no';
+
+  @ApiPropertyOptional({
+    isArray: true,
+    enum: ['schneider', 'chint', 'legrand', 'cnc', 'other'],
+    example: ['schneider', 'chint'],
+    description: 'أنواع القواطع التي يتعامل معها المحل (مطلوب عند dealsWithBreakers = yes)',
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const trimmedValue = value.trim();
+      if (!trimmedValue) {
+        return [];
+      }
+
+      try {
+        const parsed = JSON.parse(trimmedValue) as unknown;
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch {
+        return trimmedValue.split(',').map((item) => item.trim()).filter(Boolean);
+      }
+
+      return [trimmedValue];
+    }
+
+    return [];
+  })
+  @IsArray()
+  @IsIn(['schneider', 'chint', 'legrand', 'cnc', 'other'], { each: true })
+  breakerBrands?: Array<'schneider' | 'chint' | 'legrand' | 'cnc' | 'other'>;
+
+  @ApiPropertyOptional({
+    example: 'ABB',
+    description: 'مثال للخيار "أخرى" في القواطع (مطلوب عند اختيار other)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  breakerOtherExample?: string;
+
+  @ApiProperty({ enum: ['yes', 'no'], example: 'no', description: 'هل المحل لديه لمبات (إضاءة)؟' })
+  @IsString()
+  @IsIn(['yes', 'no'])
+  hasLighting!: 'yes' | 'no';
+
+  @ApiPropertyOptional({
+    example: 'يوجد قسم إضاءة متنوع',
+    description: 'ملاحظة عن الإضاءة (اختياري عند hasLighting = yes)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  lightingNote?: string;
 
   @ApiPropertyOptional({ example: 'Pass1234!', description: 'كلمة مرور المستخدم' })
   @IsOptional()

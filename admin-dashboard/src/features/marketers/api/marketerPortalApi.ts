@@ -21,6 +21,17 @@ const toFormData = <T extends object>(payload: T) => {
       return;
     }
 
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (item === undefined || item === null || item === '') {
+          return;
+        }
+
+        formData.append(key, String(item));
+      });
+      return;
+    }
+
     if (value instanceof File) {
       formData.append(key, value);
       return;

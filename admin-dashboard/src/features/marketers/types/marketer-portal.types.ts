@@ -55,6 +55,11 @@ export interface CreateMerchantLeadPayload {
   storeSize: 'small' | 'medium' | 'large';
   previousCustomer: 'yes' | 'no';
   tejadodAwareness?: 'knows' | 'heard_only' | 'none';
+  dealsWithBreakers: 'yes' | 'no';
+  breakerBrands?: Array<'schneider' | 'chint' | 'legrand' | 'cnc' | 'other'>;
+  breakerOtherExample?: string;
+  hasLighting: 'yes' | 'no';
+  lightingNote?: string;
   password?: string;
   note?: string;
   file: File;

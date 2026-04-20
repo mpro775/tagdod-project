@@ -1691,6 +1691,26 @@ export class UsersAdminController {
       throw new BadRequestException('حقل معرفة العميل بتجدد مطلوب عندما لا يكون عميلًا سابقًا');
     }
 
+    const breakerBrands =
+      dto.dealsWithBreakers === 'yes'
+        ? Array.from(new Set((dto.breakerBrands || []).filter(Boolean)))
+        : undefined;
+
+    if (dto.dealsWithBreakers === 'yes' && (!breakerBrands || breakerBrands.length === 0)) {
+      throw new BadRequestException('يجب تحديد نوع قواطع واحد على الأقل');
+    }
+
+    const breakerOtherExample =
+      dto.dealsWithBreakers === 'yes' && breakerBrands?.includes('other')
+        ? dto.breakerOtherExample?.trim()
+        : undefined;
+
+    if (dto.dealsWithBreakers === 'yes' && breakerBrands?.includes('other') && !breakerOtherExample) {
+      throw new BadRequestException('يجب إدخال مثال عند اختيار "أخرى" في القواطع');
+    }
+
+    const lightingNote = dto.hasLighting === 'yes' ? dto.lightingNote?.trim() : undefined;
+
     const existingUser = await this.userModel.findOne({ phone: dto.phone, deletedAt: null });
     if (existingUser) {
       throw new AuthException(ErrorCode.AUTH_PHONE_EXISTS, { phone: dto.phone });
@@ -1722,6 +1742,11 @@ export class UsersAdminController {
       storeSize: dto.storeSize,
       previousCustomer: dto.previousCustomer,
       tejadodAwareness,
+      dealsWithBreakers: dto.dealsWithBreakers,
+      breakerBrands,
+      breakerOtherExample,
+      hasLighting: dto.hasLighting,
+      lightingNote,
       storePhotoUrl: uploaded.url,
       verificationNote: dto.note,
       acquisitionChannel: AcquisitionChannel.MARKETER,

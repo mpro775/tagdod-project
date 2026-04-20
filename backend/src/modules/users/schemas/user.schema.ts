@@ -130,6 +130,16 @@ export class User {
   previousCustomer?: 'yes' | 'no';
   @Prop({ type: String, enum: ['knows', 'heard_only', 'none'] })
   tejadodAwareness?: 'knows' | 'heard_only' | 'none';
+  @Prop({ type: String, enum: ['yes', 'no'] })
+  dealsWithBreakers?: 'yes' | 'no';
+  @Prop({ type: [String], enum: ['schneider', 'chint', 'legrand', 'cnc', 'other'], default: undefined })
+  breakerBrands?: Array<'schneider' | 'chint' | 'legrand' | 'cnc' | 'other'>;
+  @Prop()
+  breakerOtherExample?: string;
+  @Prop({ type: String, enum: ['yes', 'no'] })
+  hasLighting?: 'yes' | 'no';
+  @Prop()
+  lightingNote?: string;
   @Prop() verificationNote?: string; // ملاحظة التحقق (اختياري)
 
   // مصدر اكتساب المستخدم

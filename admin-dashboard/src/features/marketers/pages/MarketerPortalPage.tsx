@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   Alert,
   Box,
@@ -23,7 +23,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Add, CameraAlt, CheckCircle, Engineering, Replay, Storefront } from '@mui/icons-material';
+import { Add, CheckCircle, Engineering, Replay, Storefront } from '@mui/icons-material';
 import {
   useCreateEngineerLead,
   useCreateMerchantLead,
@@ -53,6 +53,11 @@ type MerchantFormErrors = {
   storeSize?: string;
   previousCustomer?: string;
   tejadodAwareness?: string;
+  dealsWithBreakers?: string;
+  breakerBrands?: string;
+  breakerOtherExample?: string;
+  hasLighting?: string;
+  lightingNote?: string;
   password?: string;
   file?: string;
 };
@@ -143,7 +148,7 @@ export const MarketerPortalPage = () => {
     phone: '',
     firstName: '',
     lastName: '',
-    city: 'صنعاء',
+    city: 'طµظ†ط¹ط§ط،',
     jobTitle: '',
     note: '',
     password: '',
@@ -154,12 +159,17 @@ export const MarketerPortalPage = () => {
     phone: '',
     firstName: '',
     lastName: '',
-    city: 'صنعاء',
+    city: 'طµظ†ط¹ط§ط،',
     storeName: '',
     storeAddress: '',
     storeSize: '' as '' | 'large' | 'medium' | 'small',
     previousCustomer: '' as '' | 'yes' | 'no',
     tejadodAwareness: '' as '' | 'knows' | 'heard_only' | 'none',
+    dealsWithBreakers: '' as '' | 'yes' | 'no',
+    breakerBrands: [] as Array<'schneider' | 'chint' | 'legrand' | 'cnc' | 'other'>,
+    breakerOtherExample: '',
+    hasLighting: '' as '' | 'yes' | 'no',
+    lightingNote: '',
     note: '',
     password: '',
     file: null as File | null,
@@ -190,6 +200,9 @@ export const MarketerPortalPage = () => {
   };
 
   const requiresTejadodAwareness = merchantForm.previousCustomer === 'no';
+  const requiresBreakerBrands = merchantForm.dealsWithBreakers === 'yes';
+  const isOtherBreakerSelected = merchantForm.breakerBrands.includes('other');
+  const requiresLightingNote = merchantForm.hasLighting === 'yes';
   const fieldValidationSx = {
     '& .MuiInputBase-input': { textAlign: 'right' },
     '& .MuiSelect-select': { textAlign: 'right' },
@@ -200,29 +213,29 @@ export const MarketerPortalPage = () => {
     const errors: EngineerFormErrors = {};
 
     if (!engineerForm.phone) {
-      errors.phone = 'رقم الهاتف مطلوب';
+      errors.phone = 'ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ ظ…ط·ظ„ظˆط¨';
     } else if (!isValidNineDigitPhone(engineerForm.phone)) {
-      errors.phone = 'رقم الهاتف يجب أن يتكون من 9 أرقام';
+      errors.phone = 'ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ ظٹط¬ط¨ ط£ظ† ظٹطھظƒظˆظ† ظ…ظ† 9 ط£ط±ظ‚ط§ظ…';
     }
 
     if (!engineerForm.firstName.trim()) {
-      errors.firstName = 'الاسم الأول مطلوب';
+      errors.firstName = 'ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„ ظ…ط·ظ„ظˆط¨';
     } else if (engineerForm.firstName.trim().length < 2) {
-      errors.firstName = 'الاسم الأول يجب أن يكون حرفين على الأقل';
+      errors.firstName = 'ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„ ظٹط¬ط¨ ط£ظ† ظٹظƒظˆظ† ط­ط±ظپظٹظ† ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„';
     }
 
     if (!engineerForm.city.trim()) {
-      errors.city = 'المدينة مطلوبة';
+      errors.city = 'ط§ظ„ظ…ط¯ظٹظ†ط© ظ…ط·ظ„ظˆط¨ط©';
     }
 
     if (!engineerForm.password) {
-      errors.password = 'كلمة المرور مطلوبة';
+      errors.password = 'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ظ…ط·ظ„ظˆط¨ط©';
     } else if (engineerForm.password.length < PASSWORD_MIN_LENGTH) {
-      errors.password = `كلمة المرور يجب أن تكون ${PASSWORD_MIN_LENGTH} أحرف على الأقل`;
+      errors.password = `ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ظٹط¬ط¨ ط£ظ† طھظƒظˆظ† ${PASSWORD_MIN_LENGTH} ط£ط­ط±ظپ ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„`;
     }
 
     if (!engineerForm.file) {
-      errors.file = 'يرجى رفع ملف CV';
+      errors.file = 'ظٹط±ط¬ظ‰ ط±ظپط¹ ظ…ظ„ظپ CV';
     }
 
     return errors;
@@ -232,51 +245,75 @@ export const MarketerPortalPage = () => {
     const errors: MerchantFormErrors = {};
 
     if (!merchantForm.phone) {
-      errors.phone = 'رقم الهاتف مطلوب';
+      errors.phone = 'ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ ظ…ط·ظ„ظˆط¨';
     } else if (!isValidNineDigitPhone(merchantForm.phone)) {
-      errors.phone = 'رقم الهاتف يجب أن يتكون من 9 أرقام';
+      errors.phone = 'ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ ظٹط¬ط¨ ط£ظ† ظٹطھظƒظˆظ† ظ…ظ† 9 ط£ط±ظ‚ط§ظ…';
     }
 
     if (!merchantForm.firstName.trim()) {
-      errors.firstName = 'الاسم الأول مطلوب';
+      errors.firstName = 'ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„ ظ…ط·ظ„ظˆط¨';
     } else if (merchantForm.firstName.trim().length < 2) {
-      errors.firstName = 'الاسم الأول يجب أن يكون حرفين على الأقل';
+      errors.firstName = 'ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„ ظٹط¬ط¨ ط£ظ† ظٹظƒظˆظ† ط­ط±ظپظٹظ† ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„';
     }
 
     if (!merchantForm.city.trim()) {
-      errors.city = 'المدينة مطلوبة';
+      errors.city = 'ط§ظ„ظ…ط¯ظٹظ†ط© ظ…ط·ظ„ظˆط¨ط©';
     }
 
     if (!merchantForm.storeName.trim()) {
-      errors.storeName = 'اسم المحل مطلوب';
+      errors.storeName = 'ط§ط³ظ… ط§ظ„ظ…ط­ظ„ ظ…ط·ظ„ظˆط¨';
     }
 
     if (!merchantForm.storeAddress.trim()) {
-      errors.storeAddress = 'عنوان المحل مطلوب';
+      errors.storeAddress = 'ط¹ظ†ظˆط§ظ† ط§ظ„ظ…ط­ظ„ ظ…ط·ظ„ظˆط¨';
     }
 
     if (!merchantForm.storeSize) {
-      errors.storeSize = 'حجم المحل مطلوب';
+      errors.storeSize = 'ط­ط¬ظ… ط§ظ„ظ…ط­ظ„ ظ…ط·ظ„ظˆط¨';
     }
 
     if (!merchantForm.previousCustomer) {
-      errors.previousCustomer = 'هذا الحقل مطلوب';
+      errors.previousCustomer = 'ظ‡ط°ط§ ط§ظ„ط­ظ‚ظ„ ظ…ط·ظ„ظˆط¨';
     }
 
     if (merchantForm.previousCustomer === 'no' && !merchantForm.tejadodAwareness) {
-      errors.tejadodAwareness = 'يرجى تحديد مستوى المعرفة بتجدد';
+      errors.tejadodAwareness = 'ظٹط±ط¬ظ‰ طھط­ط¯ظٹط¯ ظ…ط³طھظˆظ‰ ط§ظ„ظ…ط¹ط±ظپط© ط¨طھط¬ط¯ط¯';
+    }
+
+    if (!merchantForm.dealsWithBreakers) {
+      errors.dealsWithBreakers = 'ظ‡ط°ط§ ط§ظ„ط­ظ‚ظ„ ظ…ط·ظ„ظˆط¨';
+    }
+
+    if (merchantForm.dealsWithBreakers === 'yes' && merchantForm.breakerBrands.length === 0) {
+      errors.breakerBrands = 'ظٹط±ط¬ظ‰ طھط­ط¯ظٹط¯ ظ†ظˆط¹ ظ‚ظˆط§ط·ط¹ ظˆط§ط­ط¯ ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„';
+    }
+
+    if (
+      merchantForm.dealsWithBreakers === 'yes' &&
+      merchantForm.breakerBrands.includes('other') &&
+      !merchantForm.breakerOtherExample.trim()
+    ) {
+      errors.breakerOtherExample = 'ظٹط±ط¬ظ‰ ظƒطھط§ط¨ط© ظ…ط«ط§ظ„ ظ„ظ„ط®ظٹط§ط± ط§ظ„ط¢ط®ط±';
+    }
+
+    if (!merchantForm.hasLighting) {
+      errors.hasLighting = 'ظ‡ط°ط§ ط§ظ„ط­ظ‚ظ„ ظ…ط·ظ„ظˆط¨';
+    }
+
+    if (merchantForm.lightingNote.length > 500) {
+      errors.lightingNote = 'ط§ظ„ظ…ظ„ط§ط­ط¸ط© ظٹط¬ط¨ ط£ظ„ط§ طھطھط¬ط§ظˆط² 500 ط­ط±ظپ';
     }
 
     if (!merchantForm.password) {
-      errors.password = 'كلمة المرور مطلوبة';
+      errors.password = 'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ظ…ط·ظ„ظˆط¨ط©';
     } else if (merchantForm.password.length < PASSWORD_MIN_LENGTH) {
-      errors.password = `كلمة المرور يجب أن تكون ${PASSWORD_MIN_LENGTH} أحرف على الأقل`;
+      errors.password = `ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ظٹط¬ط¨ ط£ظ† طھظƒظˆظ† ${PASSWORD_MIN_LENGTH} ط£ط­ط±ظپ ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„`;
     }
 
     if (!merchantForm.file) {
-      errors.file = 'يرجى رفع صورة المحل';
+      errors.file = 'ظٹط±ط¬ظ‰ ط±ظپط¹ طµظˆط±ط© ط§ظ„ظ…ط­ظ„';
     } else if (!merchantForm.file.type.startsWith('image/')) {
-      errors.file = 'صيغة الملف يجب أن تكون صورة';
+      errors.file = 'طµظٹط؛ط© ط§ظ„ظ…ظ„ظپ ظٹط¬ط¨ ط£ظ† طھظƒظˆظ† طµظˆط±ط©';
     }
 
     return errors;
@@ -311,7 +348,7 @@ export const MarketerPortalPage = () => {
             phone: '',
             firstName: '',
             lastName: '',
-            city: 'صنعاء',
+            city: 'طµظ†ط¹ط§ط،',
             jobTitle: '',
             note: '',
             password: '',
@@ -330,7 +367,12 @@ export const MarketerPortalPage = () => {
       return;
     }
 
-    if (merchantForm.storeSize === '' || merchantForm.previousCustomer === '') {
+    if (
+      merchantForm.storeSize === '' ||
+      merchantForm.previousCustomer === '' ||
+      merchantForm.dealsWithBreakers === '' ||
+      merchantForm.hasLighting === ''
+    ) {
       return;
     }
 
@@ -340,6 +382,8 @@ export const MarketerPortalPage = () => {
 
     const storeSize = merchantForm.storeSize;
     const previousCustomer = merchantForm.previousCustomer;
+    const dealsWithBreakers = merchantForm.dealsWithBreakers;
+    const hasLighting = merchantForm.hasLighting;
     const file = merchantForm.file;
 
     createMerchantMutation.mutate(
@@ -355,6 +399,14 @@ export const MarketerPortalPage = () => {
         tejadodAwareness: requiresTejadodAwareness
           ? merchantForm.tejadodAwareness || undefined
           : undefined,
+        dealsWithBreakers,
+        breakerBrands: requiresBreakerBrands ? merchantForm.breakerBrands : undefined,
+        breakerOtherExample:
+          requiresBreakerBrands && isOtherBreakerSelected
+            ? merchantForm.breakerOtherExample.trim() || undefined
+            : undefined,
+        hasLighting,
+        lightingNote: requiresLightingNote ? merchantForm.lightingNote.trim() || undefined : undefined,
         note: merchantForm.note || undefined,
         password: merchantForm.password,
         file,
@@ -367,12 +419,17 @@ export const MarketerPortalPage = () => {
             phone: '',
             firstName: '',
             lastName: '',
-            city: 'صنعاء',
+            city: 'طµظ†ط¹ط§ط،',
             storeName: '',
             storeAddress: '',
             storeSize: '',
             previousCustomer: '',
             tejadodAwareness: '',
+            dealsWithBreakers: '',
+            breakerBrands: [],
+            breakerOtherExample: '',
+            hasLighting: '',
+            lightingNote: '',
             note: '',
             password: '',
             file: null,
@@ -387,10 +444,10 @@ export const MarketerPortalPage = () => {
       <Stack spacing={3}>
         <Box sx={{ px: { xs: 0.5, sm: 0 } }}>
           <Typography variant="h5" fontWeight={700}>
-            بوابة المسوق
+            ط¨ظˆط§ط¨ط© ط§ظ„ظ…ط³ظˆظ‚
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            إضافة مهندسين وتجار باعتماد مباشر مع حفظ التوثيق وربط كل الحسابات باسمك.
+            ط¥ط¶ط§ظپط© ظ…ظ‡ظ†ط¯ط³ظٹظ† ظˆطھط¬ط§ط± ط¨ط§ط¹طھظ…ط§ط¯ ظ…ط¨ط§ط´ط± ظ…ط¹ ط­ظپط¸ ط§ظ„طھظˆط«ظٹظ‚ ظˆط±ط¨ط· ظƒظ„ ط§ظ„ط­ط³ط§ط¨ط§طھ ط¨ط§ط³ظ…ظƒ.
           </Typography>
         </Box>
 
@@ -399,7 +456,7 @@ export const MarketerPortalPage = () => {
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
-                  إجمالي المضافين
+                  ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ظ…ط¶ط§ظپظٹظ†
                 </Typography>
                 <Typography variant="h4" fontWeight={700}>
                   {statsQuery.isLoading ? <CircularProgress size={20} /> : statsQuery.data?.total ?? 0}
@@ -411,7 +468,7 @@ export const MarketerPortalPage = () => {
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
-                  المهندسون
+                  ط§ظ„ظ…ظ‡ظ†ط¯ط³ظˆظ†
                 </Typography>
                 <Typography variant="h4" fontWeight={700}>
                   {statsQuery.isLoading ? <CircularProgress size={20} /> : statsQuery.data?.engineers ?? 0}
@@ -423,7 +480,7 @@ export const MarketerPortalPage = () => {
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
-                  التجار
+                  ط§ظ„طھط¬ط§ط±
                 </Typography>
                 <Typography variant="h4" fontWeight={700}>
                   {statsQuery.isLoading ? <CircularProgress size={20} /> : statsQuery.data?.merchants ?? 0}
@@ -435,7 +492,7 @@ export const MarketerPortalPage = () => {
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
-                  هذا الشهر
+                  ظ‡ط°ط§ ط§ظ„ط´ظ‡ط±
                 </Typography>
                 <Typography variant="h4" fontWeight={700}>
                   {statsQuery.isLoading ? <CircularProgress size={20} /> : statsQuery.data?.createdThisMonth ?? 0}
@@ -457,13 +514,13 @@ export const MarketerPortalPage = () => {
               value="engineer"
               icon={<Engineering fontSize="small" />}
               iconPosition="start"
-              label="إضافة مهندس"
+              label="ط¥ط¶ط§ظپط© ظ…ظ‡ظ†ط¯ط³"
             />
             <Tab
               value="merchant"
               icon={<Storefront fontSize="small" />}
               iconPosition="start"
-              label="إضافة تاجر"
+              label="ط¥ط¶ط§ظپط© طھط§ط¬ط±"
             />
           </Tabs>
 
@@ -472,7 +529,7 @@ export const MarketerPortalPage = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="رقم الهاتف"
+                    label="ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ"
                     fullWidth
                     required
                     inputProps={{ maxLength: PHONE_LENGTH, inputMode: 'numeric', pattern: '[0-9]*' }}
@@ -488,7 +545,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="الاسم الأول"
+                    label="ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„"
                     fullWidth
                     required
                     error={!!engineerErrors.firstName}
@@ -502,7 +559,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="الاسم الأخير"
+                    label="ط§ظ„ط§ط³ظ… ط§ظ„ط£ط®ظٹط±"
                     fullWidth
                     value={engineerForm.lastName}
                     onChange={(event) =>
@@ -512,7 +569,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="المدينة"
+                    label="ط§ظ„ظ…ط¯ظٹظ†ط©"
                     fullWidth
                     required
                     error={!!engineerErrors.city}
@@ -528,7 +585,7 @@ export const MarketerPortalPage = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="المسمى الوظيفي"
+                    label="ط§ظ„ظ…ط³ظ…ظ‰ ط§ظ„ظˆط¸ظٹظپظٹ"
                     fullWidth
                     value={engineerForm.jobTitle}
                     onChange={(event) =>
@@ -538,7 +595,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="كلمة المرور"
+                    label="ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±"
                     fullWidth
                     required
                     type="password"
@@ -553,7 +610,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Button variant="outlined" component="label" fullWidth sx={{ height: '56px' }}>
-                    {engineerForm.file ? engineerForm.file.name : 'رفع CV (PDF/DOC)'}
+                    {engineerForm.file ? engineerForm.file.name : 'ط±ظپط¹ CV (PDF/DOC)'}
                     <input
                       type="file"
                       hidden
@@ -572,7 +629,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
               </Grid>
               <TextField
-                label="ملاحظة"
+                label="ظ…ظ„ط§ط­ط¸ط©"
                 multiline
                 minRows={2}
                 value={engineerForm.note}
@@ -586,7 +643,7 @@ export const MarketerPortalPage = () => {
                 onClick={handleCreateEngineer}
                 disabled={createEngineerMutation.isPending}
               >
-                إنشاء مهندس مع اعتماد مباشر
+                ط¥ظ†ط´ط§ط، ظ…ظ‡ظ†ط¯ط³ ظ…ط¹ ط§ط¹طھظ…ط§ط¯ ظ…ط¨ط§ط´ط±
               </Button>
             </Stack>
           )}
@@ -596,7 +653,7 @@ export const MarketerPortalPage = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="رقم الهاتف"
+                    label="ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ"
                     fullWidth
                     required
                     inputProps={{ maxLength: PHONE_LENGTH, inputMode: 'numeric', pattern: '[0-9]*' }}
@@ -612,7 +669,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="الاسم الأول"
+                    label="ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„"
                     fullWidth
                     required
                     error={!!merchantErrors.firstName}
@@ -626,7 +683,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="الاسم الأخير"
+                    label="ط§ظ„ط§ط³ظ… ط§ظ„ط£ط®ظٹط±"
                     fullWidth
                     value={merchantForm.lastName}
                     onChange={(event) =>
@@ -636,7 +693,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="المدينة"
+                    label="ط§ظ„ظ…ط¯ظٹظ†ط©"
                     fullWidth
                     required
                     error={!!merchantErrors.city}
@@ -652,7 +709,7 @@ export const MarketerPortalPage = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="اسم المحل"
+                    label="ط§ط³ظ… ط§ظ„ظ…ط­ظ„"
                     fullWidth
                     required
                     error={!!merchantErrors.storeName}
@@ -666,7 +723,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="عنوان المحل"
+                    label="ط¹ظ†ظˆط§ظ† ط§ظ„ظ…ط­ظ„"
                     fullWidth
                     required
                     error={!!merchantErrors.storeAddress}
@@ -680,7 +737,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="حجم المحل"
+                    label="ط­ط¬ظ… ط§ظ„ظ…ط­ظ„"
                     fullWidth
                     select
                     required
@@ -695,16 +752,16 @@ export const MarketerPortalPage = () => {
                       setMerchantErrors((prev) => ({ ...prev, storeSize: undefined }));
                     }}
                   >
-                    <MenuItem value="large">كبير</MenuItem>
-                    <MenuItem value="medium">متوسط</MenuItem>
-                    <MenuItem value="small">صغير</MenuItem>
+                    <MenuItem value="large">ظƒط¨ظٹط±</MenuItem>
+                    <MenuItem value="medium">ظ…طھظˆط³ط·</MenuItem>
+                    <MenuItem value="small">طµط؛ظٹط±</MenuItem>
                   </TextField>
                 </Grid>
               </Grid>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="هل هو عميل سابق لدينا؟"
+                    label="ظ‡ظ„ ظ‡ظˆ ط¹ظ…ظٹظ„ ط³ط§ط¨ظ‚ ظ„ط¯ظٹظ†ط§طں"
                     fullWidth
                     select
                     required
@@ -723,18 +780,18 @@ export const MarketerPortalPage = () => {
                       setMerchantErrors((prev) => ({
                         ...prev,
                         previousCustomer: undefined,
-                        tejadodAwareness: previousCustomer === 'yes' ? undefined : prev.tejadodAwareness,
+                        tejadodAwareness: undefined,
                       }));
                     }}
                   >
-                    <MenuItem value="yes">نعم</MenuItem>
-                    <MenuItem value="no">لا</MenuItem>
+                    <MenuItem value="yes">ظ†ط¹ظ…</MenuItem>
+                    <MenuItem value="no">ظ„ط§</MenuItem>
                   </TextField>
                 </Grid>
                 {merchantForm.previousCustomer === 'no' && (
                   <Grid size={{ xs: 12, md: 4 }}>
                     <TextField
-                      label="هل لديه معرفة بتجدد؟"
+                      label="ظ‡ظ„ ظ„ط¯ظٹظ‡ ظ…ط¹ط±ظپط© ط¨طھط¬ط¯ط¯طں"
                       fullWidth
                       select
                       required
@@ -749,15 +806,15 @@ export const MarketerPortalPage = () => {
                         setMerchantErrors((prev) => ({ ...prev, tejadodAwareness: undefined }));
                       }}
                     >
-                      <MenuItem value="knows">نعم يوجد معرفة</MenuItem>
-                      <MenuItem value="heard_only">سمعت عنها فقط</MenuItem>
-                      <MenuItem value="none">لا</MenuItem>
+                      <MenuItem value="knows">ظ†ط¹ظ… ظٹظˆط¬ط¯ ظ…ط¹ط±ظپط©</MenuItem>
+                      <MenuItem value="heard_only">ط³ظ…ط¹طھ ط¹ظ†ظ‡ط§ ظپظ‚ط·</MenuItem>
+                      <MenuItem value="none">ظ„ط§</MenuItem>
                     </TextField>
                   </Grid>
                 )}
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="كلمة المرور"
+                    label="ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±"
                     fullWidth
                     required
                     type="password"
@@ -776,15 +833,13 @@ export const MarketerPortalPage = () => {
                     color="inherit"
                     component="label"
                     fullWidth
-                    startIcon={<CameraAlt />}
                     sx={{ height: '56px' }}
                   >
-                    تصوير أو اختيار صورة المحل
+                    إرفاق صورة المحل
                     <input
                       type="file"
                       hidden
                       accept="image/jpeg,image/jpg,image/png,image/webp"
-                      capture="environment"
                       onChange={(event) => {
                         void handleMerchantFileChange(event.target.files?.[0] || null);
                         setMerchantErrors((prev) => ({ ...prev, file: undefined }));
@@ -798,6 +853,169 @@ export const MarketerPortalPage = () => {
                   ) : null}
                 </Grid>
               </Grid>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    label="ظ‡ظ„ ط§ظ„ظ…ط­ظ„ ظٹطھط¹ط§ظ…ظ„ ظ…ط¹ ط§ظ„ظ‚ظˆط§ط·ط¹طں"
+                    fullWidth
+                    select
+                    required
+                    error={!!merchantErrors.dealsWithBreakers}
+                    helperText={merchantErrors.dealsWithBreakers}
+                    value={merchantForm.dealsWithBreakers}
+                    onChange={(event) => {
+                      const dealsWithBreakers = event.target.value as 'yes' | 'no' | '';
+
+                      setMerchantForm((prev) => ({
+                        ...prev,
+                        dealsWithBreakers,
+                        breakerBrands: dealsWithBreakers === 'yes' ? prev.breakerBrands : [],
+                        breakerOtherExample: dealsWithBreakers === 'yes' ? prev.breakerOtherExample : '',
+                      }));
+
+                      setMerchantErrors((prev) => ({
+                        ...prev,
+                        dealsWithBreakers: undefined,
+                        breakerBrands: undefined,
+                        breakerOtherExample: undefined,
+                      }));
+                    }}
+                  >
+                    <MenuItem value="yes">ظ†ط¹ظ…</MenuItem>
+                    <MenuItem value="no">ظ„ط§</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    label="ظ‡ظ„ ط§ظ„ظ…ط­ظ„ ظ„ط¯ظٹظ‡ ظ„ظ…ط¨ط§طھ (ط¥ط¶ط§ط،ط©)طں"
+                    fullWidth
+                    select
+                    required
+                    error={!!merchantErrors.hasLighting}
+                    helperText={merchantErrors.hasLighting}
+                    value={merchantForm.hasLighting}
+                    onChange={(event) => {
+                      const hasLighting = event.target.value as 'yes' | 'no' | '';
+
+                      setMerchantForm((prev) => ({
+                        ...prev,
+                        hasLighting,
+                        lightingNote: hasLighting === 'yes' ? prev.lightingNote : '',
+                      }));
+
+                      setMerchantErrors((prev) => ({
+                        ...prev,
+                        hasLighting: undefined,
+                        lightingNote: undefined,
+                      }));
+                    }}
+                  >
+                    <MenuItem value="yes">ظ†ط¹ظ…</MenuItem>
+                    <MenuItem value="no">ظ„ط§</MenuItem>
+                  </TextField>
+                </Grid>
+              </Grid>
+              {merchantForm.dealsWithBreakers === 'yes' && (
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      label="ط£ظ†ظˆط§ط¹ ط§ظ„ظ‚ظˆط§ط·ط¹"
+                      fullWidth
+                      select
+                      required
+                      SelectProps={{
+                        multiple: true,
+                        renderValue: (selected) => {
+                          const selectedValues = selected as string[];
+                          const labelMap: Record<string, string> = {
+                            schneider: 'ط´ظ†ط§ظٹط¯ط± Schneider Electric',
+                            chint: 'ط´ظ†طھ Chint',
+                            legrand: 'ظ„ظٹط¬ط±ط§ظ†ط¯ Legrand',
+                            cnc: 'CNC',
+                            other: 'ط£ط®ط±ظ‰',
+                          };
+
+                          return selectedValues.map((value) => labelMap[value] || value).join('طŒ ');
+                        },
+                      }}
+                      error={!!merchantErrors.breakerBrands}
+                      helperText={merchantErrors.breakerBrands}
+                      value={merchantForm.breakerBrands}
+                      onChange={(event) => {
+                        const rawValue = event.target.value;
+                        const breakerBrands =
+                          typeof rawValue === 'string'
+                            ? (rawValue.split(',') as Array<
+                                'schneider' | 'chint' | 'legrand' | 'cnc' | 'other'
+                              >)
+                            : (rawValue as Array<
+                                'schneider' | 'chint' | 'legrand' | 'cnc' | 'other'
+                              >);
+
+                        setMerchantForm((prev) => ({
+                          ...prev,
+                          breakerBrands,
+                          breakerOtherExample: breakerBrands.includes('other')
+                            ? prev.breakerOtherExample
+                            : '',
+                        }));
+
+                        setMerchantErrors((prev) => ({
+                          ...prev,
+                          breakerBrands: undefined,
+                          breakerOtherExample: undefined,
+                        }));
+                      }}
+                    >
+                      <MenuItem value="schneider">ط´ظ†ط§ظٹط¯ط± Schneider Electric</MenuItem>
+                      <MenuItem value="chint">ط´ظ†طھ Chint</MenuItem>
+                      <MenuItem value="legrand">ظ„ظٹط¬ط±ط§ظ†ط¯ Legrand</MenuItem>
+                      <MenuItem value="cnc">CNC</MenuItem>
+                      <MenuItem value="other">ط£ط®ط±ظ‰</MenuItem>
+                    </TextField>
+                  </Grid>
+                  {merchantForm.breakerBrands.includes('other') && (
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        label="ظ…ط«ط§ظ„ ط¹ظ„ظ‰ ط§ظ„ط£ط®ط±ظ‰"
+                        fullWidth
+                        required
+                        error={!!merchantErrors.breakerOtherExample}
+                        helperText={merchantErrors.breakerOtherExample}
+                        value={merchantForm.breakerOtherExample}
+                        onChange={(event) => {
+                          setMerchantForm((prev) => ({
+                            ...prev,
+                            breakerOtherExample: event.target.value,
+                          }));
+                          setMerchantErrors((prev) => ({
+                            ...prev,
+                            breakerOtherExample: undefined,
+                          }));
+                        }}
+                      />
+                    </Grid>
+                  )}
+                </Grid>
+              )}
+              {merchantForm.hasLighting === 'yes' && (
+                <TextField
+                  label="ظ…ظ„ط§ط­ط¸ط© ط¹ظ† ط§ظ„ط¥ط¶ط§ط،ط©"
+                  fullWidth
+                  multiline
+                  minRows={2}
+                  error={!!merchantErrors.lightingNote}
+                  helperText={merchantErrors.lightingNote}
+                  value={merchantForm.lightingNote}
+                  onChange={(event) => {
+                    setMerchantForm((prev) => ({
+                      ...prev,
+                      lightingNote: event.target.value,
+                    }));
+                    setMerchantErrors((prev) => ({ ...prev, lightingNote: undefined }));
+                  }}
+                />
+              )}
               {merchantForm.file && (
                 <Alert
                   severity="success"
@@ -809,12 +1027,11 @@ export const MarketerPortalPage = () => {
                       startIcon={<Replay fontSize="small" />}
                       component="label"
                     >
-                      تغيير الصورة
+                      طھط؛ظٹظٹط± ط§ظ„طµظˆط±ط©
                       <input
                         type="file"
                         hidden
                         accept="image/jpeg,image/jpg,image/png,image/webp"
-                        capture="environment"
                         onChange={(event) => {
                           void handleMerchantFileChange(event.target.files?.[0] || null);
                           setMerchantErrors((prev) => ({ ...prev, file: undefined }));
@@ -823,11 +1040,11 @@ export const MarketerPortalPage = () => {
                     </Button>
                   }
                 >
-                  تم تجهيز صورة المحل: <strong>{merchantForm.file.name}</strong>
+                  طھظ… طھط¬ظ‡ظٹط² طµظˆط±ط© ط§ظ„ظ…ط­ظ„: <strong>{merchantForm.file.name}</strong>
                 </Alert>
               )}
               <TextField
-                label="ملاحظة"
+                label="ظ…ظ„ط§ط­ط¸ط©"
                 multiline
                 minRows={2}
                 value={merchantForm.note}
@@ -841,18 +1058,18 @@ export const MarketerPortalPage = () => {
                 onClick={handleCreateMerchant}
                 disabled={createMerchantMutation.isPending}
               >
-                إنشاء تاجر مع اعتماد مباشر
+                ط¥ظ†ط´ط§ط، طھط§ط¬ط± ظ…ط¹ ط§ط¹طھظ…ط§ط¯ ظ…ط¨ط§ط´ط±
               </Button>
             </Stack>
           )}
 
           {lastCredential && (
             <Alert severity="success" sx={{ mt: 2 }}>
-              تم الإنشاء بنجاح. الرقم: <strong>{lastCredential.phone}</strong>
+              طھظ… ط§ظ„ط¥ظ†ط´ط§ط، ط¨ظ†ط¬ط§ط­. ط§ظ„ط±ظ‚ظ…: <strong>{lastCredential.phone}</strong>
               {lastCredential.password ? (
                 <>
                   {' '}
-                  | كلمة المرور المؤقتة: <strong>{lastCredential.password}</strong>
+                  | ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط§ظ„ظ…ط¤ظ‚طھط©: <strong>{lastCredential.password}</strong>
                 </>
               ) : null}
             </Alert>
@@ -863,11 +1080,11 @@ export const MarketerPortalPage = () => {
         <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 3 }}>
           <Stack spacing={2}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
-              <Typography variant="h6">المستخدمون الذين أضفتهم</Typography>
+              <Typography variant="h6">ط§ظ„ظ…ط³طھط®ط¯ظ…ظˆظ† ط§ظ„ط°ظٹظ† ط£ط¶ظپطھظ‡ظ…</Typography>
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
                 <TextField
                   size="small"
-                  label="بحث"
+                  label="ط¨ط­ط«"
                   value={search}
                   onChange={(event) => {
                     setSearch(event.target.value);
@@ -877,7 +1094,7 @@ export const MarketerPortalPage = () => {
                 <TextField
                   size="small"
                   select
-                  label="النوع"
+                  label="ط§ظ„ظ†ظˆط¹"
                   value={type}
                   onChange={(event) => {
                     setType(event.target.value as 'all' | 'engineer' | 'merchant');
@@ -885,9 +1102,9 @@ export const MarketerPortalPage = () => {
                   }}
                   sx={{ minWidth: 140 }}
                 >
-                  <MenuItem value="all">الكل</MenuItem>
-                  <MenuItem value="engineer">مهندس</MenuItem>
-                  <MenuItem value="merchant">تاجر</MenuItem>
+                  <MenuItem value="all">ط§ظ„ظƒظ„</MenuItem>
+                  <MenuItem value="engineer">ظ…ظ‡ظ†ط¯ط³</MenuItem>
+                  <MenuItem value="merchant">طھط§ط¬ط±</MenuItem>
                 </TextField>
               </Stack>
             </Stack>
@@ -902,11 +1119,11 @@ export const MarketerPortalPage = () => {
                 <Table size="small" sx={{ minWidth: 680 }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell>الاسم</TableCell>
-                      <TableCell>الهاتف</TableCell>
-                      <TableCell>النوع</TableCell>
-                      <TableCell>حالة التوثيق</TableCell>
-                      <TableCell>تاريخ الإضافة</TableCell>
+                      <TableCell>ط§ظ„ط§ط³ظ…</TableCell>
+                      <TableCell>ط§ظ„ظ‡ط§طھظپ</TableCell>
+                      <TableCell>ط§ظ„ظ†ظˆط¹</TableCell>
+                      <TableCell>ط­ط§ظ„ط© ط§ظ„طھظˆط«ظٹظ‚</TableCell>
+                      <TableCell>طھط§ط±ظٹط® ط§ظ„ط¥ط¶ط§ظپط©</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -918,7 +1135,7 @@ export const MarketerPortalPage = () => {
                         <TableRow key={user._id} hover>
                           <TableCell>{`${user.firstName || ''} ${user.lastName || ''}`.trim() || '-'}</TableCell>
                           <TableCell>{user.phone}</TableCell>
-                          <TableCell>{isEngineer ? 'مهندس' : 'تاجر'}</TableCell>
+                          <TableCell>{isEngineer ? 'ظ…ظ‡ظ†ط¯ط³' : 'طھط§ط¬ط±'}</TableCell>
                           <TableCell>
                             <Chip
                               size="small"
@@ -953,3 +1170,4 @@ export const MarketerPortalPage = () => {
 };
 
 export default MarketerPortalPage;
+
