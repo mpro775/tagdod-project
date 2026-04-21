@@ -655,6 +655,24 @@ export class ListOrdersDto {
   @IsDateString()
   toDate?: string;
 
+  @ApiPropertyOptional({ description: 'مرادف من تاريخ (fromDate)' })
+  @IsOptional()
+  @IsDateString()
+  from?: string;
+
+  @ApiPropertyOptional({ description: 'مرادف إلى تاريخ (toDate)' })
+  @IsOptional()
+  @IsDateString()
+  to?: string;
+
+  @ApiPropertyOptional({
+    description: 'صيغة التصدير',
+    enum: ['csv', 'xlsx', 'excel', 'json'],
+  })
+  @IsOptional()
+  @IsIn(['csv', 'xlsx', 'excel', 'json'])
+  format?: 'csv' | 'xlsx' | 'excel' | 'json';
+
   @ApiPropertyOptional({ description: 'فلترة الطلبات التي لديها تقييم', type: Boolean })
   @IsOptional()
   @Type(() => Boolean)

@@ -2667,6 +2667,8 @@ export class OrderService {
       sortOrder = 'desc',
       fromDate,
       toDate,
+      from,
+      to,
       hasRating,
       minRating,
     } = query;
@@ -2681,10 +2683,15 @@ export class OrderService {
 
     if (status) filter.status = status;
     if (paymentStatus) filter.paymentStatus = paymentStatus;
-    if (fromDate || toDate) {
+    const effectiveFromDate = fromDate ?? from;
+    const effectiveToDate = toDate ?? to;
+
+    if (effectiveFromDate || effectiveToDate) {
       filter.createdAt = {} as Record<string, unknown>;
-      if (fromDate) (filter.createdAt as Record<string, unknown>).$gte = new Date(fromDate);
-      if (toDate) (filter.createdAt as Record<string, unknown>).$lte = new Date(toDate);
+      if (effectiveFromDate)
+        (filter.createdAt as Record<string, unknown>).$gte = new Date(effectiveFromDate);
+      if (effectiveToDate)
+        (filter.createdAt as Record<string, unknown>).$lte = new Date(effectiveToDate);
     }
     if (search) {
       filter.$or = [
