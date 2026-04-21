@@ -148,7 +148,7 @@ export const MarketerPortalPage = () => {
     phone: '',
     firstName: '',
     lastName: '',
-    city: 'طµظ†ط¹ط§ط،',
+    city: 'صنعاء',
     jobTitle: '',
     note: '',
     password: '',
@@ -159,7 +159,7 @@ export const MarketerPortalPage = () => {
     phone: '',
     firstName: '',
     lastName: '',
-    city: 'طµظ†ط¹ط§ط،',
+    city: 'صنعاء',
     storeName: '',
     storeAddress: '',
     storeSize: '' as '' | 'large' | 'medium' | 'small',
@@ -213,29 +213,29 @@ export const MarketerPortalPage = () => {
     const errors: EngineerFormErrors = {};
 
     if (!engineerForm.phone) {
-      errors.phone = 'ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ ظ…ط·ظ„ظˆط¨';
+      errors.phone = 'رقم الهاتف مطلوب';
     } else if (!isValidNineDigitPhone(engineerForm.phone)) {
-      errors.phone = 'ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ ظٹط¬ط¨ ط£ظ† ظٹطھظƒظˆظ† ظ…ظ† 9 ط£ط±ظ‚ط§ظ…';
+      errors.phone = 'رقم الهاتف يجب أن يتكون من 9 أرقام';
     }
 
     if (!engineerForm.firstName.trim()) {
-      errors.firstName = 'ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„ ظ…ط·ظ„ظˆط¨';
+      errors.firstName = 'الاسم الأول مطلوب';
     } else if (engineerForm.firstName.trim().length < 2) {
-      errors.firstName = 'ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„ ظٹط¬ط¨ ط£ظ† ظٹظƒظˆظ† ط­ط±ظپظٹظ† ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„';
+      errors.firstName = 'الاسم الأول يجب أن يكون حرفين على الأقل';
     }
 
     if (!engineerForm.city.trim()) {
-      errors.city = 'ط§ظ„ظ…ط¯ظٹظ†ط© ظ…ط·ظ„ظˆط¨ط©';
+      errors.city = 'المدينة مطلوبة';
     }
 
     if (!engineerForm.password) {
-      errors.password = 'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ظ…ط·ظ„ظˆط¨ط©';
+      errors.password = 'كلمة المرور مطلوبة';
     } else if (engineerForm.password.length < PASSWORD_MIN_LENGTH) {
-      errors.password = `ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ظٹط¬ط¨ ط£ظ† طھظƒظˆظ† ${PASSWORD_MIN_LENGTH} ط£ط­ط±ظپ ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„`;
+      errors.password = `كلمة المرور يجب أن تكون ${PASSWORD_MIN_LENGTH} أحرف على الأقل`;
     }
 
     if (!engineerForm.file) {
-      errors.file = 'ظٹط±ط¬ظ‰ ط±ظپط¹ ظ…ظ„ظپ CV';
+      errors.file = 'يرجى رفع ملف CV';
     }
 
     return errors;
@@ -245,47 +245,47 @@ export const MarketerPortalPage = () => {
     const errors: MerchantFormErrors = {};
 
     if (!merchantForm.phone) {
-      errors.phone = 'ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ ظ…ط·ظ„ظˆط¨';
+      errors.phone = 'رقم الهاتف مطلوب';
     } else if (!isValidNineDigitPhone(merchantForm.phone)) {
-      errors.phone = 'ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ ظٹط¬ط¨ ط£ظ† ظٹطھظƒظˆظ† ظ…ظ† 9 ط£ط±ظ‚ط§ظ…';
+      errors.phone = 'رقم الهاتف يجب أن يتكون من 9 أرقام';
     }
 
     if (!merchantForm.firstName.trim()) {
-      errors.firstName = 'ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„ ظ…ط·ظ„ظˆط¨';
+      errors.firstName = 'الاسم الأول مطلوب';
     } else if (merchantForm.firstName.trim().length < 2) {
-      errors.firstName = 'ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„ ظٹط¬ط¨ ط£ظ† ظٹظƒظˆظ† ط­ط±ظپظٹظ† ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„';
+      errors.firstName = 'الاسم الأول يجب أن يكون حرفين على الأقل';
     }
 
     if (!merchantForm.city.trim()) {
-      errors.city = 'ط§ظ„ظ…ط¯ظٹظ†ط© ظ…ط·ظ„ظˆط¨ط©';
+      errors.city = 'المدينة مطلوبة';
     }
 
     if (!merchantForm.storeName.trim()) {
-      errors.storeName = 'ط§ط³ظ… ط§ظ„ظ…ط­ظ„ ظ…ط·ظ„ظˆط¨';
+      errors.storeName = 'اسم المحل مطلوب';
     }
 
     if (!merchantForm.storeAddress.trim()) {
-      errors.storeAddress = 'ط¹ظ†ظˆط§ظ† ط§ظ„ظ…ط­ظ„ ظ…ط·ظ„ظˆط¨';
+      errors.storeAddress = 'عنوان المحل مطلوب';
     }
 
     if (!merchantForm.storeSize) {
-      errors.storeSize = 'ط­ط¬ظ… ط§ظ„ظ…ط­ظ„ ظ…ط·ظ„ظˆط¨';
+      errors.storeSize = 'حجم المحل مطلوب';
     }
 
     if (!merchantForm.previousCustomer) {
-      errors.previousCustomer = 'ظ‡ط°ط§ ط§ظ„ط­ظ‚ظ„ ظ…ط·ظ„ظˆط¨';
+      errors.previousCustomer = 'هذا الحقل مطلوب';
     }
 
     if (merchantForm.previousCustomer === 'no' && !merchantForm.tejadodAwareness) {
-      errors.tejadodAwareness = 'ظٹط±ط¬ظ‰ طھط­ط¯ظٹط¯ ظ…ط³طھظˆظ‰ ط§ظ„ظ…ط¹ط±ظپط© ط¨طھط¬ط¯ط¯';
+      errors.tejadodAwareness = 'يرجى تحديد مستوى المعرفة بتجدد';
     }
 
     if (!merchantForm.dealsWithBreakers) {
-      errors.dealsWithBreakers = 'ظ‡ط°ط§ ط§ظ„ط­ظ‚ظ„ ظ…ط·ظ„ظˆط¨';
+      errors.dealsWithBreakers = 'هذا الحقل مطلوب';
     }
 
     if (merchantForm.dealsWithBreakers === 'yes' && merchantForm.breakerBrands.length === 0) {
-      errors.breakerBrands = 'ظٹط±ط¬ظ‰ طھط­ط¯ظٹط¯ ظ†ظˆط¹ ظ‚ظˆط§ط·ط¹ ظˆط§ط­ط¯ ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„';
+      errors.breakerBrands = 'يرجى تحديد نوع قواطع واحد على الأقل';
     }
 
     if (
@@ -293,27 +293,27 @@ export const MarketerPortalPage = () => {
       merchantForm.breakerBrands.includes('other') &&
       !merchantForm.breakerOtherExample.trim()
     ) {
-      errors.breakerOtherExample = 'ظٹط±ط¬ظ‰ ظƒطھط§ط¨ط© ظ…ط«ط§ظ„ ظ„ظ„ط®ظٹط§ط± ط§ظ„ط¢ط®ط±';
+      errors.breakerOtherExample = 'يرجى كتابة مثال للخيار الآخر';
     }
 
     if (!merchantForm.hasLighting) {
-      errors.hasLighting = 'ظ‡ط°ط§ ط§ظ„ط­ظ‚ظ„ ظ…ط·ظ„ظˆط¨';
+      errors.hasLighting = 'هذا الحقل مطلوب';
     }
 
     if (merchantForm.lightingNote.length > 500) {
-      errors.lightingNote = 'ط§ظ„ظ…ظ„ط§ط­ط¸ط© ظٹط¬ط¨ ط£ظ„ط§ طھطھط¬ط§ظˆط² 500 ط­ط±ظپ';
+      errors.lightingNote = 'الملاحظة يجب ألا تتجاوز 500 حرف';
     }
 
     if (!merchantForm.password) {
-      errors.password = 'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ظ…ط·ظ„ظˆط¨ط©';
+      errors.password = 'كلمة المرور مطلوبة';
     } else if (merchantForm.password.length < PASSWORD_MIN_LENGTH) {
-      errors.password = `ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ظٹط¬ط¨ ط£ظ† طھظƒظˆظ† ${PASSWORD_MIN_LENGTH} ط£ط­ط±ظپ ط¹ظ„ظ‰ ط§ظ„ط£ظ‚ظ„`;
+      errors.password = `كلمة المرور يجب أن تكون ${PASSWORD_MIN_LENGTH} أحرف على الأقل`;
     }
 
     if (!merchantForm.file) {
-      errors.file = 'ظٹط±ط¬ظ‰ ط±ظپط¹ طµظˆط±ط© ط§ظ„ظ…ط­ظ„';
+      errors.file = 'يرجى رفع صورة المحل';
     } else if (!merchantForm.file.type.startsWith('image/')) {
-      errors.file = 'طµظٹط؛ط© ط§ظ„ظ…ظ„ظپ ظٹط¬ط¨ ط£ظ† طھظƒظˆظ† طµظˆط±ط©';
+      errors.file = 'صيغة الملف يجب أن تكون صورة';
     }
 
     return errors;
@@ -348,7 +348,7 @@ export const MarketerPortalPage = () => {
             phone: '',
             firstName: '',
             lastName: '',
-            city: 'طµظ†ط¹ط§ط،',
+            city: 'صنعاء',
             jobTitle: '',
             note: '',
             password: '',
@@ -419,7 +419,7 @@ export const MarketerPortalPage = () => {
             phone: '',
             firstName: '',
             lastName: '',
-            city: 'طµظ†ط¹ط§ط،',
+            city: 'صنعاء',
             storeName: '',
             storeAddress: '',
             storeSize: '',
@@ -444,10 +444,10 @@ export const MarketerPortalPage = () => {
       <Stack spacing={3}>
         <Box sx={{ px: { xs: 0.5, sm: 0 } }}>
           <Typography variant="h5" fontWeight={700}>
-            ط¨ظˆط§ط¨ط© ط§ظ„ظ…ط³ظˆظ‚
+            بوابة المسوق
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            ط¥ط¶ط§ظپط© ظ…ظ‡ظ†ط¯ط³ظٹظ† ظˆطھط¬ط§ط± ط¨ط§ط¹طھظ…ط§ط¯ ظ…ط¨ط§ط´ط± ظ…ط¹ ط­ظپط¸ ط§ظ„طھظˆط«ظٹظ‚ ظˆط±ط¨ط· ظƒظ„ ط§ظ„ط­ط³ط§ط¨ط§طھ ط¨ط§ط³ظ…ظƒ.
+            إضافة مهندسين وتجار باعتماد مباشر مع حفظ التوثيق وربط كل الحسابات باسمك.
           </Typography>
         </Box>
 
@@ -456,7 +456,7 @@ export const MarketerPortalPage = () => {
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
-                  ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ظ…ط¶ط§ظپظٹظ†
+                  إجمالي المضافين
                 </Typography>
                 <Typography variant="h4" fontWeight={700}>
                   {statsQuery.isLoading ? <CircularProgress size={20} /> : statsQuery.data?.total ?? 0}
@@ -468,7 +468,7 @@ export const MarketerPortalPage = () => {
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
-                  ط§ظ„ظ…ظ‡ظ†ط¯ط³ظˆظ†
+                  المهندسون
                 </Typography>
                 <Typography variant="h4" fontWeight={700}>
                   {statsQuery.isLoading ? <CircularProgress size={20} /> : statsQuery.data?.engineers ?? 0}
@@ -480,7 +480,7 @@ export const MarketerPortalPage = () => {
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
-                  ط§ظ„طھط¬ط§ط±
+                  التجار
                 </Typography>
                 <Typography variant="h4" fontWeight={700}>
                   {statsQuery.isLoading ? <CircularProgress size={20} /> : statsQuery.data?.merchants ?? 0}
@@ -492,7 +492,7 @@ export const MarketerPortalPage = () => {
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography color="text.secondary" variant="body2">
-                  ظ‡ط°ط§ ط§ظ„ط´ظ‡ط±
+                  هذا الشهر
                 </Typography>
                 <Typography variant="h4" fontWeight={700}>
                   {statsQuery.isLoading ? <CircularProgress size={20} /> : statsQuery.data?.createdThisMonth ?? 0}
@@ -514,13 +514,13 @@ export const MarketerPortalPage = () => {
               value="engineer"
               icon={<Engineering fontSize="small" />}
               iconPosition="start"
-              label="ط¥ط¶ط§ظپط© ظ…ظ‡ظ†ط¯ط³"
+              label="إضافة مهندس"
             />
             <Tab
               value="merchant"
               icon={<Storefront fontSize="small" />}
               iconPosition="start"
-              label="ط¥ط¶ط§ظپط© طھط§ط¬ط±"
+              label="إضافة تاجر"
             />
           </Tabs>
 
@@ -529,7 +529,7 @@ export const MarketerPortalPage = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ"
+                    label="رقم الهاتف"
                     fullWidth
                     required
                     inputProps={{ maxLength: PHONE_LENGTH, inputMode: 'numeric', pattern: '[0-9]*' }}
@@ -545,7 +545,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„"
+                    label="الاسم الأول"
                     fullWidth
                     required
                     error={!!engineerErrors.firstName}
@@ -559,7 +559,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="ط§ظ„ط§ط³ظ… ط§ظ„ط£ط®ظٹط±"
+                    label="الاسم الأخير"
                     fullWidth
                     value={engineerForm.lastName}
                     onChange={(event) =>
@@ -569,7 +569,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="ط§ظ„ظ…ط¯ظٹظ†ط©"
+                    label="المدينة"
                     fullWidth
                     required
                     error={!!engineerErrors.city}
@@ -585,7 +585,7 @@ export const MarketerPortalPage = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="ط§ظ„ظ…ط³ظ…ظ‰ ط§ظ„ظˆط¸ظٹظپظٹ"
+                    label="المسمى الوظيفي"
                     fullWidth
                     value={engineerForm.jobTitle}
                     onChange={(event) =>
@@ -595,7 +595,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±"
+                    label="كلمة المرور"
                     fullWidth
                     required
                     type="password"
@@ -610,7 +610,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Button variant="outlined" component="label" fullWidth sx={{ height: '56px' }}>
-                    {engineerForm.file ? engineerForm.file.name : 'ط±ظپط¹ CV (PDF/DOC)'}
+                    {engineerForm.file ? engineerForm.file.name : 'رفع CV (PDF/DOC)'}
                     <input
                       type="file"
                       hidden
@@ -629,7 +629,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
               </Grid>
               <TextField
-                label="ظ…ظ„ط§ط­ط¸ط©"
+                label="ملاحظة"
                 multiline
                 minRows={2}
                 value={engineerForm.note}
@@ -643,7 +643,7 @@ export const MarketerPortalPage = () => {
                 onClick={handleCreateEngineer}
                 disabled={createEngineerMutation.isPending}
               >
-                ط¥ظ†ط´ط§ط، ظ…ظ‡ظ†ط¯ط³ ظ…ط¹ ط§ط¹طھظ…ط§ط¯ ظ…ط¨ط§ط´ط±
+                إنشاء مهندس مع اعتماد مباشر
               </Button>
             </Stack>
           )}
@@ -653,7 +653,7 @@ export const MarketerPortalPage = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="ط±ظ‚ظ… ط§ظ„ظ‡ط§طھظپ"
+                    label="رقم الهاتف"
                     fullWidth
                     required
                     inputProps={{ maxLength: PHONE_LENGTH, inputMode: 'numeric', pattern: '[0-9]*' }}
@@ -669,7 +669,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="ط§ظ„ط§ط³ظ… ط§ظ„ط£ظˆظ„"
+                    label="الاسم الأول"
                     fullWidth
                     required
                     error={!!merchantErrors.firstName}
@@ -683,7 +683,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="ط§ظ„ط§ط³ظ… ط§ظ„ط£ط®ظٹط±"
+                    label="الاسم الأخير"
                     fullWidth
                     value={merchantForm.lastName}
                     onChange={(event) =>
@@ -693,7 +693,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <TextField
-                    label="ط§ظ„ظ…ط¯ظٹظ†ط©"
+                    label="المدينة"
                     fullWidth
                     required
                     error={!!merchantErrors.city}
@@ -709,7 +709,7 @@ export const MarketerPortalPage = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="ط§ط³ظ… ط§ظ„ظ…ط­ظ„"
+                    label="اسم المحل"
                     fullWidth
                     required
                     error={!!merchantErrors.storeName}
@@ -723,7 +723,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="ط¹ظ†ظˆط§ظ† ط§ظ„ظ…ط­ظ„"
+                    label="عنوان المحل"
                     fullWidth
                     required
                     error={!!merchantErrors.storeAddress}
@@ -737,7 +737,7 @@ export const MarketerPortalPage = () => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="ط­ط¬ظ… ط§ظ„ظ…ط­ظ„"
+                    label="حجم المحل"
                     fullWidth
                     select
                     required
@@ -752,16 +752,16 @@ export const MarketerPortalPage = () => {
                       setMerchantErrors((prev) => ({ ...prev, storeSize: undefined }));
                     }}
                   >
-                    <MenuItem value="large">ظƒط¨ظٹط±</MenuItem>
-                    <MenuItem value="medium">ظ…طھظˆط³ط·</MenuItem>
-                    <MenuItem value="small">طµط؛ظٹط±</MenuItem>
+                    <MenuItem value="large">كبير</MenuItem>
+                    <MenuItem value="medium">متوسط</MenuItem>
+                    <MenuItem value="small">صغير</MenuItem>
                   </TextField>
                 </Grid>
               </Grid>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="ظ‡ظ„ ظ‡ظˆ ط¹ظ…ظٹظ„ ط³ط§ط¨ظ‚ ظ„ط¯ظٹظ†ط§طں"
+                    label="هل هو عميل سابق لدينا؟"
                     fullWidth
                     select
                     required
@@ -784,14 +784,14 @@ export const MarketerPortalPage = () => {
                       }));
                     }}
                   >
-                    <MenuItem value="yes">ظ†ط¹ظ…</MenuItem>
-                    <MenuItem value="no">ظ„ط§</MenuItem>
+                    <MenuItem value="yes">نعم</MenuItem>
+                    <MenuItem value="no">لا</MenuItem>
                   </TextField>
                 </Grid>
                 {merchantForm.previousCustomer === 'no' && (
                   <Grid size={{ xs: 12, md: 4 }}>
                     <TextField
-                      label="ظ‡ظ„ ظ„ط¯ظٹظ‡ ظ…ط¹ط±ظپط© ط¨طھط¬ط¯ط¯طں"
+                      label="هل لديه معرفة بتجدد؟"
                       fullWidth
                       select
                       required
@@ -806,15 +806,15 @@ export const MarketerPortalPage = () => {
                         setMerchantErrors((prev) => ({ ...prev, tejadodAwareness: undefined }));
                       }}
                     >
-                      <MenuItem value="knows">ظ†ط¹ظ… ظٹظˆط¬ط¯ ظ…ط¹ط±ظپط©</MenuItem>
-                      <MenuItem value="heard_only">ط³ظ…ط¹طھ ط¹ظ†ظ‡ط§ ظپظ‚ط·</MenuItem>
-                      <MenuItem value="none">ظ„ط§</MenuItem>
+                      <MenuItem value="knows">نعم يوجد معرفة</MenuItem>
+                      <MenuItem value="heard_only">سمعت عنها فقط</MenuItem>
+                      <MenuItem value="none">لا</MenuItem>
                     </TextField>
                   </Grid>
                 )}
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
-                    label="ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±"
+                    label="كلمة المرور"
                     fullWidth
                     required
                     type="password"
@@ -856,7 +856,7 @@ export const MarketerPortalPage = () => {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
-                    label="ظ‡ظ„ ط§ظ„ظ…ط­ظ„ ظٹطھط¹ط§ظ…ظ„ ظ…ط¹ ط§ظ„ظ‚ظˆط§ط·ط¹طں"
+                    label="هل المحل يتعامل مع القواطع؟"
                     fullWidth
                     select
                     required
@@ -881,13 +881,13 @@ export const MarketerPortalPage = () => {
                       }));
                     }}
                   >
-                    <MenuItem value="yes">ظ†ط¹ظ…</MenuItem>
-                    <MenuItem value="no">ظ„ط§</MenuItem>
+                    <MenuItem value="yes">نعم</MenuItem>
+                    <MenuItem value="no">لا</MenuItem>
                   </TextField>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
-                    label="ظ‡ظ„ ط§ظ„ظ…ط­ظ„ ظ„ط¯ظٹظ‡ ظ„ظ…ط¨ط§طھ (ط¥ط¶ط§ط،ط©)طں"
+                    label="هل المحل لديه لمبات (إضاءة)؟"
                     fullWidth
                     select
                     required
@@ -910,8 +910,8 @@ export const MarketerPortalPage = () => {
                       }));
                     }}
                   >
-                    <MenuItem value="yes">ظ†ط¹ظ…</MenuItem>
-                    <MenuItem value="no">ظ„ط§</MenuItem>
+                    <MenuItem value="yes">نعم</MenuItem>
+                    <MenuItem value="no">لا</MenuItem>
                   </TextField>
                 </Grid>
               </Grid>
@@ -919,7 +919,7 @@ export const MarketerPortalPage = () => {
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, md: 6 }}>
                     <TextField
-                      label="ط£ظ†ظˆط§ط¹ ط§ظ„ظ‚ظˆط§ط·ط¹"
+                      label="أنواع القواطع"
                       fullWidth
                       select
                       required
@@ -928,14 +928,14 @@ export const MarketerPortalPage = () => {
                         renderValue: (selected) => {
                           const selectedValues = selected as string[];
                           const labelMap: Record<string, string> = {
-                            schneider: 'ط´ظ†ط§ظٹط¯ط± Schneider Electric',
-                            chint: 'ط´ظ†طھ Chint',
-                            legrand: 'ظ„ظٹط¬ط±ط§ظ†ط¯ Legrand',
+                            schneider: 'شنايدر Schneider Electric',
+                            chint: 'شنت Chint',
+                            legrand: 'ليجراند Legrand',
                             cnc: 'CNC',
-                            other: 'ط£ط®ط±ظ‰',
+                            other: 'أخرى',
                           };
 
-                          return selectedValues.map((value) => labelMap[value] || value).join('طŒ ');
+                          return selectedValues.map((value) => labelMap[value] || value).join('، ');
                         },
                       }}
                       error={!!merchantErrors.breakerBrands}
@@ -967,17 +967,17 @@ export const MarketerPortalPage = () => {
                         }));
                       }}
                     >
-                      <MenuItem value="schneider">ط´ظ†ط§ظٹط¯ط± Schneider Electric</MenuItem>
-                      <MenuItem value="chint">ط´ظ†طھ Chint</MenuItem>
-                      <MenuItem value="legrand">ظ„ظٹط¬ط±ط§ظ†ط¯ Legrand</MenuItem>
+                      <MenuItem value="schneider">شنايدر Schneider Electric</MenuItem>
+                      <MenuItem value="chint">شنت Chint</MenuItem>
+                      <MenuItem value="legrand">ليجراند Legrand</MenuItem>
                       <MenuItem value="cnc">CNC</MenuItem>
-                      <MenuItem value="other">ط£ط®ط±ظ‰</MenuItem>
+                      <MenuItem value="other">أخرى</MenuItem>
                     </TextField>
                   </Grid>
                   {merchantForm.breakerBrands.includes('other') && (
                     <Grid size={{ xs: 12, md: 6 }}>
                       <TextField
-                        label="ظ…ط«ط§ظ„ ط¹ظ„ظ‰ ط§ظ„ط£ط®ط±ظ‰"
+                        label="مثال على الأخرى"
                         fullWidth
                         required
                         error={!!merchantErrors.breakerOtherExample}
@@ -1000,7 +1000,7 @@ export const MarketerPortalPage = () => {
               )}
               {merchantForm.hasLighting === 'yes' && (
                 <TextField
-                  label="ظ…ظ„ط§ط­ط¸ط© ط¹ظ† ط§ظ„ط¥ط¶ط§ط،ط©"
+                  label="ملاحظة عن الإضاءة"
                   fullWidth
                   multiline
                   minRows={2}
@@ -1027,7 +1027,7 @@ export const MarketerPortalPage = () => {
                       startIcon={<Replay fontSize="small" />}
                       component="label"
                     >
-                      طھط؛ظٹظٹط± ط§ظ„طµظˆط±ط©
+                      تغيير الصورة
                       <input
                         type="file"
                         hidden
@@ -1040,11 +1040,11 @@ export const MarketerPortalPage = () => {
                     </Button>
                   }
                 >
-                  طھظ… طھط¬ظ‡ظٹط² طµظˆط±ط© ط§ظ„ظ…ط­ظ„: <strong>{merchantForm.file.name}</strong>
+                  تم تجهيز صورة المحل: <strong>{merchantForm.file.name}</strong>
                 </Alert>
               )}
               <TextField
-                label="ظ…ظ„ط§ط­ط¸ط©"
+                label="ملاحظة"
                 multiline
                 minRows={2}
                 value={merchantForm.note}
@@ -1058,18 +1058,18 @@ export const MarketerPortalPage = () => {
                 onClick={handleCreateMerchant}
                 disabled={createMerchantMutation.isPending}
               >
-                ط¥ظ†ط´ط§ط، طھط§ط¬ط± ظ…ط¹ ط§ط¹طھظ…ط§ط¯ ظ…ط¨ط§ط´ط±
+                إنشاء تاجر مع اعتماد مباشر
               </Button>
             </Stack>
           )}
 
           {lastCredential && (
             <Alert severity="success" sx={{ mt: 2 }}>
-              طھظ… ط§ظ„ط¥ظ†ط´ط§ط، ط¨ظ†ط¬ط§ط­. ط§ظ„ط±ظ‚ظ…: <strong>{lastCredential.phone}</strong>
+              تم الإنشاء بنجاح. الرقم: <strong>{lastCredential.phone}</strong>
               {lastCredential.password ? (
                 <>
                   {' '}
-                  | ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط§ظ„ظ…ط¤ظ‚طھط©: <strong>{lastCredential.password}</strong>
+                  | كلمة المرور المؤقتة: <strong>{lastCredential.password}</strong>
                 </>
               ) : null}
             </Alert>
@@ -1080,11 +1080,11 @@ export const MarketerPortalPage = () => {
         <Paper sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 3 }}>
           <Stack spacing={2}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
-              <Typography variant="h6">ط§ظ„ظ…ط³طھط®ط¯ظ…ظˆظ† ط§ظ„ط°ظٹظ† ط£ط¶ظپطھظ‡ظ…</Typography>
+              <Typography variant="h6">المستخدمون الذين أضفتهم</Typography>
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
                 <TextField
                   size="small"
-                  label="ط¨ط­ط«"
+                  label="بحث"
                   value={search}
                   onChange={(event) => {
                     setSearch(event.target.value);
@@ -1094,7 +1094,7 @@ export const MarketerPortalPage = () => {
                 <TextField
                   size="small"
                   select
-                  label="ط§ظ„ظ†ظˆط¹"
+                  label="النوع"
                   value={type}
                   onChange={(event) => {
                     setType(event.target.value as 'all' | 'engineer' | 'merchant');
@@ -1102,9 +1102,9 @@ export const MarketerPortalPage = () => {
                   }}
                   sx={{ minWidth: 140 }}
                 >
-                  <MenuItem value="all">ط§ظ„ظƒظ„</MenuItem>
-                  <MenuItem value="engineer">ظ…ظ‡ظ†ط¯ط³</MenuItem>
-                  <MenuItem value="merchant">طھط§ط¬ط±</MenuItem>
+                  <MenuItem value="all">الكل</MenuItem>
+                  <MenuItem value="engineer">مهندس</MenuItem>
+                  <MenuItem value="merchant">تاجر</MenuItem>
                 </TextField>
               </Stack>
             </Stack>
@@ -1119,11 +1119,11 @@ export const MarketerPortalPage = () => {
                 <Table size="small" sx={{ minWidth: 680 }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell>ط§ظ„ط§ط³ظ…</TableCell>
-                      <TableCell>ط§ظ„ظ‡ط§طھظپ</TableCell>
-                      <TableCell>ط§ظ„ظ†ظˆط¹</TableCell>
-                      <TableCell>ط­ط§ظ„ط© ط§ظ„طھظˆط«ظٹظ‚</TableCell>
-                      <TableCell>طھط§ط±ظٹط® ط§ظ„ط¥ط¶ط§ظپط©</TableCell>
+                      <TableCell>الاسم</TableCell>
+                      <TableCell>الهاتف</TableCell>
+                      <TableCell>النوع</TableCell>
+                      <TableCell>حالة التوثيق</TableCell>
+                      <TableCell>تاريخ الإضافة</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1135,7 +1135,7 @@ export const MarketerPortalPage = () => {
                         <TableRow key={user._id} hover>
                           <TableCell>{`${user.firstName || ''} ${user.lastName || ''}`.trim() || '-'}</TableCell>
                           <TableCell>{user.phone}</TableCell>
-                          <TableCell>{isEngineer ? 'ظ…ظ‡ظ†ط¯ط³' : 'طھط§ط¬ط±'}</TableCell>
+                          <TableCell>{isEngineer ? 'مهندس' : 'تاجر'}</TableCell>
                           <TableCell>
                             <Chip
                               size="small"
@@ -1170,4 +1170,5 @@ export const MarketerPortalPage = () => {
 };
 
 export default MarketerPortalPage;
+
 
