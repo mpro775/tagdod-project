@@ -116,7 +116,11 @@ export class UploadService {
       this.logger.error('Upload error:', error);
       
       // Handle specific error types
-      if (error instanceof UploadFailedException || error instanceof FileTooLargeException) {
+      if (
+        error instanceof UploadFailedException ||
+        error instanceof FileTooLargeException ||
+        error instanceof InvalidFileTypeException
+      ) {
         throw error; // Re-throw our custom errors
       } else if (error instanceof Error && ('code' in error) && (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')) {
         throw new UploadException(ErrorCode.NETWORK_ERROR, { reason: 'bunny_connection_failed' });
@@ -193,6 +197,9 @@ export class UploadService {
           'video/mkv',
           'video/quicktime',
           'application/pdf',
+          'text/csv',
+          'application/csv',
+          'application/json',
           'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           'application/vnd.ms-excel',
