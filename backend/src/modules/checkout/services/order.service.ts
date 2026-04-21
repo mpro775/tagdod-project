@@ -5259,7 +5259,27 @@ export class OrderService {
   async exportOrders(format: string, query: ListOrdersDto) {
     this.logger.log('Exporting orders list:', { format, query });
 
-    const { orders, pagination } = await this.getAllOrders(query);
+    const exportPageSize = 100;
+    const exportQueryBase: ListOrdersDto = {
+      ...query,
+      page: 1,
+      limit: exportPageSize,
+    };
+
+    const firstPageResult = await this.getAllOrders(exportQueryBase);
+    const orders = [...firstPageResult.orders];
+    const totalOrders = firstPageResult.pagination.total;
+    const totalPages = firstPageResult.pagination.totalPages;
+
+    // Export should include all records matching filters, not only the current UI page.
+    for (let page = 2; page <= totalPages; page += 1) {
+      const pageResult = await this.getAllOrders({
+        ...exportQueryBase,
+        page,
+      });
+      orders.push(...pageResult.orders);
+    }
+
     const stats = await this.getStats();
 
     const ext =
@@ -5349,9 +5369,9 @@ export class OrderService {
           format: ext,
           exportedAt: new Date().toISOString(),
           fileName,
-          recordCount: pagination.total,
+          recordCount: totalOrders,
           summary: {
-            totalOrders: pagination.total,
+            totalOrders,
             exportedOrders: orders.length,
             filters: query,
             stats,
@@ -5379,9 +5399,9 @@ export class OrderService {
         format: ext,
         exportedAt: new Date().toISOString(),
         fileName,
-        recordCount: pagination.total,
+        recordCount: totalOrders,
         summary: {
-          totalOrders: pagination.total,
+          totalOrders,
           exportedOrders: orders.length,
           filters: query,
           stats,
