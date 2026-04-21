@@ -4983,52 +4983,27 @@ export class OrderService {
     if (ext === 'json') {
       buffer = Buffer.from(JSON.stringify(summary, null, 2), 'utf-8');
       mimetype = 'application/json';
-    } else if (ext === 'csv') {
-      const rows: string[][] = [
-        ['key', 'value'],
-        ['totalOrders', String(summary.totalOrders)],
-        ['completedOrdersCount', String(summary.completedOrdersCount ?? '')],
-        ['totalRevenue', String(summary.totalRevenue)],
-        ['averageOrderValue', String(summary.averageOrderValue)],
-        [],
-        ['status', 'count'],
-        ...(Array.isArray(summary.byStatus)
-          ? summary.byStatus.map((s: { _id?: string; count?: number }) => [
-              String(s._id ?? ''),
-              String(s.count ?? 0),
-            ])
-          : []),
-      ];
-      const csvContent = rows.map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-      buffer = Buffer.from(csvContent, 'utf-8');
-      mimetype = 'text/csv';
-    } else {
-      const workbook = XLSX.utils.book_new();
-      const summarySheet = XLSX.utils.aoa_to_sheet([
-        ['المقياس', 'القيمة'],
-        ['إجمالي الطلبات', summary.totalOrders],
-        ['الطلبات المكتملة', summary.completedOrdersCount ?? ''],
-        ['إجمالي الإيرادات', summary.totalRevenue],
-        ['متوسط قيمة الطلب', summary.averageOrderValue],
-      ]);
-      XLSX.utils.book_append_sheet(workbook, summarySheet, 'ملخص');
-      const statusSheet = XLSX.utils.aoa_to_sheet([
-        ['الحالة', 'العدد'],
-        ...(Array.isArray(summary.byStatus)
-          ? summary.byStatus.map((s: { _id?: string; count?: number }) => [
-              String(s._id ?? ''),
-              s.count ?? 0,
-            ])
-          : []),
-      ]);
-      XLSX.utils.book_append_sheet(workbook, statusSheet, 'حسب الحالة');
-      buffer = XLSX.write(workbook, {
-        type: 'buffer',
-        bookType: 'xlsx',
-      }) as Buffer;
-      mimetype =
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    }
+} else if (ext === 'csv') {
+       const rows: string[][] = [
+         ['key', 'value'],
+         ['totalOrders', String(summary.totalOrders)],
+         ['completedOrdersCount', String(summary.completedOrdersCount ?? '')],
+         ['totalRevenue', String(summary.totalRevenue)],
+         ['averageOrderValue', String(summary.averageOrderValue)],
+         [],
+         ['status', 'count'],
+         ...(Array.isArray(summary.byStatus)
+           ? summary.byStatus.map((s: { _id?: string; count?: number }) => [
+               String(s._id ?? ''),
+               String(s.count ?? 0),
+             ])
+           : []),
+       ];
+       const csvContent = rows.map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+       // Add UTF-8 BOM for proper Arabic character display in Excel
+       buffer = Buffer.from('\uFEFF' + csvContent, 'utf-8');
+       mimetype = 'text/csv';
+     }
 
     if (!this.uploadService) {
       this.logger.warn('Export order analytics: UploadService not available');
@@ -5356,7 +5331,9 @@ export class OrderService {
           headers.map((h) => escape((row as Record<string, unknown>)[h])).join(','),
         ),
       ];
-      buffer = Buffer.from(rows.join('\n'), 'utf-8');
+      // Add UTF-8 BOM for proper Arabic character display in Excel
+      const csvContent = rows.join('\n');
+      buffer = Buffer.from('\uFEFF' + csvContent, 'utf-8');
       mimetype = 'text/csv';
     }
 
