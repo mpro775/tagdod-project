@@ -116,7 +116,11 @@ export class UploadService {
       this.logger.error('Upload error:', error);
       
       // Handle specific error types
-      if (error instanceof UploadFailedException || error instanceof FileTooLargeException) {
+      if (
+        error instanceof UploadFailedException ||
+        error instanceof FileTooLargeException ||
+        error instanceof InvalidFileTypeException
+      ) {
         throw error; // Re-throw our custom errors
       } else if (error instanceof Error && ('code' in error) && (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED')) {
         throw new UploadException(ErrorCode.NETWORK_ERROR, { reason: 'bunny_connection_failed' });
@@ -176,28 +180,50 @@ export class UploadService {
   }): void {
     // Get limits from environment variables
     const maxSize = parseInt(process.env.MAX_FILE_SIZE || '10485760'); // 10MB default
-    const allowedTypes = process.env.ALLOWED_FILE_TYPES 
-      ? process.env.ALLOWED_FILE_TYPES.split(',').map(type => type.trim())
-      : [
-          'image/jpeg',
-          'image/jpg',
-          'image/png', 
-          'image/gif',
-          'image/webp',
-          'video/mp4',
-          'video/avi',
-          'video/mov',
-          'video/wmv',
-          'video/flv',
-          'video/webm',
-          'video/mkv',
-          'video/quicktime',
-          'application/pdf',
-          'application/msword',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'application/vnd.ms-excel',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ];
+    const defaultAllowedTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'video/mp4',
+      'video/avi',
+      'video/mov',
+      'video/wmv',
+      'video/flv',
+      'video/webm',
+      'video/mkv',
+      'video/quicktime',
+      'application/pdf',
+      'text/csv',
+      'application/csv',
+      'application/json',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+
+    const configuredAllowedTypes = process.env.ALLOWED_FILE_TYPES
+      ? process.env.ALLOWED_FILE_TYPES.split(',').map((type) => type.trim()).filter(Boolean)
+      : [];
+
+    // Always keep export/report types available even when ALLOWED_FILE_TYPES is narrowly configured.
+    const requiredExportTypes = [
+      'text/csv',
+      'application/csv',
+      'application/json',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+
+    const allowedTypes = Array.from(
+      new Set(
+        configuredAllowedTypes.length > 0
+          ? [...configuredAllowedTypes, ...requiredExportTypes]
+          : defaultAllowedTypes,
+      ),
+    );
 
     // Check file size
     if (file.size > maxSize) {

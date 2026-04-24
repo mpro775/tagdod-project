@@ -413,7 +413,8 @@ export class ExportService {
       csvContent = JSON.stringify(data, null, 2);
     }
 
-    const csvBuffer = Buffer.from(csvContent, 'utf-8');
+    // Add UTF-8 BOM for proper Arabic character display in Excel
+const csvBuffer = Buffer.from('\uFEFF' + csvContent, 'utf-8');
     const fileName = filename || `report_${Date.now()}.csv`;
 
     const result = await this.fileStorageService.uploadBuffer(

@@ -2667,6 +2667,8 @@ export class OrderService {
       sortOrder = 'desc',
       fromDate,
       toDate,
+      from,
+      to,
       hasRating,
       minRating,
     } = query;
@@ -2681,10 +2683,15 @@ export class OrderService {
 
     if (status) filter.status = status;
     if (paymentStatus) filter.paymentStatus = paymentStatus;
-    if (fromDate || toDate) {
+    const effectiveFromDate = fromDate ?? from;
+    const effectiveToDate = toDate ?? to;
+
+    if (effectiveFromDate || effectiveToDate) {
       filter.createdAt = {} as Record<string, unknown>;
-      if (fromDate) (filter.createdAt as Record<string, unknown>).$gte = new Date(fromDate);
-      if (toDate) (filter.createdAt as Record<string, unknown>).$lte = new Date(toDate);
+      if (effectiveFromDate)
+        (filter.createdAt as Record<string, unknown>).$gte = new Date(effectiveFromDate);
+      if (effectiveToDate)
+        (filter.createdAt as Record<string, unknown>).$lte = new Date(effectiveToDate);
     }
     if (search) {
       filter.$or = [
@@ -4967,7 +4974,7 @@ export class OrderService {
       ...(revenueAnalytics && { revenue: revenueAnalytics }),
     };
 
-    const ext = format.toLowerCase() === 'xlsx' ? 'xlsx' : format.toLowerCase() === 'json' ? 'json' : 'csv';
+const ext = format.toLowerCase() === 'xlsx' ? 'xlsx' : format.toLowerCase() === 'json' ? 'json' : 'csv';
     const fileName = `order_analytics_${Date.now()}.${ext}`;
 
     let buffer: Buffer;
@@ -4977,50 +4984,52 @@ export class OrderService {
       buffer = Buffer.from(JSON.stringify(summary, null, 2), 'utf-8');
       mimetype = 'application/json';
     } else if (ext === 'csv') {
-      const rows: string[][] = [
-        ['key', 'value'],
-        ['totalOrders', String(summary.totalOrders)],
-        ['completedOrdersCount', String(summary.completedOrdersCount ?? '')],
-        ['totalRevenue', String(summary.totalRevenue)],
-        ['averageOrderValue', String(summary.averageOrderValue)],
-        [],
-        ['status', 'count'],
-        ...(Array.isArray(summary.byStatus)
-          ? summary.byStatus.map((s: { _id?: string; count?: number }) => [
-              String(s._id ?? ''),
-              String(s.count ?? 0),
-            ])
-          : []),
-      ];
-      const csvContent = rows.map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-      buffer = Buffer.from(csvContent, 'utf-8');
-      mimetype = 'text/csv';
+        const rows: string[][] = [
+          ['key', 'value'],
+          ['totalOrders', String(summary.totalOrders)],
+          ['completedOrdersCount', String(summary.completedOrdersCount ?? '')],
+          ['totalRevenue', String(summary.totalRevenue)],
+          ['averageOrderValue', String(summary.averageOrderValue)],
+          [],
+          ['status', 'count'],
+          ...(Array.isArray(summary.byStatus)
+            ? summary.byStatus.map((s: { _id?: string; count?: number }) => [
+                String(s._id ?? ''),
+                String(s.count ?? 0),
+              ])
+            : []),
+        ];
+        const csvContent = rows.map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+        // Add UTF-8 BOM for proper Arabic character display in Excel
+        buffer = Buffer.from('\uFEFF' + csvContent, 'utf-8');
+        mimetype = 'text/csv';
     } else {
-      const workbook = XLSX.utils.book_new();
-      const summarySheet = XLSX.utils.aoa_to_sheet([
-        ['المقياس', 'القيمة'],
-        ['إجمالي الطلبات', summary.totalOrders],
-        ['الطلبات المكتملة', summary.completedOrdersCount ?? ''],
-        ['إجمالي الإيرادات', summary.totalRevenue],
-        ['متوسط قيمة الطلب', summary.averageOrderValue],
-      ]);
-      XLSX.utils.book_append_sheet(workbook, summarySheet, 'ملخص');
-      const statusSheet = XLSX.utils.aoa_to_sheet([
-        ['الحالة', 'العدد'],
-        ...(Array.isArray(summary.byStatus)
-          ? summary.byStatus.map((s: { _id?: string; count?: number }) => [
-              String(s._id ?? ''),
-              s.count ?? 0,
-            ])
-          : []),
-      ]);
-      XLSX.utils.book_append_sheet(workbook, statusSheet, 'حسب الحالة');
-      buffer = XLSX.write(workbook, {
-        type: 'buffer',
-        bookType: 'xlsx',
-      }) as Buffer;
-      mimetype =
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        // xlsx format
+        const workbook = XLSX.utils.book_new();
+        const summarySheet = XLSX.utils.aoa_to_sheet([
+          ['المقياس', 'القيمة'],
+          ['إجمالي الطلبات', summary.totalOrders],
+          ['الطلبات المكتملة', summary.completedOrdersCount ?? ''],
+          ['إجمالي الإيرادات', summary.totalRevenue],
+          ['متوسط قيمة الطلب', summary.averageOrderValue],
+        ]);
+        XLSX.utils.book_append_sheet(workbook, summarySheet, 'ملخص');
+        const statusSheet = XLSX.utils.aoa_to_sheet([
+          ['الحالة', 'العدد'],
+          ...(Array.isArray(summary.byStatus)
+            ? summary.byStatus.map((s: { _id?: string; count?: number }) => [
+                String(s._id ?? ''),
+                s.count ?? 0,
+              ])
+            : []),
+        ]);
+        XLSX.utils.book_append_sheet(workbook, statusSheet, 'حسب الحالة');
+        buffer = XLSX.write(workbook, {
+          type: 'buffer',
+          bookType: 'xlsx',
+        }) as Buffer;
+        mimetype =
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     }
 
     if (!this.uploadService) {
@@ -5252,7 +5261,27 @@ export class OrderService {
   async exportOrders(format: string, query: ListOrdersDto) {
     this.logger.log('Exporting orders list:', { format, query });
 
-    const { orders, pagination } = await this.getAllOrders(query);
+    const exportPageSize = 100;
+    const exportQueryBase: ListOrdersDto = {
+      ...query,
+      page: 1,
+      limit: exportPageSize,
+    };
+
+    const firstPageResult = await this.getAllOrders(exportQueryBase);
+    const orders = [...firstPageResult.orders];
+    const totalOrders = firstPageResult.pagination.total;
+    const totalPages = firstPageResult.pagination.totalPages;
+
+    // Export should include all records matching filters, not only the current UI page.
+    for (let page = 2; page <= totalPages; page += 1) {
+      const pageResult = await this.getAllOrders({
+        ...exportQueryBase,
+        page,
+      });
+      orders.push(...pageResult.orders);
+    }
+
     const stats = await this.getStats();
 
     const ext =
@@ -5329,7 +5358,9 @@ export class OrderService {
           headers.map((h) => escape((row as Record<string, unknown>)[h])).join(','),
         ),
       ];
-      buffer = Buffer.from(rows.join('\n'), 'utf-8');
+      // Add UTF-8 BOM for proper Arabic character display in Excel
+      const csvContent = rows.join('\n');
+      buffer = Buffer.from('\uFEFF' + csvContent, 'utf-8');
       mimetype = 'text/csv';
     }
 
@@ -5342,9 +5373,9 @@ export class OrderService {
           format: ext,
           exportedAt: new Date().toISOString(),
           fileName,
-          recordCount: pagination.total,
+          recordCount: totalOrders,
           summary: {
-            totalOrders: pagination.total,
+            totalOrders,
             exportedOrders: orders.length,
             filters: query,
             stats,
@@ -5372,9 +5403,9 @@ export class OrderService {
         format: ext,
         exportedAt: new Date().toISOString(),
         fileName,
-        recordCount: pagination.total,
+        recordCount: totalOrders,
         summary: {
-          totalOrders: pagination.total,
+          totalOrders,
           exportedOrders: orders.length,
           filters: query,
           stats,
