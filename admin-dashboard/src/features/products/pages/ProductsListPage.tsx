@@ -245,6 +245,7 @@ export const ProductsListPage: React.FC = () => {
   const { mutate: deleteProduct } = useDeleteProduct();
   const { mutate: restoreProduct } = useRestoreProduct();
   const { mutate: clearCache, isPending: isClearingCache } = useClearCache();
+  const effectiveViewMode = isMobile ? 'grid' : viewMode;
 
   // Bulk Actions
   const handleBulkDelete = async () => {
@@ -895,7 +896,7 @@ export const ProductsListPage: React.FC = () => {
             </MenuItem>
           </Menu>
           {/* View Mode Toggle */}
-          <Box display="flex" gap={0.5} sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
+          <Box display={{ xs: 'none', sm: 'flex' }} gap={0.5} sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
             <Tooltip title={t('list.viewMode.table', 'عرض الجدول')}>
               <IconButton
                 size="small"
@@ -1082,7 +1083,7 @@ export const ProductsListPage: React.FC = () => {
       )}
 
       {/* Display based on view mode */}
-      {viewMode === 'grid' ? (
+      {effectiveViewMode === 'grid' ? (
         /* Grid/Card Layout */
         <Box>
           {/* Search Field for Grid View */}
@@ -1132,7 +1133,7 @@ export const ProductsListPage: React.FC = () => {
             </Paper>
           ) : (
             /* Products Grid */
-            <Grid container spacing={2}>
+            <Grid container spacing={{ xs: 1.5, sm: 2 }}>
               {data.data.map((product) => (
                 <Grid
                   size={{
@@ -1140,6 +1141,7 @@ export const ProductsListPage: React.FC = () => {
                     sm: 6,
                     md: 4,
                     lg: 3,
+                    xl: 2,
                   }}
                   key={product._id}
                 >

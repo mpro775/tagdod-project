@@ -105,12 +105,26 @@ export const DataTable: React.FC<DataTableProps> = ({
   const totalPages = Math.max(1, Math.ceil(totalRows / Math.max(1, paginationModel.pageSize)));
 
   return (
-    <Paper sx={{ width: '100%', height: actualHeight, display: 'flex', flexDirection: 'column', minHeight: typeof height === 'string' && height === '100%' ? 600 : undefined }}>
+    <Paper
+      elevation={0}
+      sx={{
+        width: '100%',
+        height: actualHeight,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: typeof height === 'string' && height === '100%' ? 600 : undefined,
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 3,
+        overflow: 'hidden',
+        bgcolor: 'background.paper',
+      }}
+    >
       {/* Toolbar */}
       {(title || onSearch || onAdd) && (
         <Box
           sx={{
-            p: { xs: 1.5, sm: 2 },
+            p: { xs: 1.5, sm: 2, md: 2.25 },
             display: 'flex',
             flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
@@ -118,6 +132,10 @@ export const DataTable: React.FC<DataTableProps> = ({
             gap: { xs: 2, sm: 0 },
             borderBottom: 1,
             borderColor: 'divider',
+            bgcolor: (theme) =>
+              theme.palette.mode === 'dark'
+                ? 'rgba(255,255,255,0.02)'
+                : 'rgba(248,250,252,0.9)',
           }}
         >
           <Box sx={{ 
@@ -130,7 +148,7 @@ export const DataTable: React.FC<DataTableProps> = ({
             {title && (
               <Box sx={{ 
                 fontSize: { xs: 16, sm: 18 }, 
-                fontWeight: 'bold',
+                fontWeight: 800,
                 textAlign: { xs: 'center', sm: 'left' }
               }}>
                 {title}
@@ -236,14 +254,15 @@ export const DataTable: React.FC<DataTableProps> = ({
               cursor: onRowClick ? 'pointer' : 'default',
             },
             '& .MuiDataGrid-columnHeaders': {
-              backgroundColor: (theme) => 
-                theme.palette.mode === 'dark' 
-                  ? theme.palette.grey[800] 
-                  : theme.palette.grey[100],
+              backgroundColor: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? theme.palette.grey[900]
+                  : theme.palette.grey[50],
               width: '100%',
+              borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
             },
             '& .MuiDataGrid-columnHeaderTitle': {
-              fontWeight: 'bold',
+              fontWeight: 800,
               color: 'text.primary',
             },
             '& .MuiDataGrid-cell': {
@@ -263,6 +282,24 @@ export const DataTable: React.FC<DataTableProps> = ({
             '& .MuiDataGrid-row': {
               minHeight: '72px !important',
               maxHeight: 'none !important',
+              borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+              transition: 'background-color 0.16s ease, box-shadow 0.16s ease',
+              '&:nth-of-type(even)': {
+                backgroundColor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(255,255,255,0.015)'
+                    : 'rgba(248,250,252,0.55)',
+              },
+              '&:hover': {
+                backgroundColor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(255,255,255,0.05)'
+                    : 'rgba(37,99,235,0.045)',
+                boxShadow: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'inset 3px 0 0 rgba(96,165,250,0.85)'
+                    : 'inset 3px 0 0 rgba(37,99,235,0.65)',
+              },
             },
             '& .MuiDataGrid-columnHeader': {
               fontSize: { xs: '0.75rem', sm: '0.875rem' },
