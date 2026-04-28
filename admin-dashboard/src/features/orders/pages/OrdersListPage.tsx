@@ -23,6 +23,8 @@ import {
   AccordionSummary,
   AccordionDetails,
   Skeleton,
+  Pagination,
+  Divider,
 } from '@mui/material';
 import {
   Visibility,
@@ -184,6 +186,95 @@ export const OrdersListPage: React.FC = () => {
     } catch {
       // Error handled by mutation onError
     }
+  };
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil((data?.meta?.total ?? 0) / Math.max(1, paginationModel.pageSize))
+  );
+
+  const renderOrderCard = (order: Order) => {
+    const customer = usersMap.get(order.userId) ?? null;
+    const customerName = [customer?.firstName, customer?.lastName].filter(Boolean).join(' ') ||
+      order.customerName ||
+      t('list.user.notSpecified');
+    const paymentMethodLabel =
+      order.localPaymentAccountType === 'wallet' && order.paymentMethod === PaymentMethod.BANK_TRANSFER
+        ? t('payment.method.WALLET', { defaultValue: 'محفظة' })
+        : order.localPaymentAccountType === 'bank' && order.paymentMethod === PaymentMethod.BANK_TRANSFER
+          ? t('payment.method.BANK_TRANSFER', { defaultValue: 'تحويل بنكي' })
+          : t(`payment.method.${order.paymentMethod as PaymentMethod}`) || order.paymentMethod;
+
+    return (
+      <Card
+        key={order._id}
+        onClick={() => navigate(`/orders/${order._id}`)}
+        sx={{
+          border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
+          borderRadius: 3,
+          boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 10px 28px rgba(15, 23, 42, 0.08)',
+          overflow: 'hidden',
+          cursor: 'pointer',
+        }}
+      >
+        <CardContent sx={{ p: 2 }}>
+          <Stack spacing={1.5}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'flex-start' }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontFamily: 'monospace', fontWeight: 800, color: 'primary.main' }}>
+                  {order.orderNumber}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {customerName}
+                </Typography>
+              </Box>
+              <Chip label={t(`status.${order.status as OrderStatus}`)} color={orderStatusColors[order.status as OrderStatus]} size="small" />
+            </Box>
+
+            <Divider />
+
+            <Grid container spacing={1.25}>
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="caption" color="text.secondary">{t('list.columns.total')}</Typography>
+                <Typography variant="body2" fontWeight={800}>{formatCurrency(order.total, order.currency)}</Typography>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="caption" color="text.secondary">{t('list.columns.items')}</Typography>
+                <Typography variant="body2" fontWeight={700}>{t('list.items.count', { count: order.items?.length || 0 })}</Typography>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="caption" color="text.secondary">{t('list.columns.paymentMethod')}</Typography>
+                <Typography variant="body2" fontWeight={700}>{paymentMethodLabel}</Typography>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="caption" color="text.secondary">{t('list.columns.createdAt')}</Typography>
+                <Typography variant="body2" fontWeight={700}>{formatDate(order.createdAt)}</Typography>
+              </Grid>
+            </Grid>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'center' }}>
+              <Chip
+                label={t(`payment.status.${order.paymentStatus as PaymentStatus}`)}
+                color={order.paymentStatus === 'paid' ? 'success' : 'warning'}
+                size="small"
+                variant="outlined"
+              />
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<Visibility />}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  navigate(`/orders/${order._id}`);
+                }}
+              >
+                {t('list.menu.viewDetails')}
+              </Button>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+    );
   };
 
   const columns: GridColDef[] = useMemo(
@@ -692,32 +783,60 @@ export const OrdersListPage: React.FC = () => {
           sx={{
             bgcolor: 'background.paper',
             border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            borderRadius: 3,
+            overflow: 'hidden',
           }}
         >
-          <CardContent>
-            <DataTable
-              title={t('list.title')}
-              columns={columns}
-              rows={data?.data || []}
-              loading={isLoading}
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              rowCount={data?.meta?.total ?? 0}
-              paginationMode="server"
-              sortModel={sortModel}
-              onSortModelChange={setSortModel}
-              sortingMode="server"
-              getRowId={(row: unknown) => (row as Order)._id as string}
-              onRowClick={(params) => {
-                const row = params.row as Order;
-                navigate(`/orders/${row._id as string}`);
-              }}
-              selectable
-              onRowSelectionModelChange={(newSelection) => {
-                setSelectedOrders(newSelection as unknown as string[]);
-              }}
-              height={isMobile ? 'calc(100vh - 600px)' : 'calc(100vh - 400px)'}
-            />
+          <CardContent sx={{ p: { xs: 1.5, md: 2.5 } }}>
+            {isMobile ? (
+              <Stack spacing={1.5}>
+                <Typography variant="h6" fontWeight={800}>{t('list.title')}</Typography>
+                {orders.length === 0 && !isLoading ? (
+                  <Paper sx={{ p: 3, textAlign: 'center', borderRadius: 3 }}>
+                    <Assignment sx={{ fontSize: 44, color: 'text.secondary', mb: 1 }} />
+                    <Typography color="text.secondary">{t('messages.empty', { defaultValue: 'لا توجد طلبات' })}</Typography>
+                  </Paper>
+                ) : (
+                  orders.map(renderOrderCard)
+                )}
+                {(data?.meta?.total ?? 0) > paginationModel.pageSize && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1 }}>
+                    <Pagination
+                      count={totalPages}
+                      page={Math.min(paginationModel.page + 1, totalPages)}
+                      onChange={(_event, page) => setPaginationModel((prev) => ({ ...prev, page: Math.max(0, page - 1) }))}
+                      color="primary"
+                      shape="rounded"
+                      size="small"
+                    />
+                  </Box>
+                )}
+              </Stack>
+            ) : (
+              <DataTable
+                title={t('list.title')}
+                columns={columns}
+                rows={data?.data || []}
+                loading={isLoading}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                rowCount={data?.meta?.total ?? 0}
+                paginationMode="server"
+                sortModel={sortModel}
+                onSortModelChange={setSortModel}
+                sortingMode="server"
+                getRowId={(row: unknown) => (row as Order)._id as string}
+                onRowClick={(params) => {
+                  const row = params.row as Order;
+                  navigate(`/orders/${row._id as string}`);
+                }}
+                selectable
+                onRowSelectionModelChange={(newSelection) => {
+                  setSelectedOrders(newSelection as unknown as string[]);
+                }}
+                height="calc(100vh - 400px)"
+              />
+            )}
           </CardContent>
         </Card>
       </Box>
