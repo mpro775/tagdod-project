@@ -180,10 +180,20 @@ export const OrdersListPage: React.FC = () => {
   };
 
   const handleExportOrders = async (fields: string[]) => {
+    const exportParams = Object.fromEntries(
+      Object.entries(filters).filter(
+        ([key, value]) =>
+          !['page', 'limit'].includes(key) &&
+          value !== undefined &&
+          value !== null &&
+          value !== ''
+      )
+    ) as ListOrdersParams;
+
     try {
       await exportMutation.mutateAsync({
         format: 'xlsx',
-        params: filters,
+        params: exportParams,
         fields,
       });
     } catch {

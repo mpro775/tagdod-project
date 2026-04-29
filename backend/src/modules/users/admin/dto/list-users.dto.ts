@@ -49,4 +49,12 @@ export class ListUsersDto {
   @IsOptional()
   @IsIn(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc' = 'desc';
+
+  @IsOptional()
+  @IsIn(['xlsx', 'excel', 'csv'])
+  format?: 'xlsx' | 'excel' | 'csv';
+
+  @IsOptional()
+  @IsString()
+  fields?: string;
 }
