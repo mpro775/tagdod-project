@@ -5286,7 +5286,7 @@ const ext = format.toLowerCase() === 'xlsx' ? 'xlsx' : format.toLowerCase() === 
       orders.push(...pageResult.orders);
     }
 
-    const stats = await this.getStats();
+    const stats = this.buildExportOrderStats(orders);
     const ext = format.toLowerCase() === 'xlsx' || format.toLowerCase() === 'excel' ? 'xlsx' : 'csv';
     const fileName = `تصدير_المبيعات_${new Date().toISOString().slice(0, 10)}.${ext}`;
     const userIds = orders.map((o) => o.userId).filter(Boolean) as Types.ObjectId[];
@@ -5335,26 +5335,18 @@ const ext = format.toLowerCase() === 'xlsx' ? 'xlsx' : format.toLowerCase() === 
       const completedOrders = orders.filter((order) => order.status === OrderStatus.COMPLETED);
       const paidOrders = orders.filter((order) => order.paymentStatus === PaymentStatus.PAID);
       const cancelledOrders = orders.filter((order) => order.status === OrderStatus.CANCELLED);
-      const salesOrders = orders.filter(
-        (order) =>
-          ![
-            OrderStatus.CANCELLED,
-            OrderStatus.RETURNED,
-            OrderStatus.REFUNDED,
-            OrderStatus.OUT_OF_STOCK,
-          ].includes(order.status),
-      );
-      const paidSalesOrders = salesOrders.filter((order) => order.paymentStatus === PaymentStatus.PAID);
+      const completedSalesOrders = completedOrders;
+      const paidCompletedSalesOrders = completedSalesOrders.filter((order) => order.paymentStatus === PaymentStatus.PAID);
       const summaryRows = [
         { 'المؤشر': 'إجمالي الطلبات المصدرة', 'القيمة': orders.length },
         { 'المؤشر': 'إجمالي الطلبات المطابقة للفلاتر', 'القيمة': totalOrders },
         { 'المؤشر': 'الطلبات المكتملة', 'القيمة': completedOrders.length },
         { 'المؤشر': 'الطلبات المدفوعة', 'القيمة': paidOrders.length },
         { 'المؤشر': 'الطلبات الملغاة', 'القيمة': cancelledOrders.length },
-        { 'المؤشر': 'إجمالي المبيعات', 'القيمة': salesOrders.reduce((sum, order) => sum + (order.total || 0), 0) },
-        { 'المؤشر': 'إجمالي المدفوع', 'القيمة': paidSalesOrders.reduce((sum, order) => sum + (order.total || 0), 0) },
-        { 'المؤشر': 'إجمالي الخصومات', 'القيمة': salesOrders.reduce((sum, order) => sum + (order.totalDiscount || 0), 0) },
-        { 'المؤشر': 'إجمالي الشحن', 'القيمة': salesOrders.reduce((sum, order) => sum + (order.shippingCost || 0), 0) },
+        { 'المؤشر': 'إجمالي المبيعات المكتملة', 'القيمة': completedSalesOrders.reduce((sum, order) => sum + (order.total || 0), 0) },
+        { 'المؤشر': 'إجمالي المدفوع للطلبات المكتملة', 'القيمة': paidCompletedSalesOrders.reduce((sum, order) => sum + (order.total || 0), 0) },
+        { 'المؤشر': 'إجمالي الخصومات للطلبات المكتملة', 'القيمة': completedSalesOrders.reduce((sum, order) => sum + (order.totalDiscount || 0), 0) },
+        { 'المؤشر': 'إجمالي الشحن للطلبات المكتملة', 'القيمة': completedSalesOrders.reduce((sum, order) => sum + (order.shippingCost || 0), 0) },
         { 'المؤشر': 'من تاريخ', 'القيمة': query.fromDate || query.from || '' },
         { 'المؤشر': 'إلى تاريخ', 'القيمة': query.toDate || query.to || '' },
         { 'المؤشر': 'تاريخ التصدير', 'القيمة': new Date().toLocaleString('ar-SA') },
@@ -5395,6 +5387,42 @@ const ext = format.toLowerCase() === 'xlsx' ? 'xlsx' : format.toLowerCase() === 
         fileUrl: uploadedResult.url, format: ext, exportedAt: new Date().toISOString(), fileName, recordCount: totalOrders,
         summary: { totalOrders, exportedOrders: orders.length, filters: query, stats, fields: resolvedFields },
       },
+    };
+  }
+
+  private buildExportOrderStats(
+    orders: Array<{
+      status?: OrderStatus;
+      total?: number;
+    }>,
+  ): {
+    total: number;
+    pending_payment: number;
+    confirmed: number;
+    processing: number;
+    completed: number;
+    onHold: number;
+    cancelled: number;
+    returned: number;
+    refunded: number;
+    totalRevenue: number;
+    averageOrderValue: number;
+  } {
+    const completedOrders = orders.filter((order) => order.status === OrderStatus.COMPLETED);
+    const totalRevenue = completedOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+
+    return {
+      total: orders.length,
+      pending_payment: orders.filter((order) => order.status === OrderStatus.PENDING_PAYMENT).length,
+      confirmed: orders.filter((order) => order.status === OrderStatus.CONFIRMED).length,
+      processing: orders.filter((order) => order.status === OrderStatus.PROCESSING).length,
+      completed: completedOrders.length,
+      onHold: orders.filter((order) => order.status === OrderStatus.ON_HOLD).length,
+      cancelled: orders.filter((order) => order.status === OrderStatus.CANCELLED).length,
+      returned: orders.filter((order) => order.status === OrderStatus.RETURNED).length,
+      refunded: orders.filter((order) => order.status === OrderStatus.REFUNDED).length,
+      totalRevenue,
+      averageOrderValue: completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0,
     };
   }
 
