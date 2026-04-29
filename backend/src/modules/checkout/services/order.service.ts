@@ -5288,7 +5288,8 @@ const ext = format.toLowerCase() === 'xlsx' ? 'xlsx' : format.toLowerCase() === 
 
     const stats = this.buildExportOrderStats(orders);
     const ext = format.toLowerCase() === 'xlsx' || format.toLowerCase() === 'excel' ? 'xlsx' : 'csv';
-    const fileName = `تصدير_المبيعات_${new Date().toISOString().slice(0, 10)}.${ext}`;
+    const exportTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `تصدير_المبيعات_${exportTimestamp}.${ext}`;
     const userIds = orders.map((o) => o.userId).filter(Boolean) as Types.ObjectId[];
     const usersMap = userIds.length > 0 ? await this.getUsersMap(userIds) : new Map<string, { name?: string; phone?: string }>();
 
