@@ -11,6 +11,19 @@ import type {
 } from '../types/user.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
+export interface ExportResult {
+  success: boolean;
+  data: {
+    fileUrl: string;
+    format: string;
+    exportedAt: string;
+    fileName: string;
+    recordCount: number;
+    fields?: string[];
+    error?: string;
+  };
+}
+
 const extractFileName = (contentDisposition?: string): string => {
   if (!contentDisposition) {
     return `user_names_${Date.now()}.csv`;
@@ -92,6 +105,29 @@ export const usersApi = {
       blob: response.data,
       fileName: extractFileName(contentDisposition),
     };
+  },
+
+  exportUsers: async (
+    params: ListUsersParams,
+    fields: string[],
+    format: 'xlsx' | 'excel' | 'csv' = 'xlsx',
+  ): Promise<ExportResult> => {
+    const { data } = await apiClient.get<ApiResponse<ExportResult> | ExportResult>(
+      '/admin/users/export',
+      {
+        params: {
+          ...sanitizePaginationParams(params),
+          format,
+          fields: fields.join(','),
+        },
+      },
+    );
+
+    const payload = 'data' in data ? (data as ApiResponse<ExportResult>).data : data;
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+      return payload as ExportResult;
+    }
+    return { success: true, data: payload as ExportResult['data'] };
   },
 
   /**

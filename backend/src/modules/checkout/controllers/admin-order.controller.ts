@@ -688,9 +688,13 @@ export class AdminOrderController {
     status: 200,
     description: 'تم تصدير القائمة بنجاح',
   })
-  async exportOrders(@Query() query: ListOrdersDto, @Query('format') format?: string) {
+  async exportOrders(
+    @Query() query: ListOrdersDto,
+    @Query('format') format?: string,
+    @Body() body?: { fields?: string[] },
+  ) {
     const exportFormat = format || 'csv';
-    return await this.orderService.exportOrders(exportFormat, query);
+    return await this.orderService.exportOrders(exportFormat, query, body?.fields);
   }
 
   @RequirePermissions(AdminPermission.ORDERS_READ, AdminPermission.ADMIN_ACCESS)

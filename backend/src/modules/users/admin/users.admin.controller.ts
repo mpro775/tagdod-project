@@ -31,6 +31,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, FilterQuery, SortOrder, Types } from 'mongoose';
 import { hash } from 'bcrypt';
 import { FileInterceptor } from '@nestjs/platform-express';
+import * as XLSX from 'xlsx';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
@@ -100,6 +101,31 @@ export class UsersAdminController {
   private readonly marketerRequiredPermissions: AdminPermission[] = [
     AdminPermission.ADMIN_ACCESS,
     AdminPermission.MARKETER_PORTAL_ACCESS,
+  ];
+
+  private readonly userExportFields = {
+    firstName: { header: 'الاسم الأول', width: 18, select: 'firstName' },
+    lastName: { header: 'الاسم الأخير', width: 18, select: 'lastName' },
+    phone: { header: 'رقم الهاتف', width: 18, select: 'phone' },
+    roles: { header: 'الدور', width: 24, select: 'roles' },
+    status: { header: 'الحالة', width: 16, select: 'status' },
+    city: { header: 'المدينة', width: 18, select: 'city' },
+    createdAt: { header: 'تاريخ الإنشاء', width: 20, select: 'createdAt' },
+    lastActivityAt: { header: 'آخر نشاط', width: 20, select: 'lastActivityAt' },
+    verificationStatus: { header: 'حالة التحقق', width: 20, select: 'engineer_status merchant_status' },
+    deletedAt: { header: 'تاريخ الحذف', width: 20, select: 'deletedAt' },
+    storeName: { header: 'اسم المتجر', width: 24, select: 'storeName' },
+    jobTitle: { header: 'المهنة', width: 22, select: 'jobTitle' },
+  } as const;
+
+  private readonly defaultUserExportFields = [
+    'firstName',
+    'lastName',
+    'phone',
+    'roles',
+    'status',
+    'city',
+    'createdAt',
   ];
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
@@ -660,6 +686,260 @@ export class UsersAdminController {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.status(200).send(csvContent);
+  }
+
+  @RequirePermissions('users.read', 'admin.access')
+  @Get('export')
+  @ApiOperation({
+    summary: 'تصدير المستخدمين',
+    description: 'تصدير المستخدمين المطابقين للفلاتر مع اختيار الحقول بصيغة Excel أو CSV',
+  })
+  @ApiQuery({ type: ListUsersDto })
+  async exportUsers(
+    @Query() dto: ListUsersDto,
+    @Query('fields') fields?: string | string[],
+    @Query('format') format: 'xlsx' | 'excel' | 'csv' = 'xlsx',
+  ) {
+    const {
+      search,
+      status,
+      role,
+      verificationStatus,
+      isAdmin,
+      includeDeleted,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = dto;
+
+    const selectedFields = this.resolveUserExportFields(fields);
+    const query: FilterQuery<User> = {};
+
+    if (!includeDeleted) {
+      query.deletedAt = null;
+      query.status = { $ne: UserStatus.DELETED };
+    }
+
+    if (search) {
+      const searchConditions: FilterQuery<User>[] = [
+        { phone: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+      ];
+
+      if (includeDeleted) {
+        searchConditions.push({ deletionReason: { $regex: search, $options: 'i' } });
+      }
+
+      query.$or = searchConditions;
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (role) {
+      query.roles = role;
+    }
+
+    if (verificationStatus && verificationStatus !== 'all') {
+      if (role === UserRole.MERCHANT) {
+        if (verificationStatus === 'verified') {
+          query.merchant_status = CapabilityStatus.APPROVED;
+        } else if (verificationStatus === 'unverified') {
+          query.merchant_status = {
+            $in: [
+              CapabilityStatus.NONE,
+              CapabilityStatus.UNVERIFIED,
+              CapabilityStatus.PENDING,
+              CapabilityStatus.REJECTED,
+            ],
+          };
+        } else if (verificationStatus === 'pending') {
+          query.merchant_status = CapabilityStatus.PENDING;
+        } else if (verificationStatus === 'rejected') {
+          query.merchant_status = CapabilityStatus.REJECTED;
+        }
+      } else if (role === UserRole.ENGINEER) {
+        if (verificationStatus === 'verified') {
+          query.engineer_status = CapabilityStatus.APPROVED;
+        } else if (verificationStatus === 'unverified') {
+          query.engineer_status = {
+            $in: [
+              CapabilityStatus.NONE,
+              CapabilityStatus.UNVERIFIED,
+              CapabilityStatus.PENDING,
+              CapabilityStatus.REJECTED,
+            ],
+          };
+        } else if (verificationStatus === 'pending') {
+          query.engineer_status = CapabilityStatus.PENDING;
+        } else if (verificationStatus === 'rejected') {
+          query.engineer_status = CapabilityStatus.REJECTED;
+        }
+      }
+    }
+
+    if (isAdmin !== undefined) {
+      if (isAdmin) {
+        query.roles = { $in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] };
+      } else {
+        query.roles = { $nin: [UserRole.ADMIN, UserRole.SUPER_ADMIN] };
+      }
+    }
+
+    const sort: Record<string, SortOrder> = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    const selectFields = Array.from(
+      new Set(
+        selectedFields
+          .flatMap((field) => this.userExportFields[field].select.split(' '))
+          .filter(Boolean),
+      ),
+    ).join(' ');
+
+    const users = await this.userModel
+      .find(query)
+      .select(selectFields)
+      .sort(sort)
+      .lean<Array<Record<string, unknown>>>();
+
+    const rows = users.map((user) => {
+      const row: Record<string, unknown> = {};
+      for (const field of selectedFields) {
+        row[this.userExportFields[field].header] = this.getUserExportValue(user, field);
+      }
+      return row;
+    });
+
+    const ext = format === 'csv' ? 'csv' : 'xlsx';
+    const fileName = `تصدير_المستخدمين_${new Date().toISOString().slice(0, 10)}.${ext}`;
+    const { buffer, mimetype } =
+      ext === 'xlsx'
+        ? this.buildUsersExcel(rows, selectedFields)
+        : this.buildUsersCsv(rows, selectedFields);
+
+    if (!this.uploadService) {
+      return {
+        success: false,
+        data: {
+          fileUrl: '',
+          format: ext,
+          exportedAt: new Date().toISOString(),
+          fileName,
+          recordCount: users.length,
+          fields: selectedFields,
+          error: 'خدمة الرفع غير متوفرة',
+        },
+      };
+    }
+
+    const uploadedResult = await this.uploadService.uploadFile(
+      {
+        buffer,
+        originalname: fileName,
+        mimetype,
+        size: buffer.length,
+      },
+      'reports/users',
+      fileName,
+    );
+
+    return {
+      success: true,
+      data: {
+        fileUrl: uploadedResult.url,
+        format: ext,
+        exportedAt: new Date().toISOString(),
+        fileName,
+        recordCount: users.length,
+        fields: selectedFields,
+        filters: dto,
+      },
+    };
+  }
+
+  private resolveUserExportFields(
+    fields?: string | string[],
+  ): Array<keyof typeof this.userExportFields> {
+    const rawFields = Array.isArray(fields) ? fields : fields?.split(',');
+    const validFields = new Set(Object.keys(this.userExportFields));
+    const resolved = (rawFields || this.defaultUserExportFields)
+      .map((field) => String(field).trim())
+      .filter((field): field is keyof typeof this.userExportFields => validFields.has(field));
+
+    return resolved.length > 0
+      ? resolved
+      : (this.defaultUserExportFields as Array<keyof typeof this.userExportFields>);
+  }
+
+  private getUserExportValue(
+    user: Record<string, unknown>,
+    field: keyof typeof this.userExportFields,
+  ) {
+    const formatDate = (value: unknown) =>
+      value ? new Date(value as string | Date).toLocaleString('ar-SA') : '';
+
+    if (field === 'roles') {
+      return Array.isArray(user.roles) ? user.roles.join(', ') : '';
+    }
+
+    if (field === 'createdAt' || field === 'lastActivityAt' || field === 'deletedAt') {
+      return formatDate(user[field]);
+    }
+
+    if (field === 'verificationStatus') {
+      const statuses = [user.engineer_status, user.merchant_status].filter(Boolean);
+      return statuses.join(' / ');
+    }
+
+    return user[field] ?? '';
+  }
+
+  private buildUsersExcel(
+    rows: Record<string, unknown>[],
+    selectedFields: Array<keyof typeof this.userExportFields>,
+  ) {
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet['!cols'] = selectedFields.map((field) => ({
+      wch: this.userExportFields[field].width,
+    }));
+    if (rows.length > 0) {
+      worksheet['!autofilter'] = {
+        ref: XLSX.utils.encode_range({
+          s: { c: 0, r: 0 },
+          e: { c: selectedFields.length - 1, r: rows.length },
+        }),
+      };
+    }
+    (worksheet as Record<string, unknown>)['!rtl'] = true;
+
+    const workbook = XLSX.utils.book_new();
+    workbook.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'المستخدمون');
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    return {
+      buffer,
+      mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
+  }
+
+  private buildUsersCsv(
+    rows: Record<string, unknown>[],
+    selectedFields: Array<keyof typeof this.userExportFields>,
+  ) {
+    const headers = selectedFields.map((field) => this.userExportFields[field].header);
+    const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const csvRows = [
+      headers.join(','),
+      ...rows.map((row) => headers.map((header) => escape(row[header])).join(',')),
+    ];
+
+    return {
+      buffer: Buffer.from(`\uFEFF${csvRows.join('\n')}`, 'utf-8'),
+      mimetype: 'text/csv; charset=utf-8',
+    };
   }
 
   @RequirePermissions('users.read', 'admin.access')

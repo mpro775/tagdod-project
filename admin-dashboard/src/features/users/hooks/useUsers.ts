@@ -205,6 +205,23 @@ export const useExportUserNames = () => {
   });
 };
 
+export const useExportUsers = () => {
+  return useMutation({
+    mutationFn: ({ params, fields }: { params: ListUsersParams; fields: string[] }) =>
+      usersApi.exportUsers(params, fields, 'xlsx'),
+    onSuccess: (result) => {
+      const fileUrl = result?.data?.fileUrl;
+      if (!result?.success || !fileUrl) {
+        toast.error(result?.data?.error || 'فشل تصدير المستخدمين');
+        return;
+      }
+      window.open(fileUrl, '_blank');
+      toast.success(`تم تصدير المستخدمين بنجاح (${result.data.recordCount || 0} سجل)`);
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 // ==================== Verification Requests Hooks ====================
 
 // Get pending verification requests

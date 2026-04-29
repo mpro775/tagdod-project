@@ -50,6 +50,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useNavigate } from 'react-router-dom';
 import { GridColDef, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { ExportFieldsDialog } from '@/shared/components/ExportFieldsDialog';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useOrders, useOrderStats, useBulkUpdateOrderStatus, useExportOrders } from '../hooks/useOrders';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
@@ -97,6 +98,7 @@ export const OrdersListPage: React.FC = () => {
   });
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const { data, isLoading, error, refetch } = useOrders(filters);
   const orders = data?.data ?? [];
@@ -177,11 +179,12 @@ export const OrdersListPage: React.FC = () => {
     }
   };
 
-  const handleExportOrders = async () => {
+  const handleExportOrders = async (fields: string[]) => {
     try {
       await exportMutation.mutateAsync({
-        format: 'csv',
+        format: 'xlsx',
         params: filters,
+        fields,
       });
     } catch {
       // Error handled by mutation onError
@@ -514,7 +517,7 @@ export const OrdersListPage: React.FC = () => {
             <Button
               variant="contained"
               startIcon={<Download />}
-              onClick={handleExportOrders}
+              onClick={() => setExportDialogOpen(true)}
               disabled={exportMutation.isPending}
               size={isMobile ? 'small' : 'medium'}
               fullWidth={isMobile}
@@ -839,6 +842,42 @@ export const OrdersListPage: React.FC = () => {
             )}
           </CardContent>
         </Card>
+        <ExportFieldsDialog
+          open={exportDialogOpen}
+          title="تصدير المبيعات"
+          loading={exportMutation.isPending}
+          onClose={() => setExportDialogOpen(false)}
+          onExport={handleExportOrders}
+          activeFilters={[
+            { label: 'بحث', value: filters.search },
+            { label: 'حالة الطلب', value: filters.status },
+            { label: 'حالة الدفع', value: filters.paymentStatus },
+            { label: 'طريقة الدفع', value: filters.paymentMethod },
+            { label: 'من تاريخ', value: filters.fromDate },
+            { label: 'إلى تاريخ', value: filters.toDate },
+            { label: 'الترتيب', value: filters.sortBy },
+          ]}
+          fields={[
+            { key: 'orderNumber', label: 'رقم الطلب', default: true },
+            { key: 'createdAt', label: 'تاريخ الطلب', default: true },
+            { key: 'customerName', label: 'اسم العميل', default: true },
+            { key: 'customerPhone', label: 'رقم الهاتف', default: true },
+            { key: 'status', label: 'حالة الطلب', default: true },
+            { key: 'paymentStatus', label: 'حالة الدفع', default: true },
+            { key: 'paymentMethod', label: 'طريقة الدفع', default: true },
+            { key: 'total', label: 'الإجمالي', default: true },
+            { key: 'currency', label: 'العملة', default: true },
+            { key: 'city', label: 'المدينة', default: true },
+            { key: 'itemsCount', label: 'عدد المنتجات', default: true },
+            { key: 'totalDiscount', label: 'إجمالي الخصومات', default: true },
+            { key: 'shippingCost', label: 'الشحن', default: true },
+            { key: 'rating', label: 'التقييم', default: true },
+            { key: 'subtotal', label: 'المجموع الفرعي' },
+            { key: 'couponDiscount', label: 'خصم الكوبون' },
+            { key: 'invoiceNumber', label: 'رقم الفاتورة' },
+            { key: 'completedAt', label: 'تاريخ الإكمال' },
+          ]}
+        />
       </Box>
     </LocalizationProvider>
   );

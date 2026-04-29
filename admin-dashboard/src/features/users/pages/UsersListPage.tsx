@@ -12,7 +12,8 @@ import { PersonAdd, Download } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useUsers, useUserStats, useExportUserNames } from '../hooks/useUsers';
+import { useUsers, useUserStats, useExportUsers } from '../hooks/useUsers';
+import { ExportFieldsDialog } from '@/shared/components/ExportFieldsDialog';
 import type { User, UserStatus } from '../types/user.types';
 import { UserStatsCards } from '../components/UserStatsCards';
 import { UsersFilter } from '../components/UsersFilter';
@@ -58,6 +59,7 @@ export const UsersListPage: React.FC = () => {
     open: false,
     user: null,
   });
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   // API
   const verificationStatusForApi =
@@ -80,7 +82,7 @@ export const UsersListPage: React.FC = () => {
   });
 
   const { data: stats, isLoading: statsLoading } = useUserStats();
-  const exportUserNamesMutation = useExportUserNames();
+  const exportUsersMutation = useExportUsers();
 
   // Table Actions Hook
   const {
@@ -126,8 +128,7 @@ export const UsersListPage: React.FC = () => {
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
   };
 
-  const handleExportNames = () => {
-    exportUserNamesMutation.mutate({
+  const getExportParams = () => ({
       search: filters.search,
       status: filters.status,
       role: filters.role,
@@ -135,6 +136,12 @@ export const UsersListPage: React.FC = () => {
       includeDeleted: filters.includeDeleted,
       sortBy: sortModel[0]?.field || 'createdAt',
       sortOrder: sortModel[0]?.sort || 'desc',
+  });
+
+  const handleExportUsers = (fields: string[]) => {
+    exportUsersMutation.mutate({
+      params: getExportParams(),
+      fields,
     });
   };
 
@@ -203,11 +210,11 @@ export const UsersListPage: React.FC = () => {
             <Button
               variant="outlined"
               startIcon={<Download />}
-              onClick={handleExportNames}
+              onClick={() => setExportDialogOpen(true)}
               size="medium"
-              disabled={exportUserNamesMutation.isPending}
+              disabled={exportUsersMutation.isPending}
             >
-              {exportUserNamesMutation.isPending
+              {exportUsersMutation.isPending
                 ? t('users:actions.exportingNames', 'جاري تصدير الأسماء...')
                 : t('users:actions.exportNames', 'تصدير الأسماء')}
             </Button>
@@ -263,17 +270,17 @@ export const UsersListPage: React.FC = () => {
         <Button
           variant="outlined"
           startIcon={<Download />}
-          onClick={handleExportNames}
+          onClick={() => setExportDialogOpen(true)}
           fullWidth
           size="large"
-          disabled={exportUserNamesMutation.isPending}
+          disabled={exportUsersMutation.isPending}
           sx={{
             py: 1.25,
             mb: 1,
             fontSize: '0.95rem',
           }}
         >
-          {exportUserNamesMutation.isPending
+          {exportUsersMutation.isPending
             ? t('users:actions.exportingNames', 'جاري تصدير الأسماء...')
             : t('users:actions.exportNames', 'تصدير الأسماء')}
         </Button>
@@ -345,6 +352,34 @@ export const UsersListPage: React.FC = () => {
         onClose={handleCloseDeleteDialog}
         onConfirm={handleConfirmDelete}
         loading={isDeleting}
+      />
+      <ExportFieldsDialog
+        open={exportDialogOpen}
+        title="تصدير المستخدمين"
+        loading={exportUsersMutation.isPending}
+        onClose={() => setExportDialogOpen(false)}
+        onExport={handleExportUsers}
+        activeFilters={[
+          { label: 'بحث', value: filters.search },
+          { label: 'الحالة', value: filters.status },
+          { label: 'الدور', value: filters.role },
+          { label: 'التحقق', value: verificationStatusForApi },
+          { label: 'المحذوفين', value: filters.includeDeleted ? 'نعم' : undefined },
+        ]}
+        fields={[
+          { key: 'firstName', label: 'الاسم الأول', default: true },
+          { key: 'lastName', label: 'الاسم الأخير', default: true },
+          { key: 'phone', label: 'رقم الهاتف', default: true },
+          { key: 'roles', label: 'الدور', default: true },
+          { key: 'status', label: 'الحالة', default: true },
+          { key: 'city', label: 'المدينة', default: true },
+          { key: 'createdAt', label: 'تاريخ الإنشاء', default: true },
+          { key: 'lastActivityAt', label: 'آخر نشاط' },
+          { key: 'verificationStatus', label: 'حالة التحقق' },
+          { key: 'deletedAt', label: 'تاريخ الحذف' },
+          { key: 'storeName', label: 'اسم المتجر' },
+          { key: 'jobTitle', label: 'المهنة' },
+        ]}
       />
     </Box>
   );

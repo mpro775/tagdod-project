@@ -364,6 +364,7 @@ export interface ListOrdersParams extends ListParams {
   paymentStatus?: PaymentStatus;
   paymentMethod?: PaymentMethod;
   search?: string;
+  city?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   fromDate?: string;

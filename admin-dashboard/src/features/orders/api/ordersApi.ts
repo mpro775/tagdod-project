@@ -308,15 +308,19 @@ export const ordersApi = {
   /**
    * Export orders list
    */
-  exportOrders: async (format: string = 'csv', params: ListOrdersParams) => {
+  exportOrders: async (format: string = 'xlsx', params: ListOrdersParams, fields?: string[]) => {
     const response = await apiClient.post<ApiResponse<any>>(
       '/admin/orders/export',
-      {},
+      { fields },
       {
         params: { ...sanitizePaginationParams(params), format },
       }
     );
-    return response.data.data;
+    const payload = response.data.data;
+    if (payload?.data?.fileUrl) {
+      return payload.data;
+    }
+    return payload;
   },
 
   /**
