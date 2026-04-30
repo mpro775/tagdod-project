@@ -101,6 +101,7 @@ interface UserOrderCounters {
 
 type CartPreviewResult = Awaited<ReturnType<CartService['previewUser']>>;
 type CouponValidationResult = Awaited<ReturnType<MarketingService['validateCoupon']>>;
+type CheckoutCouponSessionSource = 'session' | 'preview';
 
 interface InventoryReservationTarget {
   variantId?: string;
@@ -135,6 +136,13 @@ export class OrderService {
     { expiresAt: number; data: CouponValidationResult }
   >();
   private readonly couponValidationTtlMs = 60_000;
+  private readonly checkoutCouponSessionCache = new Map<
+    string,
+    { expiresAt: number; codes: string[]; source: CheckoutCouponSessionSource }
+  >();
+  private readonly checkoutCouponSessionTtlMs = Number(
+    process.env.CHECKOUT_COUPON_SESSION_TTL_SECONDS || this.reservationTtlSec || 900,
+  ) * 1000;
 
   // مؤقت: تفعيل/تعطيل دعم الكوبونات المتعددة
   // حالياً معطل - النظام يقبل كوبون واحد فقط
@@ -188,6 +196,54 @@ export class OrderService {
 
   private buildPreviewCacheKey(userId: string, currency: string): string {
     return `${userId}:${this.normalizeCurrency(currency)}`;
+  }
+
+  private normalizeCouponCodes(couponCode?: string, couponCodes?: string[]): string[] {
+    return Array.from(
+      new Set(
+        [couponCode, ...(Array.isArray(couponCodes) ? couponCodes : [])]
+          .filter((code): code is string => typeof code === 'string' && code.trim().length > 0)
+          .map((code) => code.trim().toUpperCase()),
+      ),
+    );
+  }
+
+  private rememberCheckoutCouponSession(params: {
+    userId: string;
+    requestedCodes: string[];
+    appliedCodes: string[];
+    source: CheckoutCouponSessionSource;
+  }): void {
+    if (params.requestedCodes.length === 0 || params.appliedCodes.length === 0) {
+      this.checkoutCouponSessionCache.delete(params.userId);
+      return;
+    }
+
+    this.checkoutCouponSessionCache.set(params.userId, {
+      codes: params.appliedCodes,
+      source: params.source,
+      expiresAt: Date.now() + this.checkoutCouponSessionTtlMs,
+    });
+  }
+
+  private consumeCheckoutCouponSession(userId: string): {
+    codes: string[];
+    source: CheckoutCouponSessionSource;
+  } | null {
+    const cached = this.checkoutCouponSessionCache.get(userId);
+    if (!cached) {
+      return null;
+    }
+
+    if (cached.expiresAt <= Date.now()) {
+      this.checkoutCouponSessionCache.delete(userId);
+      return null;
+    }
+
+    return {
+      codes: cached.codes,
+      source: cached.source,
+    };
   }
 
   // ===== Notification Helpers =====
@@ -269,6 +325,8 @@ export class OrderService {
   }
 
   invalidateCheckoutPreviewCache(userId: string, currency?: string): void {
+    this.checkoutCouponSessionCache.delete(userId);
+
     if (currency) {
       const key = this.buildPreviewCacheKey(userId, currency);
       this.checkoutPreviewCache.delete(key);
@@ -1928,6 +1986,13 @@ export class OrderService {
       }),
       this.getPaymentOptions(userId, normalizedCurrency, codEligibility),
     ]);
+    const requestedCouponCodes = this.normalizeCouponCodes(dto.couponCode, dto.couponCodes);
+    this.rememberCheckoutCouponSession({
+      userId,
+      requestedCodes: requestedCouponCodes,
+      appliedCodes: computation.discounts.appliedCoupons.map((coupon) => coupon.code),
+      source: 'session',
+    });
 
     let exchangeRates:
       | {
@@ -2014,6 +2079,13 @@ export class OrderService {
         couponCode,
         couponCodes,
       });
+      const requestedCouponCodes = this.normalizeCouponCodes(couponCode, couponCodes);
+      this.rememberCheckoutCouponSession({
+        userId,
+        requestedCodes: requestedCouponCodes,
+        appliedCodes: computation.discounts.appliedCoupons.map((coupon) => coupon.code),
+        source: 'preview',
+      });
       const codEligibility = computation.codEligibility;
       return {
         success: true,
@@ -2079,6 +2151,26 @@ export class OrderService {
   }> {
     try {
       // التحقق من ملكية العنوان
+      const requestedCouponCodes = this.normalizeCouponCodes(dto.couponCode, dto.couponCodes);
+      const fallbackCouponSession =
+        requestedCouponCodes.length === 0 ? this.consumeCheckoutCouponSession(userId) : null;
+      const effectiveCouponCodes =
+        requestedCouponCodes.length > 0 ? requestedCouponCodes : fallbackCouponSession?.codes || [];
+      const couponSource =
+        requestedCouponCodes.length > 0
+          ? 'request'
+          : fallbackCouponSession
+            ? 'fallback_cache'
+            : 'none';
+
+      this.logger.log(
+        `Confirm checkout requested for user ${userId} with coupons: ${
+          requestedCouponCodes.length > 0 ? requestedCouponCodes.join(', ') : 'none'
+        }, fallback=${
+          fallbackCouponSession?.codes.length ? fallbackCouponSession.codes.join(', ') : 'none'
+        }, source=${couponSource}`,
+      );
+
       const isValid = await this.addressesService.validateAddressOwnership(
         dto.deliveryAddressId,
         userId,
@@ -2113,8 +2205,8 @@ export class OrderService {
       const quote = (await this.previewCheckout(
         userId,
         dto.currency,
-        dto.couponCode,
-        dto.couponCodes,
+        effectiveCouponCodes[0],
+        effectiveCouponCodes,
       )) as {
         data: {
           total: number;
@@ -2144,6 +2236,21 @@ export class OrderService {
       const itemsDiscount = quote.data.discounts?.itemsDiscount || quote.data.itemsDiscount || 0;
       const totalDiscount = quote.data.discounts?.totalDiscount || itemsDiscount + couponDiscount;
       const appliedCoupons = quote.data.discounts?.appliedCoupons || [];
+      this.logger.log(
+        `Confirm checkout coupon result for user ${userId}: source=${couponSource}, requested=${
+          effectiveCouponCodes.length > 0 ? effectiveCouponCodes.join(', ') : 'none'
+        }, applied=${
+          appliedCoupons.length > 0 ? appliedCoupons.map((coupon) => coupon.code).join(', ') : 'none'
+        }, couponDiscount=${couponDiscount}`,
+      );
+
+      if (effectiveCouponCodes.length > 0 && appliedCoupons.length === 0) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+          reason: 'coupon_not_applied',
+          message: 'Coupon could not be applied. Please remove it or try another coupon.',
+          couponCodes: effectiveCouponCodes,
+        });
+      }
       const tax = 0; // الضريبة حالياً صفر
 
       // 🆕 حساب الإجماليات بالعملات الثلاث
@@ -2466,6 +2573,7 @@ export class OrderService {
         },
       );
 
+      this.checkoutCouponSessionCache.delete(userId);
       this.logger.log(`Order created: ${order.orderNumber}, Cart converted`);
 
       // إرسال إشعار ORDER_CREATED للعميل

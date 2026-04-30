@@ -39,16 +39,17 @@ export function PaymentPage() {
   // Local state
   const [selectedAddressId, setSelectedAddressId] = useState<string>('')
   const [couponCode, setCouponCode] = useState('')
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | undefined>(undefined)
   const [couponResult, setCouponResult] = useState<CouponValidation | null>(null)
   const [selectedPayment, setSelectedPayment] = useState<string>('')
   const [notes, setNotes] = useState('')
 
   // Checkout session (addresses + payment options + totals)
   const { data: checkoutSession, isLoading: loadingSession } = useQuery({
-    queryKey: ['checkoutSession', couponResult?.coupon?.code],
+    queryKey: ['checkoutSession', appliedCouponCode],
     queryFn: () =>
       cartService.checkoutSession({
-        couponCode: couponResult?.valid ? couponResult.coupon?.code : undefined,
+        couponCode: appliedCouponCode,
       }),
   })
 
@@ -129,8 +130,13 @@ export function PaymentPage() {
 
   // Validate coupon
   const couponMutation = useMutation({
-    mutationFn: () => couponService.validateCoupon(couponCode),
-    onSuccess: (data) => setCouponResult(data),
+    mutationFn: (code: string) => couponService.validateCoupon(code),
+    onSuccess: (data, submittedCode) => {
+      setCouponResult(data)
+      setAppliedCouponCode(
+        data.valid ? data.coupon?.code ?? submittedCode.toUpperCase() : undefined
+      )
+    },
   })
 
   // Confirm checkout
@@ -147,7 +153,7 @@ export function PaymentPage() {
         paymentProvider: selectedOption.providerId,
         localPaymentAccountId: selectedOption.localPaymentAccountId,
         currency: checkoutSession?.totals?.currency,
-        couponCode: couponResult?.valid ? couponResult.coupon?.code : undefined,
+        couponCode: appliedCouponCode,
         notes: notes || undefined,
       })
     },
@@ -253,6 +259,7 @@ export function PaymentPage() {
                 onChange={(e) => {
                   setCouponCode((e.target as HTMLInputElement).value)
                   setCouponResult(null)
+                  setAppliedCouponCode(undefined)
                 }}
               />
             </div>
@@ -260,7 +267,7 @@ export function PaymentPage() {
               fullWidth={false}
               size="md"
               variant="outline"
-              onClick={() => couponMutation.mutate()}
+              onClick={() => couponMutation.mutate(couponCode.trim())}
               loading={couponMutation.isPending}
               disabled={!couponCode.trim()}
               className="flex-shrink-0"
