@@ -74,7 +74,7 @@ type GuideFormState = {
   coverImageId: string;
   coverImageUrl?: string;
   videoId: string;
-  linkedProductId: string | null;
+  linkedProductIds: string[];
   sortOrder: number;
   isActive: boolean;
 };
@@ -89,7 +89,7 @@ const emptyFormState: GuideFormState = {
   coverImageId: '',
   coverImageUrl: '',
   videoId: '',
-  linkedProductId: null,
+  linkedProductIds: [],
   sortOrder: 0,
   isActive: true,
 };
@@ -174,12 +174,18 @@ export const InstallationGuidesManagementPage: React.FC = () => {
   }, [dialogOpen, loadProducts, productSearch]);
 
   useEffect(() => {
-    if (!dialogOpen || !form.linkedProductId) return;
-    if (productOptions.some((item) => item.id === form.linkedProductId)) return;
+    if (!dialogOpen || form.linkedProductIds.length === 0) return;
+    const missingProductIds = form.linkedProductIds.filter(
+      (productId) => !productOptions.some((item) => item.id === productId),
+    );
+    if (missingProductIds.length === 0) return;
 
     const loadLinkedProduct = async () => {
       try {
-        const product = await productsApi.getById(form.linkedProductId as string);
+        const products = await Promise.all(
+          missingProductIds.map((productId) => productsApi.getById(productId)),
+        );
+        const product = products[0];
         if (!product?._id) return;
         setProductOptions((prev) =>
           mergeUniqueProducts([
@@ -198,7 +204,7 @@ export const InstallationGuidesManagementPage: React.FC = () => {
     };
 
     void loadLinkedProduct();
-  }, [dialogOpen, form.linkedProductId, mergeUniqueProducts, productOptions]);
+  }, [dialogOpen, form.linkedProductIds, mergeUniqueProducts, productOptions]);
 
   useEffect(() => {
     if (!currentGuide || !editingId) return;
@@ -212,7 +218,12 @@ export const InstallationGuidesManagementPage: React.FC = () => {
       coverImageId: currentGuide.coverImageId || '',
       coverImageUrl: currentGuide.coverImageUrl || '',
       videoId: currentGuide.videoId || '',
-      linkedProductId: currentGuide.linkedProductId || null,
+      linkedProductIds:
+        currentGuide.linkedProductIds?.length
+          ? currentGuide.linkedProductIds
+          : currentGuide.linkedProductId
+            ? [currentGuide.linkedProductId]
+            : [],
       sortOrder: currentGuide.sortOrder ?? 0,
       isActive: currentGuide.isActive ?? true,
     });
@@ -250,9 +261,27 @@ export const InstallationGuidesManagementPage: React.FC = () => {
     }
   }, [currentGuide, editingId, mergeUniqueProducts]);
 
-  const currentLinkedProduct = useMemo(
-    () => productOptions.find((item) => item.id === form.linkedProductId) || null,
-    [form.linkedProductId, productOptions],
+  useEffect(() => {
+    if (!currentGuide?.linkedProducts?.length) return;
+
+    setProductOptions((prev) =>
+      mergeUniqueProducts([
+        ...currentGuide.linkedProducts.map((product) => ({
+          id: product.id,
+          name: product.name || product.nameEn || 'ط¨ط¯ظˆظ† ط§ط³ظ…',
+          nameEn: product.nameEn,
+        })),
+        ...prev,
+      ]),
+    );
+  }, [currentGuide?.linkedProducts, mergeUniqueProducts]);
+
+  const currentLinkedProducts = useMemo(
+    () =>
+      form.linkedProductIds
+        .map((productId) => productOptions.find((item) => item.id === productId))
+        .filter((item): item is ProductOption => Boolean(item)),
+    [form.linkedProductIds, productOptions],
   );
 
   const resetFormState = () => {
@@ -302,7 +331,7 @@ export const InstallationGuidesManagementPage: React.FC = () => {
       descriptionEn: form.descriptionEn.trim(),
       coverImageId: form.coverImageId,
       videoId: form.videoId.trim(),
-      linkedProductId: form.linkedProductId || null,
+      linkedProductIds: form.linkedProductIds,
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
     };
@@ -646,12 +675,13 @@ export const InstallationGuidesManagementPage: React.FC = () => {
               </Box>
 
               <Autocomplete
+                multiple
                 options={productOptions}
-                value={currentLinkedProduct}
+                value={currentLinkedProducts}
                 onChange={(_, value) =>
                   setForm((prev) => ({
                     ...prev,
-                    linkedProductId: value?.id || null,
+                    linkedProductIds: value.map((item) => item.id),
                   }))
                 }
                 inputValue={productSearch}
@@ -726,7 +756,7 @@ export const InstallationGuidesManagementPage: React.FC = () => {
                   {form.tagAr || 'Tag'}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {form.linkedProductId
+                  {form.linkedProductIds.length > 0
                     ? 'يوجد منتج مرتبط'
                     : 'بدون منتج مرتبط'}
                 </Typography>
@@ -774,4 +804,3 @@ export const InstallationGuidesManagementPage: React.FC = () => {
     </Box>
   );
 };
-

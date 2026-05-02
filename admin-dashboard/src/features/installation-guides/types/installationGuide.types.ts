@@ -13,6 +13,21 @@ export interface InstallationGuideLinkedProduct {
   name: string;
   nameEn: string;
   mainImageUrl?: string;
+  description?: string;
+  descriptionEn?: string;
+  images?: string[];
+  rating?: number;
+  price?: Record<string, number>;
+  pricingByCurrency?: Record<string, unknown>;
+  tags?: string[];
+  requiresVariantSelection?: boolean;
+  isNew?: boolean;
+  isFeatured?: boolean;
+  hasVariants?: boolean;
+  isAvailable?: boolean;
+  stock?: number;
+  minOrderQuantity?: number;
+  maxOrderQuantity?: number;
 }
 
 export interface InstallationGuideListItem {
@@ -33,8 +48,10 @@ export interface InstallationGuideDetail extends InstallationGuideListItem {
   coverImageId: string;
   videoId: string;
   linkedProductId?: string | null;
+  linkedProductIds: string[];
   video?: InstallationGuideVideo;
   linkedProduct?: InstallationGuideLinkedProduct | null;
+  linkedProducts: InstallationGuideLinkedProduct[];
   createdAt: string;
 }
 
@@ -48,6 +65,7 @@ export interface CreateInstallationGuideDto {
   coverImageId: string;
   videoId: string;
   linkedProductId?: string | null;
+  linkedProductIds?: string[];
   sortOrder?: number;
   isActive?: boolean;
 }
@@ -62,6 +80,7 @@ export interface UpdateInstallationGuideDto {
   coverImageId?: string;
   videoId?: string;
   linkedProductId?: string | null;
+  linkedProductIds?: string[];
   sortOrder?: number;
   isActive?: boolean;
 }
@@ -88,4 +107,3 @@ export interface InstallationGuidesListResponse {
     pages: number;
   };
 }
-

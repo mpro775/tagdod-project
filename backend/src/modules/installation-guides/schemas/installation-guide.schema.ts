@@ -32,6 +32,13 @@ export class InstallationGuide {
   @Prop({ type: Types.ObjectId, ref: 'Product', default: null, index: true })
   linkedProductId?: Types.ObjectId | null;
 
+  @Prop({
+    type: [{ type: Types.ObjectId, ref: 'Product' }],
+    default: [],
+    index: true,
+  })
+  linkedProductIds!: Types.ObjectId[];
+
   @Prop({ type: Number, default: 0, index: true })
   sortOrder!: number;
 
@@ -48,10 +55,10 @@ export class InstallationGuide {
 export const InstallationGuideSchema = SchemaFactory.createForClass(InstallationGuide);
 
 InstallationGuideSchema.index({ isActive: 1, sortOrder: 1, createdAt: -1 });
+InstallationGuideSchema.index({ linkedProductIds: 1 });
 InstallationGuideSchema.index({
   titleAr: 'text',
   titleEn: 'text',
   tagAr: 'text',
   tagEn: 'text',
 });
-

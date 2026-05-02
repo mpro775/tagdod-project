@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsIn,
   IsInt,
@@ -56,6 +57,16 @@ export class CreateInstallationGuideDto {
   @IsOptional()
   @IsMongoId()
   linkedProductId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Linked product IDs',
+    type: [String],
+    default: [],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsMongoId({ each: true })
+  linkedProductIds?: string[];
 
   @ApiPropertyOptional({ description: 'Display order', default: 0 })
   @Type(() => Number)
@@ -123,6 +134,12 @@ export class UpdateInstallationGuideDto {
   @IsOptional()
   @IsMongoId()
   linkedProductId?: string | null;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsMongoId({ each: true })
+  linkedProductIds?: string[];
 
   @ApiPropertyOptional()
   @Type(() => Number)
@@ -230,6 +247,51 @@ export class InstallationGuideLinkedProductDto {
 
   @ApiPropertyOptional()
   mainImageUrl?: string;
+
+  @ApiPropertyOptional()
+  description?: string;
+
+  @ApiPropertyOptional()
+  descriptionEn?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  images?: string[];
+
+  @ApiPropertyOptional()
+  rating?: number;
+
+  @ApiPropertyOptional()
+  price?: Record<string, number>;
+
+  @ApiPropertyOptional()
+  pricingByCurrency?: Record<string, unknown>;
+
+  @ApiPropertyOptional({ type: [String] })
+  tags?: string[];
+
+  @ApiPropertyOptional()
+  requiresVariantSelection?: boolean;
+
+  @ApiPropertyOptional()
+  isNew?: boolean;
+
+  @ApiPropertyOptional()
+  isFeatured?: boolean;
+
+  @ApiPropertyOptional()
+  hasVariants?: boolean;
+
+  @ApiPropertyOptional()
+  isAvailable?: boolean;
+
+  @ApiPropertyOptional()
+  stock?: number;
+
+  @ApiPropertyOptional()
+  minOrderQuantity?: number;
+
+  @ApiPropertyOptional()
+  maxOrderQuantity?: number;
 }
 
 export class InstallationGuideListItemDto {
@@ -277,13 +339,18 @@ export class InstallationGuideDetailDto extends InstallationGuideListItemDto {
   @ApiPropertyOptional({ nullable: true })
   linkedProductId?: string | null;
 
+  @ApiProperty({ type: [String] })
+  linkedProductIds!: string[];
+
   @ApiPropertyOptional({ type: InstallationGuideVideoDto })
   video?: InstallationGuideVideoDto;
 
   @ApiPropertyOptional({ type: InstallationGuideLinkedProductDto, nullable: true })
   linkedProduct?: InstallationGuideLinkedProductDto | null;
 
+  @ApiProperty({ type: [InstallationGuideLinkedProductDto] })
+  linkedProducts!: InstallationGuideLinkedProductDto[];
+
   @ApiProperty()
   createdAt!: Date;
 }
-

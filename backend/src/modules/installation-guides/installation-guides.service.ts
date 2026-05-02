@@ -33,6 +33,13 @@ type LeanGuide = InstallationGuide & {
   createdAt: Date;
   updatedAt: Date;
   coverImageId?: Types.ObjectId | LeanMedia;
+  linkedProductId?: Types.ObjectId | null;
+  linkedProductIds?: Types.ObjectId[];
+};
+type LeanProductWithMedia = LeanProduct & {
+  mainImageId?: Types.ObjectId | LeanMedia;
+  imageIds?: Array<Types.ObjectId | LeanMedia>;
+  pricingByCurrency?: Record<string, unknown>;
 };
 
 @Injectable()
@@ -57,7 +64,8 @@ export class InstallationGuidesService {
     userId: string,
   ): Promise<InstallationGuideDetailDto> {
     await this.validateCoverImage(dto.coverImageId);
-    await this.validateLinkedProduct(dto.linkedProductId);
+    const linkedProductIds = this.normalizeLinkedProductIds(dto);
+    await this.validateLinkedProducts(linkedProductIds);
 
     const trimmedVideoId = dto.videoId?.trim();
     if (!trimmedVideoId) {
@@ -68,9 +76,12 @@ export class InstallationGuidesService {
     const guide = await this.installationGuideModel.create({
       ...dto,
       videoId: trimmedVideoId,
-      linkedProductId: dto.linkedProductId
-        ? this.toObjectId(dto.linkedProductId, 'linkedProductId')
+      linkedProductId: linkedProductIds[0]
+        ? this.toObjectId(linkedProductIds[0], 'linkedProductIds')
         : null,
+      linkedProductIds: linkedProductIds.map((productId) =>
+        this.toObjectId(productId, 'linkedProductIds'),
+      ),
       createdBy: actorId,
       lastUpdatedBy: actorId,
       sortOrder: dto.sortOrder ?? 0,
@@ -152,10 +163,12 @@ export class InstallationGuidesService {
       throw new NotFoundException('Installation guide not found');
     }
 
-    const linkedProduct = await this.getLinkedProductPreview(
-      guide.linkedProductId?.toString() ?? null,
+    const linkedProductIds = this.extractLinkedProductIds(guide);
+    const linkedProducts = await this.getLinkedProductPreviews(
+      linkedProductIds,
       false,
     );
+    const linkedProduct = linkedProducts[0] ?? null;
     const video = await this.buildVideoPayload(guide.videoId);
 
     return {
@@ -169,9 +182,11 @@ export class InstallationGuidesService {
       videoId: guide.videoId,
       linkedProductId: guide.linkedProductId
         ? guide.linkedProductId.toString()
-        : null,
+        : linkedProductIds[0] ?? null,
+      linkedProductIds,
       video,
       linkedProduct,
+      linkedProducts,
       createdAt: guide.createdAt,
     };
   }
@@ -193,7 +208,16 @@ export class InstallationGuidesService {
       guide.coverImageId = this.toObjectId(dto.coverImageId, 'coverImageId');
     }
 
-    if (dto.linkedProductId !== undefined) {
+    if (dto.linkedProductIds !== undefined) {
+      const linkedProductIds = this.normalizeLinkedProductIds(dto);
+      await this.validateLinkedProducts(linkedProductIds);
+      guide.linkedProductIds = linkedProductIds.map((productId) =>
+        this.toObjectId(productId, 'linkedProductIds'),
+      );
+      guide.linkedProductId = linkedProductIds[0]
+        ? this.toObjectId(linkedProductIds[0], 'linkedProductIds')
+        : null;
+    } else if (dto.linkedProductId !== undefined) {
       const normalizedLinkedProductId =
         typeof dto.linkedProductId === 'string'
           ? dto.linkedProductId.trim()
@@ -201,12 +225,15 @@ export class InstallationGuidesService {
 
       if (!normalizedLinkedProductId) {
         guide.linkedProductId = null;
+        guide.linkedProductIds = [];
       } else {
-        await this.validateLinkedProduct(normalizedLinkedProductId);
-        guide.linkedProductId = this.toObjectId(
+        await this.validateLinkedProducts([normalizedLinkedProductId]);
+        const productId = this.toObjectId(
           normalizedLinkedProductId,
           'linkedProductId',
         );
+        guide.linkedProductId = productId;
+        guide.linkedProductIds = [productId];
       }
     }
 
@@ -284,10 +311,12 @@ export class InstallationGuidesService {
       throw new NotFoundException('Installation guide not found');
     }
 
-    const linkedProduct = await this.getLinkedProductPreview(
-      guide.linkedProductId?.toString() ?? null,
+    const linkedProductIds = this.extractLinkedProductIds(guide);
+    const linkedProducts = await this.getLinkedProductPreviews(
+      linkedProductIds,
       true,
     );
+    const linkedProduct = linkedProducts[0] ?? null;
     const video = await this.buildVideoPayload(guide.videoId);
 
     return {
@@ -300,7 +329,9 @@ export class InstallationGuidesService {
       descriptionEn: guide.descriptionEn,
       coverImageUrl: this.extractMediaUrl(guide.coverImageId),
       video,
+      linkedProductIds: linkedProducts.map((product) => product.id),
       linkedProduct,
+      linkedProducts,
     };
   }
 
@@ -316,31 +347,38 @@ export class InstallationGuidesService {
     }
   }
 
-  private async validateLinkedProduct(
-    linkedProductId?: string | null,
+  private async validateLinkedProducts(
+    linkedProductIds?: string[] | null,
   ): Promise<void> {
-    if (!linkedProductId) return;
+    const uniqueIds = this.dedupeIds(linkedProductIds ?? []);
+    if (uniqueIds.length === 0) return;
 
-    const productId = this.toObjectId(linkedProductId, 'linkedProductId');
-    const product = await this.productModel.findOne({
-      _id: productId,
+    const productIds = uniqueIds.map((productId) =>
+      this.toObjectId(productId, 'linkedProductIds'),
+    );
+    const foundCount = await this.productModel.countDocuments({
+      _id: { $in: productIds },
       deletedAt: null,
     });
 
-    if (!product) {
-      throw new BadRequestException('Invalid linkedProductId');
+    if (foundCount !== uniqueIds.length) {
+      throw new BadRequestException('Invalid linkedProductIds');
     }
   }
 
-  private async getLinkedProductPreview(
-    linkedProductId: string | null,
+  private async getLinkedProductPreviews(
+    linkedProductIds: string[],
     requireActive: boolean,
-  ): Promise<InstallationGuideLinkedProductDto | null> {
-    if (!linkedProductId) return null;
+  ): Promise<InstallationGuideLinkedProductDto[]> {
+    const uniqueIds = this.dedupeIds(linkedProductIds);
+    if (uniqueIds.length === 0) return [];
 
-    const productId = this.toObjectId(linkedProductId, 'linkedProductId');
     const query: Record<string, unknown> = {
-      _id: productId,
+      _id: {
+        $in: uniqueIds.map((productId) =>
+          this.toObjectId(productId, 'linkedProductIds'),
+        ),
+      },
       deletedAt: null,
     };
 
@@ -349,26 +387,120 @@ export class InstallationGuidesService {
       query.status = ProductStatus.ACTIVE;
     }
 
-    const product = await this.productModel
-      .findOne(query)
+    const products = await this.productModel
+      .find(query)
       .populate('mainImageId', 'url')
-      .lean<LeanProduct & { mainImageId?: Types.ObjectId | LeanMedia }>();
+      .populate('imageIds', 'url')
+      .lean<LeanProductWithMedia[]>();
 
-    if (!product) return null;
+    const productMap = new Map(
+      products.map((product) => [product._id.toString(), product]),
+    );
 
-    const mainImageUrl =
-      product.mainImageId &&
-      typeof product.mainImageId === 'object' &&
-      'url' in product.mainImageId
-        ? (product.mainImageId as LeanMedia).url
-        : undefined;
+    return uniqueIds
+      .map((productId) => productMap.get(productId))
+      .filter((product): product is LeanProductWithMedia => Boolean(product))
+      .map((product) => this.mapToLinkedProduct(product));
+  }
+
+  private mapToLinkedProduct(
+    product: LeanProductWithMedia,
+  ): InstallationGuideLinkedProductDto {
+    const mainImageUrl = this.extractMediaUrl(product.mainImageId);
+    const images = [
+      ...(mainImageUrl ? [mainImageUrl] : []),
+      ...((product.imageIds ?? [])
+        .map((image) => this.extractMediaUrl(image))
+        .filter((url): url is string => Boolean(url))),
+    ];
+    const rating = product.useManualRating
+      ? product.manualRating ?? 0
+      : product.averageRating ?? 0;
+    const hasVariants = (product.variantsCount ?? 0) > 0;
+    const stock = product.stock ?? 0;
+    const isAvailable =
+      product.isActive !== false &&
+      product.status === ProductStatus.ACTIVE &&
+      (hasVariants || stock > 0 || product.allowBackorder === true);
 
     return {
       id: product._id.toString(),
       name: product.name,
       nameEn: product.nameEn,
       ...(mainImageUrl ? { mainImageUrl } : {}),
+      description: product.description,
+      descriptionEn: product.descriptionEn,
+      images,
+      rating,
+      price: this.buildPriceMap(product),
+      ...(product.pricingByCurrency
+        ? { pricingByCurrency: product.pricingByCurrency }
+        : {}),
+      tags: product.metaKeywords ?? [],
+      requiresVariantSelection: hasVariants,
+      isNew: product.isNew ?? false,
+      isFeatured: product.isFeatured ?? false,
+      hasVariants,
+      isAvailable,
+      stock,
+      minOrderQuantity: product.minOrderQuantity,
+      maxOrderQuantity: product.maxOrderQuantity,
     };
+  }
+
+  private buildPriceMap(product: LeanProductWithMedia): Record<string, number> {
+    const price: Record<string, number> = {};
+    if (typeof product.basePriceUSD === 'number' && product.basePriceUSD > 0) {
+      price.USD = product.basePriceUSD;
+    }
+    if (typeof product.basePriceSAR === 'number' && product.basePriceSAR > 0) {
+      price.SAR = product.basePriceSAR;
+    }
+    if (typeof product.basePriceYER === 'number' && product.basePriceYER > 0) {
+      price.YER = product.basePriceYER;
+    }
+    return price;
+  }
+
+  private normalizeLinkedProductIds(
+    dto: Pick<CreateInstallationGuideDto, 'linkedProductId' | 'linkedProductIds'>,
+  ): string[] {
+    if (Array.isArray(dto.linkedProductIds)) {
+      return this.dedupeIds(dto.linkedProductIds);
+    }
+
+    const linkedProductId =
+      typeof dto.linkedProductId === 'string'
+        ? dto.linkedProductId.trim()
+        : dto.linkedProductId;
+
+    return linkedProductId ? [linkedProductId] : [];
+  }
+
+  private extractLinkedProductIds(guide: LeanGuide): string[] {
+    const linkedProductIds = Array.isArray(guide.linkedProductIds)
+      ? guide.linkedProductIds.map((productId) => productId.toString())
+      : [];
+
+    if (linkedProductIds.length > 0) {
+      return this.dedupeIds(linkedProductIds);
+    }
+
+    return guide.linkedProductId ? [guide.linkedProductId.toString()] : [];
+  }
+
+  private dedupeIds(ids: string[]): string[] {
+    const normalized: string[] = [];
+    const seen = new Set<string>();
+
+    ids.forEach((id) => {
+      const value = id?.toString().trim();
+      if (!value || seen.has(value)) return;
+      seen.add(value);
+      normalized.push(value);
+    });
+
+    return normalized;
   }
 
   private async buildVideoPayload(
