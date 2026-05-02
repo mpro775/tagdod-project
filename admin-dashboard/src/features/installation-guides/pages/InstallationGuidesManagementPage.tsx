@@ -41,6 +41,7 @@ import { useTranslation } from 'react-i18next';
 import { ImageField, MediaCategory } from '@/features/media';
 import type { Media } from '@/features/media/types/media.types';
 import { VideoUploader } from '@/features/media/components/VideoUploader';
+import { MultipleImagesSelector } from '@/features/products/components/MultipleImagesSelector';
 import { productsApi } from '@/features/products/api/productsApi';
 import type {
   CreateInstallationGuideDto,
@@ -74,6 +75,9 @@ type GuideFormState = {
   coverImageId: string;
   coverImageUrl?: string;
   videoId: string;
+  imageIds: string[];
+  imageUrls: string[];
+  videoIds: string[];
   linkedProductIds: string[];
   sortOrder: number;
   isActive: boolean;
@@ -89,6 +93,9 @@ const emptyFormState: GuideFormState = {
   coverImageId: '',
   coverImageUrl: '',
   videoId: '',
+  imageIds: [],
+  imageUrls: [],
+  videoIds: [],
   linkedProductIds: [],
   sortOrder: 0,
   isActive: true,
@@ -106,6 +113,9 @@ export const InstallationGuidesManagementPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<GuideFormState>(emptyFormState);
   const [selectedCover, setSelectedCover] = useState<Media | null>(null);
+  const [selectedImages, setSelectedImages] = useState<
+    { _id?: string; url: string; name: string }[]
+  >([]);
   const [deleteTarget, setDeleteTarget] = useState<InstallationGuideListItem | null>(null);
   const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
   const [productSearch, setProductSearch] = useState('');
@@ -218,6 +228,9 @@ export const InstallationGuidesManagementPage: React.FC = () => {
       coverImageId: currentGuide.coverImageId || '',
       coverImageUrl: currentGuide.coverImageUrl || '',
       videoId: currentGuide.videoId || '',
+      imageIds: currentGuide.imageIds || [],
+      imageUrls: currentGuide.imageUrls || [],
+      videoIds: currentGuide.videoIds || [],
       linkedProductIds:
         currentGuide.linkedProductIds?.length
           ? currentGuide.linkedProductIds
@@ -242,6 +255,18 @@ export const InstallationGuidesManagementPage: React.FC = () => {
       } as Media);
     } else {
       setSelectedCover(null);
+    }
+
+    if (currentGuide.imageUrls?.length && currentGuide.imageIds?.length) {
+      setSelectedImages(
+        currentGuide.imageUrls.map((url, idx) => ({
+          _id: currentGuide.imageIds[idx] || `img-${idx}`,
+          url,
+          name: `صورة ${idx + 1}`,
+        })),
+      );
+    } else {
+      setSelectedImages([]);
     }
 
     if (currentGuide.linkedProduct) {
@@ -287,6 +312,7 @@ export const InstallationGuidesManagementPage: React.FC = () => {
   const resetFormState = () => {
     setForm(emptyFormState);
     setSelectedCover(null);
+    setSelectedImages([]);
     setEditingId(null);
     setProductSearch('');
   };
@@ -331,6 +357,8 @@ export const InstallationGuidesManagementPage: React.FC = () => {
       descriptionEn: form.descriptionEn.trim(),
       coverImageId: form.coverImageId,
       videoId: form.videoId.trim(),
+      imageIds: form.imageIds,
+      videoIds: form.videoIds,
       linkedProductIds: form.linkedProductIds,
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
@@ -663,7 +691,7 @@ export const InstallationGuidesManagementPage: React.FC = () => {
 
               <Box>
                 <Typography variant="subtitle2" mb={1}>
-                  الفيديو
+                  الفيديو الرئيسي
                 </Typography>
                 <VideoUploader
                   value={form.videoId}
@@ -672,6 +700,88 @@ export const InstallationGuidesManagementPage: React.FC = () => {
                   }
                   label="رفع فيديو الشرح"
                 />
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" mb={1}>
+                  صور إضافية
+                </Typography>
+                <MultipleImagesSelector
+                  value={selectedImages}
+                  onChange={(images) => {
+                    setSelectedImages(images);
+                    setForm((prev) => ({
+                      ...prev,
+                      imageIds: images.map((img) => img._id || '').filter(Boolean),
+                      imageUrls: images.map((img) => img.url),
+                    }));
+                  }}
+                  maxImages={10}
+                  label="صور المحتوى التعليمي"
+                />
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" mb={1}>
+                  فيديوهات إضافية
+                </Typography>
+                <Stack spacing={2}>
+                  {form.videoIds.map((vid, idx) => (
+                    <Box
+                      key={`extra-video-${idx}`}
+                      sx={{
+                        p: 1.5,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        position: 'relative',
+                      }}
+                    >
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                        <Typography variant="caption" fontWeight={600}>
+                          فيديو إضافي {idx + 1}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              videoIds: prev.videoIds.filter((_, i) => i !== idx),
+                            }))
+                          }
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                      <VideoUploader
+                        value={vid}
+                        onChange={(videoId) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            videoIds: prev.videoIds.map((v, i) =>
+                              i === idx ? (videoId || '') : v,
+                            ),
+                          }))
+                        }
+                        label={`فيديو إضافي ${idx + 1}`}
+                      />
+                    </Box>
+                  ))}
+                  <Button
+                    variant="outlined"
+                    startIcon={<Add />}
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        videoIds: [...prev.videoIds, ''],
+                      }))
+                    }
+                    fullWidth
+                  >
+                    إضافة فيديو إضافي
+                  </Button>
+                </Stack>
               </Box>
 
               <Autocomplete

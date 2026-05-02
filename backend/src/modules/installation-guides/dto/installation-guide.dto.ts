@@ -53,6 +53,26 @@ export class CreateInstallationGuideDto {
   @IsNotEmpty()
   videoId!: string;
 
+  @ApiPropertyOptional({
+    description: 'Additional image media IDs',
+    type: [String],
+    default: [],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsMongoId({ each: true })
+  imageIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Additional video IDs',
+    type: [String],
+    default: [],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  videoIds?: string[];
+
   @ApiPropertyOptional({ description: 'Linked product ID', nullable: true })
   @IsOptional()
   @IsMongoId()
@@ -129,6 +149,18 @@ export class UpdateInstallationGuideDto {
   @IsString()
   @IsNotEmpty()
   videoId?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsMongoId({ each: true })
+  imageIds?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  videoIds?: string[];
 
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
@@ -210,6 +242,33 @@ export class ListInstallationGuidesDto {
   @IsOptional()
   @IsIn(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc';
+}
+
+export class ListPublicInstallationGuidesDto {
+  @ApiPropertyOptional({ default: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @ApiPropertyOptional({ default: 20 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  limit?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  tag?: string;
 }
 
 export class InstallationGuideVideoDto {
@@ -335,6 +394,18 @@ export class InstallationGuideDetailDto extends InstallationGuideListItemDto {
 
   @ApiProperty()
   videoId!: string;
+
+  @ApiProperty({ type: [String] })
+  imageIds!: string[];
+
+  @ApiProperty({ type: [String] })
+  videoIds!: string[];
+
+  @ApiProperty({ type: [String] })
+  imageUrls!: string[];
+
+  @ApiProperty({ type: [InstallationGuideVideoDto] })
+  videos!: InstallationGuideVideoDto[];
 
   @ApiPropertyOptional({ nullable: true })
   linkedProductId?: string | null;

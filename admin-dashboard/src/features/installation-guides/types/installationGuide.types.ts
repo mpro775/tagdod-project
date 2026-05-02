@@ -47,6 +47,10 @@ export interface InstallationGuideDetail extends InstallationGuideListItem {
   descriptionEn: string;
   coverImageId: string;
   videoId: string;
+  imageIds: string[];
+  videoIds: string[];
+  imageUrls: string[];
+  videos: InstallationGuideVideo[];
   linkedProductId?: string | null;
   linkedProductIds: string[];
   video?: InstallationGuideVideo;
@@ -64,6 +68,8 @@ export interface CreateInstallationGuideDto {
   descriptionEn: string;
   coverImageId: string;
   videoId: string;
+  imageIds?: string[];
+  videoIds?: string[];
   linkedProductId?: string | null;
   linkedProductIds?: string[];
   sortOrder?: number;
@@ -79,6 +85,8 @@ export interface UpdateInstallationGuideDto {
   descriptionEn?: string;
   coverImageId?: string;
   videoId?: string;
+  imageIds?: string[];
+  videoIds?: string[];
   linkedProductId?: string | null;
   linkedProductIds?: string[];
   sortOrder?: number;

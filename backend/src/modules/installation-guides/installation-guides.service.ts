@@ -19,6 +19,7 @@ import {
   InstallationGuideListItemDto,
   InstallationGuideVideoDto,
   ListInstallationGuidesDto,
+  ListPublicInstallationGuidesDto,
   UpdateInstallationGuideDto,
 } from './dto/installation-guide.dto';
 import {
@@ -35,6 +36,8 @@ type LeanGuide = InstallationGuide & {
   coverImageId?: Types.ObjectId | LeanMedia;
   linkedProductId?: Types.ObjectId | null;
   linkedProductIds?: Types.ObjectId[];
+  imageIds?: Array<Types.ObjectId | LeanMedia>;
+  videoIds?: string[];
 };
 type LeanProductWithMedia = LeanProduct & {
   mainImageId?: Types.ObjectId | LeanMedia;
@@ -73,9 +76,16 @@ export class InstallationGuidesService {
     }
 
     const actorId = this.toObjectId(userId, 'userId');
+    const imageIds = (dto.imageIds ?? []).map((id) =>
+      this.toObjectId(id, 'imageIds'),
+    );
+    const videoIds = (dto.videoIds ?? []).map((v) => v.trim()).filter(Boolean);
+
     const guide = await this.installationGuideModel.create({
       ...dto,
       videoId: trimmedVideoId,
+      imageIds,
+      videoIds,
       linkedProductId: linkedProductIds[0]
         ? this.toObjectId(linkedProductIds[0], 'linkedProductIds')
         : null,
@@ -134,6 +144,7 @@ export class InstallationGuidesService {
       this.installationGuideModel
         .find(query)
         .populate('coverImageId', 'url')
+        .populate('imageIds', 'url')
         .sort(sort)
         .skip(skip)
         .limit(limit)
@@ -157,6 +168,7 @@ export class InstallationGuidesService {
     const guide = await this.installationGuideModel
       .findById(guideId)
       .populate('coverImageId', 'url')
+      .populate('imageIds', 'url')
       .lean<LeanGuide | null>();
 
     if (!guide) {
@@ -170,6 +182,11 @@ export class InstallationGuidesService {
     );
     const linkedProduct = linkedProducts[0] ?? null;
     const video = await this.buildVideoPayload(guide.videoId);
+    const videos = await this.buildMultipleVideoPayloads(
+      guide.videoIds ?? [],
+    );
+    if (video) videos.unshift(video);
+    const imageUrls = this.extractMultipleMediaUrls(guide.imageIds);
 
     return {
       ...this.mapToListItem(guide),
@@ -180,6 +197,14 @@ export class InstallationGuidesService {
           ? String((guide.coverImageId as LeanMedia)._id)
           : String(guide.coverImageId ?? ''),
       videoId: guide.videoId,
+      imageIds: (guide.imageIds ?? []).map((img) =>
+        typeof img === 'object' && img !== null
+          ? String((img as unknown as LeanMedia)._id)
+          : String(img),
+      ),
+      videoIds: guide.videoIds ?? [],
+      imageUrls,
+      videos,
       linkedProductId: guide.linkedProductId
         ? guide.linkedProductId.toString()
         : linkedProductIds[0] ?? null,
@@ -249,6 +274,16 @@ export class InstallationGuidesService {
       throw new BadRequestException('videoId is required');
     }
 
+    if (dto.imageIds !== undefined) {
+      guide.imageIds = dto.imageIds.map((id) =>
+        this.toObjectId(id, 'imageIds'),
+      );
+    }
+
+    if (dto.videoIds !== undefined) {
+      guide.videoIds = dto.videoIds.map((v) => v.trim()).filter(Boolean);
+    }
+
     if (dto.titleAr !== undefined) guide.titleAr = dto.titleAr;
     if (dto.titleEn !== undefined) guide.titleEn = dto.titleEn;
     if (dto.tagAr !== undefined) guide.tagAr = dto.tagAr;
@@ -290,14 +325,58 @@ export class InstallationGuidesService {
     return { deleted: true };
   }
 
-  async listForPublic(): Promise<InstallationGuideListItemDto[]> {
-    const guides = await this.installationGuideModel
-      .find({ isActive: true })
-      .populate('coverImageId', 'url')
-      .sort({ sortOrder: 1, createdAt: -1 })
-      .lean<LeanGuide[]>();
+  async listForPublic(
+    dto?: ListPublicInstallationGuidesDto,
+  ): Promise<{ data: InstallationGuideListItemDto[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
+    const page = dto?.page ?? 1;
+    const limit = dto?.limit ?? 20;
+    const skip = (page - 1) * limit;
 
-    return guides.map((guide) => this.mapToListItem(guide));
+    const query: Record<string, unknown> = { isActive: true };
+
+    if (dto?.search?.trim()) {
+      const escaped = this.escapeRegex(dto.search.trim());
+      query.$or = [
+        { titleAr: { $regex: escaped, $options: 'i' } },
+        { titleEn: { $regex: escaped, $options: 'i' } },
+        { tagAr: { $regex: escaped, $options: 'i' } },
+        { tagEn: { $regex: escaped, $options: 'i' } },
+      ];
+    }
+
+    if (dto?.tag?.trim()) {
+      const escapedTag = this.escapeRegex(dto.tag.trim());
+      query.$and = [
+        ...(query.$and ? query.$and as unknown[] : []),
+        {
+          $or: [
+            { tagAr: { $regex: escapedTag, $options: 'i' } },
+            { tagEn: { $regex: escapedTag, $options: 'i' } },
+          ],
+        },
+      ];
+    }
+
+    const [guides, total] = await Promise.all([
+      this.installationGuideModel
+        .find(query)
+        .populate('coverImageId', 'url')
+        .sort({ sortOrder: 1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean<LeanGuide[]>(),
+      this.installationGuideModel.countDocuments(query),
+    ]);
+
+    return {
+      data: guides.map((guide) => this.mapToListItem(guide)),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async getByIdForPublic(id: string) {
@@ -305,6 +384,7 @@ export class InstallationGuidesService {
     const guide = await this.installationGuideModel
       .findOne({ _id: guideId, isActive: true })
       .populate('coverImageId', 'url')
+      .populate('imageIds', 'url')
       .lean<LeanGuide | null>();
 
     if (!guide) {
@@ -318,6 +398,11 @@ export class InstallationGuidesService {
     );
     const linkedProduct = linkedProducts[0] ?? null;
     const video = await this.buildVideoPayload(guide.videoId);
+    const videos = await this.buildMultipleVideoPayloads(
+      guide.videoIds ?? [],
+    );
+    if (video) videos.unshift(video);
+    const imageUrls = this.extractMultipleMediaUrls(guide.imageIds);
 
     return {
       id: guide._id.toString(),
@@ -328,6 +413,14 @@ export class InstallationGuidesService {
       descriptionAr: guide.descriptionAr,
       descriptionEn: guide.descriptionEn,
       coverImageUrl: this.extractMediaUrl(guide.coverImageId),
+      imageIds: (guide.imageIds ?? []).map((img) =>
+        typeof img === 'object' && img !== null
+          ? String((img as unknown as LeanMedia)._id)
+          : String(img),
+      ),
+      videoIds: guide.videoIds ?? [],
+      imageUrls,
+      videos,
       video,
       linkedProductIds: linkedProducts.map((product) => product.id),
       linkedProduct,
@@ -561,6 +654,30 @@ export class InstallationGuidesService {
     if (!media || typeof media !== 'object') return undefined;
     const url = (media as { url?: unknown }).url;
     return typeof url === 'string' ? url : undefined;
+  }
+
+  private extractMultipleMediaUrls(
+    mediaArray: unknown,
+  ): string[] {
+    if (!Array.isArray(mediaArray)) return [];
+    return mediaArray
+      .map((media) => this.extractMediaUrl(media))
+      .filter((url): url is string => Boolean(url));
+  }
+
+  private async buildMultipleVideoPayloads(
+    videoIds: string[],
+  ): Promise<InstallationGuideVideoDto[]> {
+    if (!videoIds.length) return [];
+    const results = await Promise.allSettled(
+      videoIds.map((id) => this.buildVideoPayload(id)),
+    );
+    return results
+      .filter(
+        (r): r is PromiseFulfilledResult<InstallationGuideVideoDto> =>
+          r.status === 'fulfilled',
+      )
+      .map((r) => r.value);
   }
 
   private escapeRegex(value: string): string {
