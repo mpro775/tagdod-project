@@ -41,6 +41,7 @@ import { useTranslation } from 'react-i18next';
 import { ImageField, MediaCategory } from '@/features/media';
 import type { Media } from '@/features/media/types/media.types';
 import { VideoUploader } from '@/features/media/components/VideoUploader';
+import { MultipleImagesSelector } from '@/features/products/components/MultipleImagesSelector';
 import { productsApi } from '@/features/products/api/productsApi';
 import type {
   CreateInstallationGuideDto,
@@ -74,7 +75,10 @@ type GuideFormState = {
   coverImageId: string;
   coverImageUrl?: string;
   videoId: string;
-  linkedProductId: string | null;
+  imageIds: string[];
+  imageUrls: string[];
+  videoIds: string[];
+  linkedProductIds: string[];
   sortOrder: number;
   isActive: boolean;
 };
@@ -89,7 +93,10 @@ const emptyFormState: GuideFormState = {
   coverImageId: '',
   coverImageUrl: '',
   videoId: '',
-  linkedProductId: null,
+  imageIds: [],
+  imageUrls: [],
+  videoIds: [],
+  linkedProductIds: [],
   sortOrder: 0,
   isActive: true,
 };
@@ -106,6 +113,9 @@ export const InstallationGuidesManagementPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<GuideFormState>(emptyFormState);
   const [selectedCover, setSelectedCover] = useState<Media | null>(null);
+  const [selectedImages, setSelectedImages] = useState<
+    { _id?: string; url: string; name: string }[]
+  >([]);
   const [deleteTarget, setDeleteTarget] = useState<InstallationGuideListItem | null>(null);
   const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
   const [productSearch, setProductSearch] = useState('');
@@ -174,12 +184,18 @@ export const InstallationGuidesManagementPage: React.FC = () => {
   }, [dialogOpen, loadProducts, productSearch]);
 
   useEffect(() => {
-    if (!dialogOpen || !form.linkedProductId) return;
-    if (productOptions.some((item) => item.id === form.linkedProductId)) return;
+    if (!dialogOpen || form.linkedProductIds.length === 0) return;
+    const missingProductIds = form.linkedProductIds.filter(
+      (productId) => !productOptions.some((item) => item.id === productId),
+    );
+    if (missingProductIds.length === 0) return;
 
     const loadLinkedProduct = async () => {
       try {
-        const product = await productsApi.getById(form.linkedProductId as string);
+        const products = await Promise.all(
+          missingProductIds.map((productId) => productsApi.getById(productId)),
+        );
+        const product = products[0];
         if (!product?._id) return;
         setProductOptions((prev) =>
           mergeUniqueProducts([
@@ -198,7 +214,7 @@ export const InstallationGuidesManagementPage: React.FC = () => {
     };
 
     void loadLinkedProduct();
-  }, [dialogOpen, form.linkedProductId, mergeUniqueProducts, productOptions]);
+  }, [dialogOpen, form.linkedProductIds, mergeUniqueProducts, productOptions]);
 
   useEffect(() => {
     if (!currentGuide || !editingId) return;
@@ -212,7 +228,15 @@ export const InstallationGuidesManagementPage: React.FC = () => {
       coverImageId: currentGuide.coverImageId || '',
       coverImageUrl: currentGuide.coverImageUrl || '',
       videoId: currentGuide.videoId || '',
-      linkedProductId: currentGuide.linkedProductId || null,
+      imageIds: currentGuide.imageIds || [],
+      imageUrls: currentGuide.imageUrls || [],
+      videoIds: currentGuide.videoIds || [],
+      linkedProductIds:
+        currentGuide.linkedProductIds?.length
+          ? currentGuide.linkedProductIds
+          : currentGuide.linkedProductId
+            ? [currentGuide.linkedProductId]
+            : [],
       sortOrder: currentGuide.sortOrder ?? 0,
       isActive: currentGuide.isActive ?? true,
     });
@@ -233,6 +257,18 @@ export const InstallationGuidesManagementPage: React.FC = () => {
       setSelectedCover(null);
     }
 
+    if (currentGuide.imageUrls?.length && currentGuide.imageIds?.length) {
+      setSelectedImages(
+        currentGuide.imageUrls.map((url, idx) => ({
+          _id: currentGuide.imageIds[idx] || `img-${idx}`,
+          url,
+          name: `صورة ${idx + 1}`,
+        })),
+      );
+    } else {
+      setSelectedImages([]);
+    }
+
     if (currentGuide.linkedProduct) {
       setProductOptions((prev) =>
         mergeUniqueProducts([
@@ -250,14 +286,33 @@ export const InstallationGuidesManagementPage: React.FC = () => {
     }
   }, [currentGuide, editingId, mergeUniqueProducts]);
 
-  const currentLinkedProduct = useMemo(
-    () => productOptions.find((item) => item.id === form.linkedProductId) || null,
-    [form.linkedProductId, productOptions],
+  useEffect(() => {
+    if (!currentGuide?.linkedProducts?.length) return;
+
+    setProductOptions((prev) =>
+      mergeUniqueProducts([
+        ...currentGuide.linkedProducts.map((product) => ({
+          id: product.id,
+          name: product.name || product.nameEn || 'ط¨ط¯ظˆظ† ط§ط³ظ…',
+          nameEn: product.nameEn,
+        })),
+        ...prev,
+      ]),
+    );
+  }, [currentGuide?.linkedProducts, mergeUniqueProducts]);
+
+  const currentLinkedProducts = useMemo(
+    () =>
+      form.linkedProductIds
+        .map((productId) => productOptions.find((item) => item.id === productId))
+        .filter((item): item is ProductOption => Boolean(item)),
+    [form.linkedProductIds, productOptions],
   );
 
   const resetFormState = () => {
     setForm(emptyFormState);
     setSelectedCover(null);
+    setSelectedImages([]);
     setEditingId(null);
     setProductSearch('');
   };
@@ -302,7 +357,9 @@ export const InstallationGuidesManagementPage: React.FC = () => {
       descriptionEn: form.descriptionEn.trim(),
       coverImageId: form.coverImageId,
       videoId: form.videoId.trim(),
-      linkedProductId: form.linkedProductId || null,
+      imageIds: form.imageIds,
+      videoIds: form.videoIds,
+      linkedProductIds: form.linkedProductIds,
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
     };
@@ -634,7 +691,7 @@ export const InstallationGuidesManagementPage: React.FC = () => {
 
               <Box>
                 <Typography variant="subtitle2" mb={1}>
-                  الفيديو
+                  الفيديو الرئيسي
                 </Typography>
                 <VideoUploader
                   value={form.videoId}
@@ -645,13 +702,96 @@ export const InstallationGuidesManagementPage: React.FC = () => {
                 />
               </Box>
 
+              <Box>
+                <Typography variant="subtitle2" mb={1}>
+                  صور إضافية
+                </Typography>
+                <MultipleImagesSelector
+                  value={selectedImages}
+                  onChange={(images) => {
+                    setSelectedImages(images);
+                    setForm((prev) => ({
+                      ...prev,
+                      imageIds: images.map((img) => img._id || '').filter(Boolean),
+                      imageUrls: images.map((img) => img.url),
+                    }));
+                  }}
+                  maxImages={10}
+                  label="صور المحتوى التعليمي"
+                />
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" mb={1}>
+                  فيديوهات إضافية
+                </Typography>
+                <Stack spacing={2}>
+                  {form.videoIds.map((vid, idx) => (
+                    <Box
+                      key={`extra-video-${idx}`}
+                      sx={{
+                        p: 1.5,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        position: 'relative',
+                      }}
+                    >
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                        <Typography variant="caption" fontWeight={600}>
+                          فيديو إضافي {idx + 1}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              videoIds: prev.videoIds.filter((_, i) => i !== idx),
+                            }))
+                          }
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                      <VideoUploader
+                        value={vid}
+                        onChange={(videoId) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            videoIds: prev.videoIds.map((v, i) =>
+                              i === idx ? (videoId || '') : v,
+                            ),
+                          }))
+                        }
+                        label={`فيديو إضافي ${idx + 1}`}
+                      />
+                    </Box>
+                  ))}
+                  <Button
+                    variant="outlined"
+                    startIcon={<Add />}
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        videoIds: [...prev.videoIds, ''],
+                      }))
+                    }
+                    fullWidth
+                  >
+                    إضافة فيديو إضافي
+                  </Button>
+                </Stack>
+              </Box>
+
               <Autocomplete
+                multiple
                 options={productOptions}
-                value={currentLinkedProduct}
+                value={currentLinkedProducts}
                 onChange={(_, value) =>
                   setForm((prev) => ({
                     ...prev,
-                    linkedProductId: value?.id || null,
+                    linkedProductIds: value.map((item) => item.id),
                   }))
                 }
                 inputValue={productSearch}
@@ -726,7 +866,7 @@ export const InstallationGuidesManagementPage: React.FC = () => {
                   {form.tagAr || 'Tag'}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {form.linkedProductId
+                  {form.linkedProductIds.length > 0
                     ? 'يوجد منتج مرتبط'
                     : 'بدون منتج مرتبط'}
                 </Typography>
@@ -774,4 +914,3 @@ export const InstallationGuidesManagementPage: React.FC = () => {
     </Box>
   );
 };
-

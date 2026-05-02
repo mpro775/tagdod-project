@@ -561,12 +561,20 @@ export const useExportOrderAnalytics = () => {
 // Export orders list
 export const useExportOrders = () => {
   return useMutation({
-    mutationFn: ({ format, params }: { format?: string; params: ListOrdersParams }) =>
-      ordersApi.exportOrders(format || 'csv', params),
+    mutationFn: ({
+      format,
+      params,
+      fields,
+    }: {
+      format?: string;
+      params: ListOrdersParams;
+      fields?: string[];
+    }) => ordersApi.exportOrders(format || 'xlsx', params, fields),
     onSuccess: (data) => {
       toast.success('تم تصدير قائمة الطلبات بنجاح');
       if (data?.fileUrl) {
         window.open(data.fileUrl, '_blank');
+        return;
       }
     },
     onError: ErrorHandler.showError,

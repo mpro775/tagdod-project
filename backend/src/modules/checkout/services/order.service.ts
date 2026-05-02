@@ -101,6 +101,7 @@ interface UserOrderCounters {
 
 type CartPreviewResult = Awaited<ReturnType<CartService['previewUser']>>;
 type CouponValidationResult = Awaited<ReturnType<MarketingService['validateCoupon']>>;
+type CheckoutCouponSessionSource = 'session' | 'preview';
 
 interface InventoryReservationTarget {
   variantId?: string;
@@ -135,6 +136,13 @@ export class OrderService {
     { expiresAt: number; data: CouponValidationResult }
   >();
   private readonly couponValidationTtlMs = 60_000;
+  private readonly checkoutCouponSessionCache = new Map<
+    string,
+    { expiresAt: number; codes: string[]; source: CheckoutCouponSessionSource }
+  >();
+  private readonly checkoutCouponSessionTtlMs = Number(
+    process.env.CHECKOUT_COUPON_SESSION_TTL_SECONDS || this.reservationTtlSec || 900,
+  ) * 1000;
 
   // مؤقت: تفعيل/تعطيل دعم الكوبونات المتعددة
   // حالياً معطل - النظام يقبل كوبون واحد فقط
@@ -188,6 +196,54 @@ export class OrderService {
 
   private buildPreviewCacheKey(userId: string, currency: string): string {
     return `${userId}:${this.normalizeCurrency(currency)}`;
+  }
+
+  private normalizeCouponCodes(couponCode?: string, couponCodes?: string[]): string[] {
+    return Array.from(
+      new Set(
+        [couponCode, ...(Array.isArray(couponCodes) ? couponCodes : [])]
+          .filter((code): code is string => typeof code === 'string' && code.trim().length > 0)
+          .map((code) => code.trim().toUpperCase()),
+      ),
+    );
+  }
+
+  private rememberCheckoutCouponSession(params: {
+    userId: string;
+    requestedCodes: string[];
+    appliedCodes: string[];
+    source: CheckoutCouponSessionSource;
+  }): void {
+    if (params.requestedCodes.length === 0 || params.appliedCodes.length === 0) {
+      this.checkoutCouponSessionCache.delete(params.userId);
+      return;
+    }
+
+    this.checkoutCouponSessionCache.set(params.userId, {
+      codes: params.appliedCodes,
+      source: params.source,
+      expiresAt: Date.now() + this.checkoutCouponSessionTtlMs,
+    });
+  }
+
+  private consumeCheckoutCouponSession(userId: string): {
+    codes: string[];
+    source: CheckoutCouponSessionSource;
+  } | null {
+    const cached = this.checkoutCouponSessionCache.get(userId);
+    if (!cached) {
+      return null;
+    }
+
+    if (cached.expiresAt <= Date.now()) {
+      this.checkoutCouponSessionCache.delete(userId);
+      return null;
+    }
+
+    return {
+      codes: cached.codes,
+      source: cached.source,
+    };
   }
 
   // ===== Notification Helpers =====
@@ -269,6 +325,8 @@ export class OrderService {
   }
 
   invalidateCheckoutPreviewCache(userId: string, currency?: string): void {
+    this.checkoutCouponSessionCache.delete(userId);
+
     if (currency) {
       const key = this.buildPreviewCacheKey(userId, currency);
       this.checkoutPreviewCache.delete(key);
@@ -1928,6 +1986,13 @@ export class OrderService {
       }),
       this.getPaymentOptions(userId, normalizedCurrency, codEligibility),
     ]);
+    const requestedCouponCodes = this.normalizeCouponCodes(dto.couponCode, dto.couponCodes);
+    this.rememberCheckoutCouponSession({
+      userId,
+      requestedCodes: requestedCouponCodes,
+      appliedCodes: computation.discounts.appliedCoupons.map((coupon) => coupon.code),
+      source: 'session',
+    });
 
     let exchangeRates:
       | {
@@ -2014,6 +2079,13 @@ export class OrderService {
         couponCode,
         couponCodes,
       });
+      const requestedCouponCodes = this.normalizeCouponCodes(couponCode, couponCodes);
+      this.rememberCheckoutCouponSession({
+        userId,
+        requestedCodes: requestedCouponCodes,
+        appliedCodes: computation.discounts.appliedCoupons.map((coupon) => coupon.code),
+        source: 'preview',
+      });
       const codEligibility = computation.codEligibility;
       return {
         success: true,
@@ -2079,6 +2151,26 @@ export class OrderService {
   }> {
     try {
       // التحقق من ملكية العنوان
+      const requestedCouponCodes = this.normalizeCouponCodes(dto.couponCode, dto.couponCodes);
+      const fallbackCouponSession =
+        requestedCouponCodes.length === 0 ? this.consumeCheckoutCouponSession(userId) : null;
+      const effectiveCouponCodes =
+        requestedCouponCodes.length > 0 ? requestedCouponCodes : fallbackCouponSession?.codes || [];
+      const couponSource =
+        requestedCouponCodes.length > 0
+          ? 'request'
+          : fallbackCouponSession
+            ? 'fallback_cache'
+            : 'none';
+
+      this.logger.log(
+        `Confirm checkout requested for user ${userId} with coupons: ${
+          requestedCouponCodes.length > 0 ? requestedCouponCodes.join(', ') : 'none'
+        }, fallback=${
+          fallbackCouponSession?.codes.length ? fallbackCouponSession.codes.join(', ') : 'none'
+        }, source=${couponSource}`,
+      );
+
       const isValid = await this.addressesService.validateAddressOwnership(
         dto.deliveryAddressId,
         userId,
@@ -2113,8 +2205,8 @@ export class OrderService {
       const quote = (await this.previewCheckout(
         userId,
         dto.currency,
-        dto.couponCode,
-        dto.couponCodes,
+        effectiveCouponCodes[0],
+        effectiveCouponCodes,
       )) as {
         data: {
           total: number;
@@ -2144,6 +2236,21 @@ export class OrderService {
       const itemsDiscount = quote.data.discounts?.itemsDiscount || quote.data.itemsDiscount || 0;
       const totalDiscount = quote.data.discounts?.totalDiscount || itemsDiscount + couponDiscount;
       const appliedCoupons = quote.data.discounts?.appliedCoupons || [];
+      this.logger.log(
+        `Confirm checkout coupon result for user ${userId}: source=${couponSource}, requested=${
+          effectiveCouponCodes.length > 0 ? effectiveCouponCodes.join(', ') : 'none'
+        }, applied=${
+          appliedCoupons.length > 0 ? appliedCoupons.map((coupon) => coupon.code).join(', ') : 'none'
+        }, couponDiscount=${couponDiscount}`,
+      );
+
+      if (effectiveCouponCodes.length > 0 && appliedCoupons.length === 0) {
+        throw new DomainException(ErrorCode.VALIDATION_ERROR, {
+          reason: 'coupon_not_applied',
+          message: 'Coupon could not be applied. Please remove it or try another coupon.',
+          couponCodes: effectiveCouponCodes,
+        });
+      }
       const tax = 0; // الضريبة حالياً صفر
 
       // 🆕 حساب الإجماليات بالعملات الثلاث
@@ -2466,6 +2573,7 @@ export class OrderService {
         },
       );
 
+      this.checkoutCouponSessionCache.delete(userId);
       this.logger.log(`Order created: ${order.orderNumber}, Cart converted`);
 
       // إرسال إشعار ORDER_CREATED للعميل
@@ -2662,7 +2770,9 @@ export class OrderService {
       limit = 20,
       status,
       paymentStatus,
+      paymentMethod,
       search,
+      city,
       sortBy = 'createdAt',
       sortOrder = 'desc',
       fromDate,
@@ -2683,6 +2793,8 @@ export class OrderService {
 
     if (status) filter.status = status;
     if (paymentStatus) filter.paymentStatus = paymentStatus;
+    if (paymentMethod) filter.paymentMethod = paymentMethod;
+    if (city) filter['deliveryAddress.city'] = { $regex: city, $options: 'i' };
     const effectiveFromDate = fromDate ?? from;
     const effectiveToDate = toDate ?? to;
 
@@ -4710,55 +4822,41 @@ export class OrderService {
         return {
           'رقم الطلب': order.orderNumber,
           'تاريخ الطلب': order.createdAt?.toLocaleDateString('ar-SA'),
-          الحالة: order.status,
-          المجموع: order.total,
-          العملة: order.currency,
+          'الحالة': order.status,
+          'الإجمالي': order.total,
+          'العملة': order.currency,
           'اسم العميل': userInfo.name,
-          'رقم الهاتف': userInfo.phone,
-          المدينة: order.deliveryAddress?.city || 'غير محدد',
+          'هاتف العميل': userInfo.phone,
+          'المدينة': order.deliveryAddress?.city || 'غير محدد',
           'طريقة الدفع': order.paymentMethod,
           'عدد المنتجات': order.items?.length || 0,
-          التقييم: order.ratingInfo?.rating || 'غير مقيم',
+          'التقييم': order.ratingInfo?.rating || 'غير محدد',
         };
       });
 
       const worksheet = XLSX.utils.json_to_sheet(excelData);
       worksheet['!cols'] = [
-        { wch: 15 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 8 },
-        { wch: 20 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 12 },
-        { wch: 10 },
+        { wch: 15 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 10 },
+        { wch: 22 }, { wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 12 },
       ];
+      (worksheet as Record<string, unknown>)['!rtl'] = true;
 
       const workbook = XLSX.utils.book_new();
+      workbook.Workbook = { Views: [{ RTL: true }] };
       XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير الطلبات');
 
       const fileName = `orders-report-${new Date().toISOString().split('T')[0]}.xlsx`;
-      const excelBuffer = XLSX.write(workbook, {
-        type: 'buffer',
-        bookType: 'xlsx',
-      }) as Buffer;
+      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
 
       if (!this.uploadService) {
-        throw new OrderExcelGenerationFailedException({
-          ordersCount: orders.length,
-          error: 'خدمة الرفع غير متوفرة (Bunny)',
-        });
+        throw new OrderExcelGenerationFailedException({ ordersCount: orders.length, error: 'خدمة الرفع غير متوفرة (Bunny)' });
       }
 
       const uploadedResult = await this.uploadService.uploadFile(
         {
           buffer: excelBuffer,
           originalname: fileName,
-          mimetype:
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           size: excelBuffer.length,
         },
         'reports',
@@ -4768,20 +4866,13 @@ export class OrderService {
       return uploadedResult.url;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      this.logger.error('Error generating Excel report', {
-        error: err.message,
-        stack: err.stack,
-        ordersCount: orders.length,
-      });
+      this.logger.error('Error generating Excel report', { error: err.message, stack: err.stack, ordersCount: orders.length });
 
       if (error instanceof OrderException) {
         throw error;
       }
 
-      throw new OrderExcelGenerationFailedException({
-        ordersCount: orders.length,
-        error: err.message,
-      });
+      throw new OrderExcelGenerationFailedException({ ordersCount: orders.length, error: err.message });
     }
   }
 
@@ -5258,109 +5349,131 @@ const ext = format.toLowerCase() === 'xlsx' ? 'xlsx' : format.toLowerCase() === 
   /**
    * تصدير قائمة الطلبات — إنشاء الملف (CSV/Excel) ورفعه إلى Bunny
    */
-  async exportOrders(format: string, query: ListOrdersDto) {
-    this.logger.log('Exporting orders list:', { format, query });
+  async exportOrders(format: string, query: ListOrdersDto, fields?: string[]) {
+    this.logger.log('Exporting orders list:', { format, query, fields });
+
+    const exportFields = {
+      orderNumber: { header: 'رقم الطلب', width: 18 },
+      createdAt: { header: 'تاريخ الطلب', width: 20 },
+      customerName: { header: 'اسم العميل', width: 24 },
+      customerPhone: { header: 'هاتف العميل', width: 18 },
+      status: { header: 'حالة الطلب', width: 18 },
+      paymentStatus: { header: 'حالة الدفع', width: 18 },
+      paymentMethod: { header: 'طريقة الدفع', width: 18 },
+      total: { header: 'الإجمالي', width: 14 },
+      currency: { header: 'العملة', width: 10 },
+      city: { header: 'المدينة', width: 18 },
+      itemsCount: { header: 'عدد المنتجات', width: 14 },
+      subtotal: { header: 'الإجمالي الفرعي', width: 16 },
+      totalDiscount: { header: 'إجمالي الخصومات', width: 18 },
+      shippingCost: { header: 'الشحن', width: 14 },
+      couponDiscount: { header: 'خصم الكوبون', width: 16 },
+      rating: { header: 'التقييم', width: 12 },
+      invoiceNumber: { header: 'رقم الفاتورة', width: 18 },
+      completedAt: { header: 'تاريخ الإكمال', width: 20 },
+    } as const;
+    const defaultFields = [
+      'orderNumber', 'createdAt', 'customerName', 'customerPhone', 'status', 'paymentStatus',
+      'paymentMethod', 'total', 'currency', 'city', 'itemsCount', 'totalDiscount', 'shippingCost', 'rating',
+    ] as const;
+    const validFields = new Set(Object.keys(exportFields));
+    const selectedFields = (fields?.length ? fields : [...defaultFields])
+      .map((field) => String(field).trim())
+      .filter((field): field is keyof typeof exportFields => validFields.has(field));
+    const resolvedFields = selectedFields.length > 0 ? selectedFields : [...defaultFields];
 
     const exportPageSize = 100;
-    const exportQueryBase: ListOrdersDto = {
-      ...query,
-      page: 1,
-      limit: exportPageSize,
-    };
-
+    const exportQueryBase: ListOrdersDto = { ...query, page: 1, limit: exportPageSize };
     const firstPageResult = await this.getAllOrders(exportQueryBase);
     const orders = [...firstPageResult.orders];
     const totalOrders = firstPageResult.pagination.total;
     const totalPages = firstPageResult.pagination.totalPages;
 
-    // Export should include all records matching filters, not only the current UI page.
     for (let page = 2; page <= totalPages; page += 1) {
-      const pageResult = await this.getAllOrders({
-        ...exportQueryBase,
-        page,
-      });
+      const pageResult = await this.getAllOrders({ ...exportQueryBase, page });
       orders.push(...pageResult.orders);
     }
 
-    const stats = await this.getStats();
-
-    const ext =
-      format.toLowerCase() === 'xlsx' || format.toLowerCase() === 'excel'
-        ? 'xlsx'
-        : 'csv';
-    const fileName = `orders_list_${Date.now()}.${ext}`;
-
+    const stats = this.buildExportOrderStats(orders);
+    const ext = format.toLowerCase() === 'xlsx' || format.toLowerCase() === 'excel' ? 'xlsx' : 'csv';
+    const exportTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `تصدير_المبيعات_${exportTimestamp}.${ext}`;
     const userIds = orders.map((o) => o.userId).filter(Boolean) as Types.ObjectId[];
     const usersMap = userIds.length > 0 ? await this.getUsersMap(userIds) : new Map<string, { name?: string; phone?: string }>();
 
-    const rowData = orders.map((order) => {
-      const userInfo = usersMap.get(order.userId?.toString?.() ?? '') ?? {
-        name: 'غير محدد',
-        phone: 'غير محدد',
-      };
+    const allRowData = orders.map((order) => {
+      const userInfo = usersMap.get(order.userId?.toString?.() ?? '') ?? { name: 'غير محدد', phone: 'غير محدد' };
       return {
         orderNumber: order.orderNumber,
-        createdAt: order.createdAt?.toLocaleDateString?.('ar-SA') ?? '',
-        status: order.status,
-        total: order.total ?? 0,
-        currency: order.currency ?? '',
+        createdAt: order.createdAt ? new Date(order.createdAt).toLocaleString('ar-SA') : '',
         customerName: userInfo.name ?? 'غير محدد',
         customerPhone: userInfo.phone ?? 'غير محدد',
-        city: order.deliveryAddress?.city ?? 'غير محدد',
+        status: order.status,
+        paymentStatus: order.paymentStatus ?? '',
         paymentMethod: order.paymentMethod ?? '',
+        total: order.total ?? 0,
+        currency: order.currency ?? '',
+        city: order.deliveryAddress?.city ?? 'غير محدد',
         itemsCount: order.items?.length ?? 0,
-        rating: order.ratingInfo?.rating ?? 'غير مقيم',
+        subtotal: order.subtotal ?? 0,
+        totalDiscount: order.totalDiscount ?? 0,
+        shippingCost: order.shippingCost ?? 0,
+        couponDiscount: order.couponDiscount ?? 0,
+        rating: order.ratingInfo?.rating ?? 'غير محدد',
+        invoiceNumber: order.invoiceNumber ?? '',
+        completedAt: order.completedAt ? new Date(order.completedAt).toLocaleString('ar-SA') : '',
       };
+    });
+    const rowData = allRowData.map((row) => {
+      const localizedRow: Record<string, unknown> = {};
+      for (const field of resolvedFields) localizedRow[exportFields[field].header] = row[field];
+      return localizedRow;
     });
 
     let buffer: Buffer;
     let mimetype: string;
-
     if (ext === 'xlsx') {
       const worksheet = XLSX.utils.json_to_sheet(rowData);
-      worksheet['!cols'] = [
-        { wch: 15 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 8 },
-        { wch: 20 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 12 },
-        { wch: 10 },
+      worksheet['!cols'] = resolvedFields.map((field) => ({ wch: exportFields[field].width }));
+      if (rowData.length > 0) {
+        worksheet['!autofilter'] = {
+          ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: resolvedFields.length - 1, r: rowData.length } }),
+        };
+      }
+      (worksheet as Record<string, unknown>)['!rtl'] = true;
+      const completedOrders = orders.filter((order) => order.status === OrderStatus.COMPLETED);
+      const paidOrders = orders.filter((order) => order.paymentStatus === PaymentStatus.PAID);
+      const cancelledOrders = orders.filter((order) => order.status === OrderStatus.CANCELLED);
+      const completedSalesOrders = completedOrders;
+      const paidCompletedSalesOrders = completedSalesOrders.filter((order) => order.paymentStatus === PaymentStatus.PAID);
+      const summaryRows = [
+        { 'المؤشر': 'إجمالي الطلبات المصدرة', 'القيمة': orders.length },
+        { 'المؤشر': 'إجمالي الطلبات المطابقة للفلاتر', 'القيمة': totalOrders },
+        { 'المؤشر': 'الطلبات المكتملة', 'القيمة': completedOrders.length },
+        { 'المؤشر': 'الطلبات المدفوعة', 'القيمة': paidOrders.length },
+        { 'المؤشر': 'الطلبات الملغاة', 'القيمة': cancelledOrders.length },
+        { 'المؤشر': 'إجمالي المبيعات المكتملة', 'القيمة': completedSalesOrders.reduce((sum, order) => sum + (order.total || 0), 0) },
+        { 'المؤشر': 'إجمالي المدفوع للطلبات المكتملة', 'القيمة': paidCompletedSalesOrders.reduce((sum, order) => sum + (order.total || 0), 0) },
+        { 'المؤشر': 'إجمالي الخصومات للطلبات المكتملة', 'القيمة': completedSalesOrders.reduce((sum, order) => sum + (order.totalDiscount || 0), 0) },
+        { 'المؤشر': 'إجمالي الشحن للطلبات المكتملة', 'القيمة': completedSalesOrders.reduce((sum, order) => sum + (order.shippingCost || 0), 0) },
+        { 'المؤشر': 'من تاريخ', 'القيمة': query.fromDate || query.from || '' },
+        { 'المؤشر': 'إلى تاريخ', 'القيمة': query.toDate || query.to || '' },
+        { 'المؤشر': 'تاريخ التصدير', 'القيمة': new Date().toLocaleString('ar-SA') },
       ];
+      const summaryWorksheet = XLSX.utils.json_to_sheet(summaryRows);
+      summaryWorksheet['!cols'] = [{ wch: 32 }, { wch: 28 }];
+      (summaryWorksheet as Record<string, unknown>)['!rtl'] = true;
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'قائمة الطلبات');
+      workbook.Workbook = { Views: [{ RTL: true }] };
+      XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'ملخص المبيعات');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'بيانات الطلبات');
       buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
-      mimetype =
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     } else {
-      const headers = [
-        'orderNumber',
-        'createdAt',
-        'status',
-        'total',
-        'currency',
-        'customerName',
-        'customerPhone',
-        'city',
-        'paymentMethod',
-        'itemsCount',
-        'rating',
-      ];
-      const escape = (v: unknown) =>
-        `"${String(v ?? '').replace(/"/g, '""')}"`;
-      const rows = [
-        headers.join(','),
-        ...rowData.map((row) =>
-          headers.map((h) => escape((row as Record<string, unknown>)[h])).join(','),
-        ),
-      ];
-      // Add UTF-8 BOM for proper Arabic character display in Excel
-      const csvContent = rows.join('\n');
-      buffer = Buffer.from('\uFEFF' + csvContent, 'utf-8');
+      const headers = resolvedFields.map((field) => exportFields[field].header);
+      const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+      const rows = [headers.join(','), ...rowData.map((row) => headers.map((h) => escape((row as Record<string, unknown>)[h])).join(','))];
+      buffer = Buffer.from('\uFEFF' + rows.join('\n'), 'utf-8');
       mimetype = 'text/csv';
     }
 
@@ -5369,48 +5482,56 @@ const ext = format.toLowerCase() === 'xlsx' ? 'xlsx' : format.toLowerCase() === 
       return {
         success: false,
         data: {
-          fileUrl: '',
-          format: ext,
-          exportedAt: new Date().toISOString(),
-          fileName,
-          recordCount: totalOrders,
-          summary: {
-            totalOrders,
-            exportedOrders: orders.length,
-            filters: query,
-            stats,
-          },
+          fileUrl: '', format: ext, exportedAt: new Date().toISOString(), fileName, recordCount: totalOrders,
+          summary: { totalOrders, exportedOrders: orders.length, filters: query, stats, fields: resolvedFields },
           error: 'خدمة الرفع غير متوفرة (Bunny)',
         },
       };
     }
 
-    const uploadedResult = await this.uploadService.uploadFile(
-      {
-        buffer,
-        originalname: fileName,
-        mimetype,
-        size: buffer.length,
-      },
-      'reports',
-      fileName,
-    );
-
+    const uploadedResult = await this.uploadService.uploadFile({ buffer, originalname: fileName, mimetype, size: buffer.length }, 'reports', fileName);
     return {
       success: true,
       data: {
-        fileUrl: uploadedResult.url,
-        format: ext,
-        exportedAt: new Date().toISOString(),
-        fileName,
-        recordCount: totalOrders,
-        summary: {
-          totalOrders,
-          exportedOrders: orders.length,
-          filters: query,
-          stats,
-        },
+        fileUrl: uploadedResult.url, format: ext, exportedAt: new Date().toISOString(), fileName, recordCount: totalOrders,
+        summary: { totalOrders, exportedOrders: orders.length, filters: query, stats, fields: resolvedFields },
       },
+    };
+  }
+
+  private buildExportOrderStats(
+    orders: Array<{
+      status?: OrderStatus;
+      total?: number;
+    }>,
+  ): {
+    total: number;
+    pending_payment: number;
+    confirmed: number;
+    processing: number;
+    completed: number;
+    onHold: number;
+    cancelled: number;
+    returned: number;
+    refunded: number;
+    totalRevenue: number;
+    averageOrderValue: number;
+  } {
+    const completedOrders = orders.filter((order) => order.status === OrderStatus.COMPLETED);
+    const totalRevenue = completedOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+
+    return {
+      total: orders.length,
+      pending_payment: orders.filter((order) => order.status === OrderStatus.PENDING_PAYMENT).length,
+      confirmed: orders.filter((order) => order.status === OrderStatus.CONFIRMED).length,
+      processing: orders.filter((order) => order.status === OrderStatus.PROCESSING).length,
+      completed: completedOrders.length,
+      onHold: orders.filter((order) => order.status === OrderStatus.ON_HOLD).length,
+      cancelled: orders.filter((order) => order.status === OrderStatus.CANCELLED).length,
+      returned: orders.filter((order) => order.status === OrderStatus.RETURNED).length,
+      refunded: orders.filter((order) => order.status === OrderStatus.REFUNDED).length,
+      totalRevenue,
+      averageOrderValue: completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0,
     };
   }
 

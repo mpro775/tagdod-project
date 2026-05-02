@@ -1,5 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ListPublicInstallationGuidesDto } from './dto/installation-guide.dto';
 import { InstallationGuidesService } from './installation-guides.service';
 
 @ApiTags('طرق-التركيب-العامة')
@@ -8,10 +9,11 @@ export class InstallationGuidesPublicController {
   constructor(private readonly guidesService: InstallationGuidesService) {}
 
   @Get('public')
-  @ApiOperation({ summary: 'Public list of active installation guides' })
+  @ApiOperation({ summary: 'Public list of active installation guides with pagination' })
+  @ApiQuery({ type: ListPublicInstallationGuidesDto })
   @ApiResponse({ status: 200, description: 'Guides fetched successfully' })
-  async list() {
-    return this.guidesService.listForPublic();
+  async list(@Query() query: ListPublicInstallationGuidesDto) {
+    return this.guidesService.listForPublic(query);
   }
 
   @Get('public/:id')

@@ -630,10 +630,20 @@ export class ListOrdersDto {
   @IsEnum(PaymentStatus)
   paymentStatus?: PaymentStatus;
 
+  @ApiPropertyOptional({ enum: PaymentMethod })
+  @IsOptional()
+  @IsEnum(PaymentMethod)
+  paymentMethod?: PaymentMethod;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({ description: 'فلترة حسب مدينة التوصيل' })
+  @IsOptional()
+  @IsString()
+  city?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
