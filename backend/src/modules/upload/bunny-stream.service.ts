@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosResponse } from 'axios';
+import * as crypto from 'crypto';
 import {
   UploadFailedException,
   FileTooLargeException,
@@ -245,6 +246,65 @@ export class BunnyStreamService {
         reason: 'bunny_stream_library_error',
       });
     }
+  }
+
+  /**
+   * Prepare a direct (browser-to-Bunny) TUS upload.
+   * Creates the video object server-side and returns TUS credentials.
+   */
+  async prepareDirectUpload(params: {
+    title: string;
+    fileSize: number;
+    mimeType: string;
+  }): Promise<{
+    videoId: string;
+    guid: string;
+    libraryId: string;
+    tusEndpoint: string;
+    signature: string;
+    expire: number;
+  }> {
+    const { title, fileSize, mimeType } = params;
+
+    this.validateVideoFile({ buffer: Buffer.alloc(0), originalname: title, mimetype: mimeType, size: fileSize });
+
+    const library = await this.getVideoLibrary();
+    if (fileSize > library.MaxFileSize) {
+      throw new FileTooLargeException({ size: fileSize, maxSize: library.MaxFileSize });
+    }
+
+    const videoGuid = uuidv4();
+    const libraryId = this.bunnyStreamCredentials.libraryId;
+    const apiKey = this.bunnyStreamCredentials.apiKey;
+
+    const createVideoUrl = `https://${this.bunnyStreamCredentials.hostname}/library/${libraryId}/videos`;
+    const createResponse = await axios.post(
+      createVideoUrl,
+      { title, guid: videoGuid },
+      { headers: { AccessKey: apiKey, 'Content-Type': 'application/json' } },
+    );
+
+    const createdVideoGuid = String(createResponse.data?.guid ?? videoGuid);
+    const createdVideoId = String(createResponse.data?.id ?? '');
+
+    this.logger.debug(
+      `Direct upload prepared. id=${createdVideoId || 'n/a'}, guid=${createdVideoGuid || 'n/a'}`,
+    );
+
+    const expire = Math.floor(Date.now() / 1000) + 86400;
+    const signature = crypto
+      .createHmac('sha256', apiKey)
+      .update(libraryId + '/tusupload' + expire + createdVideoGuid)
+      .digest('hex');
+
+    return {
+      videoId: createdVideoGuid || createdVideoId,
+      guid: createdVideoGuid,
+      libraryId,
+      tusEndpoint: `https://${this.bunnyStreamCredentials.hostname}/tusupload`,
+      signature,
+      expire,
+    };
   }
 
   /**

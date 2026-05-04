@@ -285,6 +285,95 @@ export class UploadController {
     return info;
   }
 
+  @Post('video/prepare-direct')
+  @ApiOperation({
+    summary: 'تحضير رفع مباشر للفيديو',
+    description: 'ينشئ كائن فيديو في Bunny Stream ويرجع بيانات TUS للرفع المباشر من المتصفح',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'تم تحضير الرفع المباشر بنجاح',
+  })
+  async prepareDirectUpload(
+    @Body() body: { title: string; fileSize: number; mimeType: string },
+    @Req() req: { user?: { sub?: string } },
+  ) {
+    const result = await this.bunnyStreamService.prepareDirectUpload({
+      title: body.title,
+      fileSize: body.fileSize,
+      mimeType: body.mimeType,
+    });
+    return {
+      ...result,
+      uploaderId: req.user?.sub,
+    };
+  }
+
+  @Post('video/confirm-direct')
+  @ApiOperation({
+    summary: 'تأكيد رفع مباشر للفيديو',
+    description: 'يسجل الفيديو المرفوع مباشرة في مكتبة الوسائط بعد اكتمال الرفع',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'تم تأكيد الرفع المباشر بنجاح',
+    type: VideoUploadResponseDto,
+  })
+  async confirmDirectUpload(
+    @Body()
+    body: {
+      videoId: string;
+      guid: string;
+      title: string;
+      category?: string;
+      mimeType?: string;
+      size?: number;
+    },
+    @Req() req: { user?: { sub?: string } },
+  ) {
+    const info = await this.bunnyStreamService.getVideoInfo(body.videoId || body.guid);
+    const uploaderId = req.user?.sub;
+
+    let mediaId: string | undefined;
+
+    if (uploaderId) {
+      try {
+        const media = await this.mediaService.registerVideoInLibrary({
+          videoId: body.videoId,
+          guid: body.guid || info.guid,
+          title: body.title || info.title,
+          thumbnailUrl: info.thumbnailUrl,
+          playbackUrl: info.embedUrl || info.url,
+          mimeType: body.mimeType || 'video/mp4',
+          size: body.size || info.size || 0,
+          category: (body.category as MediaCategory) || MediaCategory.OTHER,
+          uploadedBy: uploaderId,
+        });
+        mediaId = String(media._id);
+      } catch (error) {
+        this.logger.warn(
+          `Direct upload confirmed but media library registration failed. videoId=${body.videoId}`,
+        );
+      }
+    }
+
+    return {
+      videoId: body.videoId,
+      guid: body.guid || info.guid,
+      title: info.title,
+      url: info.url,
+      embedUrl: info.embedUrl,
+      hlsUrl: info.hlsUrl,
+      mp4Url: info.mp4Url,
+      thumbnailUrl: info.thumbnailUrl,
+      status: info.status,
+      duration: info.duration,
+      size: body.size || info.size,
+      mimeType: body.mimeType || 'video/mp4',
+      ...(mediaId ? { mediaId } : {}),
+    };
+  }
+
   @Post('video')
   @UseInterceptors(FileInterceptor('video'))
   @ApiConsumes('multipart/form-data')
