@@ -48,15 +48,15 @@ export class BunnyStreamService {
 
   constructor(private configService: ConfigService) {
     this.bunnyStreamCredentials = {
-      libraryId: this.configService.get<string>('BUNNY_STREAM_LIBRARY_ID') || '600364',
-      apiKey:
-        this.configService.get<string>('BUNNY_STREAM_API_KEY') ||
-        'c1368f6a-4139-4169-84a66c6b0e63-e60b-42a9',
+      libraryId: this.configService.get<string>('BUNNY_STREAM_LIBRARY_ID') || '',
+      apiKey: this.configService.get<string>('BUNNY_STREAM_API_KEY') || '',
       hostname: this.configService.get<string>('BUNNY_STREAM_HOSTNAME') || 'video.bunnycdn.com',
-      cdnHostname:
-        this.configService.get<string>('BUNNY_STREAM_CDN_HOSTNAME') ||
-        `${this.configService.get<string>('BUNNY_STREAM_LIBRARY_ID') || '600364'}.b-cdn.net`,
+      cdnHostname: this.configService.get<string>('BUNNY_STREAM_CDN_HOSTNAME') || '',
     };
+
+    if (!this.bunnyStreamCredentials.cdnHostname && this.bunnyStreamCredentials.libraryId) {
+      this.bunnyStreamCredentials.cdnHostname = `${this.bunnyStreamCredentials.libraryId}.b-cdn.net`;
+    }
 
     // Validate required credentials
     if (!this.bunnyStreamCredentials.libraryId) {
@@ -273,32 +273,53 @@ export class BunnyStreamService {
       throw new FileTooLargeException({ size: fileSize, maxSize: library.MaxFileSize });
     }
 
-    const videoGuid = uuidv4();
     const libraryId = this.bunnyStreamCredentials.libraryId;
     const apiKey = this.bunnyStreamCredentials.apiKey;
 
     const createVideoUrl = `https://${this.bunnyStreamCredentials.hostname}/library/${libraryId}/videos`;
     const createResponse = await axios.post(
       createVideoUrl,
-      { title, guid: videoGuid },
-      { headers: { AccessKey: apiKey, 'Content-Type': 'application/json' } },
+      { title },
+      {
+        headers: {
+          AccessKey: apiKey,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        validateStatus: () => true,
+      },
     );
 
-    const createdVideoGuid = String(createResponse.data?.guid ?? videoGuid);
-    const createdVideoId = String(createResponse.data?.id ?? '');
+    if (createResponse.status < 200 || createResponse.status >= 300) {
+      this.logger.error(
+        `Bunny create video failed: ${createResponse.status} ${JSON.stringify(createResponse.data)}`,
+      );
+      throw new UploadFailedException({
+        reason: 'bunny_create_video_failed',
+        status: createResponse.status,
+      });
+    }
+
+    const createdVideoGuid = String(createResponse.data?.guid ?? '');
+
+    if (!createdVideoGuid) {
+      throw new UploadFailedException({
+        reason: 'bunny_create_video_missing_guid',
+      });
+    }
 
     this.logger.debug(
-      `Direct upload prepared. id=${createdVideoId || 'n/a'}, guid=${createdVideoGuid || 'n/a'}`,
+      `Direct upload prepared. guid=${createdVideoGuid}, libraryId=${libraryId}`,
     );
 
     const expire = Math.floor(Date.now() / 1000) + 86400;
     const signature = crypto
-      .createHmac('sha256', apiKey)
-      .update(libraryId + '/tusupload' + expire + createdVideoGuid)
+      .createHash('sha256')
+      .update(`${libraryId}${apiKey}${expire}${createdVideoGuid}`)
       .digest('hex');
 
     return {
-      videoId: createdVideoGuid || createdVideoId,
+      videoId: createdVideoGuid,
       guid: createdVideoGuid,
       libraryId,
       tusEndpoint: `https://${this.bunnyStreamCredentials.hostname}/tusupload`,

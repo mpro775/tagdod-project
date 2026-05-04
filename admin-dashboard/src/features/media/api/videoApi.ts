@@ -115,8 +115,8 @@ export const videoApi = {
         headers: {
           AuthorizationSignature: credentials.signature,
           AuthorizationExpire: String(credentials.expire),
-          VideoId: credentials.guid,
-          LibraryId: credentials.libraryId,
+          VideoId: credentials.videoId,
+          LibraryId: String(credentials.libraryId),
         },
         onProgress: (bytesUploaded, bytesTotal) => {
           if (!onProgress) return;
