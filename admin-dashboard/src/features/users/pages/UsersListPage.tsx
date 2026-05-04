@@ -7,12 +7,18 @@ import {
   Grid,
   useTheme,
   useMediaQuery,
+  TextField,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
-import { PersonAdd, Download } from '@mui/icons-material';
+import { PersonAdd, Download, CalendarMonth } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useUsers, useUserStats, useExportUsers } from '../hooks/useUsers';
+import { useUsers, useUserStats, useExportUsers, useExportMonthlyReport } from '../hooks/useUsers';
 import { ExportFieldsDialog } from '@/shared/components/ExportFieldsDialog';
 import type { User, UserStatus } from '../types/user.types';
 import { UserStatsCards } from '../components/UserStatsCards';
@@ -60,6 +66,9 @@ export const UsersListPage: React.FC = () => {
     user: null,
   });
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [monthlyReportDialog, setMonthlyReportDialog] = useState(false);
+  const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
+  const [reportYear, setReportYear] = useState(new Date().getFullYear());
 
   // API
   const verificationStatusForApi =
@@ -83,6 +92,7 @@ export const UsersListPage: React.FC = () => {
 
   const { data: stats, isLoading: statsLoading } = useUserStats();
   const exportUsersMutation = useExportUsers();
+  const exportMonthlyReportMutation = useExportMonthlyReport();
 
   // Table Actions Hook
   const {
@@ -143,6 +153,15 @@ export const UsersListPage: React.FC = () => {
       params: getExportParams(),
       fields,
     });
+  };
+
+  const handleExportMonthlyReport = () => {
+    exportMonthlyReportMutation.mutate(
+      { month: reportMonth, year: reportYear },
+      {
+        onSuccess: () => setMonthlyReportDialog(false),
+      },
+    );
   };
 
   // Table Columns
@@ -209,6 +228,18 @@ export const UsersListPage: React.FC = () => {
           <Stack direction="row" spacing={2} justifyContent="flex-end">
             <Button
               variant="outlined"
+              color="secondary"
+              startIcon={<CalendarMonth />}
+              onClick={() => setMonthlyReportDialog(true)}
+              size="medium"
+              disabled={exportMonthlyReportMutation.isPending}
+            >
+              {exportMonthlyReportMutation.isPending
+                ? t('users:actions.exportingReport', 'جاري تصدير التقرير...')
+                : t('users:actions.monthlyReport', 'تقرير شهري')}
+            </Button>
+            <Button
+              variant="outlined"
               startIcon={<Download />}
               onClick={() => setExportDialogOpen(true)}
               size="medium"
@@ -267,6 +298,24 @@ export const UsersListPage: React.FC = () => {
           px: { xs: 1, sm: 2 },
         }}
       >
+        <Button
+          variant="outlined"
+          color="secondary"
+          startIcon={<CalendarMonth />}
+          onClick={() => setMonthlyReportDialog(true)}
+          fullWidth
+          size="large"
+          disabled={exportMonthlyReportMutation.isPending}
+          sx={{
+            py: 1.25,
+            mb: 1,
+            fontSize: '0.95rem',
+          }}
+        >
+          {exportMonthlyReportMutation.isPending
+            ? t('users:actions.exportingReport', 'جاري تصدير التقرير...')
+            : t('users:actions.monthlyReport', 'تقرير شهري')}
+        </Button>
         <Button
           variant="outlined"
           startIcon={<Download />}
@@ -381,6 +430,64 @@ export const UsersListPage: React.FC = () => {
           { key: 'jobTitle', label: 'المهنة' },
         ]}
       />
+
+      <Dialog
+        open={monthlyReportDialog}
+        onClose={() => setMonthlyReportDialog(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 'bold' }}>
+          {t('users:actions.monthlyReport', 'تقرير شهري')}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              select
+              label={t('users:report.month', 'الشهر')}
+              value={reportMonth}
+              onChange={(e) => setReportMonth(Number(e.target.value))}
+              fullWidth
+            >
+              <MenuItem value={1}>يناير</MenuItem>
+              <MenuItem value={2}>فبراير</MenuItem>
+              <MenuItem value={3}>مارس</MenuItem>
+              <MenuItem value={4}>أبريل</MenuItem>
+              <MenuItem value={5}>مايو</MenuItem>
+              <MenuItem value={6}>يونيو</MenuItem>
+              <MenuItem value={7}>يوليو</MenuItem>
+              <MenuItem value={8}>أغسطس</MenuItem>
+              <MenuItem value={9}>سبتمبر</MenuItem>
+              <MenuItem value={10}>أكتوبر</MenuItem>
+              <MenuItem value={11}>نوفمبر</MenuItem>
+              <MenuItem value={12}>ديسمبر</MenuItem>
+            </TextField>
+            <TextField
+              label={t('users:report.year', 'السنة')}
+              type="number"
+              value={reportYear}
+              onChange={(e) => setReportYear(Number(e.target.value))}
+              fullWidth
+              slotProps={{ htmlInput: { min: 2020, max: 2100 } }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setMonthlyReportDialog(false)}>
+            {t('common:actions.cancel', 'إلغاء')}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleExportMonthlyReport}
+            disabled={exportMonthlyReportMutation.isPending}
+            startIcon={<Download />}
+          >
+            {exportMonthlyReportMutation.isPending
+              ? t('users:actions.exporting', 'جاري التصدير...')
+              : t('common:actions.export', 'تصدير')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

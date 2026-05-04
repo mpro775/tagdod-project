@@ -943,6 +943,132 @@ export class UsersAdminController {
   }
 
   @RequirePermissions('users.read', 'admin.access')
+  @Get('export/monthly-report')
+  @ApiOperation({
+    summary: 'تصدير تقرير شهري للمستخدمين',
+    description: 'تصدير تقرير Excel يحتوي على أسماء المستخدمين وملخص عددهم حسب الدور لشهر محدد',
+  })
+  @ApiQuery({ name: 'month', type: Number, description: 'الشهر (1-12)', required: true })
+  @ApiQuery({ name: 'year', type: Number, description: 'السنة', required: true })
+  async exportMonthlyReport(
+    @Query('month') monthParam: string,
+    @Query('year') yearParam: string,
+  ) {
+    const month = Math.min(12, Math.max(1, Number(monthParam) || new Date().getMonth() + 1));
+    const year = Number(yearParam) || new Date().getFullYear();
+
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const users = await this.userModel
+      .find({
+        createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+        deletedAt: null,
+        status: { $ne: UserStatus.DELETED },
+      })
+      .select('firstName lastName phone roles status createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const roleMap: Record<string, string> = {
+      user: 'مستخدم',
+      admin: 'مدير',
+      super_admin: 'مدير عام',
+      merchant: 'تاجر',
+      engineer: 'مهندس',
+    };
+
+    const userRows = users.map((u) => ({
+      'الاسم الأول': u.firstName || '',
+      'الاسم الأخير': u.lastName || '',
+      'رقم الهاتف': u.phone,
+      'الأدوار': (u.roles || []).map((r) => roleMap[r] || r).join('، '),
+      'الحالة': u.status === UserStatus.ACTIVE ? 'نشط' : u.status === UserStatus.SUSPENDED ? 'موقوف' : u.status === UserStatus.PENDING ? 'معلق' : u.status,
+      'تاريخ التسجيل': (u as User & { createdAt?: Date }).createdAt
+        ? new Date((u as User & { createdAt?: Date }).createdAt!).toLocaleDateString('ar-SA')
+        : '',
+    }));
+
+    const roleCounts: Record<string, number> = {};
+    for (const u of users) {
+      for (const role of u.roles || []) {
+        const label = roleMap[role] || role;
+        roleCounts[label] = (roleCounts[label] || 0) + 1;
+      }
+    }
+
+    const summaryRows = Object.entries(roleCounts).map(([role, count]) => ({
+      'الدور': role,
+      'العدد': count,
+    }));
+
+    summaryRows.push({ 'الدور': 'إجمالي المستخدمين', 'العدد': users.length });
+
+    const usersSheet = XLSX.utils.json_to_sheet(userRows);
+    usersSheet['!cols'] = [
+      { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 24 }, { wch: 14 }, { wch: 20 },
+    ];
+    (usersSheet as Record<string, unknown>)['!rtl'] = true;
+
+    const summarySheet = XLSX.utils.json_to_sheet(summaryRows);
+    summarySheet['!cols'] = [{ wch: 24 }, { wch: 14 }];
+    (summarySheet as Record<string, unknown>)['!rtl'] = true;
+
+    const workbook = XLSX.utils.book_new();
+    workbook.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(workbook, usersSheet, 'المستخدمين');
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'ملخص الأدوار');
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    const monthNames = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+    ];
+    const fileName = `تقرير_المستخدمين_${monthNames[month - 1]}_${year}.xlsx`;
+
+    if (!this.uploadService) {
+      return {
+        success: false,
+        data: {
+          fileUrl: '',
+          format: 'xlsx',
+          exportedAt: new Date().toISOString(),
+          fileName,
+          recordCount: users.length,
+          error: 'خدمة الرفع غير متوفرة',
+        },
+      };
+    }
+
+    const uploadedResult = await this.uploadService.uploadFile(
+      {
+        buffer,
+        originalname: fileName,
+        mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        size: buffer.length,
+      },
+      'reports/users',
+      fileName,
+    );
+
+    return {
+      success: true,
+      data: {
+        fileUrl: uploadedResult.url,
+        format: 'xlsx',
+        exportedAt: new Date().toISOString(),
+        fileName,
+        recordCount: users.length,
+        month,
+        year,
+        monthName: monthNames[month - 1],
+        roleSummary: roleCounts,
+        totalUsers: users.length,
+      },
+    };
+  }
+
+  @RequirePermissions('users.read', 'admin.access')
   @Get(':id')
   async getUser(@Param('id') id: string) {
     const user = await this.userModel.findById(id).select('-passwordHash').lean();
