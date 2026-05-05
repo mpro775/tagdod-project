@@ -130,6 +130,22 @@ export const usersApi = {
     return { success: true, data: payload as ExportResult['data'] };
   },
 
+  exportMonthlyReport: async (
+    month: number,
+    year: number,
+  ): Promise<ExportResult> => {
+    const { data } = await apiClient.get<ApiResponse<ExportResult> | ExportResult>(
+      '/admin/users/export/monthly-report',
+      { params: { month, year } },
+    );
+
+    const payload = 'data' in data ? (data as ApiResponse<ExportResult>).data : data;
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+      return payload as ExportResult;
+    }
+    return { success: true, data: payload as ExportResult['data'] };
+  },
+
   /**
    * Get user by ID
    */

@@ -150,10 +150,10 @@ async function bootstrap() {
     const server = await app.listen(port, '0.0.0.0');
 
     // Critical server timeout settings for stability and security
-    server.keepAliveTimeout = 65000; // 65 seconds (more than load balancer timeout)
-    server.headersTimeout = 66000; // 66 seconds (more than keepAliveTimeout)
-    server.timeout = 120000; // 2 minutes for request timeout
-    server.maxHeadersCount = 50; // Limit headers for security
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
+    server.timeout = 600000;
+    server.maxHeadersCount = 50;
 
     logger.log('✅ Server started successfully!');
     logger.log(`🚀 Application is running on: http://localhost:${port}`);

@@ -18,10 +18,9 @@ import { SharedModule } from '../../shared/shared.module';
     // Configure Multer for file uploads - basic limits only, validation in service
     MulterModule.register({
       limits: {
-        fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB default (from env)
-        files: parseInt(process.env.MAX_FILES || '10'), // Max 10 files per request
+        fileSize: parseInt(process.env.MAX_FILE_SIZE || '524288000'),
+        files: parseInt(process.env.MAX_FILES || '10'),
       },
-      // Remove fileFilter - validation will be handled in the service layer
     }),
     MongooseModule.forFeature([
       { name: Media.name, schema: MediaSchema },

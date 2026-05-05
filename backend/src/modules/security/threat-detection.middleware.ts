@@ -244,8 +244,10 @@ export class ThreatDetectionMiddleware implements NestMiddleware {
       throw new DomainException(ErrorCode.VALIDATION_ERROR, { reason: 'invalid_request' });
     }
 
-    // Check for extremely large payloads
-    if (contentLength > 50 * 1024 * 1024) { // 50MB
+    // Check for extremely large payloads (exempt upload routes)
+    const isUploadRoute = req.path.includes('/upload');
+    const maxPayloadSize = isUploadRoute ? 600 * 1024 * 1024 : 50 * 1024 * 1024;
+    if (contentLength > maxPayloadSize) {
       this.logThreat('Large Payload', `${contentLength} bytes`, req);
       throw new DomainException(ErrorCode.VALIDATION_ERROR, { reason: 'payload_too_large' });
     }

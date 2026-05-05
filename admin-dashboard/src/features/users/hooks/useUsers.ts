@@ -222,6 +222,23 @@ export const useExportUsers = () => {
   });
 };
 
+export const useExportMonthlyReport = () => {
+  return useMutation({
+    mutationFn: ({ month, year }: { month: number; year: number }) =>
+      usersApi.exportMonthlyReport(month, year),
+    onSuccess: (result) => {
+      const fileUrl = result?.data?.fileUrl;
+      if (!result?.success || !fileUrl) {
+        toast.error(result?.data?.error || 'فشل تصدير التقرير الشهري');
+        return;
+      }
+      window.open(fileUrl, '_blank');
+      toast.success(`تم تصدير التقرير الشهري بنجاح (${result.data.recordCount || 0} مستخدم)`);
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 // ==================== Verification Requests Hooks ====================
 
 // Get pending verification requests

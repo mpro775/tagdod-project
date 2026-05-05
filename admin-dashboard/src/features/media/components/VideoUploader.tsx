@@ -203,7 +203,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     });
 
     try {
-      const result = await videoApi.upload(selectedFile, videoTitle.trim(), mediaCategory, (progress) => {
+      const result = await videoApi.uploadDirect(selectedFile, videoTitle.trim(), mediaCategory, (progress) => {
         setUploadProgress(progress);
       });
       setUploadedVideo(result);
