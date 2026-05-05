@@ -786,7 +786,11 @@ export const InstallationGuidesManagementPage: React.FC = () => {
                   }))
                 }
                 inputValue={productSearch}
-                onInputChange={(_, value) => setProductSearch(value)}
+                onInputChange={(_, value, reason) => {
+                  if (reason === 'input') {
+                    setProductSearch(value);
+                  }
+                }}
                 loading={loadingProducts}
                 filterOptions={(options) => options}
                 getOptionLabel={(option) =>
