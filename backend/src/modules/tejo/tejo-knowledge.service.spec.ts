@@ -12,12 +12,20 @@ describe('TejoKnowledgeService', () => {
       embed: jest.fn(),
     };
 
-    const service = new TejoKnowledgeService(kbModel as any, llmRouterService as any);
-    return { service, kbModel, llmRouterService };
+    const vectorStore = {
+      upsertPoint: jest.fn(),
+    };
+
+    const service = new TejoKnowledgeService(
+      kbModel as any,
+      llmRouterService as any,
+      vectorStore as any,
+    );
+    return { service, kbModel, llmRouterService, vectorStore };
   };
 
   it('creates knowledge entry with embedding vector', async () => {
-    const { service, kbModel, llmRouterService } = createService();
+    const { service, kbModel, llmRouterService, vectorStore } = createService();
 
     kbModel.findOne.mockReturnValue({
       exec: jest.fn().mockResolvedValue(null),
@@ -42,10 +50,20 @@ describe('TejoKnowledgeService', () => {
         model: 'text-embedding-004',
       }),
     );
+    expect(vectorStore.upsertPoint).toHaveBeenCalledWith(
+      'kb:faq_1',
+      [0.1, 0.2, 0.3],
+      expect.objectContaining({
+        tenantId: 'tajaddod',
+        sourceType: 'kb',
+        sourceId: 'faq_1',
+        text: 'sample faq text',
+      }),
+    );
   });
 
   it('updates knowledge text and vector', async () => {
-    const { service, kbModel, llmRouterService } = createService();
+    const { service, kbModel, llmRouterService, vectorStore } = createService();
 
     const save = jest.fn().mockResolvedValue(undefined);
     kbModel.findOne.mockReturnValue({
@@ -73,5 +91,15 @@ describe('TejoKnowledgeService', () => {
     expect(result.text).toBe('new text');
     expect(result.vector).toEqual([0.9, 0.8]);
     expect(save).toHaveBeenCalledTimes(1);
+    expect(vectorStore.upsertPoint).toHaveBeenCalledWith(
+      'kb:faq_1',
+      [0.9, 0.8],
+      expect.objectContaining({
+        tenantId: 'tajaddod',
+        sourceType: 'kb',
+        sourceId: 'faq_1',
+        text: 'new text',
+      }),
+    );
   });
 });

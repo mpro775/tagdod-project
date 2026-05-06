@@ -21,6 +21,7 @@ import { TejoPromptService } from './tejo-prompt.service';
 import { TejoSettingsService } from './tejo-settings.service';
 import { TejoAction, TejoCard, TejoIntent, TejoQueryResponse } from './tejo.types';
 import { TejoLlmRouterService } from './adapters/tejo-llm-router.service';
+import { TejoVectorStoreService } from './tejo-vector-store.service';
 
 interface ProductCandidate {
   id?: string;
@@ -57,6 +58,7 @@ export class TejoService {
     private readonly promptService: TejoPromptService,
     private readonly settingsService: TejoSettingsService,
     private readonly llmRouterService: TejoLlmRouterService,
+    private readonly vectorStore: TejoVectorStoreService,
     @InjectModel(TejoConversation.name)
     private readonly conversationModel: Model<TejoConversationDocument>,
     @InjectModel(TejoProductEmbedding.name)
@@ -266,7 +268,9 @@ export class TejoService {
       return 'order_help';
     }
 
-    if (/(product|kit|battery|solar|inverter|panel|منتج|بطارية|طاقة|انفرتر|لوح)/i.test(normalized)) {
+    if (
+      /(product|kit|battery|solar|inverter|panel|منتج|بطارية|طاقة|انفرتر|لوح)/i.test(normalized)
+    ) {
       return 'product_search';
     }
 
@@ -298,20 +302,9 @@ export class TejoService {
       status: 'active',
     });
 
-    const lexicalProducts = (Array.isArray(lexicalResult.results)
-      ? lexicalResult.results
-      : []) as ProductCandidate[];
-
-    if (lexicalProducts.length === 0) {
-      return {
-        products: [],
-        cards: [],
-        knowledgeSnippets: [],
-        retrievalFailed: true,
-        lexicalCount: 0,
-        vectorMatchedCount: 0,
-      };
-    }
+    const lexicalProducts = (
+      Array.isArray(lexicalResult.results) ? lexicalResult.results : []
+    ) as ProductCandidate[];
 
     const productIds = lexicalProducts
       .map((product) => this.getProductId(product))
@@ -347,13 +340,13 @@ export class TejoService {
       return count + (embeddingMap.has(productId) ? 1 : 0);
     }, 0);
 
-    const knowledgeSnippets = await this.retrieveKnowledgeSnippets(queryVector, 2);
+    const knowledgeSnippets = await this.retrieveKnowledgeSnippetsFromQdrant(queryVector, 2);
 
     return {
       products: topProducts,
       cards,
       knowledgeSnippets,
-      retrievalFailed: cards.length === 0,
+      retrievalFailed: cards.length === 0 && knowledgeSnippets.length === 0,
       lexicalCount: lexicalProducts.length,
       vectorMatchedCount,
     };
@@ -416,7 +409,7 @@ export class TejoService {
     return this.toBounded(rating * 0.7 + featuredBoost * 0.3, 0, 1);
   }
 
-  private async retrieveKnowledgeSnippets(
+  private async retrieveKnowledgeSnippetsFromQdrant(
     queryVector: number[] | null,
     limit: number,
   ): Promise<string[]> {
@@ -424,21 +417,25 @@ export class TejoService {
       return [];
     }
 
-    const rows = await this.kbEmbeddingModel.find().select('text vector').limit(50).lean();
-    if (rows.length === 0) {
+    const tenantId = process.env.TEJO_TENANT_ID || 'tajaddod';
+
+    try {
+      const results = await this.vectorStore.search({
+        tenantId,
+        vector: queryVector,
+        limit,
+        sourceType: 'kb',
+      });
+
+      return results.map((item) => String(item.payload.text || '')).filter(Boolean);
+    } catch (error) {
+      this.logger.warn(
+        `Tejo Qdrant knowledge retrieval failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
       return [];
     }
-
-    const scored = rows
-      .map((row) => ({
-        text: String(row.text || ''),
-        score: this.cosineSimilarity(queryVector, Array.isArray(row.vector) ? row.vector : []),
-      }))
-      .filter((entry) => entry.text.length > 0 && entry.score > 0.08)
-      .sort((left, right) => right.score - left.score)
-      .slice(0, limit);
-
-    return scored.map((entry) => entry.text);
   }
 
   private buildCards(products: ProductCandidate[], isArabic: boolean): TejoCard[] {

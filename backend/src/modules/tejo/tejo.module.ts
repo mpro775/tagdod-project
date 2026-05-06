@@ -17,26 +17,19 @@ import { TejoLlmRouterService } from './adapters/tejo-llm-router.service';
 import { TejoGeminiProviderAdapter } from './adapters/tejo-gemini-provider.adapter';
 import { TejoPrimaryProviderAdapter } from './adapters/tejo-primary-provider.adapter';
 import { TejoFallbackProviderAdapter } from './adapters/tejo-fallback-provider.adapter';
-import {
-  TejoPrompt,
-  TejoPromptSchema,
-} from './schemas/tejo-prompt.schema';
-import {
-  TejoConversation,
-  TejoConversationSchema,
-} from './schemas/tejo-conversation.schema';
+import { TejoPrompt, TejoPromptSchema } from './schemas/tejo-prompt.schema';
+import { TejoConversation, TejoConversationSchema } from './schemas/tejo-conversation.schema';
 import {
   TejoProductEmbedding,
   TejoProductEmbeddingSchema,
 } from './schemas/tejo-product-embedding.schema';
-import {
-  TejoKbEmbedding,
-  TejoKbEmbeddingSchema,
-} from './schemas/tejo-kb-embedding.schema';
+import { TejoKbEmbedding, TejoKbEmbeddingSchema } from './schemas/tejo-kb-embedding.schema';
 import { TEJO_EMBEDDINGS_QUEUE } from './queue/tejo-queue.constants';
 import { TejoQueueService } from './queue/tejo-queue.service';
 import { TejoQueueProcessor } from './queue/tejo-queue.processor';
 import { TejoKnowledgeService } from './tejo-knowledge.service';
+import { TejoExternalEmbeddingProviderAdapter } from './adapters/tejo-external-embedding-provider.adapter';
+import { TejoVectorStoreService } from './tejo-vector-store.service';
 
 @Module({
   imports: [
@@ -74,6 +67,8 @@ import { TejoKnowledgeService } from './tejo-knowledge.service';
     TejoFallbackProviderAdapter,
     TejoQueueService,
     TejoQueueProcessor,
+    TejoExternalEmbeddingProviderAdapter,
+    TejoVectorStoreService,
   ],
   exports: [
     TejoService,
@@ -81,7 +76,7 @@ import { TejoKnowledgeService } from './tejo-knowledge.service';
     TejoAnalyticsService,
     TejoSettingsService,
     TejoKnowledgeService,
+    TejoVectorStoreService,
   ],
 })
 export class TejoModule {}
-
