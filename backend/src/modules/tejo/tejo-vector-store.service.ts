@@ -12,6 +12,21 @@ type VectorPayload = {
   metadata?: Record<string, unknown>;
 };
 
+function makeQdrantPointId(value: string): string {
+  const hash = createHash('sha256').update(value).digest('hex');
+
+  return [
+    hash.substring(0, 8),
+    hash.substring(8, 12),
+    `4${hash.substring(13, 16)}`,
+    `${((parseInt(hash.substring(16, 18), 16) & 0x3f) | 0x80).toString(16)}${hash.substring(
+      18,
+      20,
+    )}`,
+    hash.substring(20, 32),
+  ].join('-');
+}
+
 @Injectable()
 export class TejoVectorStoreService {
   private readonly logger = new Logger(TejoVectorStoreService.name);
@@ -43,6 +58,49 @@ export class TejoVectorStoreService {
         },
       });
     }
+  }
+
+  async getCollectionStatus(): Promise<{
+    provider: 'qdrant';
+    collection: string;
+    exists: boolean;
+    vectorSize: number;
+    url: string;
+    hasApiKey: boolean;
+  }> {
+    const client = this.getClient();
+    const collections = await client.getCollections();
+    const exists = collections.collections.some(
+      (collection) => collection.name === this.collection,
+    );
+
+    return {
+      provider: 'qdrant',
+      collection: this.collection,
+      exists,
+      vectorSize: this.vectorSize,
+      url: this.url || '',
+      hasApiKey: Boolean(this.apiKey),
+    };
+  }
+
+  async rebuildCollection(): Promise<void> {
+    const client = this.getClient();
+    const collections = await client.getCollections();
+    const exists = collections.collections.some(
+      (collection) => collection.name === this.collection,
+    );
+
+    if (exists) {
+      await client.deleteCollection(this.collection);
+    }
+
+    await client.createCollection(this.collection, {
+      vectors: {
+        size: this.vectorSize,
+        distance: 'Cosine',
+      },
+    });
   }
 
   async upsertPoint(id: string, vector: number[], payload: VectorPayload): Promise<void> {
@@ -147,10 +205,6 @@ export class TejoVectorStoreService {
       return id;
     }
 
-    const hash = createHash('sha1').update(id).digest('hex');
-    return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-5${hash.slice(13, 16)}-a${hash.slice(
-      17,
-      20,
-    )}-${hash.slice(20, 32)}`;
+    return makeQdrantPointId(id);
   }
 }

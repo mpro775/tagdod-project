@@ -292,15 +292,18 @@ export class TejoService {
     isArabic: boolean,
   ): Promise<RetrievalResult> {
     const lang: 'ar' | 'en' = locale.startsWith('ar') ? 'ar' : 'en';
+    const retrievalSettings = await this.settingsService.getRetrievalSettings();
 
-    const lexicalResult = await this.searchService.advancedProductSearch({
-      q: message,
-      lang,
-      limit: 12,
-      sortBy: ProductSortBy.RELEVANCE,
-      sortOrder: SortOrder.DESC,
-      status: 'active',
-    });
+    const lexicalResult = retrievalSettings.includeProducts
+      ? await this.searchService.advancedProductSearch({
+          q: message,
+          lang,
+          limit: 12,
+          sortBy: ProductSortBy.RELEVANCE,
+          sortOrder: SortOrder.DESC,
+          status: 'active',
+        })
+      : { results: [] };
 
     const lexicalProducts = (
       Array.isArray(lexicalResult.results) ? lexicalResult.results : []
@@ -340,7 +343,14 @@ export class TejoService {
       return count + (embeddingMap.has(productId) ? 1 : 0);
     }, 0);
 
-    const knowledgeSnippets = await this.retrieveKnowledgeSnippetsFromQdrant(queryVector, 2);
+    const knowledgeSnippets = retrievalSettings.includeKb
+      ? await this.retrieveKnowledgeSnippetsFromQdrant(
+          queryVector,
+          retrievalSettings.topK,
+          retrievalSettings.minScore,
+          retrievalSettings.contextMaxChars,
+        )
+      : [];
 
     return {
       products: topProducts,
@@ -412,12 +422,14 @@ export class TejoService {
   private async retrieveKnowledgeSnippetsFromQdrant(
     queryVector: number[] | null,
     limit: number,
+    minScore: number,
+    contextMaxChars: number,
   ): Promise<string[]> {
     if (!queryVector || queryVector.length === 0 || limit <= 0) {
       return [];
     }
 
-    const tenantId = process.env.TEJO_TENANT_ID || 'tajaddod';
+    const tenantId = await this.settingsService.getTenantId();
 
     try {
       const results = await this.vectorStore.search({
@@ -427,7 +439,19 @@ export class TejoService {
         sourceType: 'kb',
       });
 
-      return results.map((item) => String(item.payload.text || '')).filter(Boolean);
+      return results
+        .filter((item) => item.score >= minScore)
+        .map((item) => String(item.payload.text || ''))
+        .filter(Boolean)
+        .reduce<string[]>((snippets, text) => {
+          const usedChars = snippets.reduce((total, item) => total + item.length, 0);
+          if (usedChars >= contextMaxChars) {
+            return snippets;
+          }
+
+          snippets.push(text.slice(0, Math.max(0, contextMaxChars - usedChars)));
+          return snippets;
+        }, []);
     } catch (error) {
       this.logger.warn(
         `Tejo Qdrant knowledge retrieval failed: ${

@@ -56,12 +56,49 @@ export interface TejoSettings {
   enabled: boolean;
   webPilotEnabled: boolean;
   providerOrder: string[];
+  chatProviderOrder: string[];
+  embeddingProviderOrder: string[];
   threshold: number;
+  tenantId: string;
   geminiChatModel: string;
   geminiEmbeddingModel: string;
   geminiBaseUrl: string;
   hasGeminiApiKey: boolean;
+  embeddingProvider: string;
+  embeddingUrl: string;
+  embeddingModel: string;
+  embeddingDimension: number;
+  embeddingTimeoutMs: number;
+  vectorStoreProvider: 'qdrant';
+  qdrantUrl: string;
+  qdrantCollection: string;
+  qdrantVectorSize: number;
+  hasQdrantApiKey: boolean;
+  retrieval: {
+    topK: number;
+    minScore: number;
+    contextMaxChars: number;
+    includeProducts: boolean;
+    includeKb: boolean;
+  };
   queue?: Record<string, number>;
+}
+
+export interface TejoDiagnosticsResult {
+  status: string;
+  provider?: string;
+  model?: string;
+  dimension?: number;
+  latencyMs?: number;
+  collection?: string;
+  exists?: boolean;
+  vectorSize?: number;
+  results?: Array<{
+    score: number;
+    sourceType?: unknown;
+    sourceId?: unknown;
+    text: string;
+  }>;
 }
 
 export interface TejoKnowledge {

@@ -103,8 +103,21 @@ export class TejoLlmRouterService {
         ? ['gemini', 'provider-a', 'provider-b']
         : ['external-embedding', 'gemini', 'provider-a', 'provider-b'];
 
+    const settingKey =
+      mode === 'chat' ? 'tejo.chat_provider_order' : 'tejo.embedding_provider_order';
+    const settingOrder = await this.systemSettingsService.getSettingValue(
+      settingKey,
+      mode === 'chat'
+        ? await this.systemSettingsService.getSettingValue('tejo.provider_order', envOrder || [])
+        : envOrder || [],
+    );
+
     const normalized =
-      envOrder && envOrder.length > 0 ? envOrder.map((item) => item.toLowerCase()) : fallbackOrder;
+      Array.isArray(settingOrder) && settingOrder.length > 0
+        ? settingOrder.map((item) => String(item).trim().toLowerCase()).filter(Boolean)
+        : envOrder && envOrder.length > 0
+          ? envOrder.map((item) => item.toLowerCase())
+          : fallbackOrder;
 
     const registry = new Map<string, TejoProviderAdapter>([
       [this.geminiProvider.name, this.geminiProvider],
