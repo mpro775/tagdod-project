@@ -14,16 +14,10 @@ import {
   IconButton,
   InputLabel,
   MenuItem,
-  Pagination,
   Paper,
   Select,
   Stack,
   Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
@@ -43,6 +37,8 @@ import type { Media } from '@/features/media/types/media.types';
 import { VideoUploader } from '@/features/media/components/VideoUploader';
 import { MultipleImagesSelector } from '@/features/products/components/MultipleImagesSelector';
 import { productsApi } from '@/features/products/api/productsApi';
+import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import type {
   CreateInstallationGuideDto,
   InstallationGuideListItem,
@@ -165,7 +161,13 @@ export const InstallationGuidesManagementPage: React.FC = () => {
           sku: item.sku,
         }));
 
-        setProductOptions((prev) => mergeUniqueProducts([...mapped, ...prev]));
+        setProductOptions((prev) => {
+          const newOptions = mergeUniqueProducts([...mapped, ...prev]);
+          if (newOptions.length === prev.length && newOptions.every((opt, i) => opt.id === prev[i].id)) {
+            return prev;
+          }
+          return newOptions;
+        });
       } catch (error) {
         toast.error('فشل تحميل المنتجات');
       } finally {
@@ -421,6 +423,111 @@ export const InstallationGuidesManagementPage: React.FC = () => {
     });
   };
 
+  const columns: GridColDef[] = [
+    {
+      field: 'coverImageUrl',
+      headerName: 'الغلاف',
+      width: 100,
+      renderCell: (params) =>
+        params.row.coverImageUrl ? (
+          <Box
+            component="img"
+            src={params.row.coverImageUrl}
+            alt={params.row.titleAr}
+            sx={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 1 }}
+          />
+        ) : (
+          '-'
+        ),
+    },
+    {
+      field: 'titleAr',
+      headerName: 'العنوان',
+      flex: 1,
+      renderCell: (params) => (
+        <Stack spacing={0.5} py={1}>
+          <Typography fontWeight={600} fontSize="0.875rem">{params.row.titleAr}</Typography>
+          <Typography variant="caption" color="text.secondary">{params.row.titleEn}</Typography>
+        </Stack>
+      ),
+    },
+    {
+      field: 'tagAr',
+      headerName: 'التاغ',
+      flex: 1,
+      renderCell: (params) => (
+        <Stack spacing={0.5} py={1}>
+          <Typography fontSize="0.875rem">{params.row.tagAr}</Typography>
+          <Typography variant="caption" color="text.secondary">{params.row.tagEn}</Typography>
+        </Stack>
+      ),
+    },
+    { field: 'sortOrder', headerName: 'الترتيب', width: 100 },
+    {
+      field: 'isActive',
+      headerName: 'الحالة',
+      width: 150,
+      renderCell: (params) => (
+        <Chip
+          size="small"
+          label={params.row.isActive ? 'نشط' : 'غير نشط'}
+          color={params.row.isActive ? 'success' : 'default'}
+        />
+      ),
+    },
+    {
+      field: 'updatedAt',
+      headerName: 'آخر تحديث',
+      width: 200,
+      renderCell: (params) => new Date(params.row.updatedAt).toLocaleString(),
+    },
+    {
+      field: 'actions',
+      headerName: 'الإجراءات',
+      width: 150,
+      align: 'right',
+      renderCell: (params) => (
+        <Stack direction="row" justifyContent="flex-end">
+          <Tooltip title="تعديل">
+            <IconButton onClick={() => openEditDialog(params.row)}>
+              <Edit fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={params.row.isActive ? 'تعطيل' : 'تفعيل'}>
+            <IconButton onClick={() => toggleGuideStatus(params.row)}>
+              {params.row.isActive ? (
+                <VisibilityOff fontSize="small" />
+              ) : (
+                <Visibility fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="حذف">
+            <IconButton
+              color="error"
+              onClick={() => setDeleteTarget(params.row)}
+            >
+              <Delete fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
+  ];
+
+  const paginationModel: GridPaginationModel = {
+    page: (filters.page || 1) - 1,
+    pageSize: filters.limit || 20,
+  };
+
+  const onPaginationModelChange = (model: GridPaginationModel) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: model.page + 1,
+      limit: model.pageSize,
+    }));
+  };
+
   return (
     <Box>
       <Stack
@@ -442,163 +549,47 @@ export const InstallationGuidesManagementPage: React.FC = () => {
       </Stack>
 
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField
-            label="بحث"
-            placeholder="العنوان أو التاغ"
-            value={filters.search || ''}
-            onChange={(event) =>
+        <FormControl sx={{ minWidth: 180 }}>
+          <InputLabel>الحالة</InputLabel>
+          <Select
+            label="الحالة"
+            value={
+              filters.isActive === undefined
+                ? 'all'
+                : filters.isActive
+                  ? 'active'
+                  : 'inactive'
+            }
+            onChange={(event) => {
+              const value = event.target.value;
               setFilters((prev) => ({
                 ...prev,
                 page: 1,
-                search: event.target.value,
-              }))
-            }
-            fullWidth
-          />
-          <FormControl sx={{ minWidth: 180 }}>
-            <InputLabel>الحالة</InputLabel>
-            <Select
-              label="الحالة"
-              value={
-                filters.isActive === undefined
-                  ? 'all'
-                  : filters.isActive
-                    ? 'active'
-                    : 'inactive'
-              }
-              onChange={(event) => {
-                const value = event.target.value;
-                setFilters((prev) => ({
-                  ...prev,
-                  page: 1,
-                  isActive:
-                    value === 'all' ? undefined : value === 'active' ? true : false,
-                }));
-              }}
-            >
-              <MenuItem value="all">الكل</MenuItem>
-              <MenuItem value="active">نشط</MenuItem>
-              <MenuItem value="inactive">غير نشط</MenuItem>
-            </Select>
-          </FormControl>
-        </Stack>
+                isActive:
+                  value === 'all' ? undefined : value === 'active' ? true : false,
+              }));
+            }}
+          >
+            <MenuItem value="all">الكل</MenuItem>
+            <MenuItem value="active">نشط</MenuItem>
+            <MenuItem value="inactive">غير نشط</MenuItem>
+          </Select>
+        </FormControl>
       </Paper>
 
-      <Paper sx={{ overflowX: 'auto' }}>
-        {isLoading ? (
-          <Box py={8} display="flex" justifyContent="center">
-            <CircularProgress />
-          </Box>
-        ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>الغلاف</TableCell>
-                <TableCell>العنوان</TableCell>
-                <TableCell>التاغ</TableCell>
-                <TableCell>الترتيب</TableCell>
-                <TableCell>الحالة</TableCell>
-                <TableCell>آخر تحديث</TableCell>
-                <TableCell align="right">الإجراءات</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {guides.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    <Typography color="text.secondary" py={4}>
-                      لا توجد بيانات
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                guides.map((guide) => (
-                  <TableRow key={guide.id}>
-                    <TableCell>
-                      {guide.coverImageUrl ? (
-                        <Box
-                          component="img"
-                          src={guide.coverImageUrl}
-                          alt={guide.titleAr}
-                          sx={{
-                            width: 64,
-                            height: 64,
-                            objectFit: 'cover',
-                            borderRadius: 1,
-                          }}
-                        />
-                      ) : (
-                        <Typography color="text.secondary">-</Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontWeight={600}>{guide.titleAr}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {guide.titleEn}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography>{guide.tagAr}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {guide.tagEn}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{guide.sortOrder}</TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        label={guide.isActive ? 'نشط' : 'غير نشط'}
-                        color={guide.isActive ? 'success' : 'default'}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {new Date(guide.updatedAt).toLocaleString()}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="تعديل">
-                        <IconButton onClick={() => openEditDialog(guide)}>
-                          <Edit fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={guide.isActive ? 'تعطيل' : 'تفعيل'}>
-                        <IconButton onClick={() => toggleGuideStatus(guide)}>
-                          {guide.isActive ? (
-                            <VisibilityOff fontSize="small" />
-                          ) : (
-                            <Visibility fontSize="small" />
-                          )}
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="حذف">
-                        <IconButton
-                          color="error"
-                          onClick={() => setDeleteTarget(guide)}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </Paper>
-
-      {pagination && pagination.pages > 1 && (
-        <Box mt={2} display="flex" justifyContent="center">
-          <Pagination
-            count={pagination.pages}
-            page={filters.page || 1}
-            onChange={(_, page) =>
-              setFilters((prev) => ({ ...prev, page }))
-            }
-            color="primary"
-          />
-        </Box>
-      )}
+      <DataTable
+        columns={columns}
+        rows={guides}
+        loading={isLoading}
+        paginationMode="server"
+        paginationModel={paginationModel}
+        onPaginationModelChange={onPaginationModelChange}
+        rowCount={pagination?.total || 0}
+        onSearch={(search) => setFilters((prev) => ({ ...prev, page: 1, search }))}
+        searchPlaceholder="العنوان أو التاغ"
+        getRowId={(row) => (row as InstallationGuideListItem).id}
+        sx={{ height: 600 }}
+      />
 
       <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="md" fullWidth>
         <DialogTitle>{editingId ? 'تعديل دليل التركيب' : 'إضافة دليل تركيب'}</DialogTitle>
@@ -795,7 +786,11 @@ export const InstallationGuidesManagementPage: React.FC = () => {
                   }))
                 }
                 inputValue={productSearch}
-                onInputChange={(_, value) => setProductSearch(value)}
+                onInputChange={(_, value, reason) => {
+                  if (reason === 'input') {
+                    setProductSearch(value);
+                  }
+                }}
                 loading={loadingProducts}
                 filterOptions={(options) => options}
                 getOptionLabel={(option) =>
