@@ -22,6 +22,7 @@ import { TejoSettingsService } from './tejo-settings.service';
 import { TejoKnowledgeService } from './tejo-knowledge.service';
 import { TejoLlmRouterService } from './adapters/tejo-llm-router.service';
 import { TejoVectorStoreService } from './tejo-vector-store.service';
+import { TejoService } from './tejo.service';
 
 interface RequestWithUser {
   user: {
@@ -43,6 +44,7 @@ export class TejoAdminController {
     private readonly knowledgeService: TejoKnowledgeService,
     private readonly llmRouterService: TejoLlmRouterService,
     private readonly vectorStore: TejoVectorStoreService,
+    private readonly tejoService: TejoService,
   ) {}
 
   @Get('prompts')
@@ -279,34 +281,7 @@ export class TejoAdminController {
   @ApiOperation({ summary: 'Test full Tejo retrieval path' })
   async testRetrieval(@Body() body: { question?: string } = {}) {
     const question = body.question?.trim() || 'كيف يتم توزيع طلبات الصيانة؟';
-    const tenantId = await this.settingsService.getTenantId();
-    const retrieval = await this.settingsService.getRetrievalSettings();
-    const startedAt = Date.now();
-
-    const embedding = await this.llmRouterService.embed({ texts: [question] });
-    const vector = embedding.response.vectors[0] || [];
-    const results = await this.vectorStore.search({
-      tenantId,
-      vector,
-      limit: retrieval.topK,
-    });
-
-    return {
-      status: 'OK',
-      question,
-      provider: embedding.provider,
-      model: embedding.response.model,
-      dimension: vector.length,
-      latencyMs: Date.now() - startedAt,
-      results: results
-        .filter((item) => item.score >= retrieval.minScore)
-        .map((item) => ({
-          score: item.score,
-          sourceType: item.payload.sourceType,
-          sourceId: item.payload.sourceId,
-          text: String(item.payload.text || '').slice(0, 500),
-        })),
-    };
+    return this.tejoService.testHybridRetrieval(question, 'ar');
   }
 
   @Post('settings/rebuild-qdrant')
