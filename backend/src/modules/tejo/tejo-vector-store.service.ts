@@ -45,8 +45,9 @@ export class TejoVectorStoreService {
 
   async ensureCollection(): Promise<void> {
     const client = this.getClient();
-    const collections = await client.getCollections();
-    const exists = collections.collections.some(
+    const response = await client.getCollections();
+    const collections = this.extractCollections(response);
+    const exists = collections.some(
       (collection) => collection.name === this.collection,
     );
 
@@ -69,8 +70,9 @@ export class TejoVectorStoreService {
     hasApiKey: boolean;
   }> {
     const client = this.getClient();
-    const collections = await client.getCollections();
-    const exists = collections.collections.some(
+    const response = await client.getCollections();
+    const collections = this.extractCollections(response);
+    const exists = collections.some(
       (collection) => collection.name === this.collection,
     );
 
@@ -86,8 +88,9 @@ export class TejoVectorStoreService {
 
   async rebuildCollection(): Promise<void> {
     const client = this.getClient();
-    const collections = await client.getCollections();
-    const exists = collections.collections.some(
+    const response = await client.getCollections();
+    const collections = this.extractCollections(response);
+    const exists = collections.some(
       (collection) => collection.name === this.collection,
     );
 
@@ -191,13 +194,32 @@ export class TejoVectorStoreService {
     }
 
     if (!this.client) {
+      const parsedUrl = new URL(this.url);
+
       this.client = new QdrantClient({
-        url: this.url,
+        host: parsedUrl.hostname,
+        port: Number(
+          parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 6333),
+        ),
+        https: parsedUrl.protocol === 'https:',
         apiKey: this.apiKey,
+        checkCompatibility: false,
       });
     }
 
     return this.client;
+  }
+
+  private extractCollections(response: any): Array<{ name: string }> {
+    if (Array.isArray(response?.collections)) {
+      return response.collections;
+    }
+
+    if (Array.isArray(response?.result?.collections)) {
+      return response.result.collections;
+    }
+
+    return [];
   }
 
   private toPointId(id: string): string {
