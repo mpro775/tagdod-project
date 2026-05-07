@@ -203,6 +203,11 @@ const ChatDetailPage = lazy(() =>
     default: m.ChatDetailPage,
   })),
 );
+const TejoChatPage = lazy(() =>
+  import("../features/chat/TejoChatPage").then((m) => ({
+    default: m.TejoChatPage,
+  })),
+);
 
 // Orders
 const OrderTrackingPage = lazy(() =>
@@ -714,6 +719,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ChatDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "tejo-chat",
+        element: (
+          <ProtectedRoute>
+            <TejoChatPage />
           </ProtectedRoute>
         ),
       },

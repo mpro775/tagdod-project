@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, Plus, MessageCircle, Clock } from 'lucide-react'
+import { ArrowRight, Plus, MessageCircle, Clock, Bot } from 'lucide-react'
 import {
   GlobalButton,
   GlobalTextField,
@@ -162,13 +162,22 @@ export function ChatPage() {
             الدردشة
           </h1>
         </div>
-        <button
-          onClick={() => setShowNewTicket(true)}
-          className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
-          aria-label="تذكرة جديدة"
-        >
-          <Plus size={22} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => navigate('/tejo-chat')}
+            className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+            aria-label="تيجو - المساعد الذكي"
+          >
+            <Bot size={22} />
+          </button>
+          <button
+            onClick={() => setShowNewTicket(true)}
+            className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+            aria-label="تذكرة جديدة"
+          >
+            <Plus size={22} />
+          </button>
+        </div>
       </header>
 
       <div className="p-4">
