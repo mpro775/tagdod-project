@@ -15,6 +15,8 @@ import {
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { Request } from 'express';
 import {
   ApiBearerAuth,
@@ -28,7 +30,7 @@ import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { RequirePermissions } from '../../../shared/decorators/permissions.decorator';
-import { UserRole } from '../schemas/user.schema';
+import { User, UserRole } from '../schemas/user.schema';
 import { EngineerProfileService } from '../services/engineer-profile.service';
 import {
   UpdateEngineerProfileAdminDto,
@@ -57,6 +59,7 @@ export class EngineerProfileAdminController {
   private readonly logger = new Logger(EngineerProfileAdminController.name);
 
   constructor(
+    @InjectModel(User.name) private readonly userModel: Model<User>,
     private readonly engineerProfileService: EngineerProfileService,
     private readonly auditService: AuditService,
     private readonly exchangeRatesService: ExchangeRatesService,
@@ -73,7 +76,19 @@ export class EngineerProfileAdminController {
   @ApiResponse({ status: 200, description: 'تم جلب البروفايل بنجاح' })
   @ApiResponse({ status: 404, description: 'المهندس غير موجود' })
   async getEngineerProfile(@Param('userId') userId: string) {
-    const profile = await this.engineerProfileService.getProfile(userId, true);
+    let profile = await this.engineerProfileService.getProfile(userId, true);
+    if (!profile) {
+      const user = await this.userModel.findById(userId).select('roles engineer_capable').lean();
+      const isEngineer =
+        !!user &&
+        (user.engineer_capable === true ||
+          (Array.isArray(user.roles) && user.roles.includes(UserRole.ENGINEER)));
+
+      if (isEngineer) {
+        await this.engineerProfileService.createProfile(userId);
+        profile = await this.engineerProfileService.getProfile(userId, true);
+      }
+    }
     if (!profile) {
       throw new UserNotFoundException({ userId, message: 'بروفايل المهندس غير موجود' });
     }

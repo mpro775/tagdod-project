@@ -1076,10 +1076,14 @@ export class UsersAdminController {
       throw new UserNotFoundException({ userId: id });
     }
 
-    const capabilities = await this.capsModel.findOne({ userId: id }).lean();
+    const [capabilities, engineerProfile] = await Promise.all([
+      this.capsModel.findOne({ userId: id }).lean(),
+      this.engineerProfileModel.findOne({ userId: user._id }).select('cvFileUrl').lean(),
+    ]);
 
     return {
       ...user,
+      cvFileUrl: engineerProfile?.cvFileUrl,
       capabilities,
     };
   }
@@ -2389,9 +2393,15 @@ export class UsersAdminController {
     };
 
     // معالجة طلبات القدرات - تحديث userData مباشرة
-    if (dto.capabilityRequest === 'engineer') {
+    const shouldCreateEngineerCapability =
+      dto.capabilityRequest === 'engineer' || dto.roles?.includes(UserRole.ENGINEER);
+
+    if (shouldCreateEngineerCapability) {
+      if (!userData.roles?.includes(UserRole.ENGINEER)) {
+        userData.roles = [...(userData.roles || [UserRole.USER]), UserRole.ENGINEER];
+      }
       userData.engineer_capable = true;
-      userData.engineer_status = CapabilityStatus.APPROVED;
+      userData.engineer_status = CapabilityStatus.UNVERIFIED;
     }
 
     if (dto.capabilityRequest === 'merchant') {
@@ -2446,7 +2456,7 @@ export class UsersAdminController {
     await this.capsModel.create(capsData);
 
     // إنشاء بروفايل المهندس إذا كان مهندساً (حتى بدون jobTitle)
-    if (dto.capabilityRequest === 'engineer') {
+    if (shouldCreateEngineerCapability) {
       const profile = await this.engineerProfileService.createProfile(user._id.toString());
       if (dto.jobTitle) {
         profile.jobTitle = dto.jobTitle;
@@ -2587,7 +2597,13 @@ export class UsersAdminController {
     // تحديث القدرات في User نفسه حسب النوع
     // ⚠️ فقط عند تغيير الأدوار بشكل صريح (وليس فارغ)
     if (dto.roles !== undefined && dto.roles.length > 0) {
-      const mainRole = dto.roles[0];
+      const mainRole = dto.roles.includes(UserRole.ENGINEER)
+        ? UserRole.ENGINEER
+        : dto.roles.includes(UserRole.MERCHANT)
+          ? UserRole.MERCHANT
+          : dto.roles.includes(UserRole.SUPER_ADMIN)
+            ? UserRole.SUPER_ADMIN
+            : dto.roles[0];
 
       // حفظ الحالات الخاصة (unverified/pending) قبل إعادة التعيين
       const preserveEngineerStatus =
@@ -2618,7 +2634,7 @@ export class UsersAdminController {
         // فقط إذا لم تكن الحالة محفوظة (unverified/pending)
         if (!preserveEngineerStatus) {
           user.engineer_capable = true;
-          user.engineer_status = CapabilityStatus.APPROVED;
+          user.engineer_status = CapabilityStatus.UNVERIFIED;
         }
       } else if (mainRole === UserRole.MERCHANT) {
         // فقط إذا لم تكن الحالة محفوظة (unverified/pending)
@@ -2633,6 +2649,13 @@ export class UsersAdminController {
       }
     }
     // إذا لم يتم إرسال roles أو كان فارغاً، لا تغير القدرات على الإطلاق
+
+    if (user.roles?.includes(UserRole.ENGINEER) || user.engineer_capable) {
+      const existingProfile = await this.engineerProfileModel.findOne({ userId: user._id });
+      if (!existingProfile) {
+        await this.engineerProfileService.createProfile(user._id.toString());
+      }
+    }
 
     await user.save();
 

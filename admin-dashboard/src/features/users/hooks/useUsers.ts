@@ -301,6 +301,7 @@ export const useUploadVerificationFile = () => {
       queryClient.invalidateQueries({ queryKey: [VERIFICATION_KEY] });
       queryClient.invalidateQueries({ queryKey: [USERS_KEY, variables.userId] });
       queryClient.invalidateQueries({ queryKey: [USERS_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['engineer-profile-admin', variables.userId] });
     },
     onError: ErrorHandler.showError,
   });
