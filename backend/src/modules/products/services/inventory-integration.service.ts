@@ -18,6 +18,10 @@ export class InventoryIntegrationService {
     private inventoryService: InventoryService, // حقن السيرفس القديم لاستخدامه
   ) {}
 
+  private escapeRegExp(value: string) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   /**
    * 1. استقبال البيانات من السكربت المحلي (مع السعر)
    * هذه الدالة تقوم بتحديث "مخزون الظل" وتزامن المنتجات المربوطة
@@ -292,14 +296,26 @@ export class InventoryIntegrationService {
    * 3. جلب الفرص (منتجات في أونكس وغير موجودة عندنا)
    * يساعد المدير في إضافة المنتجات الناقصة
    */
-  async getUnlinkedOpportunities(limit = 50, page = 1) {
+  async getUnlinkedOpportunities(limit = 50, page = 1, search = '') {
     // أضفنا Page هنا أيضاً
     const skip = (page - 1) * limit;
+    const normalizedSearch = search.trim();
+    const searchMatch = normalizedSearch
+      ? {
+          $match: {
+            $or: [
+              { sku: { $regex: this.escapeRegExp(normalizedSearch), $options: 'i' } },
+              { itemNameAr: { $regex: this.escapeRegExp(normalizedSearch), $options: 'i' } },
+            ],
+          },
+        }
+      : null;
 
     const result = await this.externalStockModel.aggregate([
       { $lookup: { from: 'products', localField: 'sku', foreignField: 'sku', as: 'p' } },
       { $lookup: { from: 'variants', localField: 'sku', foreignField: 'sku', as: 'v' } },
       { $match: { p: { $size: 0 }, v: { $size: 0 } } },
+      ...(searchMatch ? [searchMatch] : []),
       {
         $facet: {
           metadata: [{ $count: 'total' }],

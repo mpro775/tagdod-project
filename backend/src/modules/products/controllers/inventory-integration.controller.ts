@@ -20,8 +20,16 @@ export class InventoryIntegrationController {
 
   // 3. قائمة المنتجات غير المربوطة (فرص الإضافة)
   @Get('unlinked')
-  async getUnlinkedItems(@Query('limit') limit: number, @Query('page') page: number) {
-    return this.integrationService.getUnlinkedOpportunities(Number(limit) || 50, Number(page) || 1);
+  async getUnlinkedItems(
+    @Query('limit') limit: number,
+    @Query('page') page: number,
+    @Query('search') search?: string,
+  ) {
+    return this.integrationService.getUnlinkedOpportunities(
+      Number(limit) || 50,
+      Number(page) || 1,
+      search,
+    );
   }
   @Get('linked')
   async getLinkedProducts(@Query('limit') limit: number, @Query('page') page: number) {

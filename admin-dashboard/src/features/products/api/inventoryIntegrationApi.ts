@@ -46,9 +46,9 @@ export const inventoryIntegrationApi = {
      * Get unlinked items (opportunities)
      * جلب المنتجات غير المربوطة
      */
-    getUnlinkedItems: async (limit = 50, page = 1): Promise<PaginatedResponse<UnlinkedItem>> => {
+    getUnlinkedItems: async (limit = 50, page = 1, search = ''): Promise<PaginatedResponse<UnlinkedItem>> => {
         const response = await apiClient.get('/inventory/integration/unlinked', {
-            params: { limit, page }
+            params: { limit, page, search: search.trim() || undefined }
         });
         // التعامل مع الرد الجديد { data: [], total: number }
         const result = response.data?.data ?? response.data;

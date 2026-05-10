@@ -43,27 +43,23 @@ export const UnlinkedProductsPage: React.FC = () => {
     const { isMobile } = useBreakpoint();
     const [searchQuery, setSearchQuery] = React.useState('');
     const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 25 });
+    const normalizedSearchQuery = searchQuery.trim();
 
     // تحميل البيانات من السيرفر حسب الصفحة الحالية
     const { data: response, isLoading, error, refetch } = useUnlinkedItems(
         paginationModel.pageSize,
-        paginationModel.page + 1
+        paginationModel.page + 1,
+        normalizedSearchQuery
     );
 
     // استخراج البيانات من الاستجابة الجديدة
     const items = response?.data || [];
     const totalCount = response?.total || 0;
 
-    // Filter items based on search
-    const filteredItems = React.useMemo(() => {
-        if (!searchQuery.trim()) return items;
-        const query = searchQuery.toLowerCase();
-        return items.filter(
-            (item) =>
-                item.sku.toLowerCase().includes(query) ||
-                item.itemNameAr?.toLowerCase().includes(query)
-        );
-    }, [items, searchQuery]);
+    const handleSearchChange = React.useCallback((query: string) => {
+        setSearchQuery(query);
+        setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    }, []);
 
     // Handle create product action
     const handleCreateProduct = (item: UnlinkedItem) => {
@@ -288,9 +284,9 @@ export const UnlinkedProductsPage: React.FC = () => {
                     variant="outlined"
                     size="small"
                 />
-                {searchQuery && (
+                {normalizedSearchQuery && (
                     <Chip
-                        label={`${t('products:integration.unlinked.filteredLabel', 'نتائج البحث')}: ${filteredItems.length}`}
+                        label={`${t('products:integration.unlinked.filteredLabel', 'نتائج البحث')}: ${totalCount}`}
                         color="primary"
                         variant="outlined"
                     />
@@ -304,7 +300,7 @@ export const UnlinkedProductsPage: React.FC = () => {
                     size="small"
                     placeholder={t('products:integration.unlinked.search', 'بحث برمز الصنف...')}
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     sx={{ mb: 2 }}
                     InputProps={{
                         startAdornment: (
@@ -332,8 +328,8 @@ export const UnlinkedProductsPage: React.FC = () => {
                 /* Mobile Card Layout */
                 <>
                     <Grid container spacing={2}>
-                        {filteredItems.length > 0 ? (
-                            filteredItems.map((item) => (
+                        {items.length > 0 ? (
+                            items.map((item) => (
                                 <Grid size={{ xs: 12 }} key={item._id || item.sku}>
                                     <UnlinkedItemCard item={item} />
                                 </Grid>
@@ -347,7 +343,7 @@ export const UnlinkedProductsPage: React.FC = () => {
                         )}
                     </Grid>
 
-                    {!searchQuery.trim() && totalCount > paginationModel.pageSize && (
+                    {totalCount > paginationModel.pageSize && (
                         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
                             <Pagination
                                 count={Math.max(1, Math.ceil(totalCount / paginationModel.pageSize))}
@@ -368,14 +364,14 @@ export const UnlinkedProductsPage: React.FC = () => {
                 /* Desktop DataTable */
                 <DataTable
                     columns={columns}
-                    rows={filteredItems}
+                    rows={items}
                     loading={isLoading}
                     paginationModel={paginationModel}
                     onPaginationModelChange={setPaginationModel}
-                    paginationMode={searchQuery.trim() ? 'client' : 'server'}
-                    rowCount={searchQuery.trim() ? filteredItems.length : totalCount}
+                    paginationMode="server"
+                    rowCount={totalCount}
                     getRowId={(row) => (row as UnlinkedItem)._id || (row as UnlinkedItem).sku}
-                    onSearch={setSearchQuery}
+                    onSearch={handleSearchChange}
                     searchPlaceholder={t('products:integration.unlinked.search', 'بحث برمز الصنف...')}
                     sortingMode="client"
                     sortModel={[{ field: 'quantity', sort: 'desc' }]}
