@@ -52,11 +52,16 @@ export interface TejoQueryRequest {
   context?: Record<string, unknown>
 }
 
+export interface TejoAction {
+  type: string
+  label: string
+}
+
 export interface TejoQueryResponse {
   reply: string
   cards: Array<Record<string, unknown>>
   suggestions: string[]
-  actions: Array<Record<string, unknown>>
+  actions: TejoAction[]
   confidence: number
   handoffSuggested: boolean
   ticketId: string

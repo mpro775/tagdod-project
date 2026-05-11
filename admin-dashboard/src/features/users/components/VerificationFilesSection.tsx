@@ -27,17 +27,18 @@ export const VerificationFilesSection: React.FC<VerificationFilesSectionProps> =
   const hasEngineerFile = !!user.cvFileUrl;
   const hasMerchantFile = !!user.storePhotoUrl;
   const hasVerificationNote = !!user.verificationNote;
+  const engineerStatus = user.capabilities?.engineer_status ?? 'none';
+  const merchantStatus = user.capabilities?.merchant_status ?? 'none';
   const isEngineer =
     user.roles?.includes(UserRole.ENGINEER) ||
     user.capabilities?.engineer_capable ||
-    user.capabilities?.engineer_status !== 'none';
+    engineerStatus !== 'none';
   const isMerchant =
     user.roles?.includes(UserRole.MERCHANT) ||
     user.capabilities?.merchant_capable ||
-    user.capabilities?.merchant_status !== 'none';
+    merchantStatus !== 'none';
 
-  // لا نعرض القسم إذا لم تكن هناك ملفات أو ملاحظات
-  if (!hasEngineerFile && !hasMerchantFile && !hasVerificationNote) {
+  if (!isEngineer && !isMerchant && !hasVerificationNote) {
     return null;
   }
 
@@ -65,8 +66,7 @@ export const VerificationFilesSection: React.FC<VerificationFilesSectionProps> =
           </Typography>
 
           <Stack spacing={3}>
-            {/* ملف السيرة الذاتية للمهندس */}
-            {isEngineer && hasEngineerFile && (
+            {isEngineer && (
               <Paper variant="outlined" sx={{ p: 2 }}>
                 <Stack spacing={2}>
                   <Stack direction="row" alignItems="center" spacing={1}>
@@ -75,28 +75,33 @@ export const VerificationFilesSection: React.FC<VerificationFilesSectionProps> =
                       {t('users:verification.cvFile', 'السيرة الذاتية للمهندس')}
                     </Typography>
                   </Stack>
-                  <Box>
-                    <Link
-                      href={user.cvFileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{ textDecoration: 'none' }}
-                    >
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<Description />}
-                        sx={{ mt: 1 }}
+                  {hasEngineerFile ? (
+                    <Box>
+                      <Link
+                        href={user.cvFileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{ textDecoration: 'none' }}
                       >
-                        {t('users:verification.viewCv', 'عرض السيرة الذاتية')}
-                      </Button>
-                    </Link>
-                  </Box>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<Description />}
+                          sx={{ mt: 1 }}
+                        >
+                          {t('users:verification.viewCv', 'عرض السيرة الذاتية')}
+                        </Button>
+                      </Link>
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      {t('users:verification.cvNotUploaded', 'لم يتم رفع السيرة الذاتية')}
+                    </Typography>
+                  )}
                 </Stack>
               </Paper>
             )}
 
-            {/* صورة المحل للتاجر */}
             {isMerchant && hasMerchantFile && (
               <Paper variant="outlined" sx={{ p: 2 }}>
                 <Stack spacing={2}>
@@ -164,7 +169,6 @@ export const VerificationFilesSection: React.FC<VerificationFilesSectionProps> =
               </Paper>
             )}
 
-            {/* ملاحظة التحقق */}
             {hasVerificationNote && (
               <Paper variant="outlined" sx={{ p: 2 }}>
                 <Stack spacing={1}>

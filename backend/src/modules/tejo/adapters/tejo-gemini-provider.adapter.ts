@@ -167,10 +167,16 @@ export class TejoGeminiProviderAdapter implements TejoProviderAdapter {
   }
 
   private extractOutputText(raw: unknown): string {
-    const candidates = (raw as { candidates?: Array<{ content?: GeminiContent }> })?.candidates || [];
-    const parts = candidates[0]?.content?.parts || [];
+    const data = raw as Record<string, any>;
+    const parts = data?.candidates?.[0]?.content?.parts;
+
+    if (!Array.isArray(parts)) {
+      return '';
+    }
+
     return parts
-      .map((part) => part?.text || '')
+      .filter((part: any) => !part?.thought)
+      .map((part: any) => part?.text)
       .filter(Boolean)
       .join('\n')
       .trim();

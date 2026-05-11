@@ -35,10 +35,10 @@ export const useLinkedProducts = (limit = 50, page = 1) => {
  * Hook for fetching unlinked items
  * المنتجات غير المربوطة
  */
-export const useUnlinkedItems = (limit = 50, page = 1) => {
+export const useUnlinkedItems = (limit = 50, page = 1, search = '') => {
     return useQuery({
-        queryKey: [INTEGRATION_KEY, 'unlinked', limit, page],
-        queryFn: () => inventoryIntegrationApi.getUnlinkedItems(limit, page),
+        queryKey: [INTEGRATION_KEY, 'unlinked', limit, page, search],
+        queryFn: () => inventoryIntegrationApi.getUnlinkedItems(limit, page, search),
     });
 };
 

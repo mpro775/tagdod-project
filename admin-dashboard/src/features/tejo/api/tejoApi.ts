@@ -4,6 +4,7 @@ import type {
   CreateTejoPromptRequest,
   TejoAnalyticsSummary,
   TejoConversation,
+  TejoDiagnosticsResult,
   TejoKnowledge,
   TejoKnowledgeList,
   TejoPrompt,
@@ -24,7 +25,10 @@ export const tejoApi = {
   },
 
   updatePrompt: async (id: string, payload: UpdateTejoPromptRequest): Promise<TejoPrompt> => {
-    const response = await apiClient.patch<ApiResponse<TejoPrompt>>(`/admin/tejo/prompts/${id}`, payload);
+    const response = await apiClient.patch<ApiResponse<TejoPrompt>>(
+      `/admin/tejo/prompts/${id}`,
+      payload
+    );
     return response.data.data;
   },
 
@@ -37,32 +41,43 @@ export const tejoApi = {
   },
 
   getAnalyticsOverview: async (): Promise<TejoAnalyticsSummary> => {
-    const response = await apiClient.get<ApiResponse<TejoAnalyticsSummary>>('/admin/tejo/analytics/overview');
+    const response = await apiClient.get<ApiResponse<TejoAnalyticsSummary>>(
+      '/admin/tejo/analytics/overview'
+    );
     return response.data.data;
   },
 
   getAnalyticsQuality: async (): Promise<Record<string, number>> => {
-    const response = await apiClient.get<ApiResponse<Record<string, number>>>('/admin/tejo/analytics/quality');
+    const response = await apiClient.get<ApiResponse<Record<string, number>>>(
+      '/admin/tejo/analytics/quality'
+    );
     return response.data.data;
   },
 
   getAnalyticsVolume: async (): Promise<Record<string, number>> => {
-    const response = await apiClient.get<ApiResponse<Record<string, number>>>('/admin/tejo/analytics/volume');
+    const response = await apiClient.get<ApiResponse<Record<string, number>>>(
+      '/admin/tejo/analytics/volume'
+    );
     return response.data.data;
   },
 
-  getConversations: async (page = 1, limit = 20): Promise<{
+  getConversations: async (
+    page = 1,
+    limit = 20
+  ): Promise<{
     data: TejoConversation[];
     total: number;
     page: number;
     totalPages: number;
   }> => {
-    const response = await apiClient.get<ApiResponse<{
-      data: TejoConversation[];
-      total: number;
-      page: number;
-      totalPages: number;
-    }>>('/admin/tejo/conversations', {
+    const response = await apiClient.get<
+      ApiResponse<{
+        data: TejoConversation[];
+        total: number;
+        page: number;
+        totalPages: number;
+      }>
+    >('/admin/tejo/conversations', {
       params: { page, limit },
     });
 
@@ -70,7 +85,9 @@ export const tejoApi = {
   },
 
   getConversationById: async (id: string): Promise<TejoConversation> => {
-    const response = await apiClient.get<ApiResponse<TejoConversation>>(`/admin/tejo/conversations/${id}`);
+    const response = await apiClient.get<ApiResponse<TejoConversation>>(
+      `/admin/tejo/conversations/${id}`
+    );
     return response.data.data;
   },
 
@@ -82,7 +99,9 @@ export const tejoApi = {
   },
 
   getKnowledgeByKey: async (key: string): Promise<TejoKnowledge> => {
-    const response = await apiClient.get<ApiResponse<TejoKnowledge>>(`/admin/tejo/knowledge/${key}`);
+    const response = await apiClient.get<ApiResponse<TejoKnowledge>>(
+      `/admin/tejo/knowledge/${key}`
+    );
     return response.data.data;
   },
 
@@ -92,17 +111,28 @@ export const tejoApi = {
     locale?: string;
     metadata?: Record<string, unknown>;
   }): Promise<TejoKnowledge> => {
-    const response = await apiClient.post<ApiResponse<TejoKnowledge>>('/admin/tejo/knowledge', payload);
+    const response = await apiClient.post<ApiResponse<TejoKnowledge>>(
+      '/admin/tejo/knowledge',
+      payload
+    );
     return response.data.data;
   },
 
-  updateKnowledge: async (key: string, payload: UpdateTejoKnowledgeRequest): Promise<TejoKnowledge> => {
-    const response = await apiClient.patch<ApiResponse<TejoKnowledge>>(`/admin/tejo/knowledge/${key}`, payload);
+  updateKnowledge: async (
+    key: string,
+    payload: UpdateTejoKnowledgeRequest
+  ): Promise<TejoKnowledge> => {
+    const response = await apiClient.patch<ApiResponse<TejoKnowledge>>(
+      `/admin/tejo/knowledge/${key}`,
+      payload
+    );
     return response.data.data;
   },
 
   deleteKnowledge: async (key: string): Promise<{ deleted: boolean }> => {
-    const response = await apiClient.post<ApiResponse<{ deleted: boolean }>>(`/admin/tejo/knowledge/${key}/delete`);
+    const response = await apiClient.post<ApiResponse<{ deleted: boolean }>>(
+      `/admin/tejo/knowledge/${key}/delete`
+    );
     return response.data.data;
   },
 
@@ -115,13 +145,62 @@ export const tejoApi = {
     enabled?: boolean;
     webPilotEnabled?: boolean;
     providerOrder?: string[];
+    chatProviderOrder?: string[];
+    embeddingProviderOrder?: string[];
     threshold?: number;
+    tenantId?: string;
     geminiApiKey?: string;
     geminiChatModel?: string;
     geminiEmbeddingModel?: string;
     geminiBaseUrl?: string;
+    retrievalTopK?: number;
+    retrievalMinScore?: number;
+    contextMaxChars?: number;
+    includeProducts?: boolean;
+    includeKb?: boolean;
   }): Promise<TejoSettings> => {
-    const response = await apiClient.patch<ApiResponse<TejoSettings>>('/admin/tejo/settings', payload);
+    const response = await apiClient.patch<ApiResponse<TejoSettings>>(
+      '/admin/tejo/settings',
+      payload
+    );
+    return response.data.data;
+  },
+
+  testGemini: async (): Promise<TejoDiagnosticsResult> => {
+    const response = await apiClient.post<ApiResponse<TejoDiagnosticsResult>>(
+      '/admin/tejo/settings/test-gemini'
+    );
+    return response.data.data;
+  },
+
+  testEmbedding: async (): Promise<TejoDiagnosticsResult> => {
+    const response = await apiClient.post<ApiResponse<TejoDiagnosticsResult>>(
+      '/admin/tejo/settings/test-embedding'
+    );
+    return response.data.data;
+  },
+
+  testQdrant: async (): Promise<TejoDiagnosticsResult> => {
+    const response = await apiClient.post<ApiResponse<TejoDiagnosticsResult>>(
+      '/admin/tejo/settings/test-qdrant'
+    );
+    return response.data.data;
+  },
+
+  testRetrieval: async (question: string): Promise<TejoDiagnosticsResult> => {
+    const response = await apiClient.post<ApiResponse<TejoDiagnosticsResult>>(
+      '/admin/tejo/settings/test-retrieval',
+      {
+        question,
+      }
+    );
+    return response.data.data;
+  },
+
+  rebuildQdrant: async (): Promise<TejoDiagnosticsResult> => {
+    const response = await apiClient.post<ApiResponse<TejoDiagnosticsResult>>(
+      '/admin/tejo/settings/rebuild-qdrant'
+    );
     return response.data.data;
   },
 };

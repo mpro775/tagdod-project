@@ -1,12 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import {
-  CreateTejoKnowledgeDto,
-  UpdateTejoKnowledgeDto,
-} from './dto/tejo-knowledge.dto';
+import { CreateTejoKnowledgeDto, UpdateTejoKnowledgeDto } from './dto/tejo-knowledge.dto';
 import { TejoLlmRouterService } from './adapters/tejo-llm-router.service';
 import { TejoKbEmbedding, TejoKbEmbeddingDocument } from './schemas/tejo-kb-embedding.schema';
+import { TejoVectorStoreService } from './tejo-vector-store.service';
 
 @Injectable()
 export class TejoKnowledgeService {
@@ -14,9 +12,14 @@ export class TejoKnowledgeService {
     @InjectModel(TejoKbEmbedding.name)
     private readonly kbEmbeddingModel: Model<TejoKbEmbeddingDocument>,
     private readonly llmRouterService: TejoLlmRouterService,
+    private readonly vectorStore: TejoVectorStoreService,
   ) {}
 
-  async listKnowledge(page = 1, limit = 20, q?: string): Promise<{
+  async listKnowledge(
+    page = 1,
+    limit = 20,
+    q?: string,
+  ): Promise<{
     data: TejoKbEmbeddingDocument[];
     total: number;
     page: number;
@@ -29,16 +32,14 @@ export class TejoKnowledgeService {
     const filter: Record<string, unknown> = {};
     if (q && q.trim().length > 0) {
       const pattern = q.trim();
-      filter.$or = [{ key: { $regex: pattern, $options: 'i' } }, { text: { $regex: pattern, $options: 'i' } }];
+      filter.$or = [
+        { key: { $regex: pattern, $options: 'i' } },
+        { text: { $regex: pattern, $options: 'i' } },
+      ];
     }
 
     const [data, total] = await Promise.all([
-      this.kbEmbeddingModel
-        .find(filter)
-        .sort({ updatedAt: -1 })
-        .skip(skip)
-        .limit(safeLimit)
-        .exec(),
+      this.kbEmbeddingModel.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(safeLimit).exec(),
       this.kbEmbeddingModel.countDocuments(filter),
     ]);
 
@@ -71,7 +72,7 @@ export class TejoKnowledgeService {
     const model = embedResponse.response.model;
     const vector = embedResponse.response.vectors[0] || [];
 
-    return this.kbEmbeddingModel.create({
+    const saved = await this.kbEmbeddingModel.create({
       key: dto.key,
       text: dto.text,
       vector,
@@ -83,6 +84,22 @@ export class TejoKnowledgeService {
         updatedBy: userId,
       },
     });
+
+    await this.vectorStore.upsertPoint(`kb:${dto.key}`, vector, {
+      tenantId: String(dto.metadata?.tenantId || 'tajaddod'),
+      sourceType: 'kb',
+      sourceId: dto.key,
+      title: dto.key,
+      text: dto.text,
+      locale: dto.locale || 'ar,en',
+      metadata: {
+        ...(dto.metadata || {}),
+        source: 'admin',
+        updatedBy: userId,
+      },
+    });
+
+    return saved;
   }
 
   async updateKnowledge(
@@ -120,6 +137,15 @@ export class TejoKnowledgeService {
     existing.set('metadata', nextMetadata);
 
     await existing.save();
+    await this.vectorStore.upsertPoint(`kb:${key}`, vector, {
+      tenantId: String(existing.metadata?.tenantId || 'tajaddod'),
+      sourceType: 'kb',
+      sourceId: key,
+      title: key,
+      text: updatedText,
+      locale: dto.locale ?? existing.locale,
+      metadata: nextMetadata,
+    });
     return existing;
   }
 

@@ -40,6 +40,7 @@ export const EngineerCard: React.FC<EngineerCardProps> = ({
 }) => {
   const { t } = useTranslation(['services', 'common']);
   const theme = useTheme();
+  const isActive = engineer.status === 'active';
 
   const getRatingColor = (rating: number) => {
     if (rating >= 4.5) return 'success';
@@ -115,11 +116,11 @@ export const EngineerCard: React.FC<EngineerCardProps> = ({
               </Tooltip>
             )}
             {onToggleStatus && (
-              <Tooltip title={engineer.isActive ? t('services:engineers.suspend') : t('services:engineers.activate')}>
+              <Tooltip title={isActive ? t('services:engineers.suspend') : t('services:engineers.activate')}>
                 <IconButton
                   size="small"
                   onClick={() => onToggleStatus(engineer)}
-                  color={engineer.isActive ? 'warning' : 'success'}
+                  color={isActive ? 'warning' : 'success'}
                 >
                   <Block fontSize="small" />
                 </IconButton>
@@ -181,10 +182,10 @@ export const EngineerCard: React.FC<EngineerCardProps> = ({
               {t('services:engineers.status')}
             </Typography>
             <Chip
-              label={engineer.isActive ? t('common:status.active') : t('common:status.inactive')}
-              color={engineer.isActive ? 'success' : 'default'}
+              label={isActive ? t('common:status.active') : t('common:status.inactive')}
+              color={isActive ? 'success' : 'default'}
               size="small"
-              icon={engineer.isActive ? <CheckCircle /> : <Cancel />}
+              icon={isActive ? <CheckCircle /> : <Cancel />}
             />
           </Box>
         </Box>

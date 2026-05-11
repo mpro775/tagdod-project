@@ -20,6 +20,9 @@ import { TejoAnalyticsService } from './tejo-analytics.service';
 import { TejoQueueService } from './queue/tejo-queue.service';
 import { TejoSettingsService } from './tejo-settings.service';
 import { TejoKnowledgeService } from './tejo-knowledge.service';
+import { TejoLlmRouterService } from './adapters/tejo-llm-router.service';
+import { TejoVectorStoreService } from './tejo-vector-store.service';
+import { TejoService } from './tejo.service';
 
 interface RequestWithUser {
   user: {
@@ -39,6 +42,9 @@ export class TejoAdminController {
     private readonly queueService: TejoQueueService,
     private readonly settingsService: TejoSettingsService,
     private readonly knowledgeService: TejoKnowledgeService,
+    private readonly llmRouterService: TejoLlmRouterService,
+    private readonly vectorStore: TejoVectorStoreService,
+    private readonly tejoService: TejoService,
   ) {}
 
   @Get('prompts')
@@ -198,14 +204,91 @@ export class TejoAdminController {
       enabled: dto.enabled,
       webPilotEnabled: dto.webPilotEnabled,
       providerOrder: dto.providerOrder,
+      chatProviderOrder: dto.chatProviderOrder,
+      embeddingProviderOrder: dto.embeddingProviderOrder,
       threshold: dto.threshold,
+      tenantId: dto.tenantId,
       geminiApiKey: dto.geminiApiKey,
       geminiChatModel: dto.geminiChatModel,
       geminiEmbeddingModel: dto.geminiEmbeddingModel,
       geminiBaseUrl: dto.geminiBaseUrl,
+      retrievalTopK: dto.retrievalTopK,
+      retrievalMinScore: dto.retrievalMinScore,
+      contextMaxChars: dto.contextMaxChars,
+      includeProducts: dto.includeProducts,
+      includeKb: dto.includeKb,
     });
 
     return this.settingsService.getSettingsSnapshot();
   }
-}
 
+  @Post('settings/test-gemini')
+  @RequirePermissions(AdminPermission.TEJO_MANAGE, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({ summary: 'Test Gemini chat provider' })
+  async testGemini() {
+    const startedAt = Date.now();
+    const result = await this.llmRouterService.chat({
+      locale: 'ar',
+      messages: [
+        { role: 'system', content: 'Reply with a short health-check response.' },
+        { role: 'user', content: 'اختبار Tejo Gemini' },
+      ],
+    });
+
+    return {
+      status: 'OK',
+      provider: result.provider,
+      model: result.response.model,
+      latencyMs: Date.now() - startedAt,
+    };
+  }
+
+  @Post('settings/test-embedding')
+  @RequirePermissions(AdminPermission.TEJO_MANAGE, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({ summary: 'Test embedding provider' })
+  async testEmbedding() {
+    const startedAt = Date.now();
+    const result = await this.llmRouterService.embed({
+      texts: ['اختبار توليد المتجهات'],
+    });
+    const vector = result.response.vectors[0] || [];
+
+    return {
+      status: 'OK',
+      provider: result.provider,
+      model: result.response.model,
+      dimension: vector.length,
+      latencyMs: Date.now() - startedAt,
+    };
+  }
+
+  @Post('settings/test-qdrant')
+  @RequirePermissions(AdminPermission.TEJO_MANAGE, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({ summary: 'Test Qdrant vector store' })
+  async testQdrant() {
+    const startedAt = Date.now();
+    const status = await this.vectorStore.getCollectionStatus();
+
+    return {
+      status: 'OK',
+      ...status,
+      latencyMs: Date.now() - startedAt,
+    };
+  }
+
+  @Post('settings/test-retrieval')
+  @RequirePermissions(AdminPermission.TEJO_MANAGE, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({ summary: 'Test full Tejo retrieval path' })
+  async testRetrieval(@Body() body: { question?: string } = {}) {
+    const question = body.question?.trim() || 'كيف يتم توزيع طلبات الصيانة؟';
+    return this.tejoService.testHybridRetrieval(question, 'ar');
+  }
+
+  @Post('settings/rebuild-qdrant')
+  @RequirePermissions(AdminPermission.TEJO_MANAGE, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({ summary: 'Clear and rebuild Qdrant collection' })
+  async rebuildQdrant() {
+    await this.vectorStore.rebuildCollection();
+    return this.vectorStore.getCollectionStatus();
+  }
+}

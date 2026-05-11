@@ -154,3 +154,36 @@ export const useUpdateTejoSettings = () => {
     onError: ErrorHandler.showError,
   });
 };
+
+export const useTejoDiagnostics = () => {
+  return {
+    testGemini: useMutation({
+      mutationFn: tejoApi.testGemini,
+      onError: ErrorHandler.showError,
+    }),
+    testEmbedding: useMutation({
+      mutationFn: tejoApi.testEmbedding,
+      onError: ErrorHandler.showError,
+    }),
+    testQdrant: useMutation({
+      mutationFn: tejoApi.testQdrant,
+      onError: ErrorHandler.showError,
+    }),
+    testRetrieval: useMutation({
+      mutationFn: tejoApi.testRetrieval,
+      onError: ErrorHandler.showError,
+    }),
+  };
+};
+
+export const useRebuildQdrant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: tejoApi.rebuildQdrant,
+    onSuccess: () => {
+      toast.success('Qdrant collection rebuilt');
+      queryClient.invalidateQueries({ queryKey: [TEJO_KEY, 'settings'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};

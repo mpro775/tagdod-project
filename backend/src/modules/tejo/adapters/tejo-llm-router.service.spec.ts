@@ -12,6 +12,7 @@ describe('TejoLlmRouterService', () => {
     const gemini = createProvider('gemini');
     const primary = createProvider('provider-a');
     const fallback = createProvider('provider-b');
+    const externalEmbedding = createProvider('external-embedding');
 
     gemini.healthCheck.mockResolvedValue(false);
     primary.healthCheck.mockResolvedValue(true);
@@ -25,6 +26,7 @@ describe('TejoLlmRouterService', () => {
       gemini as any,
       primary as any,
       fallback as any,
+      externalEmbedding as any,
       systemSettingsService as any,
     );
 
@@ -42,11 +44,16 @@ describe('TejoLlmRouterService', () => {
     const gemini = createProvider('gemini');
     const primary = createProvider('provider-a');
     const fallback = createProvider('provider-b');
+    const externalEmbedding = createProvider('external-embedding');
 
     gemini.healthCheck.mockResolvedValue(true);
     gemini.chat.mockRejectedValue(new Error('network failed'));
     primary.healthCheck.mockResolvedValue(true);
-    primary.chat.mockResolvedValue({ outputText: 'fallback', confidence: 0.62, model: 'provider-a' });
+    primary.chat.mockResolvedValue({
+      outputText: 'fallback',
+      confidence: 0.62,
+      model: 'provider-a',
+    });
 
     const systemSettingsService = {
       getSettingValue: jest.fn().mockResolvedValue(['gemini', 'provider-a']),
@@ -56,6 +63,7 @@ describe('TejoLlmRouterService', () => {
       gemini as any,
       primary as any,
       fallback as any,
+      externalEmbedding as any,
       systemSettingsService as any,
     );
 

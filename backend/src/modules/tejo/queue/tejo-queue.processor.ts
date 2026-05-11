@@ -6,18 +6,14 @@ import { Model } from 'mongoose';
 import { Product, ProductStatus } from '../../products/schemas/product.schema';
 import { TejoReindexScope } from '../dto/tejo-reindex.dto';
 import { TejoLlmRouterService } from '../adapters/tejo-llm-router.service';
-import {
-  TEJO_EMBEDDINGS_QUEUE,
-  TEJO_EMBEDDING_REINDEX_JOB,
-} from './tejo-queue.constants';
-import {
-  TejoEmbeddingReindexJobData,
-} from './tejo-queue.service';
+import { TEJO_EMBEDDINGS_QUEUE, TEJO_EMBEDDING_REINDEX_JOB } from './tejo-queue.constants';
+import { TejoEmbeddingReindexJobData } from './tejo-queue.service';
 import {
   TejoProductEmbedding,
   TejoProductEmbeddingDocument,
 } from '../schemas/tejo-product-embedding.schema';
 import { TejoKbEmbedding, TejoKbEmbeddingDocument } from '../schemas/tejo-kb-embedding.schema';
+import { TejoVectorStoreService } from '../tejo-vector-store.service';
 
 @Processor(TEJO_EMBEDDINGS_QUEUE)
 export class TejoQueueProcessor {
@@ -31,6 +27,7 @@ export class TejoQueueProcessor {
     @InjectModel(TejoKbEmbedding.name)
     private readonly kbEmbeddingModel: Model<TejoKbEmbeddingDocument>,
     private readonly llmRouterService: TejoLlmRouterService,
+    private readonly vectorStore: TejoVectorStoreService,
   ) {}
 
   @Process(TEJO_EMBEDDING_REINDEX_JOB)
@@ -50,6 +47,7 @@ export class TejoQueueProcessor {
   }
 
   private async reindexProducts(full: boolean): Promise<void> {
+    const tenantId = process.env.TEJO_TENANT_ID || 'tajaddod';
     const query: Record<string, unknown> = {
       status: ProductStatus.ACTIVE,
       deletedAt: null,
@@ -100,6 +98,24 @@ export class TejoQueueProcessor {
 
     if (operations.length > 0) {
       await this.productEmbeddingModel.bulkWrite(operations);
+      await this.vectorStore.upsertPoints(
+        products.map((product, index) => ({
+          id: `product:${product._id.toString()}`,
+          vector: response.vectors[index] || [],
+          payload: {
+            tenantId,
+            sourceType: 'product',
+            sourceId: product._id.toString(),
+            title: String(product.name || product.nameEn || ''),
+            text: texts[index],
+            locale: 'ar,en',
+            metadata: {
+              name: product.name,
+              nameEn: product.nameEn,
+            },
+          },
+        })),
+      );
     }
   }
 
@@ -174,7 +190,22 @@ export class TejoQueueProcessor {
 
     if (operations.length > 0) {
       await this.kbEmbeddingModel.bulkWrite(operations);
+      const tenantId = process.env.TEJO_TENANT_ID || 'tajaddod';
+      await this.vectorStore.upsertPoints(
+        kbEntries.map((entry, index) => ({
+          id: `kb:${entry.key}`,
+          vector: response.vectors[index] || [],
+          payload: {
+            tenantId: String(entry.metadata?.tenantId || tenantId),
+            sourceType: 'kb',
+            sourceId: entry.key,
+            title: entry.key,
+            text: entry.text,
+            locale: entry.locale || 'ar,en',
+            metadata: entry.metadata || {},
+          },
+        })),
+      );
     }
   }
 }
-
