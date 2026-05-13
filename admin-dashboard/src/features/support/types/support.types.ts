@@ -143,6 +143,8 @@ export interface SupportTicket extends BaseEntity {
   feedbackAt?: Date;
 
   metadata?: Record<string, unknown>;
+  tejoSessionId?: string | { _id: string } | null;
+  source?: string;
 
   // معلومات العميل (populated من الـ aggregation)
   user?: TicketUser;
@@ -184,6 +186,8 @@ export interface CreateSupportTicketDto {
   priority?: SupportPriority;
   attachments?: string[];
   metadata?: Record<string, unknown>;
+  tejoSessionId?: string;
+  source?: string;
 }
 
 export interface UpdateSupportTicketDto {

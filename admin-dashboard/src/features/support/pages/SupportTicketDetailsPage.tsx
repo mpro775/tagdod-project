@@ -89,6 +89,13 @@ export const SupportTicketDetailsPage: React.FC = () => {
     }
   };
 
+  const getTejoSessionId = (): string | undefined => {
+    if (!ticket?.tejoSessionId) return undefined;
+    return typeof ticket.tejoSessionId === 'object'
+      ? ticket.tejoSessionId._id
+      : ticket.tejoSessionId;
+  };
+
   const getCategoryLabel = (category: SupportCategory): string => {
     switch (category) {
       case SupportCategory.TECHNICAL:
@@ -403,6 +410,22 @@ export const SupportTicketDetailsPage: React.FC = () => {
                       {getPriorityLabel(ticket.priority)}
                     </Typography>
                   </Box>
+
+                  {getTejoSessionId() && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Tejo Session
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => navigate(`/support/tejo/sessions/${getTejoSessionId()}`)}
+                        sx={{ mt: 0.5 }}
+                      >
+                        عرض محادثة Tejo
+                      </Button>
+                    </Box>
+                  )}
 
                   {ticket.slaDueDate && (
                     <Box>

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { TejoMessage, TejoMessageDocument } from './schemas/tejo-message.schema';
+import { TejoMessage, TejoMessageDocument, TejoMessageRole } from './schemas/tejo-message.schema';
 
 @Injectable()
 export class TejoMessageService {
@@ -63,5 +63,13 @@ export class TejoMessageService {
 
   async countBySessionId(sessionId: string): Promise<number> {
     return this.messageModel.countDocuments({ sessionId });
+  }
+
+  async countRetrievalFailuresBySessionId(sessionId: string): Promise<number> {
+    return this.messageModel.countDocuments({
+      sessionId,
+      role: TejoMessageRole.ASSISTANT,
+      'metadata.retrievalFailed': true,
+    });
   }
 }

@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "C:/Users/Abdua/tagdod-project/tagadod_app/linux"
+    "cmake.sourceDirectory": "C:/Users/Abdua/tagdod-project/tagadod_app/linux",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

@@ -46,6 +46,7 @@ export interface SendMessageRequest {
 
 export interface TejoQueryRequest {
   ticketId?: string
+  sessionId?: string
   message: string
   channel: string
   locale?: string

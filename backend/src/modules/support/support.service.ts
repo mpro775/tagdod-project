@@ -111,6 +111,7 @@ export class SupportService {
       attachments: dto.attachments || [],
       metadata: dto.metadata || {},
       source: dto.source || SupportTicketSource.MANUAL,
+      tejoSessionId: dto.tejoSessionId || null,
       slaHours,
       slaDueDate,
     });

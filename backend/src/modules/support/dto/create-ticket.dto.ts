@@ -78,4 +78,13 @@ export class CreateSupportTicketDto {
   @IsOptional()
   @IsEnum(SupportTicketSource)
   source?: string;
+
+  @ApiProperty({
+    description: 'Linked Tejo session id when the ticket is created from a Tejo handoff',
+    required: false,
+    example: '664f5c2a2f4f2c0012a34567',
+  })
+  @IsOptional()
+  @IsString()
+  tejoSessionId?: string;
 }

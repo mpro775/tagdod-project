@@ -111,7 +111,8 @@ export class TejoService {
       throw new ForbiddenException('Tejo web pilot is currently disabled');
     }
 
-    let sessionId = dto.context?.sessionId as string | undefined;
+    let sessionId =
+      dto.sessionId || (dto.context?.sessionId as string | undefined) || dto.ticketId;
     let session: TejoSessionDocument | null = null;
 
     if (sessionId) {
@@ -194,7 +195,7 @@ export class TejoService {
     const handoffRequestedByIntent = intent === 'human_handoff';
     const internalVerificationRequired = this.requiresInternalVerification(dto.message);
     const previousRetrievalFailures = retrieval.retrievalFailed
-      ? await this.countPreviousRetrievalFailuresSession(sessionId)
+      ? await this.messageService.countRetrievalFailuresBySessionId(sessionId)
       : 0;
     const repeatedRetrievalFailure = retrieval.retrievalFailed && previousRetrievalFailures >= 1;
     const handoffSuggested =
@@ -207,7 +208,7 @@ export class TejoService {
     const actions = this.buildActions(cards, handoffSuggested, isArabic);
 
     const finalReply = handoffSuggested
-      ? this.buildHandoffReply(isArabic, handoffRequestedByIntent)
+      ? this.buildHandoffReply(isArabic)
       : retrieval.retrievalFailed
         ? this.buildNoKnowledgeReply(isArabic)
         : modelResponse.outputText;
@@ -230,7 +231,7 @@ export class TejoService {
       knowledge: retrieval.knowledgeSnippets,
     };
 
-    await this.messageService.create({
+    const assistantMessage = await this.messageService.create({
       sessionId,
       userId,
       role: TejoMessageRole.ASSISTANT,
@@ -253,11 +254,15 @@ export class TejoService {
       payload: aiMessagePayload,
     });
 
-    if (handoffSuggested && !handoffRequestedByIntent) {
-      await this.sessionService.update(sessionId, {
+    await this.sessionService.incrementMessageCount(sessionId);
+
+    let finalStatus = session.status;
+    if (handoffSuggested) {
+      const updatedSession = await this.sessionService.update(sessionId, {
         status: TejoSessionStatus.ESCALATION_SUGGESTED,
         handoffSuggested: true,
       });
+      finalStatus = updatedSession?.status || TejoSessionStatus.ESCALATION_SUGGESTED;
     }
 
     const latencyMs = Date.now() - startedAt;
@@ -307,9 +312,9 @@ export class TejoService {
       handoffSuggested,
       sessionId,
       ticketId: sessionId,
-      messageId: `tejo-msg-${Date.now()}`,
+      messageId: assistantMessage._id.toString(),
       latencyMs,
-      status: session.status,
+      status: finalStatus,
     };
   }
 
@@ -384,6 +389,7 @@ export class TejoService {
       category: SupportCategory.OTHER,
       channel: session.channel as SupportChannel,
       source: SupportTicketSource.TEJO_HANDOFF,
+      tejoSessionId: session._id.toString(),
       metadata: {
         sessionId,
         locale: session.locale,
@@ -400,6 +406,11 @@ export class TejoService {
       supportTicketId: ticket._id.toString(),
       handoffTriggered: true,
     });
+
+    await this.conversationModel.updateMany(
+      { ticketId: sessionId },
+      { $set: { handoffTriggered: true } },
+    );
 
     await this.supportService.addAutomatedMessage(ticket._id.toString(), {
       content: 'تم تصعيد هذه المحادثة من تيجو. سياق المحادثة موضح أعلاه.',
@@ -1178,16 +1189,10 @@ export class TejoService {
     return 'You are Tejo support and commerce assistant. Provide concise accurate answers and use only available retrieval results.';
   }
 
-  private buildHandoffReply(isArabic: boolean, userRequestedHuman: boolean): string {
-    if (userRequestedHuman) {
-      return isArabic
-        ? 'أكيد، تم تحويلك إلى موظف دعم بشري داخل نفس التذكرة. يمكنك كتابة تفاصيل المشكلة هنا وسيقوم الفريق بمتابعتها.'
-        : 'Sure, you have been connected to a human support agent in the same ticket. You can share the issue details here and the team will follow up.';
-    }
-
+  private buildHandoffReply(isArabic: boolean): string {
     return isArabic
-      ? 'تم تحويل طلبك إلى موظف دعم بشري داخل نفس التذكرة حتى يتم التحقق من التفاصيل ومتابعتك.'
-      : 'Your request has been handed off to a human support agent in the same ticket so the details can be verified.';
+      ? 'لم أجد إجابة مؤكدة كافية. يمكنني تحويلك لموظف دعم لمساعدتك بشكل أفضل، هل تريد المتابعة؟'
+      : 'I do not have enough verified information. I can hand this conversation to a support agent if you want to continue.';
   }
 
   private buildHandoffReason(

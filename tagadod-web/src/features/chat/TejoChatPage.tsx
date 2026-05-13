@@ -152,6 +152,7 @@ export function TejoChatPage() {
           message: text,
           channel: 'web',
           locale: language === 'ar' ? 'ar-SA' : 'en-US',
+          sessionId: tejoSessionId ?? undefined,
           context: {
             sessionId: tejoSessionId ?? undefined,
           },
@@ -235,6 +236,10 @@ export function TejoChatPage() {
 
   const handleActionClick = (action: TejoAction) => {
     if (isLoading) return
+    if (action.type === 'request_handoff') {
+      handleHandoffConfirm()
+      return
+    }
     sendToTejo(action.label)
   }
 

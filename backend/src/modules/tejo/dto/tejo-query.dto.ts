@@ -8,6 +8,11 @@ export class TejoQueryDto {
   @IsString()
   ticketId?: string;
 
+  @ApiProperty({ required: false, description: 'Existing Tejo session id' })
+  @IsOptional()
+  @IsString()
+  sessionId?: string;
+
   @ApiProperty({ description: 'User message for Tejo', minLength: 1 })
   @IsString()
   @MinLength(1)

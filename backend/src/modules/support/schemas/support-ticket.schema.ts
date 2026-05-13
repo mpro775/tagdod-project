@@ -176,4 +176,5 @@ SupportTicketSchema.index({ assignedTo: 1, status: 1 });
 SupportTicketSchema.index({ category: 1, status: 1 });
 SupportTicketSchema.index({ channel: 1, status: 1, createdAt: -1 });
 SupportTicketSchema.index({ aiStatus: 1, updatedAt: -1 });
+SupportTicketSchema.index({ tejoSessionId: 1 });
 SupportTicketSchema.index({ title: 'text', description: 'text' });
