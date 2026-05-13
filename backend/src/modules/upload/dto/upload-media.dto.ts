@@ -40,5 +40,15 @@ export class UploadMediaDto {
     return Boolean(value);
   })
   isPublic?: boolean; // عامة أم خاصة
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value === 'true';
+    }
+    return Boolean(value);
+  })
+  isMainImage?: boolean; // هل هي صورة رئيسية للمنتج (تطبق عليها قيود الأبعاد)
 }
 

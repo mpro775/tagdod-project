@@ -53,6 +53,7 @@ interface MediaUploaderProps {
   // eslint-disable-next-line no-unused-vars
   onSuccess?: (media?: any) => void;
   defaultCategory?: MediaCategory;
+  isMainImage?: boolean; // هل هي صورة رئيسية للمنتج (تطبق عليها قيود الأبعاد)
 }
 
 export const MediaUploader: React.FC<MediaUploaderProps> = ({
@@ -60,6 +61,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   onClose,
   onSuccess,
   defaultCategory = MediaCategory.OTHER,
+  isMainImage = true,
 }) => {
   const { t } = useTranslation('media');
   const theme = useTheme();
@@ -86,8 +88,8 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
   const { mutate: upload, isPending } = useUploadMedia();
 
-  // التحقق مما إذا كانت الفئة الحالية تتطلب قيود أبعاد
-  const hasConstraints = CATEGORIES_WITH_CONSTRAINTS.includes(category);
+  // التحقق مما إذا كانت الفئة الحالية تتطلب قيود أبعاد (فقط للصور الرئيسية)
+  const hasConstraints = CATEGORIES_WITH_CONSTRAINTS.includes(category) && isMainImage;
 
   // دالة مساعدة للتحقق من الأبعاد حسب الفئة
   const validateImageDimensionsForCategory = useCallback(
@@ -320,6 +322,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           description,
           tags,
           isPublic,
+          isMainImage,
         },
       },
       {

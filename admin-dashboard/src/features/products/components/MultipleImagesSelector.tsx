@@ -342,6 +342,7 @@ export const MultipleImagesSelector: React.FC<MultipleImagesSelectorProps> = ({
             onChange={(media) => handleImageSelect(media)}
             onMultiChange={(media) => handleImageSelect(media)}
             category={MediaCategory.PRODUCT}
+            isMainImage={false}
             helperText={t(
               'media:uploader.selectFile',
               'يمكنك اختيار صورة من المكتبة أو رفع صورة جديدة'

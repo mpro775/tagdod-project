@@ -54,6 +54,7 @@ interface ImageFieldProps {
   showDetails?: boolean;
   size?: 'small' | 'medium' | 'large';
   variant?: 'card' | 'compact' | 'minimal';
+  isMainImage?: boolean; // هل هي صورة رئيسية (تطبق عليها قيود الأبعاد)
 }
 
 export const ImageField: React.FC<ImageFieldProps> = ({
@@ -71,6 +72,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
   showDetails = true,
   size = 'medium',
   variant = 'card',
+  isMainImage = true,
 }) => {
   const theme = useTheme();
   const { isMobile } = useBreakpoint();
@@ -416,6 +418,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({
           onClose={() => setUploaderOpen(false)}
           onSuccess={handleUploadSuccess}
           defaultCategory={category}
+          isMainImage={isMainImage}
         />
       </Box>
     );
@@ -636,12 +639,14 @@ export const ImageField: React.FC<ImageFieldProps> = ({
         onClose={handleUploaderClose}
         onSuccess={handleUploadSuccess}
         defaultCategory={category}
+        isMainImage={isMainImage}
       />
       <MediaUploader
         open={uploaderOpen}
         onClose={handleUploaderClose}
         onSuccess={handleUploadSuccess}
         defaultCategory={category}
+        isMainImage={isMainImage}
       />
 
       {/* Details Dialog */}
