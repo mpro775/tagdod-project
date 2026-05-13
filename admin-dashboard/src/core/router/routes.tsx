@@ -329,6 +329,16 @@ const TejoKnowledgePage = lazy(() =>
     default: m.TejoKnowledgePage,
   }))
 );
+const TejoSessionsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoSessionsPage').then((m) => ({
+    default: m.TejoSessionsPage,
+  }))
+);
+const TejoSessionDetailsPage = lazy(() =>
+  import('@/features/tejo/pages/TejoSessionDetailsPage').then((m) => ({
+    default: m.TejoSessionDetailsPage,
+  }))
+);
 const NotificationsListPage = lazy(() =>
   import('@/features/notifications/pages/NotificationsListPage').then((m) => ({
     default: m.NotificationsListPage,
@@ -837,6 +847,14 @@ export const routes: RouteObject[] = [
       {
         path: 'support/tejo/knowledge',
         element: <TejoKnowledgePage />,
+      },
+      {
+        path: 'support/tejo/sessions',
+        element: <TejoSessionsPage />,
+      },
+      {
+        path: 'support/tejo/sessions/:id',
+        element: <TejoSessionDetailsPage />,
       },
       {
         path: 'support/:id',

@@ -42,6 +42,13 @@ export enum SupportAiStatus {
   HANDED_OFF = 'handed_off',
 }
 
+export enum SupportTicketSource {
+  MANUAL = 'manual',
+  CONTACT_FORM = 'contact_form',
+  TEJO_HANDOFF = 'tejo_handoff',
+  WEB_CHAT = 'web_chat',
+}
+
 @Schema({ timestamps: true })
 export class SupportTicket {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
@@ -146,6 +153,17 @@ export class SupportTicket {
 
   @Prop({ type: Object, default: {} })
   metadata?: Record<string, unknown>; // Additional data like orderId, productId, etc.
+
+  @Prop({ type: Types.ObjectId, ref: 'TejoSession', default: null })
+  tejoSessionId?: string | null;
+
+  @Prop({
+    type: String,
+    enum: SupportTicketSource,
+    default: SupportTicketSource.MANUAL,
+    index: true,
+  })
+  source?: string;
 }
 
 export const SupportTicketSchema = SchemaFactory.createForClass(SupportTicket);

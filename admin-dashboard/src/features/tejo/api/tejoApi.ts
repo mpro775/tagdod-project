@@ -9,6 +9,9 @@ import type {
   TejoKnowledgeList,
   TejoPrompt,
   TejoSettings,
+  TejoSession,
+  TejoSessionMessage,
+  TejoSessionStats,
   UpdateTejoKnowledgeRequest,
   UpdateTejoPromptRequest,
 } from '../types/tejo.types';
@@ -201,6 +204,71 @@ export const tejoApi = {
     const response = await apiClient.post<ApiResponse<TejoDiagnosticsResult>>(
       '/admin/tejo/settings/rebuild-qdrant'
     );
+    return response.data.data;
+  },
+
+  getSessions: async (
+    page = 1,
+    limit = 20,
+    status?: string,
+    channel?: string
+  ): Promise<{
+    sessions: TejoSession[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> => {
+    const params: Record<string, unknown> = { page, limit };
+    if (status) params.status = status;
+    if (channel) params.channel = channel;
+
+    const response = await apiClient.get<
+      ApiResponse<{
+        sessions: TejoSession[];
+        total: number;
+        page: number;
+        totalPages: number;
+      }>
+    >('/admin/tejo/sessions', { params });
+
+    return response.data.data;
+  },
+
+  getSessionStats: async (): Promise<TejoSessionStats> => {
+    const response = await apiClient.get<ApiResponse<TejoSessionStats>>(
+      '/admin/tejo/sessions/stats'
+    );
+    return response.data.data;
+  },
+
+  getSessionById: async (id: string): Promise<TejoSession | null> => {
+    const response = await apiClient.get<ApiResponse<TejoSession>>(
+      `/admin/tejo/sessions/${id}`
+    );
+    return response.data.data;
+  },
+
+  getSessionMessages: async (
+    id: string,
+    page = 1,
+    limit = 50
+  ): Promise<{
+    messages: TejoSessionMessage[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> => {
+    const response = await apiClient.get<
+      ApiResponse<{
+        messages: TejoSessionMessage[];
+        total: number;
+        page: number;
+        totalPages: number;
+      }>
+    >(`/admin/tejo/sessions/${id}/messages`, {
+      params: { page, limit },
+    });
+
     return response.data.data;
   },
 };

@@ -24,12 +24,16 @@ import {
   TejoProductEmbeddingSchema,
 } from './schemas/tejo-product-embedding.schema';
 import { TejoKbEmbedding, TejoKbEmbeddingSchema } from './schemas/tejo-kb-embedding.schema';
+import { TejoSession, TejoSessionSchema } from './schemas/tejo-session.schema';
+import { TejoMessage, TejoMessageSchema } from './schemas/tejo-message.schema';
 import { TEJO_EMBEDDINGS_QUEUE } from './queue/tejo-queue.constants';
 import { TejoQueueService } from './queue/tejo-queue.service';
 import { TejoQueueProcessor } from './queue/tejo-queue.processor';
 import { TejoKnowledgeService } from './tejo-knowledge.service';
 import { TejoExternalEmbeddingProviderAdapter } from './adapters/tejo-external-embedding-provider.adapter';
 import { TejoVectorStoreService } from './tejo-vector-store.service';
+import { TejoSessionService } from './tejo-session.service';
+import { TejoMessageService } from './tejo-message.service';
 
 @Module({
   imports: [
@@ -39,6 +43,8 @@ import { TejoVectorStoreService } from './tejo-vector-store.service';
       { name: TejoConversation.name, schema: TejoConversationSchema },
       { name: TejoProductEmbedding.name, schema: TejoProductEmbeddingSchema },
       { name: TejoKbEmbedding.name, schema: TejoKbEmbeddingSchema },
+      { name: TejoSession.name, schema: TejoSessionSchema },
+      { name: TejoMessage.name, schema: TejoMessageSchema },
     ]),
     BullModule.registerQueue({
       name: TEJO_EMBEDDINGS_QUEUE,
@@ -69,6 +75,8 @@ import { TejoVectorStoreService } from './tejo-vector-store.service';
     TejoQueueProcessor,
     TejoExternalEmbeddingProviderAdapter,
     TejoVectorStoreService,
+    TejoSessionService,
+    TejoMessageService,
   ],
   exports: [
     TejoService,
@@ -77,6 +85,8 @@ import { TejoVectorStoreService } from './tejo-vector-store.service';
     TejoSettingsService,
     TejoKnowledgeService,
     TejoVectorStoreService,
+    TejoSessionService,
+    TejoMessageService,
   ],
 })
 export class TejoModule {}

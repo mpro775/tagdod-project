@@ -64,7 +64,36 @@ export interface TejoQueryResponse {
   actions: TejoAction[]
   confidence: number
   handoffSuggested: boolean
+  sessionId: string
   ticketId: string
   messageId: string
   latencyMs: number
+  status?: string
+}
+
+export interface TejoSession {
+  id: string
+  userId: string
+  channel: string
+  status: 'active' | 'resolved' | 'escalation_suggested' | 'escalated' | 'closed'
+  locale: string
+  supportTicketId?: string | null
+  lastMessageAt?: string
+  messageCount: number
+  handoffSuggested: boolean
+  handoffTriggered: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TejoMessage {
+  id: string
+  sessionId: string
+  userId: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  metadata?: Record<string, unknown>
+  payload?: Record<string, unknown> | null
+  createdAt: string
+  updatedAt: string
 }

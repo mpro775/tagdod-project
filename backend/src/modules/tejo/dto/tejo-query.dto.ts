@@ -3,7 +3,7 @@ import { IsObject, IsOptional, IsString, MinLength } from 'class-validator';
 import { SupportChannel } from '../../support/schemas/support-ticket.schema';
 
 export class TejoQueryDto {
-  @ApiProperty({ required: false, description: 'Existing support ticket id' })
+  @ApiProperty({ required: false, description: 'Existing support ticket id (legacy)' })
   @IsOptional()
   @IsString()
   ticketId?: string;
@@ -26,7 +26,10 @@ export class TejoQueryDto {
   @IsString()
   locale?: string;
 
-  @ApiProperty({ required: false, description: 'Optional extra context' })
+  @ApiProperty({
+    required: false,
+    description: 'Optional extra context including sessionId',
+  })
   @IsOptional()
   @IsObject()
   context?: Record<string, unknown>;

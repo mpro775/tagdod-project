@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, IsObject } from 'class-validator';
-import { SupportCategory, SupportChannel, SupportPriority } from '../schemas/support-ticket.schema';
+import { SupportCategory, SupportChannel, SupportPriority, SupportTicketSource } from '../schemas/support-ticket.schema';
 
 export class CreateSupportTicketDto {
   @ApiProperty({
@@ -68,4 +68,14 @@ export class CreateSupportTicketDto {
   @IsOptional()
   @IsEnum(SupportChannel)
   channel?: SupportChannel;
+
+  @ApiProperty({
+    description: 'مصدر إنشاء التذكرة',
+    enum: SupportTicketSource,
+    required: false,
+    example: SupportTicketSource.TEJO_HANDOFF,
+  })
+  @IsOptional()
+  @IsEnum(SupportTicketSource)
+  source?: string;
 }

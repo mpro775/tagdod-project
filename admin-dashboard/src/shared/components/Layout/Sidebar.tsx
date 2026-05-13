@@ -54,6 +54,7 @@ import {
   OnlinePrediction,
   SmartToy,
   MenuBook,
+  Chat,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -604,6 +605,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             label: navLabel('navigation.tejoKnowledge'),
             icon: <SmartToy />,
             path: '/support/tejo/knowledge',
+          },
+          {
+            id: 'support-tejo-sessions',
+            label: 'محادثات تيجو',
+            icon: <Chat />,
+            path: '/support/tejo/sessions',
           },
         ],
       },

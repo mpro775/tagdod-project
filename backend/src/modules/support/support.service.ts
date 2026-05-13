@@ -15,6 +15,7 @@ import {
   SupportChannel,
   SupportPriority,
   SupportCategory,
+  SupportTicketSource,
 } from './schemas/support-ticket.schema';
 import {
   SupportMessage,
@@ -109,6 +110,7 @@ export class SupportService {
       channel: dto.channel || SupportChannel.WEB,
       attachments: dto.attachments || [],
       metadata: dto.metadata || {},
+      source: dto.source || SupportTicketSource.MANUAL,
       slaHours,
       slaDueDate,
     });
