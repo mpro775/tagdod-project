@@ -45,10 +45,9 @@ export interface SendMessageRequest {
 }
 
 export interface TejoQueryRequest {
-  ticketId?: string
   sessionId?: string
   message: string
-  channel: string
+  channel: 'web' | 'mobile' | 'whatsapp' | 'messenger' | 'instagram'
   locale?: string
   context?: Record<string, unknown>
 }
@@ -66,7 +65,7 @@ export interface TejoQueryResponse {
   confidence: number
   handoffSuggested: boolean
   sessionId: string
-  ticketId: string
+  ticketId?: string | null
   messageId: string
   latencyMs: number
   status?: string
@@ -74,10 +73,13 @@ export interface TejoQueryResponse {
 
 export interface TejoSession {
   id: string
+  _id?: string
   userId: string
   channel: string
   status: 'active' | 'resolved' | 'escalation_suggested' | 'escalated' | 'closed'
   locale: string
+  title?: string
+  lastMessagePreview?: string
   supportTicketId?: string | null
   lastMessageAt?: string
   messageCount: number

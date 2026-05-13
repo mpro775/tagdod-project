@@ -27,7 +27,7 @@ export interface TejoQueryResponse {
   confidence: number;
   handoffSuggested: boolean;
   sessionId: string;
-  ticketId: string;
+  ticketId?: string | null;
   messageId: string;
   latencyMs: number;
   status?: string;

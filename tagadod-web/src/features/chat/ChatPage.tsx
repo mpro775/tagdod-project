@@ -164,7 +164,7 @@ export function ChatPage() {
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => navigate('/tejo-chat')}
+            onClick={() => navigate('/tejo')}
             className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
             aria-label="تيجو - المساعد الذكي"
           >

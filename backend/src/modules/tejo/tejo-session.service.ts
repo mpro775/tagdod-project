@@ -32,8 +32,18 @@ export class TejoSessionService {
 
   async findByUserId(userId: string, channel: string): Promise<TejoSessionDocument | null> {
     return this.sessionModel
-      .findOne({ userId, channel, status: TejoSessionStatus.ACTIVE })
-      .sort({ createdAt: -1 })
+      .findOne({
+        userId,
+        channel,
+        status: {
+          $in: [
+            TejoSessionStatus.ACTIVE,
+            TejoSessionStatus.ESCALATION_SUGGESTED,
+            TejoSessionStatus.ESCALATED,
+          ],
+        },
+      })
+      .sort({ lastMessageAt: -1, createdAt: -1 })
       .exec();
   }
 
@@ -48,20 +58,40 @@ export class TejoSessionService {
     );
   }
 
+  async touchAfterMessage(id: string, preview: string): Promise<void> {
+    await this.sessionModel.updateOne(
+      { _id: id },
+      {
+        $inc: { messageCount: 1 },
+        $set: {
+          lastMessageAt: new Date(),
+          lastMessagePreview: preview.slice(0, 160),
+        },
+      },
+    );
+  }
+
   async findByUserIdPaginated(
     userId: string,
+    channel?: string,
     page = 1,
     limit = 20,
   ): Promise<{ sessions: TejoSessionDocument[]; total: number; page: number; totalPages: number }> {
     const skip = (page - 1) * limit;
+    const query: Record<string, unknown> = { userId };
+
+    if (channel) {
+      query.channel = channel;
+    }
+
     const [sessions, total] = await Promise.all([
       this.sessionModel
-        .find({ userId })
-        .sort({ createdAt: -1 })
+        .find(query)
+        .sort({ lastMessageAt: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .exec(),
-      this.sessionModel.countDocuments({ userId }),
+      this.sessionModel.countDocuments(query),
     ]);
 
     return {

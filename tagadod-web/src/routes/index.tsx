@@ -208,6 +208,11 @@ const TejoChatPage = lazy(() =>
     default: m.TejoChatPage,
   })),
 );
+const TejoSessionsPage = lazy(() =>
+  import("../features/chat/TejoSessionsPage").then((m) => ({
+    default: m.TejoSessionsPage,
+  })),
+);
 
 // Orders
 const OrderTrackingPage = lazy(() =>
@@ -724,6 +729,18 @@ const router = createBrowserRouter([
       },
       {
         path: "tejo-chat",
+        element: <Navigate to="/tejo" replace />,
+      },
+      {
+        path: "tejo",
+        element: (
+          <ProtectedRoute>
+            <TejoSessionsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "tejo/:sessionId",
         element: (
           <ProtectedRoute>
             <TejoChatPage />

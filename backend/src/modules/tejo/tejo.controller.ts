@@ -1,6 +1,7 @@
-﻿import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+﻿import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateTejoSessionDto } from './dto/create-tejo-session.dto';
 import { TejoQueryDto } from './dto/tejo-query.dto';
 import { TejoService } from './tejo.service';
 
@@ -27,6 +28,14 @@ export class TejoController {
     return this.tejoService.handleQuery(req.user.sub, dto);
   }
 
+  @Post('sessions')
+  @ApiOperation({ summary: 'Create a new Tejo session' })
+  @ApiBody({ type: CreateTejoSessionDto })
+  @ApiResponse({ status: 201, description: 'Tejo session created successfully' })
+  async createSession(@Req() req: RequestWithUser, @Body() dto: CreateTejoSessionDto) {
+    return this.tejoService.createSession(req.user.sub, dto);
+  }
+
   @Post('sessions/:sessionId/handoff')
   @ApiOperation({ summary: 'Trigger handoff from Tejo session to human support' })
   @ApiResponse({ status: 201, description: 'Handoff triggered successfully' })
@@ -47,7 +56,12 @@ export class TejoController {
   @Get('sessions')
   @ApiOperation({ summary: 'Get user Tejo sessions' })
   @ApiResponse({ status: 200, description: 'User sessions retrieved' })
-  async getUserSessions(@Req() req: RequestWithUser) {
-    return this.tejoService.getUserSessions(req.user.sub);
+  async getUserSessions(
+    @Req() req: RequestWithUser,
+    @Query('channel') channel?: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '20',
+  ) {
+    return this.tejoService.getUserSessions(req.user.sub, channel, Number(page), Number(limit));
   }
 }

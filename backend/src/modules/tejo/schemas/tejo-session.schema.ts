@@ -43,6 +43,12 @@ export class TejoSession {
   @Prop({ default: 'ar' })
   locale!: string;
 
+  @Prop({ default: 'محادثة جديدة' })
+  title?: string;
+
+  @Prop({ default: '' })
+  lastMessagePreview?: string;
+
   @Prop()
   storefrontHost?: string;
 
@@ -68,6 +74,7 @@ export class TejoSession {
 export const TejoSessionSchema = SchemaFactory.createForClass(TejoSession);
 
 TejoSessionSchema.index({ userId: 1, createdAt: -1 });
+TejoSessionSchema.index({ userId: 1, channel: 1, lastMessageAt: -1 });
 TejoSessionSchema.index({ status: 1, createdAt: -1 });
 TejoSessionSchema.index({ channel: 1, status: 1 });
 TejoSessionSchema.index({ supportTicketId: 1 });

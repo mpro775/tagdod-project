@@ -11,6 +11,12 @@ import type {
 } from '../types/support'
 import type { ApiResponse, PaginatedResponse, PaginationParams } from '../types/common'
 
+type TejoChannel = 'web' | 'mobile' | 'whatsapp' | 'messenger' | 'instagram'
+
+type TejoSessionsParams = PaginationParams & {
+  channel?: TejoChannel
+}
+
 const normalizeStatus = (status: unknown): SupportTicket['status'] => {
   if (status === 'in_progress') return 'inProgress'
   if (status === 'waiting_for_user') return 'waitingForUser'
@@ -84,6 +90,31 @@ const normalizeMessage = (message: Record<string, unknown>): SupportMessage => {
         : null,
     createdAt: String(message.createdAt || new Date().toISOString()),
     updatedAt: typeof message.updatedAt === 'string' ? message.updatedAt : undefined,
+  }
+}
+
+const normalizeTejoSession = (session: Record<string, unknown>): TejoSession => {
+  const id = String(session.id || session._id || '')
+
+  return {
+    ...(session as unknown as TejoSession),
+    id,
+    _id: String(session._id || id),
+    userId: String(session.userId || ''),
+    channel: String(session.channel || 'web'),
+    status: (session.status as TejoSession['status']) || 'active',
+    locale: String(session.locale || 'ar'),
+    title: typeof session.title === 'string' ? session.title : undefined,
+    lastMessagePreview:
+      typeof session.lastMessagePreview === 'string' ? session.lastMessagePreview : undefined,
+    supportTicketId:
+      session.supportTicketId == null ? null : String(session.supportTicketId),
+    lastMessageAt: typeof session.lastMessageAt === 'string' ? session.lastMessageAt : undefined,
+    messageCount: Number(session.messageCount || 0),
+    handoffSuggested: Boolean(session.handoffSuggested),
+    handoffTriggered: Boolean(session.handoffTriggered),
+    createdAt: String(session.createdAt || new Date().toISOString()),
+    updatedAt: String(session.updatedAt || session.createdAt || new Date().toISOString()),
   }
 }
 
@@ -172,6 +203,15 @@ export async function queryTejo(body: TejoQueryRequest): Promise<TejoQueryRespon
   return data.data
 }
 
+export async function createTejoSession(body: {
+  channel: TejoChannel
+  locale?: string
+  storefrontHost?: string
+}): Promise<TejoSession> {
+  const { data } = await api.post<ApiResponse<Record<string, unknown>>>('/tejo/sessions', body)
+  return normalizeTejoSession((data.data || data) as Record<string, unknown>)
+}
+
 export async function triggerTejoHandoff(sessionId: string): Promise<{ ticketId: string; sessionId: string; status: string }> {
   const { data } = await api.post<ApiResponse<{ ticketId: string; sessionId: string; status: string }>>(`/tejo/sessions/${sessionId}/handoff`)
   return data.data
@@ -193,7 +233,7 @@ export async function getSessionMessages(sessionId: string, params?: PaginationP
   }
 }
 
-export async function getUserSessions(params?: PaginationParams): Promise<PaginatedResponse<TejoSession>> {
+export async function getUserSessions(params?: TejoSessionsParams): Promise<PaginatedResponse<TejoSession>> {
   const { data } = await api.get<Record<string, unknown>>('/tejo/sessions', { params })
   const dataNode = (data.data || data) as Record<string, unknown>
   const meta = (dataNode.meta || {}) as Record<string, unknown>
@@ -204,7 +244,7 @@ export async function getUserSessions(params?: PaginationParams): Promise<Pagina
   const totalPages = Number(dataNode.totalPages || Math.ceil(total / Math.max(limit, 1)))
 
   return {
-    data: sessions as unknown as TejoSession[],
+    data: sessions.map(normalizeTejoSession),
     meta: { page, limit, total, totalPages },
   }
 }

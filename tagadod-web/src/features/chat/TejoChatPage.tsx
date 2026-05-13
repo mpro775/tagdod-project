@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowRight, Send, Bot, AlertTriangle, RefreshCw, UserCheck } from 'lucide-react'
 import * as supportService from '../../services/supportService'
 import { useLanguageStore } from '../../stores/languageStore'
@@ -75,15 +75,13 @@ function formatTime(dateStr: string): string {
   }
 }
 
-const TEJO_SESSION_STORAGE_KEY = 'tejo_session_id'
-
 export function TejoChatPage() {
   const navigate = useNavigate()
+  const { sessionId } = useParams<{ sessionId: string }>()
   const language = useLanguageStore((s) => s.language)
   const [messages, setMessages] = useState<TejoMessage[]>([WELCOME_MESSAGE])
   const [messageText, setMessageText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [tejoSessionId, setTejoSessionId] = useState<string | null>(null)
   const [activeSuggestions, setActiveSuggestions] = useState<string[]>(INITIAL_SUGGESTIONS)
   const [activeActions, setActiveActions] = useState<TejoAction[]>([])
   const [handoffSuggested, setHandoffSuggested] = useState(false)
@@ -95,17 +93,9 @@ export function TejoChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => {
-    const storedSessionId = localStorage.getItem(TEJO_SESSION_STORAGE_KEY)
-    if (storedSessionId) {
-      setTejoSessionId(storedSessionId)
-      loadSessionHistory(storedSessionId)
-    }
-  }, [])
-
-  const loadSessionHistory = async (sessionId: string) => {
+  const loadSessionHistory = useCallback(async (currentSessionId: string) => {
     try {
-      const response = await supportService.getSessionMessages(sessionId)
+      const response = await supportService.getSessionMessages(currentSessionId)
       if (response.data && response.data.length > 0) {
         const historyMessages: TejoMessage[] = response.data.map((msg) => ({
           id: msg.id || `hist-${msg.createdAt}`,
@@ -115,7 +105,7 @@ export function TejoChatPage() {
           createdAt: msg.createdAt,
         }))
 
-        setMessages((prev) => [...prev, ...historyMessages])
+        setMessages([WELCOME_MESSAGE, ...historyMessages])
 
         const lastMsg = response.data[response.data.length - 1]
         if (lastMsg?.metadata?.handoffSuggested) {
@@ -125,7 +115,21 @@ export function TejoChatPage() {
     } catch (err) {
       console.error('Failed to load session history:', err)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    setMessages([WELCOME_MESSAGE])
+    setActiveSuggestions(INITIAL_SUGGESTIONS)
+    setActiveActions([])
+    setHandoffSuggested(false)
+    setHandoffConfirmed(false)
+    setEscalatedTicketId(null)
+    setSessionStatus('active')
+
+    if (sessionId) {
+      loadSessionHistory(sessionId)
+    }
+  }, [loadSessionHistory, sessionId])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -148,19 +152,24 @@ export function TejoChatPage() {
       setIsLoading(true)
 
       try {
+        if (!sessionId) {
+          throw new Error('Missing Tejo session id')
+        }
+
         const response = await supportService.queryTejo({
           message: text,
           channel: 'web',
           locale: language === 'ar' ? 'ar-SA' : 'en-US',
-          sessionId: tejoSessionId ?? undefined,
-          context: {
-            sessionId: tejoSessionId ?? undefined,
-          },
+          sessionId,
         })
 
-        const newSessionId = response.sessionId || response.ticketId
-        setTejoSessionId(newSessionId)
-        localStorage.setItem(TEJO_SESSION_STORAGE_KEY, newSessionId)
+        if (!response.sessionId) {
+          throw new Error('Tejo API did not return a session id')
+        }
+
+        if (response.sessionId !== sessionId) {
+          navigate(`/tejo/${response.sessionId}`, { replace: true })
+        }
 
         if (response.status) {
           setSessionStatus(response.status)
@@ -190,7 +199,7 @@ export function TejoChatPage() {
         }
         if (response.status === 'escalated') {
           setHandoffConfirmed(true)
-          setEscalatedTicketId(response.ticketId)
+          setEscalatedTicketId(response.ticketId || null)
         }
       } catch (err) {
         const te = getTejoError(err)
@@ -219,7 +228,7 @@ export function TejoChatPage() {
         setIsLoading(false)
       }
     },
-    [tejoSessionId, language, navigate],
+    [sessionId, language, navigate],
   )
 
   const handleSend = () => {
@@ -252,17 +261,18 @@ export function TejoChatPage() {
   }
 
   const handleHandoffConfirm = async () => {
-    if (!tejoSessionId) return
+    if (!sessionId) return
     setIsLoading(true)
     try {
-      const result = await supportService.triggerTejoHandoff(tejoSessionId)
+      const result = await supportService.triggerTejoHandoff(sessionId)
       setHandoffConfirmed(true)
       setEscalatedTicketId(result.ticketId)
       setSessionStatus(result.status)
 
       const sysMsg: TejoMessage = {
         id: `sys-handoff-${Date.now()}`,
-        content: 'تم تحويل محادثتك لموظف دعم. سيتم الرد عليك قريبًا.',
+        content:
+          'تم إنشاء تذكرة دعم مرتبطة بهذه المحادثة. يمكنك متابعة الدعم البشري من صفحة التذاكر، وستبقى محادثة تيجو متاحة هنا.',
         type: 'system',
         createdAt: new Date().toISOString(),
       }

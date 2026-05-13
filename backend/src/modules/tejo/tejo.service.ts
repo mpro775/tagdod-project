@@ -13,6 +13,7 @@ import {
   SupportStatus,
   SupportTicketSource,
 } from '../support/schemas/support-ticket.schema';
+import { CreateTejoSessionDto } from './dto/create-tejo-session.dto';
 import { TejoQueryDto } from './dto/tejo-query.dto';
 import { TejoConversation, TejoConversationDocument } from './schemas/tejo-conversation.schema';
 import { TejoKbEmbedding, TejoKbEmbeddingDocument } from './schemas/tejo-kb-embedding.schema';
@@ -111,8 +112,7 @@ export class TejoService {
       throw new ForbiddenException('Tejo web pilot is currently disabled');
     }
 
-    let sessionId =
-      dto.sessionId || (dto.context?.sessionId as string | undefined) || dto.ticketId;
+    let sessionId = dto.sessionId || (dto.context?.sessionId as string | undefined);
     let session: TejoSessionDocument | null = null;
 
     if (sessionId) {
@@ -138,10 +138,6 @@ export class TejoService {
 
     sessionId = session._id.toString();
 
-    if (session.status === TejoSessionStatus.ESCALATED && session.supportTicketId) {
-      return this.handleEscalatedSession(session, dto, traceId, locale, isArabic);
-    }
-
     await this.messageService.create({
       sessionId,
       userId,
@@ -150,7 +146,13 @@ export class TejoService {
       metadata: { traceId, locale },
     });
 
-    await this.sessionService.incrementMessageCount(sessionId);
+    await this.sessionService.touchAfterMessage(sessionId, dto.message);
+
+    if (!session.title || session.title === 'محادثة جديدة') {
+      await this.sessionService.update(sessionId, {
+        title: dto.message.slice(0, 60),
+      });
+    }
 
     const intent = this.detectIntent(dto.message);
     const entities = this.extractEntities(dto.message);
@@ -254,7 +256,7 @@ export class TejoService {
       payload: aiMessagePayload,
     });
 
-    await this.sessionService.incrementMessageCount(sessionId);
+    await this.sessionService.touchAfterMessage(sessionId, finalReply);
 
     let finalStatus = session.status;
     if (handoffSuggested) {
@@ -311,49 +313,20 @@ export class TejoService {
       confidence,
       handoffSuggested,
       sessionId,
-      ticketId: sessionId,
+      ticketId: session.supportTicketId ? session.supportTicketId.toString() : null,
       messageId: assistantMessage._id.toString(),
       latencyMs,
       status: finalStatus,
     };
   }
 
-  private async handleEscalatedSession(
-    session: TejoSessionDocument,
-    dto: TejoQueryDto,
-    traceId: string,
-    locale: string,
-    isArabic: boolean,
-  ): Promise<TejoQueryResponse> {
-    const ticketId = session.supportTicketId!;
-
-    await this.supportService.addMessage(ticketId, session.userId, {
-      content: dto.message,
-      metadata: {
-        source: 'tejo_escalated',
-        locale,
-        traceId,
-        ...dto.context,
-      },
+  async createSession(userId: string, dto: CreateTejoSessionDto) {
+    return this.sessionService.create({
+      userId,
+      channel: dto.channel,
+      locale: dto.locale || 'ar',
+      storefrontHost: dto.storefrontHost,
     });
-
-    const reply = isArabic
-      ? 'تم تحويل محادثتك لموظف دعم. سيتم الرد عليك قريبًا.'
-      : 'Your conversation has been handed off to a support agent. You will receive a reply soon.';
-
-    return {
-      reply,
-      cards: [],
-      suggestions: [],
-      actions: [],
-      confidence: 0,
-      handoffSuggested: false,
-      sessionId: session._id.toString(),
-      ticketId,
-      messageId: `tejo-escalated-${Date.now()}`,
-      latencyMs: 0,
-      status: session.status,
-    };
   }
 
   async triggerHandoff(sessionId: string, userId: string): Promise<{
@@ -436,8 +409,8 @@ export class TejoService {
     return this.messageService.findBySessionId(sessionId, page, limit);
   }
 
-  async getUserSessions(userId: string, page = 1, limit = 20) {
-    return this.sessionService.findByUserIdPaginated(userId, page, limit);
+  async getUserSessions(userId: string, channel?: string, page = 1, limit = 20) {
+    return this.sessionService.findByUserIdPaginated(userId, channel, page, limit);
   }
 
   private detectIntent(message: string): TejoIntent {
