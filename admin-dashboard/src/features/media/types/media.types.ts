@@ -54,6 +54,7 @@ export interface UploadMediaDto {
   description?: string;
   tags?: string[];
   isPublic?: boolean;
+  isMainImage?: boolean; // هل هي صورة رئيسية للمنتج (تطبق عليها قيود الأبعاد)
 }
 
 export interface UpdateMediaDto {

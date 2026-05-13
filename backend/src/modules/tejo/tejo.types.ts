@@ -26,9 +26,11 @@ export interface TejoQueryResponse {
   actions: TejoAction[];
   confidence: number;
   handoffSuggested: boolean;
+  sessionId: string;
   ticketId: string;
   messageId: string;
   latencyMs: number;
+  status?: string;
 }
 
 export interface TejoPromptContext {

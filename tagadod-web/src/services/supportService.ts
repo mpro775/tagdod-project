@@ -6,6 +6,8 @@ import type {
   SupportTicket,
   TejoQueryRequest,
   TejoQueryResponse,
+  TejoSession,
+  TejoMessage,
 } from '../types/support'
 import type { ApiResponse, PaginatedResponse, PaginationParams } from '../types/common'
 
@@ -168,6 +170,43 @@ export async function sendMessage(ticketId: string, body: SendMessageRequest): P
 export async function queryTejo(body: TejoQueryRequest): Promise<TejoQueryResponse> {
   const { data } = await api.post<ApiResponse<TejoQueryResponse>>('/tejo/query', body)
   return data.data
+}
+
+export async function triggerTejoHandoff(sessionId: string): Promise<{ ticketId: string; sessionId: string; status: string }> {
+  const { data } = await api.post<ApiResponse<{ ticketId: string; sessionId: string; status: string }>>(`/tejo/sessions/${sessionId}/handoff`)
+  return data.data
+}
+
+export async function getSessionMessages(sessionId: string, params?: PaginationParams): Promise<PaginatedResponse<TejoMessage>> {
+  const { data } = await api.get<Record<string, unknown>>(`/tejo/sessions/${sessionId}/messages`, { params })
+  const dataNode = (data.data || data) as Record<string, unknown>
+  const meta = (dataNode.meta || {}) as Record<string, unknown>
+  const messages = (dataNode.messages || dataNode.data || []) as Array<Record<string, unknown>>
+  const total = Number(dataNode.total || 0)
+  const page = Number(dataNode.page || 1)
+  const limit = Number(dataNode.limit || meta.limit || 50)
+  const totalPages = Number(dataNode.totalPages || Math.ceil(total / Math.max(limit, 1)))
+
+  return {
+    data: messages as unknown as TejoMessage[],
+    meta: { page, limit, total, totalPages },
+  }
+}
+
+export async function getUserSessions(params?: PaginationParams): Promise<PaginatedResponse<TejoSession>> {
+  const { data } = await api.get<Record<string, unknown>>('/tejo/sessions', { params })
+  const dataNode = (data.data || data) as Record<string, unknown>
+  const meta = (dataNode.meta || {}) as Record<string, unknown>
+  const sessions = (dataNode.sessions || dataNode.data || []) as Array<Record<string, unknown>>
+  const total = Number(dataNode.total || 0)
+  const page = Number(dataNode.page || 1)
+  const limit = Number(dataNode.limit || meta.limit || 20)
+  const totalPages = Number(dataNode.totalPages || Math.ceil(total / Math.max(limit, 1)))
+
+  return {
+    data: sessions as unknown as TejoSession[],
+    meta: { page, limit, total, totalPages },
+  }
 }
 
 export async function archiveTicket(ticketId: string): Promise<void> {

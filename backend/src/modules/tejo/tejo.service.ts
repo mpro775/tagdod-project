@@ -9,6 +9,9 @@ import {
   SupportAiStatus,
   SupportCategory,
   SupportChannel,
+  SupportPriority,
+  SupportStatus,
+  SupportTicketSource,
 } from '../support/schemas/support-ticket.schema';
 import { TejoQueryDto } from './dto/tejo-query.dto';
 import { TejoConversation, TejoConversationDocument } from './schemas/tejo-conversation.schema';
@@ -17,8 +20,12 @@ import {
   TejoProductEmbedding,
   TejoProductEmbeddingDocument,
 } from './schemas/tejo-product-embedding.schema';
+import { TejoSession, TejoSessionDocument, TejoSessionStatus } from './schemas/tejo-session.schema';
+import { TejoMessage, TejoMessageRole } from './schemas/tejo-message.schema';
 import { TejoPromptService } from './tejo-prompt.service';
 import { TejoSettingsService } from './tejo-settings.service';
+import { TejoSessionService } from './tejo-session.service';
+import { TejoMessageService } from './tejo-message.service';
 import { TejoAction, TejoCard, TejoIntent, TejoQueryResponse } from './tejo.types';
 import { TejoLlmRouterService } from './adapters/tejo-llm-router.service';
 import { TejoVectorStoreService } from './tejo-vector-store.service';
@@ -78,6 +85,8 @@ export class TejoService {
     private readonly settingsService: TejoSettingsService,
     private readonly llmRouterService: TejoLlmRouterService,
     private readonly vectorStore: TejoVectorStoreService,
+    private readonly sessionService: TejoSessionService,
+    private readonly messageService: TejoMessageService,
     @InjectModel(TejoConversation.name)
     private readonly conversationModel: Model<TejoConversationDocument>,
     @InjectModel(TejoProductEmbedding.name)
@@ -102,41 +111,45 @@ export class TejoService {
       throw new ForbiddenException('Tejo web pilot is currently disabled');
     }
 
-    let ticketId = dto.ticketId;
+    let sessionId = dto.context?.sessionId as string | undefined;
+    let session: TejoSessionDocument | null = null;
 
-    if (ticketId) {
-      await this.supportService.getTicket(ticketId, userId, false);
-      await this.supportService.addMessage(ticketId, userId, {
-        content: dto.message,
-        metadata: {
-          source: 'tejo',
-          locale,
-          traceId,
-          ...dto.context,
-        },
-      });
-    } else {
-      const ticket = await this.supportService.createTicket(userId, {
-        title: this.buildTicketTitle(dto.message, isArabic),
-        description: dto.message,
-        category: SupportCategory.OTHER,
-        channel: dto.channel,
-        metadata: {
-          source: 'tejo',
-          locale,
-          traceId,
-          ...dto.context,
-        },
-      });
-
-      ticketId = ticket._id.toString();
+    if (sessionId) {
+      session = await this.sessionService.findById(sessionId);
+      if (!session || session.userId !== userId) {
+        session = null;
+        sessionId = undefined;
+      }
     }
 
-    await this.supportService.updateTicketAiState(ticketId, {
-      isAiHandled: true,
-      aiStatus: SupportAiStatus.ACTIVE,
-      channel: dto.channel,
+    if (!session) {
+      session = await this.sessionService.findByUserId(userId, dto.channel);
+    }
+
+    if (!session) {
+      session = await this.sessionService.create({
+        userId,
+        channel: dto.channel,
+        locale,
+        storefrontHost: dto.context?.storefrontHost as string | undefined,
+      });
+    }
+
+    sessionId = session._id.toString();
+
+    if (session.status === TejoSessionStatus.ESCALATED && session.supportTicketId) {
+      return this.handleEscalatedSession(session, dto, traceId, locale, isArabic);
+    }
+
+    await this.messageService.create({
+      sessionId,
+      userId,
+      role: TejoMessageRole.USER,
+      content: dto.message,
+      metadata: { traceId, locale },
     });
+
+    await this.sessionService.incrementMessageCount(sessionId);
 
     const intent = this.detectIntent(dto.message);
     const entities = this.extractEntities(dto.message);
@@ -181,7 +194,7 @@ export class TejoService {
     const handoffRequestedByIntent = intent === 'human_handoff';
     const internalVerificationRequired = this.requiresInternalVerification(dto.message);
     const previousRetrievalFailures = retrieval.retrievalFailed
-      ? await this.countPreviousRetrievalFailures(ticketId)
+      ? await this.countPreviousRetrievalFailuresSession(sessionId)
       : 0;
     const repeatedRetrievalFailure = retrieval.retrievalFailed && previousRetrievalFailures >= 1;
     const handoffSuggested =
@@ -210,9 +223,18 @@ export class TejoService {
         )
       : undefined;
 
-    const savedAiMessage = await this.supportService.addAutomatedMessage(ticketId, {
+    const aiMessagePayload = {
+      cards,
+      suggestions,
+      actions,
+      knowledge: retrieval.knowledgeSnippets,
+    };
+
+    await this.messageService.create({
+      sessionId,
+      userId,
+      role: TejoMessageRole.ASSISTANT,
       content: finalReply,
-      messageType: handoffSuggested ? MessageType.AI_HANDOFF : MessageType.AI_REPLY,
       metadata: {
         source: 'tejo',
         traceId,
@@ -225,28 +247,23 @@ export class TejoService {
         retrievalFailed: retrieval.retrievalFailed,
         lexicalCount: retrieval.lexicalCount,
         vectorMatchedCount: retrieval.vectorMatchedCount,
+        handoffSuggested,
+        handoffReason,
       },
-      payload: {
-        cards,
-        suggestions,
-        actions,
-        knowledge: retrieval.knowledgeSnippets,
-      },
-      handoffReason,
+      payload: aiMessagePayload,
     });
 
-    if (handoffSuggested) {
-      await this.supportService.updateTicketAiState(ticketId, {
-        isAiHandled: true,
-        aiStatus: SupportAiStatus.HANDED_OFF,
-        handoffReason,
+    if (handoffSuggested && !handoffRequestedByIntent) {
+      await this.sessionService.update(sessionId, {
+        status: TejoSessionStatus.ESCALATION_SUGGESTED,
+        handoffSuggested: true,
       });
     }
 
     const latencyMs = Date.now() - startedAt;
 
     await this.conversationModel.create({
-      ticketId,
+      ticketId: sessionId,
       userId,
       userMessage: dto.message,
       reply: finalReply,
@@ -254,7 +271,7 @@ export class TejoService {
       entities,
       confidence,
       handoffSuggested,
-      handoffTriggered: handoffSuggested,
+      handoffTriggered: false,
       latencyMs,
       provider,
       model: modelResponse.model,
@@ -264,6 +281,7 @@ export class TejoService {
       metadata: {
         locale,
         traceId,
+        sessionId,
         context: dto.context || {},
         retrieval: {
           retrievalFailed: retrieval.retrievalFailed,
@@ -275,7 +293,7 @@ export class TejoService {
     });
 
     this.logger.log(
-      `Tejo query completed traceId=${traceId} ticketId=${ticketId} confidence=${confidence.toFixed(
+      `Tejo query completed traceId=${traceId} sessionId=${sessionId} confidence=${confidence.toFixed(
         3,
       )} handoff=${String(handoffSuggested)} latencyMs=${latencyMs}`,
     );
@@ -287,10 +305,128 @@ export class TejoService {
       actions,
       confidence,
       handoffSuggested,
-      ticketId,
-      messageId: savedAiMessage._id.toString(),
+      sessionId,
+      ticketId: sessionId,
+      messageId: `tejo-msg-${Date.now()}`,
       latencyMs,
+      status: session.status,
     };
+  }
+
+  private async handleEscalatedSession(
+    session: TejoSessionDocument,
+    dto: TejoQueryDto,
+    traceId: string,
+    locale: string,
+    isArabic: boolean,
+  ): Promise<TejoQueryResponse> {
+    const ticketId = session.supportTicketId!;
+
+    await this.supportService.addMessage(ticketId, session.userId, {
+      content: dto.message,
+      metadata: {
+        source: 'tejo_escalated',
+        locale,
+        traceId,
+        ...dto.context,
+      },
+    });
+
+    const reply = isArabic
+      ? 'تم تحويل محادثتك لموظف دعم. سيتم الرد عليك قريبًا.'
+      : 'Your conversation has been handed off to a support agent. You will receive a reply soon.';
+
+    return {
+      reply,
+      cards: [],
+      suggestions: [],
+      actions: [],
+      confidence: 0,
+      handoffSuggested: false,
+      sessionId: session._id.toString(),
+      ticketId,
+      messageId: `tejo-escalated-${Date.now()}`,
+      latencyMs: 0,
+      status: session.status,
+    };
+  }
+
+  async triggerHandoff(sessionId: string, userId: string): Promise<{
+    ticketId: string;
+    sessionId: string;
+    status: string;
+  }> {
+    const session = await this.sessionService.findById(sessionId);
+    if (!session || session.userId !== userId) {
+      throw new ForbiddenException('Session not found or unauthorized');
+    }
+
+    if (session.status === TejoSessionStatus.ESCALATED) {
+      return {
+        ticketId: session.supportTicketId!,
+        sessionId,
+        status: session.status,
+      };
+    }
+
+    const messages = await this.messageService.findBySessionIdRecent(sessionId, 20);
+    const recentMessages = messages.reverse();
+
+    const conversationSummary = recentMessages
+      .map((m) => `${m.role === 'user' ? 'User' : 'Tejo'}: ${m.content}`)
+      .join('\n');
+
+    const firstUserMessage = recentMessages.find((m) => m.role === 'user')?.content || 'تصعيد من تيجو';
+
+    const ticket = await this.supportService.createTicket(userId, {
+      title: `تصعيد من تيجو: ${firstUserMessage.slice(0, 50)}`,
+      description: conversationSummary.slice(0, 2000),
+      category: SupportCategory.OTHER,
+      channel: session.channel as SupportChannel,
+      source: SupportTicketSource.TEJO_HANDOFF,
+      metadata: {
+        sessionId,
+        locale: session.locale,
+      },
+    });
+
+    await this.supportService.updateTicketAiState(ticket._id.toString(), {
+      isAiHandled: true,
+      aiStatus: SupportAiStatus.HANDED_OFF,
+    });
+
+    await this.sessionService.update(sessionId, {
+      status: TejoSessionStatus.ESCALATED,
+      supportTicketId: ticket._id.toString(),
+      handoffTriggered: true,
+    });
+
+    await this.supportService.addAutomatedMessage(ticket._id.toString(), {
+      content: 'تم تصعيد هذه المحادثة من تيجو. سياق المحادثة موضح أعلاه.',
+      messageType: MessageType.SYSTEM_MESSAGE,
+      metadata: { sessionId },
+    });
+
+    this.logger.log(`Tejo handoff triggered sessionId=${sessionId} ticketId=${ticket._id}`);
+
+    return {
+      ticketId: ticket._id.toString(),
+      sessionId,
+      status: TejoSessionStatus.ESCALATED,
+    };
+  }
+
+  async getSessionMessages(sessionId: string, userId: string, page = 1, limit = 50) {
+    const session = await this.sessionService.findById(sessionId);
+    if (!session || session.userId !== userId) {
+      throw new ForbiddenException('Session not found or unauthorized');
+    }
+
+    return this.messageService.findBySessionId(sessionId, page, limit);
+  }
+
+  async getUserSessions(userId: string, page = 1, limit = 20) {
+    return this.sessionService.findByUserIdPaginated(userId, page, limit);
   }
 
   private detectIntent(message: string): TejoIntent {
@@ -1103,6 +1239,10 @@ export class TejoService {
     return /(رقم الطلب|طلب رقم|طلبي|طلباتي|حسابي|بياناتي|دفعتي|حوالتي|تحويلي|مدفوعاتي|فاتورتي|استرداد مبلغ|حالة الدفع|my order|my account|my payment|my invoice|refund status|order\s*#?\s*\d+)/i.test(
       normalized,
     );
+  }
+
+  private async countPreviousRetrievalFailuresSession(sessionId: string): Promise<number> {
+    return this.messageService.countBySessionId(sessionId);
   }
 
   private async countPreviousRetrievalFailures(ticketId: string): Promise<number> {

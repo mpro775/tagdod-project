@@ -23,6 +23,8 @@ import { TejoKnowledgeService } from './tejo-knowledge.service';
 import { TejoLlmRouterService } from './adapters/tejo-llm-router.service';
 import { TejoVectorStoreService } from './tejo-vector-store.service';
 import { TejoService } from './tejo.service';
+import { TejoSessionService } from './tejo-session.service';
+import { TejoMessageService } from './tejo-message.service';
 
 interface RequestWithUser {
   user: {
@@ -45,6 +47,8 @@ export class TejoAdminController {
     private readonly llmRouterService: TejoLlmRouterService,
     private readonly vectorStore: TejoVectorStoreService,
     private readonly tejoService: TejoService,
+    private readonly sessionService: TejoSessionService,
+    private readonly messageService: TejoMessageService,
   ) {}
 
   @Get('prompts')
@@ -290,5 +294,52 @@ export class TejoAdminController {
   async rebuildQdrant() {
     await this.vectorStore.rebuildCollection();
     return this.vectorStore.getCollectionStatus();
+  }
+
+  @Get('sessions')
+  @RequirePermissions(AdminPermission.TEJO_READ, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({ summary: 'List all Tejo sessions' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'channel', required: false })
+  async listSessions(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @Query('status') status?: string,
+    @Query('channel') channel?: string,
+  ) {
+    return this.sessionService.getAllPaginated(
+      { status, channel },
+      Number(page),
+      Number(limit),
+    );
+  }
+
+  @Get('sessions/stats')
+  @RequirePermissions(AdminPermission.TEJO_READ, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({ summary: 'Get Tejo session statistics' })
+  async sessionStats() {
+    return this.sessionService.getStats();
+  }
+
+  @Get('sessions/:id')
+  @RequirePermissions(AdminPermission.TEJO_READ, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({ summary: 'Get Tejo session details' })
+  async getSessionById(@Param('id') id: string) {
+    return this.sessionService.findById(id);
+  }
+
+  @Get('sessions/:id/messages')
+  @RequirePermissions(AdminPermission.TEJO_READ, AdminPermission.ADMIN_ACCESS)
+  @ApiOperation({ summary: 'Get messages for a Tejo session' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  async getSessionMessages(
+    @Param('id') id: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 50,
+  ) {
+    return this.messageService.findBySessionId(id, Number(page), Number(limit));
   }
 }

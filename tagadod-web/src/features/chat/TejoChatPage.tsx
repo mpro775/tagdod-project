@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Send, Bot, AlertTriangle, RefreshCw } from 'lucide-react'
+import { ArrowRight, Send, Bot, AlertTriangle, RefreshCw, UserCheck } from 'lucide-react'
 import * as supportService from '../../services/supportService'
 import { useLanguageStore } from '../../stores/languageStore'
 import type { TejoAction } from '../../types/support'
@@ -75,20 +75,57 @@ function formatTime(dateStr: string): string {
   }
 }
 
+const TEJO_SESSION_STORAGE_KEY = 'tejo_session_id'
+
 export function TejoChatPage() {
   const navigate = useNavigate()
   const language = useLanguageStore((s) => s.language)
   const [messages, setMessages] = useState<TejoMessage[]>([WELCOME_MESSAGE])
   const [messageText, setMessageText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [tejoTicketId, setTejoTicketId] = useState<string | null>(null)
+  const [tejoSessionId, setTejoSessionId] = useState<string | null>(null)
   const [activeSuggestions, setActiveSuggestions] = useState<string[]>(INITIAL_SUGGESTIONS)
   const [activeActions, setActiveActions] = useState<TejoAction[]>([])
-  const [handoffActive, setHandoffActive] = useState(false)
+  const [handoffSuggested, setHandoffSuggested] = useState(false)
+  const [handoffConfirmed, setHandoffConfirmed] = useState(false)
+  const [escalatedTicketId, setEscalatedTicketId] = useState<string | null>(null)
+  const [_sessionStatus, setSessionStatus] = useState<string>('active')
   const [errorType, setErrorType] = useState<TejoError>('none')
   const [failedMessage, setFailedMessage] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem(TEJO_SESSION_STORAGE_KEY)
+    if (storedSessionId) {
+      setTejoSessionId(storedSessionId)
+      loadSessionHistory(storedSessionId)
+    }
+  }, [])
+
+  const loadSessionHistory = async (sessionId: string) => {
+    try {
+      const response = await supportService.getSessionMessages(sessionId)
+      if (response.data && response.data.length > 0) {
+        const historyMessages: TejoMessage[] = response.data.map((msg) => ({
+          id: msg.id || `hist-${msg.createdAt}`,
+          content: msg.content,
+          type: msg.role === 'user' ? 'user' : 'tejo',
+          handoffSuggested: (msg.metadata as { handoffSuggested?: boolean })?.handoffSuggested || false,
+          createdAt: msg.createdAt,
+        }))
+
+        setMessages((prev) => [...prev, ...historyMessages])
+
+        const lastMsg = response.data[response.data.length - 1]
+        if (lastMsg?.metadata?.handoffSuggested) {
+          setHandoffSuggested(true)
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load session history:', err)
+    }
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -112,13 +149,21 @@ export function TejoChatPage() {
 
       try {
         const response = await supportService.queryTejo({
-          ticketId: tejoTicketId ?? undefined,
           message: text,
           channel: 'web',
           locale: language === 'ar' ? 'ar-SA' : 'en-US',
+          context: {
+            sessionId: tejoSessionId ?? undefined,
+          },
         })
 
-        setTejoTicketId(response.ticketId)
+        const newSessionId = response.sessionId || response.ticketId
+        setTejoSessionId(newSessionId)
+        localStorage.setItem(TEJO_SESSION_STORAGE_KEY, newSessionId)
+
+        if (response.status) {
+          setSessionStatus(response.status)
+        }
 
         const tejoMsg: TejoMessage = {
           id: response.messageId || `tejo-${Date.now()}`,
@@ -140,7 +185,11 @@ export function TejoChatPage() {
           setActiveActions(response.actions)
         }
         if (response.handoffSuggested) {
-          setHandoffActive(true)
+          setHandoffSuggested(true)
+        }
+        if (response.status === 'escalated') {
+          setHandoffConfirmed(true)
+          setEscalatedTicketId(response.ticketId)
         }
       } catch (err) {
         const te = getTejoError(err)
@@ -169,7 +218,7 @@ export function TejoChatPage() {
         setIsLoading(false)
       }
     },
-    [tejoTicketId, language, navigate],
+    [tejoSessionId, language, navigate],
   )
 
   const handleSend = () => {
@@ -195,6 +244,46 @@ export function TejoChatPage() {
       setFailedMessage(null)
       sendToTejo(failedMessage)
     }
+  }
+
+  const handleHandoffConfirm = async () => {
+    if (!tejoSessionId) return
+    setIsLoading(true)
+    try {
+      const result = await supportService.triggerTejoHandoff(tejoSessionId)
+      setHandoffConfirmed(true)
+      setEscalatedTicketId(result.ticketId)
+      setSessionStatus(result.status)
+
+      const sysMsg: TejoMessage = {
+        id: `sys-handoff-${Date.now()}`,
+        content: 'تم تحويل محادثتك لموظف دعم. سيتم الرد عليك قريبًا.',
+        type: 'system',
+        createdAt: new Date().toISOString(),
+      }
+      setMessages((prev) => [...prev, sysMsg])
+    } catch (err) {
+      const sysMsg: TejoMessage = {
+        id: `sys-handoff-err-${Date.now()}`,
+        content: 'فشل في التحويل. يرجى المحاولة مرة أخرى.',
+        type: 'system',
+        createdAt: new Date().toISOString(),
+      }
+      setMessages((prev) => [...prev, sysMsg])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleHandoffDecline = () => {
+    setHandoffSuggested(false)
+    const sysMsg: TejoMessage = {
+      id: `sys-decline-${Date.now()}`,
+      content: 'تمام، يمكنك إعادة صياغة سؤالك وسأحاول مساعدتك.',
+      type: 'system',
+      createdAt: new Date().toISOString(),
+    }
+    setMessages((prev) => [...prev, sysMsg])
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -287,11 +376,11 @@ export function TejoChatPage() {
               </div>
             )}
 
-            {msg.handoffSuggested && (
+            {msg.handoffSuggested && !handoffConfirmed && (
               <div className="flex justify-center my-2">
                 <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-100 dark:bg-yellow-900/30 text-xs text-yellow-700 dark:text-yellow-300 max-w-[85%]">
                   <AlertTriangle size={14} />
-                  <span>تم تحويل المحادثة للدعم البشري</span>
+                  <span>لم أجد إجابة مؤكدة. هل تريد تحويلك لموظف دعم؟</span>
                 </div>
               </div>
             )}
@@ -343,14 +432,34 @@ export function TejoChatPage() {
           </div>
         )}
 
-        {handoffActive && (
+        {handoffSuggested && !handoffConfirmed && (
+          <div className="flex justify-center gap-3 my-3">
+            <button
+              onClick={handleHandoffConfirm}
+              disabled={isLoading}
+              className="px-5 py-2.5 rounded-xl bg-yellow-500 text-white text-sm font-semibold hover:bg-yellow-600 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              <UserCheck size={16} />
+              نعم، حولني لموظف
+            </button>
+            <button
+              onClick={handleHandoffDecline}
+              disabled={isLoading}
+              className="px-5 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+            >
+              لا، أريد متابعة مع تيجو
+            </button>
+          </div>
+        )}
+
+        {handoffConfirmed && escalatedTicketId && (
           <div className="flex justify-center my-3">
             <button
-              onClick={() => navigate(`/chat`)}
-              className="px-5 py-2.5 rounded-xl bg-yellow-500 text-white text-sm font-semibold hover:bg-yellow-600 transition-colors flex items-center gap-2"
+              onClick={() => navigate(`/chat/${escalatedTicketId}`)}
+              className="px-5 py-2.5 rounded-xl bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition-colors flex items-center gap-2"
             >
-              <AlertTriangle size={16} />
-              متابعة مع موظف
+              <UserCheck size={16} />
+              عرض التذكرة ومتابعة مع الموظف
             </button>
           </div>
         )}

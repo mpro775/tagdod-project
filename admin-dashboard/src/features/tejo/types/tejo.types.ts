@@ -148,3 +148,53 @@ export interface UpdateTejoKnowledgeRequest {
   locale?: string;
   metadata?: Record<string, unknown>;
 }
+
+export type TejoSessionStatus = 'active' | 'resolved' | 'escalation_suggested' | 'escalated' | 'closed';
+
+export interface TejoSession {
+  _id: string;
+  userId: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  } | string;
+  channel: string;
+  status: TejoSessionStatus;
+  locale: string;
+  storefrontHost?: string;
+  supportTicketId?: {
+    _id: string;
+    title?: string;
+    status?: string;
+  } | string | null;
+  lastMessageAt?: string;
+  messageCount: number;
+  handoffSuggested: boolean;
+  handoffTriggered: boolean;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TejoSessionStats {
+  total: number;
+  active: number;
+  escalated: number;
+  escalationSuggested: number;
+  resolved: number;
+  closed: number;
+}
+
+export interface TejoSessionMessage {
+  _id: string;
+  sessionId: string;
+  userId: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  metadata?: Record<string, unknown>;
+  payload?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}

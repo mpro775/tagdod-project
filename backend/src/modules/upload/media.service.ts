@@ -64,28 +64,35 @@ export class MediaService {
       const originalWidth = metadata.width || 0;
       const originalHeight = metadata.height || 0;
 
-      // التحقق من أبعاد الصورة (فقط لصور المنتجات)
+      // التحقق من أبعاد الصورة (فقط للصور الرئيسية للمنتجات)
       if (hasConstraints) {
-        this.validateProductImageDimensions(originalWidth, originalHeight);
+        const isMainImage = dto.isMainImage !== false; // افتراضي: true إذا لم يتم تحديده
+        this.validateProductImageDimensions(originalWidth, originalHeight, isMainImage);
 
-        // تصغير الصورة إذا كانت أكبر من الحد الأقصى
-        const resizeResult = await this.resizeProductImageIfNeeded(
-          file.buffer,
-          originalWidth,
-          originalHeight,
-        );
+        // تصغير الصورة إذا كانت أكبر من الحد الأقصى (فقط للصور الرئيسية)
+        if (isMainImage) {
+          const resizeResult = await this.resizeProductImageIfNeeded(
+            file.buffer,
+            originalWidth,
+            originalHeight,
+          );
 
-        width = resizeResult.width;
-        height = resizeResult.height;
-        wasResized = resizeResult.wasResized;
+          width = resizeResult.width;
+          height = resizeResult.height;
+          wasResized = resizeResult.wasResized;
 
-        // تحديث الملف إذا تم تصغيره
-        if (wasResized) {
-          processedFile = {
-            ...file,
-            buffer: resizeResult.buffer,
-            size: resizeResult.buffer.length,
-          };
+          // تحديث الملف إذا تم تصغيره
+          if (wasResized) {
+            processedFile = {
+              ...file,
+              buffer: resizeResult.buffer,
+              size: resizeResult.buffer.length,
+            };
+          }
+        } else {
+          // الصور الإضافية: حفظ الأبعاد الأصلية بدون تصغير
+          width = originalWidth;
+          height = originalHeight;
         }
       } else {
         // للفئات الأخرى: فقط حفظ الأبعاد بدون قيود
@@ -519,12 +526,17 @@ export class MediaService {
   }
 
   /**
-   * التحقق من أبعاد صورة المنتج
-   * Validate product image dimensions (min size and aspect ratio)
-   * تطبق فقط على صور المنتجات
+   * التحقق من أبعاد صورة المنتج الرئيسية
+   * Validate main product image dimensions (min size and aspect ratio)
+   * تطبق فقط على الصورة الرئيسية للمنتجات
    */
-  private validateProductImageDimensions(width: number, height: number): void {
-    // التحقق من الحد الأدنى للأبعاد
+  private validateProductImageDimensions(width: number, height: number, isMainImage: boolean = true): void {
+    // الصور الإضافية لا تطبق عليها قيود الأبعاد
+    if (!isMainImage) {
+      return;
+    }
+
+    // التحقق من الحد الأدنى للأبعاد (للصورة الرئيسية فقط)
     if (width < PRODUCT_IMAGE_CONSTRAINTS.MIN_WIDTH || height < PRODUCT_IMAGE_CONSTRAINTS.MIN_HEIGHT) {
       throw new ImageTooSmallException({
         currentWidth: width,
@@ -534,7 +546,7 @@ export class MediaService {
       });
     }
 
-    // التحقق من نسبة الأبعاد (1:1 مربع)
+    // التحقق من نسبة الأبعاد (1:1 مربع) - للصورة الرئيسية فقط
     const aspectRatio = width / height;
     const expectedRatio = PRODUCT_IMAGE_CONSTRAINTS.ASPECT_RATIO;
     const tolerance = PRODUCT_IMAGE_CONSTRAINTS.ASPECT_RATIO_TOLERANCE;
