@@ -4,7 +4,7 @@ import { LandingService } from './landing.service';
 import { LandingSettingsResponseDto } from './dto/landing.dto';
 
 @ApiTags('الصفحة-الرئيسية-العام')
-@Controller('landing/public')
+@Controller('landing')
 export class LandingPublicController {
   constructor(private readonly landingService: LandingService) {}
 
@@ -20,6 +20,16 @@ export class LandingPublicController {
   })
   @ApiResponse({ status: 404, description: 'الإعدادات غير متوفرة' })
   async get(): Promise<LandingSettingsResponseDto> {
+    return this.landingService.getPublic();
+  }
+
+  @Get('home')
+  @ApiOperation({
+    summary: 'بيانات الصفحة الرئيسية',
+    description: 'الحصول على جميع بيانات الصفحة الرئيسية دفعة واحدة',
+  })
+  @ApiResponse({ status: 200, description: 'تم جلب البيانات بنجاح' })
+  async getHome(): Promise<LandingSettingsResponseDto> {
     return this.landingService.getPublic();
   }
 }
