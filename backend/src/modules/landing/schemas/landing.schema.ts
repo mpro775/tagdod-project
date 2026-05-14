@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
+export type LandingSettingsDocument = LandingDocument;
 export type LandingDocument = HydratedDocument<LandingSettings>;
 
 @Schema({ _id: false })

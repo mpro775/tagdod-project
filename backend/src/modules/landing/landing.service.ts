@@ -18,7 +18,7 @@ export class LandingService {
   private mapToDto(
     settings: LandingSettings & { _id: unknown; createdAt?: Date; updatedAt?: Date },
   ): LandingSettingsResponseDto {
-    const obj = settings.toObject ? settings.toObject() : (settings as Record<string, unknown>);
+    const obj = (settings as any).toObject ? (settings as any).toObject() : (settings as unknown as Record<string, unknown>);
     return {
       _id: String(obj._id),
       hero: obj.hero as Record<string, unknown> | undefined,
