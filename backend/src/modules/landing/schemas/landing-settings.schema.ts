@@ -79,6 +79,9 @@ export class LandingSettings {
 
   @Prop({ default: true })
   isPublished!: boolean;
+
+  @Prop()
+  lastUpdatedBy?: string;
 }
 
 export const LandingSettingsSchema = SchemaFactory.createForClass(LandingSettings);

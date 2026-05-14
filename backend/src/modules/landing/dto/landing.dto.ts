@@ -1,642 +1,214 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsArray,
-  IsNumber,
-  ValidateNested,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsOptional, IsBoolean, IsArray } from 'class-validator';
 
-export class CreateHeroSectionDto {
-  @ApiProperty({ description: 'العنوان بالعربية' })
-  @IsString()
-  titleAr!: string;
-
-  @ApiProperty({ description: 'العنوان بالإنجليزية' })
-  @IsString()
-  titleEn!: string;
-
-  @ApiPropertyOptional({ description: 'العنوان الفرعي بالعربية' })
+export class UpdateLandingSettingsDto {
+  @ApiPropertyOptional({ description: 'عنوان Hero بالعربية' })
   @IsOptional()
   @IsString()
-  subtitleAr?: string;
+  heroTitleAr?: string;
 
-  @ApiPropertyOptional({ description: 'العنوان الفرعي بالإنجليزية' })
+  @ApiPropertyOptional({ description: 'عنوان Hero بالإنجليزية' })
   @IsOptional()
   @IsString()
-  subtitleEn?: string;
+  heroTitleEn?: string;
 
-  @ApiPropertyOptional({ description: 'صورة الخلفية' })
+  @ApiPropertyOptional({ description: 'وصف Hero بالعربية' })
   @IsOptional()
   @IsString()
-  backgroundImage?: string;
+  heroSubtitleAr?: string;
 
-  @ApiPropertyOptional({ description: 'نص زر الدعوة بالعربية' })
+  @ApiPropertyOptional({ description: 'وصف Hero بالإنجليزية' })
   @IsOptional()
   @IsString()
-  ctaButtonTextAr?: string;
+  heroSubtitleEn?: string;
 
-  @ApiPropertyOptional({ description: 'نص زر الدعوة بالإنجليزية' })
+  @ApiPropertyOptional({ description: 'صورة Hero' })
   @IsOptional()
   @IsString()
-  ctaButtonTextEn?: string;
+  heroImage?: string;
 
-  @ApiPropertyOptional({ description: 'رابط زر الدعوة' })
+  @ApiPropertyOptional({ description: 'رابط فيديو اختياري' })
   @IsOptional()
   @IsString()
-  ctaButtonLink?: string;
+  heroVideo?: string;
 
-  @ApiPropertyOptional({ default: true })
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
-}
-
-export class CreateFeatureItemDto {
-  @ApiProperty({ description: 'العنوان بالعربية' })
-  @IsString()
-  titleAr!: string;
-
-  @ApiProperty({ description: 'العنوان بالإنجليزية' })
-  @IsString()
-  titleEn!: string;
-
-  @ApiPropertyOptional({ description: 'الوصف بالعربية' })
+  @ApiPropertyOptional({ description: 'نص الزر الأساسي بالعربية' })
   @IsOptional()
   @IsString()
-  descriptionAr?: string;
+  primaryCtaTextAr?: string;
 
-  @ApiPropertyOptional({ description: 'الوصف بالإنجليزية' })
+  @ApiPropertyOptional({ description: 'نص الزر الأساسي بالإنجليزية' })
   @IsOptional()
   @IsString()
-  descriptionEn?: string;
+  primaryCtaTextEn?: string;
 
-  @ApiPropertyOptional({ description: 'الأيقونة' })
+  @ApiPropertyOptional({ description: 'رابط الزر الأساسي' })
   @IsOptional()
   @IsString()
-  icon?: string;
+  primaryCtaUrl?: string;
 
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @IsNumber()
-  order?: number;
-
-  @ApiPropertyOptional({ default: true })
-  @IsOptional()
-  @IsBoolean()
-  isVisible?: boolean;
-}
-
-export class CreateStatItemDto {
-  @ApiProperty({ description: 'التسمية بالعربية' })
-  @IsString()
-  labelAr!: string;
-
-  @ApiProperty({ description: 'التسمية بالإنجليزية' })
-  @IsString()
-  labelEn!: string;
-
-  @ApiProperty({ description: 'القيمة' })
-  @IsString()
-  value!: string;
-
-  @ApiPropertyOptional({ description: 'الأيقونة' })
+  @ApiPropertyOptional({ description: 'نص الزر الثانوي بالعربية' })
   @IsOptional()
   @IsString()
-  icon?: string;
+  secondaryCtaTextAr?: string;
 
-  @ApiPropertyOptional({ default: true })
-  @IsOptional()
-  @IsBoolean()
-  isVisible?: boolean;
-}
-
-export class CreateTestimonialItemDto {
-  @ApiProperty({ description: 'الاسم بالعربية' })
-  @IsString()
-  nameAr!: string;
-
-  @ApiProperty({ description: 'الاسم بالإنجليزية' })
-  @IsString()
-  nameEn!: string;
-
-  @ApiPropertyOptional({ description: 'المنصب بالعربية' })
+  @ApiPropertyOptional({ description: 'نص الزر الثانوي بالإنجليزية' })
   @IsOptional()
   @IsString()
-  positionAr?: string;
+  secondaryCtaTextEn?: string;
 
-  @ApiPropertyOptional({ description: 'المنصب بالإنجليزية' })
+  @ApiPropertyOptional({ description: 'رابط الزر الثانوي' })
   @IsOptional()
   @IsString()
-  positionEn?: string;
-
-  @ApiProperty({ description: 'الاقتباس بالعربية' })
-  @IsString()
-  quoteAr!: string;
-
-  @ApiProperty({ description: 'الاقتباس بالإنجليزية' })
-  @IsString()
-  quoteEn!: string;
-
-  @ApiPropertyOptional({ description: 'الصورة الشخصية' })
-  @IsOptional()
-  @IsString()
-  avatar?: string;
-
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @IsNumber()
-  order?: number;
-
-  @ApiPropertyOptional({ default: true })
-  @IsOptional()
-  @IsBoolean()
-  isVisible?: boolean;
-}
-
-export class CreateAppDownloadSectionDto {
-  @ApiPropertyOptional({ description: 'العنوان بالعربية' })
-  @IsOptional()
-  @IsString()
-  titleAr?: string;
-
-  @ApiPropertyOptional({ description: 'العنوان بالإنجليزية' })
-  @IsOptional()
-  @IsString()
-  titleEn?: string;
-
-  @ApiPropertyOptional({ description: 'الوصف بالعربية' })
-  @IsOptional()
-  @IsString()
-  descriptionAr?: string;
-
-  @ApiPropertyOptional({ description: 'الوصف بالإنجليزية' })
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional({ description: 'صورة الخلفية' })
-  @IsOptional()
-  @IsString()
-  backgroundImage?: string;
-
-  @ApiPropertyOptional({ description: 'رابط Google Play' })
-  @IsOptional()
-  @IsString()
-  googlePlayUrl?: string;
+  secondaryCtaUrl?: string;
 
   @ApiPropertyOptional({ description: 'رابط App Store' })
   @IsOptional()
   @IsString()
   appStoreUrl?: string;
 
-  @ApiPropertyOptional({ default: true })
+  @ApiPropertyOptional({ description: 'رابط Google Play' })
+  @IsOptional()
+  @IsString()
+  playStoreUrl?: string;
+
+  @ApiPropertyOptional({ description: 'تفعيل قسم عن الشركة' })
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean;
-}
+  enableAboutSection?: boolean;
 
-export class CreatePartnerItemDto {
-  @ApiProperty({ description: 'اسم الشريك' })
-  @IsString()
-  name!: string;
-
-  @ApiPropertyOptional({ description: 'الشعار' })
-  @IsOptional()
-  @IsString()
-  logo?: string;
-
-  @ApiPropertyOptional({ description: 'رابط الموقع' })
-  @IsOptional()
-  @IsString()
-  websiteUrl?: string;
-
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @IsNumber()
-  order?: number;
-
-  @ApiPropertyOptional({ default: true })
+  @ApiPropertyOptional({ description: 'تفعيل قسم الإحصائيات' })
   @IsOptional()
   @IsBoolean()
-  isVisible?: boolean;
-}
+  enableStatsSection?: boolean;
 
-export class UpdateHeroSectionDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  titleAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  titleEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  subtitleAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  subtitleEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  backgroundImage?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  ctaButtonTextAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  ctaButtonTextEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  ctaButtonLink?: string;
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'تفعيل قسم المميزات' })
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean;
-}
+  enableFeaturesSection?: boolean;
 
-export class UpdateFeatureItemDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  titleAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  titleEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  descriptionAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  icon?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  order?: number;
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'تفعيل قسم المنتجات' })
   @IsOptional()
   @IsBoolean()
-  isVisible?: boolean;
-}
+  enableProductsSection?: boolean;
 
-export class UpdateStatItemDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  labelAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  labelEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  value?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  icon?: string;
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'تفعيل قسم المشاريع' })
   @IsOptional()
   @IsBoolean()
-  isVisible?: boolean;
-}
+  enableProjectsSection?: boolean;
 
-export class UpdateTestimonialItemDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  nameAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  nameEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  positionAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  positionEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  quoteAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  quoteEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  avatar?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  order?: number;
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'تفعيل قسم البراندات' })
   @IsOptional()
   @IsBoolean()
-  isVisible?: boolean;
-}
+  enableBrandsSection?: boolean;
 
-export class UpdateAppDownloadSectionDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  titleAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  titleEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  descriptionAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  backgroundImage?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  googlePlayUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  appStoreUrl?: string;
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'تفعيل قسم الأخبار' })
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean;
-}
+  enableArticlesSection?: boolean;
 
-export class UpdatePartnerItemDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  logo?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  websiteUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  order?: number;
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'تفعيل قسم التواصل' })
   @IsOptional()
   @IsBoolean()
-  isVisible?: boolean;
-}
+  enableContactSection?: boolean;
 
-export class CreateLandingSettingsDto {
-  @ApiPropertyOptional({ type: CreateHeroSectionDto })
+  @ApiPropertyOptional({ description: 'تفعيل قسم مركز الصيانة' })
   @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateHeroSectionDto)
-  hero?: CreateHeroSectionDto;
+  @IsBoolean()
+  enableServiceCenterSection?: boolean;
 
-  @ApiPropertyOptional({ type: [CreateFeatureItemDto] })
+  @ApiPropertyOptional({ description: 'ترتيب الأقسام' })
   @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateFeatureItemDto)
-  features?: CreateFeatureItemDto[];
+  @IsString({ each: true })
+  sectionOrder?: string[];
 
-  @ApiPropertyOptional({ type: [CreateStatItemDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateStatItemDto)
-  stats?: CreateStatItemDto[];
-
-  @ApiPropertyOptional({ type: [CreateTestimonialItemDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateTestimonialItemDto)
-  testimonials?: CreateTestimonialItemDto[];
-
-  @ApiPropertyOptional({ type: CreateAppDownloadSectionDto })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateAppDownloadSectionDto)
-  appDownload?: CreateAppDownloadSectionDto;
-
-  @ApiPropertyOptional({ type: [CreatePartnerItemDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreatePartnerItemDto)
-  partners?: CreatePartnerItemDto[];
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  seoTitleAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  seoTitleEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  seoDescriptionAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  seoDescriptionEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  faviconUrl?: string;
-
-  @ApiPropertyOptional({ default: true })
+  @ApiPropertyOptional({ description: 'حالة النشر' })
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean;
+  isPublished?: boolean;
 }
 
-export class UpdateLandingSettingsDto {
-  @ApiPropertyOptional({ type: UpdateHeroSectionDto })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => UpdateHeroSectionDto)
-  hero?: UpdateHeroSectionDto;
-
-  @ApiPropertyOptional({ type: [UpdateFeatureItemDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpdateFeatureItemDto)
-  features?: UpdateFeatureItemDto[];
-
-  @ApiPropertyOptional({ type: [UpdateStatItemDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpdateStatItemDto)
-  stats?: UpdateStatItemDto[];
-
-  @ApiPropertyOptional({ type: [UpdateTestimonialItemDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpdateTestimonialItemDto)
-  testimonials?: UpdateTestimonialItemDto[];
-
-  @ApiPropertyOptional({ type: UpdateAppDownloadSectionDto })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => UpdateAppDownloadSectionDto)
-  appDownload?: UpdateAppDownloadSectionDto;
-
-  @ApiPropertyOptional({ type: [UpdatePartnerItemDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UpdatePartnerItemDto)
-  partners?: UpdatePartnerItemDto[];
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  seoTitleAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  seoTitleEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  seoDescriptionAr?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  seoDescriptionEn?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  faviconUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
-}
+export class CreateLandingSettingsDto extends UpdateLandingSettingsDto {}
 
 export class LandingSettingsResponseDto {
   @ApiProperty()
   _id!: string;
 
-  @ApiPropertyOptional({ type: () => Object })
-  hero?: Record<string, unknown>;
-
-  @ApiProperty({ type: [Object] })
-  features!: Record<string, unknown>[];
-
-  @ApiProperty({ type: [Object] })
-  stats!: Record<string, unknown>[];
-
-  @ApiProperty({ type: [Object] })
-  testimonials!: Record<string, unknown>[];
-
-  @ApiPropertyOptional({ type: () => Object })
-  appDownload?: Record<string, unknown>;
-
-  @ApiProperty({ type: [Object] })
-  partners!: Record<string, unknown>[];
+  @ApiProperty()
+  heroTitleAr!: string;
 
   @ApiPropertyOptional()
-  seoTitleAr?: string;
+  heroTitleEn?: string;
 
   @ApiPropertyOptional()
-  seoTitleEn?: string;
+  heroSubtitleAr?: string;
 
   @ApiPropertyOptional()
-  seoDescriptionAr?: string;
+  heroSubtitleEn?: string;
 
   @ApiPropertyOptional()
-  seoDescriptionEn?: string;
+  heroImage?: string;
 
   @ApiPropertyOptional()
-  faviconUrl?: string;
+  heroVideo?: string;
+
+  @ApiPropertyOptional()
+  primaryCtaTextAr?: string;
+
+  @ApiPropertyOptional()
+  primaryCtaTextEn?: string;
+
+  @ApiPropertyOptional()
+  primaryCtaUrl?: string;
+
+  @ApiPropertyOptional()
+  secondaryCtaTextAr?: string;
+
+  @ApiPropertyOptional()
+  secondaryCtaTextEn?: string;
+
+  @ApiPropertyOptional()
+  secondaryCtaUrl?: string;
+
+  @ApiPropertyOptional()
+  appStoreUrl?: string;
+
+  @ApiPropertyOptional()
+  playStoreUrl?: string;
 
   @ApiProperty()
-  isActive!: boolean;
+  enableAboutSection!: boolean;
 
-  @ApiPropertyOptional()
-  lastUpdatedBy?: string;
+  @ApiProperty()
+  enableStatsSection!: boolean;
+
+  @ApiProperty()
+  enableFeaturesSection!: boolean;
+
+  @ApiProperty()
+  enableProductsSection!: boolean;
+
+  @ApiProperty()
+  enableProjectsSection!: boolean;
+
+  @ApiProperty()
+  enableBrandsSection!: boolean;
+
+  @ApiProperty()
+  enableArticlesSection!: boolean;
+
+  @ApiProperty()
+  enableContactSection!: boolean;
+
+  @ApiProperty()
+  enableServiceCenterSection!: boolean;
+
+  @ApiProperty()
+  sectionOrder!: string[];
+
+  @ApiProperty()
+  isPublished!: boolean;
 
   @ApiProperty()
   createdAt!: Date;

@@ -3,7 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { LandingService } from './landing.service';
 import { LandingAdminController } from './landing.admin.controller';
 import { LandingPublicController } from './landing.public.controller';
-import { LandingSettings, LandingSettingsSchema } from './schemas/landing.schema';
+import { LandingSettings, LandingSettingsSchema } from './schemas/landing-settings.schema';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../../shared/shared.module';
 
