@@ -37,6 +37,7 @@ import { InstallationGuidesModule } from './modules/installation-guides/installa
 import { CommissionsModule } from './modules/commissions/commissions.module';
 import { BackupsModule } from './modules/backups/backups.module';
 import { AppConfigModule } from './modules/app-config/app-config.module';
+import { LandingModule } from './modules/landing/landing.module';
 import { HealthModule } from './health/health.module';
 
 // Shared modules
@@ -126,6 +127,7 @@ import { ShareProductController } from './deep-linking/share-product.controller'
     CommissionsModule,
     BackupsModule,
     AppConfigModule,
+    LandingModule,
 
     // Health module
     HealthModule,
