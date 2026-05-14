@@ -31,11 +31,11 @@ export const DataQualityBadge: React.FC<DataQualityBadgeProps> = ({
     return null;
   }
 
-  const config = qualityConfig[dataQuality.overall] || { color: 'default', icon: null };
+  const config = qualityConfig[dataQuality.overall] || { color: 'default' as const, icon: undefined };
 
   const badge = (
     <Chip
-      icon={config.icon}
+      icon={config.icon as React.ReactElement | undefined}
       label={t(`dataQuality.${dataQuality.overall}`, dataQuality.overall)}
       color={config.color}
       size="small"

@@ -18,13 +18,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Grid,
   Card,
   CardContent,
   CircularProgress,
   Alert,
-  useTheme,
   Select,
   MenuItem,
   FormControl,
@@ -36,12 +34,11 @@ import {
   Visibility,
   Refresh,
   FilterList,
-  NotificationsActive,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { reportBuilderApi } from '../../api/reportBuilderApi';
-import type { AnalyticsAlert, AlertStats } from '../../types/reportBuilder.types';
+import { reportBuilderApi } from '../api/reportBuilderApi';
+import type { AnalyticsAlert, AlertStats } from '../types/reportBuilder.types';
 
 const SEVERITY_COLORS: Record<string, 'error' | 'warning' | 'info' | 'success'> = {
   critical: 'error',
@@ -73,7 +70,6 @@ const STATUS_LABELS: Record<string, string> = {
 
 export const AnalyticsAlertsPage: React.FC = () => {
   const { t, i18n } = useTranslation('analytics');
-  const theme = useTheme();
   const queryClient = useQueryClient();
   const isRTL = i18n.language === 'ar';
 
@@ -159,47 +155,47 @@ export const AnalyticsAlertsPage: React.FC = () => {
 
       {stats && (
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={6} sm={2}>
-            <Card>
-              <CardContent sx={{ textAlign: 'center', py: 2 }}>
-                <Typography variant="h4">{stats.total}</Typography>
-                <Typography variant="body2" color="text.secondary">الإجمالي</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <Card sx={{ bgcolor: 'rgba(244, 67, 54, 0.08)' }}>
-              <CardContent sx={{ textAlign: 'center', py: 2 }}>
-                <Typography variant="h4" color="error">{stats.open}</Typography>
-                <Typography variant="body2">مفتوح</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <Card sx={{ bgcolor: 'rgba(255, 152, 0, 0.08)' }}>
-              <CardContent sx={{ textAlign: 'center', py: 2 }}>
-                <Typography variant="h4" color="warning.main">{stats.acknowledged}</Typography>
-                <Typography variant="body2">تمت المشاهدة</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <Card sx={{ bgcolor: 'rgba(76, 175, 80, 0.08)' }}>
-              <CardContent sx={{ textAlign: 'center', py: 2 }}>
-                <Typography variant="h4" color="success.main">{stats.resolved}</Typography>
-                <Typography variant="body2">تم الحل</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <Card>
-              <CardContent sx={{ textAlign: 'center', py: 2 }}>
-                <Typography variant="h4">{stats.ignored}</Typography>
-                <Typography variant="body2" color="text.secondary">تم التجاهل</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={2}>
+        <Grid size={{ xs: 6, sm: 2 }}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center', py: 2 }}>
+              <Typography variant="h4">{stats.total}</Typography>
+              <Typography variant="body2" color="text.secondary">الإجمالي</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 6, sm: 2 }}>
+          <Card sx={{ bgcolor: 'rgba(244, 67, 54, 0.08)' }}>
+            <CardContent sx={{ textAlign: 'center', py: 2 }}>
+              <Typography variant="h4" color="error">{stats.open}</Typography>
+              <Typography variant="body2">مفتوح</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 6, sm: 2 }}>
+          <Card sx={{ bgcolor: 'rgba(255, 152, 0, 0.08)' }}>
+            <CardContent sx={{ textAlign: 'center', py: 2 }}>
+              <Typography variant="h4" color="warning.main">{stats.acknowledged}</Typography>
+              <Typography variant="body2">تمت المشاهدة</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 6, sm: 2 }}>
+          <Card sx={{ bgcolor: 'rgba(76, 175, 80, 0.08)' }}>
+            <CardContent sx={{ textAlign: 'center', py: 2 }}>
+              <Typography variant="h4" color="success.main">{stats.resolved}</Typography>
+              <Typography variant="body2">تم الحل</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 6, sm: 2 }}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center', py: 2 }}>
+              <Typography variant="h4">{stats.ignored}</Typography>
+              <Typography variant="body2" color="text.secondary">تم التجاهل</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 6, sm: 2 }}>
             <Card sx={{ bgcolor: 'rgba(244, 67, 54, 0.08)' }}>
               <CardContent sx={{ textAlign: 'center', py: 2 }}>
                 <Typography variant="h4" color="error">
@@ -289,7 +285,7 @@ export const AnalyticsAlertsPage: React.FC = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              alerts.map((alert) => (
+              alerts.map((alert: AnalyticsAlert) => (
                 <TableRow key={alert._id} hover>
                   <TableCell>
                     <Chip
@@ -391,7 +387,7 @@ export const AnalyticsAlertsPage: React.FC = () => {
                 {isRTL ? selectedAlert.description : selectedAlert.descriptionEn}
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">الخطورة</Typography>
                   <Chip
                     label={SEVERITY_LABELS[selectedAlert.severity]}
@@ -399,7 +395,7 @@ export const AnalyticsAlertsPage: React.FC = () => {
                     size="small"
                   />
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">الحالة</Typography>
                   <Chip
                     label={STATUS_LABELS[selectedAlert.status]}
@@ -407,18 +403,18 @@ export const AnalyticsAlertsPage: React.FC = () => {
                     size="small"
                   />
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">المصدر</Typography>
                   <Typography variant="body1">{selectedAlert.source}</Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">التاريخ</Typography>
                   <Typography variant="body1">
                     {new Date(selectedAlert.createdAt).toLocaleDateString('ar-SA')}
                   </Typography>
                 </Grid>
                 {selectedAlert.suggestedAction && (
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <Typography variant="body2" color="text.secondary">الإجراء المقترح</Typography>
                     <Alert severity="info" sx={{ mt: 1 }}>
                       {isRTL ? selectedAlert.suggestedAction : selectedAlert.suggestedActionEn}

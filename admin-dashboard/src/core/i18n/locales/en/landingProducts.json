@@ -1,0 +1,35 @@
+{
+  "pageTitle": "Landing Page Products",
+  "pageDescription": "Control which products appear on the landing page",
+  "table": {
+    "title": "Products",
+    "columns": {
+      "product": "Product",
+      "category": "Category",
+      "brand": "Brand",
+      "showOnLanding": "Show on Landing",
+      "landingOrder": "Display Order",
+      "landingLabelAr": "Label (AR)",
+      "landingLabelEn": "Label (EN)",
+      "actions": "Actions"
+    }
+  },
+  "form": {
+    "showOnLanding": "Show on Landing Page",
+    "landingOrder": "Display Order",
+    "landingLabelAr": "Label (AR)",
+    "landingLabelEn": "Label (EN)",
+    "landingDescriptionAr": "Showcase Description (AR)",
+    "landingDescriptionEn": "Showcase Description (EN)"
+  },
+  "actions": {
+    "save": "Save Changes",
+    "saving": "Saving..."
+  },
+  "messages": {
+    "noProducts": "No products found",
+    "noProductsDesc": "No products selected for landing page display",
+    "updateSuccess": "Product updated successfully",
+    "loadError": "Failed to load products"
+  }
+}

@@ -6,17 +6,14 @@ import {
   Grid,
   Card,
   CardContent,
-  Chip,
   Stack,
   Button,
   IconButton,
   Tooltip,
-  Divider,
   Alert,
   Skeleton,
   Tabs,
   Tab,
-  useTheme,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -31,10 +28,10 @@ import {
   Timer as TimerIcon,
   DataUsage as DataUsageIcon,
 } from '@mui/icons-material';
-import { useAdvancedReport } from '../../hooks/useAnalytics';
-import { ReportStatusBadge } from '../../components/report/ReportStatusBadge';
-import { DataQualityBadge } from '../../components/report/DataQualityBadge';
-import { ReportStatus, ReportExportEntry } from '../../types/analytics.types';
+import { useAdvancedReport } from '../hooks/useAnalytics';
+import { ReportStatusBadge } from '../components/report/ReportStatusBadge';
+import { DataQualityBadge } from '../components/report/DataQualityBadge';
+import { ReportStatus, ReportExportEntry } from '../types/analytics.types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -52,7 +49,6 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const ReportDetailsPage: React.FC = () => {
-  const theme = useTheme();
   const { t } = useTranslation('analytics');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

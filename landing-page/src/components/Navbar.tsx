@@ -24,9 +24,9 @@ import { useThemeContext } from "../theme/ThemeContext";
 
 const navLinks = [
   { title: "الرئيسية", path: "/" },
-  { title: "المميزات", path: "/#features" },
-  { title: "عن التطبيق", path: "/#about" },
-  { title: "الأحكام والشروط", path: "/terms" },
+  { title: "المشاريع", path: "/#projects" },
+  { title: "الأخبار", path: "/#news-articles" },
+  { title: "تواصل معنا", path: "/#contact" },
 ];
 
 const Navbar: React.FC = () => {

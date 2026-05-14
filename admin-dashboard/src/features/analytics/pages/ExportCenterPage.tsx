@@ -71,7 +71,7 @@ export const ExportCenterPage: React.FC = () => {
     .flatMap((report: AdvancedReport) =>
       (report.exports || []).map((exp) => ({
         ...exp,
-        reportId: report._id || report.reportId,
+        reportId: report.reportId,
         reportTitle: report.title,
         reportType: report.category,
       }))
@@ -91,7 +91,7 @@ export const ExportCenterPage: React.FC = () => {
     return new Date(date).toLocaleString('ar-SA');
   };
 
-  const handleDownload = (url: string, fileName: string) => {
+  const handleDownload = (url: string) => {
     window.open(url, '_blank');
   };
 
@@ -142,7 +142,6 @@ export const ExportCenterPage: React.FC = () => {
             <Tabs
               value={formatFilter}
               onChange={(_, v) => setFormatFilter(v)}
-              size="small"
             >
               <Tab label="الكل" value="all" />
               <Tab label="PDF" value="pdf" />
@@ -226,7 +225,7 @@ export const ExportCenterPage: React.FC = () => {
                             <IconButton
                               size="small"
                               color="primary"
-                              onClick={() => handleDownload(exp.fileUrl, exp.fileName)}
+                              onClick={() => handleDownload(exp.fileUrl)}
                             >
                               <DownloadIcon fontSize="small" />
                             </IconButton>

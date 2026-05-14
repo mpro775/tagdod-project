@@ -1,0 +1,81 @@
+{
+  "pageTitle": "News & Articles Management",
+  "pageDescription": "Create and manage editorial content for the website",
+  "table": {
+    "title": "News & Articles",
+    "addButton": "Add Article",
+    "columns": {
+      "article": "Article",
+      "type": "Type",
+      "category": "Category",
+      "status": "Status",
+      "showOnLanding": "Show on Landing",
+      "isFeatured": "Featured",
+      "publishDate": "Publish Date",
+      "readTime": "Read Time",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    }
+  },
+  "types": {
+    "news": "News",
+    "article": "Article"
+  },
+  "status": {
+    "draft": "Draft",
+    "published": "Published",
+    "archived": "Archived"
+  },
+  "form": {
+    "titleAr": "Title in Arabic",
+    "titleEn": "Title in English",
+    "slug": "Slug",
+    "excerptAr": "Excerpt (AR)",
+    "excerptEn": "Excerpt (EN)",
+    "contentAr": "Content (AR)",
+    "contentEn": "Content (EN)",
+    "coverImage": "Cover Image",
+    "type": "Content Type",
+    "category": "Category",
+    "tags": "Tags",
+    "authorName": "Author Name",
+    "publishDate": "Publish Date",
+    "status": "Publish Status",
+    "isFeatured": "Featured",
+    "showOnLanding": "Show on Landing Page",
+    "landingOrder": "Display Order",
+    "readTime": "Read Time (minutes)",
+    "metaTitleAr": "SEO Title (AR)",
+    "metaTitleEn": "SEO Title (EN)",
+    "metaDescriptionAr": "SEO Description (AR)",
+    "metaDescriptionEn": "SEO Description (EN)"
+  },
+  "filters": {
+    "type": "Filter by Type",
+    "status": "Filter by Status",
+    "category": "Filter by Category",
+    "landing": "Filter by Landing Display",
+    "search": "Search articles",
+    "reset": "Reset"
+  },
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "publish": "Publish",
+    "archive": "Archive",
+    "toggleLanding": "Toggle Landing Display",
+    "toggleFeatured": "Toggle Featured",
+    "view": "View"
+  },
+  "messages": {
+    "noArticles": "No articles found",
+    "noArticlesDesc": "Start by creating a new article",
+    "createSuccess": "Article created successfully",
+    "updateSuccess": "Article updated successfully",
+    "deleteSuccess": "Article deleted successfully",
+    "publishSuccess": "Article published successfully",
+    "archiveSuccess": "Article archived successfully",
+    "loadError": "Failed to load articles",
+    "deleteConfirm": "Are you sure you want to delete this article?"
+  }
+}

@@ -120,6 +120,7 @@ export class ListProductsDto {
   @IsOptional() @IsBoolean() isActive?: boolean; // في admin، يمكن عرض المنتجات غير النشطة أيضاً
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsBoolean() isNew?: boolean;
+  @IsOptional() @IsBoolean() showOnLanding?: boolean;
   @IsOptional() @IsBoolean() includeDeleted?: boolean = false; // في admin، يمكن عرض المحذوفة
   @IsOptional() @IsString() sortBy?: string;
   @IsOptional() @IsString() sortOrder?: 'asc' | 'desc';

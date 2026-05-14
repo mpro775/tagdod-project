@@ -1,5 +1,5 @@
 import { apiClient } from '@/core/api/client';
-import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
+import type { PaginatedResponse } from '@/shared/types/common.types';
 import type {
   ReportTemplate,
   CreateReportTemplateDto,

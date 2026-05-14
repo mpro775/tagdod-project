@@ -30,7 +30,6 @@ import {
   Paper,
   Tabs,
   Tab,
-  Avatar,
   Stack,
   useTheme,
 } from '@mui/material';
@@ -40,14 +39,8 @@ import {
   Add as AddIcon,
   Download as DownloadIcon,
   Visibility as VisibilityIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Archive as ArchiveIcon,
-  Unarchive as UnarchiveIcon,
   Assessment as AssessmentIcon,
-  PictureAsPdf as PictureAsPdfIcon,
-  TableChart as TableChartIcon,
-  Description as DescriptionIcon,
   FileDownload as FileDownloadIcon,
   Search as SearchIcon,
   Sort as SortIcon,
@@ -65,9 +58,8 @@ import {
   ReportFormat,
   GenerateAdvancedReportDto,
   ReportPriority,
-  ReportStatus,
 } from '../types/analytics.types';
-import { DataExportDialog, ReportScheduleForm, ReportCard, ReportStatusBadge, DataQualityBadge } from '../components';
+import { DataExportDialog, ReportScheduleForm, ReportCard } from '../components';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { ConfirmDialog } from '@/shared/components';
@@ -244,40 +236,6 @@ export const ReportsManagementPage: React.FC = () => {
     navigate(`/analytics/reports/${reportId}`);
   };
 
-  const getFormatIcon = (format: string) => {
-    switch (format) {
-      case 'pdf':
-        return <PictureAsPdfIcon />;
-      case 'excel':
-        return <TableChartIcon />;
-      case 'csv':
-        return <TableChartIcon />;
-      case 'json':
-        return <DescriptionIcon />;
-      default:
-        return <FileDownloadIcon />;
-    }
-  };
-
-  const getCategoryColor = (category: ReportCategory) => {
-    switch (category) {
-      case ReportCategory.SALES:
-        return 'primary';
-      case ReportCategory.PRODUCTS:
-        return 'secondary';
-      case ReportCategory.CUSTOMERS:
-        return 'success';
-      case ReportCategory.INVENTORY:
-        return 'warning';
-      case ReportCategory.FINANCIAL:
-        return 'error';
-      case ReportCategory.MARKETING:
-        return 'info';
-      default:
-        return 'default';
-    }
-  };
-
   const tabs = [
     { label: t('reportsManagement.tabs.all'), value: 0 },
     { label: t('reportsManagement.tabs.sales'), value: 1, category: ReportCategory.SALES },
@@ -293,7 +251,7 @@ export const ReportsManagementPage: React.FC = () => {
   const filteredReports = reports.filter((report) => {
     const matchesSearch =
       report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (report.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || report.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
@@ -610,7 +568,7 @@ export const ReportsManagementPage: React.FC = () => {
                         <ReportCard
                           report={report as any}
                           onView={handleViewReport}
-                          onDownload={handleExportReport}
+                          onDownload={(reportId: string) => handleExportReport(reportId, ReportFormat.PDF)}
                           onArchive={handleArchiveReport}
                           onDelete={handleDeleteReport}
                         />

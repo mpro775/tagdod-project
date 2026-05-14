@@ -21,9 +21,9 @@ import logoImage from "../assets/images/logo.png";
 
 const footerLinks = {
   company: [
-    { title: "من نحن", path: "/about" },
-    { title: "تواصل معنا", path: "/contact" },
-    { title: "الأسئلة الشائعة", path: "/faq" },
+    { title: "من نحن", path: "/#about" },
+    { title: "تواصل معنا", path: "/#contact" },
+    { title: "الأخبار والمقالات", path: "/#news-articles" },
   ],
   legal: [
     { title: "الأحكام والشروط", path: "/terms" },
@@ -31,9 +31,9 @@ const footerLinks = {
     { title: "كيفية حذف الحساب", path: "/deleted-account" },
   ],
   support: [
-    { title: "مركز المساعدة", path: "/help" },
-    { title: "الشحن والتوصيل", path: "/shipping" },
-    { title: "سياسة الإرجاع", path: "/returns" },
+    { title: "مركز المساعدة", path: "/#service-center" },
+    { title: "مشاريعنا", path: "/#projects" },
+    { title: "منتجاتنا", path: "/#products" },
   ],
 };
 

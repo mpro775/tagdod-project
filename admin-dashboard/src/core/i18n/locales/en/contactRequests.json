@@ -1,0 +1,73 @@
+{
+  "pageTitle": "Contact Requests",
+  "pageDescription": "View and manage requests from the landing page",
+  "table": {
+    "title": "Contact Requests",
+    "columns": {
+      "name": "Name",
+      "phone": "Phone",
+      "email": "Email",
+      "city": "City",
+      "requestType": "Request Type",
+      "subject": "Subject",
+      "status": "Status",
+      "source": "Source",
+      "assignedTo": "Assigned To",
+      "createdAt": "Submitted At",
+      "actions": "Actions"
+    }
+  },
+  "requestTypes": {
+    "general": "General Inquiry",
+    "technical_support": "Technical Support",
+    "service_center": "Service Center",
+    "maintenance": "Maintenance Request",
+    "contracting": "Contracting Request",
+    "partnership": "Partnership",
+    "other": "Other"
+  },
+  "status": {
+    "new": "New",
+    "in_review": "In Review",
+    "contacted": "Contacted",
+    "converted": "Converted",
+    "closed": "Closed"
+  },
+  "sources": {
+    "landing_page": "Landing Page",
+    "website": "Website",
+    "mobile_app": "Mobile App",
+    "admin": "Admin Panel"
+  },
+  "filters": {
+    "requestType": "Filter by Type",
+    "status": "Filter by Status",
+    "source": "Filter by Source",
+    "date": "Filter by Date",
+    "search": "Search by name or phone",
+    "reset": "Reset"
+  },
+  "details": {
+    "title": "Request Details",
+    "message": "Message",
+    "notes": "Internal Notes",
+    "addNote": "Add Note",
+    "updateStatus": "Update Status",
+    "assignTo": "Assign To"
+  },
+  "actions": {
+    "view": "View",
+    "updateStatus": "Update Status",
+    "assign": "Assign",
+    "delete": "Delete",
+    "addNote": "Add Note"
+  },
+  "messages": {
+    "noRequests": "No requests found",
+    "noRequestsDesc": "No contact requests received yet",
+    "statusUpdated": "Request status updated successfully",
+    "noteAdded": "Note added successfully",
+    "loadError": "Failed to load requests",
+    "deleteConfirm": "Are you sure you want to delete this request?"
+  }
+}

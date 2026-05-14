@@ -1,7 +1,7 @@
 import React from 'react';
 import { Chip, ChipProps } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { ReportStatus } from '../types/analytics.types';
+import { ReportStatus } from '../../types/analytics.types';
 
 interface ReportStatusBadgeProps {
   status: ReportStatus;

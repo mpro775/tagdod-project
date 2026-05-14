@@ -1,0 +1,31 @@
+{
+  "pageTitle": "براندات صفحة الهبوط",
+  "pageDescription": "التحكم في البراندات التي تظهر في صفحة الهبوط",
+  "table": {
+    "title": "البراندات",
+    "columns": {
+      "brand": "البراند",
+      "showOnLanding": "عرض في الصفحة",
+      "landingOrder": "ترتيب العرض",
+      "landingDescriptionAr": "وصف بالعربية",
+      "landingDescriptionEn": "وصف بالإنجليزية",
+      "actions": "الإجراءات"
+    }
+  },
+  "form": {
+    "showOnLanding": "عرض في صفحة الهبوط",
+    "landingOrder": "ترتيب العرض",
+    "landingDescriptionAr": "وصف مختصر بالعربية",
+    "landingDescriptionEn": "وصف مختصر بالإنجليزية"
+  },
+  "actions": {
+    "save": "حفظ التغييرات",
+    "saving": "جاري الحفظ..."
+  },
+  "messages": {
+    "noBrands": "لا توجد براندات",
+    "noBrandsDesc": "لم يتم اختيار أي براندات للعرض في صفحة الهبوط",
+    "updateSuccess": "تم تحديث البراند بنجاح",
+    "loadError": "فشل في تحميل البراندات"
+  }
+}

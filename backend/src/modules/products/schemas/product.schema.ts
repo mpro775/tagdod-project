@@ -181,6 +181,24 @@ export class Product {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   deletedBy?: string;
+
+  @Prop({ default: false })
+  showOnLanding!: boolean;
+
+  @Prop({ default: 0 })
+  landingOrder!: number;
+
+  @Prop()
+  landingLabelAr?: string;
+
+  @Prop()
+  landingLabelEn?: string;
+
+  @Prop()
+  landingDescriptionAr?: string;
+
+  @Prop()
+  landingDescriptionEn?: string;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
@@ -200,6 +218,7 @@ ProductSchema.index({ deletedAt: 1 });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ salesCount: -1 });
 ProductSchema.index({ viewsCount: -1 });
+ProductSchema.index({ showOnLanding: 1, landingOrder: 1, status: 1, isActive: 1, deletedAt: 1 });
 
 // Virtual for isAvailable
 ProductSchema.virtual('isAvailable').get(function() {

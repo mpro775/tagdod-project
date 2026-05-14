@@ -1,0 +1,31 @@
+{
+  "pageTitle": "Landing Page Brands",
+  "pageDescription": "Control which brands appear on the landing page",
+  "table": {
+    "title": "Brands",
+    "columns": {
+      "brand": "Brand",
+      "showOnLanding": "Show on Landing",
+      "landingOrder": "Display Order",
+      "landingDescriptionAr": "Description (AR)",
+      "landingDescriptionEn": "Description (EN)",
+      "actions": "Actions"
+    }
+  },
+  "form": {
+    "showOnLanding": "Show on Landing Page",
+    "landingOrder": "Display Order",
+    "landingDescriptionAr": "Short Description (AR)",
+    "landingDescriptionEn": "Short Description (EN)"
+  },
+  "actions": {
+    "save": "Save Changes",
+    "saving": "Saving..."
+  },
+  "messages": {
+    "noBrands": "No brands found",
+    "noBrandsDesc": "No brands selected for landing page display",
+    "updateSuccess": "Brand updated successfully",
+    "loadError": "Failed to load brands"
+  }
+}

@@ -152,6 +152,21 @@ export class BrandsAdminController {
     };
   }
 
+  @Get('landing')
+  @ApiOperation({
+    summary: 'الحصول على قائمة العلامات التجارية المعروضة في Landing Page',
+    description: 'الحصول على قائمة العلامات التجارية التي يتم عرضها في الصفحة الرئيسية.',
+    tags: ['إدارة العلامات التجارية']
+  })
+  async listLandingBrands(@Query() dto: ListBrandsDto) {
+    dto.showOnLanding = true;
+    const result = await this.brandsService.listBrands(dto);
+    return {
+      brands: result.brands,
+      pagination: result.pagination,
+    };
+  }
+
   // ==================== إحصائيات العلامات التجارية ====================
   @Get('stats/summary')
   @ApiOperation({

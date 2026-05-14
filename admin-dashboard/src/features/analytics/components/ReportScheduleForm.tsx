@@ -114,7 +114,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.description.trim()) {
+    if (!formData.name.trim() || !formData.description?.trim()) {
       return;
     }
 
@@ -145,7 +145,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
     onClose();
   };
 
-  const isValid = formData.name.trim() && formData.description.trim();
+  const isValid = formData.name.trim() && formData.description?.trim();
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth fullScreen={breakpoint.isXs}>

@@ -1,0 +1,69 @@
+{
+  "title": "Landing Page Settings",
+  "subtitle": "Control landing page content and settings",
+  "tabs": {
+    "hero": "Hero Section",
+    "cta": "Call to Action",
+    "sections": "Sections",
+    "app": "App",
+    "seo": "SEO"
+  },
+  "hero": {
+    "titleAr": "Title in Arabic",
+    "titleEn": "Title in English",
+    "subtitleAr": "Subtitle in Arabic",
+    "subtitleEn": "Subtitle in English",
+    "image": "Hero Image",
+    "video": "Video URL (optional)",
+    "uploadImage": "Upload Image",
+    "removeImage": "Remove Image"
+  },
+  "cta": {
+    "primaryTextAr": "Primary Button Text (AR)",
+    "primaryTextEn": "Primary Button Text (EN)",
+    "primaryUrl": "Primary Button URL",
+    "secondaryTextAr": "Secondary Button Text (AR)",
+    "secondaryTextEn": "Secondary Button Text (EN)",
+    "secondaryUrl": "Secondary Button URL"
+  },
+  "sections": {
+    "title": "Enable Sections",
+    "about": "About Company Section",
+    "stats": "Stats Section",
+    "features": "Features Section",
+    "products": "Products Section",
+    "projects": "Projects Section",
+    "brands": "Brands Section",
+    "articles": "News & Articles Section",
+    "contact": "Contact Section",
+    "serviceCenter": "Service Center Section"
+  },
+  "app": {
+    "title": "App Links",
+    "appStoreUrl": "App Store URL",
+    "playStoreUrl": "Google Play URL"
+  },
+  "seo": {
+    "title": "SEO Settings",
+    "metaTitleAr": "Page Title (AR)",
+    "metaTitleEn": "Page Title (EN)",
+    "metaDescriptionAr": "Page Description (AR)",
+    "metaDescriptionEn": "Page Description (EN)"
+  },
+  "actions": {
+    "save": "Save Settings",
+    "saving": "Saving...",
+    "reset": "Reset Settings"
+  },
+  "status": {
+    "published": "Published",
+    "draft": "Draft",
+    "publish": "Publish Page",
+    "unpublish": "Unpublish Page"
+  },
+  "messages": {
+    "saveSuccess": "Settings saved successfully",
+    "saveError": "Failed to save settings",
+    "loadError": "Failed to load settings"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "pageTitle": "إدارة المشاريع",
+  "pageDescription": "إضافة وإدارة مشاريع الشركة والمنظومات والمقاولات",
+  "table": {
+    "title": "المشاريع",
+    "addButton": "إضافة مشروع",
+    "columns": {
+      "project": "المشروع",
+      "type": "النوع",
+      "status": "الحالة",
+      "location": "الموقع",
+      "showOnLanding": "عرض في الصفحة",
+      "isFeatured": "مميز",
+      "isPublished": "منشور",
+      "landingOrder": "ترتيب العرض",
+      "createdAt": "تاريخ الإنشاء",
+      "actions": "الإجراءات"
+    }
+  },
+  "types": {
+    "system": "منظومة",
+    "contracting": "مقاولات",
+    "maintenance": "صيانة",
+    "installation": "تركيب",
+    "supply": "توريد",
+    "partnership": "شراكة",
+    "other": "أخرى"
+  },
+  "status": {
+    "planned": "مخطط",
+    "in_progress": "قيد التنفيذ",
+    "completed": "مكتمل",
+    "published": "منشور",
+    "draft": "مسودة"
+  },
+  "form": {
+    "titleAr": "العنوان بالعربية",
+    "titleEn": "العنوان بالإنجليزية",
+    "slug": "الرابط المختصر",
+    "shortDescriptionAr": "وصف مختصر بالعربية",
+    "shortDescriptionEn": "وصف مختصر بالإنجليزية",
+    "descriptionAr": "الوصف الكامل بالعربية",
+    "descriptionEn": "الوصف الكامل بالإنجليزية",
+    "type": "نوع المشروع",
+    "status": "حالة المشروع",
+    "clientName": "اسم العميل",
+    "location": "الموقع",
+    "city": "المدينة",
+    "coverImage": "صورة الغلاف",
+    "images": "معرض الصور",
+    "startDate": "تاريخ البدء",
+    "endDate": "تاريخ الانتهاء",
+    "tags": "الوسوم",
+    "isFeatured": "مشروع مميز",
+    "showOnLanding": "عرض في صفحة الهبوط",
+    "landingOrder": "ترتيب العرض",
+    "isPublished": "منشور",
+    "metaTitleAr": "عنوان SEO بالعربية",
+    "metaTitleEn": "عنوان SEO بالإنجليزية",
+    "metaDescriptionAr": "وصف SEO بالعربية",
+    "metaDescriptionEn": "وصف SEO بالإنجليزية"
+  },
+  "filters": {
+    "type": "تصفية بالنوع",
+    "status": "تصفية بالحالة",
+    "published": "تصفية بالنشر",
+    "landing": "تصفية بالعرض في الصفحة",
+    "search": "بحث في المشاريع",
+    "reset": "إعادة تعيين"
+  },
+  "actions": {
+    "edit": "تعديل",
+    "delete": "حذف",
+    "toggleLanding": "تبديل العرض في الصفحة",
+    "toggleFeatured": "تبديل التميز",
+    "togglePublish": "تبديل النشر",
+    "view": "عرض"
+  },
+  "messages": {
+    "noProjects": "لا توجد مشاريع",
+    "noProjectsDesc": "ابدأ بإضافة مشروع جديد",
+    "createSuccess": "تم إنشاء المشروع بنجاح",
+    "updateSuccess": "تم تحديث المشروع بنجاح",
+    "deleteSuccess": "تم حذف المشروع بنجاح",
+    "loadError": "فشل في تحميل المشاريع",
+    "deleteConfirm": "هل أنت متأكد من حذف هذا المشروع؟"
+  }
+}

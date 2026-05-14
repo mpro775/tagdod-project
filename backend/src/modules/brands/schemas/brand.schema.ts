@@ -31,6 +31,18 @@ export class Brand {
 
   @Prop({ type: Object, default: {} })
   metadata?: Record<string, unknown>;
+
+  @Prop({ default: false })
+  showOnLanding!: boolean;
+
+  @Prop({ default: 0 })
+  landingOrder!: number;
+
+  @Prop({ default: '' })
+  landingDescriptionAr?: string;
+
+  @Prop({ default: '' })
+  landingDescriptionEn?: string;
 }
 
 export const BrandSchema = SchemaFactory.createForClass(Brand);
@@ -41,4 +53,5 @@ BrandSchema.index({ name: 1 });
 BrandSchema.index({ nameEn: 1 });
 BrandSchema.index({ isActive: 1, sortOrder: 1 });
 BrandSchema.index({ name: 'text', nameEn: 'text', description: 'text', descriptionEn: 'text' });
+BrandSchema.index({ showOnLanding: 1, landingOrder: 1, isActive: 1 });
 

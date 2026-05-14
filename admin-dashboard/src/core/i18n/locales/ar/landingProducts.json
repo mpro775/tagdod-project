@@ -1,0 +1,35 @@
+{
+  "pageTitle": "منتجات صفحة الهبوط",
+  "pageDescription": "التحكم في المنتجات التي تظهر في صفحة الهبوط",
+  "table": {
+    "title": "المنتجات",
+    "columns": {
+      "product": "المنتج",
+      "category": "الفئة",
+      "brand": "العلامة التجارية",
+      "showOnLanding": "عرض في الصفحة",
+      "landingOrder": "ترتيب العرض",
+      "landingLabelAr": "Label بالعربية",
+      "landingLabelEn": "Label بالإنجليزية",
+      "actions": "الإجراءات"
+    }
+  },
+  "form": {
+    "showOnLanding": "عرض في صفحة الهبوط",
+    "landingOrder": "ترتيب العرض",
+    "landingLabelAr": "Label بالعربية",
+    "landingLabelEn": "Label بالإنجليزية",
+    "landingDescriptionAr": "وصف العرض بالعربية",
+    "landingDescriptionEn": "وصف العرض بالإنجليزية"
+  },
+  "actions": {
+    "save": "حفظ التغييرات",
+    "saving": "جاري الحفظ..."
+  },
+  "messages": {
+    "noProducts": "لا توجد منتجات",
+    "noProductsDesc": "لم يتم اختيار أي منتجات للعرض في صفحة الهبوط",
+    "updateSuccess": "تم تحديث المنتج بنجاح",
+    "loadError": "فشل في تحميل المنتجات"
+  }
+}

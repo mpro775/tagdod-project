@@ -1,0 +1,88 @@
+{
+  "pageTitle": "Projects Management",
+  "pageDescription": "Add and manage company projects, systems, and contracting",
+  "table": {
+    "title": "Projects",
+    "addButton": "Add Project",
+    "columns": {
+      "project": "Project",
+      "type": "Type",
+      "status": "Status",
+      "location": "Location",
+      "showOnLanding": "Show on Landing",
+      "isFeatured": "Featured",
+      "isPublished": "Published",
+      "landingOrder": "Display Order",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    }
+  },
+  "types": {
+    "system": "System",
+    "contracting": "Contracting",
+    "maintenance": "Maintenance",
+    "installation": "Installation",
+    "supply": "Supply",
+    "partnership": "Partnership",
+    "other": "Other"
+  },
+  "status": {
+    "planned": "Planned",
+    "in_progress": "In Progress",
+    "completed": "Completed",
+    "published": "Published",
+    "draft": "Draft"
+  },
+  "form": {
+    "titleAr": "Title in Arabic",
+    "titleEn": "Title in English",
+    "slug": "Slug",
+    "shortDescriptionAr": "Short Description (AR)",
+    "shortDescriptionEn": "Short Description (EN)",
+    "descriptionAr": "Full Description (AR)",
+    "descriptionEn": "Full Description (EN)",
+    "type": "Project Type",
+    "status": "Project Status",
+    "clientName": "Client Name",
+    "location": "Location",
+    "city": "City",
+    "coverImage": "Cover Image",
+    "images": "Image Gallery",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "tags": "Tags",
+    "isFeatured": "Featured Project",
+    "showOnLanding": "Show on Landing Page",
+    "landingOrder": "Display Order",
+    "isPublished": "Published",
+    "metaTitleAr": "SEO Title (AR)",
+    "metaTitleEn": "SEO Title (EN)",
+    "metaDescriptionAr": "SEO Description (AR)",
+    "metaDescriptionEn": "SEO Description (EN)"
+  },
+  "filters": {
+    "type": "Filter by Type",
+    "status": "Filter by Status",
+    "published": "Filter by Published",
+    "landing": "Filter by Landing Display",
+    "search": "Search projects",
+    "reset": "Reset"
+  },
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "toggleLanding": "Toggle Landing Display",
+    "toggleFeatured": "Toggle Featured",
+    "togglePublish": "Toggle Publish",
+    "view": "View"
+  },
+  "messages": {
+    "noProjects": "No projects found",
+    "noProjectsDesc": "Start by adding a new project",
+    "createSuccess": "Project created successfully",
+    "updateSuccess": "Project updated successfully",
+    "deleteSuccess": "Project deleted successfully",
+    "loadError": "Failed to load projects",
+    "deleteConfirm": "Are you sure you want to delete this project?"
+  }
+}

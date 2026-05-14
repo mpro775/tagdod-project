@@ -19,7 +19,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert,
   TextField,
   InputAdornment,
   Tabs,
@@ -43,11 +42,8 @@ import { toast } from 'react-hot-toast';
 import { analyticsApi } from '../api/analyticsApi';
 import { ReportScheduleForm } from '../components/ReportScheduleForm';
 import {
-  ReportType,
-  ReportFormat,
   ScheduleFrequency,
   ReportSchedule,
-  ListSchedulesParams,
 } from '../types/analytics.types';
 
 const frequencyLabels: Record<ScheduleFrequency, string> = {
@@ -57,15 +53,12 @@ const frequencyLabels: Record<ScheduleFrequency, string> = {
   quarterly: 'ربع سنوي',
 };
 
-const reportTypeLabels: Record<ReportType, string> = {
-  daily_summary: 'ملخص يومي',
+const reportTypeLabels: Record<string, string> = {
+  daily_report: 'ملخص يومي',
   weekly_report: 'تقرير أسبوعي',
   monthly_report: 'تقرير شهري',
-  revenue_report: 'تقرير الإيرادات',
-  user_activity: 'نشاط المستخدمين',
-  product_performance: 'أداء المنتجات',
-  service_analytics: 'تحليلات الخدمات',
-  support_metrics: 'مقاييس الدعم',
+  quarterly_report: 'تقرير ربع سنوي',
+  yearly_report: 'تقرير سنوي',
   custom_report: 'تقرير مخصص',
 };
 
@@ -209,7 +202,6 @@ export const ScheduledReportsPage: React.FC = () => {
             <Tabs
               value={statusFilter}
               onChange={(_, v) => setStatusFilter(v)}
-              size="small"
             >
               <Tab label="الكل" value="all" />
               <Tab label="نشط" value="active" />
@@ -248,7 +240,7 @@ export const ScheduledReportsPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.data?.length === 0 ? (
+                {data?.data?.length === 0 || !Array.isArray(data?.data) ? (
                   <TableRow>
                     <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                       <Typography color="text.secondary">
@@ -257,7 +249,7 @@ export const ScheduledReportsPage: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data?.data?.map((schedule) => (
+                  data.data.map((schedule) => (
                     <TableRow key={schedule._id} hover>
                       <TableCell>
                         <Typography variant="body2" sx={{ fontWeight: 'medium' }}>

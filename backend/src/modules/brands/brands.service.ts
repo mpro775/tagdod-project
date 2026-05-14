@@ -81,7 +81,7 @@ export class BrandsService {
    * Get all brands with filters and pagination
    */
   async listBrands(dto: ListBrandsDto) {
-    const { page = 1, limit = 20, search, isActive, sortBy = 'sortOrder', sortOrder = 'asc', language = 'ar' } = dto;
+    const { page = 1, limit = 20, search, isActive, showOnLanding, sortBy = 'sortOrder', sortOrder = 'asc', language = 'ar' } = dto;
 
     const skip = (page - 1) * limit;
     const query: Record<string, unknown> = {};
@@ -106,6 +106,11 @@ export class BrandsService {
     // Status filter
     if (typeof isActive === 'boolean') {
       query.isActive = isActive;
+    }
+
+    // Landing filter
+    if (typeof showOnLanding === 'boolean') {
+      query.showOnLanding = showOnLanding;
     }
 
     // Sort options
@@ -308,5 +313,12 @@ export class BrandsService {
       inactive,
       withProducts: brandsWithProducts.length,
     };
+  }
+
+  async getLandingBrands() {
+    return await this.brandModel
+      .find({ showOnLanding: true, isActive: true })
+      .sort({ landingOrder: 1, sortOrder: 1, name: 1 })
+      .lean();
   }
 }

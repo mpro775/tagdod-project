@@ -145,6 +145,27 @@ export const PERMISSIONS = {
   MARKETERS_UPDATE: 'marketers.update',
   MARKETERS_ANALYTICS: 'marketers.analytics',
   MARKETER_PORTAL_ACCESS: 'marketer.portal.access',
+
+  // Website Content - Landing Page
+  LANDING_SETTINGS_READ: 'landing.settings.read',
+  LANDING_SETTINGS_UPDATE: 'landing.settings.update',
+  PROJECTS_READ: 'projects.read',
+  PROJECTS_CREATE: 'projects.create',
+  PROJECTS_UPDATE: 'projects.update',
+  PROJECTS_DELETE: 'projects.delete',
+  PROJECTS_PUBLISH: 'projects.publish',
+  ARTICLES_READ: 'articles.read',
+  ARTICLES_CREATE: 'articles.create',
+  ARTICLES_UPDATE: 'articles.update',
+  ARTICLES_DELETE: 'articles.delete',
+  ARTICLES_PUBLISH: 'articles.publish',
+  LANDING_PRODUCTS_READ: 'landing.products.read',
+  LANDING_PRODUCTS_UPDATE: 'landing.products.update',
+  LANDING_BRANDS_READ: 'landing.brands.read',
+  LANDING_BRANDS_UPDATE: 'landing.brands.update',
+  CONTACT_REQUESTS_READ: 'contact_requests.read',
+  CONTACT_REQUESTS_UPDATE: 'contact_requests.update',
+  CONTACT_REQUESTS_ASSIGN: 'contact_requests.assign',
 } as const;
 
 // Permission Groups - Presets for different admin roles
@@ -337,6 +358,15 @@ export const MENU_PERMISSIONS = {
   'admin-marketers': [PERMISSIONS.SUPER_ADMIN_ACCESS, PERMISSIONS.ADMIN_ACCESS],
   'admin-marketers-survey': [PERMISSIONS.SUPER_ADMIN_ACCESS, PERMISSIONS.ADMIN_ACCESS],
   'marketer-portal': [PERMISSIONS.MARKETER_PORTAL_ACCESS, PERMISSIONS.ADMIN_ACCESS],
+
+  // Website Content section
+  'website-content': [PERMISSIONS.ADMIN_ACCESS],
+  'landing-settings': [PERMISSIONS.LANDING_SETTINGS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'landing-projects': [PERMISSIONS.PROJECTS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'landing-articles': [PERMISSIONS.ARTICLES_READ, PERMISSIONS.ADMIN_ACCESS],
+  'landing-products': [PERMISSIONS.LANDING_PRODUCTS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'landing-brands': [PERMISSIONS.LANDING_BRANDS_READ, PERMISSIONS.ADMIN_ACCESS],
+  'contact-requests': [PERMISSIONS.CONTACT_REQUESTS_READ, PERMISSIONS.ADMIN_ACCESS],
 } as const;
 
 // Helper function to check if user has any of the required permissions

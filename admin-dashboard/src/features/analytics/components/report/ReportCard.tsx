@@ -108,7 +108,7 @@ export const ReportCard: React.FC<ReportCardProps> = ({
 
         <Stack spacing={0.5} sx={{ mb: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            {t('reportDetails.createdAt', 'Created')}: {formatDate(report.createdAt || report.generatedAt)}
+            {t('reportDetails.createdAt', 'Created')}: {formatDate(report.generatedAt)}
           </Typography>
           {report.creatorName && (
             <Typography variant="body2" color="text.secondary">

@@ -1,0 +1,81 @@
+{
+  "pageTitle": "إدارة الأخبار والمقالات",
+  "pageDescription": "إنشاء وإدارة المحتوى التحريري للموقع",
+  "table": {
+    "title": "الأخبار والمقالات",
+    "addButton": "إضافة مقال",
+    "columns": {
+      "article": "المقال",
+      "type": "النوع",
+      "category": "التصنيف",
+      "status": "الحالة",
+      "showOnLanding": "عرض في الصفحة",
+      "isFeatured": "مميز",
+      "publishDate": "تاريخ النشر",
+      "readTime": "وقت القراءة",
+      "createdAt": "تاريخ الإنشاء",
+      "actions": "الإجراءات"
+    }
+  },
+  "types": {
+    "news": "خبر",
+    "article": "مقال"
+  },
+  "status": {
+    "draft": "مسودة",
+    "published": "منشور",
+    "archived": "مؤرشف"
+  },
+  "form": {
+    "titleAr": "العنوان بالعربية",
+    "titleEn": "العنوان بالإنجليزية",
+    "slug": "الرابط المختصر",
+    "excerptAr": "المقدمة بالعربية",
+    "excerptEn": "المقدمة بالإنجليزية",
+    "contentAr": "المحتوى بالعربية",
+    "contentEn": "المحتوى بالإنجليزية",
+    "coverImage": "صورة الغلاف",
+    "type": "نوع المحتوى",
+    "category": "التصنيف",
+    "tags": "الوسوم",
+    "authorName": "اسم الكاتب",
+    "publishDate": "تاريخ النشر",
+    "status": "حالة النشر",
+    "isFeatured": "مميز",
+    "showOnLanding": "عرض في صفحة الهبوط",
+    "landingOrder": "ترتيب العرض",
+    "readTime": "وقت القراءة (دقائق)",
+    "metaTitleAr": "عنوان SEO بالعربية",
+    "metaTitleEn": "عنوان SEO بالإنجليزية",
+    "metaDescriptionAr": "وصف SEO بالعربية",
+    "metaDescriptionEn": "وصف SEO بالإنجليزية"
+  },
+  "filters": {
+    "type": "تصفية بالنوع",
+    "status": "تصفية بالحالة",
+    "category": "تصفية بالتصنيف",
+    "landing": "تصفية بالعرض في الصفحة",
+    "search": "بحث في المقالات",
+    "reset": "إعادة تعيين"
+  },
+  "actions": {
+    "edit": "تعديل",
+    "delete": "حذف",
+    "publish": "نشر",
+    "archive": "أرشفة",
+    "toggleLanding": "تبديل العرض في الصفحة",
+    "toggleFeatured": "تبديل التميز",
+    "view": "عرض"
+  },
+  "messages": {
+    "noArticles": "لا توجد مقالات",
+    "noArticlesDesc": "ابدأ بإنشاء مقال جديد",
+    "createSuccess": "تم إنشاء المقال بنجاح",
+    "updateSuccess": "تم تحديث المقال بنجاح",
+    "deleteSuccess": "تم حذف المقال بنجاح",
+    "publishSuccess": "تم نشر المقال بنجاح",
+    "archiveSuccess": "تم أرشفة المقال بنجاح",
+    "loadError": "فشل في تحميل المقالات",
+    "deleteConfirm": "هل أنت متأكد من حذف هذا المقال؟"
+  }
+}

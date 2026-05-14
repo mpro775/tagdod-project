@@ -60,6 +60,16 @@ import arAbout from './locales/ar/about.json';
 import enAbout from './locales/en/about.json';
 import arCommissions from './locales/ar/commissions.json';
 import enCommissions from './locales/en/commissions.json';
+import arProjects from './locales/ar/projects.json';
+import enProjects from './locales/en/projects.json';
+import arLandingProducts from './locales/ar/landingProducts.json';
+import enLandingProducts from './locales/en/landingProducts.json';
+import arLandingBrands from './locales/ar/landingBrands.json';
+import enLandingBrands from './locales/en/landingBrands.json';
+import arLandingSettings from './locales/ar/landingSettings.json';
+import enLandingSettings from './locales/en/landingSettings.json';
+import arArticles from './locales/ar/articles.json';
+import enArticles from './locales/en/articles.json';
 
 // الترجمات المحلية
 const resources = {
@@ -92,6 +102,11 @@ const resources = {
     policies: arPolicies,
     about: arAbout,
     commissions: arCommissions,
+    projects: arProjects,
+    landingProducts: arLandingProducts,
+    landingBrands: arLandingBrands,
+    landingSettings: arLandingSettings,
+    articles: arArticles,
   },
   en: {
     common: enCommon,
@@ -122,6 +137,11 @@ const resources = {
     policies: enPolicies,
     about: enAbout,
     commissions: enCommissions,
+    projects: enProjects,
+    landingProducts: enLandingProducts,
+    landingBrands: enLandingBrands,
+    landingSettings: enLandingSettings,
+    articles: enArticles,
   },
 };
 
@@ -136,7 +156,7 @@ if (!i18n.isInitialized) {
       
       fallbackLng: DEFAULT_LANGUAGE,
       defaultNS: 'common',
-      ns: ['common', 'auth', 'orders', 'services', 'users', 'dashboard', 'attributes', 'categories', 'banners', 'brands', 'media', 'errorLogs', 'addresses', 'audit', 'cart', 'coupons', 'exchangeRates', 'marketing', 'analytics', 'notifications', 'systemSettings', 'search', 'system-monitoring', 'products', 'support', 'policies', 'about', 'commissions'],
+      ns: ['common', 'auth', 'orders', 'services', 'users', 'dashboard', 'attributes', 'categories', 'banners', 'brands', 'media', 'errorLogs', 'addresses', 'audit', 'cart', 'coupons', 'exchangeRates', 'marketing', 'analytics', 'notifications', 'systemSettings', 'search', 'system-monitoring', 'products', 'support', 'policies', 'about', 'commissions', 'projects', 'landingProducts', 'landingBrands', 'landingSettings', 'articles'],
       
       interpolation: {
         escapeValue: false, // React already escapes
