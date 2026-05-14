@@ -134,6 +134,11 @@ export class ListBrandsDto {
   @IsBoolean()
   isActive?: boolean;
 
+  @ApiProperty({ example: true, required: false })
+  @IsOptional()
+  @IsBoolean()
+  showOnLanding?: boolean;
+
   @ApiProperty({ example: 'name', enum: ['name', 'createdAt', 'sortOrder'], required: false })
   @IsOptional()
   @IsIn(['name', 'createdAt', 'sortOrder'])
