@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, MenuItem, FormControlLabel, Switch, Box, Autocomplete, Chip,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, TextField, MenuItem, FormControlLabel, Switch, Autocomplete, Chip,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import type { Project, ProjectType, ProjectStatus } from '../types/project.types';

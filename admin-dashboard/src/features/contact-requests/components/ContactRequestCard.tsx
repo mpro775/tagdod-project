@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Card, CardContent, Typography, Chip, IconButton, Tooltip, CardActions } from '@mui/material';
-import { Visibility, Edit, Delete } from '@mui/icons-material';
+import { Visibility, Delete } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { ContactRequest } from '../types/contact-request.types';

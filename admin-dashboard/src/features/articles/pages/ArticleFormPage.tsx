@@ -23,7 +23,7 @@ export const ArticleFormPage: React.FC = () => {
   useEffect(() => { if (article) { setFormData({ titleAr: article.titleAr || '', titleEn: article.titleEn || '', slug: article.slug || '', excerptAr: article.excerptAr || '', excerptEn: article.excerptEn || '', contentAr: article.contentAr || '', contentEn: article.contentEn || '', coverImage: article.coverImage || '', type: article.type, category: article.category || '', tags: article.tags || [], authorName: article.authorName || '', publishDate: article.publishDate ? new Date(article.publishDate).toISOString().split('T')[0] : '', status: article.status, isFeatured: article.isFeatured, showOnLanding: article.showOnLanding, landingOrder: article.landingOrder, readTime: article.readTime || 0 }); } }, [article]);
 
   const handleChange = (field: string, value: any) => setFormData((prev) => ({ ...prev, [field]: value }));
-  const handleSave = async () => { try { if (isEdit && id) { await updateMutation.mutateAsync({ id, data: formData }); } else { await createMutation.mutateAsync(formData); } navigate('/website/articles'); } catch {} };
+  const handleSave = async () => { try { const data = { ...formData, publishDate: formData.publishDate ? new Date(formData.publishDate) : undefined }; if (isEdit && id) { await updateMutation.mutateAsync({ id, data: data as any }); } else { await createMutation.mutateAsync(data as any); } navigate('/website/articles'); } catch {} };
 
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
 

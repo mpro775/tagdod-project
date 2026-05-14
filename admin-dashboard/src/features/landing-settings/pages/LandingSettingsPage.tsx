@@ -10,13 +10,11 @@ import {
   Stack,
   FormControlLabel,
   Switch,
-  Chip,
-  Alert,
-  useTheme,
   TextField,
   Grid,
+  useTheme,
 } from '@mui/material';
-import { Save, Web, Publish, Unpublished } from '@mui/icons-material';
+import { Save, Web } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
@@ -140,7 +138,7 @@ export const LandingSettingsPage: React.FC = () => {
               control={
                 <Switch
                   checked={formData.isPublished}
-                  onChange={(e) => handleTogglePublish()}
+                  onChange={() => handleTogglePublish()}
                   disabled={toggleMutation.isPending}
                   sx={{
                     '& .MuiSwitch-switchBase.Mui-checked': { color: theme.palette.success.main },

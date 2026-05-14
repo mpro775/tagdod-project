@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Switch, TextField, IconButton, Tooltip } from '@mui/material';
-import { Save, Store } from '@mui/icons-material';
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Switch, TextField } from '@mui/material';
+import { Store } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useLandingProducts, useUpdateLandingProduct } from '../hooks/useLandingProducts';
 import type { LandingProduct } from '../types/landing-product.types';

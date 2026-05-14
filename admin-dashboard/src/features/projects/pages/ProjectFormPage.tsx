@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Paper, Grid, TextField, MenuItem, FormControlLabel, Switch, Autocomplete, Chip, Alert, CircularProgress } from '@mui/material';
+import { Box, Typography, Button, Paper, Grid, TextField, MenuItem, FormControlLabel, Switch, Autocomplete, Chip, CircularProgress } from '@mui/material';
 import { ArrowBack, Save } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -24,7 +24,7 @@ export const ProjectFormPage: React.FC = () => {
   useEffect(() => { if (project) { setFormData({ titleAr: project.titleAr || '', titleEn: project.titleEn || '', slug: project.slug || '', shortDescriptionAr: project.shortDescriptionAr || '', shortDescriptionEn: project.shortDescriptionEn || '', descriptionAr: project.descriptionAr || '', descriptionEn: project.descriptionEn || '', type: project.type, status: project.status, clientName: project.clientName || '', location: project.location || '', city: project.city || '', coverImage: project.coverImage || '', startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '', endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '', tags: project.tags || [], isFeatured: project.isFeatured, showOnLanding: project.showOnLanding, landingOrder: project.landingOrder, isPublished: project.isPublished }); } }, [project]);
 
   const handleChange = (field: string, value: any) => setFormData((prev) => ({ ...prev, [field]: value }));
-  const handleSave = async () => { try { if (isEdit && id) { await updateMutation.mutateAsync({ id, data: formData }); } else { await createMutation.mutateAsync(formData); } navigate('/website/projects'); } catch {} };
+  const handleSave = async () => { try { const data = { ...formData, startDate: formData.startDate ? new Date(formData.startDate) : undefined, endDate: formData.endDate ? new Date(formData.endDate) : undefined }; if (isEdit && id) { await updateMutation.mutateAsync({ id, data: data as any }); } else { await createMutation.mutateAsync(data as any); } navigate('/website/projects'); } catch {} };
 
   if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
 

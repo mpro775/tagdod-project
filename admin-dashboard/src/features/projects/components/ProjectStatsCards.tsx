@@ -1,11 +1,9 @@
 import React from 'react';
-import { Box, Paper, Typography, Grid, Chip, useTheme } from '@mui/material';
+import { Box, Paper, Typography, Grid, useTheme } from '@mui/material';
 import { Assignment, CheckCircle, HourglassEmpty, Star, Web, Timeline } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { useProjectStats } from '../hooks/useProjects';
 
 export const ProjectStatsCards: React.FC = () => {
-  const { t } = useTranslation('projects');
   const theme = useTheme();
   const { data: stats } = useProjectStats();
 

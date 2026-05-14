@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, TextField, MenuItem, FormControl, InputLabel, Select, Chip, Button, Stack } from '@mui/material';
+import { Box, TextField, MenuItem, FormControl, InputLabel, Select, Button, Stack } from '@mui/material';
 import { Search, Refresh } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import type { ListProjectsParams, ProjectType, ProjectStatus } from '../types/project.types';

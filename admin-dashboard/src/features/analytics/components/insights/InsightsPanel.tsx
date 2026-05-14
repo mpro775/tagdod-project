@@ -9,14 +9,10 @@ import {
   Alert,
   AlertTitle,
   CircularProgress,
-  Button,
   IconButton,
   Tooltip,
-  useTheme,
 } from '@mui/material';
 import {
-  TrendingUp,
-  TrendingDown,
   Warning,
   Error,
   Info,
@@ -59,7 +55,6 @@ interface InsightsPanelProps {
 
 export const InsightsPanel: React.FC<InsightsPanelProps> = ({ days = 30, onInsightClick }) => {
   const { t, i18n } = useTranslation('analytics');
-  const theme = useTheme();
 
   const { data: insights, isLoading, refetch } = useQuery({
     queryKey: ['analytics-insights', days],
@@ -103,7 +98,7 @@ export const InsightsPanel: React.FC<InsightsPanelProps> = ({ days = 30, onInsig
           const description = isRTL ? insight.description : insight.descriptionEn;
 
           return (
-            <Grid item xs={12} sm={6} md={4} key={insight.id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={insight.id}>
               <Card
                 sx={{
                   borderLeft: isRTL ? 'none' : `4px solid ${config.color}`,
@@ -185,19 +180,19 @@ export const InsightsSummaryCards: React.FC<{ days?: number }> = ({ days = 30 })
 
   return (
     <Grid container spacing={2}>
-      <Grid item xs={12} sm={4}>
+      <Grid size={{ xs: 12, sm: 4 }}>
         <Alert severity="error" variant="outlined" sx={{ mb: 0 }}>
           <Typography variant="h6">{criticalCount}</Typography>
           <Typography variant="body2">تنبيهات حرجة</Typography>
         </Alert>
       </Grid>
-      <Grid item xs={12} sm={4}>
+      <Grid size={{ xs: 12, sm: 4 }}>
         <Alert severity="warning" variant="outlined" sx={{ mb: 0 }}>
           <Typography variant="h6">{warningCount}</Typography>
           <Typography variant="body2">تحذيرات</Typography>
         </Alert>
       </Grid>
-      <Grid item xs={12} sm={4}>
+      <Grid size={{ xs: 12, sm: 4 }}>
         <Alert severity="success" variant="outlined" sx={{ mb: 0 }}>
           <Typography variant="h6">{successCount}</Typography>
           <Typography variant="body2">رؤى إيجابية</Typography>

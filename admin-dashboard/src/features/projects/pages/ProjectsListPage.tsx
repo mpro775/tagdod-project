@@ -212,9 +212,9 @@ export const ProjectsListPage: React.FC = () => {
                     project={p}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
-                    onTogglePublish={togglePublish.mutate}
-                    onToggleLanding={toggleLanding.mutate}
-                    onToggleFeatured={toggleFeatured.mutate}
+                    onTogglePublish={() => togglePublish.mutate(p._id)}
+                    onToggleLanding={() => toggleLanding.mutate(p._id)}
+                    onToggleFeatured={() => toggleFeatured.mutate(p._id)}
                   />
                 </Grid>
               ))}
@@ -229,7 +229,7 @@ export const ProjectsListPage: React.FC = () => {
           onPaginationModelChange={handlePaginationModelChange}
           rowCount={projectsResponse?.meta?.total ?? 0}
           paginationMode="server"
-          getRowId={(row) => row._id}
+          getRowId={(row: any) => row._id}
           onAdd={handleAdd}
           addButtonText={t('table.addButton')}
           height="calc(100vh - 450px)"

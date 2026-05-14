@@ -15,7 +15,6 @@ import {
   Alert,
   CircularProgress,
   Divider,
-  useTheme,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -25,9 +24,9 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { reportBuilderApi } from '../../api/reportBuilderApi';
-import type { ReportTemplate, GenerateCustomReportDto } from '../../types/reportBuilder.types';
-import { REPORT_SECTIONS, REPORT_METRICS, REPORT_CHARTS } from '../../types/reportBuilder.types';
+import { reportBuilderApi } from '../api/reportBuilderApi';
+import type { ReportTemplate, GenerateCustomReportDto } from '../types/reportBuilder.types';
+import { REPORT_CHARTS } from '../types/reportBuilder.types';
 import { useNavigate } from 'react-router-dom';
 
 const STEPS = [
@@ -53,7 +52,6 @@ const SECTION_LABELS: Record<string, string> = {
 
 export const ReportBuilderPage: React.FC = () => {
   const { t } = useTranslation('analytics');
-  const theme = useTheme();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -70,7 +68,7 @@ export const ReportBuilderPage: React.FC = () => {
   const [reportTitle, setReportTitle] = useState('');
   const [reportTitleEn, setReportTitleEn] = useState('');
 
-  const { data: templates, isLoading: templatesLoading } = useQuery({
+  const { data: templates } = useQuery({
     queryKey: ['report-templates'],
     queryFn: () => reportBuilderApi.getTemplates(),
   });
@@ -84,7 +82,7 @@ export const ReportBuilderPage: React.FC = () => {
 
   const generateMutation = useMutation({
     mutationFn: (data: GenerateCustomReportDto) => reportBuilderApi.generateCustomReport(data),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['advanced-reports'] });
       navigate(`/analytics/reports/${data.id}`);
     },
@@ -102,12 +100,6 @@ export const ReportBuilderPage: React.FC = () => {
   const handleSectionToggle = useCallback((section: string) => {
     setSelectedSections((prev) =>
       prev.includes(section) ? prev.filter((s) => s !== section) : [...prev, section]
-    );
-  }, []);
-
-  const handleMetricToggle = useCallback((metric: string) => {
-    setSelectedMetrics((prev) =>
-      prev.includes(metric) ? prev.filter((m) => m !== metric) : [...prev, metric]
     );
   }, []);
 
@@ -158,8 +150,8 @@ export const ReportBuilderPage: React.FC = () => {
       case 0:
         return (
           <Grid container spacing={2}>
-            {(templates || []).map((template) => (
-              <Grid item xs={12} sm={6} md={4} key={template.key}>
+            {(templates || []).map((template: ReportTemplate) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={template.key}>
                 <Card
                   sx={{
                     cursor: 'pointer',
@@ -212,7 +204,7 @@ export const ReportBuilderPage: React.FC = () => {
               {t('analytics.filters.dateRange')}
             </Typography>
             <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <input
                   type="date"
                   value={dateRange.startDate}
@@ -220,7 +212,7 @@ export const ReportBuilderPage: React.FC = () => {
                   style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <input
                   type="date"
                   value={dateRange.endDate}
@@ -234,7 +226,7 @@ export const ReportBuilderPage: React.FC = () => {
               عنوان التقرير
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <input
                   type="text"
                   value={reportTitle}
@@ -243,7 +235,7 @@ export const ReportBuilderPage: React.FC = () => {
                   style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <input
                   type="text"
                   value={reportTitleEn}
@@ -263,8 +255,8 @@ export const ReportBuilderPage: React.FC = () => {
               اختر أقسام التقرير
             </Typography>
             <Grid container spacing={1}>
-              {(selectedTemplate?.availableSections || []).map((section) => (
-                <Grid item key={section}>
+              {(selectedTemplate?.availableSections || []).map((section: string) => (
+                <Grid key={section}>
                   <Chip
                     label={SECTION_LABELS[section] || section}
                     onClick={() => handleSectionToggle(section)}
@@ -280,8 +272,8 @@ export const ReportBuilderPage: React.FC = () => {
               اختر الرسوم البيانية
             </Typography>
             <Grid container spacing={1}>
-              {REPORT_CHARTS.map((chart) => (
-                <Grid item key={chart}>
+              {REPORT_CHARTS.map((chart: string) => (
+                <Grid key={chart}>
                   <Chip
                     label={chart}
                     onClick={() => handleChartToggle(chart)}
@@ -314,7 +306,7 @@ export const ReportBuilderPage: React.FC = () => {
                     </Typography>
                     {previewData.summary && (
                       <Grid container spacing={2}>
-                        <Grid item xs={6} sm={3}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
                           <Typography variant="body2" color="text.secondary">
                             إجمالي الإيرادات
                           </Typography>
@@ -322,7 +314,7 @@ export const ReportBuilderPage: React.FC = () => {
                             {previewData.summary.totalRevenue?.toLocaleString() || 0}
                           </Typography>
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
                           <Typography variant="body2" color="text.secondary">
                             إجمالي الطلبات
                           </Typography>
@@ -330,7 +322,7 @@ export const ReportBuilderPage: React.FC = () => {
                             {previewData.summary.totalOrders?.toLocaleString() || 0}
                           </Typography>
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
                           <Typography variant="body2" color="text.secondary">
                             متوسط قيمة الطلب
                           </Typography>
@@ -338,7 +330,7 @@ export const ReportBuilderPage: React.FC = () => {
                             {previewData.summary.averageOrderValue?.toFixed(2) || 0}
                           </Typography>
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
                           <Typography variant="body2" color="text.secondary">
                             النمو
                           </Typography>
@@ -369,17 +361,17 @@ export const ReportBuilderPage: React.FC = () => {
                   ملخص التقرير
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="body2" color="text.secondary">القالب</Typography>
                     <Typography variant="body1">{selectedTemplate?.name}</Typography>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="body2" color="text.secondary">الفترة</Typography>
                     <Typography variant="body1">
                       {dateRange.startDate} إلى {dateRange.endDate}
                     </Typography>
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <Typography variant="body2" color="text.secondary">الأقسام المحددة</Typography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                       {selectedSections.map((s) => (
