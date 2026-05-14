@@ -240,7 +240,7 @@ export const ScheduledReportsPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.data?.length === 0 ? (
+                {data?.data?.length === 0 || !Array.isArray(data?.data) ? (
                   <TableRow>
                     <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                       <Typography color="text.secondary">
@@ -249,7 +249,7 @@ export const ScheduledReportsPage: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data?.data?.map((schedule) => (
+                  data.data.map((schedule) => (
                     <TableRow key={schedule._id} hover>
                       <TableCell>
                         <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
