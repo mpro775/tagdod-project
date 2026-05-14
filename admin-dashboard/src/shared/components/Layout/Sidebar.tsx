@@ -55,12 +55,17 @@ import {
   SmartToy,
   MenuBook,
   Chat,
+<<<<<<< HEAD
   Web,
   Assignment,
   Article,
   ContactMail,
   Store,
   Settings as SettingsIcon,
+=======
+  Schedule,
+  CloudDownload,
+>>>>>>> 74509ef32a092132b1a53158c752eb087b4f882f
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -528,16 +533,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             path: '/analytics/advanced',
           },
           {
+            id: 'analytics-reports',
+            label: navLabel('navigation.analyticsReports'),
+            icon: <Description />,
+            path: '/analytics/reports',
+          },
+          {
+            id: 'analytics-scheduled-reports',
+            label: 'التقارير المجدولة',
+            icon: <Schedule />,
+            path: '/analytics/scheduled-reports',
+          },
+          {
             id: 'analytics-export',
             label: navLabel('navigation.analyticsExport'),
             icon: <GetApp />,
             path: '/analytics/export',
           },
           {
-            id: 'analytics-reports',
-            label: navLabel('navigation.analyticsReports'),
-            icon: <Description />,
-            path: '/analytics/reports',
+            id: 'analytics-export-center',
+            label: 'مركز التصدير',
+            icon: <CloudDownload />,
+            path: '/analytics/export-center',
           },
         ],
       },

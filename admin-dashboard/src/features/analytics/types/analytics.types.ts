@@ -317,9 +317,22 @@ export interface AdvancedReport {
   reportId: string;
   category: ReportCategory;
   title: string;
-  description: string;
+  titleEn: string;
+  description?: string;
+  descriptionEn?: string;
   generatedBy: string;
+  createdBy: string;
+  createdByType?: 'user' | 'system';
+  creatorName?: string;
   generatedAt: Date;
+  startDate: Date;
+  endDate: Date;
+  status: ReportStatus;
+  priority: ReportPriority;
+  isArchived: boolean;
+  dataQuality?: DataQuality;
+  exports?: ReportExportEntry[];
+  fileUrls?: string[];
   period: {
     start: Date;
     end: Date;
@@ -327,8 +340,19 @@ export interface AdvancedReport {
   data: Record<string, unknown>;
   insights: string[];
   recommendations: string[];
-  fileUrls?: string[];
-  isArchived: boolean;
+  summary?: {
+    totalRecords: number;
+    totalValue: number;
+    currency: string;
+    growth?: number;
+  };
+  metadata?: {
+    processingTime?: number;
+    generationMode?: 'manual' | 'scheduled' | 'automated';
+    tags?: string[];
+  };
+  generationDurationMs?: number;
+  failureReason?: string;
 }
 
 // Performance Metrics
@@ -379,6 +403,46 @@ export enum ReportPriority {
   CRITICAL = 'critical',
 }
 
+export enum ReportStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  ARCHIVED = 'archived',
+}
+
+export enum DataQualityLevel {
+  REAL = 'real',
+  MIXED = 'mixed',
+  ESTIMATED = 'estimated',
+  INCOMPLETE = 'incomplete',
+  NOT_CONNECTED = 'not_connected',
+}
+
+export interface DataQualitySource {
+  sales?: 'real' | 'estimated' | 'not_connected';
+  products?: 'real' | 'estimated' | 'not_connected';
+  customers?: 'real' | 'estimated' | 'not_connected';
+  marketing?: 'real' | 'estimated' | 'not_connected';
+  inventory?: 'real' | 'estimated' | 'not_connected';
+  financial?: 'real' | 'estimated' | 'not_connected';
+}
+
+export interface DataQuality {
+  overall: 'real' | 'mixed' | 'estimated' | 'incomplete';
+  sources: DataQualitySource;
+  notes: string[];
+}
+
+export interface ReportExportEntry {
+  format: 'pdf' | 'xlsx' | 'csv' | 'json';
+  fileUrl: string;
+  fileName: string;
+  fileSize?: number;
+  generatedAt: Date;
+  generatedBy: string;
+}
+
 // Schedule Frequency
 export enum ScheduleFrequency {
   DAILY = 'daily',
@@ -426,11 +490,93 @@ export interface GenerateAdvancedReportDto {
 // Create Report Schedule DTO
 export interface CreateReportScheduleDto {
   name: string;
-  description: string;
+  description?: string;
   reportType: ReportType;
   frequency: ScheduleFrequency;
   formats?: ReportFormat[];
   recipients?: string[];
   filters?: Record<string, unknown>;
   config?: Record<string, unknown>;
+}
+
+// Report Schedule interface (from backend)
+export interface ReportSchedule {
+  _id: string;
+  name: string;
+  description: string;
+  reportType: ReportType;
+  frequency: ScheduleFrequency;
+  formats: ReportFormat[];
+  recipients: string[];
+  filters: Record<string, unknown>;
+  config: Record<string, unknown>;
+  isActive: boolean;
+  nextRun: Date;
+  lastRun?: Date;
+  lastResult?: {
+    success: boolean;
+    executionTime: number;
+    fileUrls: string[];
+    reportId?: string;
+    error?: string;
+    sentAt?: Date;
+  };
+  runCount: number;
+  successCount: number;
+  failureCount: number;
+  createdBy: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Update Report Schedule DTO
+export interface UpdateReportScheduleDto {
+  name?: string;
+  description?: string;
+  reportType?: ReportType;
+  frequency?: ScheduleFrequency;
+  formats?: ReportFormat[];
+  recipients?: string[];
+  filters?: Record<string, unknown>;
+  config?: Record<string, unknown>;
+}
+
+// Schedule Stats
+export interface ScheduleStats {
+  total: number;
+  active: number;
+  inactive: number;
+  byFrequency: Record<string, number>;
+}
+
+// Export Entry (from report)
+export interface ReportExportFile {
+  _id?: string;
+  format: 'pdf' | 'xlsx' | 'csv' | 'json';
+  fileUrl: string;
+  fileName: string;
+  fileSize?: number;
+  generatedAt: Date;
+  generatedBy: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  reportId?: string;
+  reportTitle?: string;
+  reportType?: string;
+}
+
+// List Schedules Params
+export interface ListSchedulesParams {
+  page?: number;
+  limit?: number;
+  reportType?: ReportType;
+  isActive?: boolean;
+  search?: string;
 }

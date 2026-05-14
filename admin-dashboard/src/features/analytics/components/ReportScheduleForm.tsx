@@ -34,26 +34,40 @@ interface ReportScheduleFormProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  schedule?: {
+    _id: string;
+    name: string;
+    description: string;
+    reportType: ReportType;
+    frequency: ScheduleFrequency;
+    formats: ReportFormat[];
+    recipients: string[];
+    filters: Record<string, unknown>;
+    config: Record<string, unknown>;
+  };
 }
 
 export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
   open,
   onClose,
   onSuccess,
+  schedule,
 }) => {
   const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
   const scheduleReport = useScheduleReport();
 
+  const isEditing = !!schedule;
+
   const [formData, setFormData] = useState<CreateReportScheduleDto>({
-    name: '',
-    description: '',
-    reportType: ReportType.MONTHLY_REPORT,
-    frequency: ScheduleFrequency.MONTHLY,
-    formats: [ReportFormat.PDF],
-    recipients: [],
-    filters: {},
-    config: {},
+    name: schedule?.name || '',
+    description: schedule?.description || '',
+    reportType: schedule?.reportType || ReportType.MONTHLY_REPORT,
+    frequency: schedule?.frequency || ScheduleFrequency.MONTHLY,
+    formats: schedule?.formats || [ReportFormat.PDF],
+    recipients: schedule?.recipients || [],
+    filters: schedule?.filters || {},
+    config: schedule?.config || {},
   });
 
   const [newRecipient, setNewRecipient] = useState('');
@@ -117,14 +131,14 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
 
   const handleClose = () => {
     setFormData({
-      name: '',
-      description: '',
-      reportType: ReportType.MONTHLY_REPORT,
-      frequency: ScheduleFrequency.MONTHLY,
-      formats: [ReportFormat.PDF],
-      recipients: [],
-      filters: {},
-      config: {},
+      name: schedule?.name || '',
+      description: schedule?.description || '',
+      reportType: schedule?.reportType || ReportType.MONTHLY_REPORT,
+      frequency: schedule?.frequency || ScheduleFrequency.MONTHLY,
+      formats: schedule?.formats || [ReportFormat.PDF],
+      recipients: schedule?.recipients || [],
+      filters: schedule?.filters || {},
+      config: schedule?.config || {},
     });
     setNewRecipient('');
     setRecipientError('');
@@ -142,7 +156,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
             variant={breakpoint.isXs ? 'subtitle1' : 'h6'}
             sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
           >
-            {t('reportSchedule.title')}
+            {isEditing ? t('reportSchedule.edit', 'تعديل الجدولة') : t('reportSchedule.title', 'جدولة تقرير')}
           </Typography>
         </Stack>
       </DialogTitle>
@@ -437,7 +451,11 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
           size={breakpoint.isXs ? 'medium' : 'medium'}
           sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
         >
-          {scheduleReport.isPending ? t('reportSchedule.scheduling') : t('reportSchedule.schedule')}
+          {scheduleReport.isPending
+            ? t('reportSchedule.scheduling', 'جاري الحفظ...')
+            : isEditing
+            ? t('reportSchedule.update', 'تحديث')
+            : t('reportSchedule.schedule', 'جدولة')}
         </Button>
       </DialogActions>
     </Dialog>

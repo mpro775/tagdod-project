@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -64,8 +65,9 @@ import {
   ReportFormat,
   GenerateAdvancedReportDto,
   ReportPriority,
+  ReportStatus,
 } from '../types/analytics.types';
-import { DataExportDialog, ReportScheduleForm } from '../components';
+import { DataExportDialog, ReportScheduleForm, ReportCard, ReportStatusBadge, DataQualityBadge } from '../components';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { ConfirmDialog } from '@/shared/components';
@@ -99,6 +101,7 @@ export const ReportsManagementPage: React.FC = () => {
   const cardPadding = getCardPadding(breakpoint);
   const cardSpacing = getCardSpacing(breakpoint);
   const { confirmDialog, dialogProps } = useConfirmDialog();
+  const navigate = useNavigate();
 
   const [selectedTab, setSelectedTab] = useState(0);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -235,6 +238,10 @@ export const ReportsManagementPage: React.FC = () => {
     } catch (error) {
       console.error('Error archiving report:', error);
     }
+  };
+
+  const handleViewReport = (reportId: string) => {
+    navigate(`/analytics/reports/${reportId}`);
   };
 
   const getFormatIcon = (format: string) => {
@@ -596,136 +603,26 @@ export const ReportsManagementPage: React.FC = () => {
                       />
                     ))}
                   </Box>
-                ) : (
-                  <List>
+                ) : sortedReports.length > 0 ? (
+                  <Grid container spacing={2}>
                     {sortedReports.map((report) => (
-                      <ListItem key={report.reportId} divider>
-                        <Avatar
-                          sx={{
-                            mr: { xs: 1, sm: 2 },
-                            bgcolor: theme.palette.primary.main,
-                            width: { xs: 36, sm: 40 },
-                            height: { xs: 36, sm: 40 },
-                          }}
-                        >
-                          {getFormatIcon(report.fileUrls?.[0]?.split('.').pop() || 'pdf')}
-                        </Avatar>
-                        <ListItemText
-                          primary={
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                flexWrap: 'wrap',
-                              }}
-                            >
-                              <Typography
-                                variant={breakpoint.isXs ? 'subtitle1' : 'h6'}
-                                sx={{ fontSize: breakpoint.isXs ? '0.9375rem' : undefined }}
-                              >
-                                {report.title}
-                              </Typography>
-                              {report.isArchived && (
-                                <Chip
-                                  label={t('reportsManagement.archivedLabel')}
-                                  size="small"
-                                  color="secondary"
-                                  sx={{ fontSize: '0.7rem' }}
-                                />
-                              )}
-                            </Box>
-                          }
-                          secondary={
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  mb: 1,
-                                  fontSize: breakpoint.isXs ? '0.8125rem' : undefined,
-                                }}
-                              >
-                                {report.description}
-                              </Typography>
-                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                <Chip
-                                  label={report.category}
-                                  size="small"
-                                  color={getCategoryColor(report.category) as any}
-                                  variant="outlined"
-                                  sx={{ fontSize: '0.7rem' }}
-                                />
-                                <Chip
-                                  label={new Date(report.generatedAt).toLocaleDateString('ar-SA')}
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{ fontSize: '0.7rem' }}
-                                />
-                                <Chip
-                                  label={`${t('reportsManagement.by')}: ${report.generatedBy}`}
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{ fontSize: '0.7rem' }}
-                                />
-                              </Box>
-                            </Box>
-                          }
+                      <Grid size={{ xs: 12, sm: 6, md: 4 }} key={report.reportId}>
+                        <ReportCard
+                          report={report as any}
+                          onView={handleViewReport}
+                          onDownload={handleExportReport}
+                          onArchive={handleArchiveReport}
+                          onDelete={handleDeleteReport}
                         />
-                        <ListItemSecondaryAction>
-                          <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, flexWrap: 'wrap' }}>
-                            <Tooltip title={t('reportsManagement.actions.view')}>
-                              <IconButton size={breakpoint.isXs ? 'small' : 'medium'}>
-                                <VisibilityIcon sx={{ fontSize: breakpoint.isXs ? 18 : 20 }} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title={t('reportsManagement.actions.edit')}>
-                              <IconButton size={breakpoint.isXs ? 'small' : 'medium'}>
-                                <EditIcon sx={{ fontSize: breakpoint.isXs ? 18 : 20 }} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title={t('reportsManagement.actions.exportPdf')}>
-                              <IconButton
-                                size={breakpoint.isXs ? 'small' : 'medium'}
-                                onClick={() =>
-                                  handleExportReport(report.reportId, ReportFormat.PDF)
-                                }
-                              >
-                                <DownloadIcon sx={{ fontSize: breakpoint.isXs ? 18 : 20 }} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip
-                              title={
-                                report.isArchived
-                                  ? t('reportsManagement.unarchive')
-                                  : t('reportsManagement.actions.archive')
-                              }
-                            >
-                              <IconButton
-                                size={breakpoint.isXs ? 'small' : 'medium'}
-                                onClick={() => handleArchiveReport(report.reportId)}
-                              >
-                                {report.isArchived ? (
-                                  <UnarchiveIcon sx={{ fontSize: breakpoint.isXs ? 18 : 20 }} />
-                                ) : (
-                                  <ArchiveIcon sx={{ fontSize: breakpoint.isXs ? 18 : 20 }} />
-                                )}
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title={t('reportsManagement.actions.delete')}>
-                              <IconButton
-                                size={breakpoint.isXs ? 'small' : 'medium'}
-                                color="error"
-                                onClick={() => handleDeleteReport(report.reportId)}
-                              >
-                                <DeleteIcon sx={{ fontSize: breakpoint.isXs ? 18 : 20 }} />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </ListItemSecondaryAction>
-                      </ListItem>
+                      </Grid>
                     ))}
-                  </List>
+                  </Grid>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography color="text.secondary">
+                      {t('noResults', 'No matching results')}
+                    </Typography>
+                  </Box>
                 )}
               </CardContent>
             </Card>

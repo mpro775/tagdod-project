@@ -58,6 +58,9 @@ export class AdvancedReport {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
   createdBy!: Types.ObjectId;
 
+  @Prop({ type: String, enum: ['user', 'system'], default: 'user' })
+  createdByType!: 'user' | 'system';
+
   @Prop()
   creatorName?: string;
 
@@ -382,9 +385,9 @@ export class AdvancedReport {
     }>;
   };
 
-  // ===== Export Files =====
+  // ===== Legacy Export Files (deprecated, use exports array) =====
   @Prop({ type: [String], default: [] })
-  exportedFiles!: Array<string>; // URLs to PDF, Excel, CSV files
+  exportedFiles!: Array<string>;
 
   @Prop({ type: Object })
   exportSettings?: {
@@ -417,11 +420,28 @@ export class AdvancedReport {
   };
 
   // ===== Status & Sharing =====
-  @Prop({ default: 'completed' })
-  status!: 'generating' | 'completed' | 'failed' | 'scheduled';
+  @Prop({
+    type: String,
+    enum: ['pending', 'processing', 'completed', 'failed', 'archived'],
+    default: 'pending',
+    index: true,
+  })
+  status!: 'pending' | 'processing' | 'completed' | 'failed' | 'archived';
+
+  @Prop()
+  startedAt?: Date;
+
+  @Prop()
+  completedAt?: Date;
+
+  @Prop()
+  failedAt?: Date;
 
   @Prop()
   failureReason?: string;
+
+  @Prop()
+  generationDurationMs?: number;
 
   @Prop({ default: false })
   isPublic!: boolean;
@@ -437,6 +457,32 @@ export class AdvancedReport {
     userId: Types.ObjectId;
     accessedAt: Date;
     action: string;
+  }>;
+
+  // ===== Data Quality =====
+  @Prop({ type: Object })
+  dataQuality?: {
+    overall: 'real' | 'mixed' | 'estimated' | 'incomplete';
+    sources: {
+      sales?: 'real' | 'estimated' | 'not_connected';
+      products?: 'real' | 'estimated' | 'not_connected';
+      customers?: 'real' | 'estimated' | 'not_connected';
+      marketing?: 'real' | 'estimated' | 'not_connected';
+      inventory?: 'real' | 'estimated' | 'not_connected';
+      financial?: 'real' | 'estimated' | 'not_connected';
+    };
+    notes: string[];
+  };
+
+  // ===== Export Files =====
+  @Prop({ type: [Object], default: [] })
+  exports!: Array<{
+    format: 'pdf' | 'xlsx' | 'csv' | 'json';
+    fileUrl: string;
+    fileName: string;
+    fileSize?: number;
+    generatedAt: Date;
+    generatedBy: Types.ObjectId;
   }>;
 
   // ===== Metadata =====

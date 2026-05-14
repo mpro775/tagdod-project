@@ -593,5 +593,81 @@
     "deleteConfirm": "هل أنت متأكد من حذف هذا التقرير؟",
     "reportsCategory": "تقارير {category}",
     "loadError": "حدث خطأ في تحميل التقارير. يرجى المحاولة مرة أخرى."
+  },
+  "scheduledReports": {
+    "title": "التقارير المجدولة",
+    "subtitle": "إدارة وتشغيل التقارير التلقائية",
+    "create": "إنشاء جدولة",
+    "search": "بحث...",
+    "noData": "لا توجد جداول",
+    "name": "الاسم",
+    "type": "النوع",
+    "frequency": "التكرار",
+    "formats": "الصيغ",
+    "nextRun": "التشغيل القادم",
+    "lastRun": "آخر تشغيل",
+    "successRate": "نسبة النجاح",
+    "status": "الحالة",
+    "actions": "إجراءات",
+    "active": "نشط",
+    "inactive": "متوقف",
+    "runNow": "تشغيل الآن",
+    "confirmRun": "تأكيد التشغيل",
+    "confirmRunMessage": "هل تريد تشغيل \"{name}\" الآن؟",
+    "running": "جاري التشغيل...",
+    "deleteConfirm": "هل أنت متأكد من حذف هذه الجدولة؟"
+  },
+  "exportCenter": {
+    "title": "مركز التصدير",
+    "subtitle": "جميع الملفات المصدرة من التقارير",
+    "search": "بحث في الملفات...",
+    "noData": "لا توجد ملفات مصدرة",
+    "file": "الملف",
+    "report": "التقرير",
+    "format": "الصيغة",
+    "size": "الحجم",
+    "date": "تاريخ التصدير",
+    "actions": "إجراءات",
+    "download": "تحميل",
+    "all": "الكل"
+  },
+  "builder": {
+    "title": "منشئ التقارير",
+    "step": {
+      "type": "نوع التقرير",
+      "filters": "الفلاتر",
+      "sections": "الأقسام",
+      "preview": "المعاينة",
+      "confirm": "التأكيد"
+    },
+    "chooseReportType": "اختر نوع التقرير",
+    "chooseFilters": "حدد الفلاتر",
+    "chooseSections": "اختر أقسام التقرير",
+    "previewReport": "معاينة التقرير",
+    "saveTemplate": "حفظ كقالب",
+    "generateReport": "توليد التقرير"
+  },
+  "insights": {
+    "title": "الرؤى الذكية",
+    "salesDrop": "انخفاض في المبيعات",
+    "salesGrowth": "نمو في المبيعات",
+    "lowStock": "مخزون منخفض",
+    "topCustomers": "أفضل العملاء",
+    "weakProducts": "منتجات ضعيفة الأداء",
+    "cancellationSpike": "ارتفاع في الإلغاءات"
+  },
+  "alerts": {
+    "title": "تنبيهات التحليلات",
+    "severity": {
+      "low": "منخفض",
+      "medium": "متوسط",
+      "high": "مرتفع",
+      "critical": "حرج"
+    },
+    "status": {
+      "open": "مفتوح",
+      "resolved": "تم الحل",
+      "ignored": "تم التجاهل"
+    }
   }
 }

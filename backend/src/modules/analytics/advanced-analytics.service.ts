@@ -15,6 +15,7 @@ import {
 } from './schemas/advanced-report.schema';
 import { SystemMonitoringService } from '../system-monitoring/system-monitoring.service';
 import { ExportService } from './services/export.service';
+import { ReportIdService } from './services/report-id.service';
 import {
   AnalyticsReportNotFoundException,
   AnalyticsReportGenerationFailedException,
@@ -144,6 +145,7 @@ export class AdvancedAnalyticsService {
     @InjectModel(Banner.name) private bannerModel: Model<BannerDocument>,
     private systemMonitoring: SystemMonitoringService,
     private exportService: ExportService,
+    private reportIdService: ReportIdService,
   ) {}
 
   // ==================== Helper Methods ====================
@@ -1421,17 +1423,6 @@ export class AdvancedAnalyticsService {
 
   // ==================== Advanced Reports ====================
 
-  /**
-   * Generate unique report ID
-   */
-  private generateReportId(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const sequence = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-    return `REP-${year}-${month}-${sequence}`;
-  }
-
   async generateAdvancedReport(
     data: AnalyticsParams & {
       title?: string;
@@ -1448,8 +1439,8 @@ export class AdvancedAnalyticsService {
       ? new Date(data.startDate)
       : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const endDate = data.endDate ? new Date(data.endDate) : new Date();
-    const reportId = this.generateReportId();
-    const startTime = Date.now(); // Track processing time
+    const reportId = await this.reportIdService.generateReportId();
+    const startTime = Date.now();
 
     try {
       // Get comprehensive analytics data
@@ -1476,6 +1467,7 @@ export class AdvancedAnalyticsService {
         endDate,
         generatedAt: new Date(),
         createdBy: new Types.ObjectId(data.createdBy),
+        createdByType: 'user',
         creatorName: data.creatorName,
 
         // Summary
@@ -1606,6 +1598,24 @@ export class AdvancedAnalyticsService {
 
         // Status
         status: 'completed',
+        startedAt: new Date(startTime),
+        completedAt: new Date(),
+        generationDurationMs: Date.now() - startTime,
+        dataQuality: {
+          overall: 'real' as const,
+          sources: {
+            sales: 'real' as const,
+            products: 'real' as const,
+            customers: 'real' as const,
+            marketing: 'not_connected' as const,
+            inventory: 'real' as const,
+            financial: 'real' as const,
+          },
+          notes: [
+            'Marketing data is estimated from coupon usage only',
+            'Traffic sources and campaign costs are not connected to external tracking',
+          ],
+        },
         metadata: {
           processingTime: Date.now() - startTime, // Calculate actual processing time
           dataSourceVersion: '1.0',
@@ -3292,5 +3302,338 @@ export class AdvancedAnalyticsService {
     );
 
     return segmentMetrics;
+  }
+
+  // ==================== Report Builder ====================
+
+  async previewCustomReport(data: {
+    templateKey?: string;
+    startDate?: string;
+    endDate?: string;
+    sections?: string[];
+    metrics?: string[];
+    filters?: Record<string, unknown>;
+  }) {
+    this.logger.log('Previewing custom report:', data);
+
+    const startDate = data.startDate
+      ? new Date(data.startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = data.endDate ? new Date(data.endDate) : new Date();
+
+    const sections = data.sections || ['summary', 'kpis'];
+    const preview: Record<string, unknown> = {};
+
+    if (sections.includes('summary') || sections.includes('kpis')) {
+      const salesAnalytics = await this.getSalesAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+      preview.summary = {
+        totalRevenue: salesAnalytics.totalRevenue,
+        totalOrders: salesAnalytics.totalOrders,
+        averageOrderValue: salesAnalytics.averageOrderValue,
+        salesGrowth: salesAnalytics.salesGrowth,
+      };
+    }
+
+    if (sections.includes('salesTrend')) {
+      const salesAnalytics = await this.getSalesAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+      preview.salesTrend = salesAnalytics.salesByDate;
+    }
+
+    if (sections.includes('topProducts')) {
+      const productAnalytics = await this.getProductPerformance({ startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+      preview.topProducts = productAnalytics.topProducts;
+    }
+
+    if (sections.includes('customerSegments')) {
+      const customerAnalytics = await this.getCustomerAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+      preview.customerSegments = customerAnalytics.customerSegments;
+      preview.topCustomers = customerAnalytics.topCustomers;
+    }
+
+    if (sections.includes('inventory')) {
+      const inventoryReport = await this.getInventoryReport({ startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+      preview.inventory = {
+        totalProducts: inventoryReport.totalProducts,
+        lowStock: inventoryReport.lowStock,
+        outOfStock: inventoryReport.outOfStock,
+        totalValue: inventoryReport.totalValue,
+      };
+    }
+
+    if (sections.includes('financial')) {
+      const financialReport = await this.getFinancialReport({ startDate: startDate.toISOString(), endDate: endDate.toISOString() });
+      preview.financial = {
+        revenue: financialReport.revenue,
+        revenueGrowth: financialReport.revenueGrowth,
+      };
+    }
+
+    return { success: true, data: preview, sections, period: { start: startDate, end: endDate } };
+  }
+
+  async generateCustomReport(data: {
+    templateKey?: string;
+    title?: string;
+    titleEn?: string;
+    startDate?: string;
+    endDate?: string;
+    sections?: string[];
+    metrics?: string[];
+    charts?: string[];
+    filters?: Record<string, unknown>;
+    compareWithPrevious?: boolean;
+    includeRecommendations?: boolean;
+    createdBy: string;
+    creatorName?: string;
+  }) {
+    this.logger.log('Generating custom report:', data);
+
+    const startDate = data.startDate
+      ? new Date(data.startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const endDate = data.endDate ? new Date(data.endDate) : new Date();
+    const reportId = await this.reportIdService.generateReportId();
+    const startTime = Date.now();
+
+    try {
+      const sections = data.sections || ['summary', 'kpis'];
+
+      const [salesAnalytics, productAnalytics, customerAnalytics] = await Promise.all([
+        this.getSalesAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() }),
+        this.getProductPerformance({ startDate: startDate.toISOString(), endDate: endDate.toISOString() }),
+        this.getCustomerAnalytics({ startDate: startDate.toISOString(), endDate: endDate.toISOString() }),
+      ]);
+
+      const reportData: Partial<AdvancedReport> = {
+        reportId,
+        title: data.title || 'Custom Report',
+        titleEn: data.titleEn || 'Custom Report',
+        category: ReportCategory.CUSTOM,
+        priority: ReportPriority.MEDIUM,
+        startDate,
+        endDate,
+        generatedAt: new Date(),
+        createdBy: new Types.ObjectId(data.createdBy),
+        createdByType: 'user',
+        creatorName: data.creatorName,
+        summary: {
+          totalRecords: salesAnalytics.totalOrders,
+          totalValue: salesAnalytics.totalRevenue,
+          currency: 'USD',
+          growth: salesAnalytics.salesGrowth,
+        },
+        salesAnalytics: sections.includes('salesTrend') || sections.includes('kpis') ? {
+          totalSales: salesAnalytics.totalOrders,
+          totalOrders: salesAnalytics.totalOrders,
+          totalRevenue: salesAnalytics.totalRevenue,
+          averageOrderValue: salesAnalytics.averageOrderValue,
+          totalDiscount: 0,
+          netRevenue: salesAnalytics.totalRevenue,
+          topSellingProducts: salesAnalytics.topProducts.map((p) => ({
+            productId: p.id || '',
+            name: p.name || '',
+            quantity: p.sales || 0,
+            revenue: p.revenue || 0,
+          })),
+          salesByDate: salesAnalytics.salesByDate.map((item) => ({
+            date: item.date,
+            sales: item.orders,
+            orders: item.orders,
+            revenue: item.revenue,
+          })),
+          salesByCategory: salesAnalytics.salesByCategory.map((item) => ({
+            categoryId: item.category,
+            categoryName: item.category,
+            sales: item.sales,
+            revenue: item.revenue,
+            percentage: item.percentage,
+          })),
+          salesByRegion: [],
+          paymentMethods: [],
+        } : undefined,
+        productAnalytics: sections.includes('topProducts') ? {
+          totalProducts: productAnalytics.totalProducts,
+          activeProducts: productAnalytics.totalProducts,
+          outOfStock: 0,
+          lowStock: 0,
+          topPerformers: productAnalytics.topProducts.map((p) => ({
+            productId: p.id || '',
+            name: p.name || '',
+            views: 0,
+            sales: p.sales || 0,
+            revenue: p.revenue || 0,
+            rating: 0,
+          })),
+          underPerformers: [],
+          categoryBreakdown: productAnalytics.byCategory.map((item) => ({
+            categoryId: item.category || '',
+            name: item.category || '',
+            productCount: item.count || 0,
+            totalSales: item.sales || 0,
+            revenue: item.revenue || 0,
+          })),
+          brandBreakdown: [],
+          inventoryValue: 0,
+          averageProductRating: 0,
+        } : undefined,
+        customerAnalytics: sections.includes('customerSegments') ? {
+          totalCustomers: customerAnalytics.totalCustomers,
+          newCustomers: customerAnalytics.newCustomers,
+          activeCustomers: customerAnalytics.activeCustomers,
+          returningCustomers: 0,
+          customerRetentionRate: 0,
+          averageLifetimeValue: customerAnalytics.customerLifetimeValue,
+          topCustomers: customerAnalytics.topCustomers.map((c: TopCustomerResult) => ({
+            userId: c.id,
+            name: c.name,
+            totalOrders: c.orders,
+            totalSpent: c.totalSpent,
+            lastOrderDate: new Date(),
+          })),
+          customersByRegion: [],
+          customerSegmentation: (customerAnalytics.customerSegments || []).map((s: any) => ({
+            segment: s.segment,
+            count: s.count,
+            revenue: s.revenue || 0,
+            averageOrderValue: s.averageOrderValue || 0,
+          })),
+          churnRate: 0,
+          newVsReturning: {
+            new: customerAnalytics.newCustomers,
+            returning: customerAnalytics.totalCustomers - customerAnalytics.newCustomers,
+            newPercentage: customerAnalytics.totalCustomers > 0 ? (customerAnalytics.newCustomers / customerAnalytics.totalCustomers) * 100 : 0,
+            returningPercentage: customerAnalytics.totalCustomers > 0 ? ((customerAnalytics.totalCustomers - customerAnalytics.newCustomers) / customerAnalytics.totalCustomers) * 100 : 0,
+          },
+        } : undefined,
+        status: 'completed',
+        startedAt: new Date(startTime),
+        completedAt: new Date(),
+        generationDurationMs: Date.now() - startTime,
+        dataQuality: {
+          overall: 'real' as const,
+          sources: {
+            sales: 'real' as const,
+            products: 'real' as const,
+            customers: 'real' as const,
+            marketing: 'not_connected' as const,
+            inventory: 'real' as const,
+            financial: 'real' as const,
+          },
+          notes: ['Custom report generated via Report Builder'],
+        },
+        metadata: {
+          processingTime: Date.now() - startTime,
+          dataSourceVersion: '1.0',
+          reportVersion: '1.0',
+          generationMode: 'manual',
+          tags: data.filters?.tags as string[] || [],
+        },
+        filters: {
+          dateRange: { start: startDate, end: endDate },
+          customFilters: data.filters,
+        },
+      };
+
+      const savedReport = await this.advancedReportModel.create(reportData);
+
+      return {
+        id: savedReport.reportId,
+        title: savedReport.title,
+        category: savedReport.category,
+        status: savedReport.status,
+        generatedAt: savedReport.generatedAt.toISOString(),
+        summary: savedReport.summary,
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Error generating custom report:', {
+        error: err.message,
+        stack: err.stack,
+      });
+
+      if (error instanceof AnalyticsException) {
+        throw error;
+      }
+
+      throw new AnalyticsReportGenerationFailedException({
+        category: ReportCategory.CUSTOM,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        error: err.message,
+      });
+    }
+  }
+
+  async getExportedFiles(params: { page?: number; limit?: number; format?: string; search?: string }) {
+    const page = params.page || 1;
+    const limit = params.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const filter: Record<string, unknown> = {
+      'exports.0': { $exists: true },
+    };
+
+    if (params.format) {
+      filter['exports.format'] = params.format;
+    }
+
+    if (params.search) {
+      filter.$or = [
+        { title: { $regex: params.search, $options: 'i' } },
+        { titleEn: { $regex: params.search, $options: 'i' } },
+        { reportId: { $regex: params.search, $options: 'i' } },
+      ];
+    }
+
+    const [reports, total] = await Promise.all([
+      this.advancedReportModel
+        .find(filter)
+        .select('reportId title titleEn category exports createdAt')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.advancedReportModel.countDocuments(filter),
+    ]);
+
+    const allExports: Array<{
+      format: string;
+      fileUrl: string;
+      fileName: string;
+      fileSize?: number;
+      generatedAt: Date;
+      generatedBy: string;
+      reportId: string;
+      reportTitle: string;
+      reportType: string;
+    }> = [];
+
+    for (const report of reports) {
+      if (report.exports && report.exports.length > 0) {
+        for (const exp of report.exports) {
+          allExports.push({
+            format: exp.format,
+            fileUrl: exp.fileUrl,
+            fileName: exp.fileName,
+            fileSize: exp.fileSize,
+            generatedAt: exp.generatedAt,
+            generatedBy: exp.generatedBy?.toString() || '',
+            reportId: report.reportId,
+            reportTitle: report.title || report.titleEn || '',
+            reportType: report.category,
+          });
+        }
+      }
+    }
+
+    return {
+      data: allExports,
+      meta: {
+        total: allExports.length,
+        page,
+        limit,
+        totalPages: Math.ceil(allExports.length / limit),
+      },
+    };
   }
 }

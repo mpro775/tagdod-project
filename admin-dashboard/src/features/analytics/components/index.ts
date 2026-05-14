@@ -31,3 +31,6 @@ export { CacheManagement } from './CacheManagement';
 export { ComparisonTool } from './ComparisonTool';
 export { ReportScheduleForm } from './ReportScheduleForm';
 export { TrendsVisualization } from './TrendsVisualization';
+
+// Report components
+export { ReportCard, ReportStatusBadge, DataQualityBadge } from './report';
