@@ -55,6 +55,12 @@ import {
   SmartToy,
   MenuBook,
   Chat,
+  Web,
+  Assignment,
+  Article,
+  ContactMail,
+  Store,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -165,6 +171,13 @@ const AR_NAV_LABELS: Record<string, string> = {
   'navigation.usersDeleted': 'الحسابات المحذوفة',
   'navigation.usersList': 'قائمة المستخدمين',
   'navigation.verificationRequests': 'طلبات التحقق',
+  'navigation.websiteContent': 'محتوى الموقع',
+  'navigation.landingSettings': 'إعدادات صفحة الهبوط',
+  'navigation.landingProjects': 'المشاريع',
+  'navigation.landingArticles': 'الأخبار والمقالات',
+  'navigation.landingProducts': 'منتجات صفحة الهبوط',
+  'navigation.landingBrands': 'براندات صفحة الهبوط',
+  'navigation.contactRequests': 'طلبات التواصل',
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant }) => {
@@ -686,6 +699,49 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
             label: navLabel('navigation.about'),
             icon: <Info />,
             path: '/about',
+          },
+        ],
+      },
+      {
+        id: 'website-content',
+        label: navLabel('navigation.websiteContent'),
+        icon: <Web />,
+        children: [
+          {
+            id: 'landing-settings',
+            label: navLabel('navigation.landingSettings'),
+            icon: <SettingsIcon />,
+            path: '/website/landing-settings',
+          },
+          {
+            id: 'landing-projects',
+            label: navLabel('navigation.landingProjects'),
+            icon: <Assignment />,
+            path: '/website/projects',
+          },
+          {
+            id: 'landing-articles',
+            label: navLabel('navigation.landingArticles'),
+            icon: <Article />,
+            path: '/website/articles',
+          },
+          {
+            id: 'landing-products',
+            label: navLabel('navigation.landingProducts'),
+            icon: <Store />,
+            path: '/website/landing-products',
+          },
+          {
+            id: 'landing-brands',
+            label: navLabel('navigation.landingBrands'),
+            icon: <Storefront />,
+            path: '/website/landing-brands',
+          },
+          {
+            id: 'contact-requests',
+            label: navLabel('navigation.contactRequests'),
+            icon: <ContactMail />,
+            path: '/website/contact-requests',
           },
         ],
       },

@@ -479,6 +479,63 @@ const FavoritesAdminPage = lazy(() =>
   }))
 );
 
+// Website Content - Landing Page
+const LandingSettingsPage = lazy(() =>
+  import('@/features/landing-settings/pages/LandingSettingsPage').then((m) => ({
+    default: m.LandingSettingsPage,
+  }))
+);
+
+// Projects
+const ProjectsListPage = lazy(() =>
+  import('@/features/projects/pages/ProjectsListPage').then((m) => ({
+    default: m.ProjectsListPage,
+  }))
+);
+const ProjectFormPage = lazy(() =>
+  import('@/features/projects/pages/ProjectFormPage').then((m) => ({
+    default: m.ProjectFormPage,
+  }))
+);
+
+// Articles
+const ArticlesListPage = lazy(() =>
+  import('@/features/articles/pages/ArticlesListPage').then((m) => ({
+    default: m.ArticlesListPage,
+  }))
+);
+const ArticleFormPage = lazy(() =>
+  import('@/features/articles/pages/ArticleFormPage').then((m) => ({
+    default: m.ArticleFormPage,
+  }))
+);
+
+// Landing Products
+const LandingProductsPage = lazy(() =>
+  import('@/features/landing-products/pages/LandingProductsPage').then((m) => ({
+    default: m.LandingProductsPage,
+  }))
+);
+
+// Landing Brands
+const LandingBrandsPage = lazy(() =>
+  import('@/features/landing-brands/pages/LandingBrandsPage').then((m) => ({
+    default: m.LandingBrandsPage,
+  }))
+);
+
+// Contact Requests
+const ContactRequestsListPage = lazy(() =>
+  import('@/features/contact-requests/pages/ContactRequestsListPage').then((m) => ({
+    default: m.ContactRequestsListPage,
+  }))
+);
+const ContactRequestDetailsPage = lazy(() =>
+  import('@/features/contact-requests/pages/ContactRequestDetailsPage').then((m) => ({
+    default: m.ContactRequestDetailsPage,
+  }))
+);
+
 export const routes: RouteObject[] = [
   // ===========================================
   // PUBLIC ROUTES - Accessible without authentication
@@ -1009,6 +1066,66 @@ export const routes: RouteObject[] = [
       {
         path: 'marketer/portal',
         element: <MarketerPortalPage />,
+      },
+
+      // ===========================================
+      // WEBSITE CONTENT - LANDING PAGE
+      // ===========================================
+
+      // Landing Settings
+      {
+        path: 'website/landing-settings',
+        element: <LandingSettingsPage />,
+      },
+
+      // Projects
+      {
+        path: 'website/projects',
+        element: <ProjectsListPage />,
+      },
+      {
+        path: 'website/projects/new',
+        element: <ProjectFormPage />,
+      },
+      {
+        path: 'website/projects/:id',
+        element: <ProjectFormPage />,
+      },
+
+      // Articles
+      {
+        path: 'website/articles',
+        element: <ArticlesListPage />,
+      },
+      {
+        path: 'website/articles/new',
+        element: <ArticleFormPage />,
+      },
+      {
+        path: 'website/articles/:id',
+        element: <ArticleFormPage />,
+      },
+
+      // Landing Products
+      {
+        path: 'website/landing-products',
+        element: <LandingProductsPage />,
+      },
+
+      // Landing Brands
+      {
+        path: 'website/landing-brands',
+        element: <LandingBrandsPage />,
+      },
+
+      // Contact Requests
+      {
+        path: 'website/contact-requests',
+        element: <ContactRequestsListPage />,
+      },
+      {
+        path: 'website/contact-requests/:id',
+        element: <ContactRequestDetailsPage />,
       },
     ],
   },

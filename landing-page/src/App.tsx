@@ -7,6 +7,7 @@ import HomePage from "./pages/HomePage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import DeletedAccountPage from "./pages/DeletedAccountPage";
+import ArticleDetailPage from "./pages/ArticleDetailPage";
 
 const App: React.FC = () => {
   return (
@@ -15,6 +16,7 @@ const App: React.FC = () => {
       <Box component="main" flexGrow={1}>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/news/:slug" element={<ArticleDetailPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/privacypolicy" element={<PrivacyPage />} />

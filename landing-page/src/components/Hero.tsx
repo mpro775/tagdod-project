@@ -4,8 +4,36 @@ import { motion } from "framer-motion";
 import AppleIcon from "@mui/icons-material/Apple";
 import ShopIcon from "@mui/icons-material/Shop";
 import iconImage from "../assets/images/icon.png";
+import type { LandingSettings } from "../types/landing";
 
-const Hero: React.FC = () => {
+interface HeroProps {
+  settings?: LandingSettings | null;
+}
+
+const defaultSettings: LandingSettings = {
+  heroTitleAr: "مستقبل الطاقة يبدأ من هنا",
+  heroSubtitleAr:
+    "اكتشف أحدث حلول الطاقة الشمسية والكهربائيات مع تطبيق تجدد. تسوق من أفضل المنتجات، قارن الأسعار، واحصل على توصيل سريع لباب منزلك.",
+  primaryCtaTextAr: "App Store",
+  secondaryCtaTextAr: "Google Play",
+  appStoreUrl: "https://apps.apple.com/ng/app/%D8%AA%D8%AC%D8%AF%D8%AF/id6756541667",
+  playStoreUrl: "https://play.google.com/store/apps/details?id=com.tagadod.app",
+  enableAboutSection: true,
+  enableStatsSection: true,
+  enableFeaturesSection: true,
+  enableProductsSection: true,
+  enableProjectsSection: true,
+  enableBrandsSection: true,
+  enableArticlesSection: true,
+  enableContactSection: true,
+  enableServiceCenterSection: true,
+  sectionOrder: [],
+  isPublished: true,
+};
+
+const Hero: React.FC<HeroProps> = ({ settings }) => {
+  const data = settings || defaultSettings;
+
   return (
     <Box
       id="hero"
@@ -21,7 +49,6 @@ const Hero: React.FC = () => {
         pb: { xs: 8, md: 0 },
       }}
     >
-      {/* Background Decorations */}
       <Box
         sx={{
           position: "absolute",
@@ -33,7 +60,6 @@ const Hero: React.FC = () => {
           zIndex: 0,
         }}
       >
-        {/* Gradient Orbs */}
         <Box
           component={motion.div}
           animate={{
@@ -85,7 +111,6 @@ const Hero: React.FC = () => {
           }}
         />
 
-        {/* Floating Shapes */}
         {[...Array(6)].map((_, i) => (
           <Box
             key={i}
@@ -115,7 +140,6 @@ const Hero: React.FC = () => {
 
       <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
         <Grid container spacing={6} alignItems="center">
-          {/* Text Content */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Box
               component={motion.div}
@@ -123,7 +147,6 @@ const Hero: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              {/* Badge */}
               <Box
                 component={motion.div}
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -156,7 +179,6 @@ const Hero: React.FC = () => {
                 </Typography>
               </Box>
 
-              {/* Main Heading */}
               <Typography
                 variant="h1"
                 component="h1"
@@ -173,7 +195,7 @@ const Hero: React.FC = () => {
                   mb: 3,
                 }}
               >
-                مستقبل الطاقة
+                {data.heroTitleAr}
                 <br />
                 <Box
                   component="span"
@@ -184,11 +206,10 @@ const Hero: React.FC = () => {
                     WebkitTextFillColor: "transparent",
                   }}
                 >
-                  يبدأ من هنا
+                  حلول ذكية ومبتكرة
                 </Box>
               </Typography>
 
-              {/* Description */}
               <Typography
                 variant="h6"
                 sx={{
@@ -200,11 +221,9 @@ const Hero: React.FC = () => {
                   fontSize: { xs: "1rem", md: "1.15rem" },
                 }}
               >
-                اكتشف أحدث حلول الطاقة الشمسية والكهربائيات مع تطبيق تجدد. تسوق من أفضل
-                المنتجات، قارن الأسعار، واحصل على توصيل سريع لباب منزلك.
+                {data.heroSubtitleAr}
               </Typography>
 
-              {/* Download Buttons */}
               <Stack
                 direction={{ xs: "column", sm: "row" }}
                 spacing={3}
@@ -218,7 +237,7 @@ const Hero: React.FC = () => {
                   variant="contained"
                   size="large"
                   startIcon={<AppleIcon />}
-                  href="https://apps.apple.com/ng/app/%D8%AA%D8%AC%D8%AF%D8%AF/id6756541667"
+                  href={data.appStoreUrl || "#"}
                   target="_blank"
                   rel="noopener noreferrer"
                   sx={{
@@ -238,13 +257,13 @@ const Hero: React.FC = () => {
                     },
                   }}
                 >
-                  App Store
+                  {data.primaryCtaTextAr || "App Store"}
                 </Button>
                 <Button
                   variant="outlined"
                   size="large"
                   startIcon={<ShopIcon />}
-                  href="https://play.google.com/store/apps/details?id=com.tagadod.app"
+                  href={data.playStoreUrl || "#"}
                   target="_blank"
                   sx={{
                     py: 1.75,
@@ -268,11 +287,10 @@ const Hero: React.FC = () => {
                     },
                   }}
                 >
-                  Google Play
+                  {data.secondaryCtaTextAr || "Google Play"}
                 </Button>
               </Stack>
 
-              {/* Stats */}
               <Stack
                 direction="row"
                 spacing={4}
@@ -318,7 +336,6 @@ const Hero: React.FC = () => {
             </Box>
           </Grid>
 
-          {/* App Mockup */}
           <Grid
             size={{ xs: 12, md: 6 }}
             sx={{ display: "flex", justifyContent: "center" }}
@@ -333,7 +350,6 @@ const Hero: React.FC = () => {
                 perspective: "1000px",
               }}
             >
-              {/* Phone Frame */}
               <Box
                 component={motion.div}
                 animate={{ y: [0, -15, 0] }}
@@ -355,7 +371,6 @@ const Hero: React.FC = () => {
                   transform: "rotateY(-5deg) rotateX(5deg)",
                 }}
               >
-                {/* Screen */}
                 <Box
                   sx={{
                     width: "100%",
@@ -371,7 +386,6 @@ const Hero: React.FC = () => {
                     position: "relative",
                   }}
                 >
-                  {/* App Content Preview */}
                   <Box
                     component="img"
                     src={iconImage}
@@ -404,7 +418,6 @@ const Hero: React.FC = () => {
                     منصتك الأولى للطاقة الشمسية والكهربائيات
                   </Typography>
 
-                  {/* Decorative Elements */}
                   <Box
                     sx={{
                       position: "absolute",
@@ -430,7 +443,6 @@ const Hero: React.FC = () => {
                   </Box>
                 </Box>
 
-                {/* Notch */}
                 <Box
                   sx={{
                     position: "absolute",
@@ -445,7 +457,6 @@ const Hero: React.FC = () => {
                 />
               </Box>
 
-              {/* Floating Elements around phone */}
               <Box
                 component={motion.div}
                 animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}

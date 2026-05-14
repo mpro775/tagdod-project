@@ -1,0 +1,69 @@
+{
+  "title": "إعدادات صفحة الهبوط",
+  "subtitle": "التحكم في محتوى وإعدادات الصفحة الرئيسية",
+  "tabs": {
+    "hero": "القسم الرئيسي",
+    "cta": "أزرار الدعوة",
+    "sections": "الأقسام",
+    "app": "التطبيق",
+    "seo": "تحسين محركات البحث"
+  },
+  "hero": {
+    "titleAr": "العنوان بالعربية",
+    "titleEn": "العنوان بالإنجليزية",
+    "subtitleAr": "الوصف بالعربية",
+    "subtitleEn": "الوصف بالإنجليزية",
+    "image": "صورة القسم الرئيسي",
+    "video": "رابط الفيديو (اختياري)",
+    "uploadImage": "رفع صورة",
+    "removeImage": "إزالة الصورة"
+  },
+  "cta": {
+    "primaryTextAr": "نص الزر الأساسي بالعربية",
+    "primaryTextEn": "نص الزر الأساسي بالإنجليزية",
+    "primaryUrl": "رابط الزر الأساسي",
+    "secondaryTextAr": "نص الزر الثانوي بالعربية",
+    "secondaryTextEn": "نص الزر الثانوي بالإنجليزية",
+    "secondaryUrl": "رابط الزر الثانوي"
+  },
+  "sections": {
+    "title": "تفعيل الأقسام",
+    "about": "قسم عن الشركة",
+    "stats": "قسم الإحصائيات",
+    "features": "قسم المميزات",
+    "products": "قسم المنتجات",
+    "projects": "قسم المشاريع",
+    "brands": "قسم البراندات",
+    "articles": "قسم الأخبار والمقالات",
+    "contact": "قسم التواصل",
+    "serviceCenter": "قسم مركز الصيانة"
+  },
+  "app": {
+    "title": "روابط التطبيق",
+    "appStoreUrl": "رابط App Store",
+    "playStoreUrl": "رابط Google Play"
+  },
+  "seo": {
+    "title": "إعدادات SEO",
+    "metaTitleAr": "عنوان الصفحة بالعربية",
+    "metaTitleEn": "عنوان الصفحة بالإنجليزية",
+    "metaDescriptionAr": "وصف الصفحة بالعربية",
+    "metaDescriptionEn": "وصف الصفحة بالإنجليزية"
+  },
+  "actions": {
+    "save": "حفظ الإعدادات",
+    "saving": "جاري الحفظ...",
+    "reset": "استعادة الإعدادات"
+  },
+  "status": {
+    "published": "منشور",
+    "draft": "مسودة",
+    "publish": "نشر الصفحة",
+    "unpublish": "إخفاء الصفحة"
+  },
+  "messages": {
+    "saveSuccess": "تم حفظ الإعدادات بنجاح",
+    "saveError": "فشل في حفظ الإعدادات",
+    "loadError": "فشل في تحميل الإعدادات"
+  }
+}

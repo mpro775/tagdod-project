@@ -38,6 +38,10 @@ import { CommissionsModule } from './modules/commissions/commissions.module';
 import { BackupsModule } from './modules/backups/backups.module';
 import { AppConfigModule } from './modules/app-config/app-config.module';
 import { HealthModule } from './health/health.module';
+import { LandingModule } from './modules/landing/landing.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { ArticlesModule } from './modules/articles/articles.module';
+import { ContactRequestsModule } from './modules/contact-requests/contact-requests.module';
 
 // Shared modules
 import { CacheModule } from './shared/cache/cache.module';
@@ -129,6 +133,12 @@ import { ShareProductController } from './deep-linking/share-product.controller'
 
     // Health module
     HealthModule,
+
+    // Landing page modules
+    LandingModule,
+    ProjectsModule,
+    ArticlesModule,
+    ContactRequestsModule,
 
     // Shared modules
     CacheModule,

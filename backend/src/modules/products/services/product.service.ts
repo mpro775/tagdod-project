@@ -1406,4 +1406,13 @@ export class ProductService {
       this.logger.error('Error clearing product caches:', error);
     }
   }
+
+  async getLandingShowcase() {
+    return await this.productModel
+      .find({ showOnLanding: true, status: ProductStatus.ACTIVE, isActive: true, deletedAt: null })
+      .sort({ landingOrder: 1, createdAt: -1 })
+      .limit(12)
+      .populate('brandId', 'name nameEn image')
+      .lean();
+  }
 }

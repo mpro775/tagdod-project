@@ -1,0 +1,73 @@
+{
+  "pageTitle": "طلبات التواصل",
+  "pageDescription": "عرض وإدارة الطلبات القادمة من صفحة الهبوط",
+  "table": {
+    "title": "طلبات التواصل",
+    "columns": {
+      "name": "الاسم",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني",
+      "city": "المدينة",
+      "requestType": "نوع الطلب",
+      "subject": "الموضوع",
+      "status": "الحالة",
+      "source": "المصدر",
+      "assignedTo": "مسند إلى",
+      "createdAt": "تاريخ الإرسال",
+      "actions": "الإجراءات"
+    }
+  },
+  "requestTypes": {
+    "general": "استفسار عام",
+    "technical_support": "دعم فني",
+    "service_center": "مركز صيانة",
+    "maintenance": "طلب صيانة",
+    "contracting": "طلب مقاولة",
+    "partnership": "شراكة",
+    "other": "أخرى"
+  },
+  "status": {
+    "new": "جديد",
+    "in_review": "قيد المراجعة",
+    "contacted": "تم التواصل",
+    "converted": "تم التحويل",
+    "closed": "مغلق"
+  },
+  "sources": {
+    "landing_page": "صفحة الهبوط",
+    "website": "الموقع",
+    "mobile_app": "تطبيق الجوال",
+    "admin": "لوحة التحكم"
+  },
+  "filters": {
+    "requestType": "تصفية بنوع الطلب",
+    "status": "تصفية بالحالة",
+    "source": "تصفية بالمصدر",
+    "date": "تصفية بالتاريخ",
+    "search": "بحث بالاسم أو الهاتف",
+    "reset": "إعادة تعيين"
+  },
+  "details": {
+    "title": "تفاصيل الطلب",
+    "message": "الرسالة",
+    "notes": "ملاحظات داخلية",
+    "addNote": "إضافة ملاحظة",
+    "updateStatus": "تحديث الحالة",
+    "assignTo": "إسناد إلى"
+  },
+  "actions": {
+    "view": "عرض",
+    "updateStatus": "تحديث الحالة",
+    "assign": "إسناد",
+    "delete": "حذف",
+    "addNote": "إضافة ملاحظة"
+  },
+  "messages": {
+    "noRequests": "لا توجد طلبات",
+    "noRequestsDesc": "لم يتم استلام أي طلبات تواصل بعد",
+    "statusUpdated": "تم تحديث حالة الطلب بنجاح",
+    "noteAdded": "تم إضافة الملاحظة بنجاح",
+    "loadError": "فشل في تحميل الطلبات",
+    "deleteConfirm": "هل أنت متأكد من حذف هذا الطلب؟"
+  }
+}

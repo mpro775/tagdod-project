@@ -309,4 +309,11 @@ export class BrandsService {
       withProducts: brandsWithProducts.length,
     };
   }
+
+  async getLandingBrands() {
+    return await this.brandModel
+      .find({ showOnLanding: true, isActive: true })
+      .sort({ landingOrder: 1, sortOrder: 1, name: 1 })
+      .lean();
+  }
 }
