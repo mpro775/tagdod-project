@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Put, Patch, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
@@ -61,7 +61,7 @@ export class LandingAdminController {
     return this.landingService.create(dto, req.user.sub);
   }
 
-  @Put('settings')
+  @Patch('settings')
   @ApiOperation({
     summary: 'تحديث إعدادات الصفحة الرئيسية',
     description: 'تحديث إعدادات الصفحة الرئيسية',
@@ -89,7 +89,7 @@ export class LandingAdminController {
     schema: {
       type: 'object',
       properties: {
-        isActive: { type: 'boolean', example: true },
+        isPublished: { type: 'boolean', example: true },
       },
     },
   })
@@ -100,9 +100,24 @@ export class LandingAdminController {
   })
   @ApiResponse({ status: 404, description: 'الإعدادات غير موجودة' })
   async toggle(
-    @Body() dto: { isActive: boolean },
+    @Body() dto: { isPublished: boolean },
     @Req() req: RequestWithUser,
   ): Promise<LandingSettingsResponseDto> {
-    return this.landingService.toggle(dto.isActive, req.user.sub);
+    return this.landingService.toggle(dto.isPublished, req.user.sub);
+  }
+
+  @Patch('settings/toggle-publish')
+  @ApiOperation({
+    summary: 'تبديل حالة النشر',
+    description: 'تبديل حالة نشر إعدادات الصفحة الرئيسية',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم تحديث الحالة بنجاح',
+    type: LandingSettingsResponseDto,
+  })
+  async togglePublish(@Req() req: RequestWithUser): Promise<LandingSettingsResponseDto> {
+    const current = await this.landingService.getForAdmin();
+    return this.landingService.toggle(!current?.isPublished, req.user.sub);
   }
 }
