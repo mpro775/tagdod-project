@@ -2,6 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsBoolean, IsArray } from 'class-validator';
 
 export class UpdateLandingSettingsDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  _id?: string;
+
   @ApiPropertyOptional({ description: 'عنوان Hero بالعربية' })
   @IsOptional()
   @IsString()
@@ -127,6 +132,16 @@ export class UpdateLandingSettingsDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  createdAt?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  updatedAt?: string;
 }
 
 export class CreateLandingSettingsDto extends UpdateLandingSettingsDto {}
