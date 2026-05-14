@@ -55,17 +55,14 @@ import {
   SmartToy,
   MenuBook,
   Chat,
-<<<<<<< HEAD
   Web,
   Assignment,
   Article,
   ContactMail,
   Store,
   Settings as SettingsIcon,
-=======
-  Schedule,
   CloudDownload,
->>>>>>> 74509ef32a092132b1a53158c752eb087b4f882f
+  Schedule,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
