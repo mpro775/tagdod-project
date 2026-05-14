@@ -76,9 +76,42 @@ export class LandingService {
   async getPublic(): Promise<LandingSettingsResponseDto> {
     const settings = await this.landingModel.findOne({ isPublished: true }).lean().exec();
     if (!settings) {
-      throw new NotFoundException('إعدادات الصفحة الرئيسية غير متوفرة حالياً');
+      return this.getDefaultSettings();
     }
     return this.mapToDto(settings);
+  }
+
+  private getDefaultSettings(): LandingSettingsResponseDto {
+    return {
+      _id: '',
+      heroTitleAr: '',
+      heroTitleEn: '',
+      heroSubtitleAr: '',
+      heroSubtitleEn: '',
+      heroImage: '',
+      heroVideo: '',
+      primaryCtaTextAr: '',
+      primaryCtaTextEn: '',
+      primaryCtaUrl: '',
+      secondaryCtaTextAr: '',
+      secondaryCtaTextEn: '',
+      secondaryCtaUrl: '',
+      appStoreUrl: '',
+      playStoreUrl: '',
+      enableAboutSection: true,
+      enableStatsSection: true,
+      enableFeaturesSection: true,
+      enableProductsSection: true,
+      enableProjectsSection: true,
+      enableBrandsSection: true,
+      enableArticlesSection: true,
+      enableContactSection: true,
+      enableServiceCenterSection: true,
+      sectionOrder: [],
+      isPublished: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
   }
 
   async update(
