@@ -307,6 +307,16 @@ export class ProjectQueryDto {
   @IsOptional()
   @IsBoolean()
   isFeatured?: boolean;
+
+  @ApiPropertyOptional({ description: 'ترتيب حسب', example: 'createdAt' })
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @ApiPropertyOptional({ description: 'اتجاه الترتيب', example: 'desc', enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class ReorderProjectDto {

@@ -565,6 +565,7 @@ export class ProductService {
     isActive?: boolean;
     isFeatured?: boolean;
     isNew?: boolean;
+    showOnLanding?: boolean;
     includeDeleted?: boolean;
     includeSubcategories?: boolean;
     sortBy?: string;
@@ -580,6 +581,7 @@ export class ProductService {
       isActive,
       isFeatured,
       isNew,
+      showOnLanding,
       includeDeleted = false,
       includeSubcategories = true, // افتراضي: true لتضمين الفئات الفرعية في admin و public
       sortBy,
@@ -764,6 +766,10 @@ export class ProductService {
 
     if (isNew !== undefined) {
       filter.isNew = isNew;
+    }
+
+    if (showOnLanding !== undefined) {
+      filter.showOnLanding = showOnLanding;
     }
 
     // تحديد الترتيب: إذا تم تحديد sortBy و sortOrder، نستخدمهما، وإلا نستخدم الترتيب الافتراضي (الأحدث أولاً)

@@ -55,12 +55,12 @@ export class ProductsController {
   @ApiOperation({ 
     summary: 'قائمة المنتجات مع التصفية',
     description: 'جلب قائمة المنتجات مع إمكانية التصفية. في لوحة التحكم، يتم عرض جميع المنتجات بما في ذلك:\n' +
-                 '- المنتجات في الفئات الفرعية (افتراضي: includeSubcategories=true)\n' +
-                 '- المنتجات التي نفذت (out of stock)\n' +
-                 '- المنتجات التي كميتها صفر\n' +
-                 '- المنتجات غير النشطة (إذا لم يتم تحديد isActive)\n' +
-                 '- المنتجات المحذوفة (إذا includeDeleted=true)\n' +
-                 '- معلومات قواعد الأسعار المطبقة على كل منتج'
+                  '- المنتجات في الفئات الفرعية (افتراضي: includeSubcategories=true)\n' +
+                  '- المنتجات التي نفذت (out of stock)\n' +
+                  '- المنتجات التي كميتها صفر\n' +
+                  '- المنتجات غير النشطة (إذا لم يتم تحديد isActive)\n' +
+                  '- المنتجات المحذوفة (إذا includeDeleted=true)\n' +
+                  '- معلومات قواعد الأسعار المطبقة على كل منتج'
   })
   @ApiResponse({ status: 200, description: 'Products list retrieved successfully' })
   async listProducts(@Query() dto: ListProductsDto) {
@@ -111,6 +111,15 @@ export class ProductsController {
       ...result,
       data: productsWithPriceRules,
     };
+  }
+
+  @Get('landing')
+  @ApiOperation({ summary: 'قائمة المنتجات المعروضة في Landing Page' })
+  @ApiResponse({ status: 200, description: 'Landing products list retrieved successfully' })
+  async listLandingProducts(@Query() dto: ListProductsDto) {
+    dto.showOnLanding = true;
+    const result = await this.productService.list(dto);
+    return result;
   }
 
 

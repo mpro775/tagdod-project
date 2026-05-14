@@ -24,7 +24,7 @@ export class ContactRequestsService {
   }
 
   async findAll(dto: ContactRequestQueryDto) {
-    const { page = 1, limit = 20, requestType, status, search } = dto;
+    const { page = 1, limit = 20, requestType, status, search, sortBy, sortOrder } = dto;
     const skip = (page - 1) * limit;
     const query: Record<string, unknown> = {};
 
@@ -41,8 +41,15 @@ export class ContactRequestsService {
       ];
     }
 
+    const sort: Record<string, 1 | -1> = {};
+    if (sortBy && sortOrder) {
+      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    } else {
+      sort.createdAt = -1;
+    }
+
     const [requests, total] = await Promise.all([
-      this.contactRequestModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      this.contactRequestModel.find(query).sort(sort).skip(skip).limit(limit).lean(),
       this.contactRequestModel.countDocuments(query),
     ]);
 

@@ -35,7 +35,7 @@ export class ArticlesService {
   }
 
   async findAll(dto: ArticleQueryDto) {
-    const { page = 1, limit = 20, search, type, category, status, showOnLanding, isFeatured } = dto;
+    const { page = 1, limit = 20, search, type, category, status, showOnLanding, isFeatured, sortBy, sortOrder } = dto;
     const skip = (page - 1) * limit;
     const query: Record<string, unknown> = { deletedAt: null };
 
@@ -53,8 +53,16 @@ export class ArticlesService {
     if (typeof showOnLanding === 'boolean') query.showOnLanding = showOnLanding;
     if (typeof isFeatured === 'boolean') query.isFeatured = isFeatured;
 
+    const sort: Record<string, 1 | -1> = {};
+    if (sortBy && sortOrder) {
+      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    } else {
+      sort.landingOrder = 1;
+      sort.publishDate = -1;
+    }
+
     const [articles, total] = await Promise.all([
-      this.articleModel.find(query).sort({ landingOrder: 1, publishDate: -1 }).skip(skip).limit(limit).lean(),
+      this.articleModel.find(query).sort(sort).skip(skip).limit(limit).lean(),
       this.articleModel.countDocuments(query),
     ]);
 
