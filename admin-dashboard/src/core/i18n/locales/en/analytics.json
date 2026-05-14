@@ -593,5 +593,81 @@
     "deleteConfirm": "Are you sure you want to delete this report?",
     "reportsCategory": "{category} Reports",
     "loadError": "An error occurred while loading reports. Please try again."
+  },
+  "scheduledReports": {
+    "title": "Scheduled Reports",
+    "subtitle": "Manage and run automated reports",
+    "create": "Create Schedule",
+    "search": "Search...",
+    "noData": "No schedules found",
+    "name": "Name",
+    "type": "Type",
+    "frequency": "Frequency",
+    "formats": "Formats",
+    "nextRun": "Next Run",
+    "lastRun": "Last Run",
+    "successRate": "Success Rate",
+    "status": "Status",
+    "actions": "Actions",
+    "active": "Active",
+    "inactive": "Inactive",
+    "runNow": "Run Now",
+    "confirmRun": "Confirm Run",
+    "confirmRunMessage": "Do you want to run \"{name}\" now?",
+    "running": "Running...",
+    "deleteConfirm": "Are you sure you want to delete this schedule?"
+  },
+  "exportCenter": {
+    "title": "Export Center",
+    "subtitle": "All exported files from reports",
+    "search": "Search files...",
+    "noData": "No exported files",
+    "file": "File",
+    "report": "Report",
+    "format": "Format",
+    "size": "Size",
+    "date": "Export Date",
+    "actions": "Actions",
+    "download": "Download",
+    "all": "All"
+  },
+  "builder": {
+    "title": "Report Builder",
+    "step": {
+      "type": "Report Type",
+      "filters": "Filters",
+      "sections": "Sections",
+      "preview": "Preview",
+      "confirm": "Confirm"
+    },
+    "chooseReportType": "Choose report type",
+    "chooseFilters": "Select filters",
+    "chooseSections": "Choose report sections",
+    "previewReport": "Preview report",
+    "saveTemplate": "Save as template",
+    "generateReport": "Generate Report"
+  },
+  "insights": {
+    "title": "Smart Insights",
+    "salesDrop": "Sales decline detected",
+    "salesGrowth": "Sales growth detected",
+    "lowStock": "Low stock alert",
+    "topCustomers": "Top customers",
+    "weakProducts": "Underperforming products",
+    "cancellationSpike": "Cancellation rate spike"
+  },
+  "alerts": {
+    "title": "Analytics Alerts",
+    "severity": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "status": {
+      "open": "Open",
+      "resolved": "Resolved",
+      "ignored": "Ignored"
+    }
   }
 }

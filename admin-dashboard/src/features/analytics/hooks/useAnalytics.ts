@@ -10,6 +10,8 @@ import type {
   PeriodType,
   GenerateAdvancedReportDto,
   CreateReportScheduleDto,
+  UpdateReportScheduleDto,
+  ListSchedulesParams,
 } from '../types/analytics.types';
 
 const ANALYTICS_KEY = 'analytics';
@@ -412,6 +414,92 @@ export const useExportCustomersData = () => {
       }
     },
     onError: ErrorHandler.showError,
+  });
+};
+
+// ==================== Report Schedules ====================
+
+export const useSchedules = (params: ListSchedulesParams = {}) => {
+  return useQuery({
+    queryKey: [ANALYTICS_KEY, 'schedules', params],
+    queryFn: () => analyticsApi.listSchedules(params),
+  });
+};
+
+export const useSchedule = (id: string) => {
+  return useQuery({
+    queryKey: [ANALYTICS_KEY, 'schedules', id],
+    queryFn: () => analyticsApi.getSchedule(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateSchedule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateReportScheduleDto) => analyticsApi.createSchedule(data),
+    onSuccess: () => {
+      toast.success('تم إنشاء الجدولة بنجاح');
+      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'schedules'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useUpdateSchedule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateReportScheduleDto }) =>
+      analyticsApi.updateSchedule(id, data),
+    onSuccess: () => {
+      toast.success('تم تحديث الجدولة بنجاح');
+      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'schedules'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useToggleSchedule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      analyticsApi.toggleSchedule(id, isActive),
+    onSuccess: () => {
+      toast.success('تم تحديث الحالة');
+      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'schedules'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useDeleteSchedule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => analyticsApi.deleteSchedule(id),
+    onSuccess: () => {
+      toast.success('تم حذف الجدولة بنجاح');
+      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'schedules'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useRunScheduleNow = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => analyticsApi.runScheduleNow(id),
+    onSuccess: () => {
+      toast.success('تم تشغيل الجدولة بنجاح');
+      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'schedules'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useScheduleStats = () => {
+  return useQuery({
+    queryKey: [ANALYTICS_KEY, 'schedules', 'stats'],
+    queryFn: () => analyticsApi.getScheduleStats(),
   });
 };
 

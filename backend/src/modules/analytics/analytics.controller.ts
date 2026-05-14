@@ -1,15 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Query,
-  Body,
-  Param,
-  UseGuards,
-  GatewayTimeoutException,
-  Delete,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Param, UseGuards, GatewayTimeoutException, Delete, Logger, Req } from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -189,7 +178,10 @@ export class AnalyticsController {
   })
   @ApiBody({ type: ReportGenerationDto })
   @ApiResponse({ status: 201, description: 'تم إنشاء التقرير بنجاح', type: AnalyticsReportDto })
-  async generateReport(@Body() dto: ReportGenerationDto): Promise<AnalyticsReportDto> {
+  async generateReport(
+    @Body() dto: ReportGenerationDto,
+    @Req() req: { user: { sub: string; firstName?: string; lastName?: string } },
+  ): Promise<AnalyticsReportDto> {
     // Map ReportType to report category for advanced analytics
     const categoryMap: Partial<Record<ReportType, string>> = {
       [ReportType.MONTHLY_REPORT]: 'sales',
@@ -210,8 +202,8 @@ export class AnalyticsController {
       category: category as ReportCategory,
       startDate: dto.startDate,
       endDate: dto.endDate,
-      createdBy: 'system',
-      creatorName: 'System Generated',
+      createdBy: req.user.sub,
+      creatorName: [req.user.firstName, req.user.lastName].filter(Boolean).join(' ') || undefined,
     });
 
     // Convert to AnalyticsReportDto format

@@ -212,6 +212,16 @@ const AnalyticsMainPage = lazy(() =>
     default: m.AnalyticsMainPage,
   }))
 );
+const ScheduledReportsPage = lazy(() =>
+  import('@/features/analytics/pages/ScheduledReportsPage').then((m) => ({
+    default: m.ScheduledReportsPage,
+  }))
+);
+const ExportCenterPage = lazy(() =>
+  import('@/features/analytics/pages/ExportCenterPage').then((m) => ({
+    default: m.ExportCenterPage,
+  }))
+);
 const CouponsListPage = lazy(() =>
   import('@/features/coupons/pages/CouponsListPage').then((m) => ({
     default: m.CouponsListPage,
@@ -690,6 +700,14 @@ export const routes: RouteObject[] = [
       {
         path: 'analytics/reports',
         element: <ReportsManagementPage />,
+      },
+      {
+        path: 'analytics/scheduled-reports',
+        element: <ScheduledReportsPage />,
+      },
+      {
+        path: 'analytics/export-center',
+        element: <ExportCenterPage />,
       },
 
       // ===========================================

@@ -18,6 +18,11 @@ import type {
   PeriodType,
   GenerateAdvancedReportDto,
   CreateReportScheduleDto,
+  ReportSchedule,
+  UpdateReportScheduleDto,
+  ScheduleStats,
+  ListSchedulesParams,
+  ReportExportFile,
 } from '../types/analytics.types';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
@@ -431,6 +436,129 @@ export const analyticsApi = {
       params: { format, startDate, endDate },
     });
     return response.data;
+  },
+
+  // ==================== Report Schedules ====================
+
+  /**
+   * Create a report schedule
+   */
+  createSchedule: async (data: CreateReportScheduleDto): Promise<ReportSchedule> => {
+    const response = await apiClient.post<{ success: boolean; data: ReportSchedule }>(
+      '/analytics/report-schedules',
+      data
+    );
+    return response.data.data;
+  },
+
+  /**
+   * List all report schedules
+   */
+  listSchedules: async (
+    params: ListSchedulesParams = {}
+  ): Promise<PaginatedResponse<ReportSchedule>> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: ReportSchedule[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>('/analytics/report-schedules', { params });
+    return {
+      data: response.data.data,
+      meta: {
+        page: response.data.page,
+        limit: response.data.limit,
+        total: response.data.total,
+        totalPages: response.data.totalPages,
+      },
+    };
+  },
+
+  /**
+   * Get a single schedule by ID
+   */
+  getSchedule: async (id: string): Promise<ReportSchedule> => {
+    const response = await apiClient.get<{ success: boolean; data: ReportSchedule }>(
+      `/analytics/report-schedules/${id}`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Update a schedule
+   */
+  updateSchedule: async (
+    id: string,
+    data: UpdateReportScheduleDto
+  ): Promise<ReportSchedule> => {
+    const response = await apiClient.patch<{ success: boolean; data: ReportSchedule }>(
+      `/analytics/report-schedules/${id}`,
+      data
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Toggle schedule active/inactive
+   */
+  toggleSchedule: async (id: string, isActive: boolean): Promise<ReportSchedule> => {
+    const response = await apiClient.patch<{ success: boolean; data: ReportSchedule }>(
+      `/analytics/report-schedules/${id}/toggle`,
+      { isActive }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Delete a schedule
+   */
+  deleteSchedule: async (id: string): Promise<void> => {
+    await apiClient.delete(`/analytics/report-schedules/${id}`);
+  },
+
+  /**
+   * Run a schedule immediately
+   */
+  runScheduleNow: async (
+    id: string,
+    data?: { formats?: string[]; recipients?: string[] }
+  ): Promise<{ schedule: ReportSchedule; report: AdvancedReport; exports: any[] }> => {
+    const response = await apiClient.post(
+      `/analytics/report-schedules/${id}/run-now`,
+      data || {}
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Get schedule statistics
+   */
+  getScheduleStats: async (): Promise<ScheduleStats> => {
+    const response = await apiClient.get<{ success: boolean; data: ScheduleStats }>(
+      '/analytics/report-schedules/stats'
+    );
+    return response.data.data;
+  },
+
+  // ==================== Export Center ====================
+
+  /**
+   * Get all exported files from reports
+   */
+  getExportedFiles: async (
+    params: { page?: number; limit?: number; format?: string; search?: string } = {}
+  ): Promise<PaginatedResponse<ReportExportFile>> => {
+    const response = await apiClient.get<{
+      success: boolean;
+      data: ReportExportFile[];
+      meta: any;
+    }>('/analytics/advanced/reports/exports', { params });
+    return {
+      data: response.data.data,
+      meta: response.data.meta,
+    };
   },
 };
 

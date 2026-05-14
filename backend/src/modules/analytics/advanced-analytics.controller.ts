@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../../shared/guards/admin.guard';
 import { AdvancedAnalyticsService } from './advanced-analytics.service';
 import { BaseAnalyticsController, QueryParams } from './base-analytics.controller';
+import { AnalyticsInsightsService, Insight } from './services/analytics-insights.service';
 
 interface ReportData {
   title?: string;
@@ -19,12 +20,38 @@ interface ReportData {
   format?: string;
 }
 
+interface CustomReportBody {
+  templateKey?: string;
+  title?: string;
+  titleEn?: string;
+  startDate?: string;
+  endDate?: string;
+  sections?: string[];
+  metrics?: string[];
+  charts?: string[];
+  filters?: Record<string, unknown>;
+  compareWithPrevious?: boolean;
+  includeRecommendations?: boolean;
+}
+
+interface PreviewReportBody {
+  templateKey?: string;
+  startDate?: string;
+  endDate?: string;
+  sections?: string[];
+  metrics?: string[];
+  filters?: Record<string, unknown>;
+}
+
 @ApiTags('التحليلات/متقدمة')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, AdminGuard)
 @Controller('analytics/advanced')
 export class AdvancedAnalyticsController extends BaseAnalyticsController {
-  constructor(private readonly advancedAnalyticsService: AdvancedAnalyticsService) {
+  constructor(
+    private readonly advancedAnalyticsService: AdvancedAnalyticsService,
+    private readonly insightsService: AnalyticsInsightsService,
+  ) {
     super();
   }
 
@@ -293,5 +320,52 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
       endDate,
       groupBy,
     );
+  }
+
+  // ==================== Report Builder ====================
+  @Get('reports/exports')
+  @ApiOperation({ summary: 'Get all exported files from reports' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'format', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  async getExportedFiles(@Query() params: QueryParams) {
+    const result = await this.advancedAnalyticsService.getExportedFiles(
+      this.convertQueryParams(params),
+    );
+    return { success: true, data: result.data, meta: result.meta };
+  }
+
+  @Post('reports/custom/preview')
+  @ApiOperation({ summary: 'Preview a custom report without saving' })
+  @ApiBody({ schema: { type: 'object' } })
+  @ApiResponse({ status: 200, description: 'Custom report preview generated' })
+  async previewCustomReport(@Body() data: PreviewReportBody) {
+    return await this.advancedAnalyticsService.previewCustomReport(data);
+  }
+
+  @Post('reports/custom/generate')
+  @ApiOperation({ summary: 'Generate and save a custom report' })
+  @ApiBody({ schema: { type: 'object' } })
+  @ApiResponse({ status: 201, description: 'Custom report generated and saved' })
+  async generateCustomReport(
+    @Body() data: CustomReportBody,
+    @Req() req: { user: { sub: string; firstName?: string; lastName?: string } }
+  ) {
+    return await this.advancedAnalyticsService.generateCustomReport({
+      ...data,
+      createdBy: req.user.sub,
+      creatorName: [req.user.firstName, req.user.lastName].filter(Boolean).join(' ') || undefined,
+    });
+  }
+
+  // ==================== Insights ====================
+  @Get('insights')
+  @ApiOperation({ summary: 'Get smart analytics insights' })
+  @ApiQuery({ name: 'days', required: false })
+  @ApiResponse({ status: 200, description: 'Insights generated successfully' })
+  async getInsights(@Query('days') days?: string): Promise<{ success: boolean; data: Insight[]; count: number }> {
+    const insights = await this.insightsService.generateInsights(days ? parseInt(days, 10) : 30);
+    return { success: true, data: insights, count: insights.length };
   }
 }
