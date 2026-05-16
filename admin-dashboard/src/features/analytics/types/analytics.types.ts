@@ -32,7 +32,9 @@ export enum ReportFormat {
   // eslint-disable-next-line no-unused-vars
   PDF = 'pdf',
   // eslint-disable-next-line no-unused-vars
-  EXCEL = 'excel',
+  EXCEL = 'xlsx',
+  // eslint-disable-next-line no-unused-vars
+  XLSX = 'xlsx',
   // eslint-disable-next-line no-unused-vars
   CSV = 'csv',
   // eslint-disable-next-line no-unused-vars
@@ -63,7 +65,14 @@ export interface DashboardData {
     averageOrderValue: number;
     activeServices?: number;
     openSupportTickets?: number;
-    systemHealth?: number;
+    systemHealth?: {
+      status: 'healthy' | 'warning' | 'critical' | 'unknown';
+      score?: number | null;
+      uptime?: number;
+      responseTime?: number;
+      errorRate?: number;
+      lastCheckedAt?: string;
+    } | null;
   };
   kpis: {
     revenueGrowth: number;
@@ -290,56 +299,66 @@ export interface MarketingReport {
 export interface RealTimeMetrics {
   activeUsers: number;
   todaySales: number;
-  monthSales: number;
+  currentRevenue?: number;
+  monthSales?: number;
   todayOrders: number;
-  todayNewCustomers: number;
-  activeOrders: number;
-  pendingOrders: number;
-  todayAbandonedCarts: number;
-  lowStockAlerts: number;
-  pendingSupportTickets: number;
-  cpuUsage: number;
-  memoryUsage: number;
-  diskUsage: number;
-  activeConnections: number;
+  todayNewCustomers?: number;
+  activeOrders?: number;
+  pendingOrders?: number;
+  todayAbandonedCarts?: number;
+  lowStockAlerts?: number;
+  pendingSupportTickets?: number;
+  activeConnections?: number;
   systemHealth: {
-    status: 'healthy' | 'warning' | 'critical';
-    apiResponseTime: number;
-    errorRate: number;
+    status: string;
     uptime: number;
-    diskUsage: number;
+    responseTime: number;
+    apiResponseTime?: number; // backward-compatible alias
+    errorRate?: number;
   };
-  lastUpdated: Date;
+  /** @deprecated Only available if infrastructure monitoring is explicitly configured */
+  cpuUsage?: number;
+  /** @deprecated Only available if infrastructure monitoring is explicitly configured */
+  memoryUsage?: number;
+  /** @deprecated Only available if infrastructure monitoring is explicitly configured */
+  diskUsage?: number;
+  lastUpdated: Date | string;
 }
 
 // Advanced Report
 export interface AdvancedReport {
+  id?: string;
+  _id?: string;
   reportId: string;
-  category: ReportCategory;
+  category: ReportCategory | string;
+  type?: string;
   title: string;
-  titleEn: string;
+  titleEn?: string;
   description?: string;
   descriptionEn?: string;
-  generatedBy: string;
-  createdBy: string;
+  generatedBy?: string;
+  createdBy?: string;
   createdByType?: 'user' | 'system';
   creatorName?: string;
-  generatedAt: Date;
-  startDate: Date;
-  endDate: Date;
-  status: ReportStatus;
-  priority: ReportPriority;
-  isArchived: boolean;
+  generatedAt?: Date | string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+  status: ReportStatus | string;
+  priority: ReportPriority | string;
+  isArchived?: boolean;
+  archivedAt?: Date | string | null;
   dataQuality?: DataQuality;
   exports?: ReportExportEntry[];
   fileUrls?: string[];
-  period: {
-    start: Date;
-    end: Date;
+  period?: {
+    start: Date | string;
+    end: Date | string;
   };
-  data: Record<string, unknown>;
-  insights: string[];
-  recommendations: string[];
+  data?: Record<string, unknown>;
+  insights?: string[];
+  recommendations?: string[];
   summary?: {
     totalRecords: number;
     totalValue: number;
@@ -443,6 +462,20 @@ export interface ReportExportEntry {
   generatedBy: string;
 }
 
+export interface ExportFile {
+  id?: string;
+  reportId?: string;
+  reportTitle?: string;
+  fileUrl: string;
+  fileName: string;
+  format: string;
+  fileSize?: number;
+  exportedAt?: string;
+  generatedAt?: string;
+  generatedBy?: string;
+  status?: 'available' | 'expired' | 'failed' | 'processing' | string;
+}
+
 // Schedule Frequency
 export enum ScheduleFrequency {
   DAILY = 'daily',
@@ -470,7 +503,7 @@ export interface GenerateAdvancedReportDto {
     customFilters?: Record<string, unknown>;
   };
   exportSettings?: {
-    formats: Array<'pdf' | 'excel' | 'csv' | 'json'>;
+    formats: ReportFormat[];
     includeCharts: boolean;
     includeRawData: boolean;
     customBranding?: {
@@ -501,8 +534,10 @@ export interface CreateReportScheduleDto {
 
 // Report Schedule interface (from backend)
 export interface ReportSchedule {
+  id?: string;
   _id: string;
   name: string;
+  title?: string;
   description: string;
   reportType: ReportType;
   frequency: ScheduleFrequency;
@@ -511,20 +546,28 @@ export interface ReportSchedule {
   filters: Record<string, unknown>;
   config: Record<string, unknown>;
   isActive: boolean;
-  nextRun: Date;
+  status?: 'active' | 'paused' | 'inactive';
+  nextRun?: Date;
   lastRun?: Date;
+  nextRunAt?: Date | string | null;
+  lastRunAt?: Date | string | null;
   lastResult?: {
-    success: boolean;
-    executionTime: number;
-    fileUrls: string[];
+    success?: boolean;
+    status?: string;
+    message?: string;
+    executionTime?: number;
+    fileUrls?: string[];
+    fileUrl?: string;
     reportId?: string;
     error?: string;
     sentAt?: Date;
+    generatedAt?: Date | string;
   };
+  fileUrls?: string[];
   runCount: number;
   successCount: number;
   failureCount: number;
-  createdBy: {
+  createdBy?: {
     _id: string;
     firstName?: string;
     lastName?: string;

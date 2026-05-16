@@ -18,8 +18,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { getCardSpacing } from '../utils/responsive';
-import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
-import { AdvancedAnalyticsDashboard } from '../components/AdvancedAnalyticsDashboard';
+import { AnalyticsDashboardPage } from './AnalyticsDashboardPage';
+import { AdvancedAnalyticsDashboardPage } from './AdvancedAnalyticsDashboardPage';
 import { ReportsManagementPage } from './ReportsManagementPage';
 import { DataExportPage } from './DataExportPage';
 import { AnalyticsErrorBoundary } from '../components/AnalyticsErrorBoundary';
@@ -237,11 +237,11 @@ export const AnalyticsMainPage: React.FC = () => {
 
         {/* Tab Content */}
         <TabPanel value={selectedTab} index={0}>
-          <AnalyticsDashboard />
+          <AnalyticsDashboardPage />
         </TabPanel>
 
         <TabPanel value={selectedTab} index={1}>
-          <AdvancedAnalyticsDashboard />
+          <AdvancedAnalyticsDashboardPage />
         </TabPanel>
 
         <TabPanel value={selectedTab} index={2}>

@@ -1,110 +1,132 @@
 import React from 'react';
 import { Card, CardContent, Typography, useTheme } from '@mui/material';
-import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { useTranslation } from 'react-i18next';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   getChartHeight,
+  getChartMargin,
+  getChartLabelFontSize,
   getChartTooltipFontSize,
-  shouldHideLegend,
-  getLegendPosition,
+  getYAxisWidth,
+  getXAxisHeight,
   getCardPadding,
 } from '../utils/responsive';
+import { asArray } from '../utils/analyticsDataGuards';
+import { formatNumber, formatDateLabel } from '../utils/formatters';
+import { EmptyAnalyticsState } from './EmptyAnalyticsState';
 
-interface ServiceAnalyticsChartProps {
-  data?: any;
+export interface ServiceRequestItem {
+  date: string;
+  requests: number;
+  completed: number;
 }
 
-export const ServiceAnalyticsChart: React.FC<ServiceAnalyticsChartProps> = ({ data }) => {
+interface ServiceAnalyticsChartProps {
+  data?: ServiceRequestItem[];
+  title?: string;
+}
+
+export const ServiceAnalyticsChart: React.FC<ServiceAnalyticsChartProps> = ({ data, title }) => {
   const theme = useTheme();
-  const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
 
-  const COLORS = [
-    theme.palette.primary.main,
-    theme.palette.secondary.main,
-    theme.palette.success.main,
-    theme.palette.warning.main,
-    theme.palette.error.main,
-  ];
-
   const chartHeight = getChartHeight(breakpoint, 400);
+  const chartMargin = getChartMargin(breakpoint);
+  const labelFontSize = getChartLabelFontSize(breakpoint);
   const tooltipFontSize = getChartTooltipFontSize(breakpoint);
-  const hideLegend = shouldHideLegend(breakpoint) && breakpoint.isXs;
-  const legendPosition = getLegendPosition(breakpoint);
+  const yAxisWidth = getYAxisWidth(breakpoint);
+  const xAxisHeight = getXAxisHeight(breakpoint, true);
   const cardPadding = getCardPadding(breakpoint);
-  
-  // Responsive outer radius
-  const outerRadius = breakpoint.isXs ? 55 : breakpoint.isSm ? 70 : 80;
-  
-  // Show labels only on larger screens
-  const showLabels = !breakpoint.isXs;
+  const needsRotation = breakpoint.isXs || breakpoint.isSm;
 
-  if (!data || data.length === 0) {
+  const safeData = asArray<ServiceRequestItem>(data);
+
+  const hasMeaningfulData = safeData.some(
+    (item) => (item.requests ?? 0) > 0 || (item.completed ?? 0) > 0
+  );
+
+  if (safeData.length === 0 || !hasMeaningfulData) {
     return (
-      <Card>
-        <CardContent sx={{ p: cardPadding }}>
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            textAlign="center"
-            sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-          >
-            {t('charts.noData')}
-          </Typography>
-        </CardContent>
-      </Card>
+      <EmptyAnalyticsState
+        title="لا توجد طلبات خدمة"
+        description="لا توجد طلبات خدمة خلال الفترة المحددة."
+      />
     );
   }
 
   return (
     <Card>
       <CardContent sx={{ p: cardPadding }}>
-        <Typography 
-          variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+        <Typography
+          variant={breakpoint.isXs ? 'subtitle1' : 'h6'}
           gutterBottom
           sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
         >
-          {t('charts.serviceAnalytics')}
+          {title ?? 'طلبات الخدمة'}
         </Typography>
         <ResponsiveContainer width="100%" height={chartHeight}>
-          <PieChart>
-            <Pie
-              data={data || []}
-              cx="50%"
-              cy="50%"
-              labelLine={showLabels}
-              label={showLabels ? ({ name, value }: any) => `${name}: ${value}` : false}
-              outerRadius={outerRadius}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {(data || []).map((_: any, index: number) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
+          <LineChart data={safeData} margin={chartMargin}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: labelFontSize }}
+              tickFormatter={(value) => formatDateLabel(value)}
+              angle={needsRotation ? -45 : 0}
+              textAnchor={needsRotation ? 'end' : 'middle'}
+              height={xAxisHeight}
+              interval={breakpoint.isXs ? 'preserveStartEnd' : 0}
+            />
+            <YAxis
+              tick={{ fontSize: labelFontSize }}
+              width={yAxisWidth}
+              tickFormatter={(value) => formatNumber(value)}
+            />
             <Tooltip
               contentStyle={{
-                backgroundColor: theme.palette.background.paper,
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: '4px',
                 fontSize: `${tooltipFontSize}px`,
                 padding: breakpoint.isXs ? '8px' : '12px',
+                direction: 'rtl',
+                textAlign: 'right',
               }}
-              position={{ x: breakpoint.isXs ? 10 : undefined, y: breakpoint.isXs ? -10 : undefined }}
+              formatter={(value: number, name: string) => {
+                if (name === 'requests') return [formatNumber(value), 'الطلبات'];
+                if (name === 'completed') return [formatNumber(value), 'المكتملة'];
+                return [value, name];
+              }}
+              labelFormatter={(label) => formatDateLabel(label)}
             />
-            {!hideLegend && (
-              <Legend 
-                wrapperStyle={{ 
-                  fontSize: `${tooltipFontSize}px`,
-                  paddingTop: breakpoint.isXs || breakpoint.isSm ? '16px' : '0',
-                }}
-                iconSize={breakpoint.isXs ? 10 : breakpoint.isSm ? 12 : 16}
-                verticalAlign={legendPosition === 'bottom' ? 'bottom' : 'top'}
-                height={breakpoint.isXs || breakpoint.isSm ? 36 : undefined}
-              />
-            )}
-          </PieChart>
+            <Legend
+              wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
+              formatter={(value: string) => {
+                if (value === 'requests') return 'الطلبات';
+                if (value === 'completed') return 'المكتملة';
+                return value;
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="requests"
+              stroke={theme.palette.primary.main}
+              strokeWidth={breakpoint.isXs ? 1.5 : 2}
+              dot={{ fill: theme.palette.primary.main, strokeWidth: 2, r: breakpoint.isXs ? 2.5 : 3 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="completed"
+              stroke={theme.palette.success.main}
+              strokeWidth={breakpoint.isXs ? 1.5 : 2}
+              dot={{ fill: theme.palette.success.main, strokeWidth: 2, r: breakpoint.isXs ? 2.5 : 3 }}
+            />
+          </LineChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>

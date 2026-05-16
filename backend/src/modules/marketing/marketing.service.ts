@@ -329,7 +329,7 @@ export class MarketingService {
       try {
         let variant: unknown = null;
         let product: unknown = null;
-        let variantIdStr = input.variantId;
+        const variantIdStr = input.variantId;
         let productIdStr = input.productId;
 
         if (input.variantId) {

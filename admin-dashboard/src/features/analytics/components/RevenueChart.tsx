@@ -5,8 +5,17 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useTranslation } from 'react-i18next';
+import {
+  ComposedChart,
+  Area,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   getChartHeight,
@@ -17,21 +26,28 @@ import {
   getXAxisHeight,
   getCardPadding,
 } from '../utils/responsive';
+import { asArray } from '../utils/analyticsDataGuards';
+import { formatCurrency, formatNumber, formatDateLabel } from '../utils/formatters';
+import { EmptyAnalyticsState } from './EmptyAnalyticsState';
+
+export interface RevenueDailyItem {
+  date: string;
+  revenue: number;
+  orders: number;
+}
 
 interface RevenueChartProps {
-  data?: any;
+  data?: RevenueDailyItem[];
   title?: string;
-  type?: string;
   height?: number;
 }
 
 export const RevenueChart: React.FC<RevenueChartProps> = ({ data, title, height }) => {
   const theme = useTheme();
-  const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
 
-  const chartData = Array.isArray(data) ? data : [];
-  const chartHeight = getChartHeight(breakpoint, height || 400);
+  const safeData = asArray<RevenueDailyItem>(data);
+  const chartHeight = getChartHeight(breakpoint, height || 350);
   const chartMargin = getChartMargin(breakpoint);
   const labelFontSize = getChartLabelFontSize(breakpoint);
   const tooltipFontSize = getChartTooltipFontSize(breakpoint);
@@ -40,66 +56,94 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, title, height 
   const cardPadding = getCardPadding(breakpoint);
   const needsRotation = breakpoint.isXs || breakpoint.isSm;
 
-  if (!chartData || chartData.length === 0) {
+  const hasMeaningfulData = safeData.some(
+    (item) => (item.revenue ?? 0) > 0 || (item.orders ?? 0) > 0
+  );
+
+  if (safeData.length === 0 || !hasMeaningfulData) {
     return (
-      <Card>
-        <CardContent sx={{ p: cardPadding }}>
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            textAlign="center"
-            sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-          >
-            {t('charts.noData')}
-          </Typography>
-        </CardContent>
-      </Card>
+      <EmptyAnalyticsState
+        title="لا توجد بيانات إيرادات"
+        description="لا توجد بيانات إيرادات أو طلبات ضمن الفترة المحددة."
+      />
     );
   }
 
   return (
     <Card>
       <CardContent sx={{ p: cardPadding }}>
-        <Typography 
-          variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+        <Typography
+          variant={breakpoint.isXs ? 'subtitle1' : 'h6'}
           gutterBottom
           sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
         >
-          {title || t('charts.revenueTrends')}
+          {title ?? 'الإيرادات والطلبات اليومية'}
         </Typography>
         <ResponsiveContainer width="100%" height={chartHeight}>
-          <LineChart 
-            data={chartData}
-            margin={chartMargin}
-          >
+          <ComposedChart data={safeData} margin={chartMargin}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="date"
               tick={{ fontSize: labelFontSize }}
+              tickFormatter={(value) => formatDateLabel(value)}
               angle={needsRotation ? -45 : 0}
               textAnchor={needsRotation ? 'end' : 'middle'}
               height={xAxisHeight}
               interval={breakpoint.isXs ? 'preserveStartEnd' : 0}
             />
-            <YAxis 
+            <YAxis
+              yAxisId="left"
               tick={{ fontSize: labelFontSize }}
               width={yAxisWidth}
+              tickFormatter={(value) => formatCurrency(value)}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fontSize: labelFontSize }}
+              width={yAxisWidth}
+              tickFormatter={(value) => formatNumber(value)}
             />
             <Tooltip
               contentStyle={{
                 fontSize: `${tooltipFontSize}px`,
                 padding: breakpoint.isXs ? '8px' : '12px',
+                direction: 'rtl',
+                textAlign: 'right',
               }}
-              position={{ x: breakpoint.isXs ? 10 : undefined, y: breakpoint.isXs ? -10 : undefined }}
+              formatter={(value: number, name: string) => {
+                if (name === 'revenue') return [formatCurrency(value), 'الإيراد'];
+                if (name === 'orders') return [formatNumber(value), 'الطلبات'];
+                return [value, name];
+              }}
+              labelFormatter={(label) => formatDateLabel(label)}
             />
-            <Line 
-              type="monotone" 
-              dataKey="revenue" 
-              stroke={theme.palette.primary.main} 
-              strokeWidth={breakpoint.isXs ? 1.5 : breakpoint.isSm ? 2 : 3}
-              dot={{ fill: theme.palette.primary.main, strokeWidth: 2, r: breakpoint.isXs ? 2.5 : breakpoint.isSm ? 3 : 4 }}
+            <Legend
+              wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
+              formatter={(value: string) => {
+                if (value === 'revenue') return 'الإيراد';
+                if (value === 'orders') return 'الطلبات';
+                return value;
+              }}
             />
-          </LineChart>
+            <Area
+              yAxisId="left"
+              type="monotone"
+              dataKey="revenue"
+              stroke={theme.palette.primary.main}
+              fill={theme.palette.primary.main}
+              fillOpacity={0.15}
+              strokeWidth={breakpoint.isXs ? 1.5 : 2}
+              dot={{ fill: theme.palette.primary.main, strokeWidth: 2, r: breakpoint.isXs ? 2.5 : 3 }}
+            />
+            <Bar
+              yAxisId="right"
+              dataKey="orders"
+              fill={theme.palette.secondary.main}
+              radius={[2, 2, 0, 0]}
+              barSize={breakpoint.isXs ? 12 : breakpoint.isSm ? 16 : 20}
+            />
+          </ComposedChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -8,7 +8,6 @@ import {
   Tab,
   Button,
   Chip,
-  LinearProgress,
   Alert,
   Stack,
 } from '@mui/material';
@@ -26,7 +25,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 
-// Import ready-made components
 import {
   SalesAnalyticsCard,
   ProductPerformanceCard,
@@ -36,20 +34,10 @@ import {
   MarketingReportCard,
   RealTimeMetricsCard,
   AnalyticsSkeleton,
-  TrendsVisualization,
 } from '../components';
 
-// Import hooks
-import { 
-  useSalesAnalytics, 
-  useCustomerAnalytics, 
-  useInventoryReport, 
-  useFinancialReport, 
-  useMarketingReport, 
-  useRealTimeMetrics,
-} from '../hooks/useAnalytics';
-
-// Import types
+import { useRealTimeMetrics } from '../hooks/useAnalytics';
+import { withAnalyticsErrorBoundary } from '../components/AnalyticsErrorBoundary';
 import { PeriodType } from '../types/analytics.types';
 
 interface TabPanelProps {
@@ -60,7 +48,6 @@ interface TabPanelProps {
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
-
   return (
     <div
       role="tabpanel"
@@ -69,65 +56,53 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`analytics-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ py: { xs: 2, sm: 3 }, px: { xs: 1, sm: 3 } }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ py: { xs: 2, sm: 3 }, px: { xs: 1, sm: 3 } }}>
+          {children}
+        </Box>
+      )}
     </div>
   );
 }
 
-export const AdvancedAnalyticsDashboardPage: React.FC = () => {
+// Track which tabs have been loaded at least once
+const TABS = [
+  { label: 'advancedDashboard.tabs.overview', icon: <TrendingUp /> },
+  { label: 'advancedDashboard.tabs.sales', icon: <ShoppingCart /> },
+  { label: 'advancedDashboard.tabs.products', icon: <Inventory /> },
+  { label: 'advancedDashboard.tabs.customers', icon: <People /> },
+  { label: 'advancedDashboard.tabs.financial', icon: <AttachMoney /> },
+  { label: 'advancedDashboard.tabs.marketing', icon: <Assessment /> },
+  { label: 'advancedDashboard.tabs.inventory', icon: <Support /> },
+];
+
+export const AdvancedAnalyticsDashboardPage = withAnalyticsErrorBoundary(function AdvancedAnalyticsDashboardPage() {
   const { t } = useTranslation('analytics');
   const { isMobile } = useBreakpoint();
   const [activeTab, setActiveTab] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>(PeriodType.MONTHLY);
+  const [loadedTabs, setLoadedTabs] = useState<Set<number>>(new Set([0]));
 
-  // Use analytics hooks
   const { data: realtimeMetrics, isLoading: realtimeLoading, error: realtimeError } = useRealTimeMetrics();
-  const { data: salesAnalytics, isLoading: salesLoading, error: salesError } = useSalesAnalytics({ period: selectedPeriod });
-  const { data: customerAnalytics, isLoading: customerLoading, error: customerError } = useCustomerAnalytics({ period: selectedPeriod });
-  const { data: inventoryReport, isLoading: inventoryLoading, error: inventoryError } = useInventoryReport({ period: selectedPeriod });
-  const { data: financialReport, isLoading: financialLoading, error: financialError } = useFinancialReport({ period: selectedPeriod });
-  const { data: marketingReport, isLoading: marketingLoading, error: marketingError } = useMarketingReport({ period: selectedPeriod });
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
+  const handleTabChange = useCallback(
+    (_event: React.SyntheticEvent, newValue: number) => {
+      setActiveTab(newValue);
+      setLoadedTabs((prev) => new Set(prev).add(newValue));
+    },
+    []
+  );
 
   const handlePeriodChange = (period: PeriodType) => {
     setSelectedPeriod(period);
-  };
-
-  const handleExportData = (type: string, format: string) => {
-    // Implementation for data export
-    // eslint-disable-next-line no-console
-    console.log(`Exporting ${type} data in ${format} format`);
+    // When period changes, reset loaded tabs so they refetch
+    setLoadedTabs(new Set([0]));
+    setActiveTab(0);
   };
 
   const handleRefresh = () => {
-    // Refetch all data
     window.location.reload();
   };
-
-  const isLoading = realtimeLoading || salesLoading || customerLoading ||
-                   inventoryLoading || financialLoading || marketingLoading;
-
-  if (isLoading) {
-    return (
-      <Box sx={{ width: '100%', mt: { xs: 1, sm: 2 }, px: { xs: 1, sm: 0 } }}>
-        <LinearProgress />
-        <Typography 
-          variant="body2" 
-          sx={{ 
-            mt: 1, 
-            textAlign: 'center',
-            fontSize: isMobile ? '0.8125rem' : undefined,
-          }}
-        >
-          {t('advancedDashboard.loadingAnalytics')}
-        </Typography>
-        <AnalyticsSkeleton />
-      </Box>
-    );
-  }
 
   return (
     <Box sx={{ width: '100%', px: { xs: 0, sm: 2 } }}>
@@ -144,16 +119,16 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
           }}
         >
           <Box>
-            <Typography 
-              variant={isMobile ? 'h5' : 'h4'} 
-              fontWeight="bold" 
+            <Typography
+              variant={isMobile ? 'h5' : 'h4'}
+              fontWeight="bold"
               gutterBottom
               sx={{ fontSize: isMobile ? '1.5rem' : undefined }}
             >
               {t('advancedDashboard.title')}
             </Typography>
-            <Typography 
-              variant={isMobile ? 'body2' : 'body1'} 
+            <Typography
+              variant={isMobile ? 'body2' : 'body1'}
               color="text.secondary"
               sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
             >
@@ -170,7 +145,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               variant="outlined"
               startIcon={<Refresh sx={{ fontSize: isMobile ? 18 : undefined }} />}
               onClick={handleRefresh}
-              size={isMobile ? 'medium' : 'medium'}
+              size="small"
               fullWidth={isMobile}
               sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
             >
@@ -179,8 +154,8 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
             <Button
               variant="outlined"
               startIcon={<GetApp sx={{ fontSize: isMobile ? 18 : undefined }} />}
-              onClick={() => handleExportData('dashboard', 'pdf')}
-              size={isMobile ? 'medium' : 'medium'}
+              onClick={() => {/* noop */}}
+              size="small"
               fullWidth={isMobile}
               sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
             >
@@ -191,13 +166,11 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
 
         {/* Real-time Status Bar */}
         {realtimeMetrics && (
-          <Alert 
-            severity="info" 
-            sx={{ 
+          <Alert
+            severity="info"
+            sx={{
               mb: { xs: 1.5, sm: 2 },
-              '& .MuiAlert-message': {
-                width: '100%',
-              },
+              '& .MuiAlert-message': { width: '100%' },
             }}
           >
             <Stack
@@ -215,42 +188,33 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
                 spacing={isMobile ? 0.5 : 2}
                 sx={{ flexWrap: 'wrap', gap: isMobile ? 0.5 : 2 }}
               >
-                <Typography 
-                  variant="body2"
-                  sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
-                >
+                <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
                   {t('advancedDashboard.realTimeStatus.activeUsers')}: {realtimeMetrics.activeUsers || 0}
                 </Typography>
-                <Typography 
-                  variant="body2"
-                  sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
-                >
-                  {t('advancedDashboard.realTimeStatus.todaySales')}: {(realtimeMetrics.todaySales || 0).toLocaleString()} $
+                <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                  {t('advancedDashboard.realTimeStatus.todaySales')}: {realtimeMetrics.todaySales || 0} YER
                 </Typography>
-                <Typography 
-                  variant="body2"
-                  sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
-                >
-                  {t('advancedDashboard.realTimeStatus.systemStatus')}: {realtimeMetrics.systemHealth?.status === 'healthy' 
-                    ? t('realTimeMetrics.systemHealthy') 
+                <Typography variant="body2" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
+                  {t('advancedDashboard.realTimeStatus.systemStatus')}: {realtimeMetrics.systemHealth?.status === 'healthy'
+                    ? t('realTimeMetrics.systemHealthy')
                     : t('realTimeMetrics.systemUnderMaintenance')}
                 </Typography>
               </Stack>
-              <Typography 
+              <Typography
                 variant="caption"
                 sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
               >
-                {t('realTimeMetrics.lastUpdate')}: {new Date(realtimeMetrics.lastUpdated || new Date()).toLocaleTimeString('ar-SA')}
+                {t('realTimeMetrics.lastUpdate')}: {new Date(realtimeMetrics.lastUpdated || new Date()).toLocaleTimeString('ar-YE')}
               </Typography>
             </Stack>
           </Alert>
         )}
 
-        {/* Period Selection and Quick Filters */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            gap: { xs: 0.5, sm: 1 }, 
+        {/* Period Selection */}
+        <Box
+          sx={{
+            display: 'flex',
+            gap: { xs: 0.5, sm: 1 },
             mb: { xs: 1.5, sm: 2 },
             flexWrap: 'wrap',
           }}
@@ -263,7 +227,7 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               color={selectedPeriod === period ? 'primary' : 'default'}
               variant={selectedPeriod === period ? 'filled' : 'outlined'}
               size={isMobile ? 'small' : 'medium'}
-              sx={{ 
+              sx={{
                 fontSize: isMobile ? '0.75rem' : undefined,
                 height: isMobile ? 28 : undefined,
               }}
@@ -281,8 +245,8 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
             aria-label="analytics tabs"
             variant={isMobile ? 'scrollable' : 'standard'}
             scrollButtons={isMobile ? 'auto' : false}
-            sx={{ 
-              borderBottom: 1, 
+            sx={{
+              borderBottom: 1,
               borderColor: 'divider',
               '& .MuiTab-root': {
                 minWidth: isMobile ? 64 : undefined,
@@ -291,62 +255,18 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
               },
             }}
           >
-            <Tab
-              icon={<TrendingUp sx={{ fontSize: isMobile ? 18 : 20 }} />}
-              iconPosition="start"
-              label={t('advancedDashboard.tabs.overview')}
-              id="analytics-tab-0"
-              aria-controls="analytics-tabpanel-0"
-            />
-            <Tab
-              icon={<ShoppingCart sx={{ fontSize: isMobile ? 18 : 20 }} />}
-              iconPosition="start"
-              label={t('advancedDashboard.tabs.sales')}
-              id="analytics-tab-1"
-              aria-controls="analytics-tabpanel-1"
-            />
-            <Tab
-              icon={<Inventory sx={{ fontSize: isMobile ? 18 : 20 }} />}
-              iconPosition="start"
-              label={t('advancedDashboard.tabs.products')}
-              id="analytics-tab-2"
-              aria-controls="analytics-tabpanel-2"
-            />
-            <Tab
-              icon={<People sx={{ fontSize: isMobile ? 18 : 20 }} />}
-              iconPosition="start"
-              label={t('advancedDashboard.tabs.customers')}
-              id="analytics-tab-3"
-              aria-controls="analytics-tabpanel-3"
-            />
-            <Tab
-              icon={<AttachMoney sx={{ fontSize: isMobile ? 18 : 20 }} />}
-              iconPosition="start"
-              label={t('advancedDashboard.tabs.financial')}
-              id="analytics-tab-4"
-              aria-controls="analytics-tabpanel-4"
-            />
-            <Tab
-              icon={<Assessment sx={{ fontSize: isMobile ? 18 : 20 }} />}
-              iconPosition="start"
-              label={t('advancedDashboard.tabs.marketing')}
-              id="analytics-tab-5"
-              aria-controls="analytics-tabpanel-5"
-            />
-            <Tab
-              icon={<Support sx={{ fontSize: isMobile ? 18 : 20 }} />}
-              iconPosition="start"
-              label={t('advancedDashboard.tabs.inventory')}
-              id="analytics-tab-6"
-              aria-controls="analytics-tabpanel-6"
-            />
-            <Tab
-              icon={<TrendingUp sx={{ fontSize: isMobile ? 18 : 20 }} />}
-              iconPosition="start"
-              label={t('advancedDashboard.tabs.trends')}
-              id="analytics-tab-7"
-              aria-controls="analytics-tabpanel-7"
-            />
+            {TABS.map((tab, idx) => (
+              <Tab
+                key={idx}
+                icon={React.cloneElement(tab.icon as any, {
+                  sx: { fontSize: isMobile ? 18 : 20 },
+                })}
+                iconPosition="start"
+                label={t(tab.label)}
+                id={`analytics-tab-${idx}`}
+                aria-controls={`analytics-tabpanel-${idx}`}
+              />
+            ))}
           </Tabs>
 
           {/* Overview Tab */}
@@ -360,62 +280,59 @@ export const AdvancedAnalyticsDashboardPage: React.FC = () => {
 
           {/* Sales Tab */}
           <TabPanel value={activeTab} index={1}>
-            <SalesAnalyticsCard
-              data={salesAnalytics}
-              isLoading={salesLoading}
-              error={salesError}
-            />
+            {loadedTabs.has(1) ? (
+              <SalesAnalyticsCard period={selectedPeriod} />
+            ) : (
+              <AnalyticsSkeleton variant="card" count={2} />
+            )}
           </TabPanel>
 
           {/* Products Tab */}
           <TabPanel value={activeTab} index={2}>
-            <ProductPerformanceCard
-              initialPeriod={selectedPeriod}
-            />
+            {loadedTabs.has(2) ? (
+              <ProductPerformanceCard initialPeriod={selectedPeriod} />
+            ) : (
+              <AnalyticsSkeleton variant="card" count={2} />
+            )}
           </TabPanel>
 
           {/* Customers Tab */}
           <TabPanel value={activeTab} index={3}>
-            <CustomerAnalyticsCard
-              data={customerAnalytics}
-              isLoading={customerLoading}
-              error={customerError}
-            />
+            {loadedTabs.has(3) ? (
+              <CustomerAnalyticsCard period={selectedPeriod} />
+            ) : (
+              <AnalyticsSkeleton variant="card" count={2} />
+            )}
           </TabPanel>
 
           {/* Financial Tab */}
           <TabPanel value={activeTab} index={4}>
-            <FinancialReportCard
-              data={financialReport}
-              isLoading={financialLoading}
-              error={financialError}
-            />
+            {loadedTabs.has(4) ? (
+              <FinancialReportCard period={selectedPeriod} />
+            ) : (
+              <AnalyticsSkeleton variant="card" count={2} />
+            )}
           </TabPanel>
 
           {/* Marketing Tab */}
           <TabPanel value={activeTab} index={5}>
-            <MarketingReportCard
-              data={marketingReport}
-              isLoading={marketingLoading}
-              error={marketingError}
-            />
+            {loadedTabs.has(5) ? (
+              <MarketingReportCard period={selectedPeriod} />
+            ) : (
+              <AnalyticsSkeleton variant="card" count={2} />
+            )}
           </TabPanel>
 
           {/* Inventory Tab */}
           <TabPanel value={activeTab} index={6}>
-            <InventoryReportCard
-              data={inventoryReport}
-              isLoading={inventoryLoading}
-              error={inventoryError}
-            />
-          </TabPanel>
-
-          {/* Trends Tab */}
-          <TabPanel value={activeTab} index={7}>
-            <TrendsVisualization />
+            {loadedTabs.has(6) ? (
+              <InventoryReportCard period={selectedPeriod} />
+            ) : (
+              <AnalyticsSkeleton variant="card" count={2} />
+            )}
           </TabPanel>
         </CardContent>
       </Card>
     </Box>
   );
-};
+});

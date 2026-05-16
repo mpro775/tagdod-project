@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Body, Param, UseGuards, GatewayTimeoutException, Delete, Logger, Req } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Param, UseGuards, GatewayTimeoutException, Delete, Logger, Req, BadRequestException } from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -58,7 +58,7 @@ export class AnalyticsController {
     description: 'المقارنة مع الفترة السابقة',
   })
   @ApiResponse({ status: 200, description: 'تم استرداد بيانات لوحة التحكم بنجاح', type: Object })
-  async getDashboard(@Query() query: AnalyticsQueryDto): Promise<DashboardDataDto> {
+  async getDashboard(@Query() query: AnalyticsQueryDto) {
     const result = await from(this.analyticsService.getDashboardData(query))
       .pipe(
         timeout(30000), // Increased from 8s to 30s for large datasets
@@ -70,7 +70,7 @@ export class AnalyticsController {
         }),
       )
       .toPromise();
-    return result!;
+    return { success: true, data: result!, requestId: '' };
   }
 
   @Get('overview')
@@ -82,7 +82,7 @@ export class AnalyticsController {
   @ApiResponse({ status: 200, description: 'تم استرداد مقاييس النظرة العامة بنجاح' })
   async getOverview(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return dashboard.overview;
+    return { success: true, data: dashboard.overview, requestId: '' };
   }
 
   @Get('revenue')
@@ -96,7 +96,7 @@ export class AnalyticsController {
   @ApiResponse({ status: 200, description: 'تم استرداد تحليلات الإيرادات بنجاح' })
   async getRevenueAnalytics(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return dashboard.revenueCharts;
+    return { success: true, data: dashboard.revenueCharts, requestId: '' };
   }
 
   @Get('users')
@@ -110,7 +110,7 @@ export class AnalyticsController {
   @ApiResponse({ status: 200, description: 'تم استرداد تحليلات المستخدمين بنجاح' })
   async getUserAnalytics(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return dashboard.userCharts;
+    return { success: true, data: dashboard.userCharts, requestId: '' };
   }
 
   @Get('products')
@@ -124,7 +124,7 @@ export class AnalyticsController {
   @ApiResponse({ status: 200, description: 'تم استرداد تحليلات المنتجات بنجاح' })
   async getProductAnalytics(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return dashboard.productCharts;
+    return { success: true, data: dashboard.productCharts, requestId: '' };
   }
 
   @Get('services')
@@ -138,7 +138,7 @@ export class AnalyticsController {
   @ApiResponse({ status: 200, description: 'تم استرداد تحليلات الخدمات بنجاح' })
   async getServiceAnalytics(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return dashboard.serviceCharts;
+    return { success: true, data: dashboard.serviceCharts, requestId: '' };
   }
 
   @Get('support')
@@ -152,7 +152,7 @@ export class AnalyticsController {
   @ApiResponse({ status: 200, description: 'تم استرداد تحليلات الدعم بنجاح' })
   async getSupportAnalytics(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return dashboard.supportCharts;
+    return { success: true, data: dashboard.supportCharts, requestId: '' };
   }
 
   @Get('performance')
@@ -165,10 +165,10 @@ export class AnalyticsController {
     description: 'تم استرداد مقاييس الأداء بنجاح',
     type: PerformanceMetricsDto,
   })
-  async getPerformanceMetrics(): Promise<PerformanceMetricsDto> {
+  async getPerformanceMetrics() {
     // Get performance metrics from analytics service
     const metrics = await this.analyticsService.getPerformanceMetrics();
-    return metrics;
+    return { success: true, data: metrics, requestId: '' };
   }
 
   @Post('reports/generate')
@@ -181,7 +181,7 @@ export class AnalyticsController {
   async generateReport(
     @Body() dto: ReportGenerationDto,
     @Req() req: { user: { sub: string; firstName?: string; lastName?: string } },
-  ): Promise<AnalyticsReportDto> {
+  ) {
     // Map ReportType to report category for advanced analytics
     const categoryMap: Partial<Record<ReportType, string>> = {
       [ReportType.MONTHLY_REPORT]: 'sales',
@@ -240,20 +240,24 @@ export class AnalyticsController {
     }
 
     return {
-      id: report.id,
-      type: dto.reportType,
-      period: `${dto.startDate || 'Start'} to ${dto.endDate || 'End'}`,
-      generatedAt:
-        typeof report.generatedAt === 'string'
-          ? new Date(report.generatedAt)
-          : report.generatedAt &&
-              typeof report.generatedAt === 'object' &&
-              'getTime' in report.generatedAt
-            ? (report.generatedAt as Date)
-            : new Date(),
-      data: dashboard,
-      insights,
-      fileUrls,
+      success: true,
+      data: {
+        id: report.id,
+        type: dto.reportType,
+        period: `${dto.startDate || 'Start'} to ${dto.endDate || 'End'}`,
+        generatedAt:
+          typeof report.generatedAt === 'string'
+            ? new Date(report.generatedAt)
+            : report.generatedAt &&
+                typeof report.generatedAt === 'object' &&
+                'getTime' in report.generatedAt
+              ? (report.generatedAt as Date)
+              : new Date(),
+        data: dashboard,
+        insights,
+        fileUrls,
+      },
+      requestId: (req as any)['requestId'] || '',
     };
   }
 
@@ -264,7 +268,7 @@ export class AnalyticsController {
   })
   @ApiParam({ name: 'id', description: 'معرف التقرير' })
   @ApiResponse({ status: 200, description: 'تم استرداد التقرير بنجاح', type: AnalyticsReportDto })
-  async getReport(@Param('id') id: string): Promise<AnalyticsReportDto> {
+  async getReport(@Param('id') id: string) {
     // Retrieve report from database
     const report = await this.advancedAnalyticsService.getAdvancedReport(id);
 
@@ -275,20 +279,24 @@ export class AnalyticsController {
     });
 
     return {
-      id: report.id,
-      type: ReportType.MONTHLY_REPORT, // Default type, should be stored in report
-      period: `${report.startDate} to ${report.endDate}`,
-      generatedAt:
-        typeof report.generatedAt === 'string'
-          ? new Date(report.generatedAt)
-          : report.generatedAt &&
-              typeof report.generatedAt === 'object' &&
-              'getTime' in report.generatedAt
-            ? (report.generatedAt as Date)
-            : new Date(),
-      data: dashboard,
-      insights: report.insights || [],
-      fileUrls: [], // fileUrls are generated on-demand via exportReport endpoint
+      success: true,
+      data: {
+        id: report.id,
+        type: ReportType.MONTHLY_REPORT, // Default type, should be stored in report
+        period: `${report.startDate} to ${report.endDate}`,
+        generatedAt:
+          typeof report.generatedAt === 'string'
+            ? new Date(report.generatedAt)
+            : report.generatedAt &&
+                typeof report.generatedAt === 'object' &&
+                'getTime' in report.generatedAt
+              ? (report.generatedAt as Date)
+              : new Date(),
+        data: dashboard,
+        insights: report.insights || [],
+        fileUrls: [], // fileUrls are generated on-demand via exportReport endpoint
+      },
+      requestId: '',
     };
   }
 
@@ -298,15 +306,11 @@ export class AnalyticsController {
     description: 'إنشاء تقرير مجدول يعمل تلقائياً',
   })
   @ApiBody({ type: CreateReportScheduleDto })
-  @ApiResponse({ status: 201, description: 'تم إنشاء جدولة التقرير بنجاح' })
+  @ApiResponse({ status: 400, description: 'Use /analytics/report-schedules endpoint for scheduling' })
   async scheduleReport(
     @Body() dto: CreateReportScheduleDto, // eslint-disable-line @typescript-eslint/no-unused-vars
   ) {
-    // Implementation would create a scheduled report
-    return {
-      scheduleId: `schedule_${Date.now()}`,
-      message: 'Report scheduled successfully',
-    };
+    throw new BadRequestException('Use /analytics/report-schedules endpoint for scheduling');
   }
 
   @Get('kpis')
@@ -318,7 +322,7 @@ export class AnalyticsController {
   @ApiResponse({ status: 200, description: 'تم استرداد مؤشرات الأداء الرئيسية بنجاح' })
   async getKPIs(@Query() query: AnalyticsQueryDto) {
     const dashboard = await this.analyticsService.getDashboardData(query);
-    return dashboard.kpis;
+    return { success: true, data: dashboard.kpis, requestId: '' };
   }
 
   @Get('trends/:metric')
@@ -347,7 +351,7 @@ export class AnalyticsController {
       endDate.toISOString(),
     );
 
-    return trends;
+    return { success: true, data: trends, requestId: '' };
   }
 
   @Get('comparison')
@@ -409,7 +413,7 @@ export class AnalyticsController {
       previousPeriod: `${previousStart} to ${previousEnd}`,
     };
 
-    return comparison;
+    return { success: true, data: comparison, requestId: '' };
   }
 
   @Get('export/:format')
@@ -435,25 +439,25 @@ export class AnalyticsController {
     @Query('endDate') endDate?: string,
   ) {
     // Use advanced analytics service export methods
-    let fileUrl: string;
+    let exportResult: { fileUrl: string; fileName: string; format: string; fileSize?: number; exportedAt: string; status: string };
 
     switch (type.toLowerCase()) {
       case 'sales':
-        fileUrl = await this.advancedAnalyticsService.exportSalesData(
+        exportResult = await this.advancedAnalyticsService.exportSalesData(
           format,
           startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
           endDate || new Date().toISOString(),
         );
         break;
       case 'products':
-        fileUrl = await this.advancedAnalyticsService.exportProductsData(
+        exportResult = await this.advancedAnalyticsService.exportProductsData(
           format,
           startDate,
           endDate,
         );
         break;
       case 'customers':
-        fileUrl = await this.advancedAnalyticsService.exportCustomersData(
+        exportResult = await this.advancedAnalyticsService.exportCustomersData(
           format,
           startDate,
           endDate,
@@ -461,7 +465,7 @@ export class AnalyticsController {
         break;
       default:
         // Default to sales export
-        fileUrl = await this.advancedAnalyticsService.exportSalesData(
+        exportResult = await this.advancedAnalyticsService.exportSalesData(
           format,
           startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
           endDate || new Date().toISOString(),
@@ -469,11 +473,18 @@ export class AnalyticsController {
     }
 
     return {
-      fileUrl,
-      format,
-      type,
-      generatedAt: new Date(),
-      message: 'Export generated successfully',
+      success: true,
+      data: {
+        fileUrl: exportResult.fileUrl,
+        fileName: exportResult.fileName,
+        format: exportResult.format,
+        fileSize: exportResult.fileSize,
+        exportedAt: exportResult.exportedAt,
+        status: exportResult.status,
+        type,
+        message: 'Export generated successfully',
+      },
+      requestId: '',
     };
   }
 
@@ -488,8 +499,12 @@ export class AnalyticsController {
     await this.analyticsService.refreshAnalytics();
 
     return {
-      refreshedAt: new Date(),
-      message: 'Analytics data refreshed successfully',
+      success: true,
+      data: {
+        refreshedAt: new Date(),
+        message: 'Analytics data refreshed successfully',
+      },
+      requestId: '',
     };
   }
 
@@ -502,8 +517,12 @@ export class AnalyticsController {
   async clearCache() {
     await this.analyticsService.clearAnalyticsCaches();
     return {
-      clearedAt: new Date(),
-      message: 'Analytics cache cleared successfully',
+      success: true,
+      data: {
+        clearedAt: new Date(),
+        message: 'Analytics cache cleared successfully',
+      },
+      requestId: '',
     };
   }
 }

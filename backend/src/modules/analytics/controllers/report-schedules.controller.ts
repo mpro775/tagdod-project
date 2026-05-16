@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -42,21 +43,40 @@ export class ReportSchedulesController {
   @ApiResponse({ status: 201, description: 'تم إنشاء الجدولة بنجاح' })
   @ApiBody({ type: CreateReportScheduleDto })
   async create(@Body() dto: CreateReportScheduleDto, @Request() req: any) {
-    return this.reportSchedulesService.create(dto, req.user.sub);
+    const schedule = await this.reportSchedulesService.create(dto, req.user.sub);
+    return { success: true, data: schedule, requestId: '' };
   }
 
   @Get()
   @ApiOperation({ summary: 'قائمة الجداول' })
   @ApiQuery({ type: ScheduleFiltersDto })
-  async findAll(@Query() filters: ScheduleFiltersDto, @Request() req: any) {
-    return this.reportSchedulesService.findAll(filters, req.user.sub);
+  async findAll(
+    @Query() filters: ScheduleFiltersDto,
+    @Query() pagination: { page?: string; limit?: string },
+    @Request() req: any,
+  ) {
+    filters.page = parseInt(pagination.page || '1', 10);
+    filters.limit = parseInt(pagination.limit || '20', 10);
+    const result = await this.reportSchedulesService.findAll(filters, req.user.sub);
+    return { success: true, data: result, requestId: '' };
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'إحصائيات الجداول' })
+  async getStats() {
+    const stats = await this.reportSchedulesService.getScheduleStats();
+    return { success: true, data: stats, requestId: '' };
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'تفاصيل جدولة' })
   @ApiParam({ name: 'id', description: 'معرف الجدولة' })
-  async findOne(@Param('id') id: string) {
-    return this.reportSchedulesService.findById(id);
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    const schedule = await this.reportSchedulesService.findById(id);
+    if (req.user.sub !== schedule.createdBy.toString()) {
+      throw new ForbiddenException('You do not have permission to access this schedule');
+    }
+    return { success: true, data: schedule, requestId: '' };
   }
 
   @Patch(':id')
@@ -64,7 +84,12 @@ export class ReportSchedulesController {
   @ApiParam({ name: 'id', description: 'معرف الجدولة' })
   @ApiBody({ type: UpdateReportScheduleDto })
   async update(@Param('id') id: string, @Body() dto: UpdateReportScheduleDto, @Request() req: any) {
-    return this.reportSchedulesService.update(id, dto, req.user.sub);
+    const schedule = await this.reportSchedulesService.findById(id);
+    if (req.user.sub !== schedule.createdBy.toString()) {
+      throw new ForbiddenException('You do not have permission to access this schedule');
+    }
+    const updated = await this.reportSchedulesService.update(id, dto, req.user.sub);
+    return { success: true, data: updated, requestId: '' };
   }
 
   @Patch(':id/toggle')
@@ -72,15 +97,24 @@ export class ReportSchedulesController {
   @ApiParam({ name: 'id', description: 'معرف الجدولة' })
   @ApiBody({ type: ToggleScheduleDto })
   async toggle(@Param('id') id: string, @Body() dto: ToggleScheduleDto, @Request() req: any) {
-    return this.reportSchedulesService.toggle(id, dto.isActive, req.user.sub);
+    const schedule = await this.reportSchedulesService.findById(id);
+    if (req.user.sub !== schedule.createdBy.toString()) {
+      throw new ForbiddenException('You do not have permission to access this schedule');
+    }
+    const updated = await this.reportSchedulesService.toggle(id, dto.isActive, req.user.sub);
+    return { success: true, data: updated, requestId: '' };
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'حذف جدولة' })
   @ApiParam({ name: 'id', description: 'معرف الجدولة' })
   async remove(@Param('id') id: string, @Request() req: any) {
+    const schedule = await this.reportSchedulesService.findById(id);
+    if (req.user.sub !== schedule.createdBy.toString()) {
+      throw new ForbiddenException('You do not have permission to access this schedule');
+    }
     await this.reportSchedulesService.remove(id, req.user.sub);
-    return { success: true, message: 'تم حذف الجدولة بنجاح' };
+    return { success: true, data: { message: 'تم حذف الجدولة بنجاح' }, requestId: '' };
   }
 
   @Post(':id/run-now')
@@ -88,12 +122,11 @@ export class ReportSchedulesController {
   @ApiParam({ name: 'id', description: 'معرف الجدولة' })
   @ApiBody({ type: RunNowDto, required: false })
   async runNow(@Param('id') id: string, @Request() req: any, @Body() dto?: RunNowDto) {
-    return this.reportSchedulesService.runNow(id, dto || {}, req.user.sub);
-  }
-
-  @Get('stats')
-  @ApiOperation({ summary: 'إحصائيات الجداول' })
-  async getStats() {
-    return this.reportSchedulesService.getScheduleStats();
+    const schedule = await this.reportSchedulesService.findById(id);
+    if (req.user.sub !== schedule.createdBy.toString()) {
+      throw new ForbiddenException('You do not have permission to access this schedule');
+    }
+    const result = await this.reportSchedulesService.runNow(id, dto || {}, req.user.sub);
+    return { success: true, data: result, requestId: '' };
   }
 }

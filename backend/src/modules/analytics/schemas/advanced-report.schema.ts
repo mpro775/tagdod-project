@@ -483,6 +483,7 @@ export class AdvancedReport {
     fileSize?: number;
     generatedAt: Date;
     generatedBy: Types.ObjectId;
+    status?: 'available' | 'processing' | 'failed' | 'expired';
   }>;
 
   // ===== Metadata =====

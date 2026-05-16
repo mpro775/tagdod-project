@@ -11,6 +11,7 @@ import type {
   AlertStats,
   Insight,
 } from '../types/reportBuilder.types';
+import { unwrapApiData, unwrapPaginatedResult } from '../utils/analyticsDataGuards';
 
 export const reportBuilderApi = {
   // ==================== Report Templates ====================
@@ -20,14 +21,14 @@ export const reportBuilderApi = {
       '/analytics/report-templates',
       { params: category ? { category } : {} }
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   getTemplate: async (key: string): Promise<ReportTemplate> => {
     const response = await apiClient.get<{ success: boolean; data: ReportTemplate }>(
       `/analytics/report-templates/${key}`
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   createTemplate: async (data: CreateReportTemplateDto): Promise<ReportTemplate> => {
@@ -35,7 +36,7 @@ export const reportBuilderApi = {
       '/analytics/report-templates',
       data
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   updateTemplate: async (key: string, data: UpdateReportTemplateDto): Promise<ReportTemplate> => {
@@ -43,7 +44,7 @@ export const reportBuilderApi = {
       `/analytics/report-templates/${key}`,
       data
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   deleteTemplate: async (key: string): Promise<void> => {
@@ -61,7 +62,7 @@ export const reportBuilderApi = {
       '/analytics/advanced/reports/custom/preview',
       data
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   generateCustomReport: async (data: GenerateCustomReportDto) => {
@@ -69,7 +70,7 @@ export const reportBuilderApi = {
       '/analytics/advanced/reports/custom/generate',
       data
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   // ==================== Insights ====================
@@ -79,7 +80,7 @@ export const reportBuilderApi = {
       '/analytics/advanced/insights',
       { params: { days } }
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   // ==================== Alerts ====================
@@ -99,22 +100,14 @@ export const reportBuilderApi = {
       limit: number;
       totalPages: number;
     }>('/analytics/alerts', { params });
-    return {
-      data: response.data.data,
-      meta: {
-        total: response.data.total,
-        page: response.data.page,
-        limit: response.data.limit,
-        totalPages: response.data.totalPages,
-      },
-    };
+    return unwrapPaginatedResult(response) as unknown as PaginatedResponse<AnalyticsAlert>;
   },
 
   getAlert: async (id: string): Promise<AnalyticsAlert> => {
     const response = await apiClient.get<{ success: boolean; data: AnalyticsAlert }>(
       `/analytics/alerts/${id}`
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   updateAlertStatus: async (id: string, data: UpdateAlertStatusDto): Promise<AnalyticsAlert> => {
@@ -122,7 +115,7 @@ export const reportBuilderApi = {
       `/analytics/alerts/${id}/status`,
       data
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   deleteAlert: async (id: string): Promise<void> => {
@@ -133,13 +126,13 @@ export const reportBuilderApi = {
     const response = await apiClient.get<{ success: boolean; data: AlertStats }>(
       '/analytics/alerts/stats'
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   scanAlerts: async (): Promise<AnalyticsAlert[]> => {
     const response = await apiClient.post<{ success: boolean; data: AnalyticsAlert[] }>(
       '/analytics/alerts/scan'
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 };

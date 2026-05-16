@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -22,29 +22,21 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { Schedule as ScheduleIcon, Email as EmailIcon, Add as AddIcon } from '@mui/icons-material';
-import { useScheduleReport } from '../hooks/useAnalytics';
+import { useCreateSchedule, useUpdateSchedule } from '../hooks/useAnalytics';
 import {
   ReportType,
   ReportFormat,
   ScheduleFrequency,
   CreateReportScheduleDto,
+  UpdateReportScheduleDto,
+  ReportSchedule,
 } from '../types/analytics.types';
 
 interface ReportScheduleFormProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-  schedule?: {
-    _id: string;
-    name: string;
-    description: string;
-    reportType: ReportType;
-    frequency: ScheduleFrequency;
-    formats: ReportFormat[];
-    recipients: string[];
-    filters: Record<string, unknown>;
-    config: Record<string, unknown>;
-  };
+  schedule?: ReportSchedule | null;
 }
 
 export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
@@ -55,46 +47,74 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
 }) => {
   const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
-  const scheduleReport = useScheduleReport();
+  const createSchedule = useCreateSchedule();
+  const updateSchedule = useUpdateSchedule();
 
-  const isEditing = !!schedule;
+  const isEditing = !!schedule?.id;
 
   const [formData, setFormData] = useState<CreateReportScheduleDto>({
-    name: schedule?.name || '',
-    description: schedule?.description || '',
-    reportType: schedule?.reportType || ReportType.MONTHLY_REPORT,
-    frequency: schedule?.frequency || ScheduleFrequency.MONTHLY,
-    formats: schedule?.formats || [ReportFormat.PDF],
-    recipients: schedule?.recipients || [],
-    filters: schedule?.filters || {},
-    config: schedule?.config || {},
+    name: '',
+    description: '',
+    reportType: ReportType.MONTHLY_REPORT,
+    frequency: ScheduleFrequency.MONTHLY,
+    formats: [ReportFormat.PDF],
+    recipients: [],
+    filters: {},
+    config: {},
   });
 
   const [newRecipient, setNewRecipient] = useState('');
   const [recipientError, setRecipientError] = useState('');
+
+  useEffect(() => {
+    if (open && schedule) {
+      setFormData({
+        name: schedule.name || '',
+        description: schedule.description || '',
+        reportType: schedule.reportType || ReportType.MONTHLY_REPORT,
+        frequency: schedule.frequency || ScheduleFrequency.MONTHLY,
+        formats: schedule.formats?.length ? schedule.formats : [ReportFormat.PDF],
+        recipients: Array.isArray(schedule.recipients) ? schedule.recipients : [],
+        filters: schedule.filters || {},
+        config: schedule.config || {},
+      });
+    } else if (open) {
+      setFormData({
+        name: '',
+        description: '',
+        reportType: ReportType.MONTHLY_REPORT,
+        frequency: ScheduleFrequency.MONTHLY,
+        formats: [ReportFormat.PDF],
+        recipients: [],
+        filters: {},
+        config: {},
+      });
+    }
+    setNewRecipient('');
+    setRecipientError('');
+  }, [open, schedule]);
 
   const handleInputChange = (field: keyof CreateReportScheduleDto, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return /^\S+@\S+\.\S+$/.test(email);
   };
 
   const handleAddRecipient = () => {
     if (!newRecipient.trim()) {
-      setRecipientError(t('reportSchedule.recipients.emailRequired'));
+      setRecipientError(t('reportSchedule.recipients.emailRequired', 'البريد مطلوب'));
       return;
     }
 
     if (!validateEmail(newRecipient)) {
-      setRecipientError(t('reportSchedule.recipients.invalidEmail'));
+      setRecipientError(t('reportSchedule.recipients.invalidEmail', 'بريد غير صالح'));
       return;
     }
 
     if (formData.recipients?.includes(newRecipient)) {
-      setRecipientError(t('reportSchedule.recipients.duplicateEmail'));
+      setRecipientError(t('reportSchedule.recipients.duplicateEmail', 'البريد موجود'));
       return;
     }
 
@@ -114,38 +134,66 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.description?.trim()) {
+    if (!formData.name.trim() || !formData.reportType || !formData.frequency) {
+      return;
+    }
+
+    if (!formData.recipients || formData.recipients.length === 0) {
+      setRecipientError(t('reportSchedule.recipients.atLeastOne', 'مطلوب بريد واحد على الأقل'));
       return;
     }
 
     try {
-      await scheduleReport.mutateAsync(formData);
+      if (isEditing && schedule?.id) {
+        const updatePayload: UpdateReportScheduleDto = {
+          name: formData.name,
+          description: formData.description,
+          reportType: formData.reportType,
+          frequency: formData.frequency,
+          formats: formData.formats,
+          recipients: formData.recipients,
+          filters: formData.filters,
+          config: formData.config,
+        };
+        await updateSchedule.mutateAsync({ id: schedule.id, data: updatePayload });
+      } else {
+        await createSchedule.mutateAsync(formData);
+      }
       handleClose();
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
-      console.error('Failed to schedule report:', error);
+      console.error('Failed to save schedule:', error);
     }
   };
 
   const handleClose = () => {
     setFormData({
-      name: schedule?.name || '',
-      description: schedule?.description || '',
-      reportType: schedule?.reportType || ReportType.MONTHLY_REPORT,
-      frequency: schedule?.frequency || ScheduleFrequency.MONTHLY,
-      formats: schedule?.formats || [ReportFormat.PDF],
-      recipients: schedule?.recipients || [],
-      filters: schedule?.filters || {},
-      config: schedule?.config || {},
+      name: '',
+      description: '',
+      reportType: ReportType.MONTHLY_REPORT,
+      frequency: ScheduleFrequency.MONTHLY,
+      formats: [ReportFormat.PDF],
+      recipients: [],
+      filters: {},
+      config: {},
     });
     setNewRecipient('');
     setRecipientError('');
     onClose();
   };
 
-  const isValid = formData.name.trim() && formData.description?.trim();
+  const isValid =
+    formData.name.trim() &&
+    formData.reportType &&
+    formData.frequency &&
+    formData.recipients &&
+    formData.recipients.length > 0;
+
+  const mutationPending = createSchedule.isPending || updateSchedule.isPending;
+  const mutationError = createSchedule.isError || updateSchedule.isError;
+  const mutationSuccess = createSchedule.isSuccess || updateSchedule.isSuccess;
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth fullScreen={breakpoint.isXs}>
@@ -156,7 +204,9 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
             variant={breakpoint.isXs ? 'subtitle1' : 'h6'}
             sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
           >
-            {isEditing ? t('reportSchedule.edit', 'تعديل الجدولة') : t('reportSchedule.title', 'جدولة تقرير')}
+            {isEditing
+              ? t('reportSchedule.edit', 'تعديل الجدولة')
+              : t('reportSchedule.title', 'جدولة تقرير')}
           </Typography>
         </Stack>
       </DialogTitle>
@@ -170,14 +220,14 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
               gutterBottom
               sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
             >
-              {t('reportSchedule.basicInfo')}
+              {t('reportSchedule.basicInfo', 'المعلومات الأساسية')}
             </Typography>
           </Grid>
 
           <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
-              label={t('reportSchedule.name')}
+              label={t('reportSchedule.name', 'اسم الجدولة')}
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               required
@@ -193,12 +243,11 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
           <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
-              label={t('reportSchedule.description')}
+              label={t('reportSchedule.description', 'الوصف')}
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
-              required
               multiline
-              rows={3}
+              rows={2}
               size={breakpoint.isXs ? 'medium' : 'small'}
               sx={{
                 '& .MuiInputBase-input': {
@@ -215,21 +264,21 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
               gutterBottom
               sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined, mt: 2 }}
             >
-              {t('reportSchedule.reportConfig')}
+              {t('reportSchedule.reportConfig', 'إعدادات التقرير')}
             </Typography>
           </Grid>
 
           <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth size={breakpoint.isXs ? 'medium' : 'small'}>
-              <InputLabel>{t('reportSchedule.reportType')}</InputLabel>
+              <InputLabel>{t('reportSchedule.reportType', 'نوع التقرير')}</InputLabel>
               <Select
                 value={formData.reportType}
                 onChange={(e) => handleInputChange('reportType', e.target.value)}
-                label={t('reportSchedule.reportType')}
+                label={t('reportSchedule.reportType', 'نوع التقرير')}
               >
                 {Object.values(ReportType).map((type) => (
                   <MenuItem key={type} value={type}>
-                    {t(`reportSchedule.reportTypes.${type}`)}
+                    {t(`reportSchedule.reportTypes.${type}`, type)}
                   </MenuItem>
                 ))}
               </Select>
@@ -238,15 +287,15 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
 
           <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth size={breakpoint.isXs ? 'medium' : 'small'}>
-              <InputLabel>{t('reportSchedule.frequency')}</InputLabel>
+              <InputLabel>{t('reportSchedule.frequency', 'التكرار')}</InputLabel>
               <Select
                 value={formData.frequency}
                 onChange={(e) => handleInputChange('frequency', e.target.value)}
-                label={t('reportSchedule.frequency')}
+                label={t('reportSchedule.frequency', 'التكرار')}
               >
                 {Object.values(ScheduleFrequency).map((freq) => (
                   <MenuItem key={freq} value={freq}>
-                    {t(`reportSchedule.frequencies.${freq}`)}
+                    {t(`reportSchedule.frequencies.${freq}`, freq)}
                   </MenuItem>
                 ))}
               </Select>
@@ -255,12 +304,12 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
 
           <Grid size={{ xs: 12 }}>
             <FormControl fullWidth size={breakpoint.isXs ? 'medium' : 'small'}>
-              <InputLabel>{t('reportSchedule.formats')}</InputLabel>
+              <InputLabel>{t('reportSchedule.formats', 'الصيغ')}</InputLabel>
               <Select
                 multiple
                 value={formData.formats || []}
                 onChange={(e) => handleInputChange('formats', e.target.value as ReportFormat[])}
-                label={t('reportSchedule.formats')}
+                label={t('reportSchedule.formats', 'الصيغ')}
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {(selected as ReportFormat[]).map((value) => (
@@ -290,7 +339,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
               gutterBottom
               sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined, mt: 2 }}
             >
-              {t('reportSchedule.recipients.title')}
+              {t('reportSchedule.recipients.title', 'المستلمون')}
             </Typography>
           </Grid>
 
@@ -298,7 +347,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
             <Stack direction={breakpoint.isMobile ? 'column' : 'row'} spacing={1}>
               <TextField
                 fullWidth
-                label={t('reportSchedule.recipients.email')}
+                label={t('reportSchedule.recipients.email', 'البريد الإلكتروني')}
                 value={newRecipient}
                 onChange={(e) => {
                   setNewRecipient(e.target.value);
@@ -306,6 +355,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
                 }}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
+                    e.preventDefault();
                     handleAddRecipient();
                   }
                 }}
@@ -323,9 +373,9 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
                 startIcon={<AddIcon />}
                 onClick={handleAddRecipient}
                 size={breakpoint.isXs ? 'medium' : 'small'}
-                sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
+                sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined, whiteSpace: 'nowrap' }}
               >
-                {t('reportSchedule.recipients.add')}
+                {t('reportSchedule.recipients.add', 'إضافة')}
               </Button>
             </Stack>
           </Grid>
@@ -356,7 +406,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
               gutterBottom
               sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined, mt: 2 }}
             >
-              {t('reportSchedule.advancedOptions')}
+              {t('reportSchedule.advancedOptions', 'خيارات متقدمة')}
             </Typography>
           </Grid>
 
@@ -374,7 +424,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
                   size={breakpoint.isXs ? 'medium' : 'small'}
                 />
               }
-              label={t('reportSchedule.includeCharts')}
+              label={t('reportSchedule.includeCharts', 'تضمين الرسوم البيانية')}
               sx={{
                 '& .MuiFormControlLabel-label': {
                   fontSize: breakpoint.isXs ? '0.875rem' : undefined,
@@ -397,7 +447,7 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
                   size={breakpoint.isXs ? 'medium' : 'small'}
                 />
               }
-              label={t('reportSchedule.includeRawData')}
+              label={t('reportSchedule.includeRawData', 'تضمين البيانات الخام')}
               sx={{
                 '& .MuiFormControlLabel-label': {
                   fontSize: breakpoint.isXs ? '0.875rem' : undefined,
@@ -407,27 +457,29 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
           </Grid>
 
           {/* Success/Error Messages */}
-          {scheduleReport.isSuccess && (
+          {mutationSuccess && (
             <Grid size={{ xs: 12 }}>
               <Alert severity="success">
                 <Typography
                   variant="body2"
                   sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
                 >
-                  {t('reportSchedule.success')}
+                  {isEditing
+                    ? t('reportSchedule.updateSuccess', 'تم تحديث الجدولة بنجاح')
+                    : t('reportSchedule.success', 'تم إنشاء الجدولة بنجاح')}
                 </Typography>
               </Alert>
             </Grid>
           )}
 
-          {scheduleReport.isError && (
+          {mutationError && (
             <Grid size={{ xs: 12 }}>
               <Alert severity="error">
                 <Typography
                   variant="body2"
                   sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
                 >
-                  {t('reportSchedule.error')}
+                  {t('reportSchedule.error', 'حدث خطأ أثناء حفظ الجدولة')}
                 </Typography>
               </Alert>
             </Grid>
@@ -441,18 +493,18 @@ export const ReportScheduleForm: React.FC<ReportScheduleFormProps> = ({
           size={breakpoint.isXs ? 'medium' : 'medium'}
           sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
         >
-          {t('reportSchedule.cancel')}
+          {t('reportSchedule.cancel', 'إلغاء')}
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={!isValid || scheduleReport.isPending}
+          disabled={!isValid || mutationPending}
           startIcon={<ScheduleIcon />}
           size={breakpoint.isXs ? 'medium' : 'medium'}
           sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
         >
-          {scheduleReport.isPending
-            ? t('reportSchedule.scheduling', 'جاري الحفظ...')
+          {mutationPending
+            ? t('reportSchedule.saving', 'جاري الحفظ...')
             : isEditing
             ? t('reportSchedule.update', 'تحديث')
             : t('reportSchedule.schedule', 'جدولة')}

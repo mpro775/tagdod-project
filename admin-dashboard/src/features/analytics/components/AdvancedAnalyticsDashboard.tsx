@@ -50,11 +50,6 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import {
-  useSalesAnalytics,
-  useCustomerAnalytics,
-  useInventoryReport,
-  useFinancialReport,
-  useMarketingReport,
   useRealTimeMetrics,
   useAdvancedReports,
   useGenerateAdvancedReport,
@@ -120,12 +115,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
   });
 
   // Hooks for different analytics
-  const salesAnalytics = useSalesAnalytics();
   // ProductPerformanceCard now handles its own data fetching
-  const customerAnalytics = useCustomerAnalytics();
-  const inventoryReport = useInventoryReport();
-  const financialReport = useFinancialReport();
-  const marketingReport = useMarketingReport();
   const realTimeMetrics = useRealTimeMetrics();
   const advancedReports = useAdvancedReports();
 
@@ -154,7 +144,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
         startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0],
         exportSettings: {
-          formats: [reportForm.format as 'pdf' | 'excel' | 'csv' | 'json'],
+          formats: [reportForm.format as ReportFormat],
           includeCharts: reportForm.includeCharts,
           includeRawData: reportForm.includeRawData,
         },
@@ -372,11 +362,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
         {/* Sales Analytics */}
         <Grid container spacing={cardSpacing}>
           <Grid size={{ xs: 12 }}>
-            <SalesAnalyticsCard
-              data={salesAnalytics.data}
-              isLoading={salesAnalytics.isLoading}
-              error={salesAnalytics.error}
-            />
+            <SalesAnalyticsCard />
           </Grid>
         </Grid>
       </TabPanel>
@@ -394,11 +380,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
         {/* Customer Analytics */}
         <Grid container spacing={cardSpacing}>
           <Grid size={{ xs: 12 }}>
-            <CustomerAnalyticsCard
-              data={customerAnalytics.data}
-              isLoading={customerAnalytics.isLoading}
-              error={customerAnalytics.error}
-            />
+            <CustomerAnalyticsCard />
           </Grid>
         </Grid>
       </TabPanel>
@@ -407,11 +389,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
         {/* Inventory Report */}
         <Grid container spacing={cardSpacing}>
           <Grid size={{ xs: 12 }}>
-            <InventoryReportCard
-              data={inventoryReport.data}
-              isLoading={inventoryReport.isLoading}
-              error={inventoryReport.error}
-            />
+            <InventoryReportCard />
           </Grid>
         </Grid>
       </TabPanel>
@@ -420,11 +398,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
         {/* Financial Report */}
         <Grid container spacing={cardSpacing}>
           <Grid size={{ xs: 12 }}>
-            <FinancialReportCard
-              data={financialReport.data}
-              isLoading={financialReport.isLoading}
-              error={financialReport.error}
-            />
+            <FinancialReportCard />
           </Grid>
         </Grid>
       </TabPanel>
@@ -433,11 +407,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
         {/* Marketing Report */}
         <Grid container spacing={cardSpacing}>
           <Grid size={{ xs: 12 }}>
-            <MarketingReportCard
-              data={marketingReport.data}
-              isLoading={marketingReport.isLoading}
-              error={marketingReport.error}
-            />
+            <MarketingReportCard />
           </Grid>
         </Grid>
       </TabPanel>
@@ -535,7 +505,7 @@ export const AdvancedAnalyticsDashboard: React.FC<AdvancedAnalyticsDashboardProp
                                     sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
                                   />
                                   <Chip
-                                    label={new Date(report.generatedAt).toLocaleDateString()}
+                                    label={report.generatedAt ? new Date(report.generatedAt).toLocaleDateString() : '-'}
                                     size="small"
                                     variant="outlined"
                                     sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}

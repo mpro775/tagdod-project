@@ -21,6 +21,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { getCardPadding, getCardSpacing, getChartHeight, getChartMargin, getChartLabelFontSize, getChartTooltipFontSize, getYAxisWidth, getXAxisHeight } from '../utils/responsive';
+import { asArray } from '../utils/analyticsDataGuards';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
@@ -118,16 +119,11 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
   }
 
   const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('ar-SA').format(num);
+    return new Intl.NumberFormat('ar-YE').format(num);
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
+    return `${new Intl.NumberFormat('ar-YE').format(amount)} YER`;
   };
 
 
@@ -434,8 +430,8 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                 {t('productPerformance.topProducts')}
               </Typography>
               <ResponsiveContainer width="100%" height={chartHeight}>
-                <BarChart 
-                  data={data?.topProducts || []}
+                <BarChart
+                  data={asArray(data?.topProducts)}
                   margin={chartMargin}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
@@ -484,7 +480,7 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
               <ResponsiveContainer width="100%" height={chartHeight}>
                 <PieChart>
                   <Pie
-                    data={data?.byCategory || []}
+                    data={asArray(data?.byCategory)}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -493,7 +489,7 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                     fill="#8884d8"
                     dataKey="count"
                   >
-                    {(data?.byCategory || []).map((_, index) => (
+                    {asArray(data?.byCategory).map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -524,7 +520,7 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                 {t('productPerformance.lowStockProducts')}
               </Typography>
               <Box sx={{ maxHeight: breakpoint.isXs ? 200 : 250, overflowY: 'auto' }}>
-                {(data?.lowStockProducts || []).map((product, index) => (
+                {asArray(data?.lowStockProducts).map((product, index) => (
                   <Box key={index} sx={{ mb: 2 }}>
                     <Box
                       sx={{
@@ -580,7 +576,7 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                 {t('productPerformance.topProductsList')}
               </Typography>
               <Box sx={{ maxHeight: breakpoint.isXs ? 200 : 250, overflowY: 'auto' }}>
-                {(data?.topProducts || []).map((product, index) => (
+                {asArray(data?.topProducts).map((product, index) => (
                   <Box key={index} sx={{ mb: 2 }}>
                     <Box
                       sx={{

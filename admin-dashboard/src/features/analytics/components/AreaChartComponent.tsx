@@ -23,6 +23,7 @@ import {
   getXAxisHeight,
   getCardPadding,
 } from '../utils/responsive';
+import { asArray } from '../utils/analyticsDataGuards';
 
 interface DataPoint {
   name: string;
@@ -76,7 +77,9 @@ export const AreaChartComponent: React.FC<AreaChartComponentProps> = ({
   const cardPadding = getCardPadding(breakpoint);
   const needsRotation = breakpoint.isXs || breakpoint.isSm;
 
-  if (!data || data.length === 0) {
+  const safeData = asArray(data);
+
+  if (safeData.length === 0) {
     return (
       <Card>
         <CardContent sx={{ p: cardPadding }}>
@@ -108,8 +111,8 @@ export const AreaChartComponent: React.FC<AreaChartComponentProps> = ({
       )}
       <CardContent sx={{ pt: 0, p: cardPadding }}>
         <ResponsiveContainer width="100%" height={chartHeight}>
-          <AreaChart 
-            data={data} 
+          <AreaChart
+            data={safeData}
             margin={chartMargin}
           >
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}

@@ -20,6 +20,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { getCardPadding, getCardSpacing } from '../utils/responsive';
+import { asArray } from '../utils/analyticsDataGuards';
 import { TrendingUp as TrendingUpIcon } from '@mui/icons-material';
 import { useMetricTrends, useMetricTrendsAdvanced } from '../hooks/useAnalytics';
 import { PeriodType } from '../types/analytics.types';
@@ -86,12 +87,11 @@ export const TrendsVisualization: React.FC<TrendsVisualizationProps> = ({
     setSelectedMetric(metric);
   };
 
-  const chartData =
-    data?.data?.map((item: any) => ({
-      name: item.date || item.time || item.period || '',
-      value: item.value || item.count || item.revenue || 0,
-      change: item.change || 0,
-    })) || [];
+  const chartData = asArray(data?.data).map((item: any) => ({
+    name: item.date || item.time || item.period || '',
+    value: item.value || item.count || item.revenue || 0,
+    change: item.change || 0,
+  }));
 
   return (
     <Card>

@@ -1,94 +1,112 @@
 import React from 'react';
+import { Card, CardContent, Typography, useTheme } from '@mui/material';
 import {
-  Card,
-  CardContent,
-  Typography,
-  useTheme,
-} from '@mui/material';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { useTranslation } from 'react-i18next';
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Legend,
+} from 'recharts';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   getChartHeight,
   getChartMargin,
   getChartLabelFontSize,
   getChartTooltipFontSize,
-  getYAxisWidth,
-  getXAxisHeight,
   getCardPadding,
 } from '../utils/responsive';
+import { asArray } from '../utils/analyticsDataGuards';
+import { formatCurrency, formatNumber } from '../utils/formatters';
+import { EmptyAnalyticsState } from './EmptyAnalyticsState';
 
-interface ProductPerformanceChartProps {
-  data?: any;
+export interface TopProductItem {
+  name: string;
+  sold: number;
+  revenue: number;
 }
 
-export const ProductPerformanceChart: React.FC<ProductPerformanceChartProps> = ({ data }) => {
+interface ProductPerformanceChartProps {
+  data?: TopProductItem[];
+  title?: string;
+}
+
+export const ProductPerformanceChart: React.FC<ProductPerformanceChartProps> = ({
+  data,
+  title,
+}) => {
   const theme = useTheme();
-  const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
-  
+
   const chartHeight = getChartHeight(breakpoint, 400);
   const chartMargin = getChartMargin(breakpoint);
   const labelFontSize = getChartLabelFontSize(breakpoint);
   const tooltipFontSize = getChartTooltipFontSize(breakpoint);
-  const yAxisWidth = getYAxisWidth(breakpoint);
-  const xAxisHeight = getXAxisHeight(breakpoint, true);
   const cardPadding = getCardPadding(breakpoint);
-  const needsRotation = breakpoint.isXs || breakpoint.isSm;
 
-  if (!data || data.length === 0) {
+  const safeData = asArray<TopProductItem>(data);
+
+  const hasMeaningfulData = safeData.some((item) => (item.sold ?? 0) > 0 || (item.revenue ?? 0) > 0);
+
+  if (safeData.length === 0 || !hasMeaningfulData) {
     return (
-      <Card>
-        <CardContent sx={{ p: cardPadding }}>
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            textAlign="center"
-            sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-          >
-            {t('charts.noData')}
-          </Typography>
-        </CardContent>
-      </Card>
+      <EmptyAnalyticsState
+        title="لا توجد بيانات منتجات"
+        description="لا توجد منتجات مباعة ضمن الفترة المحددة."
+      />
     );
   }
 
   return (
     <Card>
       <CardContent sx={{ p: cardPadding }}>
-        <Typography 
-          variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
+        <Typography
+          variant={breakpoint.isXs ? 'subtitle1' : 'h6'}
           gutterBottom
           sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
         >
-          {t('charts.productPerformance')}
+          {title ?? 'أفضل المنتجات مبيعًا'}
         </Typography>
         <ResponsiveContainer width="100%" height={chartHeight}>
-          <BarChart 
-            data={data || []}
-            margin={chartMargin}
-          >
+          <BarChart data={safeData} margin={chartMargin} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="name" 
+            <XAxis
+              type="number"
               tick={{ fontSize: labelFontSize }}
-              angle={needsRotation ? -45 : 0}
-              textAnchor={needsRotation ? 'end' : 'middle'}
-              height={xAxisHeight}
-              interval={breakpoint.isXs ? 'preserveStartEnd' : 0}
+              tickFormatter={(value) => formatNumber(value)}
             />
-            <YAxis 
+            <YAxis
+              dataKey="name"
+              type="category"
               tick={{ fontSize: labelFontSize }}
-              width={yAxisWidth}
+              width={breakpoint.isXs ? 80 : breakpoint.isSm ? 100 : 140}
+              interval={0}
             />
             <Tooltip
               contentStyle={{
                 fontSize: `${tooltipFontSize}px`,
                 padding: breakpoint.isXs ? '8px' : '12px',
+                direction: 'rtl',
+                textAlign: 'right',
               }}
-              position={{ x: breakpoint.isXs ? 10 : undefined, y: breakpoint.isXs ? -10 : undefined }}
+              formatter={(value: number, name: string) => {
+                if (name === 'sold') return [formatNumber(value), 'الكمية المباعة'];
+                if (name === 'revenue') return [formatCurrency(value), 'الإيراد'];
+                return [value, name];
+              }}
             />
-            <Bar dataKey="sales" fill={theme.palette.primary.main} radius={[2, 2, 0, 0]} />
+            <Legend
+              wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
+              formatter={(value: string) => {
+                if (value === 'sold') return 'الكمية المباعة';
+                if (value === 'revenue') return 'الإيراد';
+                return value;
+              }}
+            />
+            <Bar dataKey="sold" fill={theme.palette.primary.main} radius={[0, 2, 2, 0]} barSize={breakpoint.isXs ? 10 : 14} />
+            <Bar dataKey="revenue" fill={theme.palette.success.main} radius={[0, 2, 2, 0]} barSize={breakpoint.isXs ? 10 : 14} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
