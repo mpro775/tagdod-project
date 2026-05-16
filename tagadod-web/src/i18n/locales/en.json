@@ -135,7 +135,71 @@
     "featured": "Featured",
     "banners": "Offers",
     "categories": "Categories",
-    "featuredProducts": "Featured Products"
+    "featuredProducts": "Featured Products",
+    "hero": {
+      "eyebrow": "Complete Online Store",
+      "title": "Everything you need in one place",
+      "subtitle": "Browse products, offers, and services easily through our online store.",
+      "primaryCta": "Shop Now",
+      "secondaryCta": "Browse Categories",
+      "searchPlaceholder": "Search for a product or service..."
+    },
+    "sections": {
+      "categories": {
+        "title": "Shop by Category",
+        "subtitle": "Choose the right category to find products faster.",
+        "viewAll": "All Categories"
+      },
+      "trust": {
+        "delivery": {
+          "title": "Fast Delivery",
+          "subtitle": "Delivery options that suit your orders."
+        },
+        "warranty": {
+          "title": "Reliable Warranty",
+          "subtitle": "Products and services with clear warranty."
+        },
+        "support": {
+          "title": "Technical Support",
+          "subtitle": "Our team is ready to help you."
+        },
+        "secure": {
+          "title": "Secure Experience",
+          "subtitle": "Shop with confidence and ease."
+        }
+      },
+      "featuredProducts": {
+        "title": "Featured Products",
+        "subtitle": "Carefully selected picks.",
+        "viewAll": "View All"
+      },
+      "newProducts": {
+        "title": "New Arrivals",
+        "subtitle": "Latest added products.",
+        "viewAll": "View All"
+      },
+      "offers": {
+        "title": "Deals & Offers",
+        "subtitle": "Special opportunities for a limited time.",
+        "viewAll": "View Offers"
+      },
+      "brands": {
+        "title": "Brands",
+        "subtitle": "Browse products by brand."
+      },
+      "service": {
+        "title": "Need help or maintenance?",
+        "subtitle": "Contact us and we will help you choose the right product or service.",
+        "primaryCta": "Contact Us",
+        "secondaryCta": "Maintenance Center"
+      }
+    },
+    "states": {
+      "loading": "Loading data...",
+      "emptyProducts": "No products are available right now.",
+      "emptyCategories": "No categories are available right now.",
+      "error": "Could not load this section. Please try again later."
+    }
   },
   "nav": {
     "home": "Home",
@@ -164,6 +228,22 @@
     "outOfStock": "Out of Stock",
     "inStock": "In Stock",
     "noImage": "No image"
+  },
+  "productCard": {
+    "addToCart": "Add to Cart",
+    "viewDetails": "View Details",
+    "favorite": "Add to Favorites",
+    "removeFavorite": "Remove from Favorites",
+    "quickView": "Quick View",
+    "outOfStock": "Out of Stock",
+    "inStock": "In Stock",
+    "lowStock": "Low Stock",
+    "new": "New",
+    "featured": "Featured",
+    "discount": "Discount",
+    "off": "Off",
+    "priceUnavailable": "Price unavailable",
+    "imageAlt": "Product image"
   },
   "cart": {
     "title": "Cart",
@@ -340,6 +420,104 @@
     "typeMessage": "Type a message...",
     "today": "Today",
     "yesterday": "Yesterday"
+  },
+  "layout": {
+    "topBar": {
+      "support": "Customer Support",
+      "trackOrder": "Track Order",
+      "contact": "Contact Us"
+    },
+    "nav": {
+      "home": "Home",
+      "categories": "Categories",
+      "products": "Products",
+      "offers": "Offers",
+      "services": "Services",
+      "maintenance": "Maintenance",
+      "contact": "Contact Us",
+      "about": "About",
+      "cart": "Cart",
+      "account": "Account",
+      "favorites": "Favorites",
+      "orders": "Orders",
+      "menu": "Menu"
+    },
+  "productListing": {
+    "titles": {
+      "allProducts": "All Products",
+      "categoryProducts": "Category Products",
+      "searchResults": "Search Results",
+      "searchResultsFor": "Search results for: {{query}}"
+    },
+    "subtitles": {
+      "allProducts": "Browse all available products in the store.",
+      "categoryProducts": "Explore products available in this category.",
+      "searchEmpty": "Type the product or part you are looking for."
+    },
+    "toolbar": {
+      "resultsCount": "{{count}} products",
+      "filters": "Filters",
+      "sortBy": "Sort by",
+      "viewGrid": "Grid view",
+      "viewList": "List view",
+      "clearFilters": "Clear filters",
+      "activeFilters": "Active filters"
+    },
+    "sort": {
+      "relevance": "Relevance",
+      "newest": "Newest",
+      "priceAsc": "Price: Low to High",
+      "priceDesc": "Price: High to Low",
+      "popular": "Most Popular",
+      "bestSelling": "Best Selling"
+    },
+    "filters": {
+      "title": "Filter Products",
+      "categories": "Categories",
+      "price": "Price",
+      "minPrice": "Min price",
+      "maxPrice": "Max price",
+      "stock": "Availability",
+      "inStock": "In stock only",
+      "outOfStock": "Out of stock",
+      "brand": "Brand",
+      "offers": "Offers",
+      "apply": "Apply",
+      "reset": "Reset",
+      "clear": "Clear"
+    },
+    "states": {
+      "loading": "Loading products...",
+      "emptyTitle": "No matching products found",
+      "emptySubtitle": "Try removing some filters or searching with different keywords.",
+      "emptySearchTitle": "Start searching for a product",
+      "errorTitle": "Could not load products",
+      "errorSubtitle": "An error occurred while fetching products. Please try again.",
+      "retry": "Retry"
+    },
+    "pagination": {
+      "loadMore": "Load More",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{page}}"
+    }
+  },
+  "search": {
+      "placeholder": "Search for a product or part..."
+    },
+    "footer": {
+      "aboutTitle": "About Store",
+      "aboutText": "An online store that provides a simple and reliable shopping experience.",
+      "quickLinks": "Quick Links",
+      "customerService": "Customer Service",
+      "policies": "Policies",
+      "contact": "Contact",
+      "privacy": "Privacy Policy",
+      "returns": "Return Policy",
+      "shipping": "Shipping & Delivery",
+      "terms": "Terms & Conditions",
+      "rights": "All rights reserved"
+    }
   },
   "policy": {
     "privacyPolicy": "Privacy Policy",

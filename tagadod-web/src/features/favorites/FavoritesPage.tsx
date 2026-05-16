@@ -5,7 +5,7 @@ import { ChevronLeft, Heart } from 'lucide-react'
 import {
   ProductCard,
   EmptyState,
-  ProductCardShimmer,
+  ProductCardSkeleton,
 } from '../../components/shared'
 import * as favoriteService from '../../services/favoriteService'
 import type { FavoriteItem } from '../../types/favorite'
@@ -52,7 +52,7 @@ export function FavoritesPage() {
       {isLoading ? (
         <div className="p-4 grid grid-cols-2 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <ProductCardShimmer key={i} />
+            <ProductCardSkeleton key={i} />
           ))}
         </div>
       ) : favorites.length === 0 ? (

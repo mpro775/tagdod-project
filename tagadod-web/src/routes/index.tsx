@@ -67,6 +67,11 @@ const ProductsByCategoryPage = lazy(() =>
     default: m.ProductsByCategoryPage,
   })),
 );
+const ProductsPage = lazy(() =>
+  import("../features/products/ProductsPage").then((m) => ({
+    default: m.ProductsPage,
+  })),
+);
 const CartPage = lazy(() =>
   import("../features/cart/CartPage").then((m) => ({ default: m.CartPage })),
 );
@@ -468,10 +473,23 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "allCategories",
+        path: "categories",
         element: (
           <GuestRoute>
             <CategoriesPage />
+          </GuestRoute>
+        ),
+      },
+      // Legacy redirect
+      {
+        path: "allCategories",
+        element: <Navigate to="/categories" replace />,
+      },
+      {
+        path: "products",
+        element: (
+          <GuestRoute>
+            <ProductsPage />
           </GuestRoute>
         ),
       },
@@ -500,12 +518,17 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "CartPage",
+        path: "cart",
         element: (
           <GuestRoute>
             <CartPage />
           </GuestRoute>
         ),
+      },
+      // Legacy redirect
+      {
+        path: "CartPage",
+        element: <Navigate to="/cart" replace />,
       },
       {
         path: "orders",

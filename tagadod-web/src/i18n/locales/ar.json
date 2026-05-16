@@ -135,7 +135,71 @@
     "featured": "مميز",
     "banners": "العروض",
     "categories": "التصنيفات",
-    "featuredProducts": "منتجات مميزة"
+    "featuredProducts": "منتجات مميزة",
+    "hero": {
+      "eyebrow": "متجر إلكتروني متكامل",
+      "title": "كل ما تحتاجه في مكان واحد",
+      "subtitle": "تصفح المنتجات، العروض، والخدمات بسهولة من متجرنا الإلكتروني.",
+      "primaryCta": "تسوق الآن",
+      "secondaryCta": "تصفح التصنيفات",
+      "searchPlaceholder": "ابحث عن منتج أو خدمة..."
+    },
+    "sections": {
+      "categories": {
+        "title": "تصفح حسب التصنيف",
+        "subtitle": "اختر التصنيف المناسب للوصول أسرع للمنتجات.",
+        "viewAll": "كل التصنيفات"
+      },
+      "trust": {
+        "delivery": {
+          "title": "توصيل سريع",
+          "subtitle": "خيارات توصيل مناسبة لطلباتك."
+        },
+        "warranty": {
+          "title": "ضمان موثوق",
+          "subtitle": "منتجات وخدمات بضمان واضح."
+        },
+        "support": {
+          "title": "دعم فني",
+          "subtitle": "فريقنا جاهز لمساعدتك."
+        },
+        "secure": {
+          "title": "تجربة آمنة",
+          "subtitle": "تسوق بثقة وسهولة."
+        }
+      },
+      "featuredProducts": {
+        "title": "منتجات مميزة",
+        "subtitle": "اختيارات مختارة بعناية.",
+        "viewAll": "عرض الكل"
+      },
+      "newProducts": {
+        "title": "وصل حديثًا",
+        "subtitle": "أحدث المنتجات المضافة.",
+        "viewAll": "عرض الكل"
+      },
+      "offers": {
+        "title": "عروض وخصومات",
+        "subtitle": "فرص مميزة لفترة محدودة.",
+        "viewAll": "عرض العروض"
+      },
+      "brands": {
+        "title": "البراندات",
+        "subtitle": "تصفح المنتجات حسب العلامة التجارية."
+      },
+      "service": {
+        "title": "هل تحتاج إلى مساعدة أو صيانة؟",
+        "subtitle": "تواصل معنا وسنساعدك في اختيار المنتج أو الخدمة المناسبة.",
+        "primaryCta": "تواصل معنا",
+        "secondaryCta": "مركز الصيانة"
+      }
+    },
+    "states": {
+      "loading": "جاري تحميل البيانات...",
+      "emptyProducts": "لا توجد منتجات متاحة حاليًا.",
+      "emptyCategories": "لا توجد تصنيفات متاحة حاليًا.",
+      "error": "تعذر تحميل هذا القسم. حاول لاحقًا."
+    }
   },
   "nav": {
     "home": "الرئيسية",
@@ -164,6 +228,22 @@
     "outOfStock": "نفد المخزون",
     "inStock": "متوفر",
     "noImage": "لا توجد صورة"
+  },
+  "productCard": {
+    "addToCart": "أضف للسلة",
+    "viewDetails": "عرض التفاصيل",
+    "favorite": "إضافة للمفضلة",
+    "removeFavorite": "إزالة من المفضلة",
+    "quickView": "عرض سريع",
+    "outOfStock": "غير متوفر",
+    "inStock": "متوفر",
+    "lowStock": "كمية محدودة",
+    "new": "جديد",
+    "featured": "مميز",
+    "discount": "خصم",
+    "off": "خصم",
+    "priceUnavailable": "السعر غير متاح",
+    "imageAlt": "صورة المنتج"
   },
   "cart": {
     "title": "السلة",
@@ -340,6 +420,104 @@
     "typeMessage": "اكتب رسالة...",
     "today": "اليوم",
     "yesterday": "الأمس"
+  },
+  "layout": {
+    "topBar": {
+      "support": "دعم العملاء",
+      "trackOrder": "تتبع الطلب",
+      "contact": "تواصل معنا"
+    },
+    "nav": {
+      "home": "الرئيسية",
+      "categories": "التصنيفات",
+      "products": "المنتجات",
+      "offers": "العروض",
+      "services": "الخدمات",
+      "maintenance": "الصيانة",
+      "contact": "تواصل معنا",
+      "about": "من نحن",
+      "cart": "السلة",
+      "account": "حسابي",
+      "favorites": "المفضلة",
+      "orders": "الطلبات",
+      "menu": "القائمة"
+    },
+  "productListing": {
+    "titles": {
+      "allProducts": "كل المنتجات",
+      "categoryProducts": "منتجات التصنيف",
+      "searchResults": "نتائج البحث",
+      "searchResultsFor": "نتائج البحث عن: {{query}}"
+    },
+    "subtitles": {
+      "allProducts": "تصفح جميع المنتجات المتاحة في المتجر.",
+      "categoryProducts": "استكشف المنتجات المتوفرة داخل هذا التصنيف.",
+      "searchEmpty": "اكتب اسم المنتج أو القطعة التي تبحث عنها."
+    },
+    "toolbar": {
+      "resultsCount": "{{count}} منتج",
+      "filters": "الفلاتر",
+      "sortBy": "ترتيب حسب",
+      "viewGrid": "عرض شبكي",
+      "viewList": "عرض قائمة",
+      "clearFilters": "مسح الفلاتر",
+      "activeFilters": "الفلاتر المفعلة"
+    },
+    "sort": {
+      "relevance": "الأهم",
+      "newest": "الأحدث",
+      "priceAsc": "السعر: من الأقل للأعلى",
+      "priceDesc": "السعر: من الأعلى للأقل",
+      "popular": "الأكثر شعبية",
+      "bestSelling": "الأكثر مبيعًا"
+    },
+    "filters": {
+      "title": "تصفية المنتجات",
+      "categories": "التصنيفات",
+      "price": "السعر",
+      "minPrice": "أقل سعر",
+      "maxPrice": "أعلى سعر",
+      "stock": "التوفر",
+      "inStock": "المتوفر فقط",
+      "outOfStock": "غير المتوفر",
+      "brand": "البراند",
+      "offers": "العروض",
+      "apply": "تطبيق",
+      "reset": "إعادة تعيين",
+      "clear": "مسح"
+    },
+    "states": {
+      "loading": "جاري تحميل المنتجات...",
+      "emptyTitle": "لم نجد منتجات مطابقة",
+      "emptySubtitle": "جرّب إزالة بعض الفلاتر أو البحث بكلمات مختلفة.",
+      "emptySearchTitle": "ابدأ البحث عن منتج",
+      "errorTitle": "تعذر تحميل المنتجات",
+      "errorSubtitle": "حدث خطأ أثناء جلب المنتجات. حاول مرة أخرى.",
+      "retry": "إعادة المحاولة"
+    },
+    "pagination": {
+      "loadMore": "تحميل المزيد",
+      "previous": "السابق",
+      "next": "التالي",
+      "page": "صفحة {{page}}"
+    }
+  },
+  "search": {
+      "placeholder": "ابحث عن منتج أو قطعة..."
+    },
+    "footer": {
+      "aboutTitle": "عن المتجر",
+      "aboutText": "متجر إلكتروني يوفر تجربة تسوق سهلة وموثوقة.",
+      "quickLinks": "روابط سريعة",
+      "customerService": "خدمة العملاء",
+      "policies": "السياسات",
+      "contact": "التواصل",
+      "privacy": "سياسة الخصوصية",
+      "returns": "سياسة الاسترجاع",
+      "shipping": "الشحن والتوصيل",
+      "terms": "الشروط والأحكام",
+      "rights": "جميع الحقوق محفوظة"
+    }
   },
   "policy": {
     "privacyPolicy": "سياسة الخصوصية",

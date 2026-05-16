@@ -2,27 +2,29 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react'
-import { gradients } from '../../theme'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getBanners } from '../../services/bannerService'
-import { getRootCategoriesForHome } from '../../services/categoryService'
-import { getNewProducts, getFeaturedProducts } from '../../services/productService'
+import { getNewProducts, getFeaturedProducts, getProducts } from '../../services/productService'
+import { ShimmerBox } from '../../components/shared'
+import { Container } from '../../components/layout'
 import {
-  ProductCard,
-  ProductCardShimmer,
-  SectionHeader,
-  ShimmerBox,
-} from '../../components/shared'
+  HomeHeroSection,
+  HomeCategoryShowcase,
+  HomeTrustFeatures,
+  HomeProductSection,
+  HomeBrandsSection,
+  HomeServiceSection,
+} from './components'
 
 /* ------------------------------------------------------------------ */
-/*  Banner Carousel                                                   */
+/*  Banner Carousel (retained from previous version)                  */
 /* ------------------------------------------------------------------ */
 function BannerCarousel() {
   const { data: banners, isLoading } = useQuery({
     queryKey: ['banners'],
     queryFn: getBanners,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   })
 
   const [current, setCurrent] = useState(0)
@@ -38,7 +40,6 @@ function BannerCarousel() {
     setCurrent((p) => (p - 1 + (count || 1)) % (count || 1))
   }, [count])
 
-  // Auto‑slide
   useEffect(() => {
     if (count <= 1) return
     timerRef.current = setInterval(next, 4000)
@@ -49,8 +50,10 @@ function BannerCarousel() {
 
   if (isLoading) {
     return (
-      <div className="px-4 mb-4 max-w-7xl mx-auto">
-        <ShimmerBox className="w-full h-48 sm:h-56 md:h-72 lg:h-80 xl:h-96" rounded="rounded-2xl" />
+      <div className="mb-6 md:mb-8">
+        <Container>
+          <ShimmerBox className="w-full h-48 sm:h-56 md:h-72 lg:h-80 xl:h-96" rounded="rounded-2xl" />
+        </Container>
       </div>
     )
   }
@@ -58,180 +61,79 @@ function BannerCarousel() {
   if (!banners?.length) return null
 
   return (
-    <div className="relative px-4 mb-6 group max-w-7xl mx-auto">
-      {/* Slide container */}
-      <div className="overflow-hidden rounded-3xl relative h-52 sm:h-60 md:h-72 lg:h-80 xl:h-96 border border-white/50 dark:border-white/10 shadow-[0_18px_45px_rgba(13,38,59,0.16)]">
-        {banners.map((banner, idx) => (
-          <div
-            key={banner.id}
-            className={`absolute inset-0 transition-opacity duration-500 ${
-              idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
-            }`}
-          >
-            {banner.link ? (
-              <Link to={banner.link} className="block w-full h-full">
-                <img
-                  src={banner.imageUrl}
-                  alt={banner.altText ?? ''}
-                  className="w-full h-full object-cover"
-                />
-              </Link>
-            ) : (
-              <img
-                src={banner.imageUrl}
-                alt={banner.altText ?? ''}
-                className="w-full h-full object-cover"
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+    <section className="mb-6 md:mb-8">
+      <Container>
+        <div className="relative group">
+          <div className="overflow-hidden rounded-2xl md:rounded-3xl relative h-48 sm:h-56 md:h-72 lg:h-80 xl:h-96 border border-white/50 dark:border-white/10 shadow-sm">
+            {banners.map((banner, idx) => (
+              <div
+                key={banner.id}
+                className={`absolute inset-0 transition-opacity duration-500 ${
+                  idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                }`}
+              >
+                {banner.link ? (
+                  <Link to={banner.link} className="block w-full h-full">
+                    <img
+                      src={banner.imageUrl}
+                      alt={banner.altText ?? ''}
+                      className="w-full h-full object-cover"
+                      loading={idx === 0 ? 'eager' : 'lazy'}
+                    />
+                  </Link>
+                ) : (
+                  <img
+                    src={banner.imageUrl}
+                    alt={banner.altText ?? ''}
+                    className="w-full h-full object-cover"
+                    loading={idx === 0 ? 'eager' : 'lazy'}
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Arrows */}
-      {count > 1 && (
-        <>
-          <button
-            onClick={prev}
-            className="absolute start-7 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/85 dark:bg-black/45 backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow"
-          >
-            <ChevronRight size={20} className="rtl:hidden" />
-            <ChevronLeft size={20} className="hidden rtl:block" />
-          </button>
-          <button
-            onClick={next}
-            className="absolute end-7 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/85 dark:bg-black/45 backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow"
-          >
-            <ChevronLeft size={20} className="rtl:hidden" />
-            <ChevronRight size={20} className="hidden rtl:block" />
-          </button>
-        </>
-      )}
+          {count > 1 && (
+            <>
+              <button
+                onClick={prev}
+                className="absolute start-3 md:start-5 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/85 dark:bg-black/45 backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow"
+                aria-label="Previous"
+              >
+                <ChevronRight size={20} className="rtl:hidden" />
+                <ChevronLeft size={20} className="hidden rtl:block" />
+              </button>
+              <button
+                onClick={next}
+                className="absolute end-3 md:end-5 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/85 dark:bg-black/45 backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow"
+                aria-label="Next"
+              >
+                <ChevronLeft size={20} className="rtl:hidden" />
+                <ChevronRight size={20} className="hidden rtl:block" />
+              </button>
+            </>
+          )}
 
-      {/* Dots */}
-      {count > 1 && (
-        <div className="absolute inset-x-0 bottom-3 z-20 flex justify-center">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/25 backdrop-blur-sm">
-          {banners.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrent(idx)}
-              className={`h-1.5 rounded-full transition-all ${
-                idx === current ? 'w-5 bg-white' : 'w-1.5 bg-white/55'
-              }`}
-            />
-          ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-/*  Categories Strip – نفس أسلوب التطبيق                                 */
-/* ------------------------------------------------------------------ */
-function CategoriesStrip() {
-  const { data: categories, isLoading } = useQuery({
-    queryKey: ['rootCategories'],
-    queryFn: getRootCategoriesForHome,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
-  })
-
-  if (isLoading) {
-    return (
-      <div className="mb-6">
-        <div className="px-4 mb-3">
-          <ShimmerBox className="w-24" height={20} />
-        </div>
-        <div className="flex gap-4 px-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <ShimmerBox key={i} className="flex-shrink-0 w-[160px] h-[140px]" rounded="rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="mb-6">
-      <SectionHeader title="التصنيفات" viewAllLink="/allCategories" />
-      <div
-        className="flex gap-4 px-4 pb-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
-        style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
-      >
-        {/* زر الكل */}
-        <Link
-          to="/allCategories"
-          className="flex-shrink-0 w-[100px] h-[140px] min-w-[100px] rounded-2xl flex flex-col items-center justify-center gap-3 snap-start snap-always text-white"
-          style={{ background: gradients.linerGreenReversed }}
-        >
-          <LayoutGrid size={44} strokeWidth={2} />
-          <span className="text-base font-semibold">الكل</span>
-        </Link>
-        {/* فئات */}
-        {(categories ?? []).map((cat) => (
-          <Link
-            key={cat.id}
-            to={`/categories/${cat.id}/products`}
-            className="flex-shrink-0 w-[160px] h-[140px] min-w-[160px] rounded-2xl flex flex-col items-center justify-center gap-3 snap-start snap-always overflow-hidden bg-gradient-to-br from-[#E4F5FF] to-[#C8EDFF] dark:from-[rgba(58,58,60,0.5)] dark:to-[#3A3A3C]"
-          >
-            <div className="w-16 h-16 flex items-center justify-center flex-shrink-0">
-              {cat.image ? (
-                <img src={cat.image} alt={cat.name} className="w-16 h-16 object-contain" />
-              ) : (
-                <span className="text-tagadod-gray text-4xl">{cat.icon ?? '📦'}</span>
-              )}
+          {count > 1 && (
+            <div className="absolute inset-x-0 bottom-3 z-20 flex justify-center">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/25 backdrop-blur-sm">
+                {banners.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrent(idx)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      idx === current ? 'w-5 bg-white' : 'w-1.5 bg-white/55'
+                    }`}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
             </div>
-            <span className="text-base font-semibold text-tagadod-titles dark:text-tagadod-dark-titles text-center line-clamp-2 px-1">
-              {cat.name}
-            </span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-/*  Products Grid (reusable)                                           */
-/* ------------------------------------------------------------------ */
-function ProductsGrid({
-  queryKey,
-  queryFn,
-  title,
-  viewAllLink,
-}: {
-  queryKey: string[]
-  queryFn: () => Promise<{ data: import('../../types/product').Product[] }>
-  title: string
-  viewAllLink?: string
-}) {
-  const { data, isLoading } = useQuery({
-    queryKey,
-    queryFn,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
-  })
-
-  return (
-    <div className="mb-6">
-      <SectionHeader title={title} viewAllLink={viewAllLink} />
-      {isLoading ? (
-        <div className="grid grid-cols-4 gap-3 px-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <ProductCardShimmer key={i} />
-          ))}
+          )}
         </div>
-      ) : data?.data?.length ? (
-        <div className="grid grid-cols-4 gap-3 px-4">
-          {data.data.slice(0, 6).map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      ) : null}
-    </div>
+      </Container>
+    </section>
   )
 }
 
@@ -241,30 +143,98 @@ function ProductsGrid({
 export function HomePage() {
   const { t } = useTranslation()
 
+  const featuredQuery = useQuery({
+    queryKey: ['featuredProducts'],
+    queryFn: () => getFeaturedProducts({ limit: 10 }),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  })
+
+  const newQuery = useQuery({
+    queryKey: ['newProducts'],
+    queryFn: () => getNewProducts({ limit: 10 }),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  })
+
+  const offersQuery = useQuery({
+    queryKey: ['offerProducts'],
+    queryFn: () => getProducts({ limit: 50 }),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  })
+
+  const offerProducts = (offersQuery.data?.data ?? []).filter(
+    (p) => p.originalPrice && p.originalPrice > p.price
+  )
+
+  // استخراج براندات فريدة من المنتجات إن وجدت
+  const allProducts = [
+    ...(featuredQuery.data?.data ?? []),
+    ...(newQuery.data?.data ?? []),
+    ...(offersQuery.data?.data ?? []),
+  ]
+  const brandMap = new Map<string, { id: string; name: string; image?: string }>()
+  // TODO: إذا أضيف حقل brand للمنتجات في المستقبل، استخدمه هنا
+  // حاليًا لا توجد بيانات براندات كافية، لذا يُرجع مصفوفة فارغة
+  void allProducts
+  const brands = Array.from(brandMap.values())
+
   return (
-    <div className="pb-24">
-      {/* Banner carousel */}
+    <div className="bg-tagadod-light-bg dark:bg-tagadod-dark-bg">
+      {/* Hero Commerce Section */}
+      <HomeHeroSection />
+
+      {/* Banner Carousel */}
       <BannerCarousel />
 
-      {/* Featured categories */}
-      <CategoriesStrip />
+      {/* Categories Showcase */}
+      <HomeCategoryShowcase />
 
-      {/* New products */}
-      <ProductsGrid
-        queryKey={['newProducts']}
-        queryFn={() => getNewProducts({ limit: 6 })}
-        title={t('منتجات جديدة')}
-        viewAllLink="/products?type=new"
+      {/* Trust Features */}
+      <HomeTrustFeatures />
+
+      {/* Featured Products */}
+      <HomeProductSection
+        title={t('home.sections.featuredProducts.title')}
+        subtitle={t('home.sections.featuredProducts.subtitle')}
+        products={featuredQuery.data?.data}
+        isLoading={featuredQuery.isLoading}
+        error={featuredQuery.error}
+        viewAllHref="/products?type=featured"
+        viewAllLabel={t('home.sections.featuredProducts.viewAll')}
+        emptyTitle={t('home.states.emptyProducts')}
       />
 
-      {/* Featured products */}
-      <ProductsGrid
-        queryKey={['featuredProducts']}
-        queryFn={() => getFeaturedProducts({ limit: 6 })}
-        title={t('منتجات مميزة')}
-        viewAllLink="/products?type=featured"
+      {/* New Products */}
+      <HomeProductSection
+        title={t('home.sections.newProducts.title')}
+        subtitle={t('home.sections.newProducts.subtitle')}
+        products={newQuery.data?.data}
+        isLoading={newQuery.isLoading}
+        error={newQuery.error}
+        viewAllHref="/products?type=new"
+        viewAllLabel={t('home.sections.newProducts.viewAll')}
+        emptyTitle={t('home.states.emptyProducts')}
       />
 
+      {/* Offers / Deals — مخفي إذا لا توجد عروض */}
+      <HomeProductSection
+        title={t('home.sections.offers.title')}
+        subtitle={t('home.sections.offers.subtitle')}
+        products={offerProducts}
+        isLoading={offersQuery.isLoading}
+        error={offersQuery.error}
+        viewAllHref="/products?type=offers"
+        viewAllLabel={t('home.sections.offers.viewAll')}
+        hideIfEmpty
+      />
+
+      {/* Brands — مخفي إذا لا توجد بيانات */}
+      <HomeBrandsSection brands={brands} />
+
+      {/* Service / Maintenance CTA */}
+      <HomeServiceSection />
     </div>
   )
 }
