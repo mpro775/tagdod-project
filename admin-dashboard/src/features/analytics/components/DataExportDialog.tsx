@@ -10,8 +10,6 @@ import {
   Select,
   MenuItem,
   TextField,
-  FormControlLabel,
-  Switch,
   Box,
   Typography,
   Stepper,
@@ -20,10 +18,6 @@ import {
   StepContent,
   Alert,
   Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
   LinearProgress,
   Grid,
   Stack,
@@ -36,40 +30,48 @@ import {
   TableChart as TableChartIcon,
   PictureAsPdf as PictureAsPdfIcon,
   Description as DescriptionIcon,
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
 } from '@mui/icons-material';
 import {
   useExportSalesData,
   useExportProductsData,
   useExportCustomersData,
-  useExportData,
+  useExportInventoryData,
+  useExportFinancialData,
+  useExportMarketingData,
 } from '../hooks/useAnalytics';
-import { ReportFormat, PeriodType } from '../types/analytics.types';
+import { normalizeExportFormat } from '../utils/exportMappers';
+import type { ExportDataType } from '../types/exports';
 
 interface DataExportDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
+const EXPORT_TYPES: { value: ExportDataType; labelKey: string; disabled?: boolean }[] = [
+  { value: 'sales', labelKey: 'export.dataType.sales' },
+  { value: 'products', labelKey: 'export.dataType.products' },
+  { value: 'customers', labelKey: 'export.dataType.customers' },
+  { value: 'inventory', labelKey: 'export.dataType.inventory' },
+  { value: 'financial', labelKey: 'export.dataType.financial' },
+  { value: 'marketing', labelKey: 'export.dataType.marketing' },
+];
+
+const FORMAT_OPTIONS = [
+  { value: 'pdf', label: 'PDF', icon: <PictureAsPdfIcon /> },
+  { value: 'xlsx', label: 'Excel', icon: <TableChartIcon /> },
+  { value: 'csv', label: 'CSV', icon: <TableChartIcon /> },
+  { value: 'json', label: 'JSON', icon: <DescriptionIcon /> },
+];
+
 export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClose }) => {
   const { t } = useTranslation('analytics');
   const { isMobile } = useBreakpoint();
   const [activeStep, setActiveStep] = useState(0);
-  const [exportType, setExportType] = useState<'sales' | 'products' | 'customers' | 'custom'>(
-    'sales'
-  );
-  const [format, setFormat] = useState<ReportFormat>(ReportFormat.EXCEL);
+  const [exportType, setExportType] = useState<ExportDataType>('sales');
+  const [format, setFormat] = useState<string>('xlsx');
   const [dateRange, setDateRange] = useState({
     startDate: '',
     endDate: '',
-  });
-  const [filters, setFilters] = useState({
-    includeCharts: true,
-    includeRawData: false,
-    groupBy: '',
-    category: '',
-    status: '',
   });
   const [exportStatus, setExportStatus] = useState<'idle' | 'exporting' | 'completed' | 'error'>(
     'idle'
@@ -79,29 +81,23 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
   const exportSalesData = useExportSalesData();
   const exportProductsData = useExportProductsData();
   const exportCustomersData = useExportCustomersData();
-  const exportData = useExportData();
-
+  const exportInventoryData = useExportInventoryData();
+  const exportFinancialData = useExportFinancialData();
+  const exportMarketingData = useExportMarketingData();
 
   const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    setActiveStep((prev) => prev + 1);
   };
 
   const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    setActiveStep((prev) => prev - 1);
   };
 
   const handleReset = () => {
     setActiveStep(0);
     setExportType('sales');
-    setFormat(ReportFormat.EXCEL);
+    setFormat('xlsx');
     setDateRange({ startDate: '', endDate: '' });
-    setFilters({
-      includeCharts: true,
-      includeRawData: false,
-      groupBy: '',
-      category: '',
-      status: '',
-    });
     setExportStatus('idle');
     setExportResult(null);
   };
@@ -110,36 +106,33 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
     setExportStatus('exporting');
 
     try {
+      const payload = {
+        type: exportType,
+        format: normalizeExportFormat(format),
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+      };
+
       let result;
 
-      switch (exportType) {
+      switch (payload.type) {
         case 'sales':
-          result = await exportSalesData.mutateAsync({
-            format: format.toString(),
-            startDate: dateRange.startDate,
-            endDate: dateRange.endDate,
-          });
+          result = await exportSalesData.mutateAsync(payload);
           break;
         case 'products':
-          result = await exportProductsData.mutateAsync({
-            format: format.toString(),
-            startDate: dateRange.startDate,
-            endDate: dateRange.endDate,
-          });
+          result = await exportProductsData.mutateAsync(payload);
           break;
         case 'customers':
-          result = await exportCustomersData.mutateAsync({
-            format: format.toString(),
-            startDate: dateRange.startDate,
-            endDate: dateRange.endDate,
-          });
+          result = await exportCustomersData.mutateAsync(payload);
           break;
-        case 'custom':
-          result = await exportData.mutateAsync({
-            format: format.toString(),
-            type: 'custom',
-            period: PeriodType.MONTHLY,
-          });
+        case 'inventory':
+          result = await exportInventoryData.mutateAsync(payload);
+          break;
+        case 'financial':
+          result = await exportFinancialData.mutateAsync(payload);
+          break;
+        case 'marketing':
+          result = await exportMarketingData.mutateAsync(payload);
           break;
         default:
           throw new Error(t('export.status.unsupportedType'));
@@ -153,54 +146,27 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
     }
   };
 
-  const getFormatIcon = (format: ReportFormat) => {
-    switch (format) {
-      case ReportFormat.PDF:
-        return <PictureAsPdfIcon />;
-      case ReportFormat.EXCEL:
-        return <TableChartIcon />;
-      case ReportFormat.CSV:
-        return <TableChartIcon />;
-      case ReportFormat.JSON:
-        return <DescriptionIcon />;
-      default:
-        return <FileDownloadIcon />;
-    }
+  const getFormatLabel = (fmt: string) => {
+    return FORMAT_OPTIONS.find((o) => o.value === fmt)?.label || fmt;
   };
 
-  const getFormatLabel = (format: ReportFormat) => {
-    return t(`export.format.${format}`);
-  };
-
-  const getExportTypeLabel = (type: string) => {
-    return t(`export.dataType.${type}`);
+  const getFormatIcon = (fmt: string) => {
+    return FORMAT_OPTIONS.find((o) => o.value === fmt)?.icon || <FileDownloadIcon />;
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="md" 
-      fullWidth
-      fullScreen={isMobile}
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth fullScreen={isMobile}>
       <DialogTitle sx={{ fontSize: isMobile ? '1.1rem' : undefined }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <DownloadIcon fontSize={isMobile ? 'small' : 'medium'} />
-          <Typography 
-            variant={isMobile ? 'subtitle1' : 'h6'}
-            sx={{ fontSize: isMobile ? '1rem' : undefined }}
-          >
+          <Typography variant={isMobile ? 'subtitle1' : 'h6'} sx={{ fontSize: isMobile ? '1rem' : undefined }}>
             {t('export.title')}
           </Typography>
         </Stack>
       </DialogTitle>
 
       <DialogContent sx={{ px: isMobile ? 1.5 : 3 }}>
-        <Stepper 
-          activeStep={activeStep} 
-          orientation={isMobile ? 'vertical' : 'vertical'}
-        >
+        <Stepper activeStep={activeStep} orientation={isMobile ? 'vertical' : 'vertical'}>
           {/* Step 1: Data Type Selection */}
           <Step>
             <StepLabel sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
@@ -209,64 +175,33 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
             <StepContent>
               <FormControl fullWidth sx={{ mb: 2 }} size={isMobile ? 'medium' : 'small'}>
                 <InputLabel>{t('export.dataType.label')}</InputLabel>
-                <Select 
-                  value={exportType} 
-                  onChange={(e) => setExportType(e.target.value as any)}
+                <Select
+                  value={exportType}
+                  onChange={(e) => setExportType(e.target.value as ExportDataType)}
                   label={t('export.dataType.label')}
                 >
-                  <MenuItem value="sales">
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                      <TableChartIcon fontSize="small" />
-                      <span>{t('export.dataType.sales')}</span>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="products">
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                      <TableChartIcon fontSize="small" />
-                      <span>{t('export.dataType.products')}</span>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="customers">
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                      <TableChartIcon fontSize="small" />
-                      <span>{t('export.dataType.customers')}</span>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="custom">
-                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                      <TableChartIcon fontSize="small" />
-                      <span>{t('export.dataType.custom')}</span>
-                    </Stack>
-                  </MenuItem>
+                  {EXPORT_TYPES.map((type) => (
+                    <MenuItem key={type.value} value={type.value} disabled={type.disabled}>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                        <TableChartIcon fontSize="small" />
+                        <span>{t(type.labelKey)}</span>
+                      </Stack>
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
               <Alert severity="info" sx={{ mb: 2 }}>
-                <Typography 
-                  variant="body2"
-                  sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
-                >
+                <Typography variant="body2" sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}>
                   {t('export.dataType.info')}
                 </Typography>
               </Alert>
 
-              <Stack 
-                direction={isMobile ? 'column' : 'row'} 
-                spacing={1}
-              >
-                <Button 
-                  onClick={handleNext} 
-                  variant="contained"
-                  size={isMobile ? 'medium' : 'small'}
-                  fullWidth={isMobile}
-                >
+              <Stack direction={isMobile ? 'column' : 'row'} spacing={1}>
+                <Button onClick={handleNext} variant="contained" size={isMobile ? 'medium' : 'small'} fullWidth={isMobile}>
                   {t('export.actions.next')}
                 </Button>
-                <Button 
-                  onClick={onClose}
-                  size={isMobile ? 'medium' : 'small'}
-                  fullWidth={isMobile}
-                >
+                <Button onClick={onClose} size={isMobile ? 'medium' : 'small'} fullWidth={isMobile}>
                   {t('export.actions.cancel')}
                 </Button>
               </Stack>
@@ -285,14 +220,14 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
                     <InputLabel>{t('export.format.label')}</InputLabel>
                     <Select
                       value={format}
-                      onChange={(e) => setFormat(e.target.value as ReportFormat)}
+                      onChange={(e) => setFormat(e.target.value)}
                       label={t('export.format.label')}
                     >
-                      {Object.values(ReportFormat).map((formatOption) => (
-                        <MenuItem key={formatOption} value={formatOption}>
+                      {FORMAT_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
                           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                            {getFormatIcon(formatOption)}
-                            <span>{getFormatLabel(formatOption)}</span>
+                            {option.icon}
+                            <span>{option.label}</span>
                           </Stack>
                         </MenuItem>
                       ))}
@@ -325,141 +260,31 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
                 </Grid>
               </Grid>
 
-              <Stack 
-                direction={isMobile ? 'column' : 'row'} 
-                spacing={1}
-              >
-                <Button 
-                  onClick={handleNext} 
-                  variant="contained"
-                  size={isMobile ? 'medium' : 'small'}
-                  fullWidth={isMobile}
-                >
+              <Stack direction={isMobile ? 'column' : 'row'} spacing={1}>
+                <Button onClick={handleNext} variant="contained" size={isMobile ? 'medium' : 'small'} fullWidth={isMobile}>
                   {t('export.actions.next')}
                 </Button>
-                <Button 
-                  onClick={handleBack}
-                  size={isMobile ? 'medium' : 'small'}
-                  fullWidth={isMobile}
-                >
+                <Button onClick={handleBack} size={isMobile ? 'medium' : 'small'} fullWidth={isMobile}>
                   {t('export.actions.previous')}
                 </Button>
               </Stack>
             </StepContent>
           </Step>
 
-          {/* Step 3: Filters */}
-          <Step>
-            <StepLabel sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
-              {t('export.steps.filters')}
-            </StepLabel>
-            <StepContent>
-              <Grid container spacing={isMobile ? 1.5 : 2} sx={{ mb: 2 }}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={filters.includeCharts}
-                        onChange={(e) =>
-                          setFilters({ ...filters, includeCharts: e.target.checked })
-                        }
-                        size={isMobile ? 'medium' : 'small'}
-                      />
-                    }
-                    label={t('export.filters.includeCharts')}
-                    sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={filters.includeRawData}
-                        onChange={(e) =>
-                          setFilters({ ...filters, includeRawData: e.target.checked })
-                        }
-                        size={isMobile ? 'medium' : 'small'}
-                      />
-                    }
-                    label={t('export.filters.includeRawData')}
-                    sx={{ fontSize: isMobile ? '0.875rem' : undefined }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label={t('export.filters.groupBy')}
-                    value={filters.groupBy}
-                    onChange={(e) => setFilters({ ...filters, groupBy: e.target.value })}
-                    placeholder={t('export.filters.groupByPlaceholder')}
-                    size={isMobile ? 'medium' : 'small'}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label={t('export.filters.category')}
-                    value={filters.category}
-                    onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                    placeholder={t('export.filters.categoryPlaceholder')}
-                    size={isMobile ? 'medium' : 'small'}
-                  />
-                </Grid>
-              </Grid>
-
-              <Stack 
-                direction={isMobile ? 'column' : 'row'} 
-                spacing={1}
-              >
-                <Button 
-                  onClick={handleNext} 
-                  variant="contained"
-                  size={isMobile ? 'medium' : 'small'}
-                  fullWidth={isMobile}
-                >
-                  {t('export.actions.next')}
-                </Button>
-                <Button 
-                  onClick={handleBack}
-                  size={isMobile ? 'medium' : 'small'}
-                  fullWidth={isMobile}
-                >
-                  {t('export.actions.previous')}
-                </Button>
-              </Stack>
-            </StepContent>
-          </Step>
-
-          {/* Step 4: Export */}
+          {/* Step 3: Export Summary & Execute */}
           <Step>
             <StepLabel sx={{ fontSize: isMobile ? '0.875rem' : undefined }}>
               {t('export.steps.export')}
             </StepLabel>
             <StepContent>
-              {/* Export Summary */}
               <Box sx={{ mb: isMobile ? 2 : 3 }}>
-                <Typography 
-                  variant={isMobile ? 'subtitle1' : 'h6'} 
-                  gutterBottom
-                  sx={{ fontSize: isMobile ? '1rem' : undefined }}
-                >
+                <Typography variant={isMobile ? 'subtitle1' : 'h6'} gutterBottom sx={{ fontSize: isMobile ? '1rem' : undefined }}>
                   {t('export.summary.title')}
                 </Typography>
-                <Stack 
-                  direction="row" 
-                  spacing={1} 
-                  sx={{ 
-                    flexWrap: 'wrap', 
-                    gap: 1, 
-                    mb: 2 
-                  }}
-                >
+                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, mb: 2 }}>
                   <Chip
                     icon={<TableChartIcon fontSize="small" />}
-                    label={getExportTypeLabel(exportType)}
+                    label={t(`export.dataType.${exportType}`)}
                     color="primary"
                     variant="outlined"
                     size={isMobile ? 'small' : 'medium'}
@@ -474,93 +299,25 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
                     sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
                   />
                   {dateRange.startDate && (
-                    <Chip 
-                      label={`${t('export.dateRange.from')} ${dateRange.startDate}`} 
+                    <Chip
+                      label={`${t('export.dateRange.from')} ${dateRange.startDate}`}
                       variant="outlined"
                       size={isMobile ? 'small' : 'medium'}
-                      sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
                     />
                   )}
                   {dateRange.endDate && (
-                    <Chip 
-                      label={`${t('export.dateRange.to')} ${dateRange.endDate}`} 
+                    <Chip
+                      label={`${t('export.dateRange.to')} ${dateRange.endDate}`}
                       variant="outlined"
                       size={isMobile ? 'small' : 'medium'}
-                      sx={{ fontSize: isMobile ? '0.75rem' : undefined }}
                     />
                   )}
                 </Stack>
-
-                <List dense>
-                  <ListItem>
-                    <ListItemIcon>
-                      {filters.includeCharts ? (
-                        <CheckCircleIcon 
-                          color="success" 
-                          fontSize={isMobile ? 'small' : 'medium'}
-                        />
-                      ) : (
-                        <ErrorIcon 
-                          color="error" 
-                          fontSize={isMobile ? 'small' : 'medium'}
-                        />
-                      )}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={t('export.summary.charts')}
-                      secondary={
-                        filters.includeCharts 
-                          ? t('export.summary.chartsIncluded') 
-                          : t('export.summary.chartsNotIncluded')
-                      }
-                      primaryTypographyProps={{
-                        fontSize: isMobile ? '0.875rem' : undefined,
-                      }}
-                      secondaryTypographyProps={{
-                        fontSize: isMobile ? '0.75rem' : undefined,
-                      }}
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemIcon>
-                      {filters.includeRawData ? (
-                        <CheckCircleIcon 
-                          color="success" 
-                          fontSize={isMobile ? 'small' : 'medium'}
-                        />
-                      ) : (
-                        <ErrorIcon 
-                          color="error" 
-                          fontSize={isMobile ? 'small' : 'medium'}
-                        />
-                      )}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={t('export.summary.rawData')}
-                      secondary={
-                        filters.includeRawData 
-                          ? t('export.summary.rawDataIncluded') 
-                          : t('export.summary.rawDataNotIncluded')
-                      }
-                      primaryTypographyProps={{
-                        fontSize: isMobile ? '0.875rem' : undefined,
-                      }}
-                      secondaryTypographyProps={{
-                        fontSize: isMobile ? '0.75rem' : undefined,
-                      }}
-                    />
-                  </ListItem>
-                </List>
               </Box>
 
-              {/* Export Status */}
               {exportStatus === 'exporting' && (
                 <Box sx={{ mb: 2 }}>
-                  <Typography 
-                    variant="body2" 
-                    gutterBottom
-                    sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
-                  >
+                  <Typography variant="body2" gutterBottom sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}>
                     {t('export.status.exporting')}
                   </Typography>
                   <LinearProgress />
@@ -569,17 +326,14 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
 
               {exportStatus === 'completed' && exportResult && (
                 <Alert severity="success" sx={{ mb: 2 }}>
-                  <Typography 
-                    variant="body2"
-                    sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
-                  >
+                  <Typography variant="body2" sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}>
                     {t('export.status.completed')}
                   </Typography>
-                  {exportResult.data?.fileUrl && (
+                  {exportResult?.fileUrl && (
                     <Button
                       variant="contained"
                       startIcon={<DownloadIcon />}
-                      onClick={() => window.open(exportResult.data.fileUrl, '_blank')}
+                      onClick={() => window.open(exportResult.fileUrl, '_blank', 'noopener,noreferrer')}
                       sx={{ mt: 1 }}
                       size={isMobile ? 'medium' : 'small'}
                       fullWidth={isMobile}
@@ -592,20 +346,13 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
 
               {exportStatus === 'error' && (
                 <Alert severity="error" sx={{ mb: 2 }}>
-                  <Typography 
-                    variant="body2"
-                    sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}
-                  >
+                  <Typography variant="body2" sx={{ fontSize: isMobile ? '0.8125rem' : undefined }}>
                     {t('export.status.error')}
                   </Typography>
                 </Alert>
               )}
 
-              <Stack 
-                direction={isMobile ? 'column' : 'row'} 
-                spacing={1}
-                sx={{ flexWrap: 'wrap' }}
-              >
+              <Stack direction={isMobile ? 'column' : 'row'} spacing={1} sx={{ flexWrap: 'wrap' }}>
                 <Button
                   onClick={handleExport}
                   variant="contained"
@@ -614,24 +361,14 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
                   size={isMobile ? 'medium' : 'small'}
                   fullWidth={isMobile}
                 >
-                  {exportStatus === 'exporting' 
-                    ? t('export.status.exportingText') 
-                    : t('export.status.startExport')
-                  }
+                  {exportStatus === 'exporting'
+                    ? t('export.status.exportingText')
+                    : t('export.status.startExport')}
                 </Button>
-                <Button 
-                  onClick={handleBack} 
-                  disabled={exportStatus === 'exporting'}
-                  size={isMobile ? 'medium' : 'small'}
-                  fullWidth={isMobile}
-                >
+                <Button onClick={handleBack} disabled={exportStatus === 'exporting'} size={isMobile ? 'medium' : 'small'} fullWidth={isMobile}>
                   {t('export.actions.previous')}
                 </Button>
-                <Button 
-                  onClick={handleReset}
-                  size={isMobile ? 'medium' : 'small'}
-                  fullWidth={isMobile}
-                >
+                <Button onClick={handleReset} size={isMobile ? 'medium' : 'small'} fullWidth={isMobile}>
                   {t('export.actions.reset')}
                 </Button>
               </Stack>
@@ -641,11 +378,7 @@ export const DataExportDialog: React.FC<DataExportDialogProps> = ({ open, onClos
       </DialogContent>
 
       <DialogActions sx={{ px: isMobile ? 1.5 : 3, pb: isMobile ? 2 : 3 }}>
-        <Button 
-          onClick={onClose}
-          size={isMobile ? 'medium' : 'large'}
-          fullWidth={isMobile}
-        >
+        <Button onClick={onClose} size={isMobile ? 'medium' : 'large'} fullWidth={isMobile}>
           {t('export.actions.close')}
         </Button>
       </DialogActions>

@@ -28,10 +28,11 @@ import {
   Timer as TimerIcon,
   DataUsage as DataUsageIcon,
 } from '@mui/icons-material';
-import { useAdvancedReport } from '../hooks/useAnalytics';
+import { useAdvancedReport, useArchiveReport, useExportReport } from '../hooks/useAnalytics';
 import { ReportStatusBadge } from '../components/report/ReportStatusBadge';
 import { DataQualityBadge } from '../components/report/DataQualityBadge';
-import { ReportStatus, ReportExportEntry } from '../types/analytics.types';
+import { ReportStatus, ReportExportEntry, ReportFormat } from '../types/analytics.types';
+import { EmptyAnalyticsState } from '../components/EmptyAnalyticsState';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -54,15 +55,17 @@ export const ReportDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
 
-  const { data: report, isLoading, error, refetch } = useAdvancedReport(id || '');
+  const reportId = id || '';
+  const { data: report, isLoading, error, refetch } = useAdvancedReport(reportId);
+  const archiveReport = useArchiveReport();
+  const exportReport = useExportReport();
 
   const handleExport = async (format: string) => {
-    if (!id) return;
+    if (!reportId) return;
     try {
-      await fetch(`/api/analytics/advanced/reports/${id}/export`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ format }),
+      await exportReport.mutateAsync({
+        reportId,
+        data: { format: format as ReportFormat, includeCharts: true, includeRawData: false },
       });
       refetch();
     } catch (err) {
@@ -71,11 +74,21 @@ export const ReportDetailsPage: React.FC = () => {
   };
 
   const handleRegenerate = async () => {
-    if (!id) return;
+    if (!reportId) return;
     try {
       await refetch();
     } catch (err) {
       console.error('Regeneration failed:', err);
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!reportId) return;
+    try {
+      await archiveReport.mutateAsync(reportId);
+      refetch();
+    } catch (err) {
+      console.error('Archive failed:', err);
     }
   };
 
@@ -86,14 +99,18 @@ export const ReportDetailsPage: React.FC = () => {
   };
 
   const formatDate = (date: Date | string | undefined): string => {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    if (!date) return '-';
+    try {
+      return new Date(date).toLocaleDateString('ar-SA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return '-';
+    }
   };
 
   if (isLoading) {
@@ -109,12 +126,12 @@ export const ReportDetailsPage: React.FC = () => {
   if (error || !report) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="error">
-          {t('messages.reportGenerationFailed', 'Failed to load report')}
-        </Alert>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mt: 2 }}>
-          {t('actions.backToReports', 'Back to Reports')}
-        </Button>
+        <EmptyAnalyticsState
+          title={t('reportDetails.notFound', 'تعذر العثور على التقرير')}
+          description={t('reportDetails.notFoundDesc', 'التقرير المطلوب غير موجود أو تم حذفه.')}
+          actionLabel={t('actions.backToReports', 'العودة للتقارير')}
+          onAction={() => navigate('/analytics/reports')}
+        />
       </Box>
     );
   }
@@ -129,32 +146,37 @@ export const ReportDetailsPage: React.FC = () => {
           <Box>
             <Button
               startIcon={<ArrowBackIcon />}
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/analytics/reports')}
               sx={{ mb: 1 }}
             >
-              {t('actions.backToReports', 'Back to Reports')}
+              {t('actions.backToReports', 'العودة للتقارير')}
             </Button>
             <Typography variant="h4" component="h1" gutterBottom>
-              {report.title}
+              {report.title || t('reportsManagement.untitled', 'تقرير بدون عنوان')}
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-              <ReportStatusBadge status={report.status || ReportStatus.COMPLETED} />
+              <ReportStatusBadge status={(report.status as ReportStatus) || ReportStatus.COMPLETED} />
               <DataQualityBadge dataQuality={report.dataQuality} showDetails />
             </Stack>
           </Box>
           <Stack direction="row" spacing={1}>
-            <Tooltip title={t('actions.download', 'Download')}>
-              <IconButton onClick={() => handleExport('pdf')}>
-                <DownloadIcon />
-              </IconButton>
+            <Tooltip title={t('actions.download', 'تحميل')}>
+              <span>
+                <IconButton
+                  onClick={() => handleExport('pdf')}
+                  disabled={report.status !== ReportStatus.COMPLETED}
+                >
+                  <DownloadIcon />
+                </IconButton>
+              </span>
             </Tooltip>
-            <Tooltip title={t('actions.regenerate', 'Regenerate')}>
+            <Tooltip title={t('actions.regenerate', 'إعادة توليد')}>
               <IconButton onClick={handleRegenerate}>
                 <ReplayIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title={t('actions.archive', 'Archive')}>
-              <IconButton>
+            <Tooltip title={report.isArchived ? t('actions.unarchive', 'إلغاء الأرشفة') : t('actions.archive', 'أرشفة')}>
+              <IconButton onClick={handleArchive}>
                 <ArchiveIcon />
               </IconButton>
             </Tooltip>

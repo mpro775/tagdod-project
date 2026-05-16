@@ -493,6 +493,9 @@
       "sales": "Sales and Revenue Data",
       "products": "Products and Inventory Data",
       "customers": "Customers and Users Data",
+      "inventory": "Inventory Data",
+      "financial": "Financial Data",
+      "marketing": "Marketing Data",
       "custom": "Custom Data",
       "info": "Select the type of data you want to export. You can export sales, products, customers, or custom data."
     },
@@ -621,6 +624,7 @@
     "title": "Export Center",
     "subtitle": "All exported files from reports",
     "search": "Search files...",
+    "searchPlaceholder": "Search files...",
     "noData": "No exported files",
     "file": "File",
     "report": "Report",
@@ -629,7 +633,23 @@
     "date": "Export Date",
     "actions": "Actions",
     "download": "Download",
-    "all": "All"
+    "open": "Open",
+    "copyLink": "Copy Link",
+    "refresh": "Refresh",
+    "all": "All",
+    "status": "Status",
+    "of": "of",
+    "formatFilter": "Format",
+    "statusFilter": "Status",
+    "totalFiles": "Total Files",
+    "availableFiles": "Available Files",
+    "failedFiles": "Failed Exports",
+    "totalSize": "Total Size",
+    "error": "An error occurred while loading files",
+    "empty": {
+      "title": "No exported files",
+      "description": "Export a report or data to see files here"
+    }
   },
   "builder": {
     "title": "Report Builder",

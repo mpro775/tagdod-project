@@ -53,6 +53,11 @@ export const ReportCard: React.FC<ReportCardProps> = ({
   const theme = useTheme();
   const { t } = useTranslation('analytics');
 
+  const reportKey = report.reportId ?? report.id;
+  if (!reportKey) {
+    return null;
+  }
+
   const formatDuration = (ms?: number): string => {
     if (!ms) return '';
     if (ms < 1000) return `${ms}ms`;
@@ -74,7 +79,7 @@ export const ReportCard: React.FC<ReportCardProps> = ({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        borderLeft: `4px solid ${categoryColors[report.category] || theme.palette.primary.main}`,
+        borderLeft: `4px solid ${categoryColors[report.category as ReportCategory] || theme.palette.primary.main}`,
         transition: 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
           transform: 'translateY(-2px)',
@@ -85,22 +90,22 @@ export const ReportCard: React.FC<ReportCardProps> = ({
       <CardContent sx={{ flex: 1, pb: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AssessmentIcon sx={{ color: categoryColors[report.category], fontSize: 24 }} />
+            <AssessmentIcon sx={{ color: categoryColors[report.category as ReportCategory], fontSize: 24 }} />
             <Typography variant="h6" component="h3" sx={{ fontSize: '1rem', fontWeight: 600 }}>
-              {report.title}
+              {report.title || t('reportsManagement.untitled', 'تقرير بدون عنوان')}
             </Typography>
           </Box>
         </Box>
 
         <Stack direction="row" spacing={1} sx={{ mb: 1.5, flexWrap: 'wrap', gap: 0.5 }}>
-          <ReportStatusBadge status={report.status || ReportStatus.COMPLETED} />
+          <ReportStatusBadge status={(report.status as ReportStatus) || ReportStatus.COMPLETED} />
           <DataQualityBadge dataQuality={report.dataQuality} />
           <Chip
-            label={report.category}
+            label={t(`reports.category.${report.category}`, report.category)}
             size="small"
             sx={{
-              backgroundColor: `${categoryColors[report.category]}20`,
-              color: categoryColors[report.category],
+              backgroundColor: `${categoryColors[report.category as ReportCategory]}20`,
+              color: categoryColors[report.category as ReportCategory],
               fontWeight: 500,
             }}
           />
@@ -108,21 +113,21 @@ export const ReportCard: React.FC<ReportCardProps> = ({
 
         <Stack spacing={0.5} sx={{ mb: 1 }}>
           <Typography variant="body2" color="text.secondary">
-            {t('reportDetails.createdAt', 'Created')}: {formatDate(report.generatedAt)}
+            {t('reportDetails.createdAt', 'تاريخ الإنشاء')}: {formatDate(report.generatedAt)}
           </Typography>
           {report.creatorName && (
             <Typography variant="body2" color="text.secondary">
-              {t('reportDetails.createdBy', 'By')}: {report.creatorName}
+              {t('reportDetails.createdBy', 'بواسطة')}: {report.creatorName}
             </Typography>
           )}
           {report.generationDurationMs && (
             <Typography variant="body2" color="text.secondary">
-              {t('reportDetails.duration', 'Duration')}: {formatDuration(report.generationDurationMs)}
+              {t('reportDetails.duration', 'المدة')}: {formatDuration(report.generationDurationMs)}
             </Typography>
           )}
           {report.status === ReportStatus.FAILED && report.failureReason && (
             <Typography variant="body2" color="error">
-              {t('reportDetails.failureReason', 'Failure reason')}: {report.failureReason}
+              {t('reportDetails.failureReason', 'سبب الفشل')}: {report.failureReason}
             </Typography>
           )}
         </Stack>
@@ -131,18 +136,18 @@ export const ReportCard: React.FC<ReportCardProps> = ({
           <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
             <Box>
               <Typography variant="caption" color="text.secondary">
-                {t('reportDetails.summary', 'Summary')}
+                {t('reportDetails.summary', 'الملخص')}
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {report.summary.totalRecords.toLocaleString()}
+                {(report.summary.totalRecords ?? 0).toLocaleString()}
               </Typography>
             </Box>
             <Box>
               <Typography variant="caption" color="text.secondary">
-                {report.summary.currency}
+                {report.summary.currency || 'YER'}
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {report.summary.totalValue.toLocaleString()}
+                {(report.summary.totalValue ?? 0).toLocaleString()}
               </Typography>
             </Box>
           </Box>
@@ -150,30 +155,44 @@ export const ReportCard: React.FC<ReportCardProps> = ({
       </CardContent>
 
       <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2, pt: 0, gap: 0.5 }}>
-        <Tooltip title={t('actions.view', 'View')}>
-          <IconButton size="small" onClick={() => onView?.(report.reportId)}>
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
+        <Tooltip title={t('actions.view', 'عرض')}>
+          <span>
+            <IconButton size="small" onClick={() => onView?.(reportKey)}>
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
-        <Tooltip title={t('actions.download', 'Download')}>
-          <IconButton size="small" onClick={() => onDownload?.(report.reportId, 'pdf')}>
-            <DownloadIcon fontSize="small" />
-          </IconButton>
+        <Tooltip title={t('actions.download', 'تحميل')}>
+          <span>
+            <IconButton
+              size="small"
+              onClick={() => onDownload?.(reportKey, 'pdf')}
+              disabled={report.status !== ReportStatus.COMPLETED}
+            >
+              <DownloadIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
-        <Tooltip title={t('actions.regenerate', 'Regenerate')}>
-          <IconButton size="small" onClick={() => onRegenerate?.(report.reportId)}>
-            <ReplayIcon fontSize="small" />
-          </IconButton>
+        <Tooltip title={t('actions.regenerate', 'إعادة توليد')}>
+          <span>
+            <IconButton size="small" onClick={() => onRegenerate?.(reportKey)}>
+              <ReplayIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
-        <Tooltip title={report.isArchived ? t('actions.unarchive', 'Unarchive') : t('actions.archive', 'Archive')}>
-          <IconButton size="small" onClick={() => onArchive?.(report.reportId)}>
-            <ArchiveIcon fontSize="small" />
-          </IconButton>
+        <Tooltip title={report.isArchived ? t('actions.unarchive', 'إلغاء الأرشفة') : t('actions.archive', 'أرشفة')}>
+          <span>
+            <IconButton size="small" onClick={() => onArchive?.(reportKey)}>
+              <ArchiveIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
-        <Tooltip title={t('actions.delete', 'Delete')}>
-          <IconButton size="small" color="error" onClick={() => onDelete?.(report.reportId)}>
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+        <Tooltip title={t('actions.delete', 'حذف')}>
+          <span>
+            <IconButton size="small" color="error" onClick={() => onDelete?.(reportKey)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
       </CardActions>
     </Card>

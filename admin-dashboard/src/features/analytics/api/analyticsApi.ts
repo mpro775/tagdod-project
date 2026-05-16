@@ -22,9 +22,32 @@ import type {
   UpdateReportScheduleDto,
   ScheduleStats,
   ListSchedulesParams,
-  ReportExportFile,
 } from '../types/analytics.types';
+import type { ExportFile, ExportFilesParams, ExportDataParams } from '../types/exports';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
+
+import {
+  unwrapApiData,
+  normalizePaginatedResponse,
+} from '../utils/analyticsDataGuards';
+
+import { mapAnalyticsDashboard } from '../utils/analyticsDashboardMappers';
+
+import {
+  mapSalesAnalytics,
+  mapCustomerAnalytics,
+  mapInventoryReport,
+  mapFinancialReport,
+  mapMarketingReport,
+  mapRealTimeMetrics,
+  mapProductPerformance,
+} from '../utils/advancedAnalyticsMappers';
+
+import {
+  mapAdvancedReport,
+  mapSchedule,
+} from '../utils/reportMappers';
+import { normalizeFileResult, normalizeExportFormat } from '../utils/exportMappers';
 
 export const analyticsApi = {
   // ==================== Dashboard ====================
@@ -37,23 +60,23 @@ export const analyticsApi = {
       '/analytics/dashboard',
       { params }
     );
-    return response.data.data;
+    return mapAnalyticsDashboard(unwrapApiData(response)) as unknown as DashboardData;
   },
 
   /**
    * Get overview metrics
    */
-  getOverview: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get<ApiResponse<any>>('/analytics/overview', { params });
-    return response.data.data;
+  getOverview: async (params: AnalyticsQueryDto = {}): Promise<DashboardData['overview']> => {
+    const response = await apiClient.get<ApiResponse<DashboardData['overview']>>('/analytics/overview', { params });
+    return unwrapApiData(response);
   },
 
   /**
    * Get KPIs
    */
-  getKPIs: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get<ApiResponse<any>>('/analytics/kpis', { params });
-    return response.data.data;
+  getKPIs: async (params: AnalyticsQueryDto = {}): Promise<DashboardData['kpis']> => {
+    const response = await apiClient.get<ApiResponse<DashboardData['kpis']>>('/analytics/kpis', { params });
+    return unwrapApiData(response);
   },
 
   // ==================== Charts Data ====================
@@ -61,41 +84,41 @@ export const analyticsApi = {
   /**
    * Get revenue analytics
    */
-  getRevenueAnalytics: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get<ApiResponse<any>>('/analytics/revenue', { params });
-    return response.data.data;
+  getRevenueAnalytics: async (params: AnalyticsQueryDto = {}): Promise<DashboardData['revenueCharts']> => {
+    const response = await apiClient.get<ApiResponse<DashboardData['revenueCharts']>>('/analytics/revenue', { params });
+    return unwrapApiData(response);
   },
 
   /**
    * Get user analytics
    */
-  getUserAnalytics: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get<ApiResponse<any>>('/analytics/users', { params });
-    return response.data.data;
+  getUserAnalytics: async (params: AnalyticsQueryDto = {}): Promise<DashboardData['userCharts']> => {
+    const response = await apiClient.get<ApiResponse<DashboardData['userCharts']>>('/analytics/users', { params });
+    return unwrapApiData(response);
   },
 
   /**
    * Get product analytics
    */
-  getProductAnalytics: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get<ApiResponse<any>>('/analytics/products', { params });
-    return response.data.data;
+  getProductAnalytics: async (params: AnalyticsQueryDto = {}): Promise<DashboardData['productCharts']> => {
+    const response = await apiClient.get<ApiResponse<DashboardData['productCharts']>>('/analytics/products', { params });
+    return unwrapApiData(response);
   },
 
   /**
    * Get service analytics
    */
-  getServiceAnalytics: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get<ApiResponse<any>>('/analytics/services', { params });
-    return response.data.data;
+  getServiceAnalytics: async (params: AnalyticsQueryDto = {}): Promise<DashboardData['serviceCharts']> => {
+    const response = await apiClient.get<ApiResponse<DashboardData['serviceCharts']>>('/analytics/services', { params });
+    return unwrapApiData(response);
   },
 
   /**
    * Get support analytics
    */
-  getSupportAnalytics: async (params: AnalyticsQueryDto = {}) => {
-    const response = await apiClient.get<ApiResponse<any>>('/analytics/support', { params });
-    return response.data.data;
+  getSupportAnalytics: async (params: AnalyticsQueryDto = {}): Promise<DashboardData['supportCharts']> => {
+    const response = await apiClient.get<ApiResponse<DashboardData['supportCharts']>>('/analytics/support', { params });
+    return unwrapApiData(response);
   },
 
   // ==================== Performance ====================
@@ -107,23 +130,23 @@ export const analyticsApi = {
     const response = await apiClient.get<ApiResponse<PerformanceMetrics>>(
       '/analytics/performance'
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   /**
    * Refresh analytics
    */
-  refreshAnalytics: async () => {
-    const response = await apiClient.post<ApiResponse<any>>('/analytics/refresh');
-    return response.data.data;
+  refreshAnalytics: async (): Promise<unknown> => {
+    const response = await apiClient.post<ApiResponse<unknown>>('/analytics/refresh');
+    return unwrapApiData(response);
   },
 
   /**
    * Clear analytics cache
    */
-  clearCache: async () => {
-    const response = await apiClient.delete<ApiResponse<any>>('/analytics/cache');
-    return response.data.data;
+  clearCache: async (): Promise<unknown> => {
+    const response = await apiClient.delete<ApiResponse<unknown>>('/analytics/cache');
+    return unwrapApiData(response);
   },
 
   // ==================== Reports ====================
@@ -131,25 +154,25 @@ export const analyticsApi = {
   /**
    * Generate report
    */
-  generateReport: async (data: ReportGenerationDto) => {
-    const response = await apiClient.post<ApiResponse<any>>('/analytics/reports/generate', data);
-    return response.data.data;
+  generateReport: async (data: ReportGenerationDto): Promise<unknown> => {
+    const response = await apiClient.post<ApiResponse<unknown>>('/analytics/reports/generate', data);
+    return unwrapApiData(response);
   },
 
   /**
    * Get report by ID
    */
-  getReport: async (id: string) => {
-    const response = await apiClient.get<ApiResponse<any>>(`/analytics/reports/${id}`);
-    return response.data.data;
+  getReport: async (id: string): Promise<unknown> => {
+    const response = await apiClient.get<ApiResponse<unknown>>(`/analytics/reports/${id}`);
+    return unwrapApiData(response);
   },
 
   /**
    * Schedule report
    */
-  scheduleReport: async (data: CreateReportScheduleDto) => {
-    const response = await apiClient.post<ApiResponse<any>>('/analytics/reports/schedule', data);
-    return response.data.data;
+  scheduleReport: async (data: CreateReportScheduleDto): Promise<unknown> => {
+    const response = await apiClient.post<ApiResponse<unknown>>('/analytics/reports/schedule', data);
+    return unwrapApiData(response);
   },
 
   // ==================== Trends ====================
@@ -162,10 +185,10 @@ export const analyticsApi = {
     period?: PeriodType,
     days?: number
   ) => {
-    const response = await apiClient.get<ApiResponse<any>>(`/analytics/trends/${metric}`, {
+    const response = await apiClient.get<ApiResponse<unknown>>(`/analytics/trends/${metric}`, {
       params: { period, days },
     });
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   // ==================== Comparison ====================
@@ -179,26 +202,26 @@ export const analyticsApi = {
     previousStart: string,
     previousEnd: string
   ) => {
-    const response = await apiClient.get<ApiResponse<any>>('/analytics/comparison', {
+    const response = await apiClient.get<ApiResponse<unknown>>('/analytics/comparison', {
       params: { currentStart, currentEnd, previousStart, previousEnd },
     });
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   // ==================== Export ====================
 
   /**
-   * Export data
+   * Export data (legacy/generic)
    */
   exportData: async (
     format: string,
     type: string,
     period?: PeriodType
-  ) => {
-    const response = await apiClient.get<ApiResponse<any>>(`/analytics/export/${format}`, {
+  ): Promise<ExportFile> => {
+    const response = await apiClient.get<ApiResponse<ExportFile>>(`/analytics/export/${normalizeExportFormat(format)}`, {
       params: { type, period },
     });
-    return response.data.data;
+    return normalizeFileResult(unwrapApiData(response));
   },
 
   // ==================== Advanced Analytics ====================
@@ -206,78 +229,78 @@ export const analyticsApi = {
   /**
    * Get sales analytics
    */
-  getSalesAnalytics: async (params: any = {}): Promise<SalesAnalytics> => {
+  getSalesAnalytics: async (params: Record<string, unknown> = {}): Promise<SalesAnalytics> => {
     const response = await apiClient.get<{ success: boolean; data: SalesAnalytics }>(
       '/analytics/advanced/sales',
       { params }
     );
-    return response.data.data;
+    return mapSalesAnalytics(unwrapApiData(response));
   },
 
   /**
    * Get product performance
    */
-  getProductPerformance: async (params: any = {}): Promise<ProductPerformance> => {
+  getProductPerformance: async (params: Record<string, unknown> = {}): Promise<ProductPerformance> => {
     const response = await apiClient.get<{ success: boolean; data: ProductPerformance }>(
       '/analytics/advanced/products/performance',
       { params }
     );
-    return response.data.data;
+    return mapProductPerformance(unwrapApiData(response));
   },
 
   /**
    * Get customer analytics
    */
-  getCustomerAnalytics: async (params: any = {}): Promise<CustomerAnalytics> => {
+  getCustomerAnalytics: async (params: Record<string, unknown> = {}): Promise<CustomerAnalytics> => {
     const response = await apiClient.get<{ success: boolean; data: CustomerAnalytics }>(
       '/analytics/advanced/customers',
       { params }
     );
-    return response.data.data;
+    return mapCustomerAnalytics(unwrapApiData(response));
   },
 
   /**
    * Get inventory report
    */
-  getInventoryReport: async (params: any = {}): Promise<InventoryReport> => {
+  getInventoryReport: async (params: Record<string, unknown> = {}): Promise<InventoryReport> => {
     const response = await apiClient.get<{ success: boolean; data: InventoryReport }>(
       '/analytics/advanced/inventory',
       { params }
     );
-    return response.data.data;
+    return mapInventoryReport(unwrapApiData(response));
   },
 
   /**
    * Get financial report
    */
-  getFinancialReport: async (params: any = {}): Promise<FinancialReport> => {
+  getFinancialReport: async (params: Record<string, unknown> = {}): Promise<FinancialReport> => {
     const response = await apiClient.get<{ success: boolean; data: FinancialReport }>(
       '/analytics/advanced/financial',
       { params }
     );
-    return response.data.data;
+    return mapFinancialReport(unwrapApiData(response));
   },
 
   /**
    * Get cart analytics
    */
-  getCartAnalytics: async (params: any = {}): Promise<CartAnalytics> => {
+  getCartAnalytics: async (params: Record<string, unknown> = {}): Promise<CartAnalytics> => {
     const response = await apiClient.get<{ success: boolean; data: CartAnalytics }>(
       '/analytics/advanced/cart-analytics',
       { params }
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   /**
    * Get marketing report
    */
-  getMarketingReport: async (params: any = {}): Promise<MarketingReport> => {
+  getMarketingReport: async (params: Record<string, unknown> = {}): Promise<MarketingReport> => {
     const response = await apiClient.get<{ success: boolean; data: MarketingReport }>(
       '/analytics/advanced/marketing',
       { params }
     );
-    return response.data.data;
+    return mapMarketingReport(unwrapApiData(response));
   },
 
   /**
@@ -287,15 +310,15 @@ export const analyticsApi = {
     const response = await apiClient.get<{ success: boolean; data: RealTimeMetrics }>(
       '/analytics/advanced/realtime'
     );
-    return response.data.data;
+    return mapRealTimeMetrics(unwrapApiData(response)) as unknown as RealTimeMetrics;
   },
 
   /**
    * Get quick stats
    */
-  getQuickStats: async () => {
-    const response = await apiClient.get('/analytics/advanced/quick-stats');
-    return response.data;
+  getQuickStats: async (): Promise<unknown> => {
+    const response = await apiClient.get<ApiResponse<unknown>>('/analytics/advanced/quick-stats');
+    return unwrapApiData(response);
   },
 
   // ==================== Advanced Reports ====================
@@ -308,7 +331,7 @@ export const analyticsApi = {
       '/analytics/advanced/reports/generate',
       data
     );
-    return response.data.data;
+    return mapAdvancedReport(unwrapApiData(response));
   },
 
   /**
@@ -317,15 +340,15 @@ export const analyticsApi = {
   listAdvancedReports: async (
     params: ListReportsParams = {}
   ): Promise<PaginatedResponse<AdvancedReport>> => {
-    const response = await apiClient.get<{
-      success: boolean;
-      data: AdvancedReport[];
-      meta: any;
-    }>('/analytics/advanced/reports', { params });
-    return {
-      data: response.data.data,
-      meta: response.data.meta,
-    };
+    const response = await apiClient.get('/analytics/advanced/reports', { params });
+    return normalizePaginatedResponse(
+      response,
+      mapAdvancedReport,
+      {
+        page: params.page ?? 1,
+        limit: params.limit ?? 50,
+      }
+    );
   },
 
   /**
@@ -335,7 +358,7 @@ export const analyticsApi = {
     const response = await apiClient.get<{ success: boolean; data: AdvancedReport }>(
       `/analytics/advanced/reports/${reportId}`
     );
-    return response.data.data;
+    return mapAdvancedReport(unwrapApiData(response));
   },
 
   /**
@@ -345,7 +368,7 @@ export const analyticsApi = {
     const response = await apiClient.post<{ success: boolean; data: AdvancedReport }>(
       `/analytics/advanced/reports/${reportId}/archive`
     );
-    return response.data.data;
+    return mapAdvancedReport(unwrapApiData(response));
   },
 
   /**
@@ -358,12 +381,17 @@ export const analyticsApi = {
   /**
    * Export report
    */
-  exportReport: async (reportId: string, data: ExportReportDto) => {
+  exportReport: async (reportId: string, data: ExportReportDto): Promise<ExportFile> => {
+    const payload = {
+      ...data,
+      format: normalizeExportFormat(data?.format),
+    };
+
     const response = await apiClient.post(
       `/analytics/advanced/reports/${reportId}/export`,
-      data
+      payload
     );
-    return response.data;
+    return normalizeFileResult(unwrapApiData(response));
   },
 
   // ==================== Comparison & Trends ====================
@@ -376,11 +404,11 @@ export const analyticsApi = {
     currentEnd: string,
     previousStart: string,
     previousEnd: string
-  ) => {
-    const response = await apiClient.get('/analytics/advanced/comparison', {
+  ): Promise<unknown> => {
+    const response = await apiClient.get<ApiResponse<unknown>>('/analytics/advanced/comparison', {
       params: { currentStart, currentEnd, previousStart, previousEnd },
     });
-    return response.data;
+    return unwrapApiData(response);
   },
 
   /**
@@ -392,10 +420,10 @@ export const analyticsApi = {
     endDate: string,
     groupBy?: string
   ) => {
-    const response = await apiClient.get(`/analytics/advanced/trends/${metric}`, {
+    const response = await apiClient.get<ApiResponse<unknown>>(`/analytics/advanced/trends/${metric}`, {
       params: { startDate, endDate, groupBy },
     });
-    return response.data;
+    return unwrapApiData(response);
   },
 
   // ==================== Data Export ====================
@@ -403,39 +431,85 @@ export const analyticsApi = {
   /**
    * Export sales data
    */
-  exportSalesData: async (format: string, startDate: string, endDate: string) => {
+  exportSalesData: async (params: ExportDataParams): Promise<ExportFile> => {
     const response = await apiClient.get('/analytics/advanced/export/sales', {
-      params: { format, startDate, endDate },
+      params: {
+        format: normalizeExportFormat(params.format),
+        startDate: params.startDate,
+        endDate: params.endDate,
+      },
     });
-    return response.data;
+    return normalizeFileResult(unwrapApiData(response));
   },
 
   /**
    * Export products data
    */
-  exportProductsData: async (
-    format: string,
-    startDate?: string,
-    endDate?: string
-  ) => {
+  exportProductsData: async (params: ExportDataParams): Promise<ExportFile> => {
     const response = await apiClient.get('/analytics/advanced/export/products', {
-      params: { format, startDate, endDate },
+      params: {
+        format: normalizeExportFormat(params.format),
+        startDate: params.startDate,
+        endDate: params.endDate,
+      },
     });
-    return response.data;
+    return normalizeFileResult(unwrapApiData(response));
   },
 
   /**
    * Export customers data
    */
-  exportCustomersData: async (
-    format: string,
-    startDate?: string,
-    endDate?: string
-  ) => {
+  exportCustomersData: async (params: ExportDataParams): Promise<ExportFile> => {
     const response = await apiClient.get('/analytics/advanced/export/customers', {
-      params: { format, startDate, endDate },
+      params: {
+        format: normalizeExportFormat(params.format),
+        startDate: params.startDate,
+        endDate: params.endDate,
+      },
     });
-    return response.data;
+    return normalizeFileResult(unwrapApiData(response));
+  },
+
+  /**
+   * Export inventory data
+   */
+  exportInventoryData: async (params: ExportDataParams): Promise<ExportFile> => {
+    const response = await apiClient.get('/analytics/advanced/export/inventory', {
+      params: {
+        format: normalizeExportFormat(params.format),
+        startDate: params.startDate,
+        endDate: params.endDate,
+      },
+    });
+    return normalizeFileResult(unwrapApiData(response));
+  },
+
+  /**
+   * Export financial data
+   */
+  exportFinancialData: async (params: ExportDataParams): Promise<ExportFile> => {
+    const response = await apiClient.get('/analytics/advanced/export/financial', {
+      params: {
+        format: normalizeExportFormat(params.format),
+        startDate: params.startDate,
+        endDate: params.endDate,
+      },
+    });
+    return normalizeFileResult(unwrapApiData(response));
+  },
+
+  /**
+   * Export marketing data
+   */
+  exportMarketingData: async (params: ExportDataParams): Promise<ExportFile> => {
+    const response = await apiClient.get('/analytics/advanced/export/marketing', {
+      params: {
+        format: normalizeExportFormat(params.format),
+        startDate: params.startDate,
+        endDate: params.endDate,
+      },
+    });
+    return normalizeFileResult(unwrapApiData(response));
   },
 
   // ==================== Report Schedules ====================
@@ -448,7 +522,7 @@ export const analyticsApi = {
       '/analytics/report-schedules',
       data
     );
-    return response.data.data;
+    return mapSchedule(unwrapApiData(response));
   },
 
   /**
@@ -457,23 +531,15 @@ export const analyticsApi = {
   listSchedules: async (
     params: ListSchedulesParams = {}
   ): Promise<PaginatedResponse<ReportSchedule>> => {
-    const response = await apiClient.get<{
-      success: boolean;
-      data: ReportSchedule[];
-      total: number;
-      page: number;
-      limit: number;
-      totalPages: number;
-    }>('/analytics/report-schedules', { params });
-    return {
-      data: response.data.data,
-      meta: {
-        page: response.data.page,
-        limit: response.data.limit,
-        total: response.data.total,
-        totalPages: response.data.totalPages,
-      },
-    };
+    const response = await apiClient.get('/analytics/report-schedules', { params });
+    return normalizePaginatedResponse(
+      response,
+      mapSchedule,
+      {
+        page: params.page ?? 1,
+        limit: params.limit ?? 20,
+      }
+    );
   },
 
   /**
@@ -483,7 +549,7 @@ export const analyticsApi = {
     const response = await apiClient.get<{ success: boolean; data: ReportSchedule }>(
       `/analytics/report-schedules/${id}`
     );
-    return response.data.data;
+    return mapSchedule(unwrapApiData(response));
   },
 
   /**
@@ -497,7 +563,7 @@ export const analyticsApi = {
       `/analytics/report-schedules/${id}`,
       data
     );
-    return response.data.data;
+    return mapSchedule(unwrapApiData(response));
   },
 
   /**
@@ -508,7 +574,7 @@ export const analyticsApi = {
       `/analytics/report-schedules/${id}/toggle`,
       { isActive }
     );
-    return response.data.data;
+    return mapSchedule(unwrapApiData(response));
   },
 
   /**
@@ -524,12 +590,34 @@ export const analyticsApi = {
   runScheduleNow: async (
     id: string,
     data?: { formats?: string[]; recipients?: string[] }
-  ): Promise<{ schedule: ReportSchedule; report: AdvancedReport; exports: any[] }> => {
-    const response = await apiClient.post(
+  ): Promise<unknown> => {
+    const response = await apiClient.post<ApiResponse<unknown>>(
       `/analytics/report-schedules/${id}/run-now`,
       data || {}
     );
-    return response.data.data;
+    return unwrapApiData(response);
+  },
+
+  /**
+   * Pause a schedule (maps to toggle with isActive=false)
+   */
+  pauseSchedule: async (id: string): Promise<ReportSchedule> => {
+    const response = await apiClient.patch<{ success: boolean; data: ReportSchedule }>(
+      `/analytics/report-schedules/${id}/toggle`,
+      { isActive: false }
+    );
+    return mapSchedule(unwrapApiData(response));
+  },
+
+  /**
+   * Resume a schedule (maps to toggle with isActive=true)
+   */
+  resumeSchedule: async (id: string): Promise<ReportSchedule> => {
+    const response = await apiClient.patch<{ success: boolean; data: ReportSchedule }>(
+      `/analytics/report-schedules/${id}/toggle`,
+      { isActive: true }
+    );
+    return mapSchedule(unwrapApiData(response));
   },
 
   /**
@@ -539,7 +627,7 @@ export const analyticsApi = {
     const response = await apiClient.get<{ success: boolean; data: ScheduleStats }>(
       '/analytics/report-schedules/stats'
     );
-    return response.data.data;
+    return unwrapApiData(response);
   },
 
   // ==================== Export Center ====================
@@ -548,17 +636,16 @@ export const analyticsApi = {
    * Get all exported files from reports
    */
   getExportedFiles: async (
-    params: { page?: number; limit?: number; format?: string; search?: string } = {}
-  ): Promise<PaginatedResponse<ReportExportFile>> => {
-    const response = await apiClient.get<{
-      success: boolean;
-      data: ReportExportFile[];
-      meta: any;
-    }>('/analytics/advanced/reports/exports', { params });
-    return {
-      data: response.data.data,
-      meta: response.data.meta,
-    };
+    params: ExportFilesParams = {}
+  ): Promise<PaginatedResponse<ExportFile>> => {
+    const response = await apiClient.get('/analytics/advanced/reports/exports', { params });
+    return normalizePaginatedResponse(
+      response,
+      normalizeFileResult,
+      {
+        page: params.page ?? 1,
+        limit: params.limit ?? 20,
+      }
+    );
   },
 };
-

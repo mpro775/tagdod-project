@@ -23,6 +23,7 @@ import {
   getXAxisHeight,
   getCardPadding,
 } from '../utils/responsive';
+import { asArray } from '../utils/analyticsDataGuards';
 
 interface DataPoint {
   name: string;
@@ -77,7 +78,9 @@ export const BarChartComponent: React.FC<BarChartComponentProps> = ({
   const cardPadding = getCardPadding(breakpoint);
   const needsRotation = orientation === 'vertical' && (breakpoint.isXs || breakpoint.isSm);
 
-  if (!data || data.length === 0) {
+  const safeData = asArray(data);
+
+  if (safeData.length === 0) {
     const noDataContent = (
       <Box sx={{ p: cardPadding }}>
         <Typography 
@@ -126,7 +129,7 @@ export const BarChartComponent: React.FC<BarChartComponentProps> = ({
       <Box sx={{ pt: title ? 0 : 0, p: cardPadding }}>
         <ResponsiveContainer width="100%" height={chartHeight}>
           <BarChart
-            data={data}
+            data={safeData}
             margin={adjustedMargin}
             layout={orientation === 'horizontal' ? 'horizontal' : 'vertical'}
           >

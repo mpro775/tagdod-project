@@ -21,14 +21,15 @@ import {
   AnalyticsReportGenerationFailedException,
   AnalyticsException,
 } from '../../shared/exceptions';
+import { resolveAnalyticsDateRange } from './utils/resolve-analytics-date-range';
 
 const COMPLETED_STATUSES = ['completed'] as const;
 
 /**
  * Advanced Analytics Service
  *
- * NOTE: All monetary values are in USD (US Dollars)
- * All revenue, pricing, and financial calculations use USD as the base currency
+ * NOTE: All monetary values are in YER (Yemeni Rial).
+ * All revenue, pricing, and financial calculations use YER as the base currency.
  */
 
 interface AnalyticsParams {
@@ -86,11 +87,14 @@ interface CategoryPerformanceResult {
   revenue: number;
 }
 
-interface CustomerSegment {
+export interface CustomerSegment {
   segment: string;
   count: number;
   percentage: number;
-  customerIds?: Types.ObjectId[];
+}
+
+interface CustomerSegmentWithIds extends CustomerSegment {
+  customerIds: Types.ObjectId[];
 }
 
 interface ReportDocument {
@@ -431,10 +435,7 @@ export class AdvancedAnalyticsService {
   async getSalesAnalytics(params: AnalyticsParams) {
     this.logger.log('Getting sales analytics with params:', params);
 
-    const startDate = params.startDate
-      ? new Date(params.startDate)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = params.endDate ? new Date(params.endDate) : new Date();
+    const { startDate, endDate } = resolveAnalyticsDateRange(params);
 
     // Get real sales data from orders using correct status values
     const [orders, previousPeriodOrders] = await Promise.all([
@@ -506,10 +507,7 @@ export class AdvancedAnalyticsService {
   async getProductPerformance(params: AnalyticsParams) {
     this.logger.log('Getting product performance with params:', params);
 
-    const startDate = params.startDate
-      ? new Date(params.startDate)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = params.endDate ? new Date(params.endDate) : new Date();
+    const { startDate, endDate } = resolveAnalyticsDateRange(params);
 
     // Calculate previous period for growth comparison
     const periodDuration = endDate.getTime() - startDate.getTime();
@@ -625,10 +623,7 @@ export class AdvancedAnalyticsService {
   async getCustomerAnalytics(params: AnalyticsParams) {
     this.logger.log('Getting customer analytics with params:', params);
 
-    const startDate = params.startDate
-      ? new Date(params.startDate)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = params.endDate ? new Date(params.endDate) : new Date();
+    const { startDate, endDate } = resolveAnalyticsDateRange(params);
 
     // Calculate previous period for comparison
     const periodDuration = endDate.getTime() - startDate.getTime();
@@ -795,10 +790,7 @@ export class AdvancedAnalyticsService {
   async getInventoryReport(params: AnalyticsParams) {
     this.logger.log('Getting inventory report with params:', params);
 
-    const startDate = params.startDate
-      ? new Date(params.startDate)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = params.endDate ? new Date(params.endDate) : new Date();
+    const { startDate, endDate } = resolveAnalyticsDateRange(params);
 
     // Calculate previous period for comparison
     const periodDuration = endDate.getTime() - startDate.getTime();
@@ -955,10 +947,7 @@ export class AdvancedAnalyticsService {
   async getFinancialReport(params: AnalyticsParams) {
     this.logger.log('Getting financial report with params:', params);
 
-    const startDate = params.startDate
-      ? new Date(params.startDate)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = params.endDate ? new Date(params.endDate) : new Date();
+    const { startDate, endDate } = resolveAnalyticsDateRange(params);
 
     // Calculate previous period for comparison
     const periodDuration = endDate.getTime() - startDate.getTime();
@@ -1026,10 +1015,7 @@ export class AdvancedAnalyticsService {
   async getCartAnalytics(params: AnalyticsParams) {
     this.logger.log('Getting cart analytics with params:', params);
 
-    const startDate = params.startDate
-      ? new Date(params.startDate)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = params.endDate ? new Date(params.endDate) : new Date();
+    const { startDate, endDate } = resolveAnalyticsDateRange(params);
 
     // Get total carts count
     const totalCarts = await this.cartModel.countDocuments({
@@ -1101,10 +1087,7 @@ export class AdvancedAnalyticsService {
   async getMarketingReport(params: AnalyticsParams) {
     this.logger.log('Getting marketing report with params:', params);
 
-    const startDate = params.startDate
-      ? new Date(params.startDate)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = params.endDate ? new Date(params.endDate) : new Date();
+    const { startDate, endDate } = resolveAnalyticsDateRange(params);
 
     // Calculate previous period for growth comparison
     const periodDuration = endDate.getTime() - startDate.getTime();
@@ -1356,18 +1339,20 @@ export class AdvancedAnalyticsService {
     const currentRevenue = currentRevenueData[0]?.totalRevenue || 0;
 
     // Get real system health from monitoring service
-    const systemHealth = await this.systemMonitoring.getSystemHealth();
+    const systemHealthData = await this.systemMonitoring.getSystemHealth();
+    const systemHealth = {
+      status: systemHealthData.status || 'unknown',
+      uptime: systemHealthData.uptime || 0,
+      responseTime: Math.round(systemHealthData.avgApiResponseTime || 0),
+      errorRate: Math.round((systemHealthData.errorRate || 0) * 100) / 100,
+    };
 
     return {
       activeUsers,
       todaySales,
       todayOrders: todayOrdersCount,
       currentRevenue,
-      systemHealth: {
-        status: systemHealth.status,
-        uptime: Math.round((systemHealth.uptime / 86400) * 1000) / 10, // Convert seconds to days, show as percentage
-        responseTime: Math.round(systemHealth.avgApiResponseTime),
-      },
+      systemHealth,
       lastUpdated: new Date().toISOString(),
     };
   }
@@ -1474,7 +1459,7 @@ export class AdvancedAnalyticsService {
         summary: {
           totalRecords: totalOrders,
           totalValue: totalRevenue,
-          currency: 'USD',
+          currency: 'YER',
           growth: salesAnalytics.salesGrowth,
         },
 
@@ -1559,7 +1544,6 @@ export class AdvancedAnalyticsService {
           ),
           customersByRegion: await this.getCustomersByRegion(),
           customerSegmentation: await this.getCustomerSegmentationWithMetrics(
-            customerAnalytics.customerSegments,
             startDate,
             endDate,
           ),
@@ -1808,12 +1792,18 @@ export class AdvancedAnalyticsService {
     return { success: true, message: 'Report deleted successfully' };
   }
 
-  async exportReport(reportId: string, data: { format?: string }) {
+  async exportReport(reportId: string, data: { format?: string }, userId?: string) {
     this.logger.log('Exporting report:', reportId, data);
 
     const format = (data.format || 'json') as 'pdf' | 'xlsx' | 'csv' | 'json';
 
-    // Get the report data
+    // Get the report document (not the mapped response)
+    const reportDoc = await this.advancedReportModel.findOne({ reportId }).lean();
+    if (!reportDoc) {
+      throw new AnalyticsReportNotFoundException({ reportId });
+    }
+
+    // Get the report data (mapped)
     const report = await this.getAdvancedReport(reportId);
 
     // Prepare export data structure from report
@@ -1847,6 +1837,21 @@ export class AdvancedAnalyticsService {
       data: exportData,
     });
 
+    // Save export entry inside report exports[]
+    const exportEntry = {
+      format: exportResult.format as 'pdf' | 'xlsx' | 'csv' | 'json',
+      fileUrl: exportResult.url,
+      fileName: exportResult.filename,
+      fileSize: exportResult.size,
+      generatedAt: new Date(),
+      generatedBy: userId ? new Types.ObjectId(userId) : reportDoc.createdBy,
+    };
+
+    await this.advancedReportModel.updateOne(
+      { reportId },
+      { $push: { exports: exportEntry } },
+    );
+
     this.logger.log(
       `Report exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
     );
@@ -1854,14 +1859,16 @@ export class AdvancedAnalyticsService {
     return {
       fileUrl: exportResult.url,
       format: exportResult.format,
+      fileSize: exportResult.size,
       exportedAt: new Date().toISOString(),
       fileName: exportResult.filename,
       path: exportResult.path,
+      status: 'available',
     };
   }
 
   // ==================== Data Export ====================
-  async exportSalesData(format: string, startDate: string, endDate: string): Promise<string> {
+  async exportSalesData(format: string, startDate: string, endDate: string) {
     this.logger.log('Exporting sales data:', { format, startDate, endDate });
 
     // Get real sales data
@@ -1886,10 +1893,18 @@ export class AdvancedAnalyticsService {
       `Sales data exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
     );
 
-    return exportResult.url;
+    return {
+      fileUrl: exportResult.url,
+      fileName: exportResult.filename,
+      format: exportResult.format,
+      fileSize: exportResult.size,
+      path: exportResult.path,
+      exportedAt: new Date().toISOString(),
+      status: 'available',
+    };
   }
 
-  async exportProductsData(format: string, startDate?: string, endDate?: string): Promise<string> {
+  async exportProductsData(format: string, startDate?: string, endDate?: string) {
     this.logger.log('Exporting products data:', { format, startDate, endDate });
 
     // Get real products data
@@ -1915,10 +1930,18 @@ export class AdvancedAnalyticsService {
       `Products data exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
     );
 
-    return exportResult.url;
+    return {
+      fileUrl: exportResult.url,
+      fileName: exportResult.filename,
+      format: exportResult.format,
+      fileSize: exportResult.size,
+      path: exportResult.path,
+      exportedAt: new Date().toISOString(),
+      status: 'available',
+    };
   }
 
-  async exportCustomersData(format: string, startDate?: string, endDate?: string): Promise<string> {
+  async exportCustomersData(format: string, startDate?: string, endDate?: string) {
     this.logger.log('Exporting customers data:', { format, startDate, endDate });
 
     // Get real customers data
@@ -1944,7 +1967,15 @@ export class AdvancedAnalyticsService {
       `Customers data exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
     );
 
-    return exportResult.url;
+    return {
+      fileUrl: exportResult.url,
+      fileName: exportResult.filename,
+      format: exportResult.format,
+      fileSize: exportResult.size,
+      path: exportResult.path,
+      exportedAt: new Date().toISOString(),
+      status: 'available',
+    };
   }
 
   // ==================== Comparison & Trends ====================
@@ -2302,9 +2333,9 @@ export class AdvancedAnalyticsService {
   }
 
   /**
-   * Get customer segments with real data
+   * Get customer segments with real data (internal, includes IDs)
    */
-  private async getCustomerSegments() {
+  private async getCustomerSegmentsWithIds(): Promise<CustomerSegmentWithIds[]> {
     // Get all customers with their spending
     const customersWithSpending = await this.userModel.aggregate([
       {
@@ -2410,6 +2441,14 @@ export class AdvancedAnalyticsService {
         customerIds: inactiveCustomers.map((c) => c._id),
       },
     ];
+  }
+
+  /**
+   * Get customer segments (public, without IDs)
+   */
+  private async getCustomerSegments(): Promise<CustomerSegment[]> {
+    const segments = await this.getCustomerSegmentsWithIds();
+    return segments.map(({ segment, count, percentage }) => ({ segment, count, percentage }));
   }
 
   /**
@@ -3252,11 +3291,9 @@ export class AdvancedAnalyticsService {
   /**
    * Get customer segmentation with revenue and AOV metrics - Real calculation
    */
-  private async getCustomerSegmentationWithMetrics(
-    segments: CustomerSegment[],
-    startDate: Date,
-    endDate: Date,
-  ) {
+  private async getCustomerSegmentationWithMetrics(startDate: Date, endDate: Date) {
+    const segments = await this.getCustomerSegmentsWithIds();
+
     // Calculate revenue and AOV for each segment using actual order data
     const segmentMetrics = await Promise.all(
       segments.map(async (segment) => {
@@ -3564,7 +3601,7 @@ export class AdvancedAnalyticsService {
     }
   }
 
-  async getExportedFiles(params: { page?: number; limit?: number; format?: string; search?: string }) {
+  async getExportedFiles(params: { page?: number; limit?: number; format?: string; search?: string; status?: string }) {
     const page = params.page || 1;
     const limit = params.limit || 20;
     const skip = (page - 1) * limit;
@@ -3597,37 +3634,61 @@ export class AdvancedAnalyticsService {
     ]);
 
     const allExports: Array<{
+      id: string;
+      exportId: string;
       format: string;
       fileUrl: string;
       fileName: string;
       fileSize?: number;
       generatedAt: Date;
+      exportedAt: Date;
       generatedBy: string;
       reportId: string;
       reportTitle: string;
       reportType: string;
+      category: string;
+      status: string;
+      source: string;
     }> = [];
 
     for (const report of reports) {
       if (report.exports && report.exports.length > 0) {
-        for (const exp of report.exports) {
+        for (let i = 0; i < report.exports.length; i++) {
+          const exp = report.exports[i];
+          const status = params.status || exp.status || 'available';
+          // Skip if status filter doesn't match
+          if (params.status && (exp.status || 'available') !== params.status) {
+            continue;
+          }
           allExports.push({
+            id: `${report.reportId}-${i}`,
+            exportId: `${report.reportId}-${i}`,
             format: exp.format,
             fileUrl: exp.fileUrl,
             fileName: exp.fileName,
             fileSize: exp.fileSize,
             generatedAt: exp.generatedAt,
+            exportedAt: exp.generatedAt,
             generatedBy: exp.generatedBy?.toString() || '',
             reportId: report.reportId,
             reportTitle: report.title || report.titleEn || '',
             reportType: report.category,
+            category: report.category,
+            status,
+            source: 'report',
           });
         }
       }
     }
 
+    // Sort by exportedAt desc
+    allExports.sort((a, b) => new Date(b.exportedAt).getTime() - new Date(a.exportedAt).getTime());
+
+    // Apply pagination after flattening
+    const paginatedExports = allExports.slice(skip, skip + limit);
+
     return {
-      data: allExports,
+      data: paginatedExports,
       meta: {
         total: allExports.length,
         page,

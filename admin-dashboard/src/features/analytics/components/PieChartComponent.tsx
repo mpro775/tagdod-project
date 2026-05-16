@@ -10,6 +10,7 @@ import {
   getLegendPosition,
   getCardPadding,
 } from '../utils/responsive';
+import { asArray } from '../utils/analyticsDataGuards';
 
 interface PieChartProps {
   data: Array<{ name: string; value: number }>;
@@ -40,7 +41,9 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
   // Show labels only on larger screens
   const showLabels = !breakpoint.isXs;
 
-  if (!data || data.length === 0) {
+  const safePieData = asArray(data).filter((item) => Number(item.value ?? item.count ?? 0) > 0);
+
+  if (safePieData.length === 0) {
     return (
       <Paper sx={{ p: cardPadding }}>
         <Typography 
@@ -69,18 +72,18 @@ export const PieChartComponent: React.FC<PieChartProps> = ({
       <ResponsiveContainer width="100%" height={chartHeight}>
         <PieChart>
           <Pie
-            data={data}
+            data={safePieData}
             cx="50%"
             cy="50%"
             labelLine={showLabels}
-            label={showLabels ? ({ name, percent }: any) => 
+            label={showLabels ? ({ name, percent }: any) =>
               `${name}: ${(percent * 100).toFixed(0)}%` : false
             }
             outerRadius={outerRadius}
             fill="#8884d8"
             dataKey="value"
           >
-            {data.map((_, index) => (
+            {safePieData.map((_, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>

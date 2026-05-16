@@ -1505,7 +1505,7 @@ export class PublicProductsPresenter {
 
           const derivedPricing = this.buildSimpleProductDerivedPricing(productRecord);
 
-          let pricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
+          const pricingByCurrency = await this.pricingService.getSimpleProductPricingByCurrencies(
             basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
             compareAtPriceUSD,
             costPriceUSD,
@@ -2546,7 +2546,7 @@ export class PublicProductsPresenter {
     if (variantsWithPricing.length === 0 && this.hasSimplePricing(product)) {
       const derivedPricing = this.buildSimpleProductDerivedPricing(product);
 
-      let productPricingByCurrencyTemp =
+      const productPricingByCurrencyTemp =
         await this.pricingService.getSimpleProductPricingByCurrencies(
           basePriceUSD ?? compareAtPriceUSD ?? costPriceUSD ?? 0,
           compareAtPriceUSD,

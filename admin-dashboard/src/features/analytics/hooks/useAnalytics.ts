@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { analyticsApi } from '../api/analyticsApi';
+import { analyticsQueryKeys } from '../utils/analyticsQueryKeys';
 import { ErrorHandler } from '@/core/error/ErrorHandler';
 import toast from 'react-hot-toast';
 import type {
@@ -13,28 +14,27 @@ import type {
   UpdateReportScheduleDto,
   ListSchedulesParams,
 } from '../types/analytics.types';
-
-const ANALYTICS_KEY = 'analytics';
+import type { ExportFilesParams } from '../types/exports';
 
 // ==================== Dashboard ====================
 
 export const useDashboard = (params: AnalyticsQueryDto = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'dashboard', params],
+    queryKey: analyticsQueryKeys.dashboard(params),
     queryFn: () => analyticsApi.getDashboard(params),
   });
 };
 
 export const useOverview = (params: AnalyticsQueryDto = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'overview', params],
+    queryKey: analyticsQueryKeys.overview(params),
     queryFn: () => analyticsApi.getOverview(params),
   });
 };
 
 export const useKPIs = (params: AnalyticsQueryDto = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'kpis', params],
+    queryKey: analyticsQueryKeys.kpis(params),
     queryFn: () => analyticsApi.getKPIs(params),
   });
 };
@@ -43,35 +43,35 @@ export const useKPIs = (params: AnalyticsQueryDto = {}) => {
 
 export const useRevenueAnalytics = (params: AnalyticsQueryDto = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'revenue', params],
+    queryKey: analyticsQueryKeys.revenue(params),
     queryFn: () => analyticsApi.getRevenueAnalytics(params),
   });
 };
 
 export const useUserAnalytics = (params: AnalyticsQueryDto = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'users', params],
+    queryKey: analyticsQueryKeys.users(params),
     queryFn: () => analyticsApi.getUserAnalytics(params),
   });
 };
 
 export const useProductAnalytics = (params: AnalyticsQueryDto = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'products', params],
+    queryKey: analyticsQueryKeys.products(params),
     queryFn: () => analyticsApi.getProductAnalytics(params),
   });
 };
 
 export const useServiceAnalytics = (params: AnalyticsQueryDto = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'services', params],
+    queryKey: analyticsQueryKeys.services(params),
     queryFn: () => analyticsApi.getServiceAnalytics(params),
   });
 };
 
 export const useSupportAnalytics = (params: AnalyticsQueryDto = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'support', params],
+    queryKey: analyticsQueryKeys.support(params),
     queryFn: () => analyticsApi.getSupportAnalytics(params),
   });
 };
@@ -80,7 +80,7 @@ export const useSupportAnalytics = (params: AnalyticsQueryDto = {}) => {
 
 export const usePerformanceMetrics = () => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'performance'],
+    queryKey: analyticsQueryKeys.performance(),
     queryFn: () => analyticsApi.getPerformanceMetrics(),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
@@ -92,7 +92,7 @@ export const useRefreshAnalytics = () => {
     mutationFn: () => analyticsApi.refreshAnalytics(),
     onSuccess: () => {
       toast.success('تم تحديث البيانات بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
     },
     onError: ErrorHandler.showError,
   });
@@ -104,7 +104,7 @@ export const useClearCache = () => {
     mutationFn: () => analyticsApi.clearCache(),
     onSuccess: () => {
       toast.success('تم مسح ذاكرة التخزين المؤقت بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
     },
     onError: ErrorHandler.showError,
   });
@@ -112,13 +112,16 @@ export const useClearCache = () => {
 
 // ==================== Reports ====================
 
+/**
+ * @deprecated Use useGenerateAdvancedReport or createSchedule instead
+ */
 export const useGenerateReport = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: ReportGenerationDto) => analyticsApi.generateReport(data),
     onSuccess: () => {
       toast.success('تم إنشاء التقرير بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'reports'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.reports() });
     },
     onError: ErrorHandler.showError,
   });
@@ -126,7 +129,7 @@ export const useGenerateReport = () => {
 
 export const useReport = (id: string) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'reports', id],
+    queryKey: analyticsQueryKeys.report(id),
     queryFn: () => analyticsApi.getReport(id),
     enabled: !!id,
   });
@@ -136,7 +139,7 @@ export const useReport = (id: string) => {
 
 export const useMetricTrends = (metric: string, period?: string, days?: number) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'trends', metric, period, days],
+    queryKey: ['analytics', 'trends', metric, period, days],
     queryFn: () => analyticsApi.getMetricTrends(metric, period as PeriodType, days),
     enabled: !!metric,
   });
@@ -149,7 +152,7 @@ export const useMetricTrendsAdvanced = (
   groupBy?: string
 ) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'trends', 'advanced', metric, startDate, endDate, groupBy],
+    queryKey: ['analytics', 'trends', 'advanced', metric, startDate, endDate, groupBy],
     queryFn: () => analyticsApi.getMetricTrendsAdvanced(metric, startDate, endDate, groupBy),
     enabled: !!(metric && startDate && endDate),
   });
@@ -165,7 +168,7 @@ export const useComparePeriods = (
 ) => {
   return useQuery({
     queryKey: [
-      ANALYTICS_KEY,
+      'analytics',
       'comparison',
       currentStart,
       currentEnd,
@@ -186,6 +189,7 @@ export const useComparePeriods = (
 // ==================== Export ====================
 
 export const useExportData = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
       format,
@@ -199,8 +203,10 @@ export const useExportData = () => {
     onSuccess: (data) => {
       toast.success('تم التصدير بنجاح');
       if (data.fileUrl) {
-        window.open(data.fileUrl, '_blank');
+        window.open(data.fileUrl, '_blank', 'noopener,noreferrer');
       }
+      queryClient.invalidateQueries({ queryKey: ['exportedFiles'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.reports() });
     },
     onError: ErrorHandler.showError,
   });
@@ -210,56 +216,56 @@ export const useExportData = () => {
 
 export const useSalesAnalytics = (params: Record<string, unknown> = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'advanced', 'sales', params],
+    queryKey: analyticsQueryKeys.advancedSales(params),
     queryFn: () => analyticsApi.getSalesAnalytics(params),
   });
 };
 
 export const useProductPerformance = (params: Record<string, unknown> = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'advanced', 'products', params],
+    queryKey: analyticsQueryKeys.advancedProducts(params),
     queryFn: () => analyticsApi.getProductPerformance(params),
   });
 };
 
 export const useCustomerAnalytics = (params: Record<string, unknown> = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'advanced', 'customers', params],
+    queryKey: analyticsQueryKeys.advancedCustomers(params),
     queryFn: () => analyticsApi.getCustomerAnalytics(params),
   });
 };
 
 export const useInventoryReport = (params: Record<string, unknown> = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'advanced', 'inventory', params],
+    queryKey: analyticsQueryKeys.advancedInventory(params),
     queryFn: () => analyticsApi.getInventoryReport(params),
   });
 };
 
 export const useFinancialReport = (params: Record<string, unknown> = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'advanced', 'financial', params],
+    queryKey: analyticsQueryKeys.advancedFinancial(params),
     queryFn: () => analyticsApi.getFinancialReport(params),
   });
 };
 
 export const useCartAnalytics = (params: Record<string, unknown> = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'advanced', 'cart', params],
+    queryKey: analyticsQueryKeys.advancedCart(params),
     queryFn: () => analyticsApi.getCartAnalytics(params),
   });
 };
 
 export const useMarketingReport = (params: Record<string, unknown> = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'advanced', 'marketing', params],
+    queryKey: analyticsQueryKeys.advancedMarketing(params),
     queryFn: () => analyticsApi.getMarketingReport(params),
   });
 };
 
 export const useRealTimeMetrics = () => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'realtime'],
+    queryKey: analyticsQueryKeys.realtime(),
     queryFn: () => analyticsApi.getRealTimeMetrics(),
     refetchInterval: 10000, // Refresh every 10 seconds
   });
@@ -267,7 +273,7 @@ export const useRealTimeMetrics = () => {
 
 export const useQuickStats = () => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'quick-stats'],
+    queryKey: analyticsQueryKeys.quickStats(),
     queryFn: () => analyticsApi.getQuickStats(),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
@@ -281,19 +287,22 @@ export const useGenerateAdvancedReport = () => {
     mutationFn: (data: GenerateAdvancedReportDto) => analyticsApi.generateAdvancedReport(data),
     onSuccess: () => {
       toast.success('تم إنشاء التقرير بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'advanced', 'reports'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.reports() });
     },
     onError: ErrorHandler.showError,
   });
 };
 
+/**
+ * @deprecated Use useGenerateAdvancedReport or createSchedule instead
+ */
 export const useScheduleReport = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateReportScheduleDto) => analyticsApi.scheduleReport(data),
     onSuccess: () => {
       toast.success('تم جدولة التقرير بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'reports'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.reports() });
     },
     onError: ErrorHandler.showError,
   });
@@ -301,14 +310,14 @@ export const useScheduleReport = () => {
 
 export const useAdvancedReports = (params: ListReportsParams = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'advanced', 'reports', params],
+    queryKey: analyticsQueryKeys.reports(params),
     queryFn: () => analyticsApi.listAdvancedReports(params),
   });
 };
 
 export const useAdvancedReport = (reportId: string) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'advanced', 'reports', reportId],
+    queryKey: analyticsQueryKeys.report(reportId),
     queryFn: () => analyticsApi.getAdvancedReport(reportId),
     enabled: !!reportId,
   });
@@ -320,7 +329,7 @@ export const useArchiveReport = () => {
     mutationFn: (reportId: string) => analyticsApi.archiveReport(reportId),
     onSuccess: () => {
       toast.success('تم أرشفة التقرير بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'advanced', 'reports'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.reports() });
     },
     onError: ErrorHandler.showError,
   });
@@ -332,21 +341,25 @@ export const useDeleteReport = () => {
     mutationFn: (reportId: string) => analyticsApi.deleteReport(reportId),
     onSuccess: () => {
       toast.success('تم حذف التقرير بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'advanced', 'reports'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.reports() });
     },
     onError: ErrorHandler.showError,
   });
 };
 
 export const useExportReport = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ reportId, data }: { reportId: string; data: ExportReportDto }) =>
       analyticsApi.exportReport(reportId, data),
-    onSuccess: (response) => {
+    onSuccess: (result, variables) => {
       toast.success('تم تصدير التقرير بنجاح');
-      if (response.data?.fileUrl) {
-        window.open(response.data.fileUrl, '_blank');
+      if (result?.fileUrl) {
+        window.open(result.fileUrl, '_blank', 'noopener,noreferrer');
       }
+      queryClient.invalidateQueries({ queryKey: ['exportedFiles'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.report(variables.reportId) });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.reports() });
     },
     onError: ErrorHandler.showError,
   });
@@ -355,65 +368,101 @@ export const useExportReport = () => {
 // ==================== Export Functions ====================
 
 export const useExportSalesData = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      format,
-      startDate,
-      endDate,
-    }: {
-      format: string;
-      startDate: string;
-      endDate: string;
-    }) => analyticsApi.exportSalesData(format, startDate, endDate),
-    onSuccess: (response) => {
+    mutationFn: analyticsApi.exportSalesData,
+    onSuccess: (result) => {
       toast.success('تم تصدير البيانات بنجاح');
-      if (response.data?.fileUrl) {
-        window.open(response.data.fileUrl, '_blank');
+      if (result?.fileUrl) {
+        window.open(result.fileUrl, '_blank', 'noopener,noreferrer');
       }
+      queryClient.invalidateQueries({ queryKey: ['exportedFiles'] });
     },
     onError: ErrorHandler.showError,
   });
 };
 
 export const useExportProductsData = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      format,
-      startDate,
-      endDate,
-    }: {
-      format: string;
-      startDate?: string;
-      endDate?: string;
-    }) => analyticsApi.exportProductsData(format, startDate, endDate),
-    onSuccess: (response) => {
+    mutationFn: analyticsApi.exportProductsData,
+    onSuccess: (result) => {
       toast.success('تم تصدير البيانات بنجاح');
-      if (response.data?.fileUrl) {
-        window.open(response.data.fileUrl, '_blank');
+      if (result?.fileUrl) {
+        window.open(result.fileUrl, '_blank', 'noopener,noreferrer');
       }
+      queryClient.invalidateQueries({ queryKey: ['exportedFiles'] });
     },
     onError: ErrorHandler.showError,
   });
 };
 
 export const useExportCustomersData = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      format,
-      startDate,
-      endDate,
-    }: {
-      format: string;
-      startDate?: string;
-      endDate?: string;
-    }) => analyticsApi.exportCustomersData(format, startDate, endDate),
-    onSuccess: (response) => {
+    mutationFn: analyticsApi.exportCustomersData,
+    onSuccess: (result) => {
       toast.success('تم تصدير البيانات بنجاح');
-      if (response.data?.fileUrl) {
-        window.open(response.data.fileUrl, '_blank');
+      if (result?.fileUrl) {
+        window.open(result.fileUrl, '_blank', 'noopener,noreferrer');
       }
+      queryClient.invalidateQueries({ queryKey: ['exportedFiles'] });
     },
     onError: ErrorHandler.showError,
+  });
+};
+
+export const useExportInventoryData = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: analyticsApi.exportInventoryData,
+    onSuccess: (result) => {
+      toast.success('تم تصدير البيانات بنجاح');
+      if (result?.fileUrl) {
+        window.open(result.fileUrl, '_blank', 'noopener,noreferrer');
+      }
+      queryClient.invalidateQueries({ queryKey: ['exportedFiles'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useExportFinancialData = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: analyticsApi.exportFinancialData,
+    onSuccess: (result) => {
+      toast.success('تم تصدير البيانات بنجاح');
+      if (result?.fileUrl) {
+        window.open(result.fileUrl, '_blank', 'noopener,noreferrer');
+      }
+      queryClient.invalidateQueries({ queryKey: ['exportedFiles'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useExportMarketingData = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: analyticsApi.exportMarketingData,
+    onSuccess: (result) => {
+      toast.success('تم تصدير البيانات بنجاح');
+      if (result?.fileUrl) {
+        window.open(result.fileUrl, '_blank', 'noopener,noreferrer');
+      }
+      queryClient.invalidateQueries({ queryKey: ['exportedFiles'] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+// ==================== Export Center ====================
+
+export const useExportedFiles = (params: ExportFilesParams = {}) => {
+  return useQuery({
+    queryKey: ['exportedFiles', params],
+    queryFn: () => analyticsApi.getExportedFiles(params),
   });
 };
 
@@ -421,14 +470,14 @@ export const useExportCustomersData = () => {
 
 export const useSchedules = (params: ListSchedulesParams = {}) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'schedules', params],
+    queryKey: analyticsQueryKeys.schedules(params),
     queryFn: () => analyticsApi.listSchedules(params),
   });
 };
 
 export const useSchedule = (id: string) => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'schedules', id],
+    queryKey: analyticsQueryKeys.schedule(id),
     queryFn: () => analyticsApi.getSchedule(id),
     enabled: !!id,
   });
@@ -440,7 +489,7 @@ export const useCreateSchedule = () => {
     mutationFn: (data: CreateReportScheduleDto) => analyticsApi.createSchedule(data),
     onSuccess: () => {
       toast.success('تم إنشاء الجدولة بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'schedules'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.schedules() });
     },
     onError: ErrorHandler.showError,
   });
@@ -453,7 +502,7 @@ export const useUpdateSchedule = () => {
       analyticsApi.updateSchedule(id, data),
     onSuccess: () => {
       toast.success('تم تحديث الجدولة بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'schedules'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.schedules() });
     },
     onError: ErrorHandler.showError,
   });
@@ -466,7 +515,7 @@ export const useToggleSchedule = () => {
       analyticsApi.toggleSchedule(id, isActive),
     onSuccess: () => {
       toast.success('تم تحديث الحالة');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'schedules'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.schedules() });
     },
     onError: ErrorHandler.showError,
   });
@@ -478,7 +527,7 @@ export const useDeleteSchedule = () => {
     mutationFn: (id: string) => analyticsApi.deleteSchedule(id),
     onSuccess: () => {
       toast.success('تم حذف الجدولة بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'schedules'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.schedules() });
     },
     onError: ErrorHandler.showError,
   });
@@ -490,7 +539,31 @@ export const useRunScheduleNow = () => {
     mutationFn: (id: string) => analyticsApi.runScheduleNow(id),
     onSuccess: () => {
       toast.success('تم تشغيل الجدولة بنجاح');
-      queryClient.invalidateQueries({ queryKey: [ANALYTICS_KEY, 'schedules'] });
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.schedules() });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const usePauseSchedule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => analyticsApi.pauseSchedule(id),
+    onSuccess: () => {
+      toast.success('تم إيقاف الجدولة');
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.schedules() });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
+export const useResumeSchedule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => analyticsApi.resumeSchedule(id),
+    onSuccess: () => {
+      toast.success('تم استئناف الجدولة');
+      queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.schedules() });
     },
     onError: ErrorHandler.showError,
   });
@@ -498,8 +571,7 @@ export const useRunScheduleNow = () => {
 
 export const useScheduleStats = () => {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'schedules', 'stats'],
+    queryKey: analyticsQueryKeys.scheduleStats(),
     queryFn: () => analyticsApi.getScheduleStats(),
   });
 };
-

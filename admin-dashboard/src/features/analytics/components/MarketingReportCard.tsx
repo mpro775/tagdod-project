@@ -21,32 +21,24 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
-import { getCardPadding, getCardSpacing, getChartHeight, getChartMargin, getChartLabelFontSize, getChartTooltipFontSize, getYAxisWidth, getXAxisHeight } from '../utils/responsive';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { MarketingReport } from '../types/analytics.types';
+import { useMarketingReport } from '../hooks/useAnalytics';
+import { asArray } from '../utils/analyticsDataGuards';
+import { formatCurrency, formatNumber, formatPercent } from '../utils/formatters';
+import { AnalyticsCardErrorBoundary } from './AnalyticsCardErrorBoundary';
+import { EmptyAnalyticsState } from './EmptyAnalyticsState';
+import { PeriodType } from '../types/analytics.types';
 
 interface MarketingReportCardProps {
-  data?: MarketingReport;
-  isLoading?: boolean;
-  error?: any;
+  period?: PeriodType;
 }
 
-export const MarketingReportCard: React.FC<MarketingReportCardProps> = ({
-  data,
-  isLoading = false,
-  error,
-}) => {
+export const MarketingReportCard: React.FC<MarketingReportCardProps> = ({ period }) => {
   const theme = useTheme();
   const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
-  const cardPadding = getCardPadding(breakpoint);
-  const cardSpacing = getCardSpacing(breakpoint);
-  const chartHeight = getChartHeight(breakpoint, 200);
-  const chartMargin = getChartMargin(breakpoint);
-  const labelFontSize = getChartLabelFontSize(breakpoint);
-  const tooltipFontSize = getChartTooltipFontSize(breakpoint);
-  const yAxisWidth = getYAxisWidth(breakpoint);
-  const xAxisHeight = getXAxisHeight(breakpoint, true);
+
+  const { data, isLoading, error } = useMarketingReport({ period });
 
   if (error) {
     return (
@@ -59,18 +51,14 @@ export const MarketingReportCard: React.FC<MarketingReportCardProps> = ({
   if (isLoading) {
     return (
       <Card>
-        <CardContent sx={{ p: cardPadding }}>
-          <Typography 
-            variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
-            gutterBottom
-            sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
-          >
+        <CardContent sx={{ p: breakpoint.isXs ? 1.5 : 2 }}>
+          <Typography variant="h6" gutterBottom>
             {t('marketingReport.title')}
           </Typography>
-          <Grid container spacing={cardSpacing}>
+          <Grid container spacing={2}>
             {[...Array(4)].map((_, index) => (
               <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-                <Skeleton variant="rectangular" height={breakpoint.isXs ? 90 : 100} />
+                <Skeleton variant="rectangular" height={100} />
               </Grid>
             ))}
           </Grid>
@@ -79,669 +67,137 @@ export const MarketingReportCard: React.FC<MarketingReportCardProps> = ({
     );
   }
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('ar-SA').format(num);
-  };
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const campaignPerformance = asArray(data?.campaignPerformance);
+  const topCoupons = asArray(data?.topCoupons);
 
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`;
-  };
-
-  const formatGrowth = (growth: number | undefined) => {
-    if (growth === undefined || growth === null) return null;
-    const isPositive = growth >= 0;
-    return {
-      value: `${isPositive ? '+' : ''}${growth.toFixed(1)}%`,
-      color: isPositive ? 'success.main' : 'error.main',
-      icon: isPositive,
-    };
-  };
+  const roiValue = data?.roi ?? 0;
+  const roiIsMassive = roiValue > 1000;
 
   return (
     <Card>
-      <CardContent sx={{ p: cardPadding }}>
-        <Stack
-          direction={breakpoint.isXs ? 'column' : 'row'}
-          spacing={cardSpacing}
-          sx={{
-            justifyContent: 'space-between',
-            alignItems: breakpoint.isXs ? 'flex-start' : 'center',
-            mb: breakpoint.isXs ? 2 : 3,
-          }}
-        >
-          <Typography 
-            variant={breakpoint.isXs ? 'h6' : 'h5'} 
-            component="h2"
-            sx={{ fontSize: breakpoint.isXs ? '1.25rem' : undefined }}
-          >
+      <CardContent sx={{ p: breakpoint.isXs ? 1.5 : 2 }}>
+        <Stack direction="row" spacing={2} sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5" component="h2">
             {t('marketingReport.title')}
           </Typography>
-          <Chip 
-            icon={<AssessmentIcon />} 
-            label={t('marketingReport.comprehensiveAnalysis')} 
-            color="primary" 
-            variant="outlined"
-            size={breakpoint.isXs ? 'small' : 'medium'}
-            sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
-          />
+          <Chip icon={<AssessmentIcon />} label={t('marketingReport.comprehensiveAnalysis')} color="primary" variant="outlined" />
         </Stack>
 
-        {/* Key Metrics */}
-        <Grid container spacing={cardSpacing} sx={{ mb: breakpoint.isXs ? 2 : 4 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: cardPadding,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.secondary.main}15, ${theme.palette.secondary.main}05)`,
-                border: `1px solid ${theme.palette.secondary.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <LocalOfferIcon 
-                  sx={{ 
-                    color: theme.palette.secondary.main, 
-                    mr: 1,
-                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
-                  }} 
-                />
-                <Typography 
-                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
-                  color="secondary"
-                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
-                >
-                  {t('marketingReport.totalCoupons')}
-                </Typography>
-              </Box>
-              <Typography 
-                variant={breakpoint.isXs ? 'h5' : 'h4'} 
-                sx={{ 
-                  fontWeight: 'bold',
-                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
-                }}
-              >
-                {formatNumber(data?.totalCoupons || 0)}
-              </Typography>
-              {formatGrowth(data?.totalCouponsGrowth) && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  {formatGrowth(data?.totalCouponsGrowth)?.icon ? (
-                    <TrendingUpIcon
-                      sx={{ 
-                        color: formatGrowth(data?.totalCouponsGrowth)?.color, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }}
-                    />
-                  ) : (
-                    <TrendingDownIcon
-                      sx={{ 
-                        color: formatGrowth(data?.totalCouponsGrowth)?.color, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }}
-                    />
-                  )}
-                  <Typography 
-                    variant="body2" 
-                    color={formatGrowth(data?.totalCouponsGrowth)?.color}
-                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
-                  >
-                    {formatGrowth(data?.totalCouponsGrowth)?.value} {t('marketingReport.fromPreviousPeriod')}
-                  </Typography>
+        {/* KPIs */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          {[
+            { label: t('marketingReport.totalCoupons'), value: formatNumber(data?.totalCoupons), growth: data?.totalCouponsGrowth, icon: <LocalOfferIcon />, color: 'secondary' as const },
+            { label: t('marketingReport.activeCoupons'), value: formatNumber(data?.activeCoupons), growth: undefined, icon: <LocalOfferIcon />, color: 'info' as const },
+            { label: t('marketingReport.totalDiscounts'), value: formatCurrency(data?.totalDiscountGiven), growth: data?.totalDiscountGrowth, icon: <AttachMoneyIcon />, color: 'success' as const },
+            {
+              label: t('marketingReport.roi'),
+              value: roiIsMassive ? `${formatPercent(roiValue)} ⚠️` : formatPercent(roiValue),
+              growth: data?.roiGrowth,
+              icon: <TrendingUpIcon />,
+              color: 'warning' as const,
+            },
+          ].map((kpi, idx) => (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+              <Box sx={{ p: 2, borderRadius: 2, background: `linear-gradient(135deg, ${theme.palette[kpi.color].main}15, ${theme.palette[kpi.color].main}05)`, border: `1px solid ${theme.palette[kpi.color].main}20` }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  {React.cloneElement(kpi.icon, { sx: { color: theme.palette[kpi.color].main, mr: 1 } })}
+                  <Typography variant="h6" color={`${kpi.color}.main`}>{kpi.label}</Typography>
                 </Box>
-              )}
-            </Box>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: cardPadding,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.info.main}15, ${theme.palette.info.main}05)`,
-                border: `1px solid ${theme.palette.info.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <LocalOfferIcon 
-                  sx={{ 
-                    color: theme.palette.info.main, 
-                    mr: 1,
-                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
-                  }} 
-                />
-                <Typography 
-                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
-                  color="info.main"
-                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
-                >
-                  {t('marketingReport.activeCoupons')}
-                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{kpi.value}</Typography>
+                {kpi.growth !== undefined && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                    {kpi.growth >= 0 ? (
+                      <TrendingUpIcon sx={{ color: 'success.main', fontSize: 16, mr: 0.5 }} />
+                    ) : (
+                      <TrendingDownIcon sx={{ color: 'error.main', fontSize: 16, mr: 0.5 }} />
+                    )}
+                    <Typography variant="body2" color={kpi.growth >= 0 ? 'success.main' : 'error.main'}>
+                      {kpi.growth >= 0 ? '+' : ''}{Number(kpi.growth).toFixed(1)}%
+                    </Typography>
+                  </Box>
+                )}
               </Box>
-              <Typography 
-                variant={breakpoint.isXs ? 'h5' : 'h4'} 
-                sx={{ 
-                  fontWeight: 'bold',
-                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
-                }}
-              >
-                {formatNumber(data?.activeCoupons || 0)}
-              </Typography>
-              <Typography 
-                variant="body2" 
-                color="text.secondary" 
-                sx={{ 
-                  mt: 1,
-                  fontSize: breakpoint.isXs ? '0.75rem' : undefined,
-                }}
-              >
-                {t('marketingReport.ofTotal', { total: formatNumber(data?.totalCoupons || 0) })}
-              </Typography>
-            </Box>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: cardPadding,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.success.main}15, ${theme.palette.success.main}05)`,
-                border: `1px solid ${theme.palette.success.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <AttachMoneyIcon 
-                  sx={{ 
-                    color: theme.palette.success.main, 
-                    mr: 1,
-                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
-                  }} 
-                />
-                <Typography 
-                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
-                  color="success.main"
-                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
-                >
-                  {t('marketingReport.totalDiscounts')}
-                </Typography>
-              </Box>
-              <Typography 
-                variant={breakpoint.isXs ? 'h5' : 'h4'} 
-                sx={{ 
-                  fontWeight: 'bold',
-                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
-                }}
-              >
-                {formatCurrency(data?.totalDiscountGiven || 0)}
-              </Typography>
-              {formatGrowth(data?.totalDiscountGrowth) && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  {formatGrowth(data?.totalDiscountGrowth)?.icon ? (
-                    <TrendingUpIcon
-                      sx={{ 
-                        color: formatGrowth(data?.totalDiscountGrowth)?.color, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }}
-                    />
-                  ) : (
-                    <TrendingDownIcon
-                      sx={{ 
-                        color: formatGrowth(data?.totalDiscountGrowth)?.color, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }}
-                    />
-                  )}
-                  <Typography 
-                    variant="body2" 
-                    color={formatGrowth(data?.totalDiscountGrowth)?.color}
-                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
-                  >
-                    {formatGrowth(data?.totalDiscountGrowth)?.value} {t('marketingReport.fromPreviousPeriod')}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: cardPadding,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.warning.main}15, ${theme.palette.warning.main}05)`,
-                border: `1px solid ${theme.palette.warning.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <TrendingUpIcon 
-                  sx={{ 
-                    color: theme.palette.warning.main, 
-                    mr: 1,
-                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
-                  }} 
-                />
-                <Typography 
-                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
-                  color="warning.main"
-                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
-                >
-                  {t('marketingReport.roi')}
-                </Typography>
-              </Box>
-              <Typography 
-                variant={breakpoint.isXs ? 'h5' : 'h4'} 
-                sx={{ 
-                  fontWeight: 'bold',
-                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
-                }}
-              >
-                {formatPercentage(data?.roi || 0)}
-              </Typography>
-              {formatGrowth(data?.roiGrowth) && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  {formatGrowth(data?.roiGrowth)?.icon ? (
-                    <TrendingUpIcon
-                      sx={{ 
-                        color: formatGrowth(data?.roiGrowth)?.color, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }}
-                    />
-                  ) : (
-                    <TrendingDownIcon
-                      sx={{ 
-                        color: formatGrowth(data?.roiGrowth)?.color, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }}
-                    />
-                  )}
-                  <Typography 
-                    variant="body2" 
-                    color={formatGrowth(data?.roiGrowth)?.color}
-                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
-                  >
-                    {formatGrowth(data?.roiGrowth)?.value} {t('marketingReport.fromPreviousPeriod')}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </Grid>
+            </Grid>
+          ))}
         </Grid>
 
+        {/* ROI Warning */}
+        {roiIsMassive && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            ROI مرتفع بسبب غياب تكلفة الحملة — قد لا يعكس الواقع.
+          </Alert>
+        )}
+
         {/* Charts */}
-        <Grid container spacing={cardSpacing}>
-          {/* Campaign Performance - عرضها فقط إذا كانت البيانات موجودة */}
-          {data?.campaignPerformance && data.campaignPerformance.length > 0 && (
-            <Grid size={{ xs: 12, lg: 8 }}>
-              <Box 
-                sx={{ 
-                  p: cardPadding, 
-                  border: `1px solid ${theme.palette.divider}`, 
-                  borderRadius: 2 
-                }}
-              >
-                <Typography 
-                  variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
-                  gutterBottom
-                  sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
-                >
-                  {t('marketingReport.campaignPerformance')}
-                </Typography>
-                <ResponsiveContainer width="100%" height={chartHeight}>
-                  <BarChart 
-                    data={data.campaignPerformance}
-                    margin={chartMargin}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="campaign" 
-                      tick={{ fontSize: labelFontSize }}
-                      angle={breakpoint.isXs ? -45 : 0}
-                      textAnchor={breakpoint.isXs ? 'end' : 'middle'}
-                      height={xAxisHeight}
-                    />
-                    <YAxis 
-                      tick={{ fontSize: labelFontSize }}
-                      width={yAxisWidth}
-                    />
-                    <Tooltip
-                      formatter={(value: number, name: string) => [
-                        name === 'reach'
-                          ? formatNumber(value)
-                          : name === 'conversions'
-                          ? formatNumber(value)
-                          : formatCurrency(value),
-                        name === 'reach'
-                          ? t('marketingReport.reach')
-                          : name === 'conversions'
-                          ? t('marketingReport.conversions')
-                          : t('marketingReport.revenue'),
-                      ]}
-                      contentStyle={{
-                        fontSize: `${tooltipFontSize}px`,
-                      }}
-                    />
-                    <Bar dataKey="reach" fill={theme.palette.primary.main} />
-                    <Bar dataKey="conversions" fill={theme.palette.secondary.main} />
-                    <Bar dataKey="revenue" fill={theme.palette.success.main} />
-                  </BarChart>
-                </ResponsiveContainer>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, lg: 8 }}>
+            <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض أداء الحملات">
+              <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                <Typography variant="h6" gutterBottom>{t('marketingReport.campaignPerformance')}</Typography>
+                {campaignPerformance.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={campaignPerformance} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="campaign" />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value: number, name: string) => [
+                          name === 'reach' ? formatNumber(value) : name === 'conversions' ? formatNumber(value) : formatCurrency(value),
+                          name === 'reach' ? 'الوصول' : name === 'conversions' ? 'التحويلات' : 'الإيراد',
+                        ]}
+                        contentStyle={{ direction: 'rtl', textAlign: 'right' }}
+                      />
+                      <Bar dataKey="reach" fill={theme.palette.primary.main} />
+                      <Bar dataKey="conversions" fill={theme.palette.secondary.main} />
+                      <Bar dataKey="revenue" fill={theme.palette.success.main} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyAnalyticsState title="لا توجد بيانات" description="لا توجد حملات تسويقية." />
+                )}
               </Box>
-            </Grid>
-          )}
+            </AnalyticsCardErrorBoundary>
+          </Grid>
 
-          {/* Top Coupons */}
-          <Grid size={{ xs: 12, lg: data?.campaignPerformance && data.campaignPerformance.length > 0 ? 4 : 6 }}>
-            <Box 
-              sx={{ 
-                p: cardPadding, 
-                border: `1px solid ${theme.palette.divider}`, 
-                borderRadius: 2 
-              }}
-            >
-              <Typography 
-                variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
-                gutterBottom
-                sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
-              >
-                {t('marketingReport.topCoupons')}
-              </Typography>
-              {(data?.topCoupons || []).length > 0 ? (
-                <Box sx={{ maxHeight: breakpoint.isXs ? 250 : 300, overflowY: 'auto' }}>
-                  {data?.topCoupons.map((coupon, index) => (
-                    <Box key={index} sx={{ mb: 2 }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          mb: 1,
-                        }}
-                      >
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            fontWeight: 'bold',
-                            fontSize: breakpoint.isXs ? '0.8125rem' : undefined,
-                          }}
-                        >
-                          {coupon.code}
-                        </Typography>
-                        <Typography 
-                          variant="body2" 
-                          color="primary"
-                          sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-                        >
-                          {formatCurrency(coupon.revenue)}
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          mb: 0.5,
-                        }}
-                      >
-                        <Typography 
-                          variant="caption" 
-                          color="text.secondary"
-                          sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
-                        >
-                          {t('marketingReport.usage')}: {formatNumber(coupon.uses)}
-                        </Typography>
-                        {coupon.discount && (
-                          <Typography 
-                            variant="caption" 
-                            color="success.main"
-                            sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
-                          >
-                            {t('marketingReport.discount')}: {formatCurrency(coupon.discount)}
+          <Grid size={{ xs: 12, lg: 4 }}>
+            <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض الكوبونات">
+              <Box sx={{ p: 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                <Typography variant="h6" gutterBottom>{t('marketingReport.topCoupons')}</Typography>
+                {topCoupons.length > 0 ? (
+                  <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
+                    {topCoupons.map((coupon, index) => (
+                      <Box key={index} sx={{ mb: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{coupon.code}</Typography>
+                          <Typography variant="body2" color="primary">{formatCurrency(coupon.revenue)}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            الاستخدام: {formatNumber(coupon.uses)}
                           </Typography>
-                        )}
+                          {coupon.discount !== undefined && (
+                            <Typography variant="caption" color="success.main">
+                              الخصم: {formatCurrency(coupon.discount)}
+                            </Typography>
+                          )}
+                        </Box>
+                        <LinearProgress
+                          variant="determinate"
+                          value={Math.min(
+                            (coupon.uses / Math.max(...topCoupons.map((c) => c.uses || 1), 1)) * 100,
+                            100
+                          )}
+                          sx={{ height: 4, borderRadius: 2 }}
+                        />
                       </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={
-                          (coupon.uses / Math.max(...(data?.topCoupons?.map((c) => c.uses) || [1]))) *
-                          100
-                        }
-                        sx={{ height: breakpoint.isXs ? 3 : 4, borderRadius: 2 }}
-                      />
-                    </Box>
-                  ))}
-                </Box>
-              ) : (
-                <Alert severity="info" sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}>
-                  {t('marketingReport.noCouponsUsed')}
-                </Alert>
-              )}
-            </Box>
-          </Grid>
-
-          {/* Marketing Metrics */}
-          <Grid size={{ xs: 12, lg: 6 }}>
-            <Box 
-              sx={{ 
-                p: cardPadding, 
-                border: `1px solid ${theme.palette.divider}`, 
-                borderRadius: 2 
-              }}
-            >
-              <Typography 
-                variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
-                gutterBottom
-                sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
-              >
-                {t('marketingReport.marketingMetrics')}
-              </Typography>
-              <Box sx={{ mb: 2 }}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 1,
-                  }}
-                >
-                  <Typography 
-                    variant="body2"
-                    sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-                  >
-                    {t('marketingReport.conversionRate')}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography 
-                      variant="body2" 
-                      color="primary"
-                      sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-                    >
-                      {formatPercentage(data?.conversionRate || 0)}
-                    </Typography>
-                    {formatGrowth(data?.conversionRateGrowth) && (
-                      <Typography 
-                        variant="caption" 
-                        color={formatGrowth(data?.conversionRateGrowth)?.color}
-                        sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
-                      >
-                        ({formatGrowth(data?.conversionRateGrowth)?.value})
-                      </Typography>
-                    )}
+                    ))}
                   </Box>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={Math.min(data?.conversionRate || 0, 100)}
-                  color="primary"
-                  sx={{ height: breakpoint.isXs ? 6 : 8, borderRadius: 4 }}
-                />
+                ) : (
+                  <EmptyAnalyticsState title="لا توجد بيانات" description="لا توجد كوبونات مستخدمة." />
+                )}
               </Box>
-
-              <Box sx={{ mb: 2 }}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 1,
-                  }}
-                >
-                  <Typography 
-                    variant="body2"
-                    sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-                  >
-                    {t('marketingReport.roi')}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography 
-                      variant="body2" 
-                      color="success.main"
-                      sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-                    >
-                      {formatPercentage(data?.roi || 0)}
-                    </Typography>
-                    {formatGrowth(data?.roiGrowth) && (
-                      <Typography 
-                        variant="caption" 
-                        color={formatGrowth(data?.roiGrowth)?.color}
-                        sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
-                      >
-                        ({formatGrowth(data?.roiGrowth)?.value})
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={Math.min(data?.roi || 0, 100)}
-                  color="success"
-                  sx={{ height: breakpoint.isXs ? 6 : 8, borderRadius: 4 }}
-                />
-              </Box>
-
-              <Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 1,
-                  }}
-                >
-                  <Typography 
-                    variant="body2"
-                    sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-                  >
-                    {t('marketingReport.activeCoupons')}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="info.main"
-                    sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-                  >
-                    {data?.activeCoupons || 0} / {data?.totalCoupons || 0}
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={((data?.activeCoupons || 0) / Math.max(data?.totalCoupons || 1, 1)) * 100}
-                  color="info"
-                  sx={{ height: breakpoint.isXs ? 6 : 8, borderRadius: 4 }}
-                />
-              </Box>
-            </Box>
+            </AnalyticsCardErrorBoundary>
           </Grid>
-
-          {/* Campaign Performance Details - عرضها فقط إذا كانت البيانات موجودة */}
-          {data?.campaignPerformance && data.campaignPerformance.length > 0 && (
-            <Grid size={{ xs: 12, lg: 6 }}>
-              <Box 
-                sx={{ 
-                  p: cardPadding, 
-                  border: `1px solid ${theme.palette.divider}`, 
-                  borderRadius: 2 
-                }}
-              >
-                <Typography 
-                  variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
-                  gutterBottom
-                  sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
-                >
-                  {t('marketingReport.campaignDetails')}
-                </Typography>
-                <Box sx={{ maxHeight: breakpoint.isXs ? 250 : 300, overflowY: 'auto' }}>
-                  {data.campaignPerformance.map((campaign, index) => (
-                    <Box key={index} sx={{ mb: 2 }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          mb: 1,
-                        }}
-                      >
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            fontWeight: 'bold',
-                            fontSize: breakpoint.isXs ? '0.8125rem' : undefined,
-                          }}
-                        >
-                          {campaign.campaign}
-                        </Typography>
-                        <Typography 
-                          variant="body2" 
-                          color="primary"
-                          sx={{ fontSize: breakpoint.isXs ? '0.8125rem' : undefined }}
-                        >
-                          {formatCurrency(campaign.revenue)}
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          mb: 0.5,
-                        }}
-                      >
-                        <Typography 
-                          variant="caption" 
-                          color="text.secondary"
-                          sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
-                        >
-                          {t('marketingReport.reach')}: {formatNumber(campaign.reach)}
-                        </Typography>
-                        <Typography 
-                          variant="caption" 
-                          color="text.secondary"
-                          sx={{ fontSize: breakpoint.isXs ? '0.7rem' : undefined }}
-                        >
-                          {t('marketingReport.conversions')}: {formatNumber(campaign.conversions)}
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={(campaign.conversions / Math.max(campaign.reach, 1)) * 100}
-                        sx={{ height: breakpoint.isXs ? 3 : 4, borderRadius: 2 }}
-                      />
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            </Grid>
-          )}
         </Grid>
       </CardContent>
     </Card>

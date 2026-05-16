@@ -20,6 +20,11 @@ interface ReportData {
   format?: string;
 }
 
+function normalizeExportFormat(format: string) {
+  const value = String(format || 'pdf').toLowerCase();
+  return value === 'excel' ? 'xlsx' : value;
+}
+
 interface CustomReportBody {
   templateKey?: string;
   title?: string;
@@ -63,9 +68,10 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'تم استرداد تحليلات المبيعات بنجاح' })
   async getSalesAnalytics(@Query() params: QueryParams) {
-    return await this.advancedAnalyticsService.getSalesAnalytics(
+    const data = await this.advancedAnalyticsService.getSalesAnalytics(
       this.convertQueryParams(params),
     );
+    return { success: true, data, requestId: '' };
   }
 
   // ==================== أداء المنتجات ====================
@@ -76,9 +82,10 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'تم استرداد أداء المنتجات بنجاح' })
   async getProductPerformance(@Query() params: QueryParams) {
-    return await this.advancedAnalyticsService.getProductPerformance(
+    const data = await this.advancedAnalyticsService.getProductPerformance(
       this.convertQueryParams(params),
     );
+    return { success: true, data, requestId: '' };
   }
 
   // ==================== تحليلات العملاء ====================
@@ -89,9 +96,10 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'تم استرداد تحليلات العملاء بنجاح' })
   async getCustomerAnalytics(@Query() params: QueryParams) {
-    return await this.advancedAnalyticsService.getCustomerAnalytics(
+    const data = await this.advancedAnalyticsService.getCustomerAnalytics(
       this.convertQueryParams(params),
     );
+    return { success: true, data, requestId: '' };
   }
 
   // ==================== تقرير المخزون ====================
@@ -102,9 +110,10 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'تم استرداد تقرير المخزون بنجاح' })
   async getInventoryReport(@Query() params: QueryParams) {
-    return await this.advancedAnalyticsService.getInventoryReport(
+    const data = await this.advancedAnalyticsService.getInventoryReport(
       this.convertQueryParams(params),
     );
+    return { success: true, data, requestId: '' };
   }
 
   // ==================== التقرير المالي ====================
@@ -115,9 +124,10 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'تم استرداد التقرير المالي بنجاح' })
   async getFinancialReport(@Query() params: QueryParams) {
-    return await this.advancedAnalyticsService.getFinancialReport(
+    const data = await this.advancedAnalyticsService.getFinancialReport(
       this.convertQueryParams(params),
     );
+    return { success: true, data, requestId: '' };
   }
 
   // ==================== تحليلات عربة التسوق ====================
@@ -128,9 +138,10 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'تم استرداد تحليلات عربة التسوق بنجاح' })
   async getCartAnalytics(@Query() params: QueryParams) {
-    return await this.advancedAnalyticsService.getCartAnalytics(
+    const data = await this.advancedAnalyticsService.getCartAnalytics(
       this.convertQueryParams(params),
     );
+    return { success: true, data, requestId: '' };
   }
 
   // ==================== التقرير التسويقي ====================
@@ -141,9 +152,10 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'endDate', required: false })
   @ApiResponse({ status: 200, description: 'تم استرداد التقرير التسويقي بنجاح' })
   async getMarketingReport(@Query() params: QueryParams) {
-    return await this.advancedAnalyticsService.getMarketingReport(
+    const data = await this.advancedAnalyticsService.getMarketingReport(
       this.convertQueryParams(params),
     );
+    return { success: true, data, requestId: '' };
   }
 
   // ==================== مقاييس الوقت الفعلي ====================
@@ -151,7 +163,8 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiOperation({ summary: 'الحصول على مقاييس الوقت الفعلي' })
   @ApiResponse({ status: 200, description: 'تم استرداد مقاييس الوقت الفعلي بنجاح' })
   async getRealTimeMetrics() {
-    return await this.advancedAnalyticsService.getRealTimeMetrics();
+    const data = await this.advancedAnalyticsService.getRealTimeMetrics();
+    return { success: true, data, requestId: '' };
   }
 
   // ==================== الإحصائيات السريعة ====================
@@ -159,7 +172,8 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiOperation({ summary: 'الحصول على الإحصائيات السريعة' })
   @ApiResponse({ status: 200, description: 'تم استرداد الإحصائيات السريعة بنجاح' })
   async getQuickStats() {
-    return await this.advancedAnalyticsService.getQuickStats();
+    const data = await this.advancedAnalyticsService.getQuickStats();
+    return { success: true, data, requestId: '' };
   }
 
   // ==================== التقارير المتقدمة ====================
@@ -185,12 +199,23 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'status', required: false })
   @ApiResponse({ status: 200, description: 'تم استرداد التقارير بنجاح' })
   async listAdvancedReports(@Query() params: QueryParams) {
-    const result = await this.advancedAnalyticsService.listAdvancedReports(
-      this.convertQueryParams(params),
-    );
+    const page = parseInt(params.page || '1', 10);
+    const limit = Math.min(parseInt(params.limit || '20', 10), 100);
+    const converted = this.convertQueryParams(params);
+    converted.page = page;
+    converted.limit = limit;
+    const result = await this.advancedAnalyticsService.listAdvancedReports(converted);
     return {
-      data: result.data,
-      meta: result.meta,
+      success: true,
+      data: {
+        data: result.data.map((report: any) => ({
+          ...report,
+          id: report.reportId ?? report._id?.toString() ?? report.id,
+          reportId: report.reportId ?? report._id?.toString() ?? report.id,
+        })),
+        meta: result.meta,
+      },
+      requestId: '',
     };
   }
 
@@ -224,8 +249,16 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiParam({ name: 'reportId', description: 'معرف التقرير' })
   @ApiBody({ schema: { type: 'object' } })
   @ApiResponse({ status: 200, description: 'تم تصدير التقرير بنجاح' })
-  async exportReport(@Param('reportId') reportId: string, @Body() data: ReportData) {
-    return await this.advancedAnalyticsService.exportReport(reportId, data);
+  async exportReport(
+    @Param('reportId') reportId: string,
+    @Body() data: ReportData,
+    @Req() req: { user: { sub: string } },
+  ) {
+    const payload = {
+      ...data,
+      format: normalizeExportFormat(data?.format || 'pdf'),
+    };
+    return await this.advancedAnalyticsService.exportReport(reportId, payload, req.user.sub);
   }
 
   // ==================== تصدير البيانات ====================
@@ -240,7 +273,11 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
-    return await this.advancedAnalyticsService.exportSalesData(format, startDate, endDate);
+    return await this.advancedAnalyticsService.exportSalesData(
+      normalizeExportFormat(format),
+      startDate,
+      endDate,
+    );
   }
 
   @Get('export/products')
@@ -255,7 +292,7 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
     @Query('endDate') endDate?: string,
   ) {
     return await this.advancedAnalyticsService.exportProductsData(
-      format,
+      normalizeExportFormat(format),
       startDate,
       endDate,
     );
@@ -273,7 +310,7 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
     @Query('endDate') endDate?: string,
   ) {
     return await this.advancedAnalyticsService.exportCustomersData(
-      format,
+      normalizeExportFormat(format),
       startDate,
       endDate,
     );
@@ -328,12 +365,16 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'format', required: false })
+  @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'search', required: false })
-  async getExportedFiles(@Query() params: QueryParams) {
-    const result = await this.advancedAnalyticsService.getExportedFiles(
-      this.convertQueryParams(params),
-    );
-    return { success: true, data: result.data, meta: result.meta };
+  async getExportedFiles(@Query() params: QueryParams & { status?: string }) {
+    const page = parseInt(params.page || '1', 10);
+    const limit = Math.min(parseInt(params.limit || '20', 10), 100);
+    const converted = this.convertQueryParams(params);
+    converted.page = page;
+    converted.limit = limit;
+    const result = await this.advancedAnalyticsService.getExportedFiles(converted);
+    return { success: true, data: { data: result.data, meta: result.meta }, requestId: '' };
   }
 
   @Post('reports/custom/preview')

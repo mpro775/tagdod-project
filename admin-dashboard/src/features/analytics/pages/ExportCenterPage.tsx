@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -16,10 +16,20 @@ import {
   Tooltip,
   TextField,
   InputAdornment,
-  Tabs,
-  Tab,
-  CircularProgress,
   Button,
+  Card,
+  CardContent,
+  CardActions,
+  Menu,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  Skeleton,
+  Alert,
+  useMediaQuery,
+  useTheme,
+  Divider,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -30,11 +40,20 @@ import {
   TableChart as ExcelIcon,
   DataObject as CsvIcon,
   Code as JsonIcon,
+  OpenInNew as OpenIcon,
+  ContentCopy as CopyIcon,
+  MoreVert as MoreIcon,
+  InsertDriveFile as TotalFilesIcon,
+  CheckCircle as AvailableIcon,
+  Error as FailedIcon,
+  Storage as StorageIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { analyticsApi } from '../api/analyticsApi';
-import { AdvancedReport } from '../types/analytics.types';
+
+import { useExportedFiles } from '../hooks/useAnalytics';
+import { ExportFile, ExportFileStatus, ExportFormat } from '../types/exports';
+import { formatFileSize } from '../utils/exportMappers';
+import { withAnalyticsErrorBoundary } from '../components/AnalyticsErrorBoundary';
 
 const formatIcons: Record<string, React.ReactNode> = {
   pdf: <PdfIcon color="error" />,
@@ -43,62 +62,294 @@ const formatIcons: Record<string, React.ReactNode> = {
   json: <JsonIcon color="warning" />,
 };
 
-const formatLabels: Record<string, string> = {
-  pdf: 'PDF',
-  xlsx: 'Excel',
-  csv: 'CSV',
-  json: 'JSON',
+const statusColors: Record<ExportFileStatus, 'success' | 'info' | 'error' | 'default'> = {
+  available: 'success',
+  processing: 'info',
+  failed: 'error',
+  expired: 'default',
 };
 
-export const ExportCenterPage: React.FC = () => {
-  const { t } = useTranslation('analytics');
+const statusLabelsEn: Record<ExportFileStatus, string> = {
+  available: 'Available',
+  processing: 'Processing',
+  failed: 'Failed',
+  expired: 'Expired',
+};
+
+export const ExportCenterPage = withAnalyticsErrorBoundary(function ExportCenterPage() {
+  const { t, i18n } = useTranslation('analytics');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [formatFilter, setFormatFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [categoryFilter] = useState<string>('all');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedFile, setSelectedFile] = useState<ExportFile | null>(null);
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['reports-exports', page, limit, search, formatFilter],
-    queryFn: () =>
-      analyticsApi.listAdvancedReports({
-        page: page + 1,
-        limit,
-        search: search || undefined,
-      }),
-  });
+  const params = useMemo(
+    () => ({
+      page: page + 1,
+      limit,
+      search: search || undefined,
+      format: (formatFilter !== 'all' ? formatFilter : undefined) as ExportFormat | undefined,
+      status: (statusFilter !== 'all' ? statusFilter : undefined) as ExportFileStatus | undefined,
+      category: categoryFilter !== 'all' ? categoryFilter : undefined,
+    }),
+    [page, limit, search, formatFilter, statusFilter, categoryFilter]
+  );
 
-  const allExports = (data?.data || [])
-    .flatMap((report: AdvancedReport) =>
-      (report.exports || []).map((exp) => ({
-        ...exp,
-        reportId: report.reportId,
-        reportTitle: report.title,
-        reportType: report.category,
-      }))
-    )
-    .filter((exp) => formatFilter === 'all' || exp.format === formatFilter)
-    .filter((exp) => !search || exp.fileName.toLowerCase().includes(search.toLowerCase()) || exp.reportTitle?.toLowerCase().includes(search.toLowerCase()));
+  const { data: exportsData, isLoading, isError, refetch } = useExportedFiles(params);
 
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return '-';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  const files = useMemo(() => exportsData?.data ?? [], [exportsData?.data]);
+  const meta = exportsData?.meta;
+
+  const getStatusLabel = (status: ExportFileStatus) => t(`exportCenter.status.${status}`, statusLabelsEn[status] || status);
+
+  const stats = useMemo(() => {
+    const totalFiles = meta?.total ?? files.length;
+    const availableFiles = files.filter((f) => f.status === 'available').length;
+    const failedFiles = files.filter((f) => f.status === 'failed').length;
+    const totalSize = files.reduce((sum, f) => sum + (f.fileSize || 0), 0);
+    return { totalFiles, availableFiles, failedFiles, totalSize };
+  }, [files, meta]);
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, file: ExportFile) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedFile(file);
   };
 
-  const formatDate = (date?: Date | string) => {
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+    setSelectedFile(null);
+  };
+
+  const handleDownload = (file: ExportFile) => {
+    if (file.fileUrl) {
+      window.open(file.fileUrl, '_blank', 'noopener,noreferrer');
+    }
+    handleCloseMenu();
+  };
+
+  const handleCopyLink = async (file: ExportFile) => {
+    if (file.fileUrl) {
+      try {
+        await navigator.clipboard.writeText(file.fileUrl);
+        // toast is handled by the caller or we could use a local state
+      } catch {
+        // fallback
+      }
+    }
+    handleCloseMenu();
+  };
+
+  const formatDate = (date?: string) => {
     if (!date) return '-';
-    return new Date(date).toLocaleString('ar-SA');
+    try {
+      return new Date(date).toLocaleString(i18n.language === 'ar' ? 'ar-SA' : 'en-US');
+    } catch {
+      return date;
+    }
   };
 
-  const handleDownload = (url: string) => {
-    window.open(url, '_blank');
-  };
+  const StatCard = ({ icon, label, value, color }: any) => (
+    <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ color: `${color}.main` }}>{icon}</Box>
+      <Box>
+        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+          {value}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
+      </Box>
+    </Paper>
+  );
+
+  const renderMobileCards = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {files.map((file, idx) => (
+        <Card key={`${file.exportId ?? file.id ?? idx}`} variant="outlined">
+          <CardContent sx={{ pb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              {formatIcons[file.format] || <FileIcon />}
+              <Typography variant="body2" sx={{ fontWeight: 'medium', flex: 1 }} noWrap>
+                {file.fileName}
+              </Typography>
+              <Chip
+                label={getStatusLabel((file.status as ExportFileStatus) || 'available')}
+                size="small"
+                color={statusColors[(file.status as ExportFileStatus) || 'available']}
+              />
+            </Box>
+            {file.reportTitle && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                {file.reportTitle}
+              </Typography>
+            )}
+            <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                {formatFileSize(file.fileSize)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {formatDate(file.exportedAt)}
+              </Typography>
+            </Box>
+          </CardContent>
+          <CardActions sx={{ pt: 0 }}>
+            <Button
+              size="small"
+              startIcon={<DownloadIcon />}
+              onClick={() => handleDownload(file)}
+              disabled={!file.fileUrl || file.status === 'failed'}
+            >
+              {t('exportCenter.download', 'تحميل')}
+            </Button>
+            <IconButton size="small" onClick={(e) => handleOpenMenu(e, file)}>
+              <MoreIcon />
+            </IconButton>
+          </CardActions>
+        </Card>
+      ))}
+    </Box>
+  );
+
+  const renderDesktopTable = () => (
+    <TableContainer>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>{t('exportCenter.file', 'الملف')}</TableCell>
+            <TableCell>{t('exportCenter.report', 'التقرير')}</TableCell>
+            <TableCell>{t('exportCenter.format', 'الصيغة')}</TableCell>
+            <TableCell>{t('exportCenter.size', 'الحجم')}</TableCell>
+            <TableCell>{t('exportCenter.status', 'الحالة')}</TableCell>
+            <TableCell>{t('exportCenter.date', 'تاريخ التصدير')}</TableCell>
+            <TableCell align="center">{t('exportCenter.actions', 'إجراءات')}</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {files.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                <Typography color="text.secondary">
+                  {t('exportCenter.noData', 'لا توجد ملفات مصدرة')}
+                </Typography>
+              </TableCell>
+            </TableRow>
+          ) : (
+            files.map((file, idx) => (
+              <TableRow key={`${file.exportId ?? file.id ?? idx}-${file.format}-${idx}`} hover>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {formatIcons[file.format] || <FileIcon />}
+                    <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                      {file.fileName}
+                    </Typography>
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                    {file.reportTitle || '-'}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={file.format?.toUpperCase()}
+                    size="small"
+                    color={
+                      file.format === 'pdf'
+                        ? 'error'
+                        : file.format === 'xlsx'
+                        ? 'success'
+                        : file.format === 'csv'
+                        ? 'primary'
+                        : 'warning'
+                    }
+                  />
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                    {formatFileSize(file.fileSize)}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={getStatusLabel((file.status as ExportFileStatus) || 'available')}
+                    size="small"
+                    color={statusColors[(file.status as ExportFileStatus) || 'available']}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                    {formatDate(file.exportedAt)}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+                    <Tooltip title={t('exportCenter.download', 'تحميل')}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleDownload(file)}
+                          disabled={!file.fileUrl || file.status === 'failed'}
+                        >
+                          <DownloadIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title={t('exportCenter.open', 'فتح')}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDownload(file)}
+                          disabled={!file.fileUrl || file.status === 'failed'}
+                        >
+                          <OpenIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title={t('exportCenter.copyLink', 'نسخ الرابط')}>
+                      <IconButton size="small" onClick={() => handleCopyLink(file)}>
+                        <CopyIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <IconButton size="small" onClick={(e) => handleOpenMenu(e, file)}>
+                      <MoreIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
-      <Paper sx={{ p: 3, mb: 3, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+      {/* Header */}
+      <Paper
+        sx={{
+          p: 3,
+          mb: 3,
+          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+          color: 'white',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
               <FileIcon />
@@ -112,23 +363,66 @@ export const ExportCenterPage: React.FC = () => {
             size="small"
             variant="contained"
             startIcon={<RefreshIcon />}
-            onClick={() => refetch()}
+            onClick={() => {
+              setPage(0);
+              refetch();
+            }}
             sx={{ bgcolor: 'white', color: '#f5576c', '&:hover': { bgcolor: '#f3f4f6' } }}
           >
-            تحديث
+            {t('exportCenter.refresh', 'تحديث')}
           </Button>
         </Box>
       </Paper>
 
+      {/* Stats */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <StatCard
+            icon={<TotalFilesIcon fontSize="large" />}
+            label={t('exportCenter.totalFiles', 'إجمالي الملفات')}
+            value={stats.totalFiles}
+            color="primary"
+          />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <StatCard
+            icon={<AvailableIcon fontSize="large" />}
+            label={t('exportCenter.availableFiles', 'الملفات المتاحة')}
+            value={stats.availableFiles}
+            color="success"
+          />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <StatCard
+            icon={<FailedIcon fontSize="large" />}
+            label={t('exportCenter.failedFiles', 'عمليات فاشلة')}
+            value={stats.failedFiles}
+            color="error"
+          />
+        </Grid>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <StatCard
+            icon={<StorageIcon fontSize="large" />}
+            label={t('exportCenter.totalSize', 'الحجم الإجمالي')}
+            value={formatFileSize(stats.totalSize)}
+            color="info"
+          />
+        </Grid>
+      </Grid>
+
+      {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <TextField
               fullWidth
               size="small"
-              placeholder={t('exportCenter.search', 'بحث في الملفات...')}
+              placeholder={t('exportCenter.searchPlaceholder', 'بحث في الملفات...')}
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -138,118 +432,120 @@ export const ExportCenterPage: React.FC = () => {
               }}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <Tabs
-              value={formatFilter}
-              onChange={(_, v) => setFormatFilter(v)}
-            >
-              <Tab label="الكل" value="all" />
-              <Tab label="PDF" value="pdf" />
-              <Tab label="Excel" value="xlsx" />
-              <Tab label="CSV" value="csv" />
-              <Tab label="JSON" value="json" />
-            </Tabs>
+          <Grid size={{ xs: 6, sm: 3, md: 2 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>{t('exportCenter.formatFilter', 'الصيغة')}</InputLabel>
+              <Select
+                value={formatFilter}
+                label={t('exportCenter.formatFilter', 'الصيغة')}
+                onChange={(e) => {
+                  setFormatFilter(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="all">{t('exportCenter.all', 'الكل')}</MenuItem>
+                <MenuItem value="pdf">PDF</MenuItem>
+                <MenuItem value="xlsx">Excel</MenuItem>
+                <MenuItem value="csv">CSV</MenuItem>
+                <MenuItem value="json">JSON</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 6, sm: 3, md: 2 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>{t('exportCenter.statusFilter', 'الحالة')}</InputLabel>
+              <Select
+                value={statusFilter}
+                label={t('exportCenter.statusFilter', 'الحالة')}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="all">{t('exportCenter.all', 'الكل')}</MenuItem>
+                <MenuItem value="available">{getStatusLabel('available')}</MenuItem>
+                <MenuItem value="processing">{getStatusLabel('processing')}</MenuItem>
+                <MenuItem value="failed">{getStatusLabel('failed')}</MenuItem>
+                <MenuItem value="expired">{getStatusLabel('expired')}</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
         </Grid>
+      </Paper>
 
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('exportCenter.file', 'الملف')}</TableCell>
-                  <TableCell>{t('exportCenter.report', 'التقرير')}</TableCell>
-                  <TableCell>{t('exportCenter.format', 'الصيغة')}</TableCell>
-                  <TableCell>{t('exportCenter.size', 'الحجم')}</TableCell>
-                  <TableCell>{t('exportCenter.date', 'تاريخ التصدير')}</TableCell>
-                  <TableCell align="center">{t('exportCenter.actions', 'إجراءات')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {allExports.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                      <Typography color="text.secondary">
-                        {t('exportCenter.noData', 'لا توجد ملفات مصدرة')}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  allExports.map((exp, idx) => (
-                    <TableRow key={`${exp.reportId}-${exp.format}-${idx}`} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {formatIcons[exp.format] || <FileIcon />}
-                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                            {exp.fileName}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
-                          {exp.reportTitle || '-'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={formatLabels[exp.format] || exp.format}
-                          size="small"
-                          color={
-                            exp.format === 'pdf'
-                              ? 'error'
-                              : exp.format === 'xlsx'
-                              ? 'success'
-                              : exp.format === 'csv'
-                              ? 'primary'
-                              : 'warning'
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
-                          {formatFileSize(exp.fileSize)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
-                          {formatDate(exp.generatedAt)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                          <Tooltip title="تحميل">
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => handleDownload(exp.fileUrl)}
-                            >
-                              <DownloadIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+      {/* Content */}
+      <Paper sx={{ p: 2 }}>
+        {isError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {t('exportCenter.error', 'حدث خطأ أثناء تحميل الملفات')}
+          </Alert>
         )}
 
-        <TablePagination
-          component="div"
-          count={allExports.length}
-          page={page}
-          onPageChange={(_, p) => setPage(p)}
-          rowsPerPage={limit}
-          onRowsPerPageChange={(e) => { setLimit(Number(e.target.value)); setPage(0); }}
-          labelRowsPerPage="عدد الصفوف"
-        />
+        {isLoading ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} variant="rectangular" height={isMobile ? 120 : 48} />
+            ))}
+          </Box>
+        ) : files.length === 0 && !isError ? (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <FileIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
+              {t('exportCenter.empty.title', 'لا توجد ملفات مصدرة')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('exportCenter.empty.description', 'قم بتصدير تقرير أو بيانات لعرض الملفات هنا')}
+            </Typography>
+          </Box>
+        ) : isMobile ? (
+          renderMobileCards()
+        ) : (
+          renderDesktopTable()
+        )}
+
+        {meta && meta.totalPages > 1 && (
+          <>
+            <Divider sx={{ my: 2 }} />
+            <TablePagination
+              component="div"
+              count={meta.total}
+              page={page}
+              onPageChange={(_, p) => setPage(p)}
+              rowsPerPage={limit}
+              onRowsPerPageChange={(e) => {
+                setLimit(Number(e.target.value));
+                setPage(0);
+              }}
+              labelRowsPerPage={t('table.rowsPerPage', 'عدد الصفوف')}
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}-${to} ${t('exportCenter.of', 'من')} ${count}`
+              }
+            />
+          </>
+        )}
       </Paper>
+
+      {/* Actions Menu */}
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleCloseMenu}>
+        <MenuItem
+          onClick={() => selectedFile && handleDownload(selectedFile)}
+          disabled={!selectedFile?.fileUrl || selectedFile?.status === 'failed'}
+        >
+          <DownloadIcon fontSize="small" sx={{ mr: 1 }} />
+          {t('exportCenter.actions.download', 'تحميل')}
+        </MenuItem>
+        <MenuItem
+          onClick={() => selectedFile && handleDownload(selectedFile)}
+          disabled={!selectedFile?.fileUrl || selectedFile?.status === 'failed'}
+        >
+          <OpenIcon fontSize="small" sx={{ mr: 1 }} />
+          {t('exportCenter.actions.open', 'فتح')}
+        </MenuItem>
+        <MenuItem onClick={() => selectedFile && handleCopyLink(selectedFile)}>
+          <CopyIcon fontSize="small" sx={{ mr: 1 }} />
+          {t('exportCenter.actions.copyLink', 'نسخ الرابط')}
+        </MenuItem>
+      </Menu>
     </Box>
   );
-};
+});

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsEnum, IsDateString, IsArray, IsObject, IsBoolean } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsOptional, IsString, IsEnum, IsDateString, IsArray, IsObject, IsBoolean, IsInt, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { PeriodType } from '../schemas/analytics-snapshot.schema';
 import { ReportType, ReportFormat, ScheduleFrequency } from '../schemas/report-schedule.schema';
 
@@ -12,8 +12,8 @@ export class AnalyticsQueryDto {
     required: false,
   })
   @IsOptional()
-  @IsEnum(PeriodType)
-  period?: PeriodType = PeriodType.MONTHLY;
+  @IsString()
+  period?: PeriodType | string = PeriodType.MONTHLY;
 
   @ApiProperty({
     description: 'تاريخ البداية',
@@ -43,6 +43,28 @@ export class AnalyticsQueryDto {
   @IsOptional()
   @IsBoolean()
   compareWithPrevious?: boolean = false;
+
+  @ApiProperty({
+    description: 'رقم الصفحة',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @ApiProperty({
+    description: 'عدد العناصر في الصفحة',
+    example: 10,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number = 10;
 }
 
 export class ReportGenerationDto {
@@ -200,7 +222,7 @@ export class DashboardDataDto {
     totalOrders: number;
     activeServices: number;
     openSupportTickets: number;
-    systemHealth: number;
+    systemHealth: { status: 'healthy' | 'warning' | 'critical' | 'unknown'; score?: number | null; uptime?: number; responseTime?: number; errorRate?: number; lastCheckedAt?: string; } | null;
   };
 
   @ApiProperty({

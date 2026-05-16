@@ -33,22 +33,24 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-import { CustomerAnalytics } from '../types/analytics.types';
+import { useCustomerAnalytics } from '../hooks/useAnalytics';
+import { asArray } from '../utils/analyticsDataGuards';
+import { formatCurrency, formatNumber } from '../utils/formatters';
+import { translateUserRole } from '../utils/translations';
+import { AnalyticsCardErrorBoundary } from './AnalyticsCardErrorBoundary';
+import { EmptyAnalyticsState } from './EmptyAnalyticsState';
+import { PeriodType } from '../types/analytics.types';
 
 interface CustomerAnalyticsCardProps {
-  data?: CustomerAnalytics;
-  isLoading?: boolean;
-  error?: any;
+  period?: PeriodType;
 }
 
-export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({
-  data,
-  isLoading = false,
-  error,
-}) => {
+export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({ period }) => {
   const theme = useTheme();
   const { t } = useTranslation('analytics');
   const breakpoint = useBreakpoint();
+
+  const { data, isLoading, error } = useCustomerAnalytics({ period });
 
   if (error) {
     return (
@@ -62,11 +64,7 @@ export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({
     return (
       <Card>
         <CardContent sx={{ p: breakpoint.isXs ? 1.5 : 2 }}>
-          <Typography 
-            variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
-            gutterBottom
-            sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
-          >
+          <Typography variant={breakpoint.isXs ? 'subtitle1' : 'h6'} gutterBottom>
             {t('customerAnalytics.title')}
           </Typography>
           <Grid container spacing={breakpoint.isXs ? 1.5 : 2}>
@@ -81,18 +79,8 @@ export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({
     );
   }
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('en-US').format(num);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const customerSegments = asArray(data?.customerSegments).map(({ customerIds, ...safe }) => safe);
+  const topCustomers = asArray(data?.topCustomers);
 
   const COLORS = [
     theme.palette.primary.main,
@@ -114,385 +102,168 @@ export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({
             mb: breakpoint.isXs ? 2 : 3,
           }}
         >
-          <Typography 
-            variant={breakpoint.isXs ? 'h6' : 'h5'} 
-            component="h2"
-            sx={{ fontSize: breakpoint.isXs ? '1.25rem' : undefined }}
-          >
+          <Typography variant={breakpoint.isXs ? 'h6' : 'h5'} component="h2">
             {t('customerAnalytics.title')}
           </Typography>
-          <Chip 
-            icon={<AssessmentIcon />} 
-            label={t('customerAnalytics.comprehensiveAnalysis')} 
-            color="primary" 
+          <Chip
+            icon={<AssessmentIcon />}
+            label={t('customerAnalytics.comprehensiveAnalysis')}
+            color="primary"
             variant="outlined"
             size={breakpoint.isXs ? 'small' : 'medium'}
-            sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
           />
         </Stack>
 
         {/* Key Metrics */}
         <Grid container spacing={breakpoint.isXs ? 1.5 : 3} sx={{ mb: breakpoint.isXs ? 2 : 4 }}>
-          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: breakpoint.isXs ? 1.5 : 2,
-                borderRadius: 2,
-                background: theme.palette.mode === 'dark'
-                  ? `linear-gradient(135deg, ${theme.palette.primary.main}25, ${theme.palette.primary.main}15)`
-                  : `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.primary.main}05)`,
-                border: `1px solid ${theme.palette.primary.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <PeopleIcon 
-                  sx={{ 
-                    color: theme.palette.primary.main, 
-                    mr: 1,
-                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
-                  }} 
-                />
-                <Typography 
-                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
-                  color="primary"
-                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
-                >
-                  {t('customerAnalytics.totalCustomers')}
-                </Typography>
-              </Box>
-              <Typography 
-                variant={breakpoint.isXs ? 'h5' : 'h4'} 
-                sx={{ 
-                  fontWeight: 'bold',
-                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
+          {[
+            {
+              label: t('customerAnalytics.totalCustomers'),
+              value: formatNumber(data?.totalCustomers),
+              growth: data?.totalCustomersGrowth,
+              icon: <PeopleIcon />,
+              color: 'primary' as const,
+            },
+            {
+              label: t('customerAnalytics.newCustomers'),
+              value: formatNumber(data?.newCustomers),
+              growth: data?.newCustomersGrowth,
+              icon: <PersonAddIcon />,
+              color: 'secondary' as const,
+            },
+            {
+              label: t('customerAnalytics.activeCustomers'),
+              value: formatNumber(data?.activeCustomers),
+              growth: data?.activeCustomersGrowth,
+              icon: <PeopleIcon />,
+              color: 'success' as const,
+            },
+            {
+              label: t('customerAnalytics.customerValue'),
+              value: formatCurrency(data?.customerLifetimeValue),
+              growth: data?.customerLifetimeValueGrowth,
+              icon: <AttachMoneyIcon />,
+              color: 'warning' as const,
+            },
+          ].map((kpi, idx) => (
+            <Grid size={{ xs: 6, sm: 6, md: 3 }} key={idx}>
+              <Box
+                sx={{
+                  p: breakpoint.isXs ? 1.5 : 2,
+                  borderRadius: 2,
+                  background: `linear-gradient(135deg, ${theme.palette[kpi.color].main}15, ${theme.palette[kpi.color].main}05)`,
+                  border: `1px solid ${theme.palette[kpi.color].main}20`,
                 }}
               >
-                {formatNumber(data?.totalCustomers || 0)}
-              </Typography>
-              {data?.totalCustomersGrowth !== undefined && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  {data.totalCustomersGrowth >= 0 ? (
-                    <TrendingUpIcon 
-                      sx={{ 
-                        color: theme.palette.success.main, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }} 
-                    />
-                  ) : (
-                    <TrendingDownIcon 
-                      sx={{ 
-                        color: theme.palette.error.main, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }} 
-                    />
-                  )}
-                  <Typography 
-                    variant="body2" 
-                    color={data.totalCustomersGrowth >= 0 ? 'success.main' : 'error.main'}
-                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
-                  >
-                    {data.totalCustomersGrowth >= 0 ? '+' : ''}{data.totalCustomersGrowth.toFixed(1)}% {t('customerAnalytics.fromPreviousPeriod')}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  {React.cloneElement(kpi.icon, {
+                    sx: { color: theme.palette[kpi.color].main, mr: 1, fontSize: breakpoint.isXs ? '1.25rem' : undefined },
+                  })}
+                  <Typography variant={breakpoint.isXs ? 'subtitle2' : 'h6'} color={`${kpi.color}.main`}>
+                    {kpi.label}
                   </Typography>
                 </Box>
-              )}
-            </Box>
-          </Grid>
-
-          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: breakpoint.isXs ? 1.5 : 2,
-                borderRadius: 2,
-                background: theme.palette.mode === 'dark'
-                  ? `linear-gradient(135deg, ${theme.palette.secondary.main}25, ${theme.palette.secondary.main}15)`
-                  : `linear-gradient(135deg, ${theme.palette.secondary.main}15, ${theme.palette.secondary.main}05)`,
-                border: `1px solid ${theme.palette.secondary.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <PersonAddIcon 
-                  sx={{ 
-                    color: theme.palette.secondary.main, 
-                    mr: 1,
-                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
-                  }} 
-                />
-                <Typography 
-                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
-                  color="secondary"
-                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
-                >
-                  {t('customerAnalytics.newCustomers')}
+                <Typography variant={breakpoint.isXs ? 'h5' : 'h4'} sx={{ fontWeight: 'bold' }}>
+                  {kpi.value}
                 </Typography>
+                {kpi.growth !== undefined && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                    {kpi.growth >= 0 ? (
+                      <TrendingUpIcon sx={{ color: 'success.main', fontSize: breakpoint.isXs ? 14 : 16, mr: 0.5 }} />
+                    ) : (
+                      <TrendingDownIcon sx={{ color: 'error.main', fontSize: breakpoint.isXs ? 14 : 16, mr: 0.5 }} />
+                    )}
+                    <Typography variant="body2" color={kpi.growth >= 0 ? 'success.main' : 'error.main'}>
+                      {kpi.growth >= 0 ? '+' : ''}{Number(kpi.growth).toFixed(1)}%
+                    </Typography>
+                  </Box>
+                )}
               </Box>
-              <Typography 
-                variant={breakpoint.isXs ? 'h5' : 'h4'} 
-                sx={{ 
-                  fontWeight: 'bold',
-                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
-                }}
-              >
-                {formatNumber(data?.newCustomers || 0)}
-              </Typography>
-              {data?.newCustomersGrowth !== undefined && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  {data.newCustomersGrowth >= 0 ? (
-                    <TrendingUpIcon 
-                      sx={{ 
-                        color: theme.palette.success.main, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }} 
-                    />
-                  ) : (
-                    <TrendingDownIcon 
-                      sx={{ 
-                        color: theme.palette.error.main, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }} 
-                    />
-                  )}
-                  <Typography 
-                    variant="body2" 
-                    color={data.newCustomersGrowth >= 0 ? 'success.main' : 'error.main'}
-                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
-                  >
-                    {data.newCustomersGrowth >= 0 ? '+' : ''}{data.newCustomersGrowth.toFixed(1)}% {t('customerAnalytics.fromPreviousPeriod')}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </Grid>
-
-          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: breakpoint.isXs ? 1.5 : 2,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.success.main}15, ${theme.palette.success.main}05)`,
-                border: `1px solid ${theme.palette.success.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <PeopleIcon 
-                  sx={{ 
-                    color: theme.palette.success.main, 
-                    mr: 1,
-                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
-                  }} 
-                />
-                <Typography 
-                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
-                  color="success.main"
-                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
-                >
-                  {t('customerAnalytics.activeCustomers')}
-                </Typography>
-              </Box>
-              <Typography 
-                variant={breakpoint.isXs ? 'h5' : 'h4'} 
-                sx={{ 
-                  fontWeight: 'bold',
-                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
-                }}
-              >
-                {formatNumber(data?.activeCustomers || 0)}
-              </Typography>
-              {data?.activeCustomersGrowth !== undefined && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  {data.activeCustomersGrowth >= 0 ? (
-                    <TrendingUpIcon 
-                      sx={{ 
-                        color: theme.palette.success.main, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }} 
-                    />
-                  ) : (
-                    <TrendingDownIcon 
-                      sx={{ 
-                        color: theme.palette.error.main, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }} 
-                    />
-                  )}
-                  <Typography 
-                    variant="body2" 
-                    color={data.activeCustomersGrowth >= 0 ? 'success.main' : 'error.main'}
-                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
-                  >
-                    {data.activeCustomersGrowth >= 0 ? '+' : ''}{data.activeCustomersGrowth.toFixed(1)}% {t('customerAnalytics.fromPreviousPeriod')}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </Grid>
-
-          <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-            <Box
-              sx={{
-                p: breakpoint.isXs ? 1.5 : 2,
-                borderRadius: 2,
-                background: `linear-gradient(135deg, ${theme.palette.warning.main}15, ${theme.palette.warning.main}05)`,
-                border: `1px solid ${theme.palette.warning.main}20`,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <AttachMoneyIcon 
-                  sx={{ 
-                    color: theme.palette.warning.main, 
-                    mr: 1,
-                    fontSize: breakpoint.isXs ? '1.25rem' : undefined,
-                  }} 
-                />
-                <Typography 
-                  variant={breakpoint.isXs ? 'subtitle2' : 'h6'} 
-                  color="warning.main"
-                  sx={{ fontSize: breakpoint.isXs ? '0.875rem' : undefined }}
-                >
-                  {t('customerAnalytics.customerValue')}
-                </Typography>
-              </Box>
-              <Typography 
-                variant={breakpoint.isXs ? 'h5' : 'h4'} 
-                sx={{ 
-                  fontWeight: 'bold',
-                  fontSize: breakpoint.isXs ? '1.5rem' : undefined,
-                }}
-              >
-                {formatCurrency(data?.customerLifetimeValue || 0)}
-              </Typography>
-              {data?.customerLifetimeValueGrowth !== undefined && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  {data.customerLifetimeValueGrowth >= 0 ? (
-                    <TrendingUpIcon 
-                      sx={{ 
-                        color: theme.palette.success.main, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }} 
-                    />
-                  ) : (
-                    <TrendingDownIcon 
-                      sx={{ 
-                        color: theme.palette.error.main, 
-                        fontSize: breakpoint.isXs ? 14 : 16, 
-                        mr: 0.5 
-                      }} 
-                    />
-                  )}
-                  <Typography 
-                    variant="body2" 
-                    color={data.customerLifetimeValueGrowth >= 0 ? 'success.main' : 'error.main'}
-                    sx={{ fontSize: breakpoint.isXs ? '0.75rem' : undefined }}
-                  >
-                    {data.customerLifetimeValueGrowth >= 0 ? '+' : ''}{data.customerLifetimeValueGrowth.toFixed(1)}% {t('customerAnalytics.fromPreviousPeriod')}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </Grid>
+            </Grid>
+          ))}
         </Grid>
 
         {/* Charts */}
         <Grid container spacing={breakpoint.isXs ? 2 : 3}>
-          {/* Customer Segments */}
           <Grid size={{ xs: 12, lg: 6 }}>
-            <Box 
-              sx={{ 
-                p: breakpoint.isXs ? 1.5 : 2, 
-                border: `1px solid ${theme.palette.divider}`, 
-                borderRadius: 2 
-              }}
-            >
-              <Typography 
-                variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
-                gutterBottom
-                sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
-              >
-                {t('customerAnalytics.customerSegments')}
-              </Typography>
-              <ResponsiveContainer width="100%" height={breakpoint.isXs ? 250 : 300}>
-                <PieChart>
-                  <Pie
-                    data={data?.customerSegments || []}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ segment, percentage }) => `${segment}: ${percentage}%`}
-                    outerRadius={breakpoint.isXs ? 60 : 80}
-                    fill="#8884d8"
-                    dataKey="count"
-                  >
-                    {(data?.customerSegments || []).map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{
-                      fontSize: breakpoint.isXs ? '12px' : '14px',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
+            <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض شرائح العملاء">
+              <Box sx={{ p: breakpoint.isXs ? 1.5 : 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                <Typography variant={breakpoint.isXs ? 'subtitle1' : 'h6'} gutterBottom>
+                  {t('customerAnalytics.customerSegments')}
+                </Typography>
+                {customerSegments.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={breakpoint.isXs ? 250 : 300}>
+                    <PieChart>
+                      <Pie
+                        data={customerSegments}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ segment, percentage }: any) => `${translateUserRole(segment)}: ${percentage}%`}
+                        outerRadius={breakpoint.isXs ? 60 : 80}
+                        fill="#8884d8"
+                        dataKey="count"
+                      >
+                        {customerSegments.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ fontSize: breakpoint.isXs ? '12px' : '14px', direction: 'rtl', textAlign: 'right' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyAnalyticsState title="لا توجد بيانات" description="لا توجد شرائح عملاء." />
+                )}
+              </Box>
+            </AnalyticsCardErrorBoundary>
           </Grid>
 
-          {/* Top Customers */}
           <Grid size={{ xs: 12, lg: 6 }}>
-            <Box 
-              sx={{ 
-                p: breakpoint.isXs ? 1.5 : 2, 
-                border: `1px solid ${theme.palette.divider}`, 
-                borderRadius: 2 
-              }}
-            >
-              <Typography 
-                variant={breakpoint.isXs ? 'subtitle1' : 'h6'} 
-                gutterBottom
-                sx={{ fontSize: breakpoint.isXs ? '1rem' : undefined }}
-              >
-                {t('customerAnalytics.topCustomers')}
-              </Typography>
-              <ResponsiveContainer width="100%" height={breakpoint.isXs ? 250 : 300}>
-                <BarChart 
-                  data={data?.topCustomers || []}
-                  margin={{ 
-                    top: 5, 
-                    right: breakpoint.isXs ? 10 : 30, 
-                    left: breakpoint.isXs ? 0 : 20, 
-                    bottom: breakpoint.isXs ? 0 : 5 
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fontSize: breakpoint.isXs ? 10 : 12 }}
-                    angle={breakpoint.isXs ? -45 : 0}
-                    textAnchor={breakpoint.isXs ? 'end' : 'middle'}
-                    height={breakpoint.isXs ? 60 : undefined}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: breakpoint.isXs ? 10 : 12 }}
-                    width={breakpoint.isXs ? 40 : undefined}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      fontSize: breakpoint.isXs ? '12px' : '14px',
-                    }}
-                    formatter={(value: number, name: string) => [
-                      name === 'orders' ? formatNumber(value) : formatCurrency(value),
-                      name === 'orders' ? t('customerAnalytics.orders') : t('customerAnalytics.totalSpending'),
-                    ]}
-                  />
-                  <Bar dataKey="orders" fill={theme.palette.primary.main} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
+            <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض أفضل العملاء">
+              <Box sx={{ p: breakpoint.isXs ? 1.5 : 2, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                <Typography variant={breakpoint.isXs ? 'subtitle1' : 'h6'} gutterBottom>
+                  {t('customerAnalytics.topCustomers')}
+                </Typography>
+                {topCustomers.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={breakpoint.isXs ? 250 : 300}>
+                    <BarChart
+                      data={topCustomers}
+                      margin={{
+                        top: 5,
+                        right: breakpoint.isXs ? 10 : 30,
+                        left: breakpoint.isXs ? 0 : 20,
+                        bottom: breakpoint.isXs ? 0 : 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: breakpoint.isXs ? 10 : 12 }}
+                        angle={breakpoint.isXs ? -45 : 0}
+                        textAnchor={breakpoint.isXs ? 'end' : 'middle'}
+                        height={breakpoint.isXs ? 60 : undefined}
+                      />
+                      <YAxis
+                        tick={{ fontSize: breakpoint.isXs ? 10 : 12 }}
+                        width={breakpoint.isXs ? 40 : undefined}
+                      />
+                      <Tooltip
+                        contentStyle={{ fontSize: breakpoint.isXs ? '12px' : '14px', direction: 'rtl', textAlign: 'right' }}
+                        formatter={(value: number, name: string) => [
+                          name === 'orders' ? formatNumber(value) : formatCurrency(value),
+                          name === 'orders' ? 'الطلبات' : 'إجمالي الإنفاق',
+                        ]}
+                      />
+                      <Bar dataKey="orders" fill={theme.palette.primary.main} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <EmptyAnalyticsState title="لا توجد بيانات" description="لا يوجد عملاء مميزون." />
+                )}
+              </Box>
+            </AnalyticsCardErrorBoundary>
           </Grid>
         </Grid>
       </CardContent>

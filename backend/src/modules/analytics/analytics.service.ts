@@ -7,8 +7,8 @@ import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
 /**
  * Analytics Service
  * 
- * NOTE: All monetary values are in USD (US Dollars)
- * All revenue, pricing, and financial calculations use USD as the base currency
+ * NOTE: All monetary values are in YER (Yemeni Rial). The default currency for the system is YER.
+ * All revenue, pricing, and financial calculations use YER as the base currency.
  */
 import {
   AnalyticsSnapshot,
@@ -182,7 +182,7 @@ export class AnalyticsService {
 
     this.logger.debug('Dashboard data cache miss');
 
-    const period = query.period || PeriodType.MONTHLY;
+    const period = (query.period || PeriodType.MONTHLY) as PeriodType;
     const { startDate } = this.getDateRange(new Date(), period);
 
     // ثبّت التاريخ (بداية اليوم UTC) حتى يطابق المستند
@@ -195,7 +195,7 @@ export class AnalyticsService {
     // جرّب توليد السناپشوت لكن بمهلة 3s
     try {
       await Promise.race([
-        this.generateAnalyticsSnapshot(snapshotDate, period),
+        this.generateAnalyticsSnapshot(snapshotDate, period as PeriodType),
         new Promise((_, rej) => setTimeout(() => rej(new Error('SNAPSHOT_TIMEOUT')), 3000))
       ]).catch(() => this.logger.warn('Snapshot generation timed out — serving last available snapshot'));
     } catch (error) {
@@ -252,7 +252,7 @@ export class AnalyticsService {
     this.logger.debug(`calculateKPIs took ${Date.now() - t0}ms`);
 
     // Calculate system health from actual performance metrics
-    let systemHealth: number | null = null;
+    let systemHealth: DashboardDataDto['overview']['systemHealth'] = null;
     try {
       const performanceMetrics = await this.calculatePerformanceMetrics();
       // Calculate health based on performance metrics
@@ -273,7 +273,21 @@ export class AnalyticsService {
       if (performanceMetrics.cpuUsage > 90) health -= 10;
       if (performanceMetrics.diskUsage > 90) health -= 10;
       
-      systemHealth = Math.max(0, Math.min(100, health));
+      const score = Math.max(0, Math.min(100, health));
+      let status: 'healthy' | 'warning' | 'critical' | 'unknown';
+      if (score >= 80) status = 'healthy';
+      else if (score >= 50) status = 'warning';
+      else if (score >= 1) status = 'critical';
+      else status = 'unknown';
+      
+      systemHealth = {
+        status,
+        score,
+        uptime: performanceMetrics.uptime,
+        responseTime: performanceMetrics.apiResponseTime,
+        errorRate: performanceMetrics.errorRate,
+        lastCheckedAt: new Date().toISOString(),
+      };
     } catch (error) {
       this.logger.warn('Failed to calculate system health from performance metrics', error);
       systemHealth = null;
@@ -286,7 +300,7 @@ export class AnalyticsService {
         totalOrders,
         activeServices,
         openSupportTickets,
-        systemHealth: systemHealth ?? 100, // Fallback to 100 if calculation fails
+        systemHealth,
       },
       revenueCharts: await this.buildRevenueCharts(),
       userCharts: await this.buildUserCharts(),
@@ -1649,7 +1663,7 @@ export class AnalyticsService {
       startDate = parseISO(query.startDate);
       endDate = parseISO(query.endDate);
     } else {
-      const range = this.getDateRange(now, query.period || PeriodType.MONTHLY);
+      const range = this.getDateRange(now, (query.period || PeriodType.MONTHLY) as PeriodType);
       startDate = range.startDate;
       endDate = range.endDate;
     }
