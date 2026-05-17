@@ -1403,14 +1403,23 @@ if (!offer) return { error: 'OFFER_NOT_FOUND' };
         { $set: { status: 'OUTBID' } },
       );
 
+      const acceptedAmount = offer.amount ?? 0;
+      const acceptedCurrency = offer.currency || 'YER';
+
       // إرسال إشعارات للمهندسين الذين تم رفض عروضهم بسبب قبول عرض آخر
       for (const otherOffer of otherOffers) {
         await this.safeNotify(
           String(otherOffer.engineerId),
           NotificationType.OFFER_REJECTED,
           'تم قبول عرض آخر',
-          `تم قبول عرض آخر للطلب ${String(r._id)}. تم إيقاف عرضك.`,
-          { requestId: String(r._id), offerId: String(otherOffer._id) },
+          `تم قبول عرض آخر بمبلغ ${acceptedAmount} ${acceptedCurrency}`,
+          {
+            requestId: String(r._id),
+            offerId: String(otherOffer._id),
+            acceptedOfferAmount: acceptedAmount,
+            acceptedOfferCurrency: acceptedCurrency,
+            acceptedOfferIsFree: offer.isFreeOffer === true,
+          },
           NotificationNavigationType.SERVICE_REQUEST,
           String(r._id),
         );
@@ -2087,7 +2096,44 @@ const formattedOffer: OfferListItem = {
       }
     }
 
-    return this.offers.find(query).populate('requestId').sort({ createdAt: -1 }).lean();
+    const offers = await this.offers
+      .find(query)
+      .populate('requestId')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return offers.map((offer: any) => {
+      const request = offer.requestId;
+      const acceptedOffer = request?.acceptedOffer;
+      const isOutbid = offer.status === 'OUTBID';
+
+      return {
+        ...offer,
+        requestId:
+          request && typeof request === 'object' && request._id
+            ? String(request._id)
+            : String(offer.requestId),
+        request:
+          request && typeof request === 'object'
+            ? {
+                id: String(request._id),
+                title: request.title ?? null,
+                status: request.status ?? null,
+                statusLabel: request.status ? this.requestStatusLabel(request.status) : null,
+                city: request.city ?? null,
+              }
+            : null,
+        statusLabel: this.offerStatusLabel(offer.status),
+        acceptedAlternativeOffer:
+          isOutbid && acceptedOffer
+            ? {
+                amount: acceptedOffer.amount ?? 0,
+                currency: acceptedOffer.currency || 'YER',
+                isFreeOffer: acceptedOffer.isFreeOffer === true,
+              }
+            : null,
+      };
+    });
   }
 
   // جلب تفاصيل الطلب للمهندس
@@ -2159,6 +2205,14 @@ const formattedOffer: OfferListItem = {
             statusLabel: this.offerStatusLabel(engineerOffer.status),
             distanceKm: engineerOffer.distanceKm ?? null,
             createdAt: engineerOffer.createdAt,
+            acceptedAlternativeOffer:
+              engineerOffer.status === 'OUTBID' && request.acceptedOffer
+                ? {
+                    amount: request.acceptedOffer.amount ?? 0,
+                    currency: request.acceptedOffer.currency || 'YER',
+                    isFreeOffer: request.acceptedOffer.isFreeOffer === true,
+                  }
+                : null,
           }
         : null,
     };
@@ -3450,11 +3504,39 @@ if (!offer) return { error: 'OFFER_NOT_FOUND' };
     offer.status = 'ACCEPTED';
     await offer.save();
 
-    // رفض جميع العروض الأخرى
+    const otherOffers = await this.offers.find({
+      requestId: r._id,
+      _id: { $ne: offer._id },
+      status: 'OFFERED',
+    });
+
+    // تحويل جميع العروض الأخرى إلى OUTBID لأن عرضاً آخر تم قبوله
     await this.offers.updateMany(
       { requestId: r._id, _id: { $ne: offer._id }, status: 'OFFERED' },
-      { $set: { status: 'REJECTED' } },
+      { $set: { status: 'OUTBID' } },
     );
+
+    const acceptedAmount = offer.amount ?? 0;
+    const acceptedCurrency = offer.currency || 'YER';
+
+    for (const otherOffer of otherOffers) {
+      await this.safeNotify(
+        String(otherOffer.engineerId),
+        NotificationType.OFFER_REJECTED,
+        'تم قبول عرض آخر',
+        `تم قبول عرض آخر بمبلغ ${acceptedAmount} ${acceptedCurrency}`,
+        {
+          requestId: String(r._id),
+          offerId: String(otherOffer._id),
+          acceptedOfferAmount: acceptedAmount,
+          acceptedOfferCurrency: acceptedCurrency,
+          acceptedOfferIsFree: offer.isFreeOffer === true,
+          acceptedBy: 'admin',
+        },
+        NotificationNavigationType.SERVICE_REQUEST,
+        String(r._id),
+      );
+    }
 
     // إرسال إشعار للمهندس
     await this.safeNotify(
