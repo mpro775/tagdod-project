@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Grid,
@@ -26,7 +26,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useDashboard, useRefreshAnalytics } from '../hooks/useAnalytics';
-import { mapAnalyticsDashboard } from '../utils/analyticsDashboardMappers';
 import { formatCurrency, formatNumber, formatPercent } from '../utils/formatters';
 import { PeriodType } from '../types/analytics.types';
 
@@ -45,10 +44,8 @@ export const AnalyticsDashboardPage: React.FC = () => {
   const { isMobile } = useBreakpoint();
   const [period, setPeriod] = useState<PeriodType>(PeriodType.MONTHLY);
 
-  const { data: dashboardData, isLoading } = useDashboard({ period });
+  const { data: view, isLoading } = useDashboard({ period });
   const { mutate: refresh, isPending: isRefreshing } = useRefreshAnalytics();
-
-  const view = useMemo(() => mapAnalyticsDashboard(dashboardData), [dashboardData]);
 
   if (isLoading) {
     return (

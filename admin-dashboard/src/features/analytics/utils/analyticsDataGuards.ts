@@ -18,7 +18,16 @@ export type PaginatedResponse<T> = {
 };
 
 export const unwrapApiData = <T = any>(response: any): T => {
-  return response?.data?.data ?? response?.data ?? response;
+  // Handle double-wrapped responses:
+  // response.data = { success, data: { success, data: {...}, requestId }, requestId }
+  const outerData = response?.data ?? response;
+  const innerData = outerData?.data ?? outerData;
+  // If innerData has its own data property (double-wrapped), return it
+  if (innerData?.data !== undefined && innerData?.success !== undefined) {
+    return innerData.data;
+  }
+  // Otherwise return innerData (single-wrapped or already unwrapped)
+  return innerData;
 };
 
 export const unwrapNestedApiData = <T = any>(response: any): T => {
