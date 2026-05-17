@@ -1,6 +1,48 @@
 import { asArray, toNumber } from './analyticsDataGuards';
 
-export const mapAnalyticsDashboard = (data: any) => {
+export interface MappedDashboardData {
+  overview: {
+    totalUsers: number;
+    totalRevenue: number;
+    totalOrders: number;
+    activeServices: number;
+    openSupportTickets: number;
+    systemHealth: null | {
+      status: 'healthy' | 'warning' | 'critical' | 'unknown';
+      score?: number | null;
+      uptime?: number;
+      responseTime?: number;
+      errorRate?: number;
+      lastCheckedAt?: string;
+    };
+  };
+  kpis: {
+    revenueGrowth: number;
+    customerSatisfaction: number;
+    orderConversion: number;
+    serviceEfficiency: number;
+    supportResolution: number;
+    systemUptime: number;
+  };
+  revenueDaily: Array<{ date: string; revenue: number; orders: number }>;
+  revenueMonthly: Array<{ month: string; date: string; revenue: number; growth: number }>;
+  revenueByCategory: Array<any>;
+  userRegistrationTrend: Array<{ date: string; newUsers: number; activeUsers: number }>;
+  userTypes: Array<{ type: string; name: string; count: number; value: number; percentage: number }>;
+  geographic: Array<any>;
+  topProducts: Array<{ name: string; product: string; sold: number; sales: number; revenue: number }>;
+  categoryPerformance: Array<any>;
+  stockAlerts: Array<any>;
+  serviceRequests: Array<{ date: string; requests: number; completed: number }>;
+  engineerPerformance: Array<any>;
+  responseTimes: { average: number; target: number; trend: Array<{ index: number; value: number; hours: number }> };
+  supportTickets: Array<{ date: string; new: number; newTickets: number; resolved: number }>;
+  supportCategories: Array<{ category: string; name: string; count: number; value: number; avgResolutionTime: number }>;
+  agentPerformance: Array<any>;
+  raw: any;
+}
+
+export const mapAnalyticsDashboard = (data: any): MappedDashboardData => {
   const overview = data?.overview ?? {};
   const kpis = data?.kpis ?? {};
 
@@ -13,7 +55,14 @@ export const mapAnalyticsDashboard = (data: any) => {
       openSupportTickets: toNumber(overview.openSupportTickets),
       systemHealth: overview.systemHealth === null || overview.systemHealth === undefined
         ? null
-        : toNumber(overview.systemHealth),
+        : {
+            status: overview.systemHealth.status ?? 'unknown',
+            score: toNumber(overview.systemHealth.score),
+            uptime: toNumber(overview.systemHealth.uptime),
+            responseTime: toNumber(overview.systemHealth.responseTime),
+            errorRate: toNumber(overview.systemHealth.errorRate),
+            lastCheckedAt: overview.systemHealth.lastCheckedAt,
+          },
     },
 
     kpis: {

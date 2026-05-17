@@ -47,7 +47,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
   const { data: view, isLoading } = useDashboard({ period });
   const { mutate: refresh, isPending: isRefreshing } = useRefreshAnalytics();
 
-  if (isLoading) {
+  if (isLoading || !view) {
     return (
       <Box
         sx={{
@@ -194,7 +194,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
             value={
               view.overview.systemHealth === null
                 ? 'غير متاح'
-                : formatPercent(view.overview.systemHealth ?? 0)
+                : `${view.overview.systemHealth.status}`
             }
             change={view.kpis.systemUptime}
             icon={<SpeedIcon sx={{ fontSize: isMobile ? 24 : 28, color: 'secondary.main' }} />}

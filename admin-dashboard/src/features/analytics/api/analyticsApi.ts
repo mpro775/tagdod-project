@@ -23,6 +23,7 @@ import type {
   ScheduleStats,
   ListSchedulesParams,
 } from '../types/analytics.types';
+import type { MappedDashboardData } from '../utils/analyticsDashboardMappers';
 import type { ExportFile, ExportFilesParams, ExportDataParams } from '../types/exports';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 
@@ -55,12 +56,12 @@ export const analyticsApi = {
   /**
    * Get dashboard data
    */
-  getDashboard: async (params: AnalyticsQueryDto = {}): Promise<DashboardData> => {
+  getDashboard: async (params: AnalyticsQueryDto = {}): Promise<MappedDashboardData> => {
     const response = await apiClient.get<ApiResponse<DashboardData>>(
       '/analytics/dashboard',
       { params }
     );
-    return mapAnalyticsDashboard(unwrapApiData(response)) as unknown as DashboardData;
+    return mapAnalyticsDashboard(unwrapApiData(response)) as MappedDashboardData;
   },
 
   /**
