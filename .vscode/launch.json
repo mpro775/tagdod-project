@@ -5,10 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "tagadod_app",
+            "name": "App (Production)",
             "cwd": "tagadod_app",
             "request": "launch",
             "type": "dart"
+        },
+        {
+            "name": "App (Staging)",
+            "cwd": "tagadod_app",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "--dart-define",
+                "BASE_URL=https://api-stg.allawzi.net/api/v1"
+            ]
         },
         {
             "name": "tagadod_app (profile mode)",
