@@ -1,12 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/core/api/client';
 
+// Helper to unwrap double-wrapped API responses
+// response.data = { success, data: { success, data: {...}, requestId }, requestId }
+const unwrapData = (response: any) => {
+  const outerData = response.data;
+  const innerEnvelope = outerData?.data;
+  return innerEnvelope?.data ?? innerEnvelope ?? outerData;
+};
+
 // Hook for dashboard overview data
 export const useDashboardOverview = () =>
   useQuery({
     queryKey: ['dashboard-overview'],
-    queryFn: async () => (await apiClient.get('/analytics/dashboard')).data, // {success,data,requestId}
-    select: (env) => env.data, // ارجع DTO مباشرة
+    queryFn: async () => {
+      const response = await apiClient.get('/analytics/dashboard');
+      // Extract the actual dashboard data from double-wrapped response
+      return unwrapData(response);
+    },
     staleTime: 5 * 60 * 1000,
     retry: 1,
     refetchOnWindowFocus: false,
@@ -19,8 +30,8 @@ export const useRecentOrders = (limit: number = 5) => {
     queryFn: async () => {
       const response = await apiClient.get(`/admin/orders?limit=${limit}&page=1`);
       // الباك إند يرجع { orders: [...], pagination: {...}, message: '...' } داخل data
-      // response.data = { success: true, data: { orders: [...], pagination: {...} }, requestId: '...' }
-      const responseData = response.data.data;
+      // response.data = { success: true, data: { success: true, data: { orders: [...], pagination: {...} }, requestId }, requestId }
+      const responseData = unwrapData(response);
       // إذا كان responseData مصفوفة مباشرة (legacy format)
       if (Array.isArray(responseData)) {
         return responseData;
@@ -41,7 +52,7 @@ export const useQuickStats = () => {
     queryKey: ['quick-stats'],
     queryFn: async () => {
       const response = await apiClient.get('/analytics/advanced/quick-stats');
-      return response.data.data;
+      return unwrapData(response);
     },
     staleTime: 1 * 60 * 1000, // 1 minute
   });
@@ -53,7 +64,7 @@ export const useRealTimeMetrics = () => {
     queryKey: ['realtime-metrics'],
     queryFn: async () => {
       const response = await apiClient.get('/analytics/advanced/realtime');
-      return response.data.data;
+      return unwrapData(response);
     },
     staleTime: 30 * 1000, // 30 seconds
     refetchInterval: 30 * 1000, // Auto refresh every 30 seconds
@@ -66,7 +77,7 @@ export const useProductsCount = () => {
     queryKey: ['products-count'],
     queryFn: async () => {
       const response = await apiClient.get('/products/stats/count');
-      return response.data.data;
+      return unwrapData(response);
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -78,7 +89,7 @@ export const useTopProducts = () => {
     queryKey: ['top-products'],
     queryFn: async () => {
       const response = await apiClient.get('/analytics/advanced/products/performance');
-      return response.data.data;
+      return unwrapData(response);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -91,8 +102,7 @@ export const useSalesAnalytics = () => {
     queryFn: async () => {
       try {
         const response = await apiClient.get('/analytics/advanced/sales');
-        // response.data = { success: true, data: {...}, requestId: '...' }
-        const data = response.data?.data;
+        const data = unwrapData(response);
         
         // Debug logging
         if (process.env.NODE_ENV === 'development') {
