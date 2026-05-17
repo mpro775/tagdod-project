@@ -105,7 +105,7 @@ export const normalizePaginatedResponse = <T = any>(
   mapper: (item: any) => T,
   fallback?: Partial<PaginationMeta>
 ): PaginatedResponse<T> => {
-  const unwrapped = payload?.data?.data ?? payload?.data ?? payload;
+  const unwrapped = payload?.data?.data?.data ?? payload?.data?.data ?? payload?.data ?? payload;
 
   const rowsRaw = Array.isArray(unwrapped)
     ? unwrapped
