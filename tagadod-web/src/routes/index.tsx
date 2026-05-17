@@ -113,8 +113,8 @@ const PolicyPage = lazy(() =>
 
 // Products & search
 const ProductPage = lazy(() =>
-  import("../features/product/ProductPage").then((m) => ({
-    default: m.ProductPage,
+  import("../features/product/details/ProductDetailsPage").then((m) => ({
+    default: m.ProductDetailsPage,
   })),
 );
 const SearchPage = lazy(() =>

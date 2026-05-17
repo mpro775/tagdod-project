@@ -519,6 +519,81 @@
       "rights": "All rights reserved"
     }
   },
+  "productDetails": {
+    "breadcrumb": {
+      "home": "Home",
+      "products": "Products",
+      "categories": "Categories"
+    },
+    "actions": {
+      "addToCart": "Add to Cart",
+      "buyNow": "Buy Now",
+      "addToFavorites": "Add to Favorites",
+      "removeFromFavorites": "Remove from Favorites",
+      "share": "Share Product",
+      "retry": "Retry",
+      "backToProducts": "Back to Products",
+      "backHome": "Back Home"
+    },
+    "labels": {
+      "sku": "SKU",
+      "brand": "Brand",
+      "category": "Category",
+      "availability": "Availability",
+      "quantity": "Quantity",
+      "price": "Price",
+      "selectVariant": "Select option",
+      "selectedVariant": "Selected option"
+    },
+    "stock": {
+      "inStock": "In Stock",
+      "outOfStock": "Out of Stock",
+      "lowStock": "Low Stock"
+    },
+    "tabs": {
+      "description": "Description",
+      "specifications": "Specifications",
+      "shippingReturns": "Shipping & Returns",
+      "reviews": "Reviews",
+      "faq": "FAQ"
+    },
+    "trust": {
+      "warranty": {
+        "title": "Reliable Warranty",
+        "subtitle": "Warranty details depend on product type."
+      },
+      "delivery": {
+        "title": "Delivery Available",
+        "subtitle": "Delivery options depend on the city."
+      },
+      "returns": {
+        "title": "Return Policy",
+        "subtitle": "Contact us to learn about return conditions."
+      },
+      "support": {
+        "title": "Technical Support",
+        "subtitle": "We help you choose the right product."
+      }
+    },
+    "sections": {
+      "relatedProducts": "Related Products",
+      "recentlyViewed": "Recently Viewed",
+      "youMayLike": "You May Also Like"
+    },
+    "states": {
+      "loading": "Loading product...",
+      "notFoundTitle": "Product not found",
+      "notFoundSubtitle": "The product may have been removed or its link changed.",
+      "errorTitle": "Could not load product",
+      "errorSubtitle": "An error occurred while fetching product details. Please try again.",
+      "noDescription": "No description is available for this product.",
+      "noSpecifications": "No specifications are available for this product.",
+      "selectRequiredOptions": "Please select the required options before adding to cart."
+    },
+    "shippingReturns": {
+      "text": "Shipping and return options vary depending on the city and product type. Contact us for more details."
+    }
+  },
   "policy": {
     "privacyPolicy": "Privacy Policy",
     "termsAndConditions": "Terms & Conditions",

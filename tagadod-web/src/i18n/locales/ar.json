@@ -519,6 +519,81 @@
       "rights": "جميع الحقوق محفوظة"
     }
   },
+  "productDetails": {
+    "breadcrumb": {
+      "home": "الرئيسية",
+      "products": "المنتجات",
+      "categories": "التصنيفات"
+    },
+    "actions": {
+      "addToCart": "أضف للسلة",
+      "buyNow": "اشترِ الآن",
+      "addToFavorites": "إضافة للمفضلة",
+      "removeFromFavorites": "إزالة من المفضلة",
+      "share": "مشاركة المنتج",
+      "retry": "إعادة المحاولة",
+      "backToProducts": "العودة للمنتجات",
+      "backHome": "العودة للرئيسية"
+    },
+    "labels": {
+      "sku": "رمز المنتج",
+      "brand": "البراند",
+      "category": "التصنيف",
+      "availability": "التوفر",
+      "quantity": "الكمية",
+      "price": "السعر",
+      "selectVariant": "اختر الخيار",
+      "selectedVariant": "الخيار المحدد"
+    },
+    "stock": {
+      "inStock": "متوفر",
+      "outOfStock": "غير متوفر",
+      "lowStock": "كمية محدودة"
+    },
+    "tabs": {
+      "description": "الوصف",
+      "specifications": "المواصفات",
+      "shippingReturns": "الشحن والاسترجاع",
+      "reviews": "التقييمات",
+      "faq": "الأسئلة الشائعة"
+    },
+    "trust": {
+      "warranty": {
+        "title": "ضمان موثوق",
+        "subtitle": "تفاصيل الضمان حسب نوع المنتج."
+      },
+      "delivery": {
+        "title": "توصيل متاح",
+        "subtitle": "خيارات توصيل مناسبة حسب المدينة."
+      },
+      "returns": {
+        "title": "سياسة استرجاع",
+        "subtitle": "تواصل معنا لمعرفة شروط الاسترجاع."
+      },
+      "support": {
+        "title": "دعم فني",
+        "subtitle": "نساعدك في اختيار المنتج المناسب."
+      }
+    },
+    "sections": {
+      "relatedProducts": "منتجات مشابهة",
+      "recentlyViewed": "شوهدت مؤخرًا",
+      "youMayLike": "قد يعجبك أيضًا"
+    },
+    "states": {
+      "loading": "جاري تحميل المنتج...",
+      "notFoundTitle": "المنتج غير موجود",
+      "notFoundSubtitle": "ربما تم حذف المنتج أو تغيير رابطه.",
+      "errorTitle": "تعذر تحميل المنتج",
+      "errorSubtitle": "حدث خطأ أثناء جلب بيانات المنتج. حاول مرة أخرى.",
+      "noDescription": "لا يوجد وصف متاح لهذا المنتج.",
+      "noSpecifications": "لا توجد مواصفات متاحة لهذا المنتج.",
+      "selectRequiredOptions": "يرجى اختيار الخيارات المطلوبة قبل الإضافة للسلة."
+    },
+    "shippingReturns": {
+      "text": "تختلف خيارات الشحن والاسترجاع حسب المدينة ونوع المنتج. تواصل معنا لمزيد من التفاصيل."
+    }
+  },
   "policy": {
     "privacyPolicy": "سياسة الخصوصية",
     "termsAndConditions": "الشروط والأحكام",
