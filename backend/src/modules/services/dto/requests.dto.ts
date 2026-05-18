@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  MinLength,
   Min,
   Max,
 } from 'class-validator';
@@ -46,4 +47,8 @@ export class NearbyQueryDto {
 
 export class CancelServiceRequestDto {
   @IsString() @MaxLength(500) reason!: string;
+}
+
+export class DisputeServiceRequestDto {
+  @IsString() @MinLength(3) @MaxLength(500) reason!: string;
 }

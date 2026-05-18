@@ -35,6 +35,7 @@ import {
   AcceptOfferDto,
   CancelServiceRequestDto,
   CreateServiceRequestDto,
+  DisputeServiceRequestDto,
   RateServiceDto,
   UpdateServiceRequestDto,
 } from './dto/requests.dto';
@@ -130,7 +131,8 @@ export class CustomerServicesController {
           value: {
             statusCode: 400,
             error: 'MONTHLY_CANCELLATION_LIMIT_REACHED',
-            message: 'لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل هذه الخدمة في 1 [الشهر القادم].',
+            message:
+              'لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل هذه الخدمة في 1 [الشهر القادم].',
           },
         },
       },
@@ -150,12 +152,14 @@ export class CustomerServicesController {
   @Get('my')
   @ApiOperation({
     summary: 'طلباتي',
-    description: 'استرداد قائمة بجميع طلبات الخدمات الخاصة بالعميل مع إمكانية الفلترة حسب الحالة. الطلبات الملغاة مدرجة افتراضياً.',
+    description:
+      'استرداد قائمة بجميع طلبات الخدمات الخاصة بالعميل مع إمكانية الفلترة حسب الحالة. الطلبات الملغاة مدرجة افتراضياً.',
   })
   @ApiQuery({
     name: 'status',
     required: false,
-    description: 'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. الطلبات الملغاة مدرجة دائماً.',
+    description:
+      'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. الطلبات الملغاة مدرجة دائماً.',
     type: [String],
     isArray: true,
     example: ['ASSIGNED', 'COMPLETED'],
@@ -500,7 +504,8 @@ export class CustomerServicesController {
   @Post(':id/cancel')
   @ApiOperation({
     summary: 'إلغاء طلب خدمة',
-    description: 'إلغاء طلب خدمة من قبل العميل (يسمح فقط من حالة ASSIGNED، ويطلب سبب إجباري، وحد أقصى 3 إلغاءات في الشهر)',
+    description:
+      'إلغاء طلب خدمة من قبل العميل (يسمح فقط من حالة ASSIGNED، ويطلب سبب إجباري، وحد أقصى 3 إلغاءات في الشهر)',
   })
   @ApiBody({
     type: CancelServiceRequestDto,
@@ -522,13 +527,16 @@ export class CustomerServicesController {
           value: { data: { error: 'REASON_REQUIRED' } },
         },
         cannotCancel: {
-          value: { data: { error: 'CANNOT_CANCEL', message: 'يمكن إلغاء الطلب فقط بعد قبول عرض من مهندس' } },
+          value: {
+            data: { error: 'CANNOT_CANCEL', message: 'يمكن إلغاء الطلب فقط بعد قبول عرض من مهندس' },
+          },
         },
         limitReached: {
           value: {
             data: {
               error: 'CANCELLATION_LIMIT_REACHED',
-              message: 'لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل هذه الخدمة في بداية الشهر القادم.',
+              message:
+                'لقد وصلت إلى الحد الأقصى المسموح به من الإلغاءات لهذا الشهر (3/3). سيتم إعادة تفعيل هذه الخدمة في بداية الشهر القادم.',
             },
           },
         },
@@ -662,6 +670,33 @@ export class CustomerServicesController {
     return { data };
   }
 
+  @Post(':id/dispute')
+  @ApiOperation({
+    summary: 'فتح نزاع على طلب خدمة',
+    description: 'فتح نزاع من قبل العميل على طلب خدمة مخصص أو مكتمل',
+  })
+  @ApiBody({ type: DisputeServiceRequestDto })
+  @ApiOkResponse({
+    description: 'تم فتح النزاع بنجاح',
+    schema: {
+      example: {
+        data: {
+          ok: true,
+          status: 'DISPUTED',
+          statusLabel: 'متنازع عليه',
+        },
+      },
+    },
+  })
+  async dispute(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+    @Body() dto: DisputeServiceRequestDto,
+  ) {
+    const data = await this.svc.disputeRequest(req.user!.sub, id, dto.reason);
+    return { data };
+  }
+
   @Get(':id/offers')
   @ApiOperation({
     summary: 'عروض طلب خدمة',
@@ -670,7 +705,8 @@ export class CustomerServicesController {
   @ApiQuery({
     name: 'status',
     required: false,
-    description: 'فلترة حسب حالة العرض (OFFERED, ACCEPTED, REJECTED, CANCELLED, OUTBID, EXPIRED). يمكن تمرير قيمة واحدة أو مصفوفة.',
+    description:
+      'فلترة حسب حالة العرض (OFFERED, ACCEPTED, REJECTED, CANCELLED, OUTBID, EXPIRED). يمكن تمرير قيمة واحدة أو مصفوفة.',
     type: [String],
     isArray: true,
     example: ['OFFERED', 'ACCEPTED'],

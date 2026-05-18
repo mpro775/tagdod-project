@@ -2,9 +2,11 @@ export enum ServiceStatus {
   OPEN = 'OPEN',
   OFFERS_COLLECTING = 'OFFERS_COLLECTING',
   ASSIGNED = 'ASSIGNED',
+  EN_ROUTE = 'EN_ROUTE',
   COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  DISPUTED = 'DISPUTED',
   RATED = 'RATED',
-  CANCELLED = 'CANCELLED'
 }
 
 export enum OfferStatus {
@@ -13,7 +15,7 @@ export enum OfferStatus {
   REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
   OUTBID = 'OUTBID',
-  EXPIRED = 'EXPIRED'
+  EXPIRED = 'EXPIRED',
 }
 
 export const VALID_SERVICE_STATUSES = Object.values(ServiceStatus);

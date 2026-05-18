@@ -55,13 +55,15 @@ export class EngineerServicesController {
   @RequireServicePermission(ServicePermission.ENGINEER)
   @ApiOperation({
     summary: 'طلبات قريبة من الفني',
-    description: 'البحث عن طلبات الخدمات القريبة من موقع الفني الحالي مع إمكانية الفلترة حسب الحالة',
+    description:
+      'البحث عن طلبات الخدمات القريبة من موقع الفني الحالي مع إمكانية الفلترة حسب الحالة',
   })
   @ApiQuery({ type: NearbyQueryDto })
   @ApiQuery({
     name: 'status',
     required: false,
-    description: 'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.',
+    description:
+      'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.',
     type: [String],
     isArray: true,
     example: ['OPEN', 'OFFERS_COLLECTING'],
@@ -119,12 +121,14 @@ export class EngineerServicesController {
   @RequireServicePermission(ServicePermission.ENGINEER)
   @ApiOperation({
     summary: 'طلبات في نفس مدينة الفني',
-    description: 'استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة مع إمكانية الفلترة حسب الحالة',
+    description:
+      'استرداد جميع طلبات الخدمات المتاحة في مدينة الفني دون فلترة حسب المسافة مع إمكانية الفلترة حسب الحالة',
   })
   @ApiQuery({
     name: 'status',
     required: false,
-    description: 'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.',
+    description:
+      'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.',
     type: [String],
     isArray: true,
     example: ['OPEN', 'OFFERS_COLLECTING'],
@@ -160,12 +164,14 @@ export class EngineerServicesController {
   @RequireServicePermission(ServicePermission.ENGINEER)
   @ApiOperation({
     summary: 'جميع طلبات الخدمات المتاحة',
-    description: 'استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة مع إمكانية الفلترة حسب الحالة',
+    description:
+      'استرداد جميع الطلبات المفتوحة أو قيد جمع العروض بدون قيود المدينة أو المسافة مع إمكانية الفلترة حسب الحالة',
   })
   @ApiQuery({
     name: 'status',
     required: false,
-    description: 'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.',
+    description:
+      'فلترة حسب حالة الطلب (OPEN, OFFERS_COLLECTING, ASSIGNED, COMPLETED, RATED, CANCELLED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: فقط OPEN و OFFERS_COLLECTING.',
     type: [String],
     isArray: true,
     example: ['OPEN', 'OFFERS_COLLECTING'],
@@ -365,11 +371,10 @@ export class EngineerServicesController {
     status: 403,
     description: 'غير مصرح لك بالعمل على هذا الطلب',
   })
-  async start() {
-    const data = await this.svc.start();
+  async start(@Req() req: RequestWithUser, @Param('id') id: string) {
+    const data = await this.svc.markEngineerOnTheWay(req.user!.sub, id);
     return { data };
   }
-
 
   @Get('offers/my')
   @ApiOperation({
@@ -379,7 +384,8 @@ export class EngineerServicesController {
   @ApiQuery({
     name: 'status',
     required: false,
-    description: 'فلترة حسب حالة العرض (OFFERED, ACCEPTED, REJECTED, CANCELLED, OUTBID, EXPIRED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: جميع العروض.',
+    description:
+      'فلترة حسب حالة العرض (OFFERED, ACCEPTED, REJECTED, CANCELLED, OUTBID, EXPIRED). يمكن تمرير قيمة واحدة أو مصفوفة. بدون فلترة: جميع العروض.',
     type: [String],
     isArray: true,
     example: ['OFFERED', 'ACCEPTED'],
