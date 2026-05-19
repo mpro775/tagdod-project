@@ -18,8 +18,21 @@ export class ServiceRating {
   @Prop() score?: number; // 1..5
   @Prop() comment?: string;
   @Prop() at?: Date;
+  @Prop() by?: string;
 }
 export const ServiceRatingSchema = SchemaFactory.createForClass(ServiceRating);
+
+@Schema({ _id: false })
+export class ServiceStatusHistoryEntry {
+  @Prop() from?: string;
+  @Prop({ required: true }) to!: string;
+  @Prop() by?: string;
+  @Prop() actorId?: string;
+  @Prop() note?: string;
+  @Prop({ default: Date.now }) at!: Date;
+}
+export const ServiceStatusHistoryEntrySchema =
+  SchemaFactory.createForClass(ServiceStatusHistoryEntry);
 
 @Schema({ timestamps: true })
 export class ServiceRequest {
@@ -41,10 +54,27 @@ export class ServiceRequest {
 
   @Prop({
     default: 'OPEN',
-    enum: ['OPEN', 'OFFERS_COLLECTING', 'ASSIGNED', 'COMPLETED', 'RATED', 'CANCELLED'],
+    enum: [
+      'OPEN',
+      'OFFERS_COLLECTING',
+      'ASSIGNED',
+      'EN_ROUTE',
+      'COMPLETED',
+      'RATED',
+      'CANCELLED',
+      'DISPUTED',
+    ],
     index: true,
   })
-  status!: 'OPEN' | 'OFFERS_COLLECTING' | 'ASSIGNED' | 'COMPLETED' | 'RATED' | 'CANCELLED';
+  status!:
+    | 'OPEN'
+    | 'OFFERS_COLLECTING'
+    | 'ASSIGNED'
+    | 'EN_ROUTE'
+    | 'COMPLETED'
+    | 'RATED'
+    | 'CANCELLED'
+    | 'DISPUTED';
 
   @Prop() scheduledAt?: Date;
 
@@ -52,8 +82,14 @@ export class ServiceRequest {
   @Prop({ type: Types.ObjectId, ref: 'User', index: true, default: null })
   engineerId!: string | null;
 
-@Prop({ type: Object, default: null })
-  acceptedOffer?: { offerId: string; amount?: number; currency?: string; note?: string; isFreeOffer?: boolean };
+  @Prop({ type: Object, default: null })
+  acceptedOffer?: {
+    offerId: string;
+    amount?: number;
+    currency?: string;
+    note?: string;
+    isFreeOffer?: boolean;
+  };
 
   @Prop({ type: ServiceRatingSchema, default: {} })
   rating?: ServiceRating;
@@ -61,9 +97,27 @@ export class ServiceRequest {
   @Prop({ type: [{ note: String, at: Date }], default: [] })
   adminNotes?: Array<{ note: string; at: Date }>;
 
+  @Prop() engineerOnTheWayAt?: Date;
+  @Prop() completedAt?: Date;
+
   // Cancellation fields
   @Prop() cancellationReason?: string;
   @Prop() cancelledAt?: Date;
+  @Prop() cancelledBy?: string;
+
+  @Prop() disputeReason?: string;
+  @Prop() disputedAt?: Date;
+  @Prop() disputedBy?: string;
+
+  @Prop({ type: [ServiceStatusHistoryEntrySchema], default: [] })
+  statusHistory?: Array<{
+    from?: string;
+    to: string;
+    by?: string;
+    actorId?: string;
+    note?: string;
+    at: Date;
+  }>;
 }
 export const ServiceRequestSchema = SchemaFactory.createForClass(ServiceRequest);
 

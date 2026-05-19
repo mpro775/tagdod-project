@@ -96,6 +96,16 @@ type EngineerOfferPopulated = EngineerOfferLean & {
   engineerId?: PopulatedEngineer | Types.ObjectId | null;
 };
 
+type ServiceRequestStatusValue =
+  | 'OPEN'
+  | 'OFFERS_COLLECTING'
+  | 'ASSIGNED'
+  | 'EN_ROUTE'
+  | 'COMPLETED'
+  | 'RATED'
+  | 'CANCELLED'
+  | 'DISPUTED';
+
 export interface OfferListItem {
   _id: Types.ObjectId;
   requestId: string;
@@ -827,7 +837,7 @@ export class ServicesService {
         phone: string | null;
         whatsapp: string | null;
       } | null;
-acceptedOffer: {
+      acceptedOffer: {
         offerId: string;
         amount?: number;
         currency?: string;
@@ -1014,7 +1024,7 @@ acceptedOffer: {
         : null;
       const whatsapp = engineerPhone ? this.makeWhatsappLink(engineerPhone) : null;
 
-const formattedOffer: OfferListItem = {
+      const formattedOffer: OfferListItem = {
         _id: offer._id,
         requestId: String(offer.requestId),
         amount: offer.amount ?? 0,
@@ -1099,7 +1109,7 @@ const formattedOffer: OfferListItem = {
         phone: string | null;
         whatsapp: string | null;
       } | null;
-acceptedOffer: {
+      acceptedOffer: {
         offerId: string;
         amount?: number;
         currency?: string;
@@ -1113,7 +1123,7 @@ acceptedOffer: {
       ? status
       : status
         ? [status]
-        : ['ASSIGNED', 'COMPLETED', 'RATED'];
+        : ['ASSIGNED', 'EN_ROUTE', 'COMPLETED', 'RATED', 'DISPUTED'];
 
     const docs = (await this.requests
       .find({
@@ -1240,10 +1250,20 @@ acceptedOffer: {
       await user.save();
     }
 
+    const previousStatus = r.status;
+
     // تحديث حالة الطلب
     r.status = 'CANCELLED';
     r.cancellationReason = reason.trim();
     r.cancelledAt = new Date();
+    r.cancelledBy = userId;
+    this.pushStatusHistory(r, {
+      from: previousStatus,
+      to: 'CANCELLED',
+      by: 'CUSTOMER',
+      actorId: userId,
+      note: reason.trim(),
+    });
     await r.save();
 
     // زيادة عدد الإلغاءات الشهرية
@@ -1374,8 +1394,9 @@ acceptedOffer: {
       requestId: r._id,
       status: 'OFFERED',
     });
-if (!offer) return { error: 'OFFER_NOT_FOUND' };
+    if (!offer) return { error: 'OFFER_NOT_FOUND' };
 
+    const previousStatus = r.status;
     r.status = 'ASSIGNED';
     r.engineerId = offer.engineerId;
     r.acceptedOffer = {
@@ -1385,6 +1406,13 @@ if (!offer) return { error: 'OFFER_NOT_FOUND' };
       note: offer.note,
       isFreeOffer: offer.isFreeOffer,
     };
+    this.pushStatusHistory(r, {
+      from: previousStatus,
+      to: 'ASSIGNED',
+      by: 'CUSTOMER',
+      actorId: userId,
+      note: 'تم قبول عرض مهندس',
+    });
     await r.save();
 
     offer.status = 'ACCEPTED';
@@ -1444,14 +1472,14 @@ if (!offer) return { error: 'OFFER_NOT_FOUND' };
     const r = await this.requests.findOne({ _id: requestObjectId, userId: userObjectId });
     if (!r) return { error: 'NOT_FOUND' };
     if (r.status !== 'COMPLETED') return { error: 'NOT_COMPLETED' };
+    if (r.rating?.score) return { error: 'ALREADY_RATED' };
 
     // التحقق من وجود تعليق (مطلوب)
     if (!comment || comment.trim().length === 0) {
       return { error: 'COMMENT_REQUIRED' };
     }
 
-    r.rating = { score, comment: comment.trim(), at: new Date() };
-    r.status = 'RATED';
+    r.rating = { score, comment: comment.trim(), at: new Date(), by: userId };
     await r.save();
 
     // إضافة التقييم إلى بروفايل المهندس تلقائياً
@@ -1510,7 +1538,7 @@ if (!offer) return { error: 'OFFER_NOT_FOUND' };
     status?: string | string[],
   ): Promise<
     | { error: string }
-| Array<{
+    | Array<{
         _id: Types.ObjectId;
         requestId: string | Types.ObjectId;
         amount?: number;
@@ -1619,7 +1647,7 @@ if (!offer) return { error: 'OFFER_NOT_FOUND' };
 
     const addressData = this.extractAddress(request.addressId);
 
-const formattedOffer: OfferListItem = {
+    const formattedOffer: OfferListItem = {
       _id: offer._id,
       requestId: String(offer.requestId),
       amount: offer.amount ?? 0,
@@ -1711,7 +1739,7 @@ const formattedOffer: OfferListItem = {
       ['OPEN', 'OFFERS_COLLECTING'].includes(s),
     );
     const hasAssignedStatuses = statusFilter.some((s) =>
-      ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s),
+      ['ASSIGNED', 'EN_ROUTE', 'COMPLETED', 'RATED', 'DISPUTED'].includes(s),
     );
 
     if (hasAvailableStatuses && !hasAssignedStatuses) {
@@ -1732,7 +1760,9 @@ const formattedOffer: OfferListItem = {
         {
           engineerId: new Types.ObjectId(engineerUserId),
           status: {
-            $in: statusFilter.filter((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s)),
+            $in: statusFilter.filter((s) =>
+              ['ASSIGNED', 'EN_ROUTE', 'COMPLETED', 'RATED', 'DISPUTED'].includes(s),
+            ),
           },
         },
       ];
@@ -1774,7 +1804,7 @@ const formattedOffer: OfferListItem = {
       ['OPEN', 'OFFERS_COLLECTING'].includes(s),
     );
     const hasAssignedStatuses = statusFilter.some((s) =>
-      ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s),
+      ['ASSIGNED', 'EN_ROUTE', 'COMPLETED', 'RATED', 'DISPUTED'].includes(s),
     );
 
     if (hasAvailableStatuses && !hasAssignedStatuses) {
@@ -1793,7 +1823,9 @@ const formattedOffer: OfferListItem = {
         {
           engineerId: new Types.ObjectId(engineerUserId),
           status: {
-            $in: statusFilter.filter((s) => ['ASSIGNED', 'COMPLETED', 'RATED'].includes(s)),
+            $in: statusFilter.filter((s) =>
+              ['ASSIGNED', 'EN_ROUTE', 'COMPLETED', 'RATED', 'DISPUTED'].includes(s),
+            ),
           },
         },
       ];
@@ -1855,14 +1887,47 @@ const formattedOffer: OfferListItem = {
 
   private requestStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      OPEN: 'بانتظار العروض',
-      OFFERS_COLLECTING: 'تجميع العروض',
-      ASSIGNED: 'تم قبول العرض',
-      COMPLETED: 'اكتملت الخدمة',
-      RATED: 'تم التقييم',
-      CANCELLED: 'ملغى',
+      OPEN: 'بانتظار عروض',
+      OFFERS_COLLECTING: 'يوجد عروض',
+      ASSIGNED: 'تم قبول مهندس',
+      EN_ROUTE: 'المهندس في الطريق',
+      COMPLETED: 'مكتمل',
+      RATED: 'مكتمل',
+      CANCELLED: 'ملغي',
+      CANCELED: 'ملغي',
+      DISPUTED: 'متنازع عليه',
     };
     return labels[status] ?? status;
+  }
+
+  private pushStatusHistory(
+    request: ServiceRequest & {
+      statusHistory?: Array<{
+        from?: string;
+        to: string;
+        by?: string;
+        actorId?: string;
+        note?: string;
+        at: Date;
+      }>;
+    },
+    params: {
+      from?: string;
+      to: string;
+      by?: string;
+      actorId?: string;
+      note?: string;
+    },
+  ) {
+    request.statusHistory = Array.isArray(request.statusHistory) ? request.statusHistory : [];
+    request.statusHistory.push({
+      from: params.from,
+      to: params.to,
+      by: params.by,
+      actorId: params.actorId,
+      note: params.note,
+      at: new Date(),
+    });
   }
 
   private offerStatusLabel(status: string): string {
@@ -1978,7 +2043,15 @@ const formattedOffer: OfferListItem = {
 
     // If first offer → move to OFFERS_COLLECTING
     if (r.status === 'OPEN') {
+      const previousStatus = r.status;
       r.status = 'OFFERS_COLLECTING';
+      this.pushStatusHistory(r, {
+        from: previousStatus,
+        to: 'OFFERS_COLLECTING',
+        by: 'SYSTEM',
+        actorId: engineerUserId,
+        note: 'تم تقديم أول عرض على الطلب',
+      });
       await r.save();
     }
 
@@ -2040,7 +2113,15 @@ const formattedOffer: OfferListItem = {
     if (!stillAvailable) {
       const req = await this.requests.findById(off.requestId);
       if (req && req.status === 'OFFERS_COLLECTING') {
+        const previousStatus = req.status;
         req.status = 'OPEN';
+        this.pushStatusHistory(req, {
+          from: previousStatus,
+          to: 'OPEN',
+          by: 'SYSTEM',
+          actorId: engineerUserId,
+          note: 'لم تعد توجد عروض نشطة على الطلب',
+        });
         await req.save();
       }
     }
@@ -2048,12 +2129,47 @@ const formattedOffer: OfferListItem = {
     return { ok: true };
   }
 
-  async start() {
-    // تم إزالة هذه الطريقة لأننا لا نحتاج حالة IN_PROGRESS
-    // يمكن للمهندس الانتقال مباشرة من ASSIGNED إلى COMPLETED
+  async markEngineerOnTheWay(engineerUserId: string, requestId: string) {
+    const r = await this.requests.findById(requestId);
+    if (!r) return { error: 'REQUEST_NOT_FOUND' };
+    if (!r.engineerId || String(r.engineerId) !== String(engineerUserId)) {
+      return { error: 'NOT_ASSIGNED_ENGINEER' };
+    }
+    if (r.status !== 'ASSIGNED') {
+      return {
+        error: 'INVALID_STATUS',
+        message: 'لا يمكن تغيير الحالة إلى المهندس في الطريق إلا بعد قبول المهندس',
+        currentStatus: r.status,
+      };
+    }
+
+    const previousStatus = r.status;
+    r.status = 'EN_ROUTE';
+    r.engineerOnTheWayAt = new Date();
+    this.pushStatusHistory(r, {
+      from: previousStatus,
+      to: 'EN_ROUTE',
+      by: 'ENGINEER',
+      actorId: engineerUserId,
+      note: 'المهندس في الطريق',
+    });
+    await r.save();
+
+    await this.safeNotify(
+      String(r.userId),
+      NotificationType.SERVICE_REQUEST_OPENED,
+      'المهندس في الطريق',
+      'المهندس بدأ التوجه إلى موقعك',
+      { requestId: String(r._id), status: 'EN_ROUTE' },
+      NotificationNavigationType.SERVICE_REQUEST,
+      String(r._id),
+    );
+
     return {
-      error: 'DEPRECATED',
-      message: 'تم إزالة هذه الطريقة. يمكن إكمال الخدمة مباشرة من حالة ASSIGNED',
+      ok: true,
+      status: r.status,
+      statusLabel: this.requestStatusLabel(r.status),
+      engineerOnTheWayAt: r.engineerOnTheWayAt,
     };
   }
 
@@ -2062,8 +2178,26 @@ const formattedOffer: OfferListItem = {
     if (!r) return { error: 'NOT_FOUND' };
     // التحقق من أن المستخدم هو العميل (صاحب الطلب)
     if (String(r.userId) !== String(customerUserId)) return { error: 'NOT_OWNER' };
-    if (r.status !== 'ASSIGNED') return { error: 'INVALID_STATUS' };
+    if (!['ASSIGNED', 'EN_ROUTE'].includes(r.status)) {
+      return {
+        error: 'INVALID_STATUS',
+        message: 'لا يمكن إكمال الطلب في حالته الحالية',
+        currentStatus: r.status,
+      };
+    }
+    const previousStatus = r.status;
     r.status = 'COMPLETED';
+    r.completedAt = new Date();
+    this.pushStatusHistory(r, {
+      from: previousStatus,
+      to: 'COMPLETED',
+      by: 'CUSTOMER',
+      actorId: customerUserId,
+      note:
+        previousStatus === 'ASSIGNED'
+          ? 'تم إكمال الطلب مباشرة دون تسجيل حالة المهندس في الطريق'
+          : 'تم تأكيد اكتمال الخدمة',
+    });
     await r.save();
     // إرسال إشعار للمهندس بأن العميل أكد إكمال الخدمة
     if (r.engineerId) {
@@ -2077,7 +2211,61 @@ const formattedOffer: OfferListItem = {
         String(r._id),
       );
     }
-    return { ok: true };
+    return {
+      ok: true,
+      status: r.status,
+      statusLabel: this.requestStatusLabel(r.status),
+      completedAt: r.completedAt,
+    };
+  }
+
+  async disputeRequest(customerUserId: string, requestId: string, reason: string) {
+    const r = await this.requests.findOne({
+      _id: new Types.ObjectId(requestId),
+      userId: new Types.ObjectId(customerUserId),
+    });
+    if (!r) return { error: 'REQUEST_NOT_FOUND' };
+    if (!reason || reason.trim().length < 3) return { error: 'REASON_REQUIRED' };
+    if (!['ASSIGNED', 'EN_ROUTE', 'COMPLETED', 'RATED'].includes(r.status)) {
+      return {
+        error: 'INVALID_STATUS',
+        message: 'لا يمكن فتح نزاع في حالة الطلب الحالية',
+        currentStatus: r.status,
+      };
+    }
+
+    const previousStatus = r.status;
+    r.status = 'DISPUTED';
+    r.disputeReason = reason.trim();
+    r.disputedAt = new Date();
+    r.disputedBy = customerUserId;
+    this.pushStatusHistory(r, {
+      from: previousStatus,
+      to: 'DISPUTED',
+      by: 'CUSTOMER',
+      actorId: customerUserId,
+      note: reason.trim(),
+    });
+    await r.save();
+
+    if (r.engineerId) {
+      await this.safeNotify(
+        String(r.engineerId),
+        NotificationType.SERVICE_REQUEST_OPENED,
+        'تم فتح نزاع على الطلب',
+        `تم فتح نزاع على الطلب ${String(r._id)}`,
+        { requestId: String(r._id), status: 'DISPUTED' },
+        NotificationNavigationType.SERVICE_REQUEST,
+        String(r._id),
+      );
+    }
+
+    return {
+      ok: true,
+      status: r.status,
+      statusLabel: this.requestStatusLabel(r.status),
+      disputedAt: r.disputedAt,
+    };
   }
 
   // جلب عروض المهندس
@@ -2335,8 +2523,14 @@ const formattedOffer: OfferListItem = {
     scheduledAt?: Date;
     createdAt: Date;
     updatedAt: Date;
-location?: { type: string; coordinates: [number, number] };
-    acceptedOffer?: { offerId: string; amount?: number; currency?: string; note?: string; isFreeOffer?: boolean };
+    location?: { type: string; coordinates: [number, number] };
+    acceptedOffer?: {
+      offerId: string;
+      amount?: number;
+      currency?: string;
+      note?: string;
+      isFreeOffer?: boolean;
+    };
     rating?: { score?: number; comment?: string; at?: Date };
     cancellationReason?: string;
     cancelledAt?: Date;
@@ -2414,7 +2608,7 @@ location?: { type: string; coordinates: [number, number] };
     return { ...request, offers: offersWithJobTitle };
   }
 
-async adminGetRequestOffers(id: string): Promise<
+  async adminGetRequestOffers(id: string): Promise<
     Array<{
       _id: Types.ObjectId;
       requestId: string | Types.ObjectId;
@@ -2474,19 +2668,38 @@ async adminGetRequestOffers(id: string): Promise<
       'OPEN',
       'OFFERS_COLLECTING',
       'ASSIGNED',
+      'EN_ROUTE',
       'COMPLETED',
-      'RATED',
       'CANCELLED',
+      'DISPUTED',
     ];
     if (!validStatuses.includes(status)) return { error: 'INVALID_STATUS' };
 
-    r.status = status as
-      | 'OPEN'
-      | 'OFFERS_COLLECTING'
-      | 'ASSIGNED'
-      | 'COMPLETED'
-      | 'RATED'
-      | 'CANCELLED';
+    const previousStatus = r.status;
+    r.status = status as ServiceRequestStatusValue;
+    if (status === 'EN_ROUTE') {
+      r.engineerOnTheWayAt = new Date();
+    }
+    if (status === 'COMPLETED') {
+      r.completedAt = new Date();
+    }
+    if (status === 'CANCELLED') {
+      r.cancelledAt = new Date();
+      r.cancelledBy = 'ADMIN';
+      r.cancellationReason = note;
+    }
+    if (status === 'DISPUTED') {
+      r.disputedAt = new Date();
+      r.disputedBy = 'ADMIN';
+      r.disputeReason = note;
+    }
+    this.pushStatusHistory(r, {
+      from: previousStatus,
+      to: status,
+      by: 'ADMIN',
+      actorId: 'ADMIN',
+      note: note || 'تحديث حالة من الإدارة',
+    });
     if (note) {
       r.adminNotes = r.adminNotes || [];
       r.adminNotes.push({ note, at: new Date() });
@@ -2509,11 +2722,22 @@ async adminGetRequestOffers(id: string): Promise<
   async adminCancel(id: string, reason?: string) {
     const r = await this.requests.findById(id);
     if (!r) return { error: 'NOT_FOUND' };
-    if (['COMPLETED', 'RATED', 'CANCELLED'].includes(r.status)) return { error: 'INVALID_STATUS' };
+    if (['COMPLETED', 'RATED', 'CANCELLED', 'DISPUTED'].includes(r.status)) {
+      return { error: 'INVALID_STATUS' };
+    }
 
+    const previousStatus = r.status;
     r.status = 'CANCELLED';
     r.cancellationReason = reason || 'إلغاء إداري';
     r.cancelledAt = new Date();
+    r.cancelledBy = 'ADMIN';
+    this.pushStatusHistory(r, {
+      from: previousStatus,
+      to: 'CANCELLED',
+      by: 'ADMIN',
+      actorId: 'ADMIN',
+      note: reason || 'إلغاء إداري',
+    });
     if (reason) {
       r.adminNotes = r.adminNotes || [];
       r.adminNotes.push({ note: `إلغاء إداري: ${reason}`, at: new Date() });
@@ -2543,8 +2767,16 @@ async adminGetRequestOffers(id: string): Promise<
     if (!r) return { error: 'NOT_FOUND' };
     if (r.status !== 'OPEN' && r.status !== 'OFFERS_COLLECTING') return { error: 'INVALID_STATUS' };
 
+    const previousStatus = r.status;
     r.status = 'ASSIGNED';
     r.engineerId = engineerId;
+    this.pushStatusHistory(r, {
+      from: previousStatus,
+      to: 'ASSIGNED',
+      by: 'ADMIN',
+      actorId: 'ADMIN',
+      note: note || 'تعيين مهندس من الإدارة',
+    });
     if (note) {
       r.adminNotes = r.adminNotes || [];
       r.adminNotes.push({ note: `تعيين مهندس: ${note}`, at: new Date() });
@@ -3486,9 +3718,10 @@ async adminGetRequestOffers(id: string): Promise<
       status: 'OFFERED',
     });
 
-if (!offer) return { error: 'OFFER_NOT_FOUND' };
+    if (!offer) return { error: 'OFFER_NOT_FOUND' };
 
     // تحديث الطلب
+    const previousStatus = r.status;
     r.status = 'ASSIGNED';
     r.engineerId = offer.engineerId;
     r.acceptedOffer = {
@@ -3498,6 +3731,13 @@ if (!offer) return { error: 'OFFER_NOT_FOUND' };
       note: offer.note,
       isFreeOffer: offer.isFreeOffer,
     };
+    this.pushStatusHistory(r, {
+      from: previousStatus,
+      to: 'ASSIGNED',
+      by: 'ADMIN',
+      actorId: 'ADMIN',
+      note: 'تم قبول عرض مهندس من الإدارة',
+    });
     await r.save();
 
     // تحديث العرض المقبول
@@ -3628,9 +3868,17 @@ if (!offer) return { error: 'OFFER_NOT_FOUND' };
     if (previousStatus === 'ACCEPTED') {
       const request = await this.requests.findById(offer.requestId);
       if (request && request.status === 'ASSIGNED') {
+        const previousRequestStatus = request.status;
         request.status = 'OPEN';
         request.engineerId = null;
         request.acceptedOffer = undefined;
+        this.pushStatusHistory(request, {
+          from: previousRequestStatus,
+          to: 'OPEN',
+          by: 'ADMIN',
+          actorId: 'ADMIN',
+          note: reason || 'تم إلغاء العرض المقبول من الإدارة',
+        });
         await request.save();
 
         this.logger.log(
