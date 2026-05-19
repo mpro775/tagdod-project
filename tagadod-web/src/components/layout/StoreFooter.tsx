@@ -8,21 +8,23 @@ export function StoreFooter() {
   const quickLinks = [
     { label: 'layout.nav.home', href: '/home' },
     { label: 'layout.nav.categories', href: '/categories' },
+    { label: 'layout.nav.products', href: '/products' },
     { label: 'layout.nav.cart', href: '/cart' },
-    { label: 'layout.nav.account', href: '/profile' },
   ]
 
   const customerLinks = [
-    { label: 'layout.footer.contact', href: '/profile' },
+    { label: 'layout.footer.about', href: '/about' },
+    { label: 'layout.footer.contact', href: '/contact' },
     { label: 'layout.nav.orders', href: '/orders' },
     { label: 'layout.nav.favorites', href: '/favorites' },
   ]
 
   const policyLinks = [
     { label: 'layout.footer.privacy', href: '/privacy-policy' },
-    { label: 'layout.footer.returns', href: '/terms-and-conditions' },
-    { label: 'layout.footer.shipping', href: '/terms-and-conditions' },
-    { label: 'layout.footer.terms', href: '/terms-and-conditions' },
+    { label: 'layout.footer.returns', href: '/return-policy' },
+    { label: 'layout.footer.shipping', href: '/shipping-policy' },
+    { label: 'layout.footer.terms', href: '/terms' },
+    { label: 'layout.footer.faq', href: '/faq' },
   ]
 
   return (

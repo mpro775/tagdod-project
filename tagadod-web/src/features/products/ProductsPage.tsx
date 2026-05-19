@@ -7,6 +7,7 @@ import { mapListingStateToProductFilters, parseQueryParams } from './listing/pro
 import type { ListingState } from './listing/productListing.types'
 import { useSearchParams } from 'react-router-dom'
 import { useMemo } from 'react'
+import { SEO } from '../../components/seo'
 
 export function ProductsPage() {
   const { t } = useTranslation()
@@ -34,7 +35,9 @@ export function ProductsPage() {
   })
 
   return (
-    <ProductListingPage
+    <>
+      <SEO title={t('productListing.titles.allProducts')} />
+      <ProductListingPage
       title={t('productListing.titles.allProducts')}
       subtitle={t('productListing.subtitles.allProducts')}
       breadcrumbItems={[
@@ -48,5 +51,6 @@ export function ProductsPage() {
       onRetry={refetch}
       categories={categories ?? []}
     />
+    </>
   )
 }

@@ -7,6 +7,8 @@ import { getBanners } from '../../services/bannerService'
 import { getNewProducts, getFeaturedProducts, getProducts } from '../../services/productService'
 import { ShimmerBox } from '../../components/shared'
 import { Container } from '../../components/layout'
+import { SEO } from '../../components/seo'
+import { trackPageView } from '../../lib/analytics'
 import {
   HomeHeroSection,
   HomeCategoryShowcase,
@@ -143,6 +145,10 @@ function BannerCarousel() {
 export function HomePage() {
   const { t } = useTranslation()
 
+  useEffect(() => {
+    trackPageView('/home', 'Home')
+  }, [])
+
   const featuredQuery = useQuery({
     queryKey: ['featuredProducts'],
     queryFn: () => getFeaturedProducts({ limit: 10 }),
@@ -181,7 +187,9 @@ export function HomePage() {
   const brands = Array.from(brandMap.values())
 
   return (
-    <div className="bg-tagadod-light-bg dark:bg-tagadod-dark-bg">
+    <>
+      <SEO title={t('layout.nav.home')} description={t('home.hero.subtitle')} />
+      <div className="bg-tagadod-light-bg dark:bg-tagadod-dark-bg">
       {/* Hero Commerce Section */}
       <HomeHeroSection />
 
@@ -236,5 +244,6 @@ export function HomePage() {
       {/* Service / Maintenance CTA */}
       <HomeServiceSection />
     </div>
+    </>
   )
 }

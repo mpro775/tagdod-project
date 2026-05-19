@@ -7,6 +7,7 @@ import { addToCartLocal } from '../../../services/cartService'
 import { useFavorites } from '../../../hooks'
 import { Breadcrumbs } from '../../../components/layout/Breadcrumbs'
 import { Container } from '../../../components/layout/Container'
+import { SEO } from '../../../components/seo'
 import { ProductGallery } from './ProductGallery'
 import { ProductPurchasePanel } from './ProductPurchasePanel'
 import { ProductInfoTabs } from './ProductInfoTabs'
@@ -23,6 +24,7 @@ import {
   isProductInStock,
   getProductSpecifications,
 } from './productDetails.helpers'
+import { trackViewProduct } from '../../../lib/analytics'
 import type { ProductVariant } from '../../../types/product'
 
 export function ProductDetailsPage() {
@@ -65,8 +67,13 @@ export function ProductDetailsPage() {
         originalPrice: product.originalPrice,
         inStock: product.inStock,
       })
+      trackViewProduct({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+      })
     }
-  }, [product?.id])
+  }, [product?.id, product])
 
   const handleVariantSelect = (variantId: string | null) => {
     setSelectedVariantId(variantId)
@@ -137,9 +144,18 @@ export function ProductDetailsPage() {
     t(`productDetails.${key}`),
   )
   const specs = getProductSpecifications(product)
+  const productImages = getProductImages(product)
+  const mainImage = productImages[0]
 
   return (
-    <div className="pb-24 md:pb-12">
+    <>
+      <SEO
+        title={product.name}
+        description={product.description?.substring(0, 160) || product.name}
+        image={mainImage}
+        type="product"
+      />
+      <div className="pb-24 md:pb-12">
       <Container>
         {/* Breadcrumbs */}
         <Breadcrumbs items={breadcrumbItems} />
@@ -200,5 +216,6 @@ export function ProductDetailsPage() {
         addSuccess={addSuccess}
       />
     </div>
+    </>
   )
 }

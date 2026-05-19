@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Heart, Plus, Check, SlidersHorizontal } from 'lucide-react'
 import type { Product } from '../../../types/product'
 import { addToCartLocal } from '../../../services/cartService'
+import { trackAddToCart } from '../../../lib/analytics'
 import { useFavorites } from '../../../hooks'
 import { gradients } from '../../../theme'
 import { cn } from '../../../utils'
@@ -69,6 +70,11 @@ export function ProductActions({
         price: product.price,
       },
     })
+    trackAddToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+    }, 1)
     setAddSuccess(true)
     setTimeout(() => setAddSuccess(false), 1500)
   }

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { getCategoryTree } from '../../services/categoryService'
 import { ShimmerBox } from '../../components/shared'
+import { SEO } from '../../components/seo'
 
 function CategoryCardShimmer() {
   return (
@@ -28,7 +29,9 @@ export function CategoriesPage() {
   const flatCategories = Array.isArray(categories) ? categories : []
 
   return (
-    <div className="p-4 pb-24">
+    <>
+      <SEO title={t('categories.title')} />
+      <div className="p-4 pb-24">
       <h2 className="text-xl font-bold text-tagadod-titles dark:text-tagadod-dark-titles mb-4">
         {t('التصنيفات')}
       </h2>
@@ -83,5 +86,6 @@ export function CategoriesPage() {
         </div>
       )}
     </div>
+    </>
   )
 }

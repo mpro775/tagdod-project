@@ -105,11 +105,6 @@ const VerifyAccountPage = lazy(() =>
     default: m.VerifyAccountPage,
   })),
 );
-const PolicyPage = lazy(() =>
-  import("../features/profile/PolicyPage").then((m) => ({
-    default: m.PolicyPage,
-  })),
-);
 
 // Products & search
 const ProductPage = lazy(() =>
@@ -235,6 +230,50 @@ const MaintenancePage = lazy(() =>
 const ForceUpdatePage = lazy(() =>
   import("../features/app-config/ForceUpdatePage").then((m) => ({
     default: m.ForceUpdatePage,
+  })),
+);
+
+// Static pages
+const AboutPage = lazy(() =>
+  import("../features/static-pages/AboutPage").then((m) => ({
+    default: m.AboutPage,
+  })),
+);
+const ContactPage = lazy(() =>
+  import("../features/static-pages/ContactPage").then((m) => ({
+    default: m.ContactPage,
+  })),
+);
+const PrivacyPolicyPage = lazy(() =>
+  import("../features/static-pages/PrivacyPolicyPage").then((m) => ({
+    default: m.PrivacyPolicyPage,
+  })),
+);
+const ReturnPolicyPage = lazy(() =>
+  import("../features/static-pages/ReturnPolicyPage").then((m) => ({
+    default: m.ReturnPolicyPage,
+  })),
+);
+const ShippingPolicyPage = lazy(() =>
+  import("../features/static-pages/ShippingPolicyPage").then((m) => ({
+    default: m.ShippingPolicyPage,
+  })),
+);
+const TermsPage = lazy(() =>
+  import("../features/static-pages/TermsPage").then((m) => ({
+    default: m.TermsPage,
+  })),
+);
+const FAQPage = lazy(() =>
+  import("../features/static-pages/FAQPage").then((m) => ({
+    default: m.FAQPage,
+  })),
+);
+
+// Error pages
+const NotFoundPage = lazy(() =>
+  import("../features/errors/NotFoundPage").then((m) => ({
+    default: m.NotFoundPage,
   })),
 );
 
@@ -431,20 +470,8 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "privacy-policy",
-        element: (
-          <LazyRoute>
-            <PolicyPage />
-          </LazyRoute>
-        ),
-      },
-      {
         path: "terms-and-conditions",
-        element: (
-          <LazyRoute>
-            <PolicyPage />
-          </LazyRoute>
-        ),
+        element: <Navigate to="/terms" replace />,
       },
       {
         path: "maintenance",
@@ -768,6 +795,74 @@ const router = createBrowserRouter([
           <ProtectedRoute>
             <TejoChatPage />
           </ProtectedRoute>
+        ),
+      },
+
+      // Static pages
+      {
+        path: "about",
+        element: (
+          <LazyRoute>
+            <AboutPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "contact",
+        element: (
+          <LazyRoute>
+            <ContactPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "privacy-policy",
+        element: (
+          <LazyRoute>
+            <PrivacyPolicyPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "return-policy",
+        element: (
+          <LazyRoute>
+            <ReturnPolicyPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "shipping-policy",
+        element: (
+          <LazyRoute>
+            <ShippingPolicyPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "terms",
+        element: (
+          <LazyRoute>
+            <TermsPage />
+          </LazyRoute>
+        ),
+      },
+      {
+        path: "faq",
+        element: (
+          <LazyRoute>
+            <FAQPage />
+          </LazyRoute>
+        ),
+      },
+
+      // Catch-all 404
+      {
+        path: "*",
+        element: (
+          <LazyRoute>
+            <NotFoundPage />
+          </LazyRoute>
         ),
       },
     ],

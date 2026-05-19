@@ -18,6 +18,7 @@ import {
   getActiveFiltersCount,
   createInitialListingState,
 } from './productListing.helpers'
+import { trackFilterProducts, trackSortProducts } from '../../../lib/analytics'
 import type { ProductListingPageProps, ListingState, SortOption } from './productListing.types'
 import type { Category } from '../../../types/category'
 
@@ -89,6 +90,7 @@ export function ProductListingPage({
 
   const handleSortChange = useCallback(
     (sort: SortOption) => {
+      trackSortProducts(sort)
       setState((prev) => {
         const next = { ...prev, sort, page: 1 }
         updateUrl(next)
@@ -122,6 +124,7 @@ export function ProductListingPage({
 
   const handleFilterChange = useCallback(
     (filters: Partial<ListingState['filters']>) => {
+      trackFilterProducts(filters as Record<string, unknown>)
       setState((prev) => {
         const next = {
           ...prev,
