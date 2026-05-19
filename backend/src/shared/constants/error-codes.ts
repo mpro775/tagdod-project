@@ -242,6 +242,12 @@ export enum ErrorCode {
   ANALYTICS_SERVICE_CALCULATION_FAILED = 'ANALYTICS_1160',
   ANALYTICS_SUPPORT_CALCULATION_FAILED = 'ANALYTICS_1161',
   ANALYTICS_CRON_JOB_FAILED = 'ANALYTICS_1162',
+  ANALYTICS_EXPORT_FAILED = 'ANALYTICS_1163',
+  ANALYTICS_EXPORT_STORAGE_NOT_CONFIGURED = 'ANALYTICS_1164',
+  ANALYTICS_EXPORT_UPLOAD_FAILED = 'ANALYTICS_1165',
+  ANALYTICS_EXPORT_FILE_GENERATION_FAILED = 'ANALYTICS_1166',
+  ANALYTICS_SALES_BY_CATEGORY_FAILED = 'ANALYTICS_1167',
+  ANALYTICS_INVENTORY_CALCULATION_FAILED = 'ANALYTICS_1168',
 
   // ==================== السمات (ATTRIBUTES: 1200-1249) ====================
   ATTRIBUTE_NOT_FOUND = 'ATTRIBUTE_1200',
@@ -500,6 +506,12 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.ANALYTICS_SERVICE_CALCULATION_FAILED]: 'فشل حساب تحليلات الخدمات',
   [ErrorCode.ANALYTICS_SUPPORT_CALCULATION_FAILED]: 'فشل حساب تحليلات الدعم الفني',
   [ErrorCode.ANALYTICS_CRON_JOB_FAILED]: 'فشل تنفيذ مهمة التحليلات المجدولة',
+  [ErrorCode.ANALYTICS_EXPORT_FAILED]: 'فشل تصدير التقرير',
+  [ErrorCode.ANALYTICS_EXPORT_STORAGE_NOT_CONFIGURED]: 'إعدادات تخزين التقارير غير مكتملة',
+  [ErrorCode.ANALYTICS_EXPORT_UPLOAD_FAILED]: 'فشل رفع ملف التقرير',
+  [ErrorCode.ANALYTICS_EXPORT_FILE_GENERATION_FAILED]: 'فشل إنشاء ملف التقرير',
+  [ErrorCode.ANALYTICS_SALES_BY_CATEGORY_FAILED]: 'فشل حساب المبيعات حسب الفئة',
+  [ErrorCode.ANALYTICS_INVENTORY_CALCULATION_FAILED]: 'فشل حساب تحليلات المخزون',
 
   // ==================== السمات ====================
   [ErrorCode.ATTRIBUTE_NOT_FOUND]: 'السمة غير موجودة',

@@ -119,6 +119,7 @@ export interface AnalyticsQueryDto {
   startDate?: string;
   endDate?: string;
   compareWithPrevious?: boolean;
+  currency?: 'YER' | 'USD' | 'SAR';
 }
 
 export interface ReportGenerationDto {
@@ -136,9 +137,10 @@ export interface SalesAnalytics {
   totalRevenue: number;
   totalOrders: number;
   averageOrderValue: number;
-  salesGrowth?: number; // نسبة النمو مقارنة بالفترة السابقة
-  revenueGrowth?: number; // نمو الإيرادات
-  ordersGrowth?: number; // نمو الطلبات
+  salesGrowth?: number;
+  revenueGrowth?: number;
+  ordersGrowth?: number;
+  currency?: string;
   salesByDate: Array<{
     date: string;
     revenue: number;
@@ -221,10 +223,31 @@ export interface InventoryReport {
   outOfStock: number;
   lowStock: number;
   totalValue: number;
-  totalProductsGrowth?: number; // نمو إجمالي المنتجات
-  inStockGrowth?: number; // نمو المنتجات المتوفرة
-  outOfStockGrowth?: number; // نمو/انخفاض المنتجات غير المتوفرة
-  totalValueGrowth?: number; // نمو قيمة المخزون
+  totalProductsGrowth?: number;
+  inStockGrowth?: number;
+  outOfStockGrowth?: number;
+  totalValueGrowth?: number;
+  currency?: string;
+  productSummary?: {
+    totalProducts: number;
+    activeProducts: number;
+    simpleProducts: number;
+    productsWithVariants: number;
+    lowStockProducts: number;
+    outOfStockProducts: number;
+  };
+  variantSummary?: {
+    totalVariants: number;
+    activeVariants: number;
+    lowStockVariants: number;
+    outOfStockVariants: number;
+    affectedProducts: number;
+  };
+  totals?: {
+    lowStockItems: number;
+    outOfStockItems: number;
+    affectedProducts: number;
+  };
   byCategory: Array<{
     category: string;
     count: number;
@@ -240,7 +263,8 @@ export interface InventoryReport {
 // Financial Report
 export interface FinancialReport {
   revenue: number;
-  revenueGrowth?: number; // نمو الإيرادات
+  revenueGrowth?: number;
+  currency?: string;
   cashFlow: Array<{
     date: string;
     revenue: number;
@@ -404,6 +428,7 @@ export interface ExportReportDto {
   format: ReportFormat;
   includeCharts?: boolean;
   includeRawData?: boolean;
+  currency?: 'YER' | 'USD' | 'SAR';
 }
 
 // List Params

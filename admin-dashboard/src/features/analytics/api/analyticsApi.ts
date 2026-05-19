@@ -386,6 +386,7 @@ export const analyticsApi = {
     const payload = {
       ...data,
       format: normalizeExportFormat(data?.format),
+      currency: data.currency || 'YER',
     };
 
     const response = await apiClient.post(
@@ -639,7 +640,7 @@ export const analyticsApi = {
   getExportedFiles: async (
     params: ExportFilesParams = {}
   ): Promise<PaginatedResponse<ExportFile>> => {
-    const response = await apiClient.get('/analytics/advanced/reports/exports', { params });
+    const response = await apiClient.get('/analytics/advanced/exports', { params });
     return normalizePaginatedResponse(
       response,
       normalizeFileResult,

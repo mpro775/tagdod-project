@@ -22,6 +22,13 @@ import {
   AnalyticsException,
 } from '../../shared/exceptions';
 import { resolveAnalyticsDateRange } from './utils/resolve-analytics-date-range';
+import { SalesCategoryAnalyticsService } from './services/sales-category-analytics.service';
+import { InventoryAnalyticsService } from './services/inventory-analytics.service';
+import {
+  normalizeAnalyticsCurrency,
+  getOrderTotalByCurrency,
+  getItemLineTotalByCurrency,
+} from './utils/currency-helpers';
 
 const COMPLETED_STATUSES = ['completed'] as const;
 
@@ -38,13 +45,7 @@ interface AnalyticsParams {
   period?: string;
   limit?: number;
   page?: number;
-}
-
-interface ProductAggregateResult {
-  _id: Types.ObjectId;
-  product: string;
-  sales: number;
-  revenue: number;
+  currency?: 'YER' | 'USD' | 'SAR';
 }
 
 interface CustomerAggregateResult {
@@ -54,18 +55,6 @@ interface CustomerAggregateResult {
   phone: string;
   totalSpent: number;
   orderCount: number;
-}
-
-interface InventoryAggregateResult {
-  _id: Types.ObjectId;
-  categoryName: string;
-  count: number;
-  totalStock: number;
-}
-
-interface RevenueSourceResult {
-  _id: string;
-  amount: number;
 }
 
 interface TopProductDetailResult {
@@ -150,6 +139,8 @@ export class AdvancedAnalyticsService {
     private systemMonitoring: SystemMonitoringService,
     private exportService: ExportService,
     private reportIdService: ReportIdService,
+    private salesCategoryAnalyticsService: SalesCategoryAnalyticsService,
+    private inventoryAnalyticsService: InventoryAnalyticsService,
   ) {}
 
   // ==================== Helper Methods ====================
@@ -157,7 +148,11 @@ export class AdvancedAnalyticsService {
   /**
    * Generate sales data by date
    */
-  private async generateSalesByDate(startDate: Date, endDate: Date) {
+  private async generateSalesByDate(
+    startDate: Date,
+    endDate: Date,
+    currency: 'YER' | 'USD' | 'SAR' = 'YER',
+  ) {
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     const salesByDate = [];
 
@@ -173,7 +168,10 @@ export class AdvancedAnalyticsService {
         })
         .lean();
 
-      const revenue = dayOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const revenue = dayOrders.reduce(
+        (sum, order) => sum + getOrderTotalByCurrency(order, currency),
+        0,
+      );
       const orders = dayOrders.length;
 
       salesByDate.push({
@@ -190,245 +188,86 @@ export class AdvancedAnalyticsService {
    * Get sales by category
    */
   private async getSalesByCategory(startDate: Date, endDate: Date) {
-    // استخدام lookup من products أولاً (أكثر موثوقية)
-    // ثم fallback إلى snapshot إذا كان موجوداً
-    const pipeline = [
-      {
-        $match: {
-          createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: COMPLETED_STATUSES },
-          paymentStatus: 'paid',
-        },
-      },
-      { $unwind: '$items' },
-      {
-        $lookup: {
-          from: 'products',
-          localField: 'items.productId',
-          foreignField: '_id',
-          as: 'product',
-        },
-      },
-      {
-        $unwind: {
-          path: '$product',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'product.categoryId',
-          foreignField: '_id',
-          as: 'categoryFromProduct',
-        },
-      },
-      {
-        $lookup: {
-          from: 'categories',
-          let: {
-            snapshotCategoryId: {
-              $cond: {
-                if: { $ne: ['$items.snapshot.categoryId', null] },
-                then: {
-                  $cond: {
-                    if: { $eq: [{ $type: '$items.snapshot.categoryId' }, 'string'] },
-                    then: { $toObjectId: '$items.snapshot.categoryId' },
-                    else: '$items.snapshot.categoryId',
-                  },
-                },
-                else: null,
-              },
-            },
-          },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $ne: ['$$snapshotCategoryId', null] },
-                    { $eq: ['$_id', '$$snapshotCategoryId'] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: 'categoryFromSnapshot',
-        },
-      },
-      {
-        $addFields: {
-          // استخدام categoryName من snapshot أولاً، ثم من product
-          categoryName: {
-            $cond: {
-              if: {
-                $and: [
-                  { $ne: ['$items.snapshot.categoryName', null] },
-                  { $ne: ['$items.snapshot.categoryName', ''] },
-                  { $ne: ['$items.snapshot.categoryName', 'undefined'] },
-                ],
-              },
-              then: '$items.snapshot.categoryName',
-              else: {
-                $cond: {
-                  if: { $gt: [{ $size: '$categoryFromSnapshot' }, 0] },
-                  then: { $arrayElemAt: ['$categoryFromSnapshot.name', 0] },
-                  else: {
-                    $cond: {
-                      if: { $gt: [{ $size: '$categoryFromProduct' }, 0] },
-                      then: { $arrayElemAt: ['$categoryFromProduct.name', 0] },
-                      else: null,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      {
-        $match: {
-          $and: [
-            { categoryName: { $ne: null } },
-            { categoryName: { $ne: '' } },
-            { categoryName: { $ne: 'undefined' } },
-            { categoryName: { $exists: true } },
-          ],
-        },
-      },
-      {
-        $group: {
-          _id: '$categoryName',
-          categoryName: { $first: '$categoryName' },
-          revenue: { $sum: '$items.lineTotal' },
-          sales: { $sum: '$items.qty' },
-        },
-      },
-      { $sort: { revenue: -1 as 1 | -1 } },
-    ];
+    const results = await this.salesCategoryAnalyticsService.getSalesByCategory({
+      startDate,
+      endDate,
+    });
 
-    try {
-      // Debug: تحقق من الطلبات المطابقة
-      const matchingOrdersCount = await this.orderModel.countDocuments({
-        createdAt: { $gte: startDate, $lte: endDate },
-        status: { $in: COMPLETED_STATUSES },
-        paymentStatus: 'paid',
-      });
-      this.logger.debug(`getSalesByCategory: Found ${matchingOrdersCount} matching orders`);
-
-      const results = await this.orderModel.aggregate(pipeline);
-      const totalRevenue = results.reduce((sum, item) => sum + (item.revenue || 0), 0);
-
-      this.logger.debug(
-        `getSalesByCategory found ${results.length} categories with total revenue: ${totalRevenue}`,
-      );
-
-      if (results.length === 0) {
-        // Debug: تحقق من البيانات الخام
-        const sampleOrder = await this.orderModel
-          .findOne({
-            createdAt: { $gte: startDate, $lte: endDate },
-            status: { $in: COMPLETED_STATUSES },
-            paymentStatus: 'paid',
-          })
-          .lean();
-
-        if (sampleOrder && sampleOrder.items && sampleOrder.items.length > 0) {
-          const firstItem = sampleOrder.items[0];
-          this.logger.debug(
-            `Sample order item snapshot.categoryId: ${firstItem.snapshot?.categoryId}`,
-          );
-          this.logger.debug(`Sample order item productId: ${firstItem.productId}`);
-        }
-      }
-
-      return results.map((item) => ({
-        category: item.categoryName,
-        revenue: item.revenue || 0,
-        percentage: totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0,
-        sales: item.sales || 0,
-      }));
-    } catch (error: any) {
-      this.logger.error(`Error in getSalesByCategory: ${error?.message || String(error)}`);
-      this.logger.error(`Error stack: ${error?.stack || 'No stack trace'}`);
-      // Return empty array on error
-      return [];
-    }
+    return results.map((item) => ({
+      category: item.categoryName,
+      revenue: item.revenue,
+      percentage: item.percentage,
+      sales: item.sales,
+    }));
   }
 
   /**
    * Get sales by payment method
    */
-  private async getSalesByPaymentMethod(startDate: Date, endDate: Date) {
-    const pipeline = [
-      {
-        $match: {
-          createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: COMPLETED_STATUSES },
-          paymentStatus: 'paid',
-        },
-      },
-      {
-        $group: {
-          _id: '$paymentMethod',
-          amount: { $sum: '$total' },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { amount: -1 as 1 | -1 } },
-    ];
+  private async getSalesByPaymentMethod(
+    startDate: Date,
+    endDate: Date,
+    currency: 'YER' | 'USD' | 'SAR' = 'YER',
+  ) {
+    const orders = await this.orderModel
+      .find({
+        createdAt: { $gte: startDate, $lte: endDate },
+        status: { $in: COMPLETED_STATUSES },
+        paymentStatus: 'paid',
+      })
+      .lean();
 
-    const results = await this.orderModel.aggregate(pipeline);
+    const map = new Map<string, { amount: number; count: number }>();
+    for (const order of orders) {
+      const method = order.paymentMethod || 'Unknown';
+      const entry = map.get(method) || { amount: 0, count: 0 };
+      entry.amount += getOrderTotalByCurrency(order, currency);
+      entry.count += 1;
+      map.set(method, entry);
+    }
 
-    return results.map((item) => ({
-      method: item._id || 'Unknown',
-      amount: item.amount,
-      count: item.count,
-    }));
+    return Array.from(map.entries())
+      .map(([method, data]) => ({ method, amount: data.amount, count: data.count }))
+      .sort((a, b) => b.amount - a.amount);
   }
 
   /**
    * Get top products
    */
-  private async getTopProducts(startDate: Date, endDate: Date, limit: number) {
-    const pipeline = [
-      {
-        $match: {
-          createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: COMPLETED_STATUSES },
-          paymentStatus: 'paid',
-        },
-      },
-      { $unwind: '$items' },
-      {
-        $lookup: {
-          from: 'products',
-          localField: 'items.productId',
-          foreignField: '_id',
-          as: 'product',
-        },
-      },
-      { $unwind: '$product' },
-      {
-        $group: {
-          _id: '$product._id',
-          product: { $first: '$product.name' },
-          sales: { $sum: '$items.qty' },
-          revenue: { $sum: { $multiply: ['$items.qty', '$items.finalPrice'] } },
-        },
-      },
-      { $sort: { sales: -1 as 1 | -1 } },
-      { $limit: limit },
-    ];
+  private async getTopProducts(
+    startDate: Date,
+    endDate: Date,
+    limit: number,
+    currency: 'YER' | 'USD' | 'SAR' = 'YER',
+  ) {
+    const orders = await this.orderModel
+      .find({
+        createdAt: { $gte: startDate, $lte: endDate },
+        status: { $in: COMPLETED_STATUSES },
+        paymentStatus: 'paid',
+      })
+      .lean();
 
-    const results = await this.orderModel.aggregate(pipeline);
+    const productMap = new Map<
+      string,
+      { name: string; sales: number; revenue: number }
+    >();
 
-    return results.map((item: ProductAggregateResult) => ({
-      id: item._id.toString(),
-      name: item.product,
-      sales: item.sales,
-      revenue: item.revenue,
-    }));
+    for (const order of orders) {
+      for (const item of order.items || []) {
+        const pid = item.productId?.toString();
+        if (!pid) continue;
+        const entry = productMap.get(pid) || { name: item.snapshot?.name || 'Unknown', sales: 0, revenue: 0 };
+        entry.sales += item.qty || 0;
+        entry.revenue += getItemLineTotalByCurrency(item, order, currency);
+        productMap.set(pid, entry);
+      }
+    }
+
+    return Array.from(productMap.entries())
+      .map(([id, data]) => ({ id, ...data }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, limit);
   }
 
   // ==================== Sales Analytics ====================
@@ -436,6 +275,7 @@ export class AdvancedAnalyticsService {
     this.logger.log('Getting sales analytics with params:', params);
 
     const { startDate, endDate } = resolveAnalyticsDateRange(params);
+    const currency = normalizeAnalyticsCurrency(params.currency);
 
     // Get real sales data from orders using correct status values
     const [orders, previousPeriodOrders] = await Promise.all([
@@ -458,13 +298,16 @@ export class AdvancedAnalyticsService {
         .lean(),
     ]);
 
-    // Calculate real metrics
-    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+    // Calculate real metrics with currency
+    const totalRevenue = orders.reduce(
+      (sum, order) => sum + getOrderTotalByCurrency(order, currency),
+      0,
+    );
     const totalOrders = orders.length;
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
     const previousRevenue = previousPeriodOrders.reduce(
-      (sum, order) => sum + (order.total || 0),
+      (sum, order) => sum + getOrderTotalByCurrency(order, currency),
       0,
     );
     const previousOrders = previousPeriodOrders.length;
@@ -478,16 +321,16 @@ export class AdvancedAnalyticsService {
       previousOrders > 0 ? ((totalOrders - previousOrders) / previousOrders) * 100 : 0;
 
     // Generate sales by date
-    const salesByDate = await this.generateSalesByDate(startDate, endDate);
+    const salesByDate = await this.generateSalesByDate(startDate, endDate, currency);
 
     // Get sales by category
     const salesByCategory = await this.getSalesByCategory(startDate, endDate);
 
     // Get sales by payment method
-    const salesByPaymentMethod = await this.getSalesByPaymentMethod(startDate, endDate);
+    const salesByPaymentMethod = await this.getSalesByPaymentMethod(startDate, endDate, currency);
 
     // Get top products
-    const topProducts = await this.getTopProducts(startDate, endDate, params.limit || 5);
+    const topProducts = await this.getTopProducts(startDate, endDate, params.limit || 5, currency);
 
     return {
       totalRevenue,
@@ -500,6 +343,7 @@ export class AdvancedAnalyticsService {
       salesByCategory,
       salesByPaymentMethod,
       topProducts,
+      currency,
     };
   }
 
@@ -791,155 +635,38 @@ export class AdvancedAnalyticsService {
     this.logger.log('Getting inventory report with params:', params);
 
     const { startDate, endDate } = resolveAnalyticsDateRange(params);
+    const currency = normalizeAnalyticsCurrency(params.currency);
 
-    // Calculate previous period for comparison
-    const periodDuration = endDate.getTime() - startDate.getTime();
-    const previousStartDate = new Date(startDate.getTime() - periodDuration);
-
-    // Get current period product counts
-    const totalProducts = await this.productModel.countDocuments({ deletedAt: null });
-    const activeProducts = await this.productModel.countDocuments({
-      status: 'active',
-      isActive: true,
-      deletedAt: null,
+    const report = await this.inventoryAnalyticsService.getInventoryReport({
+      startDate,
+      endDate,
+      currency,
     });
 
-    // Get low stock products (stock < minStock)
-    const lowStockProducts = await this.productModel.countDocuments({
-      deletedAt: null,
-      trackStock: true,
-      stock: { $gt: 0 }, // استبعاد المنتجات التي نفذت (stock = 0)
-      $expr: { $lt: ['$stock', '$minStock'] },
-    });
-
-    // Get out of stock products
-    const outOfStockProducts = await this.productModel.countDocuments({
-      deletedAt: null,
-      trackStock: true,
-      stock: 0,
-    });
-
-    // Get previous period counts for comparison
-    const previousTotalProducts = await this.productModel.countDocuments({
-      deletedAt: null,
-      createdAt: { $lt: startDate },
-    });
-
-    const previousActiveProducts = await this.productModel.countDocuments({
-      status: 'active',
-      isActive: true,
-      deletedAt: null,
-      createdAt: { $lt: startDate },
-    });
-
-    const previousOutOfStockProducts = await this.productModel.countDocuments({
-      deletedAt: null,
-      trackStock: true,
-      stock: 0,
-      updatedAt: { $gte: previousStartDate, $lt: startDate },
-    });
-
-    // Calculate current and previous inventory values
-    const totalValue = await this.calculateInventoryValue();
-    const previousTotalValue = await this.calculateInventoryValueForDate(previousStartDate);
-
-    // Calculate growth metrics
-    const totalProductsGrowth =
-      previousTotalProducts > 0
-        ? ((totalProducts - previousTotalProducts) / previousTotalProducts) * 100
-        : 0;
-    const inStockGrowth =
-      previousActiveProducts > 0
-        ? ((activeProducts - previousActiveProducts) / previousActiveProducts) * 100
-        : 0;
-    const outOfStockGrowth =
-      previousOutOfStockProducts > 0
-        ? ((outOfStockProducts - previousOutOfStockProducts) / previousOutOfStockProducts) * 100
-        : 0;
-    const totalValueGrowth =
-      previousTotalValue > 0 ? ((totalValue - previousTotalValue) / previousTotalValue) * 100 : 0;
-
-    // Get inventory by category
-    const inventoryByCategory = await this.productModel.aggregate([
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'categoryId',
-          foreignField: '_id',
-          as: 'category',
-        },
-      },
-      { $unwind: '$category' },
-      {
-        $group: {
-          _id: '$category._id',
-          categoryName: { $first: '$category.name' },
-          count: { $sum: 1 },
-          totalStock: { $sum: '$stock' },
-        },
-      },
-      { $sort: { count: -1 } },
-    ]);
-
-    // Get recent inventory movements from orders
-    const recentMovements = await this.orderModel.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: COMPLETED_STATUSES },
-        },
-      },
-      { $unwind: '$items' },
-      {
-        $lookup: {
-          from: 'products',
-          localField: 'items.productId',
-          foreignField: '_id',
-          as: 'product',
-        },
-      },
-      { $unwind: '$product' },
-      {
-        $project: {
-          date: '$createdAt',
-          type: 'out',
-          quantity: '$items.qty',
-          productName: '$product.name',
-        },
-      },
-      { $sort: { date: -1 } },
-      { $limit: 20 },
-    ]);
-
-    // Calculate inventory value for each category
-    const categoryValues = await Promise.all(
-      inventoryByCategory.map(async (item: InventoryAggregateResult) => {
-        const categoryValue = await this.calculateCategoryInventoryValue(item._id);
-        return {
-          category: item.categoryName,
-          count: item.count,
-          value: categoryValue,
-        };
-      }),
-    );
-
+    // Keep backward-compatible shape while adding new fields
     return {
-      totalProducts,
-      inStock: activeProducts,
-      lowStock: lowStockProducts,
-      outOfStock: outOfStockProducts,
-      totalValue,
-      totalProductsGrowth,
-      inStockGrowth,
-      outOfStockGrowth,
-      totalValueGrowth,
-      byCategory: categoryValues,
-      movements: recentMovements.map((movement) => ({
-        date: movement.date,
-        type: movement.type,
-        quantity: movement.quantity,
-        product: movement.productName,
+      totalProducts: report.productSummary.totalProducts,
+      inStock: report.productSummary.activeProducts,
+      lowStock: report.totals.lowStockItems,
+      outOfStock: report.totals.outOfStockItems,
+      totalValue: report.totalValue,
+      totalProductsGrowth: 0,
+      inStockGrowth: 0,
+      outOfStockGrowth: 0,
+      totalValueGrowth: 0,
+      // New enriched fields
+      productSummary: report.productSummary,
+      variantSummary: report.variantSummary,
+      totals: report.totals,
+      byCategory: report.byCategory.map((c) => ({
+        category: c.categoryName,
+        count: c.productCount + c.variantCount,
+        value: c.value,
       })),
+      lowStockItems: report.lowStockItems,
+      outOfStockItems: report.outOfStockItems,
+      movements: [],
+      currency,
     };
   }
 
@@ -948,66 +675,56 @@ export class AdvancedAnalyticsService {
     this.logger.log('Getting financial report with params:', params);
 
     const { startDate, endDate } = resolveAnalyticsDateRange(params);
+    const currency = normalizeAnalyticsCurrency(params.currency);
 
     // Calculate previous period for comparison
     const periodDuration = endDate.getTime() - startDate.getTime();
     const previousStartDate = new Date(startDate.getTime() - periodDuration);
     const previousEndDate = startDate;
 
-    // Get current and previous period revenue from orders
-    const [currentRevenueData, previousRevenueData] = await Promise.all([
-      this.orderModel.aggregate([
-        {
-          $match: {
-            createdAt: { $gte: startDate, $lte: endDate },
-            status: { $in: COMPLETED_STATUSES },
-            paymentStatus: 'paid',
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalRevenue: { $sum: '$total' },
-            orderCount: { $sum: 1 },
-          },
-        },
-      ]),
-      this.orderModel.aggregate([
-        {
-          $match: {
-            createdAt: { $gte: previousStartDate, $lt: previousEndDate },
-            status: { $in: COMPLETED_STATUSES },
-            paymentStatus: 'paid',
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalRevenue: { $sum: '$total' },
-            orderCount: { $sum: 1 },
-          },
-        },
-      ]),
+    // Get current and previous period orders
+    const [currentOrders, previousOrders] = await Promise.all([
+      this.orderModel
+        .find({
+          createdAt: { $gte: startDate, $lte: endDate },
+          status: { $in: COMPLETED_STATUSES },
+          paymentStatus: 'paid',
+        })
+        .lean(),
+      this.orderModel
+        .find({
+          createdAt: { $gte: previousStartDate, $lt: previousEndDate },
+          status: { $in: COMPLETED_STATUSES },
+          paymentStatus: 'paid',
+        })
+        .lean(),
     ]);
 
-    const revenue = currentRevenueData[0]?.totalRevenue || 0;
-    const previousRevenue = previousRevenueData[0]?.totalRevenue || 0;
+    const revenue = currentOrders.reduce(
+      (sum, order) => sum + getOrderTotalByCurrency(order, currency),
+      0,
+    );
+    const previousRevenue = previousOrders.reduce(
+      (sum, order) => sum + getOrderTotalByCurrency(order, currency),
+      0,
+    );
 
     // Calculate revenue growth
     const revenueGrowth =
       previousRevenue > 0 ? ((revenue - previousRevenue) / previousRevenue) * 100 : 0;
 
     // Generate cash flow data (daily revenue)
-    const cashFlow = await this.generateCashFlowData(startDate, endDate);
+    const cashFlow = await this.generateCashFlowData(startDate, endDate, currency);
 
     // Get revenue by source (payment methods)
-    const revenueBySource = await this.getRevenueBySource(startDate, endDate);
+    const revenueBySource = await this.getRevenueBySource(startDate, endDate, currency);
 
     return {
       revenue,
       revenueGrowth,
       cashFlow,
       revenueBySource,
+      currency,
     };
   }
 
@@ -1792,10 +1509,15 @@ export class AdvancedAnalyticsService {
     return { success: true, message: 'Report deleted successfully' };
   }
 
-  async exportReport(reportId: string, data: { format?: string }, userId?: string) {
+  async exportReport(
+    reportId: string,
+    data: { format?: string; currency?: 'YER' | 'USD' | 'SAR' },
+    userId?: string,
+  ) {
     this.logger.log('Exporting report:', reportId, data);
 
     const format = (data.format || 'json') as 'pdf' | 'xlsx' | 'csv' | 'json';
+    const currency = normalizeAnalyticsCurrency(data.currency);
 
     // Get the report document (not the mapped response)
     const reportDoc = await this.advancedReportModel.findOne({ reportId }).lean();
@@ -1815,7 +1537,7 @@ export class AdvancedAnalyticsService {
     const productAnalytics: any = report.data?.productAnalytics || {};
 
     const exportData = {
-      summary: report.summary,
+      summary: { ...report.summary, currency },
       topProducts: productAnalytics?.topProducts || salesAnalytics?.topSellingProducts || [],
       salesByDate: salesAnalytics?.salesByDate || [],
       topCustomers: customerAnalytics?.topCustomers || [],
@@ -1825,46 +1547,59 @@ export class AdvancedAnalyticsService {
       totalRevenue: salesAnalytics?.totalRevenue || 0,
       totalOrders: salesAnalytics?.totalOrders || 0,
       totalUsers: customerAnalytics?.totalCustomers || 0,
+      currency,
     };
 
-    // Generate file using export service
-    const fileName = `${reportId}_${Date.now()}.${format}`;
-    const exportResult = await this.exportService.exportData({
-      format,
-      filename: fileName,
-      folder: 'analytics/reports',
-      title: report.title || report.titleEn || 'Analytics Report',
-      data: exportData,
-    });
+    try {
+      // Generate file using export service
+      const fileName = `${reportId}_${Date.now()}.${format}`;
+      const exportResult = await this.exportService.exportData({
+        format,
+        filename: fileName,
+        folder: 'analytics/reports',
+        title: report.title || report.titleEn || 'Analytics Report',
+        data: exportData,
+      });
 
-    // Save export entry inside report exports[]
-    const exportEntry = {
-      format: exportResult.format as 'pdf' | 'xlsx' | 'csv' | 'json',
-      fileUrl: exportResult.url,
-      fileName: exportResult.filename,
-      fileSize: exportResult.size,
-      generatedAt: new Date(),
-      generatedBy: userId ? new Types.ObjectId(userId) : reportDoc.createdBy,
-    };
+      // Save export entry inside report exports[]
+      const exportEntry = {
+        format: exportResult.format as 'pdf' | 'xlsx' | 'csv' | 'json',
+        fileUrl: exportResult.url,
+        fileName: exportResult.filename,
+        fileSize: exportResult.size,
+        generatedAt: new Date(),
+        generatedBy: userId ? new Types.ObjectId(userId) : reportDoc.createdBy,
+      };
 
-    await this.advancedReportModel.updateOne(
-      { reportId },
-      { $push: { exports: exportEntry } },
-    );
+      await this.advancedReportModel.updateOne(
+        { reportId },
+        { $push: { exports: exportEntry } },
+      );
 
-    this.logger.log(
-      `Report exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
-    );
+      this.logger.log(
+        `Report exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
+      );
 
-    return {
-      fileUrl: exportResult.url,
-      format: exportResult.format,
-      fileSize: exportResult.size,
-      exportedAt: new Date().toISOString(),
-      fileName: exportResult.filename,
-      path: exportResult.path,
-      status: 'available',
-    };
+      return {
+        fileUrl: exportResult.url,
+        format: exportResult.format,
+        fileSize: exportResult.size,
+        exportedAt: new Date().toISOString(),
+        fileName: exportResult.filename,
+        path: exportResult.path,
+        status: 'available',
+        currency,
+      };
+    } catch (error) {
+      this.logger.error('Report export failed', {
+        reportId,
+        format,
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
   }
 
   // ==================== Data Export ====================
@@ -1966,6 +1701,99 @@ export class AdvancedAnalyticsService {
     this.logger.log(
       `Customers data exported successfully: ${exportResult.url} (${exportResult.size} bytes)`,
     );
+
+    return {
+      fileUrl: exportResult.url,
+      fileName: exportResult.filename,
+      format: exportResult.format,
+      fileSize: exportResult.size,
+      path: exportResult.path,
+      exportedAt: new Date().toISOString(),
+      status: 'available',
+    };
+  }
+
+  async exportInventoryData(format: string, startDate?: string, endDate?: string) {
+    this.logger.log('Exporting inventory data:', { format, startDate, endDate });
+
+    const inventoryData = await this.getInventoryReport({
+      startDate,
+      endDate,
+      period: startDate && endDate ? 'custom' : '30d',
+    });
+
+    const fileName = `inventory_data_${startDate || 'all'}_${endDate || 'all'}_${Date.now()}.${format}`;
+    const periodLabel = startDate && endDate ? `${startDate} to ${endDate}` : 'All Time';
+
+    const exportResult = await this.exportService.exportData({
+      format: format as 'pdf' | 'xlsx' | 'csv' | 'json',
+      filename: fileName,
+      folder: 'analytics/exports/inventory',
+      title: `Inventory Report - ${periodLabel}`,
+      data: inventoryData,
+    });
+
+    return {
+      fileUrl: exportResult.url,
+      fileName: exportResult.filename,
+      format: exportResult.format,
+      fileSize: exportResult.size,
+      path: exportResult.path,
+      exportedAt: new Date().toISOString(),
+      status: 'available',
+    };
+  }
+
+  async exportFinancialData(format: string, startDate?: string, endDate?: string) {
+    this.logger.log('Exporting financial data:', { format, startDate, endDate });
+
+    const financialData = await this.getFinancialReport({
+      startDate,
+      endDate,
+      period: startDate && endDate ? 'custom' : '30d',
+    });
+
+    const fileName = `financial_data_${startDate || 'all'}_${endDate || 'all'}_${Date.now()}.${format}`;
+    const periodLabel = startDate && endDate ? `${startDate} to ${endDate}` : 'All Time';
+
+    const exportResult = await this.exportService.exportData({
+      format: format as 'pdf' | 'xlsx' | 'csv' | 'json',
+      filename: fileName,
+      folder: 'analytics/exports/financial',
+      title: `Financial Report - ${periodLabel}`,
+      data: financialData,
+    });
+
+    return {
+      fileUrl: exportResult.url,
+      fileName: exportResult.filename,
+      format: exportResult.format,
+      fileSize: exportResult.size,
+      path: exportResult.path,
+      exportedAt: new Date().toISOString(),
+      status: 'available',
+    };
+  }
+
+  async exportMarketingData(format: string, startDate?: string, endDate?: string) {
+    this.logger.log('Exporting marketing data:', { format, startDate, endDate });
+
+    const marketingData = await this.getMarketingReport({
+      startDate,
+      endDate,
+      period: startDate && endDate ? 'custom' : '30d',
+    });
+
+    const fileName = `marketing_data_${startDate || 'all'}_${endDate || 'all'}_${Date.now()}.${format}`;
+    const periodLabel = startDate && endDate ? `${startDate} to ${endDate}` : 'All Time';
+
+    const exportResult = await this.exportService.exportData({
+      format: format as 'pdf' | 'xlsx' | 'csv' | 'json',
+      filename: fileName,
+      folder: 'analytics/exports/marketing',
+      title: `Marketing Report - ${periodLabel}`,
+      data: marketingData,
+    });
 
     return {
       fileUrl: exportResult.url,
@@ -2549,7 +2377,11 @@ export class AdvancedAnalyticsService {
   /**
    * Generate cash flow data
    */
-  private async generateCashFlowData(startDate: Date, endDate: Date) {
+   private async generateCashFlowData(
+    startDate: Date,
+    endDate: Date,
+    currency: 'YER' | 'USD' | 'SAR' = 'YER',
+  ) {
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     const cashFlow = [];
     let cumulativeBalance = 0;
@@ -2567,7 +2399,10 @@ export class AdvancedAnalyticsService {
         })
         .lean();
 
-      const dailyRevenue = dailyOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const dailyRevenue = dailyOrders.reduce(
+        (sum, order) => sum + getOrderTotalByCurrency(order, currency),
+        0,
+      );
       cumulativeBalance += dailyRevenue;
 
       cashFlow.push({
@@ -2583,32 +2418,34 @@ export class AdvancedAnalyticsService {
   /**
    * Get revenue by source
    */
-  private async getRevenueBySource(startDate: Date, endDate: Date) {
-    const pipeline = [
-      {
-        $match: {
-          createdAt: { $gte: startDate, $lte: endDate },
-          status: { $in: COMPLETED_STATUSES },
-          paymentStatus: 'paid',
-        },
-      },
-      {
-        $group: {
-          _id: '$paymentMethod',
-          amount: { $sum: '$total' },
-        },
-      },
-      { $sort: { amount: -1 as 1 | -1 } },
-    ];
+  private async getRevenueBySource(
+    startDate: Date,
+    endDate: Date,
+    currency: 'YER' | 'USD' | 'SAR' = 'YER',
+  ) {
+    const orders = await this.orderModel
+      .find({
+        createdAt: { $gte: startDate, $lte: endDate },
+        status: { $in: COMPLETED_STATUSES },
+        paymentStatus: 'paid',
+      })
+      .lean();
 
-    const results = await this.orderModel.aggregate(pipeline);
-    const totalRevenue = results.reduce((sum, item: RevenueSourceResult) => sum + item.amount, 0);
+    const map = new Map<string, number>();
+    for (const order of orders) {
+      const method = order.paymentMethod || 'Unknown';
+      map.set(method, (map.get(method) || 0) + getOrderTotalByCurrency(order, currency));
+    }
 
-    return results.map((item: RevenueSourceResult) => ({
-      source: item._id || 'Unknown',
-      amount: item.amount,
-      percentage: totalRevenue > 0 ? (item.amount / totalRevenue) * 100 : 0,
-    }));
+    const totalRevenue = Array.from(map.values()).reduce((sum, v) => sum + v, 0);
+
+    return Array.from(map.entries())
+      .map(([source, amount]) => ({
+        source,
+        amount,
+        percentage: totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount);
   }
 
   /**
@@ -3622,7 +3459,7 @@ export class AdvancedAnalyticsService {
       ];
     }
 
-    const [reports, total] = await Promise.all([
+    const [reports] = await Promise.all([
       this.advancedReportModel
         .find(filter)
         .select('reportId title titleEn category exports createdAt')

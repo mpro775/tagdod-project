@@ -615,6 +615,42 @@ export class AnalyticsCronJobFailedException extends AnalyticsException {
   }
 }
 
+export class AnalyticsExportFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_EXPORT_FAILED, details);
+  }
+}
+
+export class AnalyticsExportStorageNotConfiguredException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_EXPORT_STORAGE_NOT_CONFIGURED, details);
+  }
+}
+
+export class AnalyticsExportUploadFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_EXPORT_UPLOAD_FAILED, details);
+  }
+}
+
+export class AnalyticsExportFileGenerationFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_EXPORT_FILE_GENERATION_FAILED, details);
+  }
+}
+
+export class AnalyticsSalesByCategoryFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_SALES_BY_CATEGORY_FAILED, details);
+  }
+}
+
+export class AnalyticsInventoryCalculationFailedException extends AnalyticsException {
+  constructor(details?: unknown) {
+    super(ErrorCode.ANALYTICS_INVENTORY_CALCULATION_FAILED, details);
+  }
+}
+
 // ==================== Attribute Exceptions ====================
 
 export class AttributeException extends DomainException {

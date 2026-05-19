@@ -66,6 +66,7 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'period', required: false })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
+  @ApiQuery({ name: 'currency', required: false, enum: ['YER', 'USD', 'SAR'] })
   @ApiResponse({ status: 200, description: 'تم استرداد تحليلات المبيعات بنجاح' })
   async getSalesAnalytics(@Query() params: QueryParams) {
     const data = await this.advancedAnalyticsService.getSalesAnalytics(
@@ -108,6 +109,7 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'period', required: false })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
+  @ApiQuery({ name: 'currency', required: false, enum: ['YER', 'USD', 'SAR'] })
   @ApiResponse({ status: 200, description: 'تم استرداد تقرير المخزون بنجاح' })
   async getInventoryReport(@Query() params: QueryParams) {
     const data = await this.advancedAnalyticsService.getInventoryReport(
@@ -122,6 +124,7 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiQuery({ name: 'period', required: false })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
+  @ApiQuery({ name: 'currency', required: false, enum: ['YER', 'USD', 'SAR'] })
   @ApiResponse({ status: 200, description: 'تم استرداد التقرير المالي بنجاح' })
   async getFinancialReport(@Query() params: QueryParams) {
     const data = await this.advancedAnalyticsService.getFinancialReport(
@@ -174,6 +177,38 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   async getQuickStats() {
     const data = await this.advancedAnalyticsService.getQuickStats();
     return { success: true, data, requestId: '' };
+  }
+
+  // ==================== مركز التصدير (يجب أن يكون فوق routes الديناميكية) ====================
+  @Get('exports')
+  @ApiOperation({ summary: 'Get all exported files from reports (new path)' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'format', required: false })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  async getExportedFilesNew(@Query() params: QueryParams & { status?: string }) {
+    const page = parseInt(params.page || '1', 10);
+    const limit = Math.min(parseInt(params.limit || '20', 10), 100);
+    const converted = this.convertQueryParams(params);
+    converted.page = page;
+    converted.limit = limit;
+    const result = await this.advancedAnalyticsService.getExportedFiles(converted);
+    return { success: true, data: { data: result.data, meta: result.meta }, requestId: '' };
+  }
+
+  // @Get('reports/exports') — Legacy route, kept for backward compatibility.
+  // NOTE: This must remain above any @Get('reports/:reportId') to avoid being
+  // interpreted as reportId = 'exports'.
+  @Get('reports/exports')
+  @ApiOperation({ summary: 'Get all exported files from reports (legacy)' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'format', required: false })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  async getExportedFilesLegacy(@Query() params: QueryParams & { status?: string }) {
+    return this.getExportedFilesNew(params);
   }
 
   // ==================== التقارير المتقدمة ====================
@@ -251,12 +286,13 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
   @ApiResponse({ status: 200, description: 'تم تصدير التقرير بنجاح' })
   async exportReport(
     @Param('reportId') reportId: string,
-    @Body() data: ReportData,
+    @Body() data: ReportData & { currency?: string },
     @Req() req: { user: { sub: string } },
   ) {
     const payload = {
       ...data,
       format: normalizeExportFormat(data?.format || 'pdf'),
+      currency: (data.currency || 'YER') as 'YER' | 'USD' | 'SAR',
     };
     return await this.advancedAnalyticsService.exportReport(reportId, payload, req.user.sub);
   }
@@ -310,6 +346,60 @@ export class AdvancedAnalyticsController extends BaseAnalyticsController {
     @Query('endDate') endDate?: string,
   ) {
     return await this.advancedAnalyticsService.exportCustomersData(
+      normalizeExportFormat(format),
+      startDate,
+      endDate,
+    );
+  }
+
+  @Get('export/inventory')
+  @ApiOperation({ summary: 'تصدير بيانات المخزون' })
+  @ApiQuery({ name: 'format', required: true })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  @ApiResponse({ status: 200, description: 'تم تصدير بيانات المخزون بنجاح' })
+  async exportInventoryData(
+    @Query('format') format: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return await this.advancedAnalyticsService.exportInventoryData(
+      normalizeExportFormat(format),
+      startDate,
+      endDate,
+    );
+  }
+
+  @Get('export/financial')
+  @ApiOperation({ summary: 'تصدير البيانات المالية' })
+  @ApiQuery({ name: 'format', required: true })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  @ApiResponse({ status: 200, description: 'تم تصدير البيانات المالية بنجاح' })
+  async exportFinancialData(
+    @Query('format') format: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return await this.advancedAnalyticsService.exportFinancialData(
+      normalizeExportFormat(format),
+      startDate,
+      endDate,
+    );
+  }
+
+  @Get('export/marketing')
+  @ApiOperation({ summary: 'تصدير بيانات التسويق' })
+  @ApiQuery({ name: 'format', required: true })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  @ApiResponse({ status: 200, description: 'تم تصدير بيانات التسويق بنجاح' })
+  async exportMarketingData(
+    @Query('format') format: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return await this.advancedAnalyticsService.exportMarketingData(
       normalizeExportFormat(format),
       startDate,
       endDate,

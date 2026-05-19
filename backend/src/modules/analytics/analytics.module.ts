@@ -18,6 +18,8 @@ import { AnalyticsCalculationService } from './services/analytics-calculation.se
 import { AnalyticsCacheService } from './services/analytics-cache.service';
 import { FileStorageService } from './services/file-storage.service';
 import { ExportService } from './services/export.service';
+import { SalesCategoryAnalyticsService } from './services/sales-category-analytics.service';
+import { InventoryAnalyticsService } from './services/inventory-analytics.service';
 import { ReportTemplatesService } from './services/report-templates.service';
 import { AnalyticsInsightsService } from './services/analytics-insights.service';
 import { AnalyticsAlertsService } from './services/analytics-alerts.service';
@@ -90,6 +92,8 @@ import { CacheService } from '../../shared/cache/cache.service';
     AnalyticsCacheService,
     FileStorageService,
     ExportService,
+    SalesCategoryAnalyticsService,
+    InventoryAnalyticsService,
     StockAlertService,
     ActivityTrackingMiddleware,
     CacheService,
@@ -111,6 +115,8 @@ import { CacheService } from '../../shared/cache/cache.service';
     AnalyticsCacheService,
     FileStorageService,
     ExportService,
+    SalesCategoryAnalyticsService,
+    InventoryAnalyticsService,
     StockAlertService,
     ActivityTrackingMiddleware,
     ReportTemplatesService,

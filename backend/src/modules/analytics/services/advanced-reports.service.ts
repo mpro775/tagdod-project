@@ -31,6 +31,7 @@ import { User, UserDocument } from '../../users/schemas/user.schema';
 import { Coupon, CouponDocument } from '../../marketing/schemas/coupon.schema';
 import { SupportTicket, SupportTicketDocument } from '../../support/schemas/support-ticket.schema';
 import { SystemMonitoringService } from '../../system-monitoring/system-monitoring.service';
+import { SalesCategoryAnalyticsService } from './sales-category-analytics.service';
 import { startOfDay, subMonths, parseISO } from 'date-fns';
 
 // Local interfaces to replace any types
@@ -271,6 +272,7 @@ export class AdvancedReportsService {
     @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
     @InjectModel(SupportTicket.name) private supportModel: Model<SupportTicketDocument>,
     private systemMonitoring: SystemMonitoringService,
+    private salesCategoryAnalyticsService: SalesCategoryAnalyticsService,
   ) {}
 
   /**
@@ -1304,39 +1306,26 @@ export class AdvancedReportsService {
     endDate: Date,
     matchQuery: Record<string, unknown>,
   ): Promise<SalesByCategoryEntry[]> {
-    const result = await this.orderModel.aggregate([
-      { $match: matchQuery },
-      { $unwind: '$items' },
-      {
-        $group: {
-          _id: '$items.snapshot.categoryId',
-          categoryName: { $first: '$items.snapshot.categoryName' },
-          sales: { $sum: '$items.qty' },
-          revenue: { $sum: '$items.lineTotal' },
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          categoryId: { $toString: '$_id' },
-          categoryName: { $ifNull: ['$categoryName', 'Unknown'] },
-          sales: '$sales',
-          revenue: '$revenue',
-        },
-      },
-    ]);
+    const items = await this.salesCategoryAnalyticsService.getSalesByCategory({
+      startDate,
+      endDate,
+    });
 
-    // If no results, return empty array
-    if (!result || result.length === 0) {
-      return [];
+    // Filter by categoryIds if provided in matchQuery
+    const categoryIds = (matchQuery['items.snapshot.categoryId'] as { $in?: string[] })?.$in;
+    let filtered = items;
+    if (categoryIds && categoryIds.length > 0) {
+      filtered = items.filter(
+        (i) => i.categoryId && categoryIds.includes(i.categoryId),
+      );
     }
 
-    // Calculate percentages
-    const totalRevenue = result.reduce((sum, item) => sum + (item.revenue || 0), 0);
-    return result.map((item) => ({
-      ...item,
-      percentage: totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0,
+    return filtered.map((item) => ({
+      categoryId: item.categoryId || 'uncategorized',
+      categoryName: item.categoryName || 'Unknown',
+      sales: item.sales,
+      revenue: item.revenue,
+      percentage: item.percentage,
     }));
   }
 

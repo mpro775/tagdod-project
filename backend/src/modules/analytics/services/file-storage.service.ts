@@ -2,6 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosResponse } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import * as fs from 'fs';
+import * as path from 'path';
+import {
+  AnalyticsExportStorageNotConfiguredException,
+  AnalyticsExportUploadFailedException,
+} from '../../../shared/exceptions';
 
 export interface FileUploadResult {
   url: string;
@@ -20,15 +26,20 @@ export interface BunnyCredentials {
 
 /**
  * File Storage Service for Analytics Reports
- * Handles file uploads to Bunny.net Storage
+ * Handles file uploads to Bunny.net Storage with local fallback for dev/staging
  */
 @Injectable()
 export class FileStorageService {
   private readonly logger = new Logger(FileStorageService.name);
   private readonly bunnyCredentials: BunnyCredentials;
   private readonly defaultFolder = 'analytics/reports';
+  private readonly nodeEnv: string;
+  private readonly localUploadDir: string;
 
   constructor(private configService: ConfigService) {
+    this.nodeEnv = this.configService.get<string>('NODE_ENV') || 'development';
+    this.localUploadDir = this.configService.get<string>('LOCAL_UPLOAD_DIR') || path.join(process.cwd(), 'uploads', 'reports');
+
     // Read all configuration from environment variables
     this.bunnyCredentials = {
       storageZoneName: this.configService.get<string>('BUNNY_STORAGE_ZONE') || '',
@@ -39,15 +50,55 @@ export class FileStorageService {
 
     // Validate required credentials
     if (!this.bunnyCredentials.storageZoneName) {
-      this.logger.warn('BUNNY_STORAGE_ZONE not configured - file storage will fail');
+      this.logger.warn('BUNNY_STORAGE_ZONE not configured');
     }
     if (!this.bunnyCredentials.apiKey) {
-      this.logger.warn('BUNNY_API_KEY not configured - file storage will fail');
+      this.logger.warn('BUNNY_API_KEY not configured');
     }
   }
 
+  private isBunnyConfigured(): boolean {
+    return !!(
+      this.bunnyCredentials.storageZoneName &&
+      this.bunnyCredentials.apiKey
+    );
+  }
+
+  private isProduction(): boolean {
+    return this.nodeEnv === 'production';
+  }
+
+  private ensureLocalDir(folder: string): string {
+    const dir = path.join(this.localUploadDir, folder);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    return dir;
+  }
+
+  private async uploadLocal(
+    buffer: Buffer,
+    filename: string,
+    mimeType: string,
+    folder: string,
+  ): Promise<FileUploadResult> {
+    const dir = this.ensureLocalDir(folder);
+    const filePath = path.join(dir, filename);
+    fs.writeFileSync(filePath, buffer);
+
+    this.logger.log(`File saved locally: ${filePath} (${buffer.length} bytes)`);
+
+    return {
+      url: `file://${filePath}`,
+      filename,
+      size: buffer.length,
+      mimeType,
+      path: `${folder}/${filename}`,
+    };
+  }
+
   /**
-   * Upload buffer to Bunny.net Storage
+   * Upload buffer to Bunny.net Storage or local fallback
    */
   async uploadBuffer(
     buffer: Buffer,
@@ -55,15 +106,24 @@ export class FileStorageService {
     mimeType: string,
     folder: string = this.defaultFolder,
   ): Promise<FileUploadResult> {
-    try {
-      if (!this.bunnyCredentials.storageZoneName || !this.bunnyCredentials.apiKey) {
-        throw new Error('Bunny.net credentials not configured');
-      }
+    // Generate unique filename if needed
+    const fileExtension = filename.split('.').pop() || 'bin';
+    const baseName = filename.replace(/\.[^/.]+$/, '') || uuidv4();
+    const uniqueFilename = `${baseName}.${fileExtension}`;
 
-      // Generate unique filename if needed
-      const fileExtension = filename.split('.').pop() || 'bin';
-      const baseName = filename.replace(/\.[^/.]+$/, '') || uuidv4();
-      const uniqueFilename = `${baseName}.${fileExtension}`;
+    if (!this.isBunnyConfigured()) {
+      if (this.isProduction()) {
+        this.logger.error('Bunny.net credentials not configured in production');
+        throw new AnalyticsExportStorageNotConfiguredException({
+          provider: 'bunny',
+          env: this.nodeEnv,
+        });
+      }
+      this.logger.warn('Bunny.net not configured. Using local file storage fallback.');
+      return this.uploadLocal(buffer, uniqueFilename, mimeType, folder);
+    }
+
+    try {
       const filePath = `${folder}/${uniqueFilename}`;
 
       // Clean hostname (remove http/https if present)
@@ -83,7 +143,11 @@ export class FileStorageService {
 
       if (res.status !== 201) {
         this.logger.error(`Bunny upload failed: ${res.status} ${res.statusText} | ${uploadUrl}`);
-        throw new Error(`Failed to upload file to Bunny.net: ${res.status} ${res.statusText}`);
+        throw new AnalyticsExportUploadFailedException({
+          status: res.status,
+          statusText: res.statusText,
+          url: uploadUrl,
+        });
       }
 
       // Generate public URL with CDN fallback
@@ -107,8 +171,20 @@ export class FileStorageService {
         path: filePath,
       };
     } catch (error) {
-      this.logger.error('Upload error:', error);
-      throw error instanceof Error ? error : new Error('Failed to upload file');
+      this.logger.error('Upload error:', {
+        error: error instanceof Error ? error.message : String(error),
+        env: this.nodeEnv,
+        provider: 'bunny',
+      });
+
+      if (error instanceof AnalyticsExportStorageNotConfiguredException || error instanceof AnalyticsExportUploadFailedException) {
+        throw error;
+      }
+
+      throw new AnalyticsExportUploadFailedException({
+        originalError: error instanceof Error ? error.message : String(error),
+        env: this.nodeEnv,
+      });
     }
   }
 

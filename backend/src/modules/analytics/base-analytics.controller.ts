@@ -1,5 +1,11 @@
 import { Logger } from '@nestjs/common';
 
+export type AnalyticsCurrency = 'YER' | 'USD' | 'SAR';
+
+export function normalizeAnalyticsCurrency(value?: string): AnalyticsCurrency {
+  return value === 'USD' || value === 'SAR' || value === 'YER' ? value : 'YER';
+}
+
 export interface QueryParams {
   period?: string;
   startDate?: string;
@@ -8,6 +14,7 @@ export interface QueryParams {
   limit?: string;
   status?: string;
   format?: string;
+  currency?: string;
 }
 
 export interface AnalyticsParams {
@@ -16,6 +23,7 @@ export interface AnalyticsParams {
   period?: string;
   limit?: number;
   page?: number;
+  currency?: AnalyticsCurrency;
 }
 
 export abstract class BaseAnalyticsController {
@@ -31,6 +39,7 @@ export abstract class BaseAnalyticsController {
       period: params.period,
       limit: params.limit ? parseInt(params.limit, 10) : undefined,
       page: params.page ? parseInt(params.page, 10) : undefined,
+      currency: normalizeAnalyticsCurrency(params.currency),
     };
   }
 

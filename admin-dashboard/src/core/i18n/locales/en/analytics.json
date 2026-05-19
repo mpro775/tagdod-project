@@ -40,6 +40,12 @@
     "creating": "Creating...",
     "titleRequired": "Report title is required"
   },
+  "currency": "Currency",
+  "currencies": {
+    "YER": "Yemeni Rial",
+    "USD": "US Dollar",
+    "SAR": "Saudi Riyal"
+  },
   "categories": {
     "SALES": "Sales",
     "PRODUCTS": "Products",
@@ -194,7 +200,14 @@
     "byCategory": "Inventory by Category",
     "movements": "Inventory Movements",
     "incoming": "Incoming",
-    "outgoing": "Outgoing"
+    "outgoing": "Outgoing",
+    "productSummary": "Product Summary",
+    "variantSummary": "Variant Summary",
+    "simpleProducts": "Simple Products",
+    "productsWithVariants": "Products With Variants",
+    "lowStockVariants": "Low Stock Variants",
+    "outOfStockVariants": "Out of Stock Variants",
+    "affectedProducts": "Affected Products"
   },
   "kpi": {
     "progressToTarget": "Progress to Target"
@@ -646,6 +659,9 @@
     "failedFiles": "Failed Exports",
     "totalSize": "Total Size",
     "error": "An error occurred while loading files",
+    "downloadFailed": "Report download failed",
+    "storageNotConfigured": "Report storage configuration is incomplete",
+    "fileGenerationFailed": "Report file generation failed",
     "empty": {
       "title": "No exported files",
       "description": "Export a report or data to see files here"

@@ -2,6 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
 import * as XLSX from 'xlsx';
 import { FileStorageService } from './file-storage.service';
+import {
+  AnalyticsExportFileGenerationFailedException,
+  AnalyticsExportUploadFailedException,
+} from '../../../shared/exceptions';
 
 export interface ExportOptions {
   format: 'pdf' | 'xlsx' | 'csv' | 'json';
@@ -44,11 +48,30 @@ export class ExportService {
         case 'json':
           return await this.exportToJSON(data, filename, folder);
         default:
-          throw new Error(`Unsupported export format: ${format}`);
+          throw new AnalyticsExportFileGenerationFailedException({
+            format,
+            reason: `Unsupported export format: ${format}`,
+          });
       }
     } catch (error) {
-      this.logger.error(`Export failed for format ${format}:`, error);
-      throw error instanceof Error ? error : new Error(`Failed to export ${format}`);
+      this.logger.error(`Export failed for format ${format}:`, {
+        error: error instanceof Error ? error.message : String(error),
+        format,
+        filename,
+      });
+
+      if (
+        error instanceof AnalyticsExportFileGenerationFailedException ||
+        error instanceof AnalyticsExportUploadFailedException
+      ) {
+        throw error;
+      }
+
+      throw new AnalyticsExportFileGenerationFailedException({
+        format,
+        filename,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -105,11 +128,10 @@ export class ExportService {
         });
 
         const primaryColor = branding?.colors?.primary || '#1a56db';
-        const secondaryColor = branding?.colors?.secondary || '#6b7280';
         const companyName = branding?.companyName || '';
 
         this.generatePDFCover(doc, title, data, companyName, primaryColor);
-        this.generatePDFContent(doc, data, title, primaryColor, secondaryColor);
+        this.generatePDFContent(doc, data, title, primaryColor);
         this.generatePDFFooter(doc, companyName);
 
         doc.end();
@@ -188,7 +210,6 @@ export class ExportService {
     data: any,
     title?: string,
     primaryColor?: string,
-    secondaryColor?: string,
   ): void {
     doc.addPage();
 
@@ -239,7 +260,7 @@ export class ExportService {
     }
 
     if (data.salesAnalytics) {
-      this.renderPDFSection(doc, 'Sales Analytics', primaryColor, secondaryColor);
+      this.renderPDFSection(doc, 'Sales Analytics', primaryColor);
       const sales = data.salesAnalytics;
       if (sales.totalRevenue !== undefined) {
         doc.fontSize(10).text(`Revenue: $${Number(sales.totalRevenue).toLocaleString()}`);
@@ -264,7 +285,7 @@ export class ExportService {
     }
 
     if (data.productAnalytics) {
-      this.renderPDFSection(doc, 'Product Analytics', primaryColor, secondaryColor);
+      this.renderPDFSection(doc, 'Product Analytics', primaryColor);
       const prod = data.productAnalytics;
       if (prod.totalProducts !== undefined) doc.fontSize(10).text(`Total Products: ${prod.totalProducts}`);
       if (prod.activeProducts !== undefined) doc.text(`Active: ${prod.activeProducts}`);
@@ -273,7 +294,7 @@ export class ExportService {
     }
 
     if (data.customerAnalytics) {
-      this.renderPDFSection(doc, 'Customer Analytics', primaryColor, secondaryColor);
+      this.renderPDFSection(doc, 'Customer Analytics', primaryColor);
       const cust = data.customerAnalytics;
       if (cust.totalCustomers !== undefined) doc.fontSize(10).text(`Total Customers: ${cust.totalCustomers}`);
       if (cust.newCustomers !== undefined) doc.text(`New Customers: ${cust.newCustomers}`);
@@ -283,7 +304,7 @@ export class ExportService {
     }
 
     if (data.financialAnalytics) {
-      this.renderPDFSection(doc, 'Financial Analytics', primaryColor, secondaryColor);
+      this.renderPDFSection(doc, 'Financial Analytics', primaryColor);
       const fin = data.financialAnalytics;
       if (fin.grossRevenue !== undefined) doc.fontSize(10).text(`Gross Revenue: $${Number(fin.grossRevenue).toLocaleString()}`);
       if (fin.netRevenue !== undefined) doc.text(`Net Revenue: $${Number(fin.netRevenue).toLocaleString()}`);
@@ -292,7 +313,7 @@ export class ExportService {
     }
 
     if (data.marketingAnalytics) {
-      this.renderPDFSection(doc, 'Marketing Analytics', primaryColor, secondaryColor);
+      this.renderPDFSection(doc, 'Marketing Analytics', primaryColor);
       const mkt = data.marketingAnalytics;
       if (mkt.totalCampaigns !== undefined) doc.fontSize(10).text(`Total Campaigns: ${mkt.totalCampaigns}`);
       if (mkt.totalCouponsUsed !== undefined) doc.text(`Coupons Used: ${mkt.totalCouponsUsed}`);
@@ -301,7 +322,7 @@ export class ExportService {
     }
 
     if (data.insights && Array.isArray(data.insights) && data.insights.length > 0) {
-      this.renderPDFSection(doc, 'Key Insights', primaryColor, secondaryColor);
+      this.renderPDFSection(doc, 'Key Insights', primaryColor);
       doc.fontSize(10).fillColor('#374151').font('Helvetica');
       data.insights.slice(0, 10).forEach((insight: any, i: number) => {
         const text = typeof insight === 'string' ? insight : insight.text || insight.message || 'N/A';
@@ -311,7 +332,7 @@ export class ExportService {
     }
 
     if (data.recommendations && Array.isArray(data.recommendations) && data.recommendations.length > 0) {
-      this.renderPDFSection(doc, 'Recommendations', primaryColor, secondaryColor);
+      this.renderPDFSection(doc, 'Recommendations', primaryColor);
       doc.fontSize(10).fillColor('#374151').font('Helvetica');
       data.recommendations.slice(0, 10).forEach((rec: any, i: number) => {
         const text = typeof rec === 'string' ? rec : rec.text || rec.message || 'N/A';
@@ -321,7 +342,7 @@ export class ExportService {
     }
 
     if (data.dataQuality) {
-      this.renderPDFSection(doc, 'Data Quality', primaryColor, secondaryColor);
+      this.renderPDFSection(doc, 'Data Quality', primaryColor);
       doc.fontSize(10).fillColor('#374151').font('Helvetica');
       const dq = data.dataQuality;
       doc.text(`Overall: ${dq.overall || 'N/A'}`);
@@ -338,7 +359,6 @@ export class ExportService {
     doc: PDFKit.PDFDocument,
     sectionTitle: string,
     primaryColor?: string,
-    secondaryColor?: string,
   ): void {
     const y = doc.y;
     const pageHeight = doc.page.height - 60;

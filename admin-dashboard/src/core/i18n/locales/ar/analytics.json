@@ -40,6 +40,12 @@
     "creating": "جاري الإنشاء...",
     "titleRequired": "عنوان التقرير مطلوب"
   },
+  "currency": "العملة",
+  "currencies": {
+    "YER": "ريال يمني",
+    "USD": "دولار أمريكي",
+    "SAR": "ريال سعودي"
+  },
   "categories": {
     "SALES": "المبيعات",
     "PRODUCTS": "المنتجات",
@@ -194,7 +200,14 @@
     "byCategory": "المخزون حسب الفئة",
     "movements": "حركات المخزون",
     "incoming": "وارد",
-    "outgoing": "صادر"
+    "outgoing": "صادر",
+    "productSummary": "ملخص المنتجات",
+    "variantSummary": "ملخص المتغيرات",
+    "simpleProducts": "منتجات بسيطة",
+    "productsWithVariants": "منتجات بمتغيرات",
+    "lowStockVariants": "متغيرات منخفضة المخزون",
+    "outOfStockVariants": "متغيرات نافدة",
+    "affectedProducts": "منتجات متأثرة"
   },
   "kpi": {
     "progressToTarget": "التقدم نحو الهدف"
@@ -646,6 +659,9 @@
     "failedFiles": "عمليات فاشلة",
     "totalSize": "الحجم الإجمالي",
     "error": "حدث خطأ أثناء تحميل الملفات",
+    "downloadFailed": "فشل تنزيل التقرير",
+    "storageNotConfigured": "إعدادات تخزين التقارير غير مكتملة",
+    "fileGenerationFailed": "فشل إنشاء ملف التقرير",
     "empty": {
       "title": "لا توجد ملفات مصدرة",
       "description": "قم بتصدير تقرير أو بيانات لعرض الملفات هنا"
