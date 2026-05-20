@@ -129,6 +129,8 @@ export interface OfferListItem {
 export class ServicesService {
   private readonly logger = new Logger(ServicesService.name);
   private readonly enableSMSToEngineers: boolean;
+  private readonly engineerNotificationRoute = '/customers-orders';
+  private readonly engineerRecipientContext = 'engineer';
 
   constructor(
     @InjectModel(ServiceRequest.name) private requests: Model<ServiceRequest>,
@@ -209,6 +211,27 @@ export class ServicesService {
       // لن يوقف النظام، مجرد تحذير
       this.logger.warn(`Notification failed for user ${userId}:`, error);
     }
+  }
+
+  private async safeNotifyEngineer(
+    engineerUserId: string,
+    type: NotificationType,
+    title: string,
+    message: string,
+    data?: Record<string, unknown>,
+  ) {
+    return this.safeNotify(
+      engineerUserId,
+      type,
+      title,
+      message,
+      {
+        ...(data || {}),
+        recipientContext: this.engineerRecipientContext,
+      },
+      NotificationNavigationType.SECTION,
+      this.engineerNotificationRoute,
+    );
   }
 
   /**
@@ -297,8 +320,8 @@ export class ServicesService {
     title: string,
     message: string,
     data?: Record<string, unknown>,
-    navigationType?: NotificationNavigationType,
-    navigationTarget?: string,
+    _navigationType?: NotificationNavigationType,
+    _navigationTarget?: string,
   ): Promise<void> {
     try {
       // جلب جميع المهندسين في المدينة
@@ -321,14 +344,12 @@ export class ServicesService {
 
       // إرسال إشعار لكل مهندس بشكل متوازي لتحسين الأداء
       const notificationPromises = engineers.map((engineer) =>
-        this.safeNotify(
+        this.safeNotifyEngineer(
           String(engineer._id),
           type,
           title,
           message,
           data,
-          navigationType,
-          navigationTarget,
         ),
       );
 
@@ -1281,14 +1302,12 @@ export class ServicesService {
 
     // إرسال إشعار للمهندس المقبول عرضه
     if (r.engineerId) {
-      await this.safeNotify(
+      await this.safeNotifyEngineer(
         String(r.engineerId),
         NotificationType.SERVICE_REQUEST_CANCELLED,
         'تم إلغاء طلب الخدمة',
         `تم إلغاء الطلب ${String(r._id)} من قبل العميل. السبب: ${reason.trim()}`,
         { requestId: String(r._id), reason: reason.trim() },
-        NotificationNavigationType.SERVICE_REQUEST,
-        String(r._id),
       );
     }
 
@@ -1436,7 +1455,7 @@ export class ServicesService {
 
       // إرسال إشعارات للمهندسين الذين تم رفض عروضهم بسبب قبول عرض آخر
       for (const otherOffer of otherOffers) {
-        await this.safeNotify(
+        await this.safeNotifyEngineer(
           String(otherOffer.engineerId),
           NotificationType.OFFER_REJECTED,
           'تم قبول عرض آخر',
@@ -1448,20 +1467,16 @@ export class ServicesService {
             acceptedOfferCurrency: acceptedCurrency,
             acceptedOfferIsFree: offer.isFreeOffer === true,
           },
-          NotificationNavigationType.SERVICE_REQUEST,
-          String(r._id),
         );
       }
     }
 
-    await this.safeNotify(
+    await this.safeNotifyEngineer(
       String(offer.engineerId),
       NotificationType.OFFER_ACCEPTED,
       'تم قبول عرضك',
       `تم قبول عرضك للطلب ${String(r._id)}`,
       { requestId: String(r._id) },
-      NotificationNavigationType.SERVICE_REQUEST,
-      String(r._id),
     );
     return { ok: true };
   }
@@ -1517,14 +1532,12 @@ export class ServicesService {
 
     // إشعار للمهندس بالتقييم
     if (r.engineerId) {
-      await this.safeNotify(
+      await this.safeNotifyEngineer(
         String(r.engineerId),
         NotificationType.SERVICE_RATED,
         'تم تقييمك من قبل العميل',
         `تم تقييمك بنتيجة ${score} نجوم: ${comment.trim()}`,
         { requestId: String(r._id), score, comment: comment.trim() },
-        NotificationNavigationType.SERVICE_REQUEST,
-        String(r._id),
       );
     }
 
@@ -2201,14 +2214,12 @@ export class ServicesService {
     await r.save();
     // إرسال إشعار للمهندس بأن العميل أكد إكمال الخدمة
     if (r.engineerId) {
-      await this.safeNotify(
+      await this.safeNotifyEngineer(
         String(r.engineerId),
         NotificationType.SERVICE_COMPLETED,
         'تم تأكيد إنجاز الخدمة',
         `تم تأكيد إنجاز الخدمة للطلب ${String(r._id)} من قبل العميل`,
         { requestId: String(r._id) },
-        NotificationNavigationType.SERVICE_REQUEST,
-        String(r._id),
       );
     }
     return {
@@ -2226,7 +2237,7 @@ export class ServicesService {
     });
     if (!r) return { error: 'REQUEST_NOT_FOUND' };
     if (!reason || reason.trim().length < 3) return { error: 'REASON_REQUIRED' };
-    if (!['ASSIGNED', 'EN_ROUTE', 'COMPLETED', 'RATED'].includes(r.status)) {
+    if (!['ASSIGNED', 'EN_ROUTE'].includes(r.status)) {
       return {
         error: 'INVALID_STATUS',
         message: 'لا يمكن فتح نزاع في حالة الطلب الحالية',
@@ -2249,14 +2260,12 @@ export class ServicesService {
     await r.save();
 
     if (r.engineerId) {
-      await this.safeNotify(
+      await this.safeNotifyEngineer(
         String(r.engineerId),
         NotificationType.SERVICE_REQUEST_OPENED,
         'تم فتح نزاع على الطلب',
         `تم فتح نزاع على الطلب ${String(r._id)}`,
         { requestId: String(r._id), status: 'DISPUTED' },
-        NotificationNavigationType.SERVICE_REQUEST,
-        String(r._id),
       );
     }
 
@@ -3760,7 +3769,7 @@ export class ServicesService {
     const acceptedCurrency = offer.currency || 'YER';
 
     for (const otherOffer of otherOffers) {
-      await this.safeNotify(
+      await this.safeNotifyEngineer(
         String(otherOffer.engineerId),
         NotificationType.OFFER_REJECTED,
         'تم قبول عرض آخر',
@@ -3773,20 +3782,16 @@ export class ServicesService {
           acceptedOfferIsFree: offer.isFreeOffer === true,
           acceptedBy: 'admin',
         },
-        NotificationNavigationType.SERVICE_REQUEST,
-        String(r._id),
       );
     }
 
     // إرسال إشعار للمهندس
-    await this.safeNotify(
+    await this.safeNotifyEngineer(
       String(offer.engineerId),
       NotificationType.OFFER_ACCEPTED,
       'تم قبول عرضك',
       `تم قبول عرضك للطلب ${String(r._id)} من قبل الإدارة`,
       { requestId: String(r._id) },
-      NotificationNavigationType.SERVICE_REQUEST,
-      String(r._id),
     );
 
     this.logger.log(`Admin accepted offer ${offerId} for request ${requestId}`);
@@ -3807,14 +3812,12 @@ export class ServicesService {
     await offer.save();
 
     // إرسال إشعار للمهندس
-    await this.safeNotify(
+    await this.safeNotifyEngineer(
       String(offer.engineerId),
       NotificationType.OFFER_REJECTED,
       'تم رفض عرضك',
       reason || `تم رفض عرضك للطلب ${String(offer.requestId)} من قبل الإدارة`,
       { requestId: String(offer.requestId), reason },
-      NotificationNavigationType.SERVICE_REQUEST,
-      String(offer.requestId),
     );
 
     this.logger.log(`Admin rejected offer ${offerId}. Reason: ${reason || 'No reason provided'}`);
@@ -3888,14 +3891,12 @@ export class ServicesService {
     }
 
     // إرسال إشعار للمهندس
-    await this.safeNotify(
+    await this.safeNotifyEngineer(
       String(offer.engineerId),
       NotificationType.OFFER_CANCELLED,
       'تم إلغاء عرضك',
       reason || `تم إلغاء عرضك للطلب ${String(offer.requestId)} من قبل الإدارة`,
       { requestId: String(offer.requestId), reason },
-      NotificationNavigationType.SERVICE_REQUEST,
-      String(offer.requestId),
     );
 
     this.logger.log(`Admin cancelled offer ${offerId}. Reason: ${reason || 'No reason provided'}`);
@@ -3977,14 +3978,12 @@ export class ServicesService {
         .lean();
 
       for (const offer of expiredOffersList) {
-        await this.safeNotify(
+        await this.safeNotifyEngineer(
           String(offer.engineerId),
           NotificationType.OFFER_CANCELLED,
           'انتهت صلاحية عرضك',
           `انتهت صلاحية عرضك للطلب ${String(offer.requestId)} بعد 5 أيام`,
           { requestId: String(offer.requestId), offerId: String(offer._id) },
-          NotificationNavigationType.SERVICE_REQUEST,
-          String(offer.requestId),
         );
       }
     }
