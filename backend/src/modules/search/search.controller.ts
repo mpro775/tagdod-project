@@ -88,7 +88,7 @@ export class SearchController {
     const userId = req?.user?.sub;
     const currency = dto.currency || req?.user?.preferredCurrency || 'USD';
     const data = await this.searchService.universalSearch(dto, userId, currency);
-    return { data };
+    return data;
   }
 
   // ==================== بحث المنتجات المتقدم ====================
@@ -196,7 +196,7 @@ export class SearchController {
     const userId = req?.user?.sub;
     const currency = dto.currency || req?.user?.preferredCurrency || 'USD';
     const data = await this.searchService.advancedProductSearch(dto, userId, currency);
-    return { data };
+    return data;
   }
 
   // ==================== الاقتراحات (Autocomplete) ====================
@@ -235,7 +235,7 @@ export class SearchController {
     @Query('limit') limit = 10,
   ) {
     const data = await this.searchService.getSearchSuggestions(query, lang, limit);
-    return { data };
+    return data;
   }
 
   // ==================== Autocomplete (alias) ====================
@@ -270,6 +270,6 @@ export class SearchController {
     @Query('lang') lang: 'ar' | 'en' = 'ar',
   ) {
     const data = await this.searchService.getSearchSuggestions(query, lang, 8);
-    return { data };
+    return data;
   }
 }
