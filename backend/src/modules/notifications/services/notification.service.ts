@@ -368,6 +368,7 @@ export class NotificationService implements OnModuleInit {
           const isUserOnline = this.webSocketService.isUserOnline(dto.recipientId);
 
           if (isUserOnline) {
+            const sentAt = new Date();
             // المستخدم متصل - إرسال عبر WebSocket (متزامن للـ real-time)
             const sent = this.webSocketService.sendToUser(
               dto.recipientId,
@@ -382,6 +383,7 @@ export class NotificationService implements OnModuleInit {
                 priority: savedNotification.priority,
                 data: savedNotification.data,
                 createdAt: savedNotification.createdAt,
+                sentAt,
                 isRead: false,
               },
               '/notifications',
@@ -394,7 +396,7 @@ export class NotificationService implements OnModuleInit {
               // تحديث الحالة إلى SENT
               await this.notificationModel.updateOne(
                 { _id: savedNotification._id },
-                { $set: { status: NotificationStatus.SENT, sentAt: new Date() } },
+                { $set: { status: NotificationStatus.SENT, sentAt } },
               );
             } else {
               // فشل الإرسال عبر WebSocket - إضافة للـ Queue كبديل
@@ -421,6 +423,7 @@ export class NotificationService implements OnModuleInit {
           this.logger.log(`Push notification ${savedNotification._id} added to queue`);
         } else if (channel === NotificationChannel.DASHBOARD) {
           // DASHBOARD: خاص بالإداريين - إرسال عبر WebSocket (متزامن)
+          const sentAt = new Date();
           this.webSocketService.sendToUser(
             dto.recipientId,
             'notification:new',
@@ -434,6 +437,7 @@ export class NotificationService implements OnModuleInit {
               priority: savedNotification.priority,
               data: savedNotification.data,
               createdAt: savedNotification.createdAt,
+              sentAt,
               isRead: false,
             },
             '/notifications',
@@ -444,7 +448,7 @@ export class NotificationService implements OnModuleInit {
           // تحديث الحالة إلى SENT
           await this.notificationModel.updateOne(
             { _id: savedNotification._id },
-            { $set: { status: NotificationStatus.SENT, sentAt: new Date() } },
+            { $set: { status: NotificationStatus.SENT, sentAt } },
           );
         }
       } else if (targetRoles && targetRoles.length > 0) {
@@ -493,6 +497,7 @@ export class NotificationService implements OnModuleInit {
           if (targetUsers.length > 0) {
             const userIds = targetUsers.map((user) => user._id.toString());
             const roleBatchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const sentAt = new Date();
 
             // إنشاء نسخة من الإشعار لكل مستخدم
             const userNotifications = targetUsers.map((user) => {
@@ -519,7 +524,7 @@ export class NotificationService implements OnModuleInit {
                 templateId: savedNotification.templateId,
                 templateKey: savedNotification.templateKey,
                 scheduledFor: savedNotification.scheduledFor,
-                sentAt: new Date(),
+                sentAt,
                 isSystemGenerated: savedNotification.isSystemGenerated,
                 createdBy: savedNotification.createdBy,
                 batchId: roleBatchId,
@@ -553,6 +558,7 @@ export class NotificationService implements OnModuleInit {
                 priority: savedNotification.priority,
                 data: savedNotification.data,
                 createdAt: savedNotification.createdAt,
+                sentAt,
                 isRead: false,
               },
               '/notifications', // ✅ تمرير namespace
@@ -564,7 +570,7 @@ export class NotificationService implements OnModuleInit {
               {
                 $set: {
                   status: NotificationStatus.SENT,
-                  sentAt: new Date(),
+                  sentAt,
                 },
               },
             );
@@ -708,6 +714,8 @@ export class NotificationService implements OnModuleInit {
           continue;
         }
 
+        const sentAt = new Date();
+
         if (notification.channel === NotificationChannel.PUSH) {
           await this.sendPushNotification(
             notification as UnifiedNotificationDocument,
@@ -729,6 +737,7 @@ export class NotificationService implements OnModuleInit {
               priority: notification.priority,
               data: notification.data,
               createdAt: notification.createdAt,
+              sentAt,
               isRead: false,
             },
             '/notifications',
@@ -749,7 +758,7 @@ export class NotificationService implements OnModuleInit {
           {
             $set: {
               status: NotificationStatus.SENT,
-              sentAt: new Date(),
+              sentAt,
             },
           },
         );
@@ -1480,7 +1489,8 @@ export class NotificationService implements OnModuleInit {
         type: notification.type,
         priority: notification.priority,
         data: notification.data,
-        createdAt: new Date(),
+        createdAt: notification.createdAt,
+        sentAt: notification.sentAt,
         isRead: false,
       },
       '/notifications',
@@ -1977,6 +1987,7 @@ export class NotificationService implements OnModuleInit {
       }
 
       // إنشاء نسخة من الإشعار لكل مستخدم
+      const sentAt = new Date();
       const userNotifications = targetUsers.map((user) => {
         // التأكد من تحويل _id إلى string أولاً (لأن .lean() قد يعيد ObjectId)
         const userId = user._id instanceof Types.ObjectId ? user._id.toString() : String(user._id);
@@ -2000,7 +2011,7 @@ export class NotificationService implements OnModuleInit {
           templateId: notification.templateId,
           templateKey: notification.templateKey,
           scheduledFor: notification.scheduledFor || new Date(),
-          sentAt: new Date(),
+          sentAt,
           isSystemGenerated: notification.isSystemGenerated,
           createdBy: notification.createdBy,
         };
@@ -2033,6 +2044,7 @@ export class NotificationService implements OnModuleInit {
           priority: notification.priority,
           data: notification.data,
           createdAt: notification.createdAt,
+          sentAt,
           isRead: false,
         },
         '/notifications', // ✅ تمرير namespace
@@ -2084,6 +2096,7 @@ export class NotificationService implements OnModuleInit {
           priority: notification.priority,
           data: notification.data,
           createdAt: notification.createdAt,
+          sentAt: notification.sentAt,
           isRead: notification.readAt ? true : false,
         },
         '/notifications', // ✅ تمرير namespace
