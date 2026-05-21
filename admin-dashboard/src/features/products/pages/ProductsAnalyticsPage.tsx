@@ -36,6 +36,8 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   useProductStats,
@@ -52,8 +54,14 @@ export const ProductsAnalyticsPage: React.FC = () => {
     end: '',
   });
 
-  const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useProductStats();
-  const { data: inventorySummary, isLoading: loadingInventory } = useInventorySummary();
+  const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useProductStats(
+    dateRange.start || undefined,
+    dateRange.end || undefined,
+  );
+  const { data: inventorySummary, isLoading: loadingInventory, refetch: refetchInventory } = useInventorySummary(
+    dateRange.start || undefined,
+    dateRange.end || undefined,
+  );
 
   const clearDateRange = () => {
     setDateRange({ start: '', end: '' });
@@ -63,10 +71,135 @@ export const ProductsAnalyticsPage: React.FC = () => {
 
   const handleRefresh = () => {
     refetchStats();
+    refetchInventory();
   };
 
   const handleExportData = () => {
-    alert(t('products:stats.exportSoon', 'ميزة التصدير ستكون متاحة قريباً'));
+    if (!stats && !inventorySummary) {
+      toast.error(t('products:stats.noDataToExport', 'لا توجد بيانات للتصدير'));
+      return;
+    }
+
+    try {
+      const wb = XLSX.utils.book_new();
+      const dateStr = new Date().toLocaleDateString('ar-SA');
+
+      // Sheet 1: Overview Stats
+      if (stats) {
+        const overviewData = [
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.total', 'إجمالي المنتجات'),
+            [t('products:stats.value', 'القيمة')]: stats.total,
+          },
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.active', 'منتجات نشطة'),
+            [t('products:stats.value', 'القيمة')]: stats.active,
+          },
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.featured', 'منتجات مميزة'),
+            [t('products:stats.value', 'القيمة')]: stats.featured,
+          },
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.new', 'منتجات جديدة'),
+            [t('products:stats.value', 'القيمة')]: stats.new,
+          },
+        ];
+        const wsOverview = XLSX.utils.json_to_sheet(overviewData);
+        XLSX.utils.book_append_sheet(wb, wsOverview, t('products:stats.overviewSheet', 'إحصائيات عامة'));
+      }
+
+      // Sheet 2: By Status
+      if (stats) {
+        const statusData = [
+          {
+            [t('products:stats.status', 'الحالة')]: t('products:status.active', 'نشط'),
+            [t('products:stats.count', 'العدد')]: stats.active,
+          },
+          {
+            [t('products:stats.status', 'الحالة')]: t('products:status.draft', 'مسودة'),
+            [t('products:stats.count', 'العدد')]: stats.draft,
+          },
+          {
+            [t('products:stats.status', 'الحالة')]: t('products:status.archived', 'مؤرشف'),
+            [t('products:stats.count', 'العدد')]: stats.archived,
+          },
+        ];
+        const wsStatus = XLSX.utils.json_to_sheet(statusData);
+        XLSX.utils.book_append_sheet(wb, wsStatus, t('products:stats.statusSheet', 'حسب الحالة'));
+      }
+
+      // Sheet 3: Inventory Stats
+      if (inventorySummary) {
+        const inventoryData = [
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.totalVariants', 'إجمالي المتغيرات'),
+            [t('products:stats.value', 'القيمة')]: inventorySummary.totalVariants,
+          },
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.inStock', 'متوفر في المخزون'),
+            [t('products:stats.value', 'القيمة')]: inventorySummary.inStock,
+          },
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.inStockUnits', 'وحدات متوفرة'),
+            [t('products:stats.value', 'القيمة')]: inventorySummary.inStockUnits ?? '-',
+          },
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.lowStock', 'مخزون منخفض'),
+            [t('products:stats.value', 'القيمة')]: inventorySummary.lowStock,
+          },
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.lowStockUnits', 'وحدات منخفضة'),
+            [t('products:stats.value', 'القيمة')]: inventorySummary.lowStockUnits ?? '-',
+          },
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.outOfStock', 'نفذ من المخزون'),
+            [t('products:stats.value', 'القيمة')]: inventorySummary.outOfStock,
+          },
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.outOfStockUnits', 'وحدات نفذت'),
+            [t('products:stats.value', 'القيمة')]: inventorySummary.outOfStockUnits ?? '-',
+          },
+          {
+            [t('products:stats.metric', 'المقياس')]: t('products:stats.totalInventoryValue', 'إجمالي قيمة المخزون'),
+            [t('products:stats.value', 'القيمة')]: inventorySummary.totalValue ? `${inventorySummary.totalValue.toLocaleString()} $` : '-',
+          },
+        ];
+        const wsInventory = XLSX.utils.json_to_sheet(inventoryData);
+        XLSX.utils.book_append_sheet(wb, wsInventory, t('products:stats.inventorySheet', 'المخزون'));
+      }
+
+      // Sheet 4: Variants per Product
+      if (inventorySummary?.variantsPerProduct && inventorySummary.variantsPerProduct.length > 0) {
+        const variantsData = inventorySummary.variantsPerProduct.map((row) => ({
+          [t('products:stats.product', 'المنتج')]: row.productName || row.productId,
+          [t('products:stats.variantsCount', 'عدد المتغيرات')]: row.variantsCount,
+          [t('products:stats.totalUnits', 'إجمالي الوحدات')]: row.totalUnits ?? '-',
+        }));
+        const wsVariants = XLSX.utils.json_to_sheet(variantsData);
+        XLSX.utils.book_append_sheet(wb, wsVariants, t('products:stats.variantsSheet', 'المتغيرات'));
+      }
+
+      // Sheet 5: Date Range
+      const dateRangeData = [
+        {
+          [t('products:stats.field', 'الحقل')]: t('products:stats.dateFrom', 'من تاريخ'),
+          [t('products:stats.value', 'القيمة')]: dateRange.start || '-',
+        },
+        {
+          [t('products:stats.field', 'الحقل')]: t('products:stats.dateTo', 'إلى تاريخ'),
+          [t('products:stats.value', 'القيمة')]: dateRange.end || '-',
+        },
+      ];
+      const wsDateRange = XLSX.utils.json_to_sheet(dateRangeData);
+      XLSX.utils.book_append_sheet(wb, wsDateRange, t('products:stats.dateRangeSheet', 'نطاق التاريخ'));
+
+      const fileName = `products-analytics-${dateStr}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      toast.success(t('products:stats.exportSuccess', 'تم تصدير البيانات بنجاح'));
+    } catch {
+      toast.error(t('products:stats.exportError', 'حدث خطأ أثناء تصدير البيانات'));
+    }
   };
 
   if (loadingStats) {

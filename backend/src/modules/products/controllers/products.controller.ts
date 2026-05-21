@@ -166,8 +166,11 @@ export class ProductsController {
   @Get('stats/summary')
   @ApiOperation({ summary: 'الحصول على إحصائيات المنتجات' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
-  async getStats() {
-    return this.productService.getStats();
+  async getStats(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.productService.getStats(startDate, endDate);
   }
 
   // ==================== Variants Management ====================
@@ -324,8 +327,11 @@ export class ProductsController {
   @Get('inventory/summary')
   @ApiOperation({ summary: 'الحصول على ملخص المخزون' })
   @ApiResponse({ status: 200, description: 'Inventory summary retrieved successfully' })
-  async getInventorySummary() {
-    const summary = await this.inventoryService.getInventorySummary();
+  async getInventorySummary(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const summary = await this.inventoryService.getInventorySummary(startDate, endDate);
     return summary;
   }
 

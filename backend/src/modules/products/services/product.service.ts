@@ -1189,14 +1189,21 @@ export class ProductService {
     await this.productModel.updateOne({ _id: id }, { $set: { variantsCount } });
   }
 
-  async getStats(): Promise<{ data: { total: number; active: number; featured: number; newProducts: number; byStatus: Record<ProductStatus, number> } }> {
+  async getStats(startDate?: string, endDate?: string): Promise<{ data: { total: number; active: number; featured: number; newProducts: number; byStatus: Record<ProductStatus, number> } }> {
+    const dateFilter: Record<string, unknown> = { deletedAt: null };
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) (dateFilter.createdAt as Record<string, Date>).$gte = new Date(startDate);
+      if (endDate) (dateFilter.createdAt as Record<string, Date>).$lte = new Date(endDate);
+    }
+
     const [total, active, featured, newProducts, byStatus] = await Promise.all([
-      this.productModel.countDocuments({ deletedAt: null }),
-      this.productModel.countDocuments({ status: ProductStatus.ACTIVE, deletedAt: null }),
-      this.productModel.countDocuments({ isFeatured: true, deletedAt: null }),
-      this.productModel.countDocuments({ isNew: true, deletedAt: null }),
+      this.productModel.countDocuments({ ...dateFilter }),
+      this.productModel.countDocuments({ status: ProductStatus.ACTIVE, ...dateFilter }),
+      this.productModel.countDocuments({ isFeatured: true, ...dateFilter }),
+      this.productModel.countDocuments({ isNew: true, ...dateFilter }),
       this.productModel.aggregate([
-        { $match: { deletedAt: null } },
+        { $match: { ...dateFilter } },
         { $group: { _id: '$status', count: { $sum: 1 } } },
       ]),
     ]);

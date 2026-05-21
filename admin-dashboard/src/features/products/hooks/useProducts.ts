@@ -135,10 +135,10 @@ export const useClearCache = () => {
 };
 
 // Get product stats
-export const useProductStats = () => {
+export const useProductStats = (startDate?: string, endDate?: string) => {
   return useQuery({
-    queryKey: [PRODUCTS_KEY, 'stats'],
-    queryFn: () => productsApi.getStats(),
+    queryKey: [PRODUCTS_KEY, 'stats', startDate, endDate],
+    queryFn: () => productsApi.getStats(startDate, endDate),
   });
 };
 
@@ -313,9 +313,9 @@ export const useOutOfStockVariants = () => {
 };
 
 // Get inventory summary
-export const useInventorySummary = () => {
+export const useInventorySummary = (startDate?: string, endDate?: string) => {
   return useQuery({
-    queryKey: [PRODUCTS_KEY, 'inventory', 'summary'],
-    queryFn: () => productsApi.getInventorySummary(),
+    queryKey: [PRODUCTS_KEY, 'inventory', 'summary', startDate, endDate],
+    queryFn: () => productsApi.getInventorySummary(startDate, endDate),
   });
 };

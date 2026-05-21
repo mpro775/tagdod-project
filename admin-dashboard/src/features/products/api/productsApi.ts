@@ -85,10 +85,12 @@ export const productsApi = {
    * API returns: { total, active, featured, newProducts, byStatus: { draft, active, archived } }
    * We map to ProductStats: { total, active, featured, new, draft, archived }
    */
-  getStats: async (): Promise<ProductStats> => {
+  getStats: async (startDate?: string, endDate?: string): Promise<ProductStats> => {
     const response = await apiClient.get<
       ApiResponse<ProductStats | { data: ProductStats } | { total: number; active: number; featured: number; newProducts: number; byStatus: Record<string, number> }>
-    >('/admin/products/stats/summary');
+    >('/admin/products/stats/summary', {
+      params: { startDate, endDate },
+    });
     const payload = response.data.data as any;
     const inner = payload?.data ?? payload;
     if (!inner) return { total: 0, active: 0, draft: 0, archived: 0, featured: 0, new: 0 };
@@ -264,11 +266,12 @@ export const productsApi = {
   /**
    * Get inventory summary
    */
-  getInventorySummary: async (): Promise<InventorySummary> => {
+  getInventorySummary: async (startDate?: string, endDate?: string): Promise<InventorySummary> => {
     const response = await apiClient.get<
       ApiResponse<InventorySummary | { data: InventorySummary }>
     >(
-      '/admin/products/inventory/summary'
+      '/admin/products/inventory/summary',
+      { params: { startDate, endDate } }
     );
     const payload = response.data.data as InventorySummary | { data: InventorySummary };
     return (payload as any)?.data ?? (payload as InventorySummary);

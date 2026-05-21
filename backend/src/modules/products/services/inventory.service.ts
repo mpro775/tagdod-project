@@ -532,7 +532,11 @@ export class InventoryService {
 
   // ==================== Inventory Reports ====================
 
-  async getLowStockVariants(threshold?: number): Promise<
+  async getLowStockVariants(
+    threshold?: number,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<
     Array<{
       variantId: string;
       productId: string;
@@ -546,14 +550,22 @@ export class InventoryService {
     }>
   > {
     try {
+      const dateFilter: Record<string, unknown> = {};
+      if (startDate || endDate) {
+        dateFilter.createdAt = {};
+        if (startDate) (dateFilter.createdAt as Record<string, Date>).$gte = new Date(startDate);
+        if (endDate) (dateFilter.createdAt as Record<string, Date>).$lte = new Date(endDate);
+      }
+
       // جلب جميع الـ variants النشطة ثم تصفيتها في JavaScript (تجنب مشاكل NaN في MongoDB)
       const variants = await this.variantModel
         .find({
           trackInventory: true,
           deletedAt: null,
           isActive: true,
+          ...dateFilter,
         })
-        .select('_id productId sku stock minStock attributeValues')
+        .select('_id productId sku stock minStock attributeValues createdAt')
         .populate('productId', 'name nameEn')
         .lean();
 
@@ -633,7 +645,10 @@ export class InventoryService {
     }
   }
 
-  async getOutOfStockVariants(): Promise<
+  async getOutOfStockVariants(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<
     Array<{
       variantId: string;
       productId: string;
@@ -644,14 +659,22 @@ export class InventoryService {
     }>
   > {
     try {
+      const dateFilter: Record<string, unknown> = {};
+      if (startDate || endDate) {
+        dateFilter.createdAt = {};
+        if (startDate) (dateFilter.createdAt as Record<string, Date>).$gte = new Date(startDate);
+        if (endDate) (dateFilter.createdAt as Record<string, Date>).$lte = new Date(endDate);
+      }
+
       // جلب الـ variants ثم تصفيتها في JavaScript
       const variants = await this.variantModel
         .find({
           trackInventory: true,
           deletedAt: null,
           isActive: true,
+          ...dateFilter,
         })
-        .select('_id productId sku stock attributeValues')
+        .select('_id productId sku stock attributeValues createdAt')
         .populate('productId', 'name nameEn')
         .lean();
 
@@ -703,7 +726,10 @@ export class InventoryService {
     }
   }
 
-  async getInventorySummary(): Promise<{
+  async getInventorySummary(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<{
     totalVariants: number;
     inStock: number;
     lowStock: number;
@@ -728,16 +754,26 @@ export class InventoryService {
       sku?: string;
     }>;
   }> {
+    const dateFilter: Record<string, unknown> = {};
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) (dateFilter.createdAt as Record<string, Date>).$gte = new Date(startDate);
+      if (endDate) (dateFilter.createdAt as Record<string, Date>).$lte = new Date(endDate);
+    }
+
+    const baseFilter = { deletedAt: null, isActive: true, ...dateFilter };
+
     const [totalVariants, inStock, lowStockVariants, outOfStockVariants] = await Promise.all([
-      this.variantModel.countDocuments({ deletedAt: null, isActive: true }),
+      this.variantModel.countDocuments(baseFilter),
       this.variantModel.countDocuments({
         deletedAt: null,
         isActive: true,
         trackInventory: true,
         stock: { $gt: 0 },
+        ...dateFilter,
       }),
-      this.getLowStockVariants(),
-      this.getOutOfStockVariants(),
+      this.getLowStockVariants(undefined, startDate, endDate),
+      this.getOutOfStockVariants(startDate, endDate),
     ]);
 
     return {
