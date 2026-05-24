@@ -70,6 +70,10 @@ export interface PushNotificationData extends NotificationData {
   sound?: string;
   badge?: number;
   data?: Record<string, unknown>;
+  ttlSeconds?: number;
+  collapseKey?: string;
+  androidPriority?: 'normal' | 'high';
+  apnsPriority?: '5' | '10';
 }
 
 export interface EmailNotificationData extends NotificationData {
@@ -115,6 +119,7 @@ export interface InAppNotificationResult extends NotificationResult {
 
 export interface PushNotificationResult extends NotificationResult {
   deliveredAt?: Date;
+  providerAcceptedAt?: Date;
   clickedAt?: Date;
   platform?: string;
 }

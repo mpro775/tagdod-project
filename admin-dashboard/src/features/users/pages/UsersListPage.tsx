@@ -32,7 +32,6 @@ import {
   LoadingState,
   PageHeader,
   PageShell,
-  SectionCard,
   usePageTitle,
 } from '@/shared/design-system';
 import '../styles/responsive-users.css';
@@ -47,7 +46,6 @@ export const UsersListPage: React.FC = () => {
 
   usePageTitle(pageTitle);
 
-  // State
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: isMobile ? 10 : 20,
@@ -67,7 +65,6 @@ export const UsersListPage: React.FC = () => {
     includeDeleted: false,
   });
 
-  // Dialog state
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     user: User | null;
@@ -80,7 +77,6 @@ export const UsersListPage: React.FC = () => {
   const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
   const [reportYear, setReportYear] = useState(new Date().getFullYear());
 
-  // API
   const verificationStatusForApi =
     (filters.role === 'merchant' || filters.role === 'engineer') &&
     filters.verificationStatus &&
@@ -104,7 +100,6 @@ export const UsersListPage: React.FC = () => {
   const exportUsersMutation = useExportUsers();
   const exportMonthlyReportMutation = useExportMonthlyReport();
 
-  // Table Actions Hook
   const {
     handleStatusToggle,
     handleRestore,
@@ -114,12 +109,8 @@ export const UsersListPage: React.FC = () => {
     onRefetch: refetch,
   });
 
-  // Action Handlers
   const handleDelete = (user: User) => {
-    setDeleteDialog({
-      open: true,
-      user,
-    });
+    setDeleteDialog({ open: true, user });
   };
 
   const handleCloseDeleteDialog = () => {
@@ -149,13 +140,13 @@ export const UsersListPage: React.FC = () => {
   };
 
   const getExportParams = () => ({
-      search: filters.search,
-      status: filters.status,
-      role: filters.role,
-      verificationStatus: verificationStatusForApi,
-      includeDeleted: filters.includeDeleted,
-      sortBy: sortModel[0]?.field || 'createdAt',
-      sortOrder: sortModel[0]?.sort || 'desc',
+    search: filters.search,
+    status: filters.status,
+    role: filters.role,
+    verificationStatus: verificationStatusForApi,
+    includeDeleted: filters.includeDeleted,
+    sortBy: sortModel[0]?.field || 'createdAt',
+    sortOrder: sortModel[0]?.sort || 'desc',
   });
 
   const handleExportUsers = (fields: string[]) => {
@@ -174,7 +165,6 @@ export const UsersListPage: React.FC = () => {
     );
   };
 
-  // Table Columns
   const columns = useUsersTableColumns({
     onEdit: handleEdit,
     onDelete: handleDelete,
@@ -182,103 +172,123 @@ export const UsersListPage: React.FC = () => {
     onStatusToggle: handleStatusToggle,
   });
 
-  // Calculate table height responsively
   const tableHeight = React.useMemo(() => {
-    if (isSmallScreen) return 'calc(100vh - 320px)';
-    if (isMobile) return 'calc(100vh - 300px)';
-    return 'calc(100vh - 280px)';
+    if (isSmallScreen) return 'calc(100vh - 400px)';
+    if (isMobile) return 'calc(100vh - 360px)';
+    return 'calc(100vh - 320px)';
   }, [isMobile, isSmallScreen]);
 
+  const toolbarActions = (
+    <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<CalendarMonth />}
+        onClick={() => setMonthlyReportDialog(true)}
+        disabled={exportMonthlyReportMutation.isPending}
+      >
+        {exportMonthlyReportMutation.isPending
+          ? t('users:actions.exportingReport', 'جاري التصدير...')
+          : t('users:actions.monthlyReport', 'تقرير شهري')}
+      </Button>
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<Download />}
+        onClick={() => setExportDialogOpen(true)}
+        disabled={exportUsersMutation.isPending}
+      >
+        {exportUsersMutation.isPending
+          ? t('users:actions.exportingNames', 'جاري التصدير...')
+          : t('users:actions.exportNames', 'تصدير الأسماء')}
+      </Button>
+    </Stack>
+  );
+
+  const mobileToolbarActions = (
+    <Stack direction="column" spacing={1} sx={{ width: '100%' }}>
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<CalendarMonth />}
+        onClick={() => setMonthlyReportDialog(true)}
+        fullWidth
+        disabled={exportMonthlyReportMutation.isPending}
+      >
+        {exportMonthlyReportMutation.isPending
+          ? t('users:actions.exportingReport', 'جاري التصدير...')
+          : t('users:actions.monthlyReport', 'تقرير شهري')}
+      </Button>
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<Download />}
+        onClick={() => setExportDialogOpen(true)}
+        fullWidth
+        disabled={exportUsersMutation.isPending}
+      >
+        {exportUsersMutation.isPending
+          ? t('users:actions.exportingNames', 'جاري التصدير...')
+          : t('users:actions.exportNames', 'تصدير الأسماء')}
+      </Button>
+    </Stack>
+  );
+
   return (
-    <PageShell fullHeight>
+    <PageShell spacing="compact" fullHeight>
       <PageHeader
         title={pageTitle}
         description={t('users:list.description', 'إدارة المستخدمين، الفلاتر، والتصدير')}
+        variant="compact"
         breadcrumbs={[
           { label: t('common:navigation.dashboard', 'لوحة التحكم'), to: '/dashboard' },
           { label: pageTitle },
         ]}
+        actions={[
+          {
+            label: t('users:actions.addUser', 'إضافة مستخدم / أدمن'),
+            icon: <PersonAdd />,
+            onClick: () => navigate('/users/new'),
+            variant: 'primary',
+          },
+        ]}
       />
-      {/* إحصائيات المستخدمين */}
-      {stats && <UserStatsCards stats={stats} loading={statsLoading} />}
 
-      {/* فلاتر البحث */}
-      <Box sx={{ px: { xs: 1, sm: 0 }, mb: { xs: 2, sm: 3 } }}>
-        <UsersFilter
-          filters={{
-            search: filters.search,
-            status: filters.status,
-            role: filters.role,
-            verificationStatus: filters.verificationStatus,
-            includeDeleted: filters.includeDeleted,
-          }}
-          onFiltersChange={(newFilters) => {
-            setFilters({
-              search: newFilters.search,
-              status: newFilters.status,
-              role: newFilters.role,
-              verificationStatus: newFilters.verificationStatus,
-              includeDeleted: newFilters.includeDeleted || false,
-            });
-            setPaginationModel((prev) => ({ ...prev, page: 0 }));
-          }}
-          onClearFilters={handleClearFilters}
-        />
-      </Box>
+      {stats && <UserStatsCards stats={stats} loading={statsLoading} compact />}
 
-      {/* Action Buttons - Desktop */}
-      <Box sx={{ mb: 2, display: { xs: 'none', md: 'block' }, px: { xs: 1, sm: 0 } }}>
-        <SectionCard padding="sm">
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="flex-end">
-            <Button
-              variant="outlined"
-              color="secondary"
-              startIcon={<CalendarMonth />}
-              onClick={() => setMonthlyReportDialog(true)}
-              size="medium"
-              disabled={exportMonthlyReportMutation.isPending}
-            >
-              {exportMonthlyReportMutation.isPending
-                ? t('users:actions.exportingReport', 'جاري تصدير التقرير...')
-                : t('users:actions.monthlyReport', 'تقرير شهري')}
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<Download />}
-              onClick={() => setExportDialogOpen(true)}
-              size="medium"
-              disabled={exportUsersMutation.isPending}
-            >
-              {exportUsersMutation.isPending
-                ? t('users:actions.exportingNames', 'جاري تصدير الأسماء...')
-                : t('users:actions.exportNames', 'تصدير الأسماء')}
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<PersonAdd />}
-              onClick={() => navigate('/users/new')}
-              size="medium"
-              color="primary"
-            >
-              {t('users:actions.addUser', 'إضافة مستخدم / أدمن')}
-            </Button>
-          </Stack>
-        </SectionCard>
-      </Box>
+      <UsersFilter
+        filters={{
+          search: filters.search,
+          status: filters.status,
+          role: filters.role,
+          verificationStatus: filters.verificationStatus,
+          includeDeleted: filters.includeDeleted,
+        }}
+        onFiltersChange={(newFilters) => {
+          setFilters({
+            search: newFilters.search,
+            status: newFilters.status,
+            role: newFilters.role,
+            verificationStatus: newFilters.verificationStatus,
+            includeDeleted: newFilters.includeDeleted || false,
+          });
+          setPaginationModel((prev) => ({ ...prev, page: 0 }));
+        }}
+        onClearFilters={handleClearFilters}
+        actions={isMobile ? undefined : toolbarActions}
+      />
 
-      {/* Desktop View - Table */}
+      {isMobile && <Box sx={{ mt: 0 }}>{mobileToolbarActions}</Box>}
+
       <Box
         sx={{
-          mb: 2,
           display: { xs: 'none', md: 'block' },
-          px: { xs: 1, sm: 0 },
           width: '100%',
           overflowX: 'auto',
           minWidth: 0,
         }}
       >
         <DataTable
-          title={t('users:list.title', 'إدارة المستخدمين')}
           columns={columns}
           rows={data?.data || []}
           loading={isLoading}
@@ -297,104 +307,13 @@ export const UsersListPage: React.FC = () => {
         />
       </Box>
 
-      {/* Mobile Action Buttons */}
-      <Box
-        sx={{
-          mb: 2,
-          display: { xs: 'block', md: 'none' },
-          px: { xs: 1, sm: 2 },
-        }}
-      >
-        <Button
-          variant="outlined"
-          color="secondary"
-          startIcon={<CalendarMonth />}
-          onClick={() => setMonthlyReportDialog(true)}
-          fullWidth
-          size="large"
-          disabled={exportMonthlyReportMutation.isPending}
-          sx={{
-            py: 1.25,
-            mb: 1,
-            fontSize: '0.95rem',
-          }}
-        >
-          {exportMonthlyReportMutation.isPending
-            ? t('users:actions.exportingReport', 'جاري تصدير التقرير...')
-            : t('users:actions.monthlyReport', 'تقرير شهري')}
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<Download />}
-          onClick={() => setExportDialogOpen(true)}
-          fullWidth
-          size="large"
-          disabled={exportUsersMutation.isPending}
-          sx={{
-            py: 1.25,
-            mb: 1,
-            fontSize: '0.95rem',
-          }}
-        >
-          {exportUsersMutation.isPending
-            ? t('users:actions.exportingNames', 'جاري تصدير الأسماء...')
-            : t('users:actions.exportNames', 'تصدير الأسماء')}
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<PersonAdd />}
-          onClick={() => navigate('/users/new')}
-          fullWidth
-          color="primary"
-          size="large"
-          sx={{
-            py: 1.5,
-            fontSize: '1rem',
-          }}
-        >
-          {t('users:actions.addUser', 'إضافة مستخدم / أدمن')}
-        </Button>
-      </Box>
-
-      {/* Mobile View - Cards */}
-      <Box
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          px: { xs: 1, sm: 2 },
-        }}
-      >
+      <Box sx={{ display: { xs: 'block', md: 'none' } }}>
         {isLoading ? (
-          <>
-            <LoadingState variant="skeleton" rows={4} />
-            {false && (
-          <Box
-            sx={{
-              textAlign: 'center',
-              py: 4,
-              color: 'text.secondary',
-            }}
-          >
-            {t('common:loading', 'جاري التحميل...')}
-          </Box>
-            )}
-          </>
+          <LoadingState variant="skeleton" rows={4} />
         ) : (data?.data || []).length === 0 ? (
-          <>
-            <EmptyState title={t('users:list.noUsers', 'لا يوجد مستخدمين')} />
-            {false && (
-          <Box
-            sx={{
-              textAlign: 'center',
-              py: 4,
-              color: 'text.secondary',
-            }}
-          >
-            {t('users:list.noUsers', 'لا يوجد مستخدمين')}
-          </Box>
-            )}
-          </>
+          <EmptyState title={t('users:list.noUsers', 'لا يوجد مستخدمين')} />
         ) : (
-          <Grid container spacing={{ xs: 2, sm: 2 }}>
+          <Grid container spacing={{ xs: 1.5, sm: 2 }}>
             {(data?.data || []).map((user: User) => (
               <Grid component="div" size={{ xs: 6, sm: 6, md: 4 }} key={user._id} sx={{ minWidth: 0 }}>
                 <UserCard
@@ -411,7 +330,6 @@ export const UsersListPage: React.FC = () => {
         )}
       </Box>
 
-      {/* Delete Confirmation Dialog */}
       <DeleteUserDialog
         open={deleteDialog.open}
         user={deleteDialog.user}

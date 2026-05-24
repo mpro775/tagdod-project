@@ -5,6 +5,7 @@ import {
   NOTIFICATION_QUEUE,
   NOTIFICATION_SCHEDULED_QUEUE,
   NOTIFICATION_RETRY_QUEUE,
+  NOTIFICATION_DEAD_LETTER_QUEUE,
 } from './queue.constants';
 import { NotificationPriority, NotificationStatus } from '../enums/notification.enums';
 import { InjectModel } from '@nestjs/mongoose';
@@ -20,10 +21,12 @@ export interface NotificationJobData {
   recipientId?: string;
   channel: string;
   type: string;
+  category?: string;
   title: string;
   message: string;
   messageEn: string;
   data?: Record<string, unknown>;
+  payload?: Record<string, string>;
   priority: NotificationPriority;
   deviceToken?: string;
   recipientEmail?: string;
@@ -31,8 +34,15 @@ export interface NotificationJobData {
   actionUrl?: string;
   navigationType?: string;
   navigationTarget?: string;
+  navigationParams?: Record<string, unknown>;
+  trackingId?: string;
+  batchId?: string;
+  campaign?: string;
   attempt?: number;
   scheduledFor?: Date;
+  finalFailureReason?: string;
+  finalFailedAt?: Date;
+  attemptsMade?: number;
 }
 
 // Priority mapping for Bull queue
@@ -54,6 +64,8 @@ export class NotificationQueueService {
     private readonly scheduledQueue: Queue<NotificationJobData>,
     @InjectQueue(NOTIFICATION_RETRY_QUEUE)
     private readonly retryQueue: Queue<NotificationJobData>,
+    @InjectQueue(NOTIFICATION_DEAD_LETTER_QUEUE)
+    private readonly deadLetterQueue: Queue<NotificationJobData>,
     @InjectModel(UnifiedNotification.name)
     private readonly notificationModel: Model<UnifiedNotificationDocument>,
   ) {}
@@ -120,6 +132,14 @@ export class NotificationQueueService {
 
       this.logger.log(
         `Notification ${data.notificationId} added to queue with job ID: ${job.id} (priority: ${data.priority})`,
+      );
+
+      await this.notificationModel.updateOne(
+        {
+          _id: data.notificationId,
+          status: { $in: [NotificationStatus.PENDING, NotificationStatus.QUEUED] },
+        },
+        { $set: { status: NotificationStatus.QUEUED } },
       );
 
       return job.id?.toString() || '';
@@ -254,6 +274,39 @@ export class NotificationQueueService {
     }
   }
 
+  async addToDeadLetter(
+    data: NotificationJobData,
+    reason: string,
+    attemptsMade: number = 0,
+  ): Promise<string> {
+    const payload: NotificationJobData = {
+      ...data,
+      finalFailureReason: reason,
+      finalFailedAt: new Date(),
+      attemptsMade,
+    };
+
+    const job = await this.deadLetterQueue.add('dead-letter', payload, { attempts: 1 });
+    await this.notificationModel.updateOne(
+      { _id: data.notificationId },
+      {
+        $set: {
+          status: NotificationStatus.FAILED,
+          errorMessage: reason,
+          failedAt: new Date(),
+          'metadata.finalFailureReason': reason,
+          'metadata.finalFailedAt': new Date(),
+          'metadata.attemptsMade': attemptsMade,
+        },
+      },
+    );
+
+    this.logger.warn(
+      `Notification ${data.notificationId} moved to dead-letter queue: ${reason}`,
+    );
+    return job.id?.toString() || '';
+  }
+
   /**
    * Get queue statistics
    */
@@ -261,17 +314,20 @@ export class NotificationQueueService {
     send: { waiting: number; active: number; completed: number; failed: number; delayed: number };
     scheduled: { waiting: number; active: number; completed: number; failed: number; delayed: number };
     retry: { waiting: number; active: number; completed: number; failed: number; delayed: number };
+    deadLetter: { waiting: number; active: number; completed: number; failed: number; delayed: number };
   }> {
-    const [sendCounts, scheduledCounts, retryCounts] = await Promise.all([
+    const [sendCounts, scheduledCounts, retryCounts, deadLetterCounts] = await Promise.all([
       this.notificationQueue.getJobCounts(),
       this.scheduledQueue.getJobCounts(),
       this.retryQueue.getJobCounts(),
+      this.deadLetterQueue.getJobCounts(),
     ]);
 
     return {
       send: sendCounts,
       scheduled: scheduledCounts,
       retry: retryCounts,
+      deadLetter: deadLetterCounts,
     };
   }
 
@@ -286,7 +342,9 @@ export class NotificationQueueService {
       stats.scheduled.waiting +
       stats.scheduled.delayed +
       stats.retry.waiting +
-      stats.retry.delayed
+      stats.retry.delayed +
+      stats.deadLetter.waiting +
+      stats.deadLetter.delayed
     );
   }
 
@@ -298,6 +356,7 @@ export class NotificationQueueService {
       this.notificationQueue.pause(),
       this.scheduledQueue.pause(),
       this.retryQueue.pause(),
+      this.deadLetterQueue.pause(),
     ]);
     this.logger.log('All notification queues paused');
   }
@@ -310,6 +369,7 @@ export class NotificationQueueService {
       this.notificationQueue.resume(),
       this.scheduledQueue.resume(),
       this.retryQueue.resume(),
+      this.deadLetterQueue.resume(),
     ]);
     this.logger.log('All notification queues resumed');
   }
@@ -326,6 +386,7 @@ export class NotificationQueueService {
       this.scheduledQueue.clean(grace * 24, 'failed'),
       this.retryQueue.clean(grace, 'completed'),
       this.retryQueue.clean(grace * 24, 'failed'),
+      this.deadLetterQueue.clean(grace * 24 * 7, 'completed'),
     ]);
     this.logger.log('Old jobs cleaned from all queues');
   }
@@ -334,13 +395,14 @@ export class NotificationQueueService {
    * Get failed jobs
    */
   async getFailedJobs(limit: number = 100): Promise<NotificationJobData[]> {
-    const [sendFailed, scheduledFailed, retryFailed] = await Promise.all([
+    const [sendFailed, scheduledFailed, retryFailed, deadLetterFailed] = await Promise.all([
       this.notificationQueue.getFailed(0, limit),
       this.scheduledQueue.getFailed(0, limit),
       this.retryQueue.getFailed(0, limit),
+      this.deadLetterQueue.getJobs(['waiting', 'failed'], 0, limit),
     ]);
 
-    return [...sendFailed, ...scheduledFailed, ...retryFailed].map((job) => job.data);
+    return [...sendFailed, ...scheduledFailed, ...retryFailed, ...deadLetterFailed].map((job) => job.data);
   }
 
   /**
@@ -368,6 +430,7 @@ export class NotificationQueueService {
       checkQueue(this.notificationQueue),
       checkQueue(this.scheduledQueue),
       checkQueue(this.retryQueue),
+      checkQueue(this.deadLetterQueue),
     ]);
 
     return results.some((result) => result);

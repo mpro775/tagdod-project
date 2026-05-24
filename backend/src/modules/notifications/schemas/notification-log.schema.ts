@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { 
   NotificationStatus, 
+  NotificationDeliveryStatus,
   NotificationChannel, 
   NotificationPriority,
   DevicePlatform 
@@ -43,6 +44,14 @@ export class NotificationLog {
   })
   status!: NotificationStatus;
 
+  @Prop({
+    type: String,
+    enum: Object.values(NotificationDeliveryStatus),
+    default: NotificationDeliveryStatus.QUEUED,
+    index: true,
+  })
+  deliveryStatus!: NotificationDeliveryStatus;
+
   // ===== Content =====
   @Prop({ required: true, maxlength: 200 })
   title!: string;
@@ -82,6 +91,15 @@ export class NotificationLog {
   @Prop({ type: Date, index: true })
   sentAt?: Date;
 
+  @Prop({ type: Date, index: true })
+  providerAcceptedAt?: Date;
+
+  @Prop({ type: Date })
+  receivedAt?: Date;
+
+  @Prop({ type: Date })
+  openedAt?: Date;
+
   @Prop({ type: Date })
   deliveredAt?: Date;
 
@@ -113,6 +131,9 @@ export class NotificationLog {
 
   @Prop({ maxlength: 100 })
   externalId?: string;
+
+  @Prop({ maxlength: 200 })
+  providerMessageId?: string;
 
   @Prop({ 
     type: Object, 
@@ -169,8 +190,10 @@ export const NotificationLogSchema = SchemaFactory.createForClass(NotificationLo
 
 // Indexes for performance
 NotificationLogSchema.index({ userId: 1, status: 1, createdAt: -1 });
+NotificationLogSchema.index({ userId: 1, deliveryStatus: 1, createdAt: -1 });
 NotificationLogSchema.index({ templateKey: 1, channel: 1, createdAt: -1 });
 NotificationLogSchema.index({ status: 1, scheduledAt: 1 });
+NotificationLogSchema.index({ deliveryStatus: 1, createdAt: -1 });
 NotificationLogSchema.index({ status: 1, sentAt: -1 }, { sparse: true });
 NotificationLogSchema.index({ channel: 1, status: 1, createdAt: -1 });
 NotificationLogSchema.index({ trackingId: 1 }, { sparse: true, unique: true });

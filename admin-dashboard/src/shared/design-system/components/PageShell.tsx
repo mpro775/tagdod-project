@@ -9,9 +9,9 @@ export interface PageShellProps {
 }
 
 const spacingMap = {
-  compact: 2,
-  normal: 3,
-  relaxed: 4,
+  compact: 1.25,
+  normal: 2,
+  relaxed: 3,
 } as const;
 
 export function PageShell({

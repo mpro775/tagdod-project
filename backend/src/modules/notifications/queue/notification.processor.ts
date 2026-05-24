@@ -14,11 +14,18 @@ import {
   UnifiedNotificationDocument,
 } from '../schemas/unified-notification.schema';
 import { NotificationLog, NotificationLogDocument } from '../schemas/notification-log.schema';
-import { NotificationStatus, NotificationChannel, DevicePlatform } from '../enums/notification.enums';
+import {
+  NotificationStatus,
+  NotificationChannel,
+  DevicePlatform,
+  NotificationDeliveryStatus,
+  NotificationDeliveryErrorCode,
+} from '../enums/notification.enums';
 import { WebSocketService } from '../../../shared/websocket/websocket.service';
 import { PushNotificationAdapter, SmsNotificationAdapter } from '../adapters/notification.adapters';
 import { DeviceToken, DeviceTokenDocument } from '../schemas/device-token.schema';
 import { User, UserDocument } from '../../users/schemas/user.schema';
+import { NotificationPreferenceService } from '../services/notification-preference.service';
 
 @Processor(NOTIFICATION_QUEUE)
 export class NotificationProcessor {
@@ -36,9 +43,52 @@ export class NotificationProcessor {
     private readonly webSocketService: WebSocketService,
     private readonly pushNotificationAdapter: PushNotificationAdapter,
     private readonly smsNotificationAdapter: SmsNotificationAdapter,
+    private readonly preferenceService: NotificationPreferenceService,
     @Inject(forwardRef(() => NotificationQueueService))
     private readonly queueService: NotificationQueueService,
   ) {}
+
+  private readonly terminalErrorCodes = new Set<string>([
+    NotificationDeliveryErrorCode.NO_DEVICE_TOKEN,
+    NotificationDeliveryErrorCode.INVALID_TOKEN,
+    NotificationDeliveryErrorCode.REGISTRATION_TOKEN_NOT_REGISTERED,
+    NotificationDeliveryErrorCode.FCM_NOT_CONFIGURED,
+    NotificationDeliveryErrorCode.SKIPPED_BY_PREFERENCES,
+  ]);
+
+  private toDeliveryStatus(status: NotificationStatus, errorCode?: string): NotificationDeliveryStatus {
+    if (errorCode === NotificationDeliveryErrorCode.NO_DEVICE_TOKEN) {
+      return NotificationDeliveryStatus.NO_DEVICE_TOKEN;
+    }
+    if (errorCode === NotificationDeliveryErrorCode.FCM_NOT_CONFIGURED) {
+      return NotificationDeliveryStatus.PROVIDER_NOT_CONFIGURED;
+    }
+    if (
+      errorCode === NotificationDeliveryErrorCode.INVALID_TOKEN ||
+      errorCode === NotificationDeliveryErrorCode.REGISTRATION_TOKEN_NOT_REGISTERED
+    ) {
+      return NotificationDeliveryStatus.INVALID_TOKEN;
+    }
+    if (errorCode === NotificationDeliveryErrorCode.SKIPPED_BY_PREFERENCES) {
+      return NotificationDeliveryStatus.SKIPPED_BY_PREFERENCES;
+    }
+    if (status === NotificationStatus.SENDING) return NotificationDeliveryStatus.SENDING;
+    if (status === NotificationStatus.SENT) return NotificationDeliveryStatus.PROVIDER_ACCEPTED;
+    if (status === NotificationStatus.FAILED) return NotificationDeliveryStatus.FAILED;
+    return NotificationDeliveryStatus.QUEUED;
+  }
+
+  private extractErrorCode(metadata?: Record<string, unknown>): string | undefined {
+    return metadata && typeof metadata.errorCode === 'string'
+      ? metadata.errorCode
+      : undefined;
+  }
+
+  private maskToken(token?: string): string | undefined {
+    if (!token) return undefined;
+    if (token.length <= 16) return `${token.substring(0, 4)}...`;
+    return `${token.substring(0, 12)}...${token.substring(token.length - 4)}`;
+  }
 
   /**
    * إنشاء سجل إشعار لكل مستخدم
@@ -52,28 +102,40 @@ export class NotificationProcessor {
     errorCode?: string,
     deviceToken?: string,
     platform?: DevicePlatform,
+    metadata?: Record<string, unknown>,
   ): Promise<NotificationLogDocument> {
+    const now = new Date();
+    const deliveryStatus = this.toDeliveryStatus(status, errorCode);
     const log = new this.notificationLogModel({
       userId: new Types.ObjectId(userId),
       notificationId: new Types.ObjectId(notificationId),
       templateKey: (data as any).templateKey || 'manual',
       channel: data.channel,
       status,
+      deliveryStatus,
       title: data.title,
       body: data.message,
       messageEn: data.messageEn,
       data: data.data || {},
       actionUrl: data.actionUrl,
       priority: data.priority,
-      deviceToken: deviceToken ? deviceToken.substring(0, 500) : undefined,
+      deviceToken: this.maskToken(deviceToken),
       platform,
       errorMessage: errorMessage ? errorMessage.substring(0, 500) : undefined,
       errorCode: errorCode ? errorCode.substring(0, 50) : undefined,
-      sentAt: status === NotificationStatus.SENT ? new Date() : undefined,
-      failedAt: status === NotificationStatus.FAILED ? new Date() : undefined,
+      sentAt: status === NotificationStatus.SENT ? now : undefined,
+      providerAcceptedAt:
+        deliveryStatus === NotificationDeliveryStatus.PROVIDER_ACCEPTED ? now : undefined,
+      failedAt: status === NotificationStatus.FAILED ? now : undefined,
       trackingId: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      externalId: metadata?.providerMessageId ? String(metadata.providerMessageId) : undefined,
+      providerMessageId: metadata?.providerMessageId ? String(metadata.providerMessageId) : undefined,
+      batchId: data.batchId,
       metadata: {
         provider: data.channel === NotificationChannel.PUSH ? 'FCM' : undefined,
+        providerResponse: metadata,
+        campaign: data.campaign,
+        notificationTrackingId: data.trackingId,
       },
     });
 
@@ -88,15 +150,27 @@ export class NotificationProcessor {
     status: NotificationStatus,
     errorMessage?: string,
     errorCode?: string,
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
-    const updateData: any = { status };
+    const now = new Date();
+    const deliveryStatus = this.toDeliveryStatus(status, errorCode);
+    const updateData: any = { status, deliveryStatus };
 
     if (status === NotificationStatus.SENT) {
-      updateData.sentAt = new Date();
+      updateData.sentAt = now;
+      updateData.providerAcceptedAt = now;
     } else if (status === NotificationStatus.FAILED) {
-      updateData.failedAt = new Date();
+      updateData.failedAt = now;
       if (errorMessage) updateData.errorMessage = errorMessage.substring(0, 500);
       if (errorCode) updateData.errorCode = errorCode.substring(0, 50);
+    }
+
+    if (metadata?.providerMessageId) {
+      updateData.externalId = String(metadata.providerMessageId);
+      updateData.providerMessageId = String(metadata.providerMessageId);
+    }
+    if (metadata) {
+      updateData['metadata.providerResponse'] = metadata;
     }
 
     await this.notificationLogModel.updateOne({ _id: logId }, { $set: updateData });
@@ -196,10 +270,13 @@ export class NotificationProcessor {
       if (success) {
         this.logger.log(`Notification ${data.notificationId} sent successfully`);
       } else {
-        throw new Error(errorMessage || 'Failed to send notification');
+        const sendError = new Error(errorMessage || 'Failed to send notification');
+        (sendError as Error & { code?: string }).code = errorCode;
+        throw sendError;
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorCode = (error as Error & { code?: string })?.code;
       this.logger.error(`Failed to process notification ${data.notificationId}: ${errorMsg}`);
 
       // عدم الكتابة فوق SENT إذا كان الإرسال قد نجح وتأخر تحديث DB (لتجنب إعادة الإرسال عند الـ retry)
@@ -213,6 +290,7 @@ export class NotificationProcessor {
             status: NotificationStatus.FAILED,
             failedAt: new Date(),
             errorMessage: errorMsg,
+            errorCode,
           },
           $inc: { retryCount: 1 },
         },
@@ -235,11 +313,36 @@ export class NotificationProcessor {
           logId,
           NotificationStatus.FAILED,
           'No recipientId provided',
-          'NO_RECIPIENT',
+          NotificationDeliveryErrorCode.NO_RECIPIENT,
         );
       }
       this.logger.debug(`Skipping notification ${data.notificationId} - no recipientId`);
-      return { success: false, error: 'No recipientId provided', errorCode: 'NO_RECIPIENT' };
+      return { success: false, error: 'No recipientId provided', errorCode: NotificationDeliveryErrorCode.NO_RECIPIENT };
+    }
+
+    const channel = data.channel === NotificationChannel.DASHBOARD
+      ? NotificationChannel.IN_APP
+      : data.channel;
+    const preference = await this.preferenceService.canSendNotification(
+      data.recipientId,
+      data.type,
+      channel,
+    );
+    if (!preference.canSend) {
+      const error = preference.reason || 'Notification skipped by user preferences';
+      if (logId) {
+        await this.updateNotificationLog(
+          logId,
+          NotificationStatus.FAILED,
+          error,
+          NotificationDeliveryErrorCode.SKIPPED_BY_PREFERENCES,
+        );
+      }
+      return {
+        success: false,
+        error,
+        errorCode: NotificationDeliveryErrorCode.SKIPPED_BY_PREFERENCES,
+      };
     }
 
     const isUserOnline = this.webSocketService.isUserOnline(data.recipientId);
@@ -254,11 +357,14 @@ export class NotificationProcessor {
           message: data.message,
           messageEn: data.messageEn,
           type: data.type,
+          category: data.category,
           priority: data.priority,
           data: data.data,
+          trackingId: data.trackingId,
           actionUrl: data.actionUrl,
           navigationType: data.navigationType,
           navigationTarget: data.navigationTarget,
+          navigationParams: data.navigationParams,
           createdAt: new Date(),
           isRead: false,
         },
@@ -343,10 +449,40 @@ export class NotificationProcessor {
           logId,
           NotificationStatus.FAILED,
           'No recipientId for push notification',
-          'NO_RECIPIENT',
+          NotificationDeliveryErrorCode.NO_RECIPIENT,
         );
       }
-      return { success: false, error: 'No recipientId for push notification', errorCode: 'NO_RECIPIENT' };
+      return { success: false, error: 'No recipientId for push notification', errorCode: NotificationDeliveryErrorCode.NO_RECIPIENT };
+    }
+
+    const preference = await this.preferenceService.canSendNotification(
+      data.recipientId,
+      data.type,
+      NotificationChannel.PUSH,
+    );
+    if (!preference.canSend) {
+      const error = preference.reason || 'Push notification skipped by user preferences';
+      if (logId) {
+        await this.updateNotificationLog(
+          logId,
+          NotificationStatus.FAILED,
+          error,
+          NotificationDeliveryErrorCode.SKIPPED_BY_PREFERENCES,
+        );
+      }
+      await this.createNotificationLog(
+        data.notificationId,
+        data.recipientId,
+        data,
+        NotificationStatus.FAILED,
+        error,
+        NotificationDeliveryErrorCode.SKIPPED_BY_PREFERENCES,
+      );
+      return {
+        success: false,
+        error,
+        errorCode: NotificationDeliveryErrorCode.SKIPPED_BY_PREFERENCES,
+      };
     }
 
     // Get device tokens for user
@@ -358,8 +494,25 @@ export class NotificationProcessor {
       .lean();
 
     if (deviceTokens.length === 0) {
-      this.logger.debug(`No active device tokens for user ${data.recipientId}, trying fallback channels`);
-      return await this.tryFallbackChannels(data, logId);
+      const error = `No active device tokens found for user ${data.recipientId}`;
+      this.logger.debug(error);
+      if (logId) {
+        await this.updateNotificationLog(
+          logId,
+          NotificationStatus.FAILED,
+          error,
+          NotificationDeliveryErrorCode.NO_DEVICE_TOKEN,
+        );
+      }
+      await this.createNotificationLog(
+        data.notificationId,
+        data.recipientId,
+        data,
+        NotificationStatus.FAILED,
+        error,
+        NotificationDeliveryErrorCode.NO_DEVICE_TOKEN,
+      );
+      return { success: false, error, errorCode: NotificationDeliveryErrorCode.NO_DEVICE_TOKEN };
     }
 
     let successCount = 0;
@@ -379,16 +532,21 @@ export class NotificationProcessor {
           recipientId: data.recipientId,
           deviceToken: deviceToken.token,
           actionUrl: data.actionUrl,
-          data: {
+          data: data.payload || {
             ...(data.data || {}),
             actionUrl: data.actionUrl,
             navigationType: data.navigationType,
             navigationTarget: data.navigationTarget,
+            navigationParams: data.navigationParams,
           },
         });
 
         if (result.success) {
           successCount++;
+          const providerMessageId =
+            result.metadata && typeof result.metadata.providerMessageId === 'string'
+              ? result.metadata.providerMessageId
+              : result.externalId;
           // إنشاء سجل منفصل لكل جهاز ناجح
           await this.createNotificationLog(
             data.notificationId,
@@ -399,6 +557,10 @@ export class NotificationProcessor {
             undefined,
             deviceToken.token,
             deviceToken.platform as DevicePlatform,
+            {
+              providerMessageId,
+              providerAcceptedAt: result.providerAcceptedAt?.toISOString(),
+            },
           );
           // Update last used timestamp
           await this.deviceTokenModel.updateOne(
@@ -407,10 +569,8 @@ export class NotificationProcessor {
           );
         } else {
           lastError = result.error;
-          const errorCode =
-            result.metadata && typeof result.metadata === 'object' && 'errorCode' in result.metadata
-              ? String(result.metadata.errorCode)
-              : 'UNKNOWN_ERROR';
+          const errorCode = this.extractErrorCode(result.metadata)
+            || NotificationDeliveryErrorCode.UNKNOWN_ERROR;
           lastErrorCode = errorCode;
 
           // إنشاء سجل فشل لكل جهاز
@@ -427,9 +587,10 @@ export class NotificationProcessor {
 
           // Disable invalid tokens
           if (
-            errorCode.includes('invalid') ||
-            errorCode.includes('unregistered') ||
-            errorCode.includes('registration-token-not-registered')
+            errorCode === NotificationDeliveryErrorCode.INVALID_TOKEN ||
+            errorCode === NotificationDeliveryErrorCode.REGISTRATION_TOKEN_NOT_REGISTERED ||
+            errorCode.toLowerCase().includes('invalid') ||
+            errorCode.toLowerCase().includes('unregistered')
           ) {
             await this.deviceTokenModel.updateOne(
               { _id: deviceToken._id },
@@ -440,7 +601,7 @@ export class NotificationProcessor {
         }
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error);
-        lastErrorCode = 'EXCEPTION';
+        lastErrorCode = NotificationDeliveryErrorCode.UNKNOWN_ERROR;
         this.logger.error(`Error sending to device ${deviceToken._id}: ${lastError}`);
       }
     }
@@ -481,6 +642,7 @@ export class NotificationProcessor {
 
   @OnQueueFailed()
   async onFailed(job: Job<NotificationJobData>, error: Error) {
+    const errorCode = (error as Error & { code?: string }).code;
     this.logger.error(
       `Job ${job.id} failed for notification ${job.data.notificationId}: ${error.message}`,
     );
@@ -499,6 +661,11 @@ export class NotificationProcessor {
 
     // Add to retry queue if attempts remaining
     const attempt = job.data.attempt || 1;
+    if (errorCode && this.terminalErrorCodes.has(errorCode)) {
+      await this.queueService.addToDeadLetter(job.data, error.message, attempt);
+      return;
+    }
+
     if (attempt < 5) {
       const delay = Math.pow(2, attempt) * 10000; // Exponential backoff: 10s, 20s, 40s, 80s, 160s
       try {
@@ -511,6 +678,8 @@ export class NotificationProcessor {
           `Failed to queue retry for notification ${job.data.notificationId}: ${retryError instanceof Error ? retryError.message : String(retryError)}`,
         );
       }
+    } else {
+      await this.queueService.addToDeadLetter(job.data, error.message, attempt);
     }
   }
 }

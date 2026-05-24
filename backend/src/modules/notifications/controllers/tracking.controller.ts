@@ -75,6 +75,43 @@ export class TrackingController {
     }
   }
 
+  @Post(':trackingId/received')
+  @ApiOperation({
+    summary: 'Track notification received by app',
+    description: 'Track when the mobile app receives a push notification.',
+  })
+  @ApiParam({ name: 'trackingId', description: 'Notification tracking ID' })
+  @ApiResponse({ status: 200, description: 'Receive tracked successfully' })
+  async trackReceived(
+    @Param('trackingId') trackingId: string,
+    @Body() body: { deviceToken?: string },
+  ): Promise<{ success: boolean; message: string }> {
+    await this.analyticsService.trackReceived(trackingId, body.deviceToken);
+
+    return {
+      success: true,
+      message: 'Receive tracked successfully',
+    };
+  }
+
+  @Post(':trackingId/open')
+  @ApiOperation({
+    summary: 'Track notification open (POST)',
+    description: 'Track notification open from mobile apps.',
+  })
+  @ApiParam({ name: 'trackingId', description: 'Notification tracking ID' })
+  @ApiResponse({ status: 200, description: 'Open tracked successfully' })
+  async trackOpenPost(
+    @Param('trackingId') trackingId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    await this.analyticsService.trackOpen(trackingId);
+
+    return {
+      success: true,
+      message: 'Open tracked successfully',
+    };
+  }
+
   /**
    * Track notification click
    * Used when user clicks a link in notification

@@ -58,6 +58,20 @@ export enum NotificationStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum NotificationDeliveryStatus {
+  QUEUED = 'queued',
+  SENDING = 'sending',
+  PROVIDER_ACCEPTED = 'provider_accepted',
+  RECEIVED_BY_APP = 'received_by_app',
+  OPENED = 'opened',
+  CLICKED = 'clicked',
+  FAILED = 'failed',
+  NO_DEVICE_TOKEN = 'no_device_token',
+  PROVIDER_NOT_CONFIGURED = 'provider_not_configured',
+  INVALID_TOKEN = 'invalid_token',
+  SKIPPED_BY_PREFERENCES = 'skipped_by_preferences',
+}
+
 export enum NotificationChannel {
   IN_APP = 'inApp',
   PUSH = 'push',
@@ -262,14 +276,19 @@ export interface NotificationDeliveryLog {
   userName?: string;
   userEmail?: string;
   status: NotificationStatus;
+  deliveryStatus?: NotificationDeliveryStatus;
   channel: NotificationChannel;
   sentAt?: Date;
+  providerAcceptedAt?: Date;
+  receivedAt?: Date;
+  openedAt?: Date;
   deliveredAt?: Date;
   failedAt?: Date;
   errorMessage?: string;
   errorCode?: string;
   deviceToken?: string;
   platform?: string;
+  providerMessageId?: string;
   createdAt: Date;
 }
 
@@ -281,7 +300,26 @@ export interface NotificationDeliveryDetails {
     sent: number;
     failed: number;
     pending: number;
+    totalRecipients?: number;
+    totalDeviceAttempts?: number;
+    providerAccepted?: number;
+    receivedByApp?: number;
+    opened?: number;
+    noDeviceToken?: number;
+    skippedByPreferences?: number;
   };
+}
+
+export interface FcmHealth {
+  configured: boolean;
+  initialized: boolean;
+  projectId?: string;
+  clientEmail?: string;
+  activeDeviceTokens: number;
+  usersWithoutDevices: number;
+  invalidTokensLast7Days: number;
+  providerFailuresLast24h: number;
+  lastError?: string | null;
 }
 
 export interface ListNotificationsParams extends ListParams {

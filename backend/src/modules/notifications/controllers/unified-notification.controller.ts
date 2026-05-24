@@ -939,6 +939,54 @@ export class UnifiedNotificationController {
     };
   }
 
+  @Get('admin/fcm/health')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Admin: FCM health',
+    description: 'Returns Firebase Admin initialization, token counts, and recent FCM failures.',
+  })
+  async getFcmHealth() {
+    return this.notificationService.getFcmHealth();
+  }
+
+  @Post('admin/fcm/test')
+  @UseGuards(AdminGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Admin: send FCM test',
+    description: 'Creates a real push notification test for a specific user.',
+  })
+  async sendFcmTest(
+    @Body() body: { userId: string; title?: string; message?: string; data?: Record<string, unknown> },
+  ) {
+    if (!body.userId || !Types.ObjectId.isValid(body.userId)) {
+      throw new BadRequestException('Invalid userId format');
+    }
+
+    const notification = await this.notificationService.createNotification({
+      type: 'SYSTEM_ALERT' as any,
+      title: body.title || 'FCM test',
+      message: body.message || 'FCM test push notification',
+      messageEn: body.message || 'FCM test push notification',
+      recipientId: body.userId,
+      channel: NotificationChannel.PUSH,
+      priority: 'high' as any,
+      category: 'system' as any,
+      data: {
+        ...(body.data || {}),
+        test: true,
+      },
+      isSystemGenerated: true,
+    });
+
+    return {
+      success: true,
+      notificationId: (notification as any)._id?.toString?.(),
+      message: 'FCM test notification queued',
+    };
+  }
+
   @Post('admin/users/devices/check')
   @UseGuards(AdminGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)

@@ -180,6 +180,32 @@ export const useTestNotification = () => {
   });
 };
 
+export const useFcmHealth = () => {
+  return useQuery({
+    queryKey: ['notification-fcm-health'],
+    queryFn: () => notificationsApi.getFcmHealth(),
+    refetchInterval: 30000,
+  });
+};
+
+export const useSendFcmTest = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      userId: string;
+      title?: string;
+      message?: string;
+      data?: Record<string, unknown>;
+    }) => notificationsApi.sendFcmTest(data),
+    onSuccess: () => {
+      toast.success('تمت إضافة اختبار FCM إلى الطابور');
+      queryClient.invalidateQueries({ queryKey: ['notification-fcm-health'] });
+      queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_KEY] });
+    },
+    onError: ErrorHandler.showError,
+  });
+};
+
 // ===== Templates =====
 export const useNotificationTemplates = () => {
   return useQuery({

@@ -27,6 +27,10 @@ import {
   TableRow,
   Chip,
   TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   CircularProgress,
   Tooltip,
 } from '@mui/material';
@@ -41,7 +45,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
-import { Notification, NotificationStatus } from '../types/notification.types';
+import { Notification, NotificationDeliveryStatus, NotificationStatus } from '../types/notification.types';
 import { formatDate } from '@/shared/utils/formatters';
 import { getChannelIcon } from './notificationHelpers';
 import { NotificationStatusChip } from './NotificationStatusChip';
@@ -66,6 +70,8 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
   const { isMobile } = useBreakpoint();
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
+  const [deliveryStatusFilter, setDeliveryStatusFilter] = useState('');
+  const [platformFilter, setPlatformFilter] = useState('');
 
   // جلب تفاصيل الإرسال (حسب batch أو إشعار فردي)
   const singleDetails = useNotificationDeliveryDetails(
@@ -80,21 +86,33 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
   // فلترة السجلات حسب البحث
   const filteredLogs = useMemo(() => {
     if (!deliveryDetails?.logs) return [];
-    if (!searchQuery.trim()) return deliveryDetails.logs;
+    let logs = deliveryDetails.logs;
+    if (deliveryStatusFilter) {
+      logs = logs.filter((log) => log.deliveryStatus === deliveryStatusFilter);
+    }
+    if (platformFilter) {
+      logs = logs.filter((log) => log.platform === platformFilter);
+    }
+    if (!searchQuery.trim()) return logs;
 
     const query = searchQuery.toLowerCase();
-    return deliveryDetails.logs.filter(
+    return logs.filter(
       (log) =>
         log.userName?.toLowerCase().includes(query) ||
         log.userEmail?.toLowerCase().includes(query) ||
-        log.errorMessage?.toLowerCase().includes(query)
+        log.errorMessage?.toLowerCase().includes(query) ||
+        log.errorCode?.toLowerCase().includes(query)
     );
-  }, [deliveryDetails?.logs, searchQuery]);
+  }, [deliveryDetails?.logs, searchQuery, deliveryStatusFilter, platformFilter]);
 
   if (!notification) return null;
 
   const isBatch = isBatchRow(notification);
   const recipientsCount = deliveryDetails?.summary?.total ?? notification.recipientCount ?? 0;
+  const deliveryStatusLabel = (status?: NotificationDeliveryStatus | string) => {
+    if (!status) return t('statuses.pending');
+    return t(`deliveryStatuses.${status}`, status.replace(/_/g, ' '));
+  };
 
   return (
     <Dialog
@@ -555,16 +573,52 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
 
                   {/* Search */}
                   {deliveryDetails.logs.length > 0 && (
-                    <TextField
-                      fullWidth
-                      size="small"
-                      placeholder={t('dialogs.searchUsers', 'البحث في المستخدمين...')}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      InputProps={{
-                        startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                      }}
-                    />
+                    <Grid container spacing={1.5}>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          placeholder={t('dialogs.searchUsers', 'البحث في المستخدمين...')}
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          InputProps={{
+                            startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                          }}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>{t('dialogs.deliveryStatus', 'Delivery status')}</InputLabel>
+                          <Select
+                            label={t('dialogs.deliveryStatus', 'Delivery status')}
+                            value={deliveryStatusFilter}
+                            onChange={(event) => setDeliveryStatusFilter(event.target.value)}
+                          >
+                            <MenuItem value="">{t('common.all', 'All')}</MenuItem>
+                            {Object.values(NotificationDeliveryStatus).map((status) => (
+                              <MenuItem key={status} value={status}>
+                                {deliveryStatusLabel(status)}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>{t('dialogs.platform', 'Platform')}</InputLabel>
+                          <Select
+                            label={t('dialogs.platform', 'Platform')}
+                            value={platformFilter}
+                            onChange={(event) => setPlatformFilter(event.target.value)}
+                          >
+                            <MenuItem value="">{t('common.all', 'All')}</MenuItem>
+                            <MenuItem value="ios">iOS</MenuItem>
+                            <MenuItem value="android">Android</MenuItem>
+                            <MenuItem value="web">Web</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    </Grid>
                   )}
 
                   {/* Logs Table */}
@@ -674,18 +728,29 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                                 </Box>
                               </TableCell>
                               <TableCell>
-                                {log.status === NotificationStatus.SENT ? (
+                                {[
+                                  NotificationDeliveryStatus.PROVIDER_ACCEPTED,
+                                  NotificationDeliveryStatus.RECEIVED_BY_APP,
+                                  NotificationDeliveryStatus.OPENED,
+                                  NotificationDeliveryStatus.CLICKED,
+                                ].includes(log.deliveryStatus as NotificationDeliveryStatus) ? (
                                   <Chip
                                     icon={<CheckCircle />}
-                                    label={t('dialogs.sent', 'نجح')}
+                                    label={deliveryStatusLabel(log.deliveryStatus)}
                                     color="success"
                                     size="small"
                                     sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
                                   />
-                                ) : log.status === NotificationStatus.FAILED ? (
+                                ) : [
+                                  NotificationDeliveryStatus.FAILED,
+                                  NotificationDeliveryStatus.NO_DEVICE_TOKEN,
+                                  NotificationDeliveryStatus.PROVIDER_NOT_CONFIGURED,
+                                  NotificationDeliveryStatus.INVALID_TOKEN,
+                                  NotificationDeliveryStatus.SKIPPED_BY_PREFERENCES,
+                                ].includes(log.deliveryStatus as NotificationDeliveryStatus) || log.status === NotificationStatus.FAILED ? (
                                   <Chip
                                     icon={<Error />}
-                                    label={t('dialogs.failed', 'فشل')}
+                                    label={deliveryStatusLabel(log.deliveryStatus)}
                                     color="error"
                                     size="small"
                                     sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
@@ -693,7 +758,7 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                                 ) : (
                                   <Chip
                                     icon={<Schedule />}
-                                    label={t('dialogs.pending', 'قيد الانتظار')}
+                                    label={deliveryStatusLabel(log.deliveryStatus)}
                                     color="warning"
                                     size="small"
                                     sx={{ fontSize: isMobile ? '0.7rem' : undefined }}
@@ -765,6 +830,22 @@ export const NotificationViewDialog: React.FC<NotificationViewDialogProps> = ({
                                       >
                                         {log.deviceToken.substring(0, 20)}...
                                       </Typography>
+                                      {log.providerMessageId && (
+                                        <Typography
+                                          variant="caption"
+                                          color="text.secondary"
+                                          sx={{
+                                            fontSize: '0.65rem',
+                                            fontFamily: 'monospace',
+                                            display: 'block',
+                                            maxWidth: 150,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                          }}
+                                        >
+                                          {log.providerMessageId}
+                                        </Typography>
+                                      )}
                                     </Box>
                                   ) : (
                                     <Typography

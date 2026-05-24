@@ -48,7 +48,7 @@ DeviceTokenSchema.index({ userId: 1, platform: 1 });
 // تغيير: Unique index على (userId + token) بدلاً من token فقط
 // هذا يسمح لنفس الـ token أن يُستخدم من مستخدمين مختلفين (عند تغيير الجهاز)
 // لكن يمنع نفس المستخدم من تسجيل نفس الـ token أكثر من مرة
-DeviceTokenSchema.index({ userId: 1, token: 1 }, { unique: true });
+DeviceTokenSchema.index({ token: 1 }, { unique: true });
 DeviceTokenSchema.index({ isActive: 1, lastUsedAt: -1 });
 DeviceTokenSchema.index({ createdAt: -1 });
 

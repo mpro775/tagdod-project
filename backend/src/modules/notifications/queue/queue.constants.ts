@@ -2,6 +2,7 @@
 export const NOTIFICATION_QUEUE = 'notification-send';
 export const NOTIFICATION_SCHEDULED_QUEUE = 'notification-scheduled';
 export const NOTIFICATION_RETRY_QUEUE = 'notification-retry';
+export const NOTIFICATION_DEAD_LETTER_QUEUE = 'notification-dead-letter';
 // Bulk queue for long-running batch send operations
 export const NOTIFICATION_BULK_QUEUE = 'notification-bulk';
 

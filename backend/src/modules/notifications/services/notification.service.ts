@@ -19,6 +19,7 @@ import {
   NotificationChannel,
   NotificationPriority,
   NotificationNavigationType,
+  NotificationDeliveryStatus,
 } from '../enums/notification.enums';
 import {
   NotificationNotFoundException,
@@ -27,6 +28,7 @@ import {
 } from '../../../shared/exceptions';
 import { WebSocketService } from '../../../shared/websocket/websocket.service';
 import { PushNotificationAdapter, SmsNotificationAdapter } from '../adapters/notification.adapters';
+import { FCMAdapter } from '../adapters/fcm.adapter';
 import { DeviceToken, DeviceTokenDocument } from '../schemas/device-token.schema';
 import { User, UserDocument, UserStatus, UserRole } from '../../users/schemas/user.schema';
 import {
@@ -62,6 +64,7 @@ export class NotificationService implements OnModuleInit {
     private readonly webSocketService: WebSocketService,
     private readonly pushNotificationAdapter: PushNotificationAdapter,
     private readonly smsNotificationAdapter: SmsNotificationAdapter,
+    private readonly fcmAdapter: FCMAdapter,
     private readonly channelConfigService: NotificationChannelConfigService,
     private readonly queueService: NotificationQueueService,
     @InjectQueue(NOTIFICATION_BULK_QUEUE)
@@ -88,6 +91,8 @@ export class NotificationService implements OnModuleInit {
     fallbackDate.setDate(fallbackDate.getDate() - NotificationService.USER_VISIBLE_DAYS);
 
     return {
+      isExpired: { $ne: true },
+      isArchived: { $ne: true },
       $or: [
         { visibleUntil: { $gt: now } },
         {
@@ -107,20 +112,81 @@ export class NotificationService implements OnModuleInit {
     notification: UnifiedNotificationDocument,
     recipientId?: string,
   ): NotificationJobData {
+    const targetRecipientId = recipientId || notification.recipientId?.toString();
     return {
       notificationId: notification._id.toString(),
-      recipientId: recipientId || notification.recipientId?.toString(),
+      recipientId: targetRecipientId,
       channel: notification.channel,
       type: notification.type,
+      category: notification.category,
       title: notification.title,
       message: notification.message,
       messageEn: notification.messageEn,
       data: notification.data,
+      payload: this.buildNotificationPayload(notification, targetRecipientId),
       priority: notification.priority,
       actionUrl: (notification as any).actionUrl,
       navigationType: (notification as any).navigationType,
       navigationTarget: (notification as any).navigationTarget,
+      navigationParams: (notification as any).navigationParams,
+      trackingId: notification.trackingId,
+      batchId: notification.batchId,
+      campaign: notification.metadata?.campaign,
     };
+  }
+
+  buildNotificationPayload(
+    notification: Pick<
+      UnifiedNotification,
+      | 'type'
+      | 'category'
+      | 'priority'
+      | 'channel'
+      | 'actionUrl'
+      | 'navigationType'
+      | 'navigationTarget'
+      | 'navigationParams'
+      | 'data'
+      | 'batchId'
+      | 'trackingId'
+      | 'createdAt'
+      | 'metadata'
+    > & { _id?: unknown },
+    recipientId?: string,
+  ): Record<string, string> {
+    const sourceData = notification.data || {};
+    const entityType = sourceData.entityType || sourceData.type;
+    const entityId =
+      sourceData.entityId ||
+      sourceData.orderId ||
+      sourceData.productId ||
+      sourceData.categoryId ||
+      sourceData.serviceRequestId;
+    const payload: Record<string, unknown> = {
+      notificationId: notification._id?.toString() || '',
+      trackingId: notification.trackingId || notification._id?.toString() || '',
+      type: notification.type,
+      category: notification.category,
+      priority: notification.priority,
+      channel: notification.channel,
+      recipientId,
+      actionUrl: notification.actionUrl,
+      navigationType: notification.navigationType || NotificationNavigationType.NONE,
+      navigationTarget: notification.navigationTarget,
+      navigationParams: notification.navigationParams,
+      entityType,
+      entityId,
+      batchId: notification.batchId,
+      campaign: notification.metadata?.campaign,
+      createdAt: notification.createdAt?.toISOString?.() || new Date().toISOString(),
+      ...sourceData,
+    };
+
+    return Object.entries(payload).reduce<Record<string, string>>((acc, [key, value]) => {
+      if (value === undefined || value === null) return acc;
+      acc[key] = typeof value === 'string' ? value : JSON.stringify(value);
+      return acc;
+    }, {});
   }
 
   private resolveRecipientName(user?: {
@@ -375,6 +441,8 @@ export class NotificationService implements OnModuleInit {
         batchId: dto.batchId,
         metadata: dto.campaign ? { campaign: dto.campaign } : {},
         visibleUntil,
+        expiredAt: visibleUntil,
+        isExpired: false,
       });
 
       const savedNotification = await notification.save();
@@ -495,7 +563,11 @@ export class NotificationService implements OnModuleInit {
         }
       } else if (targetRoles && targetRoles.length > 0) {
         // إرسال الإشعارات الموجهة للأدوار لجميع المستخدمين الذين لديهم هذه الأدوار
-        if (channel === NotificationChannel.DASHBOARD || channel === NotificationChannel.IN_APP) {
+        if (
+          channel === NotificationChannel.DASHBOARD ||
+          channel === NotificationChannel.IN_APP ||
+          channel === NotificationChannel.PUSH
+        ) {
           // تحديد الأدوار المستهدفة (استثناء MERCHANT من إشعارات المخزون)
           let rolesToSend = [...targetRoles];
 
@@ -559,7 +631,7 @@ export class NotificationService implements OnModuleInit {
                 navigationTarget: savedNotification.navigationTarget,
                 navigationParams: savedNotification.navigationParams,
                 channel: savedNotification.channel,
-                status: NotificationStatus.SENT,
+                status: NotificationStatus.QUEUED,
                 priority: savedNotification.priority,
                 category: savedNotification.category,
                 targetRoles: savedNotification.targetRoles,
@@ -567,11 +639,12 @@ export class NotificationService implements OnModuleInit {
                 templateId: savedNotification.templateId,
                 templateKey: savedNotification.templateKey,
                 scheduledFor: savedNotification.scheduledFor,
-                sentAt,
                 isSystemGenerated: savedNotification.isSystemGenerated,
                 createdBy: savedNotification.createdBy,
                 batchId: roleBatchId,
                 visibleUntil,
+                expiredAt: visibleUntil,
+                isExpired: false,
               };
             });
 
@@ -582,14 +655,22 @@ export class NotificationService implements OnModuleInit {
             );
 
             // Log للتحقق من recipientId في النسخ
-            createdNotifications.forEach((notif) => {
+            for (const notif of createdNotifications) {
               this.logger.debug(
                 `Created notification copy ${notif._id} for recipient ${notif.recipientId?.toString() || 'undefined'}`,
               );
-            });
+              if (notif.recipientId) {
+                await this.queueService.addToQueue(
+                  this.createJobData(
+                    notif as UnifiedNotificationDocument,
+                    notif.recipientId.toString(),
+                  ),
+                );
+              }
+            }
 
             // إرسال الإشعار لجميع المستخدمين عبر WebSocket
-            const sentCount = this.webSocketService.sendToMultipleUsers(
+            const sentCount = createdNotifications.length || this.webSocketService.sendToMultipleUsers(
               userIds,
               'notification:new',
               {
@@ -616,14 +697,13 @@ export class NotificationService implements OnModuleInit {
               { _id: savedNotification._id },
               {
                 $set: {
-                  status: NotificationStatus.SENT,
-                  sentAt,
+                  status: NotificationStatus.QUEUED,
                 },
               },
             );
 
             this.logger.log(
-              `Notification ${dto.type} sent to ${sentCount}/${userIds.length} users with roles [${rolesToSend.join(', ')}] (${createdNotifications.length} copies created)`,
+              `Notification ${dto.type} queued for ${sentCount}/${userIds.length} users with roles [${rolesToSend.join(', ')}] (${createdNotifications.length} copies created)`,
             );
           } else {
             this.logger.warn(
@@ -761,54 +841,17 @@ export class NotificationService implements OnModuleInit {
           continue;
         }
 
-        const sentAt = new Date();
-
-        if (notification.channel === NotificationChannel.PUSH) {
-          await this.sendPushNotification(
-            notification as UnifiedNotificationDocument,
-            recipientId,
-          );
-        } else if (notification.channel === NotificationChannel.IN_APP) {
-          await this.resendInAppNotification(notificationId);
-        } else if (notification.channel === NotificationChannel.DASHBOARD) {
-          this.webSocketService.sendToUser(
-            recipientId,
-            'notification:new',
-            {
-              id: notificationId,
-              title: notification.title,
-              message: notification.message,
-              messageEn: notification.messageEn,
-              type: notification.type,
-              category: notification.category,
-              priority: notification.priority,
-              data: notification.data,
-              actionUrl: notification.actionUrl,
-              navigationType: notification.navigationType,
-              navigationTarget: notification.navigationTarget,
-              createdAt: notification.createdAt,
-              sentAt,
-              isRead: false,
-            },
-            '/notifications',
-          );
-        } else if (
-          notification.channel === NotificationChannel.SMS ||
-          notification.channel === NotificationChannel.EMAIL
-        ) {
-          const jobData = this.createJobData(
-            notification as UnifiedNotificationDocument,
-            recipientId,
-          );
-          await this.queueService.addToQueue(jobData);
-        }
+        const jobData = this.createJobData(
+          notification as UnifiedNotificationDocument,
+          recipientId,
+        );
+        await this.queueService.addToQueue(jobData);
 
         await this.notificationModel.updateOne(
           { _id: notificationId },
           {
             $set: {
-              status: NotificationStatus.SENT,
-              sentAt,
+              status: NotificationStatus.QUEUED,
             },
           },
         );
@@ -1414,7 +1457,10 @@ const {
           lastUsedAt: { $lt: cutoffDate },
         },
         {
-          isActive: false,
+          $set: {
+            isActive: false,
+            lastUsedAt: new Date(),
+          },
         },
       );
 
@@ -1445,7 +1491,10 @@ const {
           createdAt: { $lt: cutoffDate },
         },
         {
-          isActive: false,
+          $set: {
+            isActive: false,
+            lastUsedAt: new Date(),
+          },
         },
       );
 
@@ -1804,24 +1853,31 @@ const {
   ): Promise<{ success: boolean; message: string; deviceToken?: DeviceTokenDocument }> {
     try {
       // البحث عن Token موجود لنفس المستخدم
-      let deviceToken = await this.deviceTokenModel.findOne({
-        token: token,
-        userId: new Types.ObjectId(userId),
-      });
+      const now = new Date();
+      let deviceToken = await this.deviceTokenModel.findOne({ token });
 
       if (deviceToken) {
+        const previousUserId = deviceToken.userId.toString();
+        deviceToken.userId = new Types.ObjectId(userId);
         // تحديث Token موجود
         deviceToken.isActive = true;
-        deviceToken.lastUsedAt = new Date();
+        deviceToken.lastUsedAt = now;
         deviceToken.platform = platform as any;
         if (userAgent) deviceToken.userAgent = userAgent;
         if (appVersion) deviceToken.appVersion = appVersion;
         await deviceToken.save();
 
-        this.logger.log(`Device token updated for user ${userId}`);
+        this.logger.log(
+          previousUserId === userId
+            ? `Device token updated for user ${userId}`
+            : `Device token moved from user ${previousUserId} to user ${userId}`,
+        );
         return {
           success: true,
-          message: 'Device token updated successfully',
+          message:
+            previousUserId === userId
+              ? 'Device token updated successfully'
+              : 'Device token moved to current user successfully',
           deviceToken,
         };
       }
@@ -1835,7 +1891,7 @@ const {
           isActive: true,
           token: { $ne: token }, // استثناء الـ token الجديد
         },
-        { isActive: false },
+        { $set: { isActive: false } },
       );
 
       // إنشاء Token جديد
@@ -1846,7 +1902,7 @@ const {
         userAgent: userAgent,
         appVersion: appVersion,
         isActive: true,
-        lastUsedAt: new Date(),
+        lastUsedAt: now,
       });
 
       await deviceToken.save();
@@ -1942,6 +1998,65 @@ const {
       );
       return [];
     }
+  }
+
+  async getFcmHealth(): Promise<{
+    configured: boolean;
+    initialized: boolean;
+    projectId?: string;
+    clientEmail?: string;
+    activeDeviceTokens: number;
+    usersWithoutDevices: number;
+    invalidTokensLast7Days: number;
+    providerFailuresLast24h: number;
+    lastError?: string | null;
+  }> {
+    const health = this.fcmAdapter.getHealth();
+    const now = Date.now();
+    const last24h = new Date(now - 24 * 60 * 60 * 1000);
+    const last7Days = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const [
+      activeDeviceTokens,
+      activeUsers,
+      usersWithDevices,
+      invalidTokensLast7Days,
+      providerFailuresLast24h,
+    ] = await Promise.all([
+      this.deviceTokenModel.countDocuments({ isActive: true }),
+      this.userModel.countDocuments({ status: UserStatus.ACTIVE }),
+      this.deviceTokenModel.distinct('userId', { isActive: true }),
+      this.notificationLogModel.countDocuments({
+        channel: NotificationChannel.PUSH,
+        createdAt: { $gte: last7Days },
+        $or: [
+          { errorCode: { $in: ['INVALID_TOKEN', 'REGISTRATION_TOKEN_NOT_REGISTERED'] } },
+          { deliveryStatus: NotificationDeliveryStatus.INVALID_TOKEN },
+        ],
+      }),
+      this.notificationLogModel.countDocuments({
+        channel: NotificationChannel.PUSH,
+        createdAt: { $gte: last24h },
+        deliveryStatus: {
+          $in: [
+            NotificationDeliveryStatus.FAILED,
+            NotificationDeliveryStatus.PROVIDER_NOT_CONFIGURED,
+            NotificationDeliveryStatus.INVALID_TOKEN,
+          ],
+        },
+      }),
+    ]);
+
+    return {
+      configured: health.configured,
+      initialized: health.initialized,
+      projectId: health.projectId,
+      clientEmail: health.clientEmail,
+      activeDeviceTokens,
+      usersWithoutDevices: Math.max(0, activeUsers - usersWithDevices.length),
+      invalidTokensLast7Days,
+      providerFailuresLast24h,
+      lastError: health.lastError || null,
+    };
   }
 
   /**
@@ -2249,6 +2364,7 @@ const {
       delayed: number;
     };
     retry: { waiting: number; active: number; completed: number; failed: number; delayed: number };
+    deadLetter: { waiting: number; active: number; completed: number; failed: number; delayed: number };
     totalPending: number;
   }> {
     const stats = await this.queueService.getQueueStats();
@@ -2435,14 +2551,19 @@ const {
         userName,
         userEmail: userPhone,
         status: log.status,
+        deliveryStatus: log.deliveryStatus,
         channel: log.channel,
         sentAt: log.sentAt,
+        providerAcceptedAt: log.providerAcceptedAt,
+        receivedAt: log.receivedAt,
+        openedAt: log.openedAt,
         deliveredAt: log.deliveredAt,
         failedAt: log.failedAt,
         errorMessage: log.errorMessage,
         errorCode: log.errorCode,
         deviceToken: log.deviceToken,
         platform: log.platform,
+        providerMessageId: log.providerMessageId,
         createdAt: log.createdAt || new Date(),
       };
     });
@@ -2450,9 +2571,20 @@ const {
     // حساب الملخص
     const summary = {
       total: logsWithUserInfo.length,
-      sent: logsWithUserInfo.filter((log) => log.status === NotificationStatus.SENT).length,
-      failed: logsWithUserInfo.filter((log) => log.status === NotificationStatus.FAILED).length,
-      pending: logsWithUserInfo.filter((log) => log.status === NotificationStatus.PENDING).length,
+      sent: logsWithUserInfo.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.PROVIDER_ACCEPTED).length,
+      failed: logsWithUserInfo.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.FAILED).length,
+      pending: logsWithUserInfo.filter((log) =>
+        !log.deliveryStatus ||
+        log.deliveryStatus === NotificationDeliveryStatus.QUEUED ||
+        log.deliveryStatus === NotificationDeliveryStatus.SENDING,
+      ).length,
+      totalRecipients: new Set(logsWithUserInfo.map((log) => log.userId).filter(Boolean)).size,
+      totalDeviceAttempts: logsWithUserInfo.filter((log) => !!log.deviceToken).length,
+      providerAccepted: logsWithUserInfo.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.PROVIDER_ACCEPTED).length,
+      receivedByApp: logsWithUserInfo.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.RECEIVED_BY_APP).length,
+      opened: logsWithUserInfo.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.OPENED).length,
+      noDeviceToken: logsWithUserInfo.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.NO_DEVICE_TOKEN).length,
+      skippedByPreferences: logsWithUserInfo.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.SKIPPED_BY_PREFERENCES).length,
     };
 
     return {
@@ -2505,6 +2637,72 @@ const {
     }
 
     const firstNotification = notifications[0];
+    const notificationIds = notifications.map((notification) => notification._id);
+    const deliveryLogs = await this.notificationLogModel
+      .find({
+        $or: [
+          { batchId },
+          { notificationId: { $in: notificationIds } },
+        ],
+      })
+      .populate('userId', 'firstName lastName phone')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (deliveryLogs.length > 0) {
+      const logs = deliveryLogs.map((log) => {
+        const user = log.userId as { _id?: unknown; firstName?: string; lastName?: string; phone?: string } | null;
+        const userName =
+          user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.phone || 'غير معروف' : 'غير معروف';
+        const userPhone = user?.phone || 'غير متوفر';
+        return {
+          _id: log._id.toString(),
+          userId: user?._id?.toString() || (log.userId as Types.ObjectId)?.toString() || '',
+          userName,
+          userEmail: userPhone,
+          status: log.status,
+          deliveryStatus: log.deliveryStatus,
+          channel: log.channel,
+          sentAt: log.sentAt,
+          providerAcceptedAt: log.providerAcceptedAt,
+          receivedAt: log.receivedAt,
+          openedAt: log.openedAt,
+          deliveredAt: log.deliveredAt,
+          failedAt: log.failedAt,
+          errorMessage: log.errorMessage,
+          errorCode: log.errorCode,
+          deviceToken: log.deviceToken,
+          platform: log.platform,
+          providerMessageId: log.providerMessageId,
+          createdAt: log.createdAt || new Date(),
+        };
+      });
+
+      const summary = {
+        total: logs.length,
+        sent: logs.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.PROVIDER_ACCEPTED).length,
+        failed: logs.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.FAILED).length,
+        pending: logs.filter((log) =>
+          !log.deliveryStatus ||
+          log.deliveryStatus === NotificationDeliveryStatus.QUEUED ||
+          log.deliveryStatus === NotificationDeliveryStatus.SENDING,
+        ).length,
+        totalRecipients: new Set(logs.map((log) => log.userId).filter(Boolean)).size,
+        totalDeviceAttempts: logs.filter((log) => !!log.deviceToken).length,
+        providerAccepted: logs.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.PROVIDER_ACCEPTED).length,
+        receivedByApp: logs.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.RECEIVED_BY_APP).length,
+        opened: logs.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.OPENED).length,
+        noDeviceToken: logs.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.NO_DEVICE_TOKEN).length,
+        skippedByPreferences: logs.filter((log) => log.deliveryStatus === NotificationDeliveryStatus.SKIPPED_BY_PREFERENCES).length,
+      };
+
+      return {
+        notification: firstNotification as UnifiedNotificationDocument,
+        logs,
+        summary,
+      };
+    }
+
     const logs = notifications.map((notif) => {
       const user = notif.recipientId as { _id?: unknown; firstName?: string; lastName?: string; phone?: string } | null;
       const userName =

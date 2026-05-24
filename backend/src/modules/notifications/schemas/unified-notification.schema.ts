@@ -194,6 +194,12 @@ export class UnifiedNotification {
   @Prop({ type: Date, index: true })
   hiddenFromUserAt?: Date;
 
+  @Prop({ type: Date, index: true })
+  expiredAt?: Date;
+
+  @Prop({ default: false, index: true })
+  isExpired!: boolean;
+
   // ===== System Fields =====
   @Prop({ type: Types.ObjectId, ref: 'User' })
   createdBy?: Types.ObjectId;
@@ -224,6 +230,8 @@ UnifiedNotificationSchema.index({ targetRoles: 1, status: 1 });
 UnifiedNotificationSchema.index({ recipientId: 1, visibleUntil: -1, createdAt: -1 });
 UnifiedNotificationSchema.index({ visibleUntil: 1 });
 UnifiedNotificationSchema.index({ hiddenFromUserAt: 1 }, { sparse: true });
+UnifiedNotificationSchema.index({ expiredAt: 1 }, { sparse: true });
+UnifiedNotificationSchema.index({ isExpired: 1, createdAt: -1 });
 
 // ===== TTL Index: Auto-delete old notifications after 90 days =====
 UnifiedNotificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }); // 90 days

@@ -8,6 +8,10 @@ export interface FCMNotification {
   data?: Record<string, string>;
   imageUrl?: string;
   clickAction?: string;
+  ttlSeconds?: number;
+  collapseKey?: string;
+  androidPriority?: 'normal' | 'high';
+  apnsPriority?: '5' | '10';
 }
 
 export interface FCMToken {
@@ -20,6 +24,10 @@ export interface FCMToken {
 export class FCMAdapter {
   private readonly logger = new Logger(FCMAdapter.name);
   private firebaseApp?: admin.app.App;
+  private configured = false;
+  private lastError?: string;
+  private projectId?: string;
+  private clientEmail?: string;
 
   constructor(private configService: ConfigService) {
     this.initializeFirebase();
@@ -30,6 +38,9 @@ export class FCMAdapter {
       const projectId = this.configService.get('FCM_PROJECT_ID');
       const privateKey = this.configService.get('FCM_PRIVATE_KEY');
       const clientEmail = this.configService.get('FCM_CLIENT_EMAIL');
+      this.projectId = projectId;
+      this.clientEmail = clientEmail;
+      this.configured = !!projectId && !!privateKey && !!clientEmail;
 
       // Check if required environment variables are set
       if (!projectId || !privateKey || !clientEmail) {
@@ -38,6 +49,7 @@ export class FCMAdapter {
           'Required: FCM_PROJECT_ID, FCM_PRIVATE_KEY, FCM_CLIENT_EMAIL. ' +
           'Push notifications will be disabled.'
         );
+        this.lastError = 'Missing FCM_PROJECT_ID, FCM_PRIVATE_KEY, or FCM_CLIENT_EMAIL';
         return;
       }
       this.logger.log(
@@ -70,10 +82,12 @@ export class FCMAdapter {
         });
         this.logger.log('Firebase Admin SDK initialized successfully');
       }
+      this.lastError = undefined;
     } catch (error) {
       this.logger.error('Failed to initialize Firebase Admin SDK:', error);
       // Firebase app will remain uninitialized (checked via isInitialized())
       this.firebaseApp = undefined;
+      this.lastError = error instanceof Error ? error.message : String(error);
     }
   }
 
@@ -82,6 +96,76 @@ export class FCMAdapter {
    */
   public isInitialized(): boolean {
     return this.firebaseApp !== undefined && this.firebaseApp !== null;
+  }
+
+  public getHealth(): {
+    configured: boolean;
+    initialized: boolean;
+    projectId?: string;
+    clientEmail?: string;
+    lastError?: string;
+  } {
+    return {
+      configured: this.configured,
+      initialized: this.isInitialized(),
+      projectId: this.projectId,
+      clientEmail: this.clientEmail,
+      lastError: this.lastError,
+    };
+  }
+
+  private buildMessage(
+    target: { token: string } | { topic: string },
+    notification: FCMNotification,
+  ): admin.messaging.Message {
+    const ttlSeconds = notification.ttlSeconds ?? 604800;
+    const ttlMs = ttlSeconds * 1000;
+    const apnsExpiration = Math.floor(Date.now() / 1000 + ttlSeconds).toString();
+
+    return {
+      ...target,
+      notification: {
+        title: notification.title,
+        body: notification.body,
+        imageUrl: notification.imageUrl,
+      },
+      data: notification.data,
+      android: {
+        priority: notification.androidPriority || 'high',
+        ttl: ttlMs,
+        collapseKey: notification.collapseKey,
+        notification: {
+          clickAction: notification.clickAction,
+          sound: 'default',
+          channelId: 'tagadod_default',
+        },
+      },
+      apns: {
+        headers: {
+          'apns-priority': notification.apnsPriority || '10',
+          'apns-expiration': apnsExpiration,
+        },
+        payload: {
+          aps: {
+            alert: {
+              title: notification.title,
+              body: notification.body,
+            },
+            sound: 'default',
+            badge: 1,
+          },
+        },
+      },
+      webpush: {
+        notification: {
+          title: notification.title,
+          body: notification.body,
+          icon: '/icon-192x192.png',
+          badge: '/badge-72x72.png',
+          requireInteraction: true,
+        },
+      },
+    };
   }
 
   /**
@@ -93,6 +177,7 @@ export class FCMAdapter {
     notification: FCMNotification,
   ): Promise<{
     success: boolean;
+    messageId?: string;
     errorCode?: string;
     errorMessage?: string;
   }> {
@@ -100,64 +185,35 @@ export class FCMAdapter {
       this.logger.warn('FCM is not initialized. Cannot send notification.');
       return {
         success: false,
-        errorCode: 'fcm_not_initialized',
+        errorCode: 'FCM_NOT_CONFIGURED',
         errorMessage: 'FCM is not initialized. Cannot send notification.',
       };
     }
 
     try {
-      const message: admin.messaging.Message = {
-        token,
-        notification: {
-          title: notification.title,
-          body: notification.body,
-          imageUrl: notification.imageUrl,
-        },
-        data: notification.data,
-        android: {
-          notification: {
-            clickAction: notification.clickAction,
-            sound: 'default',
-            priority: 'high',
-          },
-        },
-        apns: {
-          payload: {
-            aps: {
-              alert: {
-                title: notification.title,
-                body: notification.body,
-              },
-              sound: 'default',
-              badge: 1,
-            },
-          },
-        },
-        webpush: {
-          notification: {
-            title: notification.title,
-            body: notification.body,
-            icon: '/icon-192x192.png',
-            badge: '/badge-72x72.png',
-            requireInteraction: true,
-          },
-        },
-      };
+      const message = this.buildMessage({ token }, notification);
 
       const response = await this.firebaseApp!.messaging().send(message);
       this.logger.log(`FCM notification sent successfully: ${response}`);
       return {
         success: true,
+        messageId: response,
       };
     } catch (error: unknown) {
       // Handle invalid token errors
       const firebaseError = error as { code?: string; message?: string };
-      const errorCode = firebaseError?.code || 'unknown_error';
+      const rawErrorCode = firebaseError?.code || 'unknown_error';
+      const errorCode =
+        rawErrorCode === 'messaging/registration-token-not-registered'
+          ? 'REGISTRATION_TOKEN_NOT_REGISTERED'
+          : rawErrorCode === 'messaging/invalid-registration-token'
+            ? 'INVALID_TOKEN'
+            : rawErrorCode;
       const errorMessage = firebaseError?.message || 'Unknown FCM error';
 
       if (
-        errorCode === 'messaging/invalid-registration-token' ||
-        errorCode === 'messaging/registration-token-not-registered'
+        errorCode === 'INVALID_TOKEN' ||
+        errorCode === 'REGISTRATION_TOKEN_NOT_REGISTERED'
       ) {
         this.logger.warn(`Invalid or unregistered FCM token: ${token.substring(0, 20)}...`);
         return {
@@ -220,15 +276,7 @@ export class FCMAdapter {
     }
 
     try {
-      const message: admin.messaging.Message = {
-        topic,
-        notification: {
-          title: notification.title,
-          body: notification.body,
-          imageUrl: notification.imageUrl,
-        },
-        data: notification.data,
-      };
+      const message = this.buildMessage({ topic }, notification);
 
       const response = await this.firebaseApp!.messaging().send(message);
       this.logger.log(`FCM topic notification sent successfully: ${response}`);

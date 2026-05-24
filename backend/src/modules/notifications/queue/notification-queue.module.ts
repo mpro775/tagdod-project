@@ -7,6 +7,7 @@ import {
   NOTIFICATION_QUEUE,
   NOTIFICATION_SCHEDULED_QUEUE,
   NOTIFICATION_RETRY_QUEUE,
+  NOTIFICATION_DEAD_LETTER_QUEUE,
   NOTIFICATION_BULK_QUEUE,
 } from './queue.constants';
 import {
@@ -19,6 +20,7 @@ export {
   NOTIFICATION_QUEUE,
   NOTIFICATION_SCHEDULED_QUEUE,
   NOTIFICATION_RETRY_QUEUE,
+  NOTIFICATION_DEAD_LETTER_QUEUE,
   NOTIFICATION_BULK_QUEUE,
 };
 
@@ -108,6 +110,14 @@ export {
             type: 'exponential',
             delay: 10000,
           },
+        },
+      },
+      {
+        name: NOTIFICATION_DEAD_LETTER_QUEUE,
+        defaultJobOptions: {
+          attempts: 1,
+          removeOnComplete: false,
+          removeOnFail: false,
         },
       },
       {

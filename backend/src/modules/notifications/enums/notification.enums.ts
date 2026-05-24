@@ -90,6 +90,30 @@ export enum NotificationStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum NotificationDeliveryStatus {
+  QUEUED = 'queued',
+  SENDING = 'sending',
+  PROVIDER_ACCEPTED = 'provider_accepted',
+  RECEIVED_BY_APP = 'received_by_app',
+  OPENED = 'opened',
+  CLICKED = 'clicked',
+  FAILED = 'failed',
+  NO_DEVICE_TOKEN = 'no_device_token',
+  PROVIDER_NOT_CONFIGURED = 'provider_not_configured',
+  INVALID_TOKEN = 'invalid_token',
+  SKIPPED_BY_PREFERENCES = 'skipped_by_preferences',
+}
+
+export enum NotificationDeliveryErrorCode {
+  FCM_NOT_CONFIGURED = 'FCM_NOT_CONFIGURED',
+  NO_DEVICE_TOKEN = 'NO_DEVICE_TOKEN',
+  INVALID_TOKEN = 'INVALID_TOKEN',
+  REGISTRATION_TOKEN_NOT_REGISTERED = 'REGISTRATION_TOKEN_NOT_REGISTERED',
+  SKIPPED_BY_PREFERENCES = 'SKIPPED_BY_PREFERENCES',
+  NO_RECIPIENT = 'NO_RECIPIENT',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+}
+
 export enum NotificationChannel {
   IN_APP = 'inApp',
   PUSH = 'push',

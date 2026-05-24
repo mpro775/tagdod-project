@@ -21,6 +21,7 @@ import type {
   InitializeChannelConfigsResponse,
   NotificationType,
   NotificationDeliveryDetails,
+  FcmHealth,
 } from '../types/notification.types';
 
 /**
@@ -196,6 +197,20 @@ export const notificationsApi = {
       templateKey,
       payload,
     });
+  },
+
+  getFcmHealth: async (): Promise<FcmHealth> => {
+    const response = await apiClient.get<ApiResponse<FcmHealth>>('/notifications/admin/fcm/health');
+    return getEnvelopeData<FcmHealth>(response.data);
+  },
+
+  sendFcmTest: async (data: {
+    userId: string;
+    title?: string;
+    message?: string;
+    data?: Record<string, unknown>;
+  }): Promise<void> => {
+    await apiClient.post('/notifications/admin/fcm/test', data);
   },
 
   // ===== Templates =====

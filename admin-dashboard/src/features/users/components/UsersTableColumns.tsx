@@ -1,11 +1,11 @@
 import React from 'react';
 import { GridColDef } from '@mui/x-data-grid';
-import { Box, Chip, IconButton, Tooltip, Switch, useTheme } from '@mui/material';
-import { Edit, Delete, Restore } from '@mui/icons-material';
+import { Box, Chip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '@/shared/utils/formatters';
 import type { User, UserStatus } from '../types/user.types';
 import { getPrimaryRole, CapabilityStatus } from '../types/user.types';
+import { UserRowActions } from './UserRowActions';
 
 interface UsersTableColumnsProps {
   onEdit: (user: User) => void;
@@ -21,20 +21,19 @@ export const useUsersTableColumns = ({
   onStatusToggle,
 }: UsersTableColumnsProps): GridColDef[] => {
   const { t, i18n } = useTranslation(['users', 'common']);
-  const theme = useTheme();
 
   return React.useMemo(
     () => [
       {
         field: 'phone',
         headerName: t('users:list.columns.phone', 'رقم الهاتف'),
-        minWidth: 120,
-        flex: 0.9,
+        minWidth: 110,
+        flex: 0.8,
         renderCell: (params) => (
           <Box
             sx={{
-              fontWeight: 'medium',
-              fontSize: { xs: '0.7rem', sm: '0.875rem' },
+              fontWeight: 600,
+              fontSize: '0.8125rem',
               color: 'text.primary',
             }}
           >
@@ -45,17 +44,18 @@ export const useUsersTableColumns = ({
       {
         field: 'name',
         headerName: t('users:list.columns.name', 'الاسم'),
-        minWidth: 130,
-        flex: 1.2,
+        minWidth: 120,
+        flex: 1,
         renderCell: (params) => {
           const fullName = `${params.row.firstName || ''} ${params.row.lastName || ''}`.trim();
           return (
             <Box
               sx={{
-                fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                fontSize: '0.8125rem',
                 color: 'text.primary',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
               {fullName || '-'}
@@ -66,8 +66,8 @@ export const useUsersTableColumns = ({
       {
         field: 'roles',
         headerName: t('users:list.columns.role', 'الدور'),
-        minWidth: 90,
-        flex: 0.8,
+        minWidth: 80,
+        flex: 0.6,
         renderCell: (params) => {
           const primaryRole = getPrimaryRole(params.row.roles);
           const role = primaryRole;
@@ -91,11 +91,9 @@ export const useUsersTableColumns = ({
               color={colorMap[role]}
               size="small"
               sx={{
-                fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                height: { xs: 20, sm: 24 },
-                '& .MuiChip-label': {
-                  px: { xs: 0.5, sm: 1 },
-                },
+                fontSize: '0.7rem',
+                height: 22,
+                '& .MuiChip-label': { px: 0.75 },
               }}
             />
           );
@@ -104,34 +102,28 @@ export const useUsersTableColumns = ({
       {
         field: 'verificationStatus',
         headerName: t('users:list.columns.verification', 'التوثيق'),
-        minWidth: 110,
-        flex: 0.9,
+        minWidth: 90,
+        flex: 0.7,
         renderCell: (params) => {
           const caps = params.row.capabilities;
           const roles = params.row.roles || [];
           const isEngineer = roles.includes('engineer');
           const isMerchant = roles.includes('merchant');
 
-          // لا يظهر شيء إذا لم يكن مهندس أو تاجر
           if (!isEngineer && !isMerchant) {
-            return '-';
+            return <Box sx={{ color: 'text.disabled', fontSize: '0.8125rem' }}>—</Box>;
           }
 
-          // تحديد حالة التوثيق حسب الدور
-          // نتحقق أولاً من كائن المستخدم الرئيسي، ثم من capabilities
           let status: CapabilityStatus = CapabilityStatus.NONE;
           let label = '';
           let color: 'success' | 'warning' | 'error' | 'info' | 'default' = 'default';
 
           if (isEngineer) {
-            // نتحقق من كائن المستخدم أولاً، ثم من capabilities
             status = params.row.engineer_status || caps?.engineer_status || CapabilityStatus.NONE;
           } else if (isMerchant) {
-            // نتحقق من كائن المستخدم أولاً، ثم من capabilities
             status = params.row.merchant_status || caps?.merchant_status || CapabilityStatus.NONE;
           }
 
-          // تحديد اللون والنص حسب الحالة
           switch (status) {
             case CapabilityStatus.APPROVED:
               label = t('users:status.verified', 'موثق');
@@ -160,11 +152,9 @@ export const useUsersTableColumns = ({
               color={color}
               size="small"
               sx={{
-                fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                height: { xs: 20, sm: 24 },
-                '& .MuiChip-label': {
-                  px: { xs: 0.5, sm: 1 },
-                },
+                fontSize: '0.7rem',
+                height: 22,
+                '& .MuiChip-label': { px: 0.75 },
               }}
             />
           );
@@ -173,8 +163,8 @@ export const useUsersTableColumns = ({
       {
         field: 'status',
         headerName: t('users:list.columns.status', 'الحالة'),
-        minWidth: 80,
-        flex: 0.7,
+        minWidth: 75,
+        flex: 0.6,
         renderCell: (params) => {
           const statusMap: Record<
             UserStatus,
@@ -192,79 +182,24 @@ export const useUsersTableColumns = ({
               color={status.color}
               size="small"
               sx={{
-                fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                height: { xs: 20, sm: 24 },
-                '& .MuiChip-label': {
-                  px: { xs: 0.5, sm: 1 },
-                },
+                fontSize: '0.7rem',
+                height: 22,
+                '& .MuiChip-label': { px: 0.75 },
               }}
             />
           );
         },
       },
       {
-        field: 'capabilities',
-        headerName: t('users:list.columns.capabilities', 'القدرات'),
-        minWidth: 100,
-        flex: 1,
-        renderCell: (params) => {
-          const caps = params.row.capabilities;
-          if (!caps) return '-';
-
-          const badges = [];
-          if (caps.engineer_capable) badges.push(t('users:capabilities.engineer', 'مهندس'));
-          if (caps.merchant_capable) badges.push(t('users:capabilities.merchant', 'تاجر'));
-          if (badges.length === 0) badges.push(t('users:capabilities.customer', 'عميل'));
-
-          return (
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 0.5,
-                flexWrap: 'wrap',
-                alignItems: 'center',
-              }}
-            >
-              {badges.slice(0, 2).map((badge) => (
-                <Chip
-                  key={badge}
-                  label={badge}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                    height: { xs: 18, sm: 22 },
-                    '& .MuiChip-label': {
-                      px: { xs: 0.5, sm: 0.75 },
-                    },
-                  }}
-                />
-              ))}
-              {badges.length > 2 && (
-                <Chip
-                  label={`+${badges.length - 2}`}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                    height: { xs: 18, sm: 22 },
-                  }}
-                />
-              )}
-            </Box>
-          );
-        },
-      },
-      {
         field: 'createdAt',
         headerName: t('users:list.columns.createdAt', 'تاريخ الإنشاء'),
-        minWidth: 110,
-        flex: 0.8,
+        minWidth: 95,
+        flex: 0.7,
         valueFormatter: (value) => formatDate(value as Date),
         renderCell: (params) => (
           <Box
             sx={{
-              fontSize: { xs: '0.7rem', sm: '0.875rem' },
+              fontSize: '0.8125rem',
               color: 'text.secondary',
             }}
           >
@@ -275,142 +210,23 @@ export const useUsersTableColumns = ({
       {
         field: 'actions',
         headerName: t('users:list.columns.actions', 'الإجراءات'),
-        minWidth: 100,
-        flex: 0.8,
+        minWidth: 80,
+        flex: 0.5,
         sortable: false,
         renderCell: (params) => {
           const user = params.row as User;
-          const isDeleted = !!user.deletedAt;
-
-          if (isDeleted) {
-            return (
-              <Box display="flex" gap={0.5} flexWrap="wrap">
-                <Tooltip title={t('users:actions.restore', 'استعادة')}>
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRestore(user);
-                    }}
-                    sx={{
-                      p: { xs: 0.5, sm: 0.75 },
-                      '&:hover': {
-                        backgroundColor:
-                          theme.palette.mode === 'dark'
-                            ? 'rgba(144, 202, 249, 0.16)'
-                            : 'rgba(25, 118, 210, 0.08)',
-                      },
-                    }}
-                  >
-                    <Restore fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            );
-          }
-
           return (
-            <Box
-              display="flex"
-              gap={0.5}
-              alignItems="center"
-              flexWrap="wrap"
-              sx={{
-                '& > *': {
-                  flexShrink: 0,
-                },
-              }}
-            >
-              <Tooltip title={t('users:actions.edit', 'تعديل')}>
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(user);
-                  }}
-                  sx={{
-                    p: { xs: 0.5, sm: 0.75 },
-                    '&:hover': {
-                      backgroundColor:
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(144, 202, 249, 0.16)'
-                          : 'rgba(25, 118, 210, 0.08)',
-                    },
-                  }}
-                >
-                  <Edit fontSize="small" />
-                </IconButton>
-              </Tooltip>
-
-              <Tooltip
-                title={
-                  user.status === 'active'
-                    ? t('users:status.active', 'نشط')
-                    : t('users:status.suspended', 'موقوف')
-                }
-              >
-                <Box
-                  onClick={(e) => e.stopPropagation()}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    minWidth: { xs: 40, sm: 48 },
-                  }}
-                >
-                  <Switch
-                    checked={user.status === 'active'}
-                    onChange={(e) => {
-                      onStatusToggle(user, e.target.checked);
-                    }}
-                    size="small"
-                    color={user.status === 'active' ? 'success' : 'default'}
-                    sx={{
-                      m: 0,
-                      '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: 'success.main',
-                      },
-                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: 'success.main',
-                      },
-                      '& .MuiSwitch-track': {
-                        backgroundColor:
-                          theme.palette.mode === 'dark'
-                            ? 'rgba(255, 255, 255, 0.3)'
-                            : 'rgba(0, 0, 0, 0.26)',
-                      },
-                    }}
-                  />
-                </Box>
-              </Tooltip>
-
-              <Tooltip title={t('users:actions.delete', 'حذف')}>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(user);
-                  }}
-                  sx={{
-                    p: { xs: 0.5, sm: 0.75 },
-                    '&:hover': {
-                      backgroundColor:
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(211, 47, 47, 0.16)'
-                          : 'rgba(211, 47, 47, 0.08)',
-                    },
-                  }}
-                >
-                  <Delete fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
+            <UserRowActions
+              user={user}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onRestore={onRestore}
+              onStatusToggle={onStatusToggle}
+            />
           );
         },
       },
     ],
-    [t, i18n.language, theme.palette.mode, onEdit, onDelete, onRestore, onStatusToggle]
+    [t, i18n.language, onEdit, onDelete, onRestore, onStatusToggle]
   );
 };

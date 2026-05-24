@@ -26,6 +26,7 @@ export interface StatCardProps {
     label?: string;
   };
   compact?: boolean;
+  showProgress?: boolean;
 }
 
 const getToneColor = (theme: Theme, tone: NonNullable<StatCardProps['tone']>) => {
@@ -45,20 +46,40 @@ export function StatCard({
   unit,
   progress,
   trend,
-  compact: _compact = true,
+  compact = false,
+  showProgress,
 }: StatCardProps) {
   const theme = useTheme<Theme>();
   const navigate = useNavigate();
   const toneColor = getToneColor(theme, tone);
   const TrendIcon = trend?.direction === 'up' ? ArrowUpward : trend?.direction === 'down' ? ArrowDownward : Remove;
   const isClickable = Boolean(linkTo || onClick);
+  const shouldShowProgress = showProgress !== undefined ? showProgress : !compact;
 
   const handleClick = () => {
     if (linkTo) navigate(linkTo);
     else if (onClick) onClick();
   };
 
-  const iconBox = icon ? (
+  const compactIconBox = icon ? (
+    <Box
+      sx={{
+        width: 28,
+        height: 28,
+        display: 'grid',
+        placeItems: 'center',
+        color: toneColor,
+        bgcolor: alpha(toneColor, theme.palette.mode === 'dark' ? 0.14 : 0.08),
+        borderRadius: `${designRadius.sm}px`,
+        flexShrink: 0,
+        '& .MuiSvgIcon-root': { fontSize: 16 },
+      }}
+    >
+      {icon}
+    </Box>
+  ) : null;
+
+  const defaultIconBox = icon ? (
     <Box
       sx={{
         width: 36,
@@ -75,6 +96,76 @@ export function StatCard({
       {icon}
     </Box>
   ) : null;
+
+  if (compact) {
+    return (
+      <Card
+        elevation={0}
+        onClick={isClickable ? handleClick : undefined}
+        sx={{
+          height: '100%',
+          minHeight: 68,
+          border: '1px solid',
+          borderColor: theme.palette.mode === 'dark' ? alpha(theme.palette.divider, 0.12) : alpha(theme.palette.divider, 0.88),
+          borderRadius: `${designRadius.md}px`,
+          boxShadow: 'none',
+          transition: isClickable ? theme.transitions.create(['borderColor', 'boxShadow'], { duration: theme.transitions.duration.short }) : undefined,
+          ...(isClickable && {
+            cursor: 'pointer',
+            '&:hover': {
+              borderColor: alpha(toneColor, 0.3),
+              boxShadow: '0 1px 4px rgba(15,23,42,0.06)',
+            },
+          }),
+        }}
+      >
+        <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 } }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            {compactIconBox}
+            <Stack spacing={0} sx={{ minWidth: 0, flex: 1 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontWeight: 600, fontSize: 11, lineHeight: 1.3 }}
+                noWrap
+              >
+                {title}
+              </Typography>
+              {loading ? (
+                <Skeleton variant="text" width="50%" height={18} />
+              ) : (
+                <Stack direction="row" alignItems="baseline" spacing={0.5}>
+                  <Typography
+                    sx={{
+                      fontWeight: 700,
+                      lineHeight: 1.2,
+                      fontVariantNumeric: 'tabular-nums',
+                      fontSize: 20,
+                    }}
+                  >
+                    {value}
+                  </Typography>
+                  {unit && (
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, fontSize: 10 }}>
+                      {unit}
+                    </Typography>
+                  )}
+                </Stack>
+              )}
+              {progress && shouldShowProgress && progress.showValue && !loading && (
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10, lineHeight: 1.2 }}>
+                  {Math.round(progress.value)}%
+                </Typography>
+              )}
+            </Stack>
+            {isClickable && !loading && (
+              <OpenInNew sx={{ fontSize: 12, color: 'text.secondary', opacity: 0.4 }} />
+            )}
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card
@@ -115,7 +206,7 @@ export function StatCard({
               {isClickable && !loading && (
                 <OpenInNew sx={{ fontSize: 13, color: 'text.secondary', opacity: 0.5 }} />
               )}
-              {iconBox}
+              {defaultIconBox}
             </Stack>
           </Stack>
 
@@ -148,7 +239,7 @@ export function StatCard({
             </Typography>
           )}
 
-          {progress && !loading && (
+          {progress && shouldShowProgress && !loading && (
             <Box sx={{ mt: 0.25 }}>
               <LinearProgress
                 variant="determinate"

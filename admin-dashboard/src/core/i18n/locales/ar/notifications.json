@@ -52,6 +52,19 @@
     "queued": "قيد الانتظار",
     "sending": "جاري الإرسال"
   },
+  "deliveryStatuses": {
+    "queued": "قيد الانتظار",
+    "sending": "جاري الإرسال",
+    "provider_accepted": "قبله FCM",
+    "received_by_app": "استلمه التطبيق",
+    "opened": "تم الفتح",
+    "clicked": "تم النقر",
+    "failed": "فشل",
+    "no_device_token": "لا يوجد توكن جهاز",
+    "provider_not_configured": "FCM غير مهيأ",
+    "invalid_token": "توكن غير صالح",
+    "skipped_by_preferences": "تم تخطيه بسبب التفضيلات"
+  },
   "priorities": {
     "urgent": "عاجل",
     "high": "عالي",

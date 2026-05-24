@@ -52,6 +52,19 @@
     "queued": "Queued",
     "sending": "Sending"
   },
+  "deliveryStatuses": {
+    "queued": "Queued",
+    "sending": "Sending",
+    "provider_accepted": "FCM accepted",
+    "received_by_app": "Received by app",
+    "opened": "Opened",
+    "clicked": "Clicked",
+    "failed": "Failed",
+    "no_device_token": "No device token",
+    "provider_not_configured": "FCM not configured",
+    "invalid_token": "Invalid token",
+    "skipped_by_preferences": "Skipped by preferences"
+  },
   "priorities": {
     "urgent": "Urgent",
     "high": "High",

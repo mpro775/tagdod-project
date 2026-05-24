@@ -15,27 +15,22 @@ export interface DataTableProps {
   rows: GridRowsProp;
   loading?: boolean;
 
-  // Pagination
   paginationModel: GridPaginationModel;
   // eslint-disable-next-line no-unused-vars
   onPaginationModelChange: (model: GridPaginationModel) => void;
-  // Server-side pagination support
-  rowCount?: number; // Total number of rows (for server-side pagination)
-  paginationMode?: 'client' | 'server'; // Default: 'client'
+  rowCount?: number;
+  paginationMode?: 'client' | 'server';
   customPagination?: boolean;
 
-  // Sorting
   sortModel?: GridSortModel;
   // eslint-disable-next-line no-unused-vars
   onSortModelChange?: (model: GridSortModel) => void;
-  sortingMode?: 'client' | 'server'; // Default: 'client'
+  sortingMode?: 'client' | 'server';
 
-  // Selection
   selectable?: boolean;
   // eslint-disable-next-line no-unused-vars
   onRowSelectionModelChange?: (selection: string[]) => void;
 
-  // Toolbar
   title?: string;
   searchPlaceholder?: string;
   // eslint-disable-next-line no-unused-vars
@@ -43,20 +38,16 @@ export interface DataTableProps {
   onAdd?: () => void;
   addButtonText?: string;
 
-  // Height
   height?: number | string;
   rowHeight?: number | 'auto' | ((params: { id: string | number }) => number | 'auto');
   getRowHeight?: (params: { id: string | number }) => number | 'auto';
 
-  // Row actions
   // eslint-disable-next-line no-unused-vars
   onRowClick?: (params: { row: unknown }) => void;
 
-  // Row ID
   // eslint-disable-next-line no-unused-vars
   getRowId?: (row: unknown) => string | number;
 
-  // Custom styles
   sx?: object;
 }
 
@@ -94,11 +85,10 @@ export const DataTable: React.FC<DataTableProps> = ({
     onSearch?.(value);
   };
 
-  // Calculate actual height - ensure it's a valid value
-  const actualHeight = typeof height === 'string' && height === '100%' 
-    ? '100%' 
-    : typeof height === 'number' 
-      ? `${height}px` 
+  const actualHeight = typeof height === 'string' && height === '100%'
+    ? '100%'
+    : typeof height === 'number'
+      ? `${height}px`
       : height || '600px';
 
   const totalRows = paginationMode === 'server' ? (rowCount ?? 0) : rows.length;
@@ -120,16 +110,15 @@ export const DataTable: React.FC<DataTableProps> = ({
         bgcolor: 'background.paper',
       }}
     >
-      {/* Toolbar */}
       {(title || onSearch || onAdd) && (
         <Box
           sx={{
-            p: { xs: 1.5, sm: 2, md: 2.25 },
+            p: { xs: 1, sm: 1.5 },
             display: 'flex',
             flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
             alignItems: { xs: 'stretch', sm: 'center' },
-            gap: { xs: 2, sm: 0 },
+            gap: { xs: 1.5, sm: 1 },
             borderBottom: 1,
             borderColor: 'divider',
             bgcolor: (theme) =>
@@ -138,17 +127,17 @@ export const DataTable: React.FC<DataTableProps> = ({
                 : 'rgba(248,250,252,0.9)',
           }}
         >
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 2, 
+          <Box sx={{
+            display: 'flex',
+            gap: 2,
             flex: 1,
             flexDirection: { xs: 'column', sm: 'row' },
             alignItems: { xs: 'stretch', sm: 'center' }
           }}>
             {title && (
-              <Box sx={{ 
-                fontSize: { xs: 16, sm: 18 }, 
-                fontWeight: 800,
+              <Box sx={{
+                fontSize: { xs: 15, sm: 16 },
+                fontWeight: 700,
                 textAlign: { xs: 'center', sm: 'left' }
               }}>
                 {title}
@@ -160,14 +149,14 @@ export const DataTable: React.FC<DataTableProps> = ({
                 placeholder={searchPlaceholder || 'بحث...'}
                 value={searchQuery}
                 onChange={handleSearchChange}
-                sx={{ 
-                  minWidth: { xs: '100%', sm: 250, md: 300 },
+                sx={{
+                  minWidth: { xs: '100%', sm: 220 },
                   width: { xs: '100%', sm: 'auto' }
                 }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Search />
+                      <Search fontSize="small" />
                     </InputAdornment>
                   ),
                 }}
@@ -176,13 +165,14 @@ export const DataTable: React.FC<DataTableProps> = ({
           </Box>
 
           {onAdd && (
-            <Button 
-              variant="contained" 
-              startIcon={<Add />} 
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<Add />}
               onClick={onAdd}
               sx={{
                 width: { xs: '100%', sm: 'auto' },
-                minWidth: { xs: 'auto', sm: 120 }
+                minWidth: { xs: 'auto', sm: 100 }
               }}
             >
               {addButtonText}
@@ -191,41 +181,32 @@ export const DataTable: React.FC<DataTableProps> = ({
         </Box>
       )}
 
-      {/* Data Execution Grid */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative', height: '100%' }}>
         <DataGrid
           rows={rows}
           columns={columns}
           loading={loading}
-          // Row ID
           getRowId={getRowId}
-          // Row height - use getRowHeight if provided, otherwise use rowHeight
-          {...(getRowHeight 
-            ? { getRowHeight } 
-            : rowHeight && typeof rowHeight !== 'function'
-              ? { rowHeight: rowHeight === 'auto' ? undefined : rowHeight }
-              : {})}
-          // Pagination
+          columnHeaderHeight={48}
+          rowHeight={typeof rowHeight === 'number' ? rowHeight : 56}
+          {...(getRowHeight ? { getRowHeight } : {})}
           paginationMode={paginationMode}
           paginationModel={paginationModel}
           onPaginationModelChange={onPaginationModelChange}
           rowCount={rowCount ?? rows.length}
           pageSizeOptions={[10, 20, 30, 50, 75, 100]}
           hideFooterPagination={customPagination}
-          // Sorting
           sortingMode={sortingMode}
           sortModel={sortModel}
           onSortModelChange={onSortModelChange}
-          // Selection
           checkboxSelection={selectable}
           onRowSelectionModelChange={(selection) => {
             onRowSelectionModelChange?.(selection as unknown as string[]);
           }}
-          // Row click
           onRowClick={onRowClick}
-          // Style
           disableRowSelectionOnClick
           autoHeight={false}
+          density="compact"
           sx={{
             flex: 1,
             border: 'none',
@@ -262,12 +243,13 @@ export const DataTable: React.FC<DataTableProps> = ({
               borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
             },
             '& .MuiDataGrid-columnHeaderTitle': {
-              fontWeight: 800,
+              fontWeight: 700,
+              fontSize: '0.8125rem',
               color: 'text.primary',
             },
             '& .MuiDataGrid-cell': {
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              padding: { xs: '8px', sm: '12px 16px' },
+              fontSize: '0.8125rem',
+              padding: '0 12px',
               display: 'flex',
               alignItems: 'center',
               overflow: 'hidden',
@@ -280,21 +262,21 @@ export const DataTable: React.FC<DataTableProps> = ({
               },
             },
             '& .MuiDataGrid-row': {
-              minHeight: '72px !important',
+              minHeight: '56px !important',
               maxHeight: 'none !important',
               borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-              transition: 'background-color 0.16s ease, box-shadow 0.16s ease',
+              transition: 'background-color 0.15s ease',
               '&:nth-of-type(even)': {
                 backgroundColor: (theme) =>
                   theme.palette.mode === 'dark'
                     ? 'rgba(255,255,255,0.015)'
-                    : 'rgba(248,250,252,0.55)',
+                    : 'rgba(248,250,252,0.4)',
               },
               '&:hover': {
                 backgroundColor: (theme) =>
                   theme.palette.mode === 'dark'
                     ? 'rgba(255,255,255,0.05)'
-                    : 'rgba(37,99,235,0.045)',
+                    : 'rgba(37,99,235,0.04)',
                 boxShadow: (theme) =>
                   theme.palette.mode === 'dark'
                     ? 'inset 3px 0 0 rgba(96,165,250,0.85)'
@@ -302,10 +284,9 @@ export const DataTable: React.FC<DataTableProps> = ({
               },
             },
             '& .MuiDataGrid-columnHeader': {
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              padding: { xs: '4px 8px', sm: '8px 16px' },
+              fontSize: '0.8125rem',
+              padding: '0 12px',
             },
-            // Use :first-of-type instead of :first-child for SSR safety
             '& .MuiDataGrid-row:first-of-type': {
               borderTop: 'none',
             },
@@ -318,7 +299,6 @@ export const DataTable: React.FC<DataTableProps> = ({
             '& .MuiDataGrid-footerContainer:first-of-type': {
               borderTop: (theme) => `1px solid ${theme.palette.divider}`,
             },
-            // Additional overrides for any MUI internal :first-child usage
             '& .MuiDataGrid-main > div:first-of-type': {
               overflow: 'auto',
             },
@@ -330,7 +310,6 @@ export const DataTable: React.FC<DataTableProps> = ({
             },
             ...sx,
           }}
-        // Responsive settings
         disableColumnMenu={false}
         disableColumnFilter={false}
         disableColumnSelector={false}
@@ -341,7 +320,7 @@ export const DataTable: React.FC<DataTableProps> = ({
         <Box
           sx={{
             px: { xs: 1.5, sm: 2 },
-            py: 1.25,
+            py: 1,
             borderTop: 1,
             borderColor: 'divider',
             display: 'flex',

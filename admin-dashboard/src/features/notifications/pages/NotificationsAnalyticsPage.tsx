@@ -29,7 +29,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
-import { useNotificationStats, useAdvancedAnalytics, useQueueStats } from '../hooks/useNotifications';
+import { useNotificationStats, useAdvancedAnalytics, useQueueStats, useFcmHealth } from '../hooks/useNotifications';
 
 export const NotificationsAnalyticsPage: React.FC = () => {
   const theme = useTheme();
@@ -38,6 +38,7 @@ export const NotificationsAnalyticsPage: React.FC = () => {
   const { data: stats, isLoading, error } = useNotificationStats();
   const { data: advancedAnalytics, isLoading: isLoadingAnalytics } = useAdvancedAnalytics();
   const { data: queueStats } = useQueueStats();
+  const { data: fcmHealth, isLoading: isLoadingFcmHealth } = useFcmHealth();
 
   if (isLoading) {
     return (
@@ -127,6 +128,55 @@ export const NotificationsAnalyticsPage: React.FC = () => {
       >
         {t('analytics.title')}
       </Typography>
+
+      <Card sx={{ mb: isMobile ? 2 : 3 }}>
+        <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap', mb: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Send color={fcmHealth?.initialized ? 'success' : 'warning'} />
+              <Typography variant="h6" sx={{ fontSize: isMobile ? '1rem' : undefined }}>
+                {t('analytics.fcmHealth', 'FCM health')}
+              </Typography>
+            </Box>
+            <Chip
+              size="small"
+              color={fcmHealth?.initialized ? 'success' : fcmHealth?.configured ? 'warning' : 'error'}
+              label={
+                isLoadingFcmHealth
+                  ? t('analytics.loading')
+                  : fcmHealth?.initialized
+                    ? t('analytics.firebaseInitialized', 'Firebase initialized')
+                    : fcmHealth?.configured
+                      ? t('analytics.envOnly', 'Env only')
+                      : t('analytics.notConfigured', 'Not configured')
+              }
+            />
+          </Box>
+          <Grid container spacing={isMobile ? 1 : 2}>
+            <Grid size={{ xs: 6, md: 3 }}>
+              <Typography variant="caption" color="text.secondary">{t('analytics.activeDeviceTokens', 'Active device tokens')}</Typography>
+              <Typography variant="h6">{fcmHealth?.activeDeviceTokens ?? 0}</Typography>
+            </Grid>
+            <Grid size={{ xs: 6, md: 3 }}>
+              <Typography variant="caption" color="text.secondary">{t('analytics.usersWithoutDevices', 'Users without devices')}</Typography>
+              <Typography variant="h6">{fcmHealth?.usersWithoutDevices ?? 0}</Typography>
+            </Grid>
+            <Grid size={{ xs: 6, md: 3 }}>
+              <Typography variant="caption" color="text.secondary">{t('analytics.invalidTokens7d', 'Invalid tokens 7d')}</Typography>
+              <Typography variant="h6">{fcmHealth?.invalidTokensLast7Days ?? 0}</Typography>
+            </Grid>
+            <Grid size={{ xs: 6, md: 3 }}>
+              <Typography variant="caption" color="text.secondary">{t('analytics.providerFailures24h', 'Provider failures 24h')}</Typography>
+              <Typography variant="h6">{fcmHealth?.providerFailuresLast24h ?? 0}</Typography>
+            </Grid>
+          </Grid>
+          {fcmHealth?.lastError && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              {fcmHealth.lastError}
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Main Statistics */}
       <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 4 }}>

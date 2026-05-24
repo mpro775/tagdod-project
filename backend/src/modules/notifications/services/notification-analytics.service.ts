@@ -6,7 +6,7 @@ import {
   UnifiedNotificationDocument,
 } from '../schemas/unified-notification.schema';
 import { NotificationLog, NotificationLogDocument } from '../schemas/notification-log.schema';
-import { NotificationStatus } from '../enums/notification.enums';
+import { NotificationDeliveryStatus, NotificationStatus } from '../enums/notification.enums';
 
 // Analytics filter interface
 export interface AnalyticsFilter {
@@ -66,6 +66,43 @@ export class NotificationAnalyticsService {
 
   // ===== Tracking Methods =====
 
+  async trackReceived(trackingId: string, deviceToken?: string): Promise<void> {
+    try {
+      const notification = await this.notificationModel
+        .findOneAndUpdate(
+          { trackingId },
+          {
+            $set: {
+              status: NotificationStatus.DELIVERED,
+              deliveredAt: new Date(),
+            },
+          },
+          { new: true },
+        )
+        .lean();
+
+      if (!notification) return;
+
+      await this.logModel.updateMany(
+        {
+          notificationId: notification._id,
+          ...(deviceToken ? { deviceToken: { $regex: deviceToken.substring(0, 12) } } : {}),
+        },
+        {
+          $set: {
+            deliveryStatus: NotificationDeliveryStatus.RECEIVED_BY_APP,
+            receivedAt: new Date(),
+            deliveredAt: new Date(),
+          },
+        },
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to track received for ${trackingId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
   /**
    * Track notification open event
    */
@@ -95,6 +132,28 @@ export class NotificationAnalyticsService {
             'interaction.lastInteractionAt': new Date(),
           },
           $inc: { 'interaction.clickCount': 0 }, // Trigger update
+        },
+      );
+
+      const notification = await this.notificationModel
+        .findOne({ trackingId })
+        .select('_id')
+        .lean();
+      await this.logModel.updateMany(
+        {
+          $or: [
+            { trackingId },
+            ...(notification?._id ? [{ notificationId: notification._id }] : []),
+          ],
+        },
+        {
+          $set: {
+            deliveryStatus: NotificationDeliveryStatus.OPENED,
+            openedAt: new Date(),
+            readAt: new Date(),
+            'interaction.opened': true,
+            'interaction.lastInteractionAt': new Date(),
+          },
         },
       );
     } catch (error) {
@@ -139,6 +198,28 @@ export class NotificationAnalyticsService {
         { trackingId },
         {
           $set: {
+            'interaction.clicked': true,
+            'interaction.lastInteractionAt': new Date(),
+          },
+          $inc: { 'interaction.clickCount': 1 },
+        },
+      );
+
+      const notification = await this.notificationModel
+        .findOne({ trackingId })
+        .select('_id')
+        .lean();
+      await this.logModel.updateMany(
+        {
+          $or: [
+            { trackingId },
+            ...(notification?._id ? [{ notificationId: notification._id }] : []),
+          ],
+        },
+        {
+          $set: {
+            deliveryStatus: NotificationDeliveryStatus.CLICKED,
+            clickedAt: new Date(),
             'interaction.clicked': true,
             'interaction.lastInteractionAt': new Date(),
           },

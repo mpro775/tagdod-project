@@ -22,7 +22,7 @@ import {
   EmailDeliveryStatus,
   SmsDeliveryStatus
 } from '../ports/notification.ports';
-import { NotificationChannel } from '../enums/notification.enums';
+import { NotificationChannel, NotificationDeliveryErrorCode } from '../enums/notification.enums';
 import { FCMAdapter, FCMNotification } from './fcm.adapter';
 import { EmailAdapter, EmailNotification } from './email.adapter';
 import { SMSAdapter, SMSNotification } from './sms.adapter';
@@ -159,13 +159,10 @@ export class InAppNotificationAdapter extends BaseNotificationAdapter implements
 // ===== Push Notification Adapter =====
 @Injectable()
 export class PushNotificationAdapter extends BaseNotificationAdapter implements IPushNotificationPort {
-  private readonly fcmEnabled: boolean;
-
   constructor(@Optional() private readonly fcmAdapter?: FCMAdapter) {
     super();
-    this.fcmEnabled = !!fcmAdapter;
-    if (!this.fcmEnabled) {
-      this.logger.warn('FCMAdapter is not available. Push notifications will use mock implementation.');
+    if (!this.fcmAdapter) {
+      this.logger.warn('FCMAdapter is not available. Push notifications will fail explicitly.');
     }
   }
 
@@ -182,6 +179,10 @@ export class PushNotificationAdapter extends BaseNotificationAdapter implements 
       }),
       imageUrl: data.imageUrl,
       clickAction: data.actionUrl,
+      ttlSeconds: data.ttlSeconds,
+      collapseKey: data.collapseKey,
+      androidPriority: data.androidPriority,
+      apnsPriority: data.apnsPriority,
     };
   }
 
@@ -199,75 +200,87 @@ export class PushNotificationAdapter extends BaseNotificationAdapter implements 
 
   async send(notification: PushNotificationData): Promise<PushNotificationResult> {
     this.logger.log(`Sending push notification: ${notification.id}`);
-    
-    // Check if FCM is enabled and device token is provided
-    if (this.fcmEnabled && notification.deviceToken) {
-      try {
-        const fcmNotification = this.toFCMNotification(notification);
-        const result = await this.fcmAdapter!.sendToDevice(
-          notification.deviceToken,
-          fcmNotification
-        );
 
-        if (result.success) {
-          return {
-            success: true,
-            notificationId: notification.id,
-            externalId: `fcm_${Date.now()}`,
-            deliveredAt: new Date(),
-            platform: this.detectPlatform(notification.deviceToken),
-            metadata: { 
-              adapter: 'PushNotificationAdapter',
-              provider: 'FCM',
-              channel: 'push',
-              deviceToken: notification.deviceToken.substring(0, 20) + '...' // Mask token
-            }
-          };
-        } else {
-          // Return detailed error information
-          return {
-            success: false,
-            notificationId: notification.id,
-            error: result.errorMessage || 'FCM send failed',
-            metadata: { 
-              adapter: 'PushNotificationAdapter',
-              provider: 'FCM',
-              channel: 'push',
-              errorCode: result.errorCode,
-              deviceToken: notification.deviceToken.substring(0, 20) + '...'
-            }
-          };
-        }
-      } catch (error) {
-        this.logger.error(`Failed to send FCM notification: ${error instanceof Error ? error.message : String(error)}`);
-        return {
-          success: false,
-          notificationId: notification.id,
-          error: error instanceof Error ? error.message : 'Unknown FCM error',
-          metadata: { 
-            adapter: 'PushNotificationAdapter',
-            provider: 'FCM',
-            channel: 'push'
-          }
-        };
-      }
+    if (!this.fcmAdapter?.isInitialized()) {
+      return {
+        success: false,
+        notificationId: notification.id,
+        error: 'FCM is not configured',
+        metadata: {
+          adapter: 'PushNotificationAdapter',
+          provider: 'FCM',
+          channel: 'push',
+          errorCode: NotificationDeliveryErrorCode.FCM_NOT_CONFIGURED,
+        },
+      };
     }
 
-    // Fallback to mock implementation if FCM is not available or no device token
-    this.logger.warn(`FCM not available or no device token provided. Using mock implementation for notification ${notification.id}`);
-    return {
-      success: true,
-      notificationId: notification.id,
-      externalId: `push_mock_${Date.now()}`,
-      deliveredAt: new Date(),
-      platform: 'unknown',
-      metadata: { 
-        adapter: 'PushNotificationAdapter',
-        provider: 'mock',
-        channel: 'push',
-        deviceToken: notification.deviceToken || 'none'
+    if (!notification.deviceToken) {
+      return {
+        success: false,
+        notificationId: notification.id,
+        error: 'No device token provided',
+        metadata: {
+          adapter: 'PushNotificationAdapter',
+          provider: 'FCM',
+          channel: 'push',
+          errorCode: NotificationDeliveryErrorCode.NO_DEVICE_TOKEN,
+        },
+      };
+    }
+
+    try {
+      const fcmNotification = this.toFCMNotification(notification);
+      const result = await this.fcmAdapter.sendToDevice(
+        notification.deviceToken,
+        fcmNotification
+      );
+
+      if (result.success) {
+        const providerAcceptedAt = new Date();
+        return {
+          success: true,
+          notificationId: notification.id,
+          externalId: result.messageId,
+          providerAcceptedAt,
+          platform: this.detectPlatform(notification.deviceToken),
+          metadata: {
+            adapter: 'PushNotificationAdapter',
+            provider: 'FCM',
+            channel: 'push',
+            providerMessageId: result.messageId,
+            providerAcceptedAt: providerAcceptedAt.toISOString(),
+            deviceToken: notification.deviceToken.substring(0, 20) + '...',
+          },
+        };
       }
-    };
+
+      return {
+        success: false,
+        notificationId: notification.id,
+        error: result.errorMessage || 'FCM send failed',
+        metadata: {
+          adapter: 'PushNotificationAdapter',
+          provider: 'FCM',
+          channel: 'push',
+          errorCode: result.errorCode,
+          deviceToken: notification.deviceToken.substring(0, 20) + '...',
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Failed to send FCM notification: ${error instanceof Error ? error.message : String(error)}`);
+      return {
+        success: false,
+        notificationId: notification.id,
+        error: error instanceof Error ? error.message : 'Unknown FCM error',
+        metadata: {
+          adapter: 'PushNotificationAdapter',
+          provider: 'FCM',
+          channel: 'push',
+          errorCode: NotificationDeliveryErrorCode.UNKNOWN_ERROR,
+        },
+      };
+    }
   }
 
   async sendToDevice(deviceToken: string, notification: PushNotificationData): Promise<PushNotificationResult> {
@@ -281,7 +294,7 @@ export class PushNotificationAdapter extends BaseNotificationAdapter implements 
   async sendToTopic(topic: string, notification: PushNotificationData): Promise<PushNotificationResult> {
     this.logger.log(`Sending push notification to topic: ${topic}`);
     
-    if (this.fcmEnabled) {
+    if (this.fcmAdapter?.isInitialized()) {
       try {
         const fcmNotification = this.toFCMNotification(notification);
         const success = await this.fcmAdapter!.sendToTopic(topic, fcmNotification);
@@ -291,7 +304,7 @@ export class PushNotificationAdapter extends BaseNotificationAdapter implements 
             success: true,
             notificationId: notification.id,
             externalId: `fcm_topic_${Date.now()}`,
-            deliveredAt: new Date(),
+            providerAcceptedAt: new Date(),
             platform: 'all',
             metadata: { 
               adapter: 'PushNotificationAdapter',
@@ -319,19 +332,18 @@ export class PushNotificationAdapter extends BaseNotificationAdapter implements 
       }
     }
 
-    // Fallback
-    this.logger.warn(`FCM not available. Using mock implementation for topic ${topic}`);
+    this.logger.warn(`FCM not available. Topic push failed for ${topic}`);
     return {
-      success: true,
+      success: false,
       notificationId: notification.id,
-      externalId: `push_topic_mock_${Date.now()}`,
-      deliveredAt: new Date(),
       platform: 'all',
+      error: 'FCM is not configured',
       metadata: { 
         adapter: 'PushNotificationAdapter',
-        provider: 'mock',
+        provider: 'FCM',
         channel: 'push',
-        topic
+        topic,
+        errorCode: NotificationDeliveryErrorCode.FCM_NOT_CONFIGURED,
       }
     };
   }

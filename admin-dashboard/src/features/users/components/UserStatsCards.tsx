@@ -10,14 +10,15 @@ import {
 } from '@mui/icons-material';
 import { UserStats } from '../types/user.types';
 import { useTranslation } from 'react-i18next';
-import { PageSummaryGrid, StatCard, StatsSection } from '@/shared/design-system';
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
 
 interface UserStatsCardsProps {
   stats: UserStats;
   loading?: boolean;
+  compact?: boolean;
 }
 
-export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading = false }) => {
+export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading = false, compact = false }) => {
   const { t } = useTranslation(['users', 'common']);
 
   const statsData = [
@@ -80,24 +81,23 @@ export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ stats, loading =
   ];
 
   return (
-    <StatsSection title={t('users:stats.title', 'إحصائيات المستخدمين')}>
-      <PageSummaryGrid columns={4}>
-        {statsData.map((stat) => (
-          <StatCard
-            key={stat.title}
-            title={stat.title}
-            value={loading ? '-' : stat.value.toLocaleString('en-US')}
-            icon={stat.icon}
-            tone={stat.tone}
-            loading={loading}
-            progress={{
-              value: stat.percentage,
-              label: t('users:stats.ofTotal', 'من الإجمالي'),
-              showValue: true,
-            }}
-          />
-        ))}
-      </PageSummaryGrid>
-    </StatsSection>
+    <PageSummaryGrid columns={4} compact={compact}>
+      {statsData.map((stat) => (
+        <StatCard
+          key={stat.title}
+          title={stat.title}
+          value={loading ? '-' : stat.value.toLocaleString('en-US')}
+          icon={stat.icon}
+          tone={stat.tone}
+          loading={loading}
+          compact={compact}
+          progress={{
+            value: stat.percentage,
+            label: t('users:stats.ofTotal', 'من الإجمالي'),
+            showValue: true,
+          }}
+        />
+      ))}
+    </PageSummaryGrid>
   );
 };
