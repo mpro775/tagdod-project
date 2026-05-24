@@ -1,17 +1,23 @@
-import React, { useMemo } from 'react';
-import { Box, Grid, Stack, Typography } from '@mui/material';
+import React, { useMemo, useState } from 'react';
+import { Box, Grid } from '@mui/material';
 import {
   AttachMoney,
   Inventory,
   People,
-  Refresh,
   ShoppingCart,
-  SupportAgent,
-  AccessTime,
 } from '@mui/icons-material';
 import { usePerformanceMetrics } from '../../analytics/hooks/useAnalytics';
-import { QuickStatsWidget, RevenueChart, TopProductsWidget, RecentOrders, QuickActions, AttentionCenter } from '../components';
-import type { AttentionItem } from '../components/AttentionCenter';
+import {
+  DashboardHero,
+  CompactKpiCard,
+  CompactAttentionCenter,
+  RevenueIntelligence,
+  CompactPerformanceWidget,
+  CompactRecentOrders,
+  CompactTopProducts,
+  QuickActionsPanel,
+} from '../components';
+import type { AttentionActionItem } from '../components/CompactAttentionCenter';
 import {
   useDashboardOverview,
   useRecentOrders,
@@ -24,24 +30,18 @@ import { useUnreadSupportCount } from '@/features/support/hooks/useSupport';
 import { useCartStatistics } from '@/features/cart/hooks/useCart';
 import { useTranslation } from 'react-i18next';
 import { formatCurrency } from '@/shared/utils/format';
-import {
-  ErrorState,
-  PageHeader,
-  PageShell,
-  PageSummaryGrid,
-  StatCard,
-  usePageTitle,
-} from '@/shared/design-system';
+import { ErrorState, PageShell, usePageTitle } from '@/shared/design-system';
 
 export const DashboardPage: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const numberFormatter = useMemo(() => new Intl.NumberFormat('en-US'), []);
   const pageTitle = t('dashboard:header.title', 'لوحة التحكم الرئيسية');
+  const [period, setPeriod] = useState<'today' | 'weekly' | 'monthly' | 'custom'>('monthly');
 
   usePageTitle(pageTitle);
 
   const { data: dashboardData, isLoading, error, refetch } = useDashboardOverview();
-  const { data: recentOrdersData, isLoading: ordersLoading } = useRecentOrders(5);
+  const { data: recentOrdersData, isLoading: ordersLoading } = useRecentOrders(4);
   const { data: productsData } = useProductsCount();
   const { data: topProductsData, isLoading: topProductsLoading } = useTopProducts();
   const { data: salesAnalyticsData } = useSalesAnalytics();
@@ -57,7 +57,7 @@ export const DashboardPage: React.FC = () => {
       if (value === undefined || value === null) return null;
       return numberFormatter.format(value);
     },
-    [numberFormatter]
+    [numberFormatter],
   );
 
   const calculateRevenueGrowth = (): number | undefined => {
@@ -74,13 +74,14 @@ export const DashboardPage: React.FC = () => {
   };
 
   const revenueGrowth = calculateRevenueGrowth();
+
   const buildTrend = (value?: number | null) =>
     value === undefined || value === null
       ? undefined
       : {
           value: `${numberFormatter.format(Math.abs(value))}%`,
           direction: (value > 0 ? 'up' : value < 0 ? 'down' : 'flat') as 'up' | 'down' | 'flat',
-          label: t('dashboard:stats.trendLabel', 'عن الفترة السابقة'),
+          label: t('dashboard:stats.periodComparison', 'من الفترة السابقة'),
         };
 
   const pendingOrdersCount = orderStats?.pending_payment ?? 0;
@@ -88,62 +89,55 @@ export const DashboardPage: React.FC = () => {
   const abandonedCartsCount = cartStats?.allTime?.abandoned ?? 0;
   const lowStockCount = dashboardData?.overview?.lowStockProducts ?? productsData?.lowStock ?? 0;
 
-  const attentionItems = useMemo<AttentionItem[]>(() => {
-    const items: AttentionItem[] = [];
-    if (pendingOrdersCount > 0) {
-      items.push({
-        id: 'pending-orders',
-        type: 'pending_order',
-        title: t('dashboard:attention.pendingOrders', 'طلبات معلقة'),
-        description: t('dashboard:attention.pendingOrdersDesc', 'طلبات بانتظار المراجعة أو الدفع'),
-        count: pendingOrdersCount,
-        linkTo: '/orders',
-        tone: 'warning',
-      });
-    }
-    if (lowStockCount > 0) {
-      items.push({
-        id: 'low-stock',
-        type: 'low_stock',
-        title: t('dashboard:attention.lowStock', 'منتجات منخفضة المخزون'),
-        description: t('dashboard:attention.lowStockDesc', 'منتجات تحتاج إعادة توريد'),
-        count: lowStockCount,
-        linkTo: '/products/inventory',
-        tone: 'error',
-      });
-    }
-    if (abandonedCartsCount > 0) {
-      items.push({
+  const attentionItems = useMemo<AttentionActionItem[]>(() => {
+    const items: AttentionActionItem[] = [
+      {
         id: 'abandoned-carts',
-        type: 'abandoned_cart',
         title: t('dashboard:attention.abandonedCarts', 'سلات متروكة'),
-        description: t('dashboard:attention.abandonedCartsDesc', 'سلات تحتاج متابعة واسترداد'),
         count: abandonedCartsCount,
+        description: abandonedCartsCount > 0
+          ? t('dashboard:attention.abandonedCartsDesc', 'تحتاج متابعة واسترداد')
+          : t('dashboard:attention.noCriticalItems', 'لا توجد سلات حرجة'),
         linkTo: '/carts',
-        tone: 'info',
-      });
-    }
-    if (openTicketsCount > 0) {
-      items.push({
+        tone: abandonedCartsCount > 0 ? 'warning' : 'success',
+      },
+      {
+        id: 'pending-orders',
+        title: t('dashboard:attention.pendingOrders', 'طلبات معلقة'),
+        count: pendingOrdersCount,
+        description: pendingOrdersCount > 0
+          ? t('dashboard:attention.pendingOrdersDesc', 'بانتظار مراجعة أو دفع')
+          : t('dashboard:attention.noPendingOrders', 'لا توجد طلبات معلقة'),
+        linkTo: '/orders',
+        tone: pendingOrdersCount > 0 ? 'warning' : 'success',
+      },
+      {
         id: 'open-tickets',
-        type: 'open_ticket',
-        title: t('dashboard:attention.openTickets', 'تذاكر دعم مفتوحة'),
-        description: t('dashboard:attention.openTicketsDesc', 'تذاكر تحتاج رد'),
+        title: t('dashboard:attention.openTickets', 'تذاكر دعم'),
         count: openTicketsCount,
+        description: openTicketsCount > 0
+          ? t('dashboard:attention.openTicketsDesc', 'تحتاج رد')
+          : t('dashboard:attention.allGood', 'كل شيء جيد'),
         linkTo: '/support',
-        tone: 'warning',
-      });
-    }
+        tone: openTicketsCount > 0 ? 'info' : 'success',
+      },
+      {
+        id: 'low-stock',
+        title: t('dashboard:attention.lowStock', 'مخزون منخفض'),
+        count: lowStockCount,
+        description: lowStockCount > 0
+          ? t('dashboard:attention.lowStockDesc', 'منتجات تحتاج توريد')
+          : t('dashboard:attention.stockStable', 'المخزون مستقر'),
+        linkTo: '/products/inventory',
+        tone: lowStockCount > 0 ? 'error' : 'success',
+      },
+    ];
     return items;
-  }, [pendingOrdersCount, lowStockCount, abandonedCartsCount, openTicketsCount, t]);
+  }, [abandonedCartsCount, pendingOrdersCount, openTicketsCount, lowStockCount, t]);
 
   if (error) {
     return (
       <PageShell fullHeight>
-        <PageHeader
-          title={pageTitle}
-          description={t('dashboard:header.subtitle', 'مرحباً بك في لوحة تحكم تجدد')}
-        />
         <ErrorState
           title={t('dashboard:error.title', 'حدث خطأ أثناء تحميل البيانات')}
           onRetry={() => void refetch()}
@@ -155,133 +149,111 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <PageShell fullHeight>
-      <PageHeader
-        title={pageTitle}
-        description={t('dashboard:header.subtitle', 'مرحباً بك في لوحة تحكم تجدد')}
-        actions={[
-          {
-            label: t('dashboard:header.refresh', 'تحديث البيانات'),
-            icon: <Refresh />,
-            onClick: () => void refetch(),
-            variant: 'primary',
-            loading: isLoading,
-          },
-        ]}
-        meta={
-          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
-            <AccessTime sx={{ fontSize: 14, color: 'text.secondary' }} />
-            <Typography variant="caption" color="text.secondary">
-              {t('dashboard:header.lastUpdate', 'آخر تحديث: الآن')}
-            </Typography>
-          </Stack>
-        }
-      />
+      <Box
+        sx={{
+          display: 'grid',
+          gap: { xs: 1.5, sm: 2 },
+          pb: 3,
+        }}
+      >
+        <DashboardHero
+          title={pageTitle}
+          subtitle={t('dashboard:header.subtitle', 'نظرة تشغيلية سريعة على أداء منصة تجدد')}
+          lastUpdateLabel={t('dashboard:header.lastUpdate', 'آخر تحديث: الآن')}
+          isRefreshing={isLoading}
+          onRefresh={() => void refetch()}
+          period={period}
+          onPeriodChange={setPeriod}
+        />
 
-      {/* KPI Cards */}
-      <PageSummaryGrid columns={4}>
-        <StatCard
-          title={t('dashboard:stats.totalRevenue.title', 'إجمالي المبيعات')}
-          value={formatCurrency(dashboardData?.overview?.totalRevenue || 0)}
-          icon={<AttachMoney fontSize="small" />}
-          trend={buildTrend(revenueGrowth)}
-          tone="success"
-          loading={isOverviewLoading}
-          linkTo="/analytics"
-          description={t('dashboard:stats.totalRevenue.desc', 'إجمالي الإيرادات')}
-        />
-        <StatCard
-          title={t('dashboard:stats.totalOrders.title', 'الطلبات الجديدة')}
-          value={formatNumber(dashboardData?.overview?.totalOrders) ?? '-'}
-          icon={<ShoppingCart fontSize="small" />}
-          trend={buildTrend(dashboardData?.kpis?.orderGrowth)}
-          tone="primary"
-          loading={isOverviewLoading}
-          linkTo="/orders"
-          description={t('dashboard:stats.totalOrders.desc', 'جميع الطلبات')}
-        />
-        <StatCard
-          title={t('dashboard:stats.totalUsers.title', 'المستخدمون الجدد')}
-          value={formatNumber(dashboardData?.overview?.totalUsers) ?? '-'}
-          icon={<People fontSize="small" />}
-          trend={buildTrend(dashboardData?.kpis?.userGrowth)}
-          tone="info"
-          loading={isOverviewLoading}
-          linkTo="/users"
-        />
-        <StatCard
-          title={t('dashboard:stats.totalProducts.title', 'المنتجات')}
-          value={formatNumber(productsData?.count) ?? '-'}
-          icon={<Inventory fontSize="small" />}
-          trend={buildTrend(dashboardData?.kpis?.conversionRate)}
-          tone="neutral"
-          loading={isOverviewLoading}
-          linkTo="/products"
-        />
-        <StatCard
-          title={t('dashboard:stats.supportTickets.title', 'تذاكر الدعم المفتوحة')}
-          value={String(openTicketsCount)}
-          icon={<SupportAgent fontSize="small" />}
-          tone={openTicketsCount > 0 ? 'warning' : 'success'}
-          loading={false}
-          linkTo="/support"
-          description={t('dashboard:stats.supportTickets.desc', 'تذاكر تحتاج رد')}
-        />
-        <StatCard
-          title={t('dashboard:stats.abandonedCarts.title', 'السلات المتروكة')}
-          value={String(abandonedCartsCount)}
-          icon={<ShoppingCart fontSize="small" />}
-          tone={abandonedCartsCount > 0 ? 'warning' : 'success'}
-          loading={cartStatsLoading}
-          linkTo="/carts"
-          description={t('dashboard:stats.abandonedCarts.desc', 'سلات تحتاج متابعة')}
-        />
-      </PageSummaryGrid>
-
-      {/* Attention Center */}
-      <AttentionCenter
-        items={attentionItems}
-        isLoading={orderStatsLoading}
-        maxItems={5}
-      />
-
-      {/* Charts Row */}
-      <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, sm: 12, lg: 8 }} sx={{ minWidth: 0 }}>
-          <Box sx={{ overflow: 'hidden' }}>
-            <RevenueChart revenueCharts={dashboardData?.revenueCharts} isLoading={isLoading} />
-          </Box>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 12, lg: 4 }} sx={{ minWidth: 0 }}>
-          <Box sx={{ overflow: 'hidden' }}>
-            <QuickStatsWidget
-            title={t('dashboard:quickStats.title', 'إحصائيات الأداء')}
-            stats={{
-              activeUsers: dashboardData?.overview?.totalUsers,
-              systemHealth: performanceData?.uptime,
-              errorRate: performanceData?.errorRate,
-              responseTime: performanceData?.apiResponseTime,
-            }}
-            isLoading={performanceLoading}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, minmax(0, 1fr))',
+              lg: 'repeat(4, minmax(0, 1fr))',
+            },
+            gap: { xs: 1.5, sm: 2 },
+          }}
+        >
+          <CompactKpiCard
+            title={t('dashboard:stats.totalRevenue.title', 'إجمالي الإيرادات')}
+            value={formatCurrency(dashboardData?.overview?.totalRevenue || 0)}
+            icon={<AttachMoney sx={{ fontSize: 20 }} />}
+            tone="green"
+            trend={buildTrend(revenueGrowth)}
+            loading={isOverviewLoading}
+            linkTo="/analytics"
+            description={t('dashboard:stats.totalRevenue.subtitle', 'إجمالي الإيرادات')}
           />
-          </Box>
-        </Grid>
-      </Grid>
+          <CompactKpiCard
+            title={t('dashboard:stats.totalOrders.title', 'إجمالي الطلبات')}
+            value={formatNumber(dashboardData?.overview?.totalOrders) ?? '—'}
+            icon={<ShoppingCart sx={{ fontSize: 20 }} />}
+            tone="blue"
+            trend={buildTrend(dashboardData?.kpis?.orderGrowth)}
+            loading={isOverviewLoading}
+            linkTo="/orders"
+            description={t('dashboard:stats.totalOrders.subtitle', 'جميع الطلبات')}
+          />
+          <CompactKpiCard
+            title={t('dashboard:stats.totalUsers.title', 'إجمالي المستخدمين')}
+            value={formatNumber(dashboardData?.overview?.totalUsers) ?? '—'}
+            icon={<People sx={{ fontSize: 20 }} />}
+            tone="cyan"
+            trend={buildTrend(dashboardData?.kpis?.userGrowth)}
+            loading={isOverviewLoading}
+            linkTo="/users"
+          />
+          <CompactKpiCard
+            title={t('dashboard:stats.totalProducts.title', 'إجمالي المنتجات')}
+            value={formatNumber(productsData?.count) ?? '—'}
+            icon={<Inventory sx={{ fontSize: 20 }} />}
+            tone="amber"
+            trend={buildTrend(dashboardData?.kpis?.conversionRate)}
+            loading={isOverviewLoading}
+            linkTo="/products"
+          />
+        </Box>
 
-      {/* Top Products & Recent Orders */}
-      <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, sm: 6, lg: 6 }} sx={{ minWidth: 0 }}>
-          <Box sx={{ overflow: 'hidden' }}>
-            <TopProductsWidget products={topProductsData} isLoading={topProductsLoading} />
-          </Box>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 6 }} sx={{ minWidth: 0 }}>
-          <Box sx={{ overflow: 'hidden' }}>
-            <RecentOrders orders={recentOrdersData} isLoading={ordersLoading} />
-          </Box>
-        </Grid>
-      </Grid>
+        <CompactAttentionCenter
+          items={attentionItems}
+          isLoading={orderStatsLoading || cartStatsLoading}
+        />
 
-      <QuickActions />
+        <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+          <Grid size={{ xs: 12, lg: 8 }}>
+            <RevenueIntelligence
+              revenueCharts={dashboardData?.revenueCharts}
+              salesAnalytics={salesAnalyticsData}
+              isLoading={isLoading}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, lg: 4 }}>
+            <CompactPerformanceWidget
+              stats={{
+                activeUsers: dashboardData?.overview?.totalUsers,
+                systemHealth: performanceData?.uptime,
+                errorRate: performanceData?.errorRate,
+                responseTime: performanceData?.apiResponseTime,
+              }}
+              isLoading={performanceLoading}
+            />
+          </Grid>
+        </Grid>
+
+        <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+          <Grid size={{ xs: 12, lg: 6 }}>
+            <CompactRecentOrders orders={recentOrdersData} isLoading={ordersLoading} />
+          </Grid>
+          <Grid size={{ xs: 12, lg: 6 }}>
+            <CompactTopProducts products={topProductsData} isLoading={topProductsLoading} />
+          </Grid>
+        </Grid>
+
+        <QuickActionsPanel />
+      </Box>
     </PageShell>
   );
 };

@@ -16,15 +16,15 @@ import html2pdf from 'html2pdf.js';
 async function loadArabicFont(doc: jsPDF): Promise<boolean> {
   try {
     // تحميل الخط العادي (Regular)
-    const regularFontPath = `/fonts/GraphikArabic-Regular.ttf`;
+    const regularFontPath = `/fonts/alfont_com_Norsal-Regular.otf`;
     let regularResponse = await fetch(regularFontPath);
 
     // إذا فشل، جرب مسارات بديلة
     if (!regularResponse.ok) {
       const altPaths = [
-        `./fonts/GraphikArabic-Regular.ttf`,
-        `fonts/GraphikArabic-Regular.ttf`,
-        `/public/fonts/GraphikArabic-Regular.ttf`,
+        `./fonts/alfont_com_Norsal-Regular.otf`,
+        `fonts/alfont_com_Norsal-Regular.otf`,
+        `/public/fonts/alfont_com_Norsal-Regular.otf`,
       ];
 
       for (const altPath of altPaths) {
@@ -46,14 +46,14 @@ async function loadArabicFont(doc: jsPDF): Promise<boolean> {
     const regularBase64Font = arrayBufferToBase64(regularFontArrayBuffer);
 
     // تحميل الخط العريض (Bold)
-    const boldFontPath = `/fonts/GraphikArabic-Bold.ttf`;
+    const boldFontPath = `/fonts/alfont_com_Norsal-Bold.otf`;
     let boldResponse = await fetch(boldFontPath);
 
     if (!boldResponse.ok) {
       const altPaths = [
-        `./fonts/GraphikArabic-Bold.ttf`,
-        `fonts/GraphikArabic-Bold.ttf`,
-        `/public/fonts/GraphikArabic-Bold.ttf`,
+        `./fonts/alfont_com_Norsal-Bold.otf`,
+        `fonts/alfont_com_Norsal-Bold.otf`,
+        `/public/fonts/alfont_com_Norsal-Bold.otf`,
       ];
 
       for (const altPath of altPaths) {
@@ -75,13 +75,13 @@ async function loadArabicFont(doc: jsPDF): Promise<boolean> {
     // إضافة الخطوط إلى jsPDF
     try {
       // إضافة الخط العادي
-      doc.addFileToVFS('GraphikArabic-Regular.ttf', regularBase64Font);
-      doc.addFont('GraphikArabic-Regular.ttf', 'GraphikArabic', 'normal');
+      doc.addFileToVFS('Norsal-Regular.otf', regularBase64Font);
+      doc.addFont('Norsal-Regular.otf', 'Norsal', 'normal');
 
       // إضافة الخط العريض إذا كان متوفراً
       if (boldBase64Font) {
-        doc.addFileToVFS('GraphikArabic-Bold.ttf', boldBase64Font);
-        doc.addFont('GraphikArabic-Bold.ttf', 'GraphikArabic', 'bold');
+        doc.addFileToVFS('Norsal-Bold.otf', boldBase64Font);
+        doc.addFont('Norsal-Bold.otf', 'Norsal', 'bold');
         } else {
         console.warn('Bold font not found, using normal font for bold text');
       }
@@ -162,7 +162,7 @@ export const exportCommissionsReportToPDF = async (report: CommissionsReport) =>
 
     // تحميل الخط العربي
     const fontLoaded = await loadArabicFont(doc);
-    const fontFamily = fontLoaded ? 'GraphikArabic' : 'helvetica';
+    const fontFamily = fontLoaded ? 'Norsal' : 'helvetica';
 
     // محاولة التحقق من أن الخط Bold متوفر
     // إذا لم يكن متوفراً، سنستخدم 'normal' بدلاً من 'bold'

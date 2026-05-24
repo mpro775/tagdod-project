@@ -1,12 +1,23 @@
 {
   "header": {
     "title": "لوحة التحكم الرئيسية",
-    "subtitle": "مرحباً بك في لوحة تحكم تجدٌد",
-    "refresh": "تحديث البيانات"
+    "subtitle": "نظرة تشغيلية سريعة على أداء منصة تجدد",
+    "refresh": "تحديث البيانات",
+    "lastUpdate": "آخر تحديث: الآن"
   },
   "error": {
     "title": "خطأ في تحميل البيانات",
     "retry": "إعادة المحاولة"
+  },
+  "hero": {
+    "title": "لوحة التحكم الرئيسية",
+    "subtitle": "نظرة تشغيلية سريعة على أداء منصة تجدد",
+    "today": "اليوم",
+    "weekly": "أسبوعي",
+    "monthly": "شهري",
+    "custom": "مخصص",
+    "refresh": "تحديث",
+    "lastUpdate": "آخر تحديث: الآن"
   },
   "stats": {
     "totalUsers": {
@@ -25,7 +36,26 @@
       "title": "إجمالي المنتجات",
       "subtitle": "منتج متاح"
     },
-    "periodComparison": "من الفترة السابقة"
+    "supportTickets": {
+      "title": "تذاكر الدعم المفتوحة",
+      "desc": "تذاكر تحتاج رد"
+    },
+    "abandonedCarts": {
+      "title": "السلات المتروكة",
+      "desc": "سلات تحتاج متابعة"
+    },
+    "periodComparison": "من الفترة السابقة",
+    "trendLabel": "عن الفترة السابقة"
+  },
+  "compact": {
+    "periodTotal": "إجمالي الفترة",
+    "dailyAverage": "متوسط يومي",
+    "bestDay": "أفضل يوم",
+    "view": "عرض",
+    "follow": "متابعة",
+    "review": "مراجعة",
+    "stable": "مستقر",
+    "noData": "لا توجد بيانات متاحة حاليًا"
   },
   "quickStats": {
     "title": "إحصائيات الأداء",
@@ -42,6 +72,9 @@
   "revenueChart": {
     "title": "نظرة عامة على الإيرادات",
     "average": "متوسط {{value}} يومياً",
+    "averageWeekly": "متوسط {{value}} أسبوعياً",
+    "averageMonthly": "متوسط {{value}} شهرياً",
+    "noData": "لا توجد إيرادات في هذه الفترة",
     "period": {
       "daily": "يومي",
       "weekly": "أسبوعي",
@@ -97,10 +130,30 @@
     "title": "إجراءات سريعة",
     "addProduct": "إضافة منتج",
     "orders": "الطلبات",
+    "carts": "السلات المتروكة",
     "discount": "كوبون خصم",
     "newCategory": "فئة جديدة",
     "inventory": "إدارة المخزون",
-    "reports": "التقارير"
+    "reports": "مركز التقارير",
+    "support": "الدعم الفني"
+  },
+  "attention": {
+    "title": "ما يحتاج انتباهك الآن",
+    "description": "عناصر تحتاج متابعة",
+    "empty": "كل شيء على ما يرام",
+    "emptyDesc": "لا توجد عناصر تحتاج انتباهك حالياً",
+    "pendingOrders": "طلبات معلقة",
+    "pendingOrdersDesc": "طلبات بانتظار المراجعة أو الدفع",
+    "lowStock": "منتجات منخفضة المخزون",
+    "lowStockDesc": "منتجات تحتاج إعادة توريد",
+    "abandonedCarts": "سلات متروكة",
+    "abandonedCartsDesc": "سلات تحتاج متابعة واسترداد",
+    "openTickets": "تذاكر دعم مفتوحة",
+    "openTicketsDesc": "تذاكر تحتاج رد",
+    "noCriticalItems": "لا توجد عناصر حرجة",
+    "noPendingOrders": "لا توجد طلبات معلقة",
+    "allGood": "كل شيء جيد",
+    "stockStable": "المخزون مستقر"
   },
   "miniChart": {
     "noData": "لا توجد بيانات"
@@ -131,4 +184,3 @@
     }
   }
 }
-

@@ -1,0 +1,49 @@
+/* Norsal Font Implementation */
+/* This file ensures proper font loading and fallback for Norsal */
+
+/* Import the font definitions */
+@import './fonts/stylesheet.css';
+
+/* Global font application */
+* {
+  font-family: 'Norsal', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+}
+
+/* Ensure proper font rendering for Arabic text */
+body,
+html {
+  font-family: 'Norsal', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Force Norsal for all Arabic and RTL content */
+[lang="ar"], 
+[dir="rtl"],
+.arabic-text,
+.rtl-text,
+.rtl-content {
+  font-family: 'Norsal', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+}
+
+/* Material-UI component overrides */
+.MuiTypography-root,
+.MuiButton-root,
+.MuiTextField-root,
+.MuiInputBase-root,
+.MuiFormLabel-root,
+.MuiChip-root,
+.MuiTab-root,
+.MuiMenuItem-root {
+  font-family: 'Norsal', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+}
+
+/* Font weight mappings for Norsal */
+.font-extralight { font-weight: 200; }
+.font-normal { font-weight: 400; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+.font-black { font-weight: 900; }

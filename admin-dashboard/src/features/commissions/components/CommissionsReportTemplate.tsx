@@ -16,7 +16,7 @@ export const CommissionsReportTemplate: React.FC<Props> = ({ report, id }) => {
       padding: '20mm',
       backgroundColor: 'white',
       direction: 'rtl' as const,
-      fontFamily: '"Graphik Arabic", "Cairo", "Tajawal", sans-serif',
+      fontFamily: '"Norsal", "Cairo", "Tajawal", sans-serif',
       color: '#333',
       boxSizing: 'border-box' as const,
     },

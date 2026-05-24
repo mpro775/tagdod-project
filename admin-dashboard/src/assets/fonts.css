@@ -1,27 +1,27 @@
-/* Arabic Fonts - Graphik Arabic Font Configuration */
+/* Arabic Fonts - Norsal Font Configuration */
 /* Note: Fonts are loaded locally from assets/fonts/ */
 
-/* Global font configuration - Graphik Arabic as primary */
+/* Global font configuration - Norsal as primary */
 * {
-  font-family: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'Norsal', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 /* Global Arabic font settings */
 body,
 html {
-  font-family: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: 'Norsal', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Force Graphik Arabic font for Arabic text */
+/* Force Norsal font for Arabic text */
 [lang="ar"], 
 [dir="rtl"],
 .arabic-text,
 .rtl-text,
 .rtl-content {
-  font-family: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+  font-family: 'Norsal', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
 }
 
 /* Enhanced Arabic text rendering */

@@ -4,7 +4,7 @@
 div[data-react-hot-toast] {
   z-index: 9999 !important;
   direction: rtl !important;
-  font-family: 'Cairo', 'Tajawal', Arial, sans-serif !important;
+  font-family: 'Norsal', 'Cairo', 'Tajawal', Arial, sans-serif !important;
 }
 
 div[data-react-hot-toast] > div {

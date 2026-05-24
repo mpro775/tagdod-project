@@ -185,6 +185,14 @@ const AR_NAV_LABELS: Record<string, string> = {
   'navigation.exportCenter': 'مركز التصدير',
 };
 
+const hideScrollbarSx = {
+  scrollbarWidth: 'none' as const,
+  msOverflowStyle: 'none' as const,
+  '&::-webkit-scrollbar': {
+    display: 'none',
+  },
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -1004,7 +1012,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   };
 
   const drawerContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
       {/* Logo/Title */}
       <Box sx={{ p: 2.25, textAlign: 'center' }}>
         <Box
@@ -1028,7 +1036,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       <Divider />
 
       {/* Menu Items */}
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 1 }}>
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 1, ...hideScrollbarSx }}>
         <List>{filteredMenuItems.map((item) => renderMenuItem(item))}</List>
       </Box>
 
@@ -1060,6 +1068,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
           borderColor: 'divider',
           bgcolor: 'background.paper',
           backgroundImage: 'none',
+          height: '100vh',
+          overflow: 'hidden',
         },
       }}
     >

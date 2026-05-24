@@ -8,3 +8,14 @@ export { RecentOrders } from './RecentOrders';
 export { QuickActions } from './QuickActions';
 export { AttentionCenter } from './AttentionCenter';
 export type { AttentionItem, AttentionCenterProps } from './AttentionCenter';
+
+export { DashboardHero } from './DashboardHero';
+export { CompactKpiCard } from './CompactKpiCard';
+export type { CompactKpiCardProps } from './CompactKpiCard';
+export { CompactAttentionCenter } from './CompactAttentionCenter';
+export type { AttentionActionItem } from './CompactAttentionCenter';
+export { RevenueIntelligence } from './RevenueIntelligence';
+export { CompactPerformanceWidget } from './CompactPerformanceWidget';
+export { CompactRecentOrders } from './CompactRecentOrders';
+export { CompactTopProducts } from './CompactTopProducts';
+export { QuickActionsPanel } from './QuickActionsPanel';

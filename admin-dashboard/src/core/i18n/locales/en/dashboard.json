@@ -1,12 +1,23 @@
 {
   "header": {
     "title": "Main Dashboard",
-    "subtitle": "Welcome to the Tagdod admin console",
-    "refresh": "Refresh Data"
+    "subtitle": "A quick operational overview of Tagdod platform",
+    "refresh": "Refresh Data",
+    "lastUpdate": "Last update: now"
   },
   "error": {
     "title": "Unable to load data",
     "retry": "Try Again"
+  },
+  "hero": {
+    "title": "Main Dashboard",
+    "subtitle": "A quick operational overview of Tagdod platform",
+    "today": "Today",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "custom": "Custom",
+    "refresh": "Refresh",
+    "lastUpdate": "Last update: now"
   },
   "stats": {
     "totalUsers": {
@@ -19,13 +30,32 @@
     },
     "totalRevenue": {
       "title": "Total Revenue",
-      "subtitle": "Yemeni Riyal"
+      "subtitle": "US Dollars"
     },
     "totalProducts": {
       "title": "Total Products",
       "subtitle": "Available products"
     },
-    "periodComparison": "vs previous period"
+    "supportTickets": {
+      "title": "Open Support Tickets",
+      "desc": "Tickets needing a reply"
+    },
+    "abandonedCarts": {
+      "title": "Abandoned Carts",
+      "desc": "Carts needing follow-up"
+    },
+    "periodComparison": "vs previous period",
+    "trendLabel": "vs previous period"
+  },
+  "compact": {
+    "periodTotal": "Period Total",
+    "dailyAverage": "Daily Average",
+    "bestDay": "Best Day",
+    "view": "View",
+    "follow": "Follow",
+    "review": "Review",
+    "stable": "Stable",
+    "noData": "No data available"
   },
   "quickStats": {
     "title": "Performance Stats",
@@ -42,6 +72,9 @@
   "revenueChart": {
     "title": "Revenue Overview",
     "average": "Average {{value}} per day",
+    "averageWeekly": "Average {{value}} per week",
+    "averageMonthly": "Average {{value}} per month",
+    "noData": "No revenue data for this period",
     "period": {
       "daily": "Daily",
       "weekly": "Weekly",
@@ -97,10 +130,30 @@
     "title": "Quick Actions",
     "addProduct": "Add product",
     "orders": "Orders",
+    "carts": "Abandoned Carts",
     "discount": "Discount coupon",
     "newCategory": "New category",
     "inventory": "Inventory management",
-    "reports": "Reports"
+    "reports": "Reports Center",
+    "support": "Tech Support"
+  },
+  "attention": {
+    "title": "Needs Your Attention",
+    "description": "Items requiring follow-up",
+    "empty": "All clear",
+    "emptyDesc": "No items need your attention right now",
+    "pendingOrders": "Pending Orders",
+    "pendingOrdersDesc": "Orders awaiting review or payment",
+    "lowStock": "Low Stock Products",
+    "lowStockDesc": "Products needing restocking",
+    "abandonedCarts": "Abandoned Carts",
+    "abandonedCartsDesc": "Carts needing follow-up and recovery",
+    "openTickets": "Open Support Tickets",
+    "openTicketsDesc": "Tickets needing a reply",
+    "noCriticalItems": "No critical items",
+    "noPendingOrders": "No pending orders",
+    "allGood": "All good",
+    "stockStable": "Stock is stable"
   },
   "miniChart": {
     "noData": "No data available"
@@ -131,4 +184,3 @@
     }
   }
 }
-

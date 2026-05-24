@@ -2,9 +2,9 @@
 /* Note: This file provides CSS variables and fallback strategy */
 /* Actual fonts are loaded locally from assets/fonts/ */
 
-/* Enhanced Arabic font stack - Graphik Arabic as primary */
+/* Enhanced Arabic font stack - Norsal as primary */
 :root {
-  --arabic-font-stack: 'Graphik Arabic', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --arabic-font-stack: 'Norsal', 'Cairo', 'Tajawal', 'Segoe UI Arabic', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 /* Apply Arabic font stack to all MUI components */

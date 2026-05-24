@@ -1,6 +1,6 @@
 export const designTypography = {
   fontFamily: [
-    '"Graphik Arabic"',
+    '"Norsal"',
     '"Cairo"',
     '"Tajawal"',
     '"Noto Sans Arabic"',
