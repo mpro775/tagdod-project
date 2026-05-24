@@ -15,7 +15,7 @@ export const MainLayout: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Sidebar */}
       <Sidebar
         width={DRAWER_WIDTH}
@@ -29,6 +29,7 @@ export const MainLayout: React.FC = () => {
         component="main"
         sx={{
           flexGrow: 1,
+          minWidth: 0,
           width: {
             xs: '100%',
             md: `calc(100% - ${sidebarOpen ? DRAWER_WIDTH : 0}px)`,
@@ -42,7 +43,7 @@ export const MainLayout: React.FC = () => {
       >
         <Header onMenuClick={toggleSidebar} />
 
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 1.5, sm: 2, md: 3 } }}>
           <Outlet />
         </Box>
       </Box>

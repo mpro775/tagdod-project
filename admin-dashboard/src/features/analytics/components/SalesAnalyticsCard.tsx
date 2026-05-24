@@ -240,10 +240,10 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({ period }
                         width={yAxisWidth}
                       />
                       <Tooltip
-                        formatter={(value: number, name: string) => [
-                          name === 'revenue' ? formatCurrency(value) : formatNumber(value),
-                          name === 'revenue' ? 'الإيراد' : 'الطلبات',
-                        ]}
+formatter={(value, name) => [
+                           name === 'revenue' ? formatCurrency(Number(value)) : formatNumber(Number(value)),
+                           name === 'revenue' ? 'الإيراد' : 'الطلبات',
+                         ]}
                         labelFormatter={(value) => {
                           try {
                             return new Date(value).toLocaleDateString('ar-YE');
@@ -301,7 +301,7 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({ period }
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
+                        formatter={(value) => formatCurrency(Number(value))}
                         contentStyle={{ fontSize: `${tooltipFontSize}px`, direction: 'rtl', textAlign: 'right' }}
                       />
                     </PieChart>
@@ -338,10 +338,10 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({ period }
                         width={yAxisWidth}
                       />
                       <Tooltip
-                        formatter={(value: number, name: string) => [
-                          formatCurrency(value),
-                          name === 'amount' ? 'المبلغ' : 'العدد',
-                        ]}
+formatter={(value, name) => [
+                           formatCurrency(Number(value)),
+                           name === 'amount' ? 'المبلغ' : 'العدد',
+                         ]}
                         contentStyle={{ fontSize: `${tooltipFontSize}px`, direction: 'rtl', textAlign: 'right' }}
                       />
                       <Bar dataKey="amount" fill={theme.palette.primary.main} />

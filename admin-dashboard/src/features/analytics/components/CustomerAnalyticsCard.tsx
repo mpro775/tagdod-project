@@ -251,10 +251,10 @@ export const CustomerAnalyticsCard: React.FC<CustomerAnalyticsCardProps> = ({ pe
                       />
                       <Tooltip
                         contentStyle={{ fontSize: breakpoint.isXs ? '12px' : '14px', direction: 'rtl', textAlign: 'right' }}
-                        formatter={(value: number, name: string) => [
-                          name === 'orders' ? formatNumber(value) : formatCurrency(value),
-                          name === 'orders' ? 'الطلبات' : 'إجمالي الإنفاق',
-                        ]}
+formatter={(value, name) => [
+                           name === 'orders' ? formatNumber(Number(value)) : formatCurrency(Number(value)),
+                           name === 'orders' ? 'الطلبات' : 'إجمالي الإنفاق',
+                         ]}
                       />
                       <Bar dataKey="orders" fill={theme.palette.primary.main} />
                     </BarChart>

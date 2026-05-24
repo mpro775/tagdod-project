@@ -195,7 +195,7 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
                   borderRadius: '8px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                 }}
-                formatter={(value: number) => [`${value}%`, t('categoryDistribution.tooltip', 'النسبة')]}
+                formatter={(value) => [`${value}%`, t('categoryDistribution.tooltip', 'النسبة')]}
               />
               <Legend 
                 verticalAlign="bottom" 

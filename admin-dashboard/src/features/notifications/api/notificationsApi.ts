@@ -213,8 +213,9 @@ export const notificationsApi = {
       '/notifications/admin/templates',
       data
     );
-    const raw = getEnvelopeData<ApiTemplateResponse | NotificationTemplate | undefined>(response.data);
-    return raw ? mapApiTemplateToNotificationTemplate(raw as ApiTemplateResponse) : (raw as NotificationTemplate);
+const raw = getEnvelopeData<ApiTemplateResponse | NotificationTemplate | undefined>(response.data);
+    if (!raw) throw new Error('Failed to create template: no data returned');
+    return mapApiTemplateToNotificationTemplate(raw as ApiTemplateResponse);
   },
 
   updateTemplate: async (key: string, data: UpdateTemplateDto): Promise<NotificationTemplate> => {
@@ -223,7 +224,8 @@ export const notificationsApi = {
       data
     );
     const raw = getEnvelopeData<ApiTemplateResponse | NotificationTemplate | undefined>(response.data);
-    return raw ? mapApiTemplateToNotificationTemplate(raw as ApiTemplateResponse) : (raw as NotificationTemplate);
+    if (!raw) throw new Error('Failed to update template: no data returned');
+    return mapApiTemplateToNotificationTemplate(raw as ApiTemplateResponse);
   },
 
   deleteTemplate: async (key: string): Promise<void> => {

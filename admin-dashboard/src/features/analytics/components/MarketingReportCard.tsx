@@ -141,10 +141,10 @@ export const MarketingReportCard: React.FC<MarketingReportCardProps> = ({ period
                       <XAxis dataKey="campaign" />
                       <YAxis />
                       <Tooltip
-                        formatter={(value: number, name: string) => [
-                          name === 'reach' ? formatNumber(value) : name === 'conversions' ? formatNumber(value) : formatCurrency(value),
-                          name === 'reach' ? 'الوصول' : name === 'conversions' ? 'التحويلات' : 'الإيراد',
-                        ]}
+formatter={(value, name) => [
+                           name === 'reach' ? formatNumber(Number(value)) : name === 'conversions' ? formatNumber(Number(value)) : formatCurrency(Number(value)),
+                           name === 'reach' ? 'الوصول' : name === 'conversions' ? 'التحويلات' : 'الإيراد',
+                         ]}
                         contentStyle={{ direction: 'rtl', textAlign: 'right' }}
                       />
                       <Bar dataKey="reach" fill={theme.palette.primary.main} />

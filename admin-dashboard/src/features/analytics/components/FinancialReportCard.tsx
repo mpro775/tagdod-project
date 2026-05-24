@@ -159,10 +159,10 @@ export const FinancialReportCard: React.FC<FinancialReportCardProps> = ({ period
                       />
                       <YAxis tickFormatter={(value) => formatCurrency(value)} />
                       <Tooltip
-                        formatter={(value: number, name: string) => [
-                          formatCurrency(value),
-                          name === 'revenue' ? 'الإيراد' : 'الرصيد التراكمي',
-                        ]}
+formatter={(value, name) => [
+                           formatCurrency(Number(value)),
+                           name === 'revenue' ? 'الإيراد' : 'الرصيد التراكمي',
+                         ]}
                         labelFormatter={(value) => {
                           try {
                             return new Date(value).toLocaleDateString('ar-YE');
@@ -222,7 +222,7 @@ export const FinancialReportCard: React.FC<FinancialReportCardProps> = ({ period
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
+                        formatter={(value) => formatCurrency(Number(value))}
                         contentStyle={{ direction: 'rtl', textAlign: 'right' }}
                       />
                     </PieChart>

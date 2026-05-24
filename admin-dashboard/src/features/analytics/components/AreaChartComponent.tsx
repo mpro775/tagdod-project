@@ -144,7 +144,7 @@ export const AreaChartComponent: React.FC<AreaChartComponentProps> = ({
                 fontSize: `${tooltipFontSize}px`,
                 padding: breakpoint.isXs ? '8px' : '12px',
               }}
-              formatter={(value: number) => [value.toLocaleString(), '']}
+              formatter={(value) => [Number(value).toLocaleString(), '']}
               position={{ x: breakpoint.isXs ? 10 : undefined, y: breakpoint.isXs ? -10 : undefined }}
             />
             {showLegend && !hideLegend && (

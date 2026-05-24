@@ -11,6 +11,7 @@ import {
   Typography,
   Collapse,
   Badge,
+  alpha,
 } from '@mui/material';
 import logoImage from '../../../assets/images/logo.png';
 import {
@@ -931,19 +932,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
               }
             }}
             sx={{
-              pl: 2 + depth * 2,
-              borderRadius: 1,
+              minHeight: 42,
+              pl: 2 + depth * 1.75,
+              borderRadius: 2,
               mx: 1,
-              my: 0.5,
+              my: 0.35,
+              color: 'text.secondary',
+              '& .MuiListItemIcon-root': {
+                minWidth: 38,
+                color: 'inherit',
+              },
               '&.Mui-selected': {
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                color: 'primary.main',
+                fontWeight: 800,
                 '&:hover': {
-                  bgcolor: 'primary.dark',
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.18),
                 },
                 '& .MuiListItemIcon-root': {
-                  color: 'primary.contrastText',
+                  color: 'primary.main',
                 },
+              },
+              '&:hover': {
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                color: 'text.primary',
               },
               '&:focus': {
                 outline: '2px solid',
@@ -992,18 +1004,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   const drawerContent = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Logo/Title */}
-      <Box sx={{ p: 2, textAlign: 'center' }}>
+      <Box sx={{ p: 2.25, textAlign: 'center' }}>
         <Box
           component="img"
           src={logoImage}
           alt="Tagadodo Logo"
           sx={{
-            height: 60,
+            height: 54,
             width: 'auto',
             maxWidth: '100%',
             objectFit: 'contain',
             mb: 1,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+            filter: 'drop-shadow(0 8px 16px rgba(15, 23, 42, 0.10))',
           }}
         />
         <Typography variant="h6" fontWeight="bold">
@@ -1040,6 +1052,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
         '& .MuiDrawer-paper': {
           width: width,
           boxSizing: 'border-box',
+          borderInlineEnd: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          backgroundImage: 'none',
         },
       }}
     >

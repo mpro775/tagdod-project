@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Stack,
-  Paper as MuiPaper,
   Grid,
   useTheme,
   useMediaQuery,
@@ -28,6 +27,14 @@ import { useUsersTableColumns } from '../components/UsersTableColumns';
 import { DeleteUserDialog } from '../components/DeleteUserDialog';
 import { useUsersTableActions } from '../hooks/useUsersTableActions';
 import { useTranslation } from 'react-i18next';
+import {
+  EmptyState,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  SectionCard,
+  usePageTitle,
+} from '@/shared/design-system';
 import '../styles/responsive-users.css';
 
 export const UsersListPage: React.FC = () => {
@@ -36,6 +43,9 @@ export const UsersListPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const pageTitle = t('users:list.title', 'إدارة المستخدمين');
+
+  usePageTitle(pageTitle);
 
   // State
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -180,14 +190,15 @@ export const UsersListPage: React.FC = () => {
   }, [isMobile, isSmallScreen]);
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        bgcolor: 'background.default',
-        minHeight: '100vh',
-        pb: { xs: 2, sm: 3 },
-      }}
-    >
+    <PageShell fullHeight>
+      <PageHeader
+        title={pageTitle}
+        description={t('users:list.description', 'إدارة المستخدمين، الفلاتر، والتصدير')}
+        breadcrumbs={[
+          { label: t('common:navigation.dashboard', 'لوحة التحكم'), to: '/dashboard' },
+          { label: pageTitle },
+        ]}
+      />
       {/* إحصائيات المستخدمين */}
       {stats && <UserStatsCards stats={stats} loading={statsLoading} />}
 
@@ -217,14 +228,7 @@ export const UsersListPage: React.FC = () => {
 
       {/* Action Buttons - Desktop */}
       <Box sx={{ mb: 2, display: { xs: 'none', md: 'block' }, px: { xs: 1, sm: 0 } }}>
-        <MuiPaper
-          sx={{
-            p: 2,
-            mb: 2,
-            bgcolor: 'background.paper',
-            backgroundImage: 'none',
-          }}
-        >
+        <SectionCard padding="sm">
           <Stack direction="row" spacing={2} justifyContent="flex-end">
             <Button
               variant="outlined"
@@ -259,7 +263,7 @@ export const UsersListPage: React.FC = () => {
               {t('users:actions.addUser', 'إضافة مستخدم / أدمن')}
             </Button>
           </Stack>
-        </MuiPaper>
+        </SectionCard>
       </Box>
 
       {/* Desktop View - Table */}
@@ -357,6 +361,9 @@ export const UsersListPage: React.FC = () => {
         }}
       >
         {isLoading ? (
+          <>
+            <LoadingState variant="skeleton" rows={4} />
+            {false && (
           <Box
             sx={{
               textAlign: 'center',
@@ -366,7 +373,12 @@ export const UsersListPage: React.FC = () => {
           >
             {t('common:loading', 'جاري التحميل...')}
           </Box>
+            )}
+          </>
         ) : (data?.data || []).length === 0 ? (
+          <>
+            <EmptyState title={t('users:list.noUsers', 'لا يوجد مستخدمين')} />
+            {false && (
           <Box
             sx={{
               textAlign: 'center',
@@ -376,6 +388,8 @@ export const UsersListPage: React.FC = () => {
           >
             {t('users:list.noUsers', 'لا يوجد مستخدمين')}
           </Box>
+            )}
+          </>
         ) : (
           <Grid container spacing={{ xs: 2, sm: 2 }}>
             {(data?.data || []).map((user: User) => (
@@ -488,6 +502,6 @@ export const UsersListPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 };

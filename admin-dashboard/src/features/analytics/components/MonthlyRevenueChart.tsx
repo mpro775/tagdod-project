@@ -103,11 +103,11 @@ export const MonthlyRevenueChart: React.FC<MonthlyRevenueChartProps> = ({ data, 
                 direction: 'rtl',
                 textAlign: 'right',
               }}
-              formatter={(value: number, name: string) => {
-                if (name === 'revenue') return [formatCurrency(value), 'الإيراد'];
-                if (name === 'growth') return [formatPercent(value), 'نسبة النمو'];
-                return [value, name];
-              }}
+formatter={(value, name) => {
+                 if (name === 'revenue') return [formatCurrency(Number(value)), 'الإيراد'];
+                 if (name === 'growth') return [formatPercent(Number(value)), 'نسبة النمو'];
+                 return [String(value), String(name)];
+               }}
               labelFormatter={(label) => formatMonthLabel(label)}
             />
             <Line

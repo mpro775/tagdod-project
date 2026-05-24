@@ -141,7 +141,7 @@ export const LineChartComponent: React.FC<LineChartComponentProps> = ({
                 fontSize: `${tooltipFontSize}px`,
                 padding: breakpoint.isXs ? '8px' : '12px',
               }}
-              formatter={(value: number) => [typeof value === 'number' ? value.toLocaleString('en-US') : value, '']}
+              formatter={(value) => [typeof value === 'number' ? value.toLocaleString('en-US') : String(value), '']}
               position={{ x: breakpoint.isXs ? 10 : undefined, y: breakpoint.isXs ? -10 : undefined }}
             />
             {showLegend && !hideLegend && (

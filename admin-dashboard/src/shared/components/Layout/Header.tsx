@@ -10,6 +10,8 @@ import {
   Avatar,
   Divider,
   ListItemIcon,
+  Tooltip,
+  alpha,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -29,9 +31,11 @@ import { NotificationBell } from '@/shared/components/NotificationBell';
 
 interface HeaderProps {
   onMenuClick: () => void;
+  title?: string;
+  subtitle?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onMenuClick, title, subtitle }) => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
@@ -73,63 +77,63 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       sx={{
         borderBottom: 1,
         borderColor: 'divider',
-        bgcolor: 'background.paper',
+        bgcolor: (theme) =>
+          theme.palette.mode === 'dark'
+            ? alpha(theme.palette.background.paper, 0.94)
+            : alpha(theme.palette.background.paper, 0.98),
+        backdropFilter: 'blur(10px)',
       }}
     >
-      <Toolbar>
-        {/* Menu Button */}
-        <IconButton
-          edge="start"
-          color="inherit"
-          aria-label="menu"
-          onClick={onMenuClick}
-          sx={{ mr: 2 }}
-        >
+      <Toolbar sx={{ minHeight: { xs: 64, md: 68 }, gap: 1 }}>
+        <IconButton edge="start" color="inherit" aria-label="menu" onClick={onMenuClick}>
           <MenuIcon />
         </IconButton>
 
-        {/* Title */}
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          {t('navigation.dashboard')}
-        </Typography>
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography variant="subtitle1" component="div" sx={{ fontWeight: 800 }} noWrap>
+            {title || t('app.name', 'لوحة تحكم تجدد')}
+          </Typography>
+          {subtitle && (
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
 
-        {/* Actions */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* Theme Toggle */}
-          <IconButton color="inherit" onClick={toggleMode}>
-            {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
-          </IconButton>
-
-          {/* Language Toggle */}
-          <IconButton
-            color="inherit"
-            onClick={handleToggleLanguage}
-            title={i18n.language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Tooltip
+            title={
+              mode === 'dark'
+                ? t('common.lightMode', 'الوضع الفاتح')
+                : t('common.darkMode', 'الوضع الداكن')
+            }
           >
-            <Language />
-          </IconButton>
+            <IconButton color="inherit" onClick={toggleMode}>
+              {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
+          </Tooltip>
 
-          {/* Refresh Page */}
-          <IconButton
-            color="inherit"
-            onClick={handleRefreshPage}
-            title={t('common.refresh_page', 'تحديث الصفحة')}
-          >
-            <Refresh />
-          </IconButton>
+          <Tooltip title={i18n.language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>
+            <IconButton color="inherit" onClick={handleToggleLanguage}>
+              <Language />
+            </IconButton>
+          </Tooltip>
 
-          {/* Notifications */}
+          <Tooltip title={t('common.refresh_page', 'تحديث الصفحة')}>
+            <IconButton color="inherit" onClick={handleRefreshPage}>
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+
           <NotificationBell />
 
-          {/* User Menu */}
-          <IconButton edge="end" color="inherit" onClick={handleMenuOpen} sx={{ ml: 1 }}>
-            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+          <IconButton edge="end" color="inherit" onClick={handleMenuOpen} sx={{ ml: 0.5 }}>
+            <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontWeight: 800 }}>
               {user?.firstName?.[0] || 'A'}
             </Avatar>
           </IconButton>
         </Box>
 
-        {/* User Menu Dropdown */}
         <Menu
           anchorEl={anchorEl}
           open={isMenuOpen}
@@ -138,8 +142,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
-          {/* User Info */}
-          <Box sx={{ px: 2, py: 1 }}>
+          <Box sx={{ px: 2, py: 1.25, minWidth: 220 }}>
             <Typography variant="subtitle2" fontWeight="bold">
               {user?.firstName || t('common.user', 'المستخدم')}
             </Typography>
@@ -150,7 +153,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
           <Divider />
 
-          {/* Menu Items */}
           <MenuItem onClick={() => navigate('/profile')}>
             <ListItemIcon>
               <AccountCircle fontSize="small" />

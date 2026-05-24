@@ -111,20 +111,20 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data, title, height 
                 direction: 'rtl',
                 textAlign: 'right',
               }}
-              formatter={(value: number, name: string) => {
-                if (name === 'revenue') return [formatCurrency(value), 'الإيراد'];
-                if (name === 'orders') return [formatNumber(value), 'الطلبات'];
-                return [value, name];
-              }}
-              labelFormatter={(label) => formatDateLabel(label)}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
-              formatter={(value: string) => {
-                if (value === 'revenue') return 'الإيراد';
-                if (value === 'orders') return 'الطلبات';
-                return value;
-              }}
+formatter={(value, name) => {
+                 if (name === 'revenue') return [formatCurrency(Number(value)), 'الإيراد'];
+                 if (name === 'orders') return [formatNumber(Number(value)), 'الطلبات'];
+                 return [String(value), String(name)];
+               }}
+               labelFormatter={(label) => formatDateLabel(label)}
+             />
+             <Legend
+               wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
+               formatter={(value) => {
+                 if (value === 'revenue') return 'الإيراد';
+                 if (value === 'orders') return 'الطلبات';
+                 return value;
+               }}
             />
             <Area
               yAxisId="left"

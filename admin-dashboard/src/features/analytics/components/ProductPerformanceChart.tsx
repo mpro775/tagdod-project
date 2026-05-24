@@ -91,19 +91,19 @@ export const ProductPerformanceChart: React.FC<ProductPerformanceChartProps> = (
                 direction: 'rtl',
                 textAlign: 'right',
               }}
-              formatter={(value: number, name: string) => {
-                if (name === 'sold') return [formatNumber(value), 'الكمية المباعة'];
-                if (name === 'revenue') return [formatCurrency(value), 'الإيراد'];
-                return [value, name];
-              }}
+formatter={(value, name) => {
+                 if (name === 'sold') return [formatNumber(Number(value)), 'الكمية المباعة'];
+                 if (name === 'revenue') return [formatCurrency(Number(value)), 'الإيراد'];
+                 return [String(value), String(name)];
+               }}
             />
             <Legend
-              wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
-              formatter={(value: string) => {
-                if (value === 'sold') return 'الكمية المباعة';
-                if (value === 'revenue') return 'الإيراد';
-                return value;
-              }}
+               wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
+               formatter={(value) => {
+                 if (value === 'sold') return 'الكمية المباعة';
+                 if (value === 'revenue') return 'الإيراد';
+                 return value;
+               }}
             />
             <Bar dataKey="sold" fill={theme.palette.primary.main} radius={[0, 2, 2, 0]} barSize={breakpoint.isXs ? 10 : 14} />
             <Bar dataKey="revenue" fill={theme.palette.success.main} radius={[0, 2, 2, 0]} barSize={breakpoint.isXs ? 10 : 14} />

@@ -9,10 +9,8 @@ import {
   MenuItem,
   Alert,
   Grid,
-  Skeleton,
   Paper,
   Typography,
-  Drawer,
   FormControl,
   InputLabel,
   Select,
@@ -64,7 +62,17 @@ import { formatDate } from '@/shared/utils/formatters';
 import { CurrencySelector } from '@/shared/components/CurrencySelector';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
-import { ConfirmDialog } from '@/shared/components';
+import {
+  ConfirmDialog,
+  DataToolbar,
+  DetailsDrawer,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  StatusChip,
+  usePageTitle,
+} from '@/shared/design-system';
 import type { Product } from '../types/product.types';
 import { ProductStatus } from '../types/product.types';
 import { ProductImage } from '../components';
@@ -85,6 +93,9 @@ export const ProductsListPage: React.FC = () => {
   const { t } = useTranslation('products');
   const { isMobile } = useBreakpoint();
   const { confirmDialog, dialogProps } = useConfirmDialog();
+  const pageTitle = t('list.title', 'المنتجات');
+
+  usePageTitle(pageTitle);
 
   // Helper function to parse URL params
   const getParamNumber = useCallback((key: string, defaultValue: number) => {
@@ -471,7 +482,18 @@ export const ProductsListPage: React.FC = () => {
           archived: { label: t('status.archived'), color: 'warning' },
         };
         const status = statusMap[params.row.status as ProductStatus];
-        return <Chip label={status.label} color={status.color} size="small" />;
+        return (
+          <StatusChip
+            label={status.label}
+            status={
+              params.row.status === ProductStatus.ACTIVE
+                ? 'active'
+                : params.row.status === ProductStatus.ARCHIVED
+                  ? 'archived'
+                  : 'draft'
+            }
+          />
+        );
       },
     },
     {
@@ -639,60 +661,29 @@ export const ProductsListPage: React.FC = () => {
   // Show full page loading state
   if (isLoading) {
     return (
-      <Box>
-        {/* Header Skeleton */}
-        <Box
-          sx={{
-            mb: 2,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: { xs: 2, sm: 0 },
-          }}
-        >
-          <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
-            <Skeleton variant="rectangular" width={120} height={36} />
-            <Skeleton variant="rectangular" width={180} height={36} />
-          </Box>
-          <Box display="flex" gap={1} alignItems="center">
-            <Skeleton variant="rectangular" width={100} height={36} />
-            <Skeleton variant="rectangular" width={120} height={36} />
-          </Box>
-        </Box>
-
-        {/* Content Skeleton */}
-        {isMobile ? (
-          <Box>
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Paper key={index} sx={{ p: 2, mb: 2 }}>
-                <Box display="flex" gap={2}>
-                  <Skeleton variant="rounded" width={80} height={80} />
-                  <Box flex={1}>
-                    <Skeleton variant="text" width="80%" height={28} />
-                    <Skeleton variant="text" width="60%" height={20} />
-                    <Skeleton variant="text" width="40%" height={20} />
-                  </Box>
-                </Box>
-                <Box mt={2} display="flex" gap={1}>
-                  <Skeleton variant="text" width="60%" height={32} />
-                  <Skeleton variant="text" width="30%" height={32} />
-                </Box>
-              </Paper>
-            ))}
-          </Box>
-        ) : (
-          <Box>
-            <Skeleton variant="rectangular" height={60} sx={{ mb: 2 }} />
-            <Skeleton variant="rectangular" height="calc(100vh - 200px)" />
-          </Box>
-        )}
-      </Box>
+      <PageShell fullHeight>
+        <PageHeader
+          title={pageTitle}
+          description={t('list.description', 'إدارة المنتجات والفلاتر وحالات العرض')}
+        />
+        <LoadingState variant="skeleton" rows={isMobile ? 5 : 7} />
+      </PageShell>
     );
   }
 
   return (
-    <Box>
+    <PageShell fullHeight>
+      <PageHeader
+        title={pageTitle}
+        description={t('list.description', 'إدارة المنتجات والفلاتر وحالات العرض')}
+        breadcrumbs={[
+          { label: t('navigation.dashboard', 'لوحة التحكم'), to: '/dashboard' },
+          { label: pageTitle },
+        ]}
+      />
+
+      {false && (
+        <>
       {/* Breadcrumbs */}
       <Breadcrumbs
         separator={<ChevronRight fontSize="small" />}
@@ -713,6 +704,8 @@ export const ProductsListPage: React.FC = () => {
         </Link>
         <Typography color="text.primary">{t('list.title', 'المنتجات')}</Typography>
       </Breadcrumbs>
+        </>
+      )}
 
       {/* Header with filters */}
       <Box
@@ -950,7 +943,7 @@ export const ProductsListPage: React.FC = () => {
         >
           <Box
             sx={{
-              display: 'flex',
+              display: 'none',
               justifyContent: 'space-between',
               alignItems: 'center',
               flexWrap: 'wrap',
@@ -1086,12 +1079,21 @@ export const ProductsListPage: React.FC = () => {
       {effectiveViewMode === 'grid' ? (
         /* Grid/Card Layout */
         <Box>
+          <DataToolbar
+            searchValue={search}
+            searchPlaceholder={t('list.search')}
+            onSearchChange={(value) => {
+              setSearch(value);
+              setPaginationModel((prev) => ({ ...prev, page: 0 }));
+            }}
+          />
+
           {/* Search Field for Grid View */}
           <Paper
             sx={{
               p: { xs: 1.5, sm: 2 },
               mb: 2,
-              display: 'flex',
+              display: 'none',
               justifyContent: 'space-between',
               alignItems: 'center',
               flexDirection: { xs: 'column', sm: 'row' },
@@ -1122,6 +1124,13 @@ export const ProductsListPage: React.FC = () => {
 
           {!data?.data || data.data.length === 0 ? (
             /* Empty State */
+            <>
+              <EmptyState
+                icon={<Inventory sx={{ fontSize: 52 }} />}
+                title={t('list.empty')}
+                description={t('list.emptyDescription')}
+              />
+              {false && (
             <Paper sx={{ p: 4, textAlign: 'center' }}>
               <Inventory sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -1131,6 +1140,8 @@ export const ProductsListPage: React.FC = () => {
                 {t('list.emptyDescription')}
               </Typography>
             </Paper>
+              )}
+            </>
           ) : (
             /* Products Grid */
             <Grid container spacing={{ xs: 1.5, sm: 2 }}>
@@ -1218,17 +1229,20 @@ export const ProductsListPage: React.FC = () => {
       )}
 
       {/* Advanced Filters Drawer */}
-      <Drawer
-        anchor="right"
+      <DetailsDrawer
         open={filtersDrawerOpen}
         onClose={() => setFiltersDrawerOpen(false)}
-        PaperProps={{
-          sx: { width: { xs: '100%', sm: 400 }, p: 3 },
-        }}
+        title={t('list.advancedFilters', 'الفلاتر المتقدمة')}
+        width={400}
       >
         <Box>
           <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
+            sx={{
+              display: 'none',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 3,
+            }}
           >
             <Typography variant="h6" fontWeight="bold">
               {t('list.advancedFilters', 'الفلاتر المتقدمة')}
@@ -1356,7 +1370,7 @@ export const ProductsListPage: React.FC = () => {
             </Box>
           </Stack>
         </Box>
-      </Drawer>
+      </DetailsDrawer>
 
       {/* Filter Menu (Legacy - keeping for backward compatibility) */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
@@ -1382,6 +1396,6 @@ export const ProductsListPage: React.FC = () => {
 
       {/* Confirm Dialog */}
       <ConfirmDialog {...dialogProps} />
-    </Box>
+    </PageShell>
   );
 };

@@ -28,3 +28,6 @@ export { default as CurrencySelector } from './CurrencySelector';
 export { default as PriceDisplay } from './PriceDisplay';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps, ConfirmDialogType } from './ConfirmDialog';
+
+// Design System
+export * from '@/shared/design-system';

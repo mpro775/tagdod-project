@@ -16,13 +16,11 @@ import {
   Typography,
   Stack,
   Paper,
-  Alert,
   useTheme,
   alpha,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Skeleton,
   Pagination,
   Divider,
 } from '@mui/material';
@@ -55,6 +53,16 @@ import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useOrders, useOrderStats, useBulkUpdateOrderStatus, useExportOrders } from '../hooks/useOrders';
 import { formatDate, formatCurrency } from '@/shared/utils/formatters';
 import { useTranslation } from 'react-i18next';
+import {
+  EmptyState,
+  ErrorState,
+  PageHeader,
+  PageShell,
+  SectionCard,
+  StatCard,
+  StatusChip,
+  usePageTitle,
+} from '@/shared/design-system';
 import type {
   Order,
   OrderStatus,
@@ -81,11 +89,24 @@ const orderStatusColors: Record<
   out_of_stock: 'error',
 };
 
+const orderStatusToDesignStatus = (
+  status: OrderStatus
+): 'pending' | 'success' | 'warning' | 'error' | 'info' | 'neutral' => {
+  if (status === 'completed') return 'success';
+  if (status === 'cancelled' || status === 'refunded' || status === 'out_of_stock') return 'error';
+  if (status === 'pending_payment' || status === 'on_hold') return 'warning';
+  if (status === 'confirmed' || status === 'processing' || status === 'returned') return 'info';
+  return 'neutral';
+};
+
 export const OrdersListPage: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { t } = useTranslation('orders');
   const { isMobile } = useBreakpoint();
+  const pageTitle = t('navigation.title');
+
+  usePageTitle(pageTitle);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
   const [sortModel, setSortModel] = useState<GridSortModel>([
     { field: 'createdAt', sort: 'desc' },
@@ -241,7 +262,10 @@ export const OrdersListPage: React.FC = () => {
                   {customerName}
                 </Typography>
               </Box>
-              <Chip label={t(`status.${order.status as OrderStatus}`)} color={orderStatusColors[order.status as OrderStatus]} size="small" />
+              <StatusChip
+                label={t(`status.${order.status as OrderStatus}`)}
+                status={orderStatusToDesignStatus(order.status as OrderStatus)}
+              />
             </Box>
 
             <Divider />
@@ -266,10 +290,9 @@ export const OrdersListPage: React.FC = () => {
             </Grid>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'center' }}>
-              <Chip
+              <StatusChip
                 label={t(`payment.status.${order.paymentStatus as PaymentStatus}`)}
-                color={order.paymentStatus === 'paid' ? 'success' : 'warning'}
-                size="small"
+                status={order.paymentStatus === 'paid' ? 'success' : 'warning'}
                 variant="outlined"
               />
               <Button
@@ -382,10 +405,9 @@ export const OrdersListPage: React.FC = () => {
         headerName: t('list.columns.paymentStatus'),
         width: 120,
         renderCell: (params) => (
-          <Chip
+          <StatusChip
             label={t(`payment.status.${params.row.paymentStatus as PaymentStatus}`)}
-            color={params.row.paymentStatus === 'paid' ? 'success' : 'warning'}
-            size="small"
+            status={params.row.paymentStatus === 'paid' ? 'success' : 'warning'}
           />
         ),
       },
@@ -394,10 +416,9 @@ export const OrdersListPage: React.FC = () => {
         headerName: t('list.columns.status'),
         width: 140,
         renderCell: (params) => (
-          <Chip
+          <StatusChip
             label={t(`status.${params.row.status as OrderStatus}`)}
-            color={orderStatusColors[params.row.status as OrderStatus]}
-            size="small"
+            status={orderStatusToDesignStatus(params.row.status as OrderStatus)}
           />
         ),
       },
@@ -501,54 +522,43 @@ export const OrdersListPage: React.FC = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ar}>
-      <Box
-        sx={{
-          p: isMobile ? 1.5 : 3,
-          bgcolor: 'background.default',
-          minHeight: '100vh',
-        }}
-      >
-        {/* Header */}
-        <Box sx={{ mb: isMobile ? 2 : 3, display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 2 }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: isMobile ? '1.5rem' : undefined }}>
-            {t('navigation.title')}
-          </Typography>
-          <Stack direction="row" spacing={1} sx={{ width: isMobile ? '100%' : 'auto' }}>
-            <Button
-              variant="outlined"
-              startIcon={<Refresh />}
-              onClick={() => refetch()}
-              disabled={isLoading}
-              size={isMobile ? 'small' : 'medium'}
-              fullWidth={isMobile}
-            >
-              {t('actions.refresh')}
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<Download />}
-              onClick={() => setExportDialogOpen(true)}
-              disabled={exportMutation.isPending}
-              size={isMobile ? 'small' : 'medium'}
-              fullWidth={isMobile}
-            >
-              {exportMutation.isPending ? t('actions.exporting') : t('actions.export')}
-            </Button>
-          </Stack>
-        </Box>
+      <PageShell fullHeight>
+        <PageHeader
+          title={pageTitle}
+          description={t('navigation.description', 'متابعة الطلبات، الفلاتر، التصدير، وتحديث الحالات')}
+          breadcrumbs={[
+            { label: t('navigation.dashboard', 'لوحة التحكم'), to: '/dashboard' },
+            { label: pageTitle },
+          ]}
+          actions={[
+            {
+              label: t('actions.refresh'),
+              icon: <Refresh />,
+              onClick: () => void refetch(),
+              loading: isLoading,
+            },
+            {
+              label: exportMutation.isPending ? t('actions.exporting') : t('actions.export'),
+              icon: <Download />,
+              onClick: () => setExportDialogOpen(true),
+              variant: 'primary',
+              disabled: exportMutation.isPending,
+            },
+          ]}
+        />
 
         {/* Stats Cards */}
         {statsLoading ? (
           <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
             {[...Array(9)].map((_, index) => (
               <Grid size={{ xs: 6, sm: 4, md: 2 }} key={index}>
-                <Card sx={{ bgcolor: 'background.paper', height: '100%' }}>
-                  <CardContent sx={{ textAlign: 'center', p: isMobile ? 1.5 : 3 }}>
-                    <Skeleton variant="circular" width={40} height={40} sx={{ mx: 'auto', mb: 1 }} />
-                    <Skeleton variant="text" height={40} sx={{ mb: 1 }} />
-                    <Skeleton variant="text" height={20} width="60%" sx={{ mx: 'auto' }} />
-                  </CardContent>
-                </Card>
+                <StatCard
+                  title={t('stats.loading', 'جاري التحميل')}
+                  value="-"
+                  icon={<Assignment fontSize="small" />}
+                  tone="neutral"
+                  loading
+                />
               </Grid>
             ))}
           </Grid>
@@ -556,44 +566,14 @@ export const OrdersListPage: React.FC = () => {
           <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
             {statsCards.map((stat, index) => (
               <Grid size={{ xs: 6, sm: 4, md: 2 }} key={index}>
-                <Card
-                  component="div"
-                  sx={{
-                    bgcolor: 'background.paper',
-                    border: `1px solid ${alpha(theme.palette[stat.color].main, theme.palette.mode === 'dark' ? 0.3 : 0.2)}`,
-                    height: '100%',
-                    '&:hover': {
-                      boxShadow: theme.shadows[4],
-                      transform: 'translateY(-2px)',
-                      transition: 'all 0.2s ease-in-out',
-                    },
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', p: isMobile ? 1.5 : 3 }}>
-                    <Box sx={{ color: `${stat.color}.main`, mb: 1, display: 'flex', justifyContent: 'center', fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-                      {stat.icon}
-                    </Box>
-                    <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: isMobile ? '1.5rem' : undefined }}>
-                      {stat.value}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: isMobile ? '0.75rem' : undefined }}>
-                      {stat.title}
-                    </Typography>
-                  </CardContent>
-                </Card>
+                <StatCard title={stat.title} value={stat.value} icon={stat.icon} tone={stat.color} />
               </Grid>
             ))}
           </Grid>
         ) : null}
 
         {/* Filters */}
-        <Paper
-          sx={{
-            mb: isMobile ? 2 : 3,
-            bgcolor: 'background.paper',
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-          }}
-        >
+        <SectionCard padding="none">
           <Accordion expanded={filtersExpanded} onChange={() => setFiltersExpanded(!filtersExpanded)}>
             <AccordionSummary expandIcon={<ExpandMore />}>
               <Typography
@@ -725,7 +705,7 @@ export const OrdersListPage: React.FC = () => {
               </Grid>
             </AccordionDetails>
           </Accordion>
-        </Paper>
+        </SectionCard>
 
         {/* Bulk Actions */}
         {selectedOrders.length > 0 && (
@@ -786,9 +766,13 @@ export const OrdersListPage: React.FC = () => {
 
         {/* Error Alert */}
         {error && (
-          <Alert severity="error" sx={{ mb: isMobile ? 2 : 3, bgcolor: 'background.paper' }}>
-            {t('messages.error.loadFailed')}
-          </Alert>
+          <SectionCard>
+            <ErrorState
+              title={t('messages.error.loadFailed')}
+              onRetry={() => void refetch()}
+              retryLabel={t('actions.refresh')}
+            />
+          </SectionCard>
         )}
 
         {/* Data Table */}
@@ -805,10 +789,18 @@ export const OrdersListPage: React.FC = () => {
               <Stack spacing={1.5}>
                 <Typography variant="h6" fontWeight={800}>{t('list.title')}</Typography>
                 {orders.length === 0 && !isLoading ? (
+                  <>
+                    <EmptyState
+                      icon={<Assignment sx={{ fontSize: 44 }} />}
+                      title={t('messages.empty', { defaultValue: 'لا توجد طلبات' })}
+                    />
+                    {false && (
                   <Paper sx={{ p: 3, textAlign: 'center', borderRadius: 3 }}>
                     <Assignment sx={{ fontSize: 44, color: 'text.secondary', mb: 1 }} />
                     <Typography color="text.secondary">{t('messages.empty', { defaultValue: 'لا توجد طلبات' })}</Typography>
                   </Paper>
+                    )}
+                  </>
                 ) : (
                   orders.map(renderOrderCard)
                 )}
@@ -888,7 +880,7 @@ export const OrdersListPage: React.FC = () => {
             { key: 'completedAt', label: 'تاريخ الإكمال' },
           ]}
         />
-      </Box>
+      </PageShell>
     </LocalizationProvider>
   );
 };

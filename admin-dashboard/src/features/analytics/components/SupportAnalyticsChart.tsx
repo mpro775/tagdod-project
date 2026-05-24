@@ -97,20 +97,20 @@ export const SupportAnalyticsChart: React.FC<SupportAnalyticsChartProps> = ({ da
                 direction: 'rtl',
                 textAlign: 'right',
               }}
-              formatter={(value: number, name: string) => {
-                if (name === 'newTickets') return [formatNumber(value), 'تذاكر جديدة'];
-                if (name === 'resolved') return [formatNumber(value), 'محلولة'];
-                return [value, name];
-              }}
-              labelFormatter={(label) => formatDateLabel(label)}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
-              formatter={(value: string) => {
-                if (value === 'newTickets') return 'تذاكر جديدة';
-                if (value === 'resolved') return 'محلولة';
-                return value;
-              }}
+formatter={(value, name) => {
+                 if (name === 'newTickets') return [formatNumber(Number(value)), 'تذاكر جديدة'];
+                 if (name === 'resolved') return [formatNumber(Number(value)), 'محلولة'];
+                 return [String(value), String(name)];
+               }}
+               labelFormatter={(label) => formatDateLabel(label)}
+             />
+             <Legend
+               wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
+               formatter={(value) => {
+                 if (value === 'newTickets') return 'تذاكر جديدة';
+                 if (value === 'resolved') return 'محلولة';
+                 return value;
+               }}
             />
             <Bar dataKey="newTickets" fill={theme.palette.warning.main} radius={[2, 2, 0, 0]} />
             <Bar dataKey="resolved" fill={theme.palette.success.main} radius={[2, 2, 0, 0]} />

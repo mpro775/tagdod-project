@@ -447,10 +447,10 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                     width={yAxisWidth}
                   />
                   <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === 'sales' ? formatNumber(value) : formatCurrency(value),
-                      name === 'sales' ? t('productPerformance.sales') : t('productPerformance.revenue') || t('charts.revenue'),
-                    ]}
+formatter={(value, name) => [
+                       name === 'sales' ? formatNumber(Number(value)) : formatCurrency(Number(value)),
+                       name === 'sales' ? t('productPerformance.sales') : t('productPerformance.revenue') || t('charts.revenue'),
+                     ]}
                     contentStyle={{
                       fontSize: `${tooltipFontSize}px`,
                     }}
@@ -484,7 +484,8 @@ export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ category, count }) => `${category}: ${count}`}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    label={(props: any) => `${props.category}: ${props.count}`}
                     outerRadius={breakpoint.isXs ? 60 : 80}
                     fill="#8884d8"
                     dataKey="count"

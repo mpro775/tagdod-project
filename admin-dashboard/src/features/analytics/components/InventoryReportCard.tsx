@@ -171,7 +171,7 @@ export const InventoryReportCard: React.FC<InventoryReportCardProps> = ({ period
                       <XAxis dataKey="date" />
                       <YAxis />
                       <Tooltip
-                        formatter={(value: number, name: string) => [formatNumber(value), name === 'in' ? 'إدخال' : 'إخراج']}
+                        formatter={(value, name) => [formatNumber(Number(value)), name === 'in' ? 'إدخال' : 'إخراج']}
                         contentStyle={{ direction: 'rtl', textAlign: 'right' }}
                       />
                       <Bar dataKey="quantity" fill={theme.palette.primary.main} />

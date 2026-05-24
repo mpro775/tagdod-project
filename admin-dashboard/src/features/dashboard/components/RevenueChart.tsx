@@ -201,7 +201,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ revenueCharts, isLoa
                   borderRadius: '8px',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                 }}
-                formatter={(value: number) => [currencyFormatter.format(value), t('revenueChart.tooltip.revenue', 'الإيرادات')]}
+                formatter={(value) => [currencyFormatter.format(Number(value)), t('revenueChart.tooltip.revenue', 'الإيرادات')]}
               />
               <Legend />
               <Area

@@ -112,13 +112,13 @@ export const UserTypesDistribution: React.FC<UserTypesDistributionProps> = ({ da
                 direction: 'rtl',
                 textAlign: 'right',
               }}
-              formatter={(value: number, name: string, props: any) => {
-                const pct = props?.payload?.percentage;
-                return [
-                  `${formatNumber(value)}${pct !== undefined ? ` (${formatPercent(pct)})` : ''}`,
-                  name,
-                ];
-              }}
+formatter={(value, name, props) => {
+                 const pct = props?.payload?.percentage;
+                 return [
+                   `${formatNumber(Number(value))}${pct !== undefined ? ` (${formatPercent(pct)})` : ''}`,
+                   String(name),
+                 ];
+               }}
             />
             {!hideLegend && (
               <Legend

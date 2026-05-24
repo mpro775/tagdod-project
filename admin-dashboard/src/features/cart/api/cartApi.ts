@@ -20,7 +20,7 @@ import type { ApiResponse } from '@/shared/types/common.types';
 // Cart Management API
 export const cartApi = {
   // Get all carts with filters
-  async getAllCarts(filters: CartFilters = {}): Promise<{ carts: Cart[]; pagination: any }> {
+  async getAllCarts(filters: CartFilters = {}): Promise<{ carts: Cart[]; pagination?: any }> {
     // Convert 0-based page to 1-based page for backend compatibility
     const params = {
       ...filters,
@@ -76,9 +76,9 @@ export const cartApi = {
   },
 
   // Send reminders to all abandoned carts
-  async sendAllReminders() {
-    const response = await apiClient.post<ApiResponse<any>>('/admin/carts/send-reminders');
-    return unwrapApiData(response.data);
+async sendAllReminders(): Promise<{ sent?: number; emailsSent?: number; [key: string]: unknown }> {
+    const response = await apiClient.post<ApiResponse<{ sent?: number; emailsSent?: number }>>('/admin/carts/send-reminders');
+    return unwrapApiData<{ sent?: number; emailsSent?: number }>(response.data, { sent: 0, emailsSent: 0 });
   },
 
   // Analytics API

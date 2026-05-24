@@ -97,20 +97,20 @@ export const ServiceAnalyticsChart: React.FC<ServiceAnalyticsChartProps> = ({ da
                 direction: 'rtl',
                 textAlign: 'right',
               }}
-              formatter={(value: number, name: string) => {
-                if (name === 'requests') return [formatNumber(value), 'الطلبات'];
-                if (name === 'completed') return [formatNumber(value), 'المكتملة'];
-                return [value, name];
-              }}
-              labelFormatter={(label) => formatDateLabel(label)}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
-              formatter={(value: string) => {
-                if (value === 'requests') return 'الطلبات';
-                if (value === 'completed') return 'المكتملة';
-                return value;
-              }}
+formatter={(value, name) => {
+                 if (name === 'requests') return [formatNumber(Number(value)), 'الطلبات'];
+                 if (name === 'completed') return [formatNumber(Number(value)), 'المكتملة'];
+                 return [String(value), String(name)];
+               }}
+               labelFormatter={(label) => formatDateLabel(label)}
+             />
+             <Legend
+               wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
+               formatter={(value) => {
+                 if (value === 'requests') return 'الطلبات';
+                 if (value === 'completed') return 'المكتملة';
+                 return value;
+               }}
             />
             <Line
               type="monotone"

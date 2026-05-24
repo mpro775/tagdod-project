@@ -97,20 +97,20 @@ export const UserAnalyticsChart: React.FC<UserAnalyticsChartProps> = ({ data, ti
                 direction: 'rtl',
                 textAlign: 'right',
               }}
-              formatter={(value: number, name: string) => {
-                if (name === 'newUsers') return [formatNumber(value), 'مستخدمون جدد'];
-                if (name === 'activeUsers') return [formatNumber(value), 'مستخدمون نشطون'];
-                return [value, name];
-              }}
-              labelFormatter={(label) => formatDateLabel(label)}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
-              formatter={(value: string) => {
-                if (value === 'newUsers') return 'مستخدمون جدد';
-                if (value === 'activeUsers') return 'مستخدمون نشطون';
-                return value;
-              }}
+formatter={(value, name) => {
+                 if (name === 'newUsers') return [formatNumber(Number(value)), 'مستخدمون جدد'];
+                 if (name === 'activeUsers') return [formatNumber(Number(value)), 'مستخدمون نشطون'];
+                 return [String(value), String(name)];
+               }}
+               labelFormatter={(label) => formatDateLabel(label)}
+             />
+             <Legend
+               wrapperStyle={{ fontSize: `${tooltipFontSize}px`, paddingTop: '8px' }}
+               formatter={(value) => {
+                 if (value === 'newUsers') return 'مستخدمون جدد';
+                 if (value === 'activeUsers') return 'مستخدمون نشطون';
+                 return value;
+               }}
             />
             <Line
               type="monotone"
