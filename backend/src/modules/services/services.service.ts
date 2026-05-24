@@ -2259,12 +2259,15 @@ export class ServicesService {
     });
     await r.save();
 
+    const requestTitle =
+      typeof r.title === 'string' && r.title.trim().length > 0 ? r.title.trim() : 'طلب خدمة';
+
     if (r.engineerId) {
       await this.safeNotifyEngineer(
         String(r.engineerId),
         NotificationType.SERVICE_REQUEST_OPENED,
         'تم فتح نزاع على الطلب',
-        `تم فتح نزاع على الطلب ${String(r._id)}`,
+        `تم فتح نزاع على طلب: ${requestTitle}`,
         { requestId: String(r._id), status: 'DISPUTED' },
       );
     }
