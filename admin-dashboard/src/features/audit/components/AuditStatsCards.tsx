@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, Typography, Badge } from '@mui/material';
 import {
   Shield,
   Warning as AlertTriangle,
@@ -12,6 +11,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { AuditStats } from '../types/audit.types';
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
 
 interface AuditStatsCardsProps {
   stats: AuditStats | undefined;
@@ -23,136 +23,41 @@ export const AuditStatsCards: React.FC<AuditStatsCardsProps> = ({ stats, isLoadi
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 8 }).map((_, index) => (
-          <Card key={index} className="animate-pulse">
-            <CardHeader className="pb-2">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-            </CardContent>
-          </Card>
+      <PageSummaryGrid columns={4}>
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <StatCard key={i} title="…" value="-" loading />
         ))}
-      </div>
+      </PageSummaryGrid>
     );
   }
 
   if (!stats) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">{t('messages.noData')}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <StatCard title={t('messages.noData', 'لا توجد بيانات')} value="-" tone="neutral" />;
   }
 
   const statsData = [
-    {
-      title: t('stats.totalLogs'),
-      value: stats.totalLogs,
-      icon: DatabaseIcon,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      description: t('stats.totalLogsDesc'),
-    },
-    {
-      title: t('stats.sensitiveLogs'),
-      value: stats.sensitiveLogs,
-      icon: Shield,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-      description: t('stats.sensitiveLogsDesc'),
-    },
-    {
-      title: t('stats.permissionChanges'),
-      value: stats.permissionChanges,
-      icon: Key,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      description: t('stats.permissionChangesDesc'),
-    },
-    {
-      title: t('stats.roleChanges'),
-      value: stats.roleChanges,
-      icon: CrownIcon,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      description: t('stats.roleChangesDesc'),
-    },
-    {
-      title: t('stats.capabilityDecisions'),
-      value: stats.capabilityDecisions,
-      icon: CheckCircleIcon,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      description: t('stats.capabilityDecisionsDesc'),
-    },
-    {
-      title: t('stats.adminActions'),
-      value: stats.adminActions,
-      icon: Settings,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      description: t('stats.adminActionsDesc'),
-    },
-    {
-      title: t('stats.authEvents'),
-      value: stats.authEvents,
-      icon: Lock,
-      color: 'text-cyan-600',
-      bgColor: 'bg-cyan-50',
-      description: t('stats.authEventsDesc'),
-    },
-    {
-      title: t('stats.sensitivityRate'),
-      value: stats.totalLogs > 0 ? Math.round((stats.sensitiveLogs / stats.totalLogs) * 100) : 0,
-      icon: AlertTriangle,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50',
-      description: t('stats.sensitivityRateDesc'),
-      suffix: '%',
-    },
+    { title: t('stats.totalLogs'), value: stats.totalLogs.toLocaleString(), icon: <DatabaseIcon fontSize="small" />, tone: 'primary' as const, description: t('stats.totalLogsDesc') },
+    { title: t('stats.sensitiveLogs'), value: stats.sensitiveLogs.toLocaleString(), icon: <Shield fontSize="small" />, tone: 'error' as const, description: t('stats.sensitiveLogsDesc') },
+    { title: t('stats.permissionChanges'), value: stats.permissionChanges.toLocaleString(), icon: <Key fontSize="small" />, tone: 'warning' as const, description: t('stats.permissionChangesDesc') },
+    { title: t('stats.roleChanges'), value: stats.roleChanges.toLocaleString(), icon: <CrownIcon fontSize="small" />, tone: 'secondary' as const, description: t('stats.roleChangesDesc') },
+    { title: t('stats.capabilityDecisions'), value: stats.capabilityDecisions.toLocaleString(), icon: <CheckCircleIcon fontSize="small" />, tone: 'success' as const, description: t('stats.capabilityDecisionsDesc') },
+    { title: t('stats.adminActions'), value: stats.adminActions.toLocaleString(), icon: <Settings fontSize="small" />, tone: 'info' as const, description: t('stats.adminActionsDesc') },
+    { title: t('stats.authEvents'), value: stats.authEvents.toLocaleString(), icon: <Lock fontSize="small" />, tone: 'primary' as const, description: t('stats.authEventsDesc') },
+    { title: t('stats.sensitivityRate'), value: `${stats.totalLogs > 0 ? Math.round((stats.sensitiveLogs / stats.totalLogs) * 100) : 0}%`, icon: <AlertTriangle fontSize="small" />, tone: 'warning' as const, description: t('stats.sensitivityRateDesc') },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {statsData.map((stat, index) => {
-        const Icon = stat.icon;
-        return (
-          <Card key={index} className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Typography variant="body2" className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </Typography>
-              <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                <Icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stat.value.toLocaleString()}
-                {stat.suffix}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
-              {stat.title === t('stats.sensitivityRate') && (
-                <div className="mt-2">
-                  <Badge
-                    variant="standard"
-                    color={stat.value > 20 ? 'error' : stat.value > 10 ? 'warning' : 'info'}
-                    className="text-xs"
-                  >
-                    {stat.value > 20 ? t('stats.highSensitivity') : stat.value > 10 ? t('stats.mediumSensitivity') : t('stats.lowSensitivity')}
-                  </Badge>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+    <PageSummaryGrid columns={4}>
+      {statsData.map((stat) => (
+        <StatCard
+          key={stat.title}
+          title={stat.title}
+          value={stat.value}
+          icon={stat.icon}
+          tone={stat.tone}
+          description={stat.description}
+        />
+      ))}
+    </PageSummaryGrid>
   );
 };

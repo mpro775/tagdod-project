@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
+  MenuOpen as MenuOpenIcon,
   AccountCircle,
   Logout,
   Settings,
@@ -34,11 +35,17 @@ import { NotificationBell } from '@/shared/components/NotificationBell';
 
 interface HeaderProps {
   onMenuClick: () => void;
+  sidebarCollapsed?: boolean;
   title?: string;
   subtitle?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onMenuClick, title, subtitle }) => {
+export const Header: React.FC<HeaderProps> = ({
+  onMenuClick,
+  sidebarCollapsed = false,
+  title,
+  subtitle,
+}) => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
@@ -95,19 +102,56 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, title, subtitle }) 
       color="default"
       elevation={0}
       sx={{
-        borderBottom: 1,
-        borderColor: 'divider',
+        borderBottom: '1px solid',
+        borderColor: (theme) => alpha(theme.palette.divider, 0.75),
         bgcolor: (theme) =>
           theme.palette.mode === 'dark'
-            ? alpha(theme.palette.background.paper, 0.94)
+            ? alpha(theme.palette.background.paper, 0.96)
             : alpha(theme.palette.background.paper, 0.98),
-        backdropFilter: 'blur(10px)',
+        backgroundImage: (theme) =>
+          theme.palette.mode === 'dark'
+            ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)}, transparent 42%)`
+            : `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.035)}, transparent 46%)`,
+        backdropFilter: 'blur(16px)',
+        boxShadow: 'none',
+        zIndex: (theme) => theme.zIndex.drawer + 1,
       }}
     >
-      <Toolbar sx={{ minHeight: { xs: 56, sm: 64, md: 68 }, gap: { xs: 0.5, sm: 1 } }}>
-        <IconButton edge="start" color="inherit" aria-label="فتح القائمة" onClick={onMenuClick}>
-          <MenuIcon />
-        </IconButton>
+      <Toolbar
+        sx={{
+          minHeight: { xs: 56, sm: 64, md: 72 },
+          gap: { xs: 0.5, sm: 1 },
+          px: { xs: 1.25, sm: 2, md: 2.5 },
+        }}
+      >
+        <Tooltip title={sidebarCollapsed ? 'فتح القائمة الجانبية' : 'طي القائمة الجانبية'}>
+          <IconButton
+            edge="start"
+            aria-label={sidebarCollapsed ? 'فتح القائمة الجانبية' : 'طي القائمة الجانبية'}
+            onClick={onMenuClick}
+            sx={{
+              width: { xs: 40, md: 44 },
+              height: { xs: 40, md: 44 },
+              borderRadius: 3,
+              border: '1px solid',
+              borderColor: (theme) =>
+                alpha(theme.palette.primary.main, sidebarCollapsed ? 0.45 : 0.22),
+              bgcolor: (theme) => alpha(theme.palette.primary.main, sidebarCollapsed ? 0.14 : 0.06),
+              color: 'primary.main',
+              transition: (theme) =>
+                theme.transitions.create(['background-color', 'border-color', 'transform'], {
+                  duration: theme.transitions.duration.shorter,
+                }),
+              '&:hover': {
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.18),
+                borderColor: 'primary.main',
+                transform: 'translateY(-1px)',
+              },
+            }}
+          >
+            {sidebarCollapsed ? <MenuIcon /> : <MenuOpenIcon />}
+          </IconButton>
+        </Tooltip>
 
         <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
           <Typography
@@ -128,8 +172,21 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, title, subtitle }) 
         {isMobile ? (
           <>
             <NotificationBell />
-            <IconButton edge="end" color="inherit" onClick={handleMenuOpen} aria-label="الملف الشخصي">
-              <Avatar sx={{ width: 30, height: 30, bgcolor: 'primary.main', fontWeight: 800, fontSize: '0.875rem' }}>
+            <IconButton
+              edge="end"
+              color="inherit"
+              onClick={handleMenuOpen}
+              aria-label="الملف الشخصي"
+            >
+              <Avatar
+                sx={{
+                  width: 30,
+                  height: 30,
+                  bgcolor: 'primary.main',
+                  fontWeight: 800,
+                  fontSize: '0.875rem',
+                }}
+              >
                 {user?.firstName?.[0] || 'A'}
               </Avatar>
             </IconButton>
@@ -145,7 +202,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, title, subtitle }) 
             >
               <MenuItem onClick={handleToggleTheme}>
                 <ListItemIcon>
-                  {mode === 'dark' ? <Brightness7 fontSize="small" /> : <Brightness4 fontSize="small" />}
+                  {mode === 'dark' ? (
+                    <Brightness7 fontSize="small" />
+                  ) : (
+                    <Brightness4 fontSize="small" />
+                  )}
                 </ListItemIcon>
                 {mode === 'dark'
                   ? t('common.lightMode', 'الوضع الفاتح')
@@ -193,7 +254,12 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, title, subtitle }) 
 
             <NotificationBell />
 
-            <IconButton edge="end" color="inherit" onClick={handleMenuOpen} aria-label="الملف الشخصي">
+            <IconButton
+              edge="end"
+              color="inherit"
+              onClick={handleMenuOpen}
+              aria-label="الملف الشخصي"
+            >
               <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontWeight: 800 }}>
                 {user?.firstName?.[0] || 'A'}
               </Avatar>
@@ -221,14 +287,24 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, title, subtitle }) 
 
           <Divider />
 
-          <MenuItem onClick={() => { navigate('/profile'); handleMenuClose(); }}>
+          <MenuItem
+            onClick={() => {
+              navigate('/profile');
+              handleMenuClose();
+            }}
+          >
             <ListItemIcon>
               <AccountCircle fontSize="small" />
             </ListItemIcon>
             {t('common.profile', 'الملف الشخصي')}
           </MenuItem>
 
-          <MenuItem onClick={() => { navigate('/system/settings'); handleMenuClose(); }}>
+          <MenuItem
+            onClick={() => {
+              navigate('/system/settings');
+              handleMenuClose();
+            }}
+          >
             <ListItemIcon>
               <Settings fontSize="small" />
             </ListItemIcon>
@@ -240,7 +316,11 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick, title, subtitle }) 
               <Divider />
               <MenuItem onClick={handleToggleTheme}>
                 <ListItemIcon>
-                  {mode === 'dark' ? <Brightness7 fontSize="small" /> : <Brightness4 fontSize="small" />}
+                  {mode === 'dark' ? (
+                    <Brightness7 fontSize="small" />
+                  ) : (
+                    <Brightness4 fontSize="small" />
+                  )}
                 </ListItemIcon>
                 {mode === 'dark'
                   ? t('common.lightMode', 'الوضع الفاتح')

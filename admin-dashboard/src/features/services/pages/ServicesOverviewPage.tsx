@@ -17,8 +17,6 @@ import {
   useTheme,
 } from '@mui/material';
 import {
-  TrendingUp,
-  TrendingDown,
   People,
   Engineering,
   RequestQuote,
@@ -34,93 +32,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useOverviewStatistics } from '../hooks/useServices';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
-
-const StatCard: React.FC<{
-  title: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-  };
-  subtitle?: string;
-  loading?: boolean;
-}> = ({ title, value, icon, color, trend, subtitle, loading = false }) => {
-  const theme = useTheme();
-  
-  return (
-    <Card 
-      sx={{ 
-        height: '100%', 
-        position: 'relative', 
-        overflow: 'visible',
-        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : undefined,
-      }}
-    >
-      <CardContent>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box flex={1}>
-            <Typography color="text.secondary" gutterBottom variant="body2" sx={{ mb: 1 }}>
-              {title}
-            </Typography>
-            {loading ? (
-              <Skeleton variant="text" width="60%" height={40} />
-            ) : (
-              <Typography 
-                variant="h4" 
-                component="h2" 
-                sx={{ 
-                  mb: 1,
-                  fontFeatureSettings: '"tnum"',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                {value}
-              </Typography>
-            )}
-            {subtitle && (
-              <Typography color="text.secondary" variant="body2" sx={{ mb: 1 }}>
-                {subtitle}
-              </Typography>
-            )}
-            {trend && !loading && (
-              <Box display="flex" alignItems="center" mt={1}>
-                {trend.isPositive ? (
-                  <TrendingUp color="success" fontSize="small" />
-                ) : (
-                  <TrendingDown color="error" fontSize="small" />
-                )}
-                <Typography
-                  variant="body2"
-                  color={trend.isPositive ? 'success.main' : 'error.main'}
-                  ml={0.5}
-                  fontWeight="medium"
-                  sx={{
-                    fontFeatureSettings: '"tnum"',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
-                  {formatNumber(Math.abs(trend.value), 'en')}%
-                </Typography>
-              </Box>
-            )}
-          </Box>
-          <Avatar
-            sx={{
-              backgroundColor: color,
-              width: { xs: 48, sm: 56 },
-              height: { xs: 48, sm: 56 },
-              boxShadow: 2,
-            }}
-          >
-            {icon}
-          </Avatar>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
 
 export const ServicesOverviewPage: React.FC = () => {
   const { t } = useTranslation('services');
@@ -148,19 +60,18 @@ export const ServicesOverviewPage: React.FC = () => {
           </Stack>
         </Box>
         
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <PageSummaryGrid columns={4}>
           {[1, 2, 3, 4].map((i) => (
-            <Grid key={i} size={{ xs: 6, md: 6 }}>
-              <StatCard
-                title={t('messages.loading')}
-                value=""
-                icon={<RequestQuote />}
-                color="grey.300"
-                loading={true}
-              />
-            </Grid>
+            <StatCard
+              key={i}
+              title="…"
+              value="-"
+              icon={<RequestQuote fontSize="small" />}
+              tone="neutral"
+              loading
+            />
           ))}
-        </Grid>
+        </PageSummaryGrid>
         
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid size={{ xs: 6, md: 6 }}>
@@ -364,51 +275,40 @@ export const ServicesOverviewPage: React.FC = () => {
         </Stack>
       </Box>
       
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 6, md: 6 }}>
-          <StatCard
-            title={t('stats.totalRequests')}
-            value={formatNumber(stats.totalRequests, 'en')}
-            icon={<RequestQuote sx={{ color: 'white', fontSize: '1.5rem' }} />}
-            color="primary.main"
-            subtitle={t('stats.allRequestsSubmitted')}
-            trend={stats.trends?.requests}
-          />
-        </Grid>
-        
-        <Grid size={{ xs: 6, md: 6 }}>
-          <StatCard
-            title={t('stats.totalOffers')}
-            value={formatNumber(stats.totalOffers, 'en')}
-            icon={<Engineering sx={{ color: 'white', fontSize: '1.5rem' }} />}
-            color="info.main"
-            subtitle={t('stats.engineersOffers')}
-            trend={stats.trends?.offers}
-          />
-        </Grid>
-        
-        <Grid size={{ xs: 6, md: 6 }}>
-          <StatCard
-            title={t('stats.totalEngineers')}
-            value={formatNumber(stats.totalEngineers, 'en')}
-            icon={<People sx={{ color: 'white', fontSize: '1.5rem' }} />}
-            color="success.main"
-            subtitle={t('stats.registeredEngineers')}
-            trend={stats.trends?.engineers}
-          />
-        </Grid>
-        
-        <Grid size={{ xs: 6, md: 6 }}>
-          <StatCard
-            title={t('stats.totalRevenue')}
-            value={formatCurrency(stats.totalRevenue, 'USD', 'en')}
-            icon={<AttachMoney sx={{ color: 'white', fontSize: '1.5rem' }} />}
-            color="warning.main"
-            subtitle={t('stats.totalProfits')}
-            trend={stats.trends?.revenue}
-          />
-        </Grid>
-      </Grid>
+      <PageSummaryGrid columns={4}>
+        <StatCard
+          title={t('stats.totalRequests')}
+          value={formatNumber(stats.totalRequests, 'en')}
+          icon={<RequestQuote fontSize="small" />}
+          tone="primary"
+          description={t('stats.allRequestsSubmitted')}
+          trend={stats.trends?.requests ? { value: `${Math.abs(stats.trends.requests.value)}%`, direction: stats.trends.requests.isPositive ? 'up' as const : 'down' as const } : undefined}
+        />
+        <StatCard
+          title={t('stats.totalOffers')}
+          value={formatNumber(stats.totalOffers, 'en')}
+          icon={<Engineering fontSize="small" />}
+          tone="info"
+          description={t('stats.engineersOffers')}
+          trend={stats.trends?.offers ? { value: `${Math.abs(stats.trends.offers.value)}%`, direction: stats.trends.offers.isPositive ? 'up' as const : 'down' as const } : undefined}
+        />
+        <StatCard
+          title={t('stats.totalEngineers')}
+          value={formatNumber(stats.totalEngineers, 'en')}
+          icon={<People fontSize="small" />}
+          tone="success"
+          description={t('stats.registeredEngineers')}
+          trend={stats.trends?.engineers ? { value: `${Math.abs(stats.trends.engineers.value)}%`, direction: stats.trends.engineers.isPositive ? 'up' as const : 'down' as const } : undefined}
+        />
+        <StatCard
+          title={t('stats.totalRevenue')}
+          value={formatCurrency(stats.totalRevenue, 'USD', 'en')}
+          icon={<AttachMoney fontSize="small" />}
+          tone="warning"
+          description={t('stats.totalProfits')}
+          trend={stats.trends?.revenue ? { value: `${Math.abs(stats.trends.revenue.value)}%`, direction: stats.trends.revenue.isPositive ? 'up' as const : 'down' as const } : undefined}
+        />
+      </PageSummaryGrid>
 
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 6, md: 6 }}>

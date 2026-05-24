@@ -1,5 +1,4 @@
 import React from 'react';
-import { Grid } from '@mui/material';
 import {
   Notifications,
   CheckCircle,
@@ -9,10 +8,8 @@ import {
   TrendingUp,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { NotificationStats } from '../types/notification.types';
-import { NotificationStatsCard } from './NotificationStatsCard';
-import { useTheme } from '@mui/material/styles';
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
 
 interface NotificationStatsCardsProps {
   stats: NotificationStats | undefined;
@@ -24,8 +21,6 @@ export const NotificationStatsCards: React.FC<NotificationStatsCardsProps> = Rea
   isLoading = false,
 }) => {
   const { t } = useTranslation('notifications');
-  const { isMobile } = useBreakpoint();
-  const theme = useTheme();
 
   const safeStats = {
     total: stats?.total || 0,
@@ -34,73 +29,31 @@ export const NotificationStatsCards: React.FC<NotificationStatsCardsProps> = Rea
     failed: stats?.byStatus?.failed || 0,
     read: stats?.byStatus?.read || 0,
     unreadCount: stats?.unreadCount || 0,
-    recent24h: stats?.recent24h || 0,
   };
 
+  const cards = [
+    { title: t('stats.total'), value: safeStats.total, icon: <Notifications fontSize="small" />, tone: 'primary' as const },
+    { title: t('stats.sent'), value: safeStats.sent, icon: <CheckCircle fontSize="small" />, tone: 'success' as const },
+    { title: t('stats.queued'), value: safeStats.queued, icon: <Pending fontSize="small" />, tone: 'warning' as const },
+    { title: t('stats.failed'), value: safeStats.failed, icon: <Error fontSize="small" />, tone: 'error' as const },
+    { title: t('stats.read'), value: safeStats.read, icon: <Visibility fontSize="small" />, tone: 'info' as const },
+    { title: t('stats.unread'), value: safeStats.unreadCount, icon: <TrendingUp fontSize="small" />, tone: 'secondary' as const },
+  ];
+
   return (
-    <Grid container spacing={isMobile ? 1.5 : 2}>
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <NotificationStatsCard
-          icon={<Notifications />}
-          value={safeStats.total}
-          label={t('stats.total')}
-          color={theme.palette.primary.main}
-          isLoading={isLoading}
+    <PageSummaryGrid columns={4}>
+      {cards.map((card) => (
+        <StatCard
+          key={card.title}
+          title={card.title}
+          value={card.value.toLocaleString('en-US')}
+          icon={card.icon}
+          tone={card.tone}
+          loading={isLoading}
         />
-      </Grid>
-
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <NotificationStatsCard
-          icon={<CheckCircle />}
-          value={safeStats.sent}
-          label={t('stats.sent')}
-          color={theme.palette.success.main}
-          isLoading={isLoading}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <NotificationStatsCard
-          icon={<Pending />}
-          value={safeStats.queued}
-          label={t('stats.queued')}
-          color={theme.palette.warning.main}
-          isLoading={isLoading}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <NotificationStatsCard
-          icon={<Error />}
-          value={safeStats.failed}
-          label={t('stats.failed')}
-          color={theme.palette.error.main}
-          isLoading={isLoading}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <NotificationStatsCard
-          icon={<Visibility />}
-          value={safeStats.read}
-          label={t('stats.read')}
-          color={theme.palette.info.main}
-          isLoading={isLoading}
-        />
-      </Grid>
-
-      <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <NotificationStatsCard
-          icon={<TrendingUp />}
-          value={safeStats.unreadCount}
-          label={t('stats.unread')}
-          color={theme.palette.secondary.main}
-          isLoading={isLoading}
-        />
-      </Grid>
-    </Grid>
+      ))}
+    </PageSummaryGrid>
   );
 });
 
 NotificationStatsCards.displayName = 'NotificationStatsCards';
-

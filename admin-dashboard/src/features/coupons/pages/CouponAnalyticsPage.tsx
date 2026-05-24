@@ -31,8 +31,6 @@ import {
   ConfirmationNumber,
   People,
   BarChart,
-  ArrowDownward,
-  ArrowUpward,
   Refresh,
   Download,
   Visibility,
@@ -40,6 +38,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
 import {
   useCouponAnalytics,
   useCouponStatistics,
@@ -47,73 +46,6 @@ import {
 } from '../../marketing/hooks/useMarketing';
 import { formatCurrency } from '../../cart/api/cartApi';
 import { toast } from 'react-hot-toast';
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  change?: number;
-  icon: React.ComponentType<any>;
-  color?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info';
-}
-
-const StatCard: React.FC<StatCardProps> = ({
-  title,
-  value,
-  change,
-  icon: Icon,
-  color = 'primary',
-}) => (
-  <Card>
-    <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-      <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Box>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            gutterBottom
-            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-          >
-            {title}
-          </Typography>
-          <Typography
-            variant="h4"
-            component="div"
-            fontWeight="bold"
-            sx={{ fontSize: { xs: '1.25rem', sm: '2rem' } }}
-          >
-            {value}
-          </Typography>
-          {change !== undefined && (
-            <Box display="flex" alignItems="center" mt={1}>
-              {change >= 0 ? (
-                <ArrowUpward color="success" fontSize="small" />
-              ) : (
-                <ArrowDownward color="error" fontSize="small" />
-              )}
-              <Typography
-                variant="body2"
-                color={change >= 0 ? 'success.main' : 'error.main'}
-                sx={{ ml: 0.5, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-              >
-                {Math.abs(change)}%
-              </Typography>
-            </Box>
-          )}
-        </Box>
-        <Box
-          sx={{
-            p: { xs: 1, sm: 2 },
-            borderRadius: '50%',
-            backgroundColor: `${color}.light`,
-            color: `${color}.main`,
-          }}
-        >
-          <Icon sx={{ fontSize: { xs: 24, sm: 32 } }} />
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-);
 
 export const CouponAnalyticsPage: React.FC = () => {
   const { t } = useTranslation('coupons');
@@ -314,82 +246,64 @@ export const CouponAnalyticsPage: React.FC = () => {
       </Box>
 
       {/* Statistics Cards */}
-      <Grid container spacing={{ xs: 2, sm: 3 }} mb={4}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Box mb={4}>
+        <PageSummaryGrid columns={4}>
           <StatCard
             title={t('analytics.totalCoupons')}
             value={statistics?.totalCoupons || analytics?.totalInPeriod || 0}
-            icon={ConfirmationNumber}
-            color="primary"
+            icon={<ConfirmationNumber fontSize="small" />}
+            tone="primary"
           />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={t('analytics.activeCoupons')}
             value={statistics?.activeCoupons || analytics?.statusBreakdown?.active || 0}
-            icon={TrendingUp}
-            color="success"
+            icon={<TrendingUp fontSize="small" />}
+            tone="success"
           />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={t('analytics.totalUses')}
             value={statistics?.totalUses || 0}
-            icon={People}
-            color="info"
+            icon={<People fontSize="small" />}
+            tone="info"
           />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={t('analytics.usageRate')}
             value={`${statistics?.usageRate || '0.00'}%`}
-            icon={AttachMoney}
-            color="warning"
+            icon={<AttachMoney fontSize="small" />}
+            tone="warning"
           />
-        </Grid>
-      </Grid>
+        </PageSummaryGrid>
+      </Box>
 
       {/* Additional Statistics Cards */}
-      <Grid container spacing={{ xs: 2, sm: 3 }} mb={4}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Box mb={4}>
+        <PageSummaryGrid columns={4}>
           <StatCard
             title={t('analytics.expiredCoupons')}
             value={statistics?.expiredCoupons || analytics?.statusBreakdown?.expired || 0}
-            icon={ConfirmationNumber}
-            color="error"
+            icon={<ConfirmationNumber fontSize="small" />}
+            tone="error"
           />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={t('analytics.inactiveCoupons')}
             value={analytics?.statusBreakdown?.inactive || 0}
-            icon={ConfirmationNumber}
-            color="secondary"
+            icon={<ConfirmationNumber fontSize="small" />}
+            tone="secondary"
           />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={t('analytics.scheduledCoupons')}
             value={analytics?.statusBreakdown?.scheduled || 0}
-            icon={ConfirmationNumber}
-            color="info"
+            icon={<ConfirmationNumber fontSize="small" />}
+            tone="info"
           />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title={t('analytics.totalLimit')}
             value={statistics?.totalLimit || 0}
-            icon={BarChart}
-            color="primary"
+            icon={<BarChart fontSize="small" />}
+            tone="primary"
           />
-        </Grid>
-      </Grid>
+        </PageSummaryGrid>
+      </Box>
 
       {/* Status Breakdown */}
       {analytics?.statusBreakdown && (

@@ -4,6 +4,7 @@ export * from './components/PageHeader';
 export * from './components/PageSummaryGrid';
 export * from './components/SectionCard';
 export * from './components/StatCard';
+export * from './components/StatsSection';
 export * from './components/DataToolbar';
 export * from './components/StatusChip';
 export * from './components/EmptyState';

@@ -48,6 +48,7 @@ export class NotificationService implements OnModuleInit {
 
   private static readonly PLACEHOLDER_REGEX = /{{\s*(\w+)\s*}}/g;
   private static readonly NAME_ALIAS_REGEX = /@name\b/g;
+  private static readonly USER_VISIBLE_DAYS = 7;
 
   constructor(
     @InjectModel(UnifiedNotification.name)
@@ -66,6 +67,36 @@ export class NotificationService implements OnModuleInit {
     @InjectQueue(NOTIFICATION_BULK_QUEUE)
     private readonly bulkQueue: Queue<BulkNotificationJobData>,
   ) {}
+
+  // ===== Visibility Helpers =====
+
+  private addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
+  private getNotificationVisibleUntil(baseDate?: Date): Date {
+    const now = new Date();
+    const startDate = baseDate && baseDate > now ? baseDate : now;
+    return this.addDays(startDate, NotificationService.USER_VISIBLE_DAYS);
+  }
+
+  private buildUserVisibleNotificationFilter(): Record<string, unknown> {
+    const now = new Date();
+    const fallbackDate = new Date(now);
+    fallbackDate.setDate(fallbackDate.getDate() - NotificationService.USER_VISIBLE_DAYS);
+
+    return {
+      $or: [
+        { visibleUntil: { $gt: now } },
+        {
+          visibleUntil: { $exists: false },
+          createdAt: { $gte: fallbackDate },
+        },
+      ],
+    };
+  }
 
   // ===== Helper Methods =====
 
@@ -325,6 +356,8 @@ export class NotificationService implements OnModuleInit {
         );
       }
 
+      const visibleUntil = this.getNotificationVisibleUntil(dto.scheduledFor);
+
       const notification = new this.notificationModel({
         ...dto,
         data: enrichedData,
@@ -341,6 +374,7 @@ export class NotificationService implements OnModuleInit {
         targetRoles: targetRoles,
         batchId: dto.batchId,
         metadata: dto.campaign ? { campaign: dto.campaign } : {},
+        visibleUntil,
       });
 
       const savedNotification = await notification.save();
@@ -506,6 +540,7 @@ export class NotificationService implements OnModuleInit {
             const userIds = targetUsers.map((user) => user._id.toString());
             const roleBatchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             const sentAt = new Date();
+            const visibleUntil = this.getNotificationVisibleUntil();
 
             // إنشاء نسخة من الإشعار لكل مستخدم
             const userNotifications = targetUsers.map((user) => {
@@ -536,6 +571,7 @@ export class NotificationService implements OnModuleInit {
                 isSystemGenerated: savedNotification.isSystemGenerated,
                 createdBy: savedNotification.createdBy,
                 batchId: roleBatchId,
+                visibleUntil,
               };
             });
 
@@ -815,11 +851,10 @@ export class NotificationService implements OnModuleInit {
     // 1. موجهة للمستخدم مباشرة (recipientId) - هذه لها الأولوية
     // 2. أو موجهة للأدوار التي يمتلكها المستخدم (targetRoles) بدون recipientId محدد
     const userIdObj = new Types.ObjectId(userId);
-    const filter: Record<string, unknown> = {
+
+    const targetFilter = {
       $or: [
-        // إشعارات موجهة للمستخدم مباشرة (النسخ التي تم إنشاؤها)
         { recipientId: userIdObj },
-        // إشعارات موجهة للأدوار بدون recipientId محدد (للتوافق مع الإشعارات القديمة)
         {
           $and: [
             {
@@ -835,6 +870,10 @@ export class NotificationService implements OnModuleInit {
           ],
         },
       ],
+    };
+
+    const filter: Record<string, unknown> = {
+      $and: [targetFilter, this.buildUserVisibleNotificationFilter()],
     };
 
     const [notifications, total] = await Promise.all([
@@ -903,12 +942,19 @@ export class NotificationService implements OnModuleInit {
   async markAllAsRead(userId: string): Promise<number> {
     const result = await this.notificationModel.updateMany(
       {
-        recipientId: new Types.ObjectId(userId),
-        status: { $ne: NotificationStatus.READ },
+        $and: [
+          {
+            recipientId: new Types.ObjectId(userId),
+            status: { $ne: NotificationStatus.READ },
+          },
+          this.buildUserVisibleNotificationFilter(),
+        ],
       },
       {
-        status: NotificationStatus.READ,
-        readAt: new Date(),
+        $set: {
+          status: NotificationStatus.READ,
+          readAt: new Date(),
+        },
       },
     );
 
@@ -920,17 +966,16 @@ export class NotificationService implements OnModuleInit {
    */
   async getUnreadCount(userId: string): Promise<number> {
     const userIdObj = new Types.ObjectId(userId);
-    const count = await this.notificationModel.countDocuments({
-      recipientId: userIdObj,
-      status: { $ne: NotificationStatus.READ },
+
+    return this.notificationModel.countDocuments({
+      $and: [
+        {
+          recipientId: userIdObj,
+          status: { $ne: NotificationStatus.READ },
+        },
+        this.buildUserVisibleNotificationFilter(),
+      ],
     });
-
-    // Log للتحقق من الاستعلام
-    this.logger.debug(
-      `Unread count query: userId=${userId}, userIdObj=${userIdObj.toString()}, count=${count}`,
-    );
-
-    return count;
   }
 
   /**
@@ -969,7 +1014,7 @@ export class NotificationService implements OnModuleInit {
       hasPrevPage: boolean;
     };
   }> {
-    const {
+const {
       page = 1,
       limit = 20,
       recipientId,
@@ -980,8 +1025,9 @@ export class NotificationService implements OnModuleInit {
       search,
       startDate,
       endDate,
-      groupByBatch = true, // افتراضي: تجميع الحملات
+      groupByBatch = true,
       campaign,
+      visibilityStatus,
     } = query;
 
     const skip = (page - 1) * limit;
@@ -1031,6 +1077,13 @@ export class NotificationService implements OnModuleInit {
     // Campaign filter
     if (campaign) {
       filter['metadata.campaign'] = campaign;
+    }
+
+    // Visibility status filter (for admin dashboard)
+    if (visibilityStatus === 'active') {
+      filter.visibleUntil = { $gt: new Date() };
+    } else if (visibilityStatus === 'expired') {
+      filter.visibleUntil = { $lte: new Date() };
     }
 
     if (groupByBatch) {
@@ -1297,16 +1350,48 @@ export class NotificationService implements OnModuleInit {
 
   // ===== Cleanup Operations =====
 
+  async archiveExpiredUserVisibleNotifications(): Promise<number> {
+    const now = new Date();
+
+    const result = await this.notificationModel.updateMany(
+      {
+        visibleUntil: { $lte: now },
+        hiddenFromUserAt: { $exists: false },
+      },
+      {
+        $set: {
+          hiddenFromUserAt: now,
+        },
+      },
+    );
+
+    this.logger.log(`Archived ${result.modifiedCount} expired user-visible notifications`);
+    return result.modifiedCount;
+  }
+
   /**
    * حذف الإشعارات القديمة
    */
-  async deleteOldNotifications(olderThanDays: number = 30): Promise<number> {
+  async deleteOldNotifications(olderThanDays: number = 90): Promise<number> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
+    const now = new Date();
+
     const result = await this.notificationModel.deleteMany({
       createdAt: { $lt: cutoffDate },
-      status: NotificationStatus.READ,
+      $or: [
+        { scheduledFor: { $exists: false } },
+        { scheduledFor: null },
+        { scheduledFor: { $lt: now } },
+      ],
+      status: {
+        $nin: [
+          NotificationStatus.PENDING,
+          NotificationStatus.QUEUED,
+          NotificationStatus.SENDING,
+        ],
+      },
     });
 
     this.logger.log(`Deleted ${result.deletedCount} old notifications`);
@@ -2012,6 +2097,7 @@ export class NotificationService implements OnModuleInit {
 
       // إنشاء نسخة من الإشعار لكل مستخدم
       const sentAt = new Date();
+      const copyVisibleUntil = this.getNotificationVisibleUntil();
       const userNotifications = targetUsers.map((user) => {
         // التأكد من تحويل _id إلى string أولاً (لأن .lean() قد يعيد ObjectId)
         const userId = user._id instanceof Types.ObjectId ? user._id.toString() : String(user._id);
@@ -2038,6 +2124,7 @@ export class NotificationService implements OnModuleInit {
           sentAt,
           isSystemGenerated: notification.isSystemGenerated,
           createdBy: notification.createdBy,
+          visibleUntil: copyVisibleUntil,
         };
       });
 

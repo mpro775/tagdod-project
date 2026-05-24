@@ -49,7 +49,7 @@ import {
   Storage as StorageIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
+import { PageShell, PageHeader, usePageTitle, StatCard, PageSummaryGrid } from '@/shared/design-system';
 
 import { useExportedFiles } from '../hooks/useAnalytics';
 import { ExportFile, ExportFileStatus, ExportFormat } from '../types/exports';
@@ -155,20 +155,6 @@ export const ExportCenterPage = withAnalyticsErrorBoundary(function ExportCenter
       return date;
     }
   };
-
-  const StatCard = ({ icon, label, value, color }: any) => (
-    <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-      <Box sx={{ color: `${color}.main` }}>{icon}</Box>
-      <Box>
-        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          {value}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {label}
-        </Typography>
-      </Box>
-    </Paper>
-  );
 
   const renderMobileCards = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -383,40 +369,34 @@ export const ExportCenterPage = withAnalyticsErrorBoundary(function ExportCenter
       </Paper>
 
       {/* Stats */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 6, md: 3 }}>
+      <Box sx={{ mb: 3 }}>
+        <PageSummaryGrid columns={4}>
           <StatCard
-            icon={<TotalFilesIcon fontSize="large" />}
-            label={t('exportCenter.totalFiles', 'إجمالي الملفات')}
+            title={t('exportCenter.totalFiles', 'إجمالي الملفات')}
             value={stats.totalFiles}
-            color="primary"
+            icon={<TotalFilesIcon fontSize="small" />}
+            tone="primary"
           />
-        </Grid>
-        <Grid size={{ xs: 6, md: 3 }}>
           <StatCard
-            icon={<AvailableIcon fontSize="large" />}
-            label={t('exportCenter.availableFiles', 'الملفات المتاحة')}
+            title={t('exportCenter.availableFiles', 'الملفات المتاحة')}
             value={stats.availableFiles}
-            color="success"
+            icon={<AvailableIcon fontSize="small" />}
+            tone="success"
           />
-        </Grid>
-        <Grid size={{ xs: 6, md: 3 }}>
           <StatCard
-            icon={<FailedIcon fontSize="large" />}
-            label={t('exportCenter.failedFiles', 'عمليات فاشلة')}
+            title={t('exportCenter.failedFiles', 'عمليات فاشلة')}
             value={stats.failedFiles}
-            color="error"
+            icon={<FailedIcon fontSize="small" />}
+            tone="error"
           />
-        </Grid>
-        <Grid size={{ xs: 6, md: 3 }}>
           <StatCard
-            icon={<StorageIcon fontSize="large" />}
-            label={t('exportCenter.totalSize', 'الحجم الإجمالي')}
+            title={t('exportCenter.totalSize', 'الحجم الإجمالي')}
             value={formatFileSize(stats.totalSize)}
-            color="info"
+            icon={<StorageIcon fontSize="small" />}
+            tone="info"
           />
-        </Grid>
-      </Grid>
+        </PageSummaryGrid>
+      </Box>
 
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3 }}>

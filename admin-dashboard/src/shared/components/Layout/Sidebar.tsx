@@ -6,14 +6,15 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Divider,
   Box,
   Typography,
   Collapse,
   Badge,
+  Tooltip,
   alpha,
 } from '@mui/material';
 import logoImage from '../../../assets/images/logo.png';
+import iconImage from '../../../assets/images/icon.png';
 import {
   Dashboard,
   People,
@@ -83,8 +84,12 @@ interface MenuItem {
 
 interface SidebarProps {
   width: number;
+  expandedWidth: number;
+  collapsedWidth: number;
+  collapsed: boolean;
   open: boolean;
   onClose: () => void;
+  onExpandRequest?: () => void;
   variant: 'permanent' | 'temporary';
 }
 
@@ -185,15 +190,16 @@ const AR_NAV_LABELS: Record<string, string> = {
   'navigation.exportCenter': 'مركز التصدير',
 };
 
-const hideScrollbarSx = {
-  scrollbarWidth: 'none' as const,
-  msOverflowStyle: 'none' as const,
-  '&::-webkit-scrollbar': {
-    display: 'none',
-  },
-};
-
-export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  width,
+  expandedWidth,
+  collapsedWidth,
+  collapsed,
+  open,
+  onClose,
+  onExpandRequest,
+  variant,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
@@ -215,6 +221,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   const unreadSupportCount = unreadSupport?.unreadTicketsCount ?? 0;
   const { data: pendingOrders } = usePendingOrdersCount(60000);
   const pendingOrdersCount = pendingOrders?.pendingCount ?? 0;
+  const drawerWidth =
+    variant === 'permanent' ? (collapsed ? collapsedWidth : width) : expandedWidth;
 
   const menuItems: MenuItem[] = React.useMemo(
     () => [
@@ -811,23 +819,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     [t, i18n.language]
   );
 
-  // Add badges to menu items
   const menuItemsWithBadges = React.useMemo(() => {
     const addBadges = (items: MenuItem[]): MenuItem[] => {
       return items.map((item) => {
         const newItem = { ...item };
 
-        // Add badge to sales/orders menu
         if (item.id === 'sales' && pendingOrdersCount > 0) {
           newItem.badge = pendingOrdersCount;
         }
 
-        // Add badge to support menu
         if (item.id === 'support' && unreadSupportCount > 0) {
           newItem.badge = unreadSupportCount;
         }
 
-        // Recursively process children
         if (item.children) {
           newItem.children = addBadges(item.children);
         }
@@ -839,7 +843,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     return addBadges(menuItems);
   }, [menuItems, pendingOrdersCount, unreadSupportCount]);
 
-  // Build effective permissions so super_admin role can always see admin menus.
   const userPermissions = React.useMemo(() => {
     const normalized = Array.isArray(user?.permissions) ? [...user.permissions] : [];
     const roles = Array.isArray(user?.roles) ? user.roles : [];
@@ -862,7 +865,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     return filterMenuByPermissions(menuItemsWithBadges, userPermissions);
   }, [menuItemsWithBadges, userPermissions]);
 
-  // Find and expand parent items for the current path
   useEffect(() => {
     const findActiveParents = (items: MenuItem[], path: string): string[] => {
       const parents: string[] = [];
@@ -896,10 +898,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     }
   }, [location.pathname, filteredMenuItems]);
 
-  // Focus active item when sidebar opens
   useEffect(() => {
     if (open && activeItemRef.current) {
-      // Small delay to ensure the item is rendered
       setTimeout(() => {
         if (activeItemRef.current) {
           activeItemRef.current.focus();
@@ -909,12 +909,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     }
   }, [open, location.pathname]);
 
-  // Toggle expand
   const handleToggleExpand = (id: string) => {
     setExpandedItems((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
 
-  // Navigate
   const handleNavigate = (path: string) => {
     navigate(path);
     if (variant === 'temporary') {
@@ -922,85 +920,127 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     }
   };
 
-  // Render menu item
   const renderMenuItem = (item: MenuItem, depth = 0) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.id);
     const isActive = Boolean(item.path && location.pathname.startsWith(item.path));
 
+    const handleItemClick = () => {
+      if (collapsed && hasChildren) {
+        onExpandRequest?.();
+        setExpandedItems((prev) => (prev.includes(item.id) ? prev : [...prev, item.id]));
+        return;
+      }
+
+      if (hasChildren) {
+        handleToggleExpand(item.id);
+      } else if (item.path) {
+        handleNavigate(item.path);
+      }
+    };
+
+    const itemButton = (
+      <ListItemButton
+        ref={isActive ? activeItemRef : null}
+        selected={isActive}
+        onClick={handleItemClick}
+        sx={{
+          minHeight: 44,
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          px: collapsed ? 1.25 : 1.5,
+          py: 1,
+          paddingInlineStart: collapsed ? 1.25 : 2 + depth * 1.75,
+          borderRadius: 3,
+          mx: 1,
+          my: 0.35,
+          color: 'text.secondary',
+          overflow: 'hidden',
+          transition: (theme) =>
+            theme.transitions.create(['background-color', 'color', 'padding', 'transform'], {
+              duration: theme.transitions.duration.shorter,
+            }),
+          '& .MuiListItemIcon-root': {
+            minWidth: collapsed ? 0 : 38,
+            justifyContent: 'center',
+            color: 'inherit',
+            transition: (theme) =>
+              theme.transitions.create(['min-width', 'color'], {
+                duration: theme.transitions.duration.shorter,
+              }),
+          },
+          '&.Mui-selected': {
+            bgcolor: (theme) => alpha(theme.palette.primary.main, collapsed ? 0.18 : 0.13),
+            color: 'primary.main',
+            fontWeight: 800,
+            boxShadow: (theme) => `inset 0 0 0 1px ${alpha(theme.palette.primary.main, 0.18)}`,
+            '&:hover': {
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+            },
+            '& .MuiListItemIcon-root': {
+              color: 'primary.main',
+            },
+          },
+          '&:hover': {
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+            color: 'text.primary',
+            transform: 'translateX(-1px)',
+          },
+          '&:focus-visible': {
+            outline: '2px solid',
+            outlineColor: 'primary.main',
+            outlineOffset: 2,
+          },
+        }}
+      >
+        {item.icon && (
+          <ListItemIcon>
+            {item.badge && item.badge > 0 ? (
+              <Badge badgeContent={item.badge} color="error" max={99}>
+                {item.icon}
+              </Badge>
+            ) : (
+              item.icon
+            )}
+          </ListItemIcon>
+        )}
+
+        {!collapsed && (
+          <ListItemText
+            primary={
+              item.id === 'support' && unreadSupportCount > 0 ? (
+                <Badge badgeContent={unreadSupportCount} color="error" max={99}>
+                  <span>{item.label}</span>
+                </Badge>
+              ) : (
+                item.label
+              )
+            }
+            primaryTypographyProps={{
+              fontSize: depth > 0 ? '0.84rem' : '0.9rem',
+              fontWeight: isActive ? 800 : 650,
+              noWrap: true,
+            }}
+            sx={{ minWidth: 0, my: 0 }}
+          />
+        )}
+
+        {!collapsed && hasChildren && (isExpanded ? <ExpandLess /> : <ExpandMore />)}
+      </ListItemButton>
+    );
+
     return (
       <React.Fragment key={item.id}>
         <ListItem disablePadding>
-          <ListItemButton
-            ref={isActive ? activeItemRef : null}
-            selected={isActive}
-            onClick={() => {
-              if (hasChildren) {
-                handleToggleExpand(item.id);
-              } else if (item.path) {
-                handleNavigate(item.path);
-              }
-            }}
-            sx={{
-              minHeight: 42,
-              pl: 2 + depth * 1.75,
-              borderRadius: 2,
-              mx: 1,
-              my: 0.35,
-              color: 'text.secondary',
-              '& .MuiListItemIcon-root': {
-                minWidth: 38,
-                color: 'inherit',
-              },
-              '&.Mui-selected': {
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
-                color: 'primary.main',
-                fontWeight: 800,
-                '&:hover': {
-                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.18),
-                },
-                '& .MuiListItemIcon-root': {
-                  color: 'primary.main',
-                },
-              },
-              '&:hover': {
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                color: 'text.primary',
-              },
-              '&:focus': {
-                outline: '2px solid',
-                outlineColor: 'primary.main',
-                outlineOffset: 2,
-              },
-            }}
-          >
-            {item.icon && (
-              <ListItemIcon>
-                {item.badge && item.badge > 0 ? (
-                  <Badge badgeContent={item.badge} color="error" max={99}>
-                    {item.icon}
-                  </Badge>
-                ) : (
-                  item.icon
-                )}
-              </ListItemIcon>
-            )}
-            <ListItemText
-              primary={
-                item.id === 'support' && unreadSupportCount > 0 ? (
-                  <Badge badgeContent={unreadSupportCount} color="error" max={99}>
-                    <span>{item.label}</span>
-                  </Badge>
-                ) : (
-                  item.label
-                )
-              }
-            />
-            {hasChildren && (isExpanded ? <ExpandLess /> : <ExpandMore />)}
-          </ListItemButton>
+          {collapsed ? (
+            <Tooltip title={item.label} placement="left" arrow>
+              {itemButton}
+            </Tooltip>
+          ) : (
+            itemButton
+          )}
         </ListItem>
 
-        {hasChildren && (
+        {hasChildren && !collapsed && (
           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
             <List component="div" disablePadding>
               {item.children!.map((child) => renderMenuItem(child, depth + 1))}
@@ -1012,41 +1052,99 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
   };
 
   const drawerContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-      {/* Logo/Title */}
-      <Box sx={{ p: 2.25, textAlign: 'center' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
+      <Box
+        sx={{
+          height: { xs: 64, md: 72 },
+          px: collapsed ? 1.25 : 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 1.25,
+          textAlign: 'center',
+          borderBottom: '1px solid',
+          borderColor: (theme) => alpha(theme.palette.divider, 0.75),
+          transition: (theme) =>
+            theme.transitions.create(['padding', 'height'], {
+              duration: theme.transitions.duration.shorter,
+            }),
+        }}
+      >
         <Box
           component="img"
-          src={logoImage}
-          alt="Tagadodo Logo"
+          src={collapsed ? iconImage : logoImage}
+          alt="Tagadod Logo"
           sx={{
-            height: 54,
-            width: 'auto',
-            maxWidth: '100%',
+            height: collapsed ? 38 : 54,
+            width: collapsed ? 38 : 'auto',
+            maxWidth: collapsed ? 38 : '100%',
             objectFit: 'contain',
-            mb: 1,
-            filter: 'drop-shadow(0 8px 16px rgba(15, 23, 42, 0.10))',
+            flexShrink: 0,
+            filter: 'drop-shadow(0 8px 16px rgba(15, 23, 42, 0.16))',
+            transition: (theme) =>
+              theme.transitions.create(['height', 'width', 'max-width'], {
+                duration: theme.transitions.duration.shorter,
+              }),
           }}
         />
-        <Typography variant="h6" fontWeight="bold">
-          {appName}
-        </Typography>
+
+        {!collapsed && (
+          <Typography variant="h6" fontWeight="bold" noWrap sx={{ lineHeight: 1.2 }}>
+            {appName}
+          </Typography>
+        )}
       </Box>
 
-      <Divider />
-
-      {/* Menu Items */}
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 1, ...hideScrollbarSx }}>
-        <List>{filteredMenuItems.map((item) => renderMenuItem(item))}</List>
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          py: 1.25,
+          '&::-webkit-scrollbar': {
+            width: 6,
+          },
+          '&::-webkit-scrollbar-track': {
+            bgcolor: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.28),
+            borderRadius: 999,
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.42),
+          },
+        }}
+      >
+        <List disablePadding>{filteredMenuItems.map((item) => renderMenuItem(item))}</List>
       </Box>
 
-      <Divider />
-
-      {/* Footer */}
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="caption" color="text.secondary">
-          © 2025 Tagadod
-        </Typography>
+      <Box
+        sx={{
+          minHeight: collapsed ? 52 : 64,
+          p: collapsed ? 1 : 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderTop: '1px solid',
+          borderColor: (theme) => alpha(theme.palette.divider, 0.65),
+        }}
+      >
+        {collapsed ? (
+          <Box
+            sx={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              bgcolor: 'primary.main',
+              boxShadow: (theme) => `0 0 0 6px ${alpha(theme.palette.primary.main, 0.1)}`,
+            }}
+          />
+        ) : (
+          <Typography variant="caption" color="text.secondary">
+            © 2025 Tagadod
+          </Typography>
+        )}
       </Box>
     </Box>
   );
@@ -1058,18 +1156,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       onClose={onClose}
       ModalProps={{ keepMounted: false }}
       sx={{
-        width: width,
+        width: drawerWidth,
         flexShrink: 0,
+        transition: (theme) =>
+          theme.transitions.create('width', {
+            easing: theme.transitions.easing.easeInOut,
+            duration: theme.transitions.duration.standard,
+          }),
         '& .MuiDrawer-paper': {
-          width: width,
+          width: drawerWidth,
           maxWidth: '100vw',
           boxSizing: 'border-box',
+          overflowX: 'hidden',
           borderInlineEnd: variant === 'permanent' ? '1px solid' : 'none',
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-          backgroundImage: 'none',
-          height: '100vh',
-          overflow: 'hidden',
+          borderColor: (theme) => alpha(theme.palette.divider, 0.75),
+          bgcolor: (theme) =>
+            theme.palette.mode === 'dark'
+              ? alpha(theme.palette.background.paper, 0.96)
+              : alpha(theme.palette.background.paper, 0.98),
+          backgroundImage: (theme) =>
+            theme.palette.mode === 'dark'
+              ? `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.1)}, transparent 34%)`
+              : `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.045)}, transparent 36%)`,
+          backdropFilter: 'blur(16px)',
+          boxShadow: variant === 'temporary' ? 24 : 'none',
+          transition: (theme) =>
+            theme.transitions.create('width', {
+              easing: theme.transitions.easing.easeInOut,
+              duration: theme.transitions.duration.standard,
+            }),
         },
       }}
     >
@@ -1077,4 +1192,3 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
     </Drawer>
   );
 };
-

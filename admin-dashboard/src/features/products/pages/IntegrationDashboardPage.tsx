@@ -10,10 +10,6 @@ import {
     Box,
     Typography,
     Paper,
-    Grid,
-    Card,
-    CardContent,
-    Skeleton,
     Button,
     Alert,
     Chip,
@@ -24,79 +20,12 @@ import {
     AddCircleOutline,
     Schedule,
     Sync,
-    ArrowForward,
     Home,
     ChevronRight,
 } from '@mui/icons-material';
 import { Breadcrumbs, Link } from '@mui/material';
 import { useIntegrationStats } from '../hooks/useInventoryIntegration';
-
-// Stat Card Component
-interface StatCardProps {
-    title: string;
-    value: number | string;
-    icon: React.ReactNode;
-    color: string;
-    subtitle?: string;
-    action?: React.ReactNode;
-    loading?: boolean;
-}
-
-const StatCard: React.FC<StatCardProps> = ({
-    title,
-    value,
-    icon,
-    color,
-    subtitle,
-    action,
-    loading,
-}) => (
-    <Card
-        sx={{
-            height: '100%',
-            background: `linear-gradient(135deg, ${color}15 0%, ${color}05 100%)`,
-            border: `1px solid ${color}30`,
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: `0 8px 24px ${color}20`,
-            },
-        }}
-    >
-        <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {title}
-                    </Typography>
-                    {loading ? (
-                        <Skeleton variant="text" width={80} height={48} />
-                    ) : (
-                        <Typography variant="h3" fontWeight="bold" color={color}>
-                            {typeof value === 'number' ? value.toLocaleString('en-US') : value}
-                        </Typography>
-                    )}
-                    {subtitle && (
-                        <Typography variant="caption" color="text.secondary">
-                            {subtitle}
-                        </Typography>
-                    )}
-                </Box>
-                <Box
-                    sx={{
-                        p: 1.5,
-                        borderRadius: 2,
-                        backgroundColor: `${color}20`,
-                        color: color,
-                    }}
-                >
-                    {icon}
-                </Box>
-            </Box>
-            {action && <Box sx={{ mt: 2 }}>{action}</Box>}
-        </CardContent>
-    </Card>
-);
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
 
 export const IntegrationDashboardPage: React.FC = () => {
     const { t } = useTranslation(['products', 'common']);
@@ -181,76 +110,57 @@ export const IntegrationDashboardPage: React.FC = () => {
             )}
 
             {/* Stats Cards */}
-            <Grid container spacing={3}>
+            <PageSummaryGrid columns={4}>
                 {/* Total Onyx Items */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <StatCard
-                        title={t('products:integration.cards.totalOnyx', 'إجمالي أصناف أونكس')}
-                        value={stats?.onyxTotalItems ?? 0}
-                        icon={<Inventory sx={{ fontSize: 32 }} />}
-                        color="#2196f3"
-                        loading={isLoading}
-                    />
-                </Grid>
+                <StatCard
+                    title={t('products:integration.cards.totalOnyx', 'إجمالي أصناف أونكس')}
+                    value={isLoading ? '-' : (stats?.onyxTotalItems ?? 0).toLocaleString('en-US')}
+                    icon={<Inventory fontSize="small" />}
+                    tone="primary"
+                    loading={isLoading}
+                />
 
                 {/* Synced Items */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <StatCard
-                        title={t('products:integration.cards.synced', 'المربوطة بنجاح')}
-                        value={stats?.fullySynced ?? 0}
-                        icon={<CheckCircle sx={{ fontSize: 32 }} />}
-                        color="#4caf50"
-                        loading={isLoading}
-                        subtitle={
-                            stats?.onyxTotalItems
-                                ? `${Math.round(((stats?.fullySynced ?? 0) / stats.onyxTotalItems) * 100)}%`
-                                : undefined
-                        }
-                    />
-                </Grid>
+                <StatCard
+                    title={t('products:integration.cards.synced', 'المربوطة بنجاح')}
+                    value={isLoading ? '-' : (stats?.fullySynced ?? 0).toLocaleString('en-US')}
+                    icon={<CheckCircle fontSize="small" />}
+                    tone="success"
+                    loading={isLoading}
+                    description={
+                        stats?.onyxTotalItems
+                            ? `${Math.round(((stats?.fullySynced ?? 0) / stats.onyxTotalItems) * 100)}%`
+                            : undefined
+                    }
+                />
 
                 {/* Unlinked Opportunities */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <StatCard
-                        title={t('products:integration.cards.opportunities', 'فرص الإضافة')}
-                        value={stats?.notLinkedOpportunities ?? 0}
-                        icon={<AddCircleOutline sx={{ fontSize: 32 }} />}
-                        color="#ff9800"
-                        loading={isLoading}
-                        action={
-                            (stats?.notLinkedOpportunities ?? 0) > 0 && (
-                                <Button
-                                    size="small"
-                                    endIcon={<ArrowForward />}
-                                    onClick={() => navigate('/products/unlinked')}
-                                    sx={{ color: '#ff9800' }}
-                                >
-                                    {t('products:integration.viewOpportunities', 'عرض التفاصيل')}
-                                </Button>
-                            )
-                        }
-                    />
-                </Grid>
+                <StatCard
+                    title={t('products:integration.cards.opportunities', 'فرص الإضافة')}
+                    value={isLoading ? '-' : (stats?.notLinkedOpportunities ?? 0).toLocaleString('en-US')}
+                    icon={<AddCircleOutline fontSize="small" />}
+                    tone="warning"
+                    loading={isLoading}
+                    linkTo={(stats?.notLinkedOpportunities ?? 0) > 0 ? '/products/unlinked' : undefined}
+                />
 
                 {/* Last Sync */}
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <StatCard
-                        title={t('products:integration.cards.lastSync', 'آخر تحديث')}
-                        value={formatLastSync(lastSyncTime)}
-                        icon={<Schedule sx={{ fontSize: 32 }} />}
-                        color="#9c27b0"
-                        loading={isLoading}
-                        subtitle={
-                            lastSyncTime
-                                ? new Date(lastSyncTime).toLocaleString('ar-SA', {
-                                    dateStyle: 'short',
-                                    timeStyle: 'short',
-                                })
-                                : undefined
-                        }
-                    />
-                </Grid>
-            </Grid>
+                <StatCard
+                    title={t('products:integration.cards.lastSync', 'آخر تحديث')}
+                    value={isLoading ? '-' : formatLastSync(lastSyncTime)}
+                    icon={<Schedule fontSize="small" />}
+                    tone="secondary"
+                    loading={isLoading}
+                    description={
+                        lastSyncTime
+                            ? new Date(lastSyncTime).toLocaleString('ar-SA', {
+                                dateStyle: 'short',
+                                timeStyle: 'short',
+                            })
+                            : undefined
+                    }
+                />
+            </PageSummaryGrid>
 
             {/* Info Section */}
             <Paper sx={{ mt: 4, p: 3 }}>

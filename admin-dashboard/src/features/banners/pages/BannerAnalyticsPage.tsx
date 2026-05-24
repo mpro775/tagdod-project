@@ -15,13 +15,11 @@ import {
   Avatar,
   Skeleton,
   Alert,
-  useTheme,
 } from '@mui/material';
 import {
   ArrowBack,
   Analytics,
   TrendingUp,
-  TrendingDown,
   Visibility,
   AdsClick,
   Campaign,
@@ -32,6 +30,7 @@ import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useBannersAnalytics } from '../hooks/useBanners';
 import { BannerLocation } from '../types/banner.types';
 import type { Banner } from '../types/banner.types';
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
 
 const formatNumber = (num: number) => {
   return new Intl.NumberFormat('en-US').format(num);
@@ -39,117 +38,6 @@ const formatNumber = (num: number) => {
 
 const formatPercentage = (num: number) => {
   return `${num.toFixed(1)}%`;
-};
-
-const getTrendIcon = (trend: 'up' | 'down' | 'neutral') => {
-  switch (trend) {
-    case 'up':
-      return <TrendingUp color="success" />;
-    case 'down':
-      return <TrendingDown color="error" />;
-    default:
-      return <TrendingUp color="action" />;
-  }
-};
-
-const getTrendColor = (trend: 'up' | 'down' | 'neutral') => {
-  switch (trend) {
-    case 'up':
-      return 'success';
-    case 'down':
-      return 'error';
-    default:
-      return 'default';
-  }
-};
-
-const StatCard: React.FC<{
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  trend?: {
-    value: number;
-    direction: 'up' | 'down' | 'neutral';
-  };
-  icon: React.ReactNode;
-  color: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
-}> = ({ title, value, subtitle, trend, icon, color }) => {
-  const theme = useTheme();
-  
-  return (
-    <Card sx={{ height: '100%', bgcolor: 'background.paper' }}>
-      <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Box flex={1}>
-            <Typography 
-              variant="h4" 
-              component="div" 
-              color={`${color}.main`} 
-              fontWeight="bold"
-              sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' } }}
-            >
-              {value}
-            </Typography>
-            <Typography 
-              variant="body2" 
-              color="text.secondary" 
-              gutterBottom
-              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-            >
-              {title}
-            </Typography>
-            {subtitle && (
-              <Typography 
-                variant="caption" 
-                color="text.secondary"
-                sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-              >
-                {subtitle}
-              </Typography>
-            )}
-          </Box>
-          <Box
-            sx={{
-              p: { xs: 0.75, sm: 1 },
-              borderRadius: 2,
-              bgcolor: theme.palette.mode === 'dark' 
-                ? `${color}.dark` 
-                : `${color}.light`,
-              color: `${color}.main`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              '& svg': {
-                fontSize: { xs: '1.5rem', sm: '2rem' },
-              },
-            }}
-          >
-            {icon}
-          </Box>
-        </Box>
-
-        {trend && (
-          <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-            {getTrendIcon(trend.direction)}
-            <Chip
-              label={`${trend.direction === 'up' ? '+' : ''}${trend.value}%`}
-              size="small"
-              color={getTrendColor(trend.direction) as any}
-              variant="outlined"
-              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-            />
-            <Typography 
-              variant="caption" 
-              color="text.secondary"
-              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-            >
-              من الشهر الماضي
-            </Typography>
-          </Box>
-        )}
-      </CardContent>
-    </Card>
-  );
 };
 
 const LoadingSkeleton: React.FC = () => (
@@ -510,47 +398,38 @@ export const BannerAnalyticsPage: React.FC = () => {
       </Box>
 
       {/* Key Metrics */}
-      <Grid container spacing={{ xs: 2, sm: 3 }} mb={4}>
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+      <Box mb={4}>
+        <PageSummaryGrid columns={4}>
           <StatCard
             title={t('stats.totalBanners')}
             value={formatNumber(totalBanners)}
-            subtitle={t('stats.activeInactive', { active: activeBanners, inactive: inactiveBanners })}
-            icon={<Campaign />}
-            color="primary"
+            icon={<Campaign fontSize="small" />}
+            tone="primary"
+            description={t('stats.activeInactive', { active: activeBanners, inactive: inactiveBanners })}
           />
-        </Grid>
-
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <StatCard
             title={t('stats.totalViews')}
             value={formatNumber(totalViews)}
-            subtitle={t('stats.allBanners')}
-            icon={<Visibility />}
-            color="info"
+            icon={<Visibility fontSize="small" />}
+            tone="info"
+            description={t('stats.allBanners')}
           />
-        </Grid>
-
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <StatCard
             title={t('stats.totalClicks')}
             value={formatNumber(totalClicks)}
-            subtitle={`CTR: ${ctrPercentage.toFixed(1)}%`}
-            icon={<AdsClick />}
-            color="success"
+            icon={<AdsClick fontSize="small" />}
+            tone="success"
+            description={`CTR: ${ctrPercentage.toFixed(1)}%`}
           />
-        </Grid>
-
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <StatCard
             title={t('stats.totalConversions')}
             value={formatNumber(totalConversions)}
-            subtitle={`تحويل: ${conversionPercentage.toFixed(1)}%`}
-            icon={<TrendingUp />}
-            color="warning"
+            icon={<TrendingUp fontSize="small" />}
+            tone="warning"
+            description={`${t('stats.conversionRateLabel', 'تحويل')}: ${conversionPercentage.toFixed(1)}%`}
           />
-        </Grid>
-      </Grid>
+        </PageSummaryGrid>
+      </Box>
 
       {/* Performance Indicators */}
       <Grid container spacing={{ xs: 2, sm: 3 }} mb={4}>

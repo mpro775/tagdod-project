@@ -1002,6 +1002,7 @@ export class ServicesService {
         city: string | null;
       } | null;
       offers: OfferListItem[];
+      latestOfferAt: Date;
     }>
   > {
     const userObjectId = new Types.ObjectId(userId);
@@ -1021,7 +1022,7 @@ export class ServicesService {
     const offers = (await this.offers
       .find({ requestId: { $in: requestIds }, status: 'OFFERED' })
       .populate('engineerId', 'firstName lastName phone')
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1, _id: -1 })
       .lean()) as EngineerOfferPopulated[];
 
     // جلب jobTitle من EngineerProfile لجميع المهندسين
@@ -1080,6 +1081,15 @@ export class ServicesService {
       offersByRequest.get(key)!.push(formattedOffer);
     }
 
+    const latestOfferAtByRequest = new Map<string, Date>();
+    for (const offer of offers) {
+      const key = String(offer.requestId);
+      const current = latestOfferAtByRequest.get(key);
+      if (!current || offer.createdAt > current) {
+        latestOfferAtByRequest.set(key, offer.createdAt);
+      }
+    }
+
     return requests
       .map((req) => {
         const addressData = this.extractAddress(req.addressId);
@@ -1105,9 +1115,11 @@ export class ServicesService {
               }
             : null,
           offers: offersByRequest.get(String(req._id)) ?? [],
+          latestOfferAt: latestOfferAtByRequest.get(String(req._id)) ?? req.createdAt,
         };
       })
-      .filter((item) => item.offers.length > 0);
+      .filter((item) => item.offers.length > 0)
+      .sort((a, b) => b.latestOfferAt.getTime() - a.latestOfferAt.getTime());
   }
 
   async myRequestsWithAcceptedOffers(
@@ -1603,7 +1615,7 @@ export class ServicesService {
     const offers = (await this.offers
       .find(query)
       .populate('engineerId', 'firstName lastName phone')
-      .sort({ distanceKm: 1, amount: 1 }) // أقرب ثم أرخص
+      .sort({ createdAt: -1, _id: -1 }) // الأحدث أولاً
       .lean()) as EngineerOfferPopulated[];
 
     // جلب jobTitle من EngineerProfile

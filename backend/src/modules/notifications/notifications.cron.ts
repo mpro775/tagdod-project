@@ -66,6 +66,24 @@ export class NotificationsCronService {
     }
   }
 
+  @Cron('30 4 * * *')
+  async archiveExpiredUserNotifications() {
+    this.logger.log('[Cron] Archiving expired user-visible notifications...');
+
+    try {
+      const archivedCount =
+        await this.notificationService.archiveExpiredUserVisibleNotifications();
+      this.logger.log(
+        `[Cron] Archived ${archivedCount} expired user-visible notifications`,
+      );
+    } catch (error) {
+      this.logger.error(
+        '[Cron] Error archiving expired user-visible notifications:',
+        error,
+      );
+    }
+  }
+
   // ===== Queue Management Cron Jobs =====
 
   /**

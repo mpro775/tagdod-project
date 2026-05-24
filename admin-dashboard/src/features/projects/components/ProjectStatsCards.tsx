@@ -1,32 +1,33 @@
 import React from 'react';
-import { Box, Paper, Typography, Grid, useTheme } from '@mui/material';
 import { Assignment, CheckCircle, HourglassEmpty, Star, Web, Timeline } from '@mui/icons-material';
 import { useProjectStats } from '../hooks/useProjects';
+import { useTranslation } from 'react-i18next';
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
 
 export const ProjectStatsCards: React.FC = () => {
-  const theme = useTheme();
+  const { t } = useTranslation('projects');
   const { data: stats } = useProjectStats();
 
   const cards = [
-    { label: 'إجمالي المشاريع', value: stats?.total ?? 0, icon: <Assignment />, color: theme.palette.primary.main },
-    { label: 'منشور', value: stats?.published ?? 0, icon: <CheckCircle />, color: theme.palette.success.main },
-    { label: 'قيد التنفيذ', value: stats?.inProgress ?? 0, icon: <HourglassEmpty />, color: theme.palette.warning.main },
-    { label: 'مكتمل', value: stats?.completed ?? 0, icon: <Timeline />, color: theme.palette.info.main },
-    { label: 'مميز', value: stats?.featured ?? 0, icon: <Star />, color: theme.palette.secondary.main },
-    { label: 'معروض في الصفحة', value: stats?.onLanding ?? 0, icon: <Web />, color: theme.palette.error.main },
+    { title: t('stats.total', 'إجمالي المشاريع'), value: stats?.total ?? 0, icon: <Assignment fontSize="small" />, tone: 'primary' as const },
+    { title: t('stats.published', 'منشور'), value: stats?.published ?? 0, icon: <CheckCircle fontSize="small" />, tone: 'success' as const },
+    { title: t('stats.inProgress', 'قيد التنفيذ'), value: stats?.inProgress ?? 0, icon: <HourglassEmpty fontSize="small" />, tone: 'warning' as const },
+    { title: t('stats.completed', 'مكتمل'), value: stats?.completed ?? 0, icon: <Timeline fontSize="small" />, tone: 'info' as const },
+    { title: t('stats.featured', 'مميز'), value: stats?.featured ?? 0, icon: <Star fontSize="small" />, tone: 'secondary' as const },
+    { title: t('stats.onLanding', 'معروض في الصفحة'), value: stats?.onLanding ?? 0, icon: <Web fontSize="small" />, tone: 'error' as const },
   ];
 
   return (
-    <Grid container spacing={2} sx={{ mb: 3 }}>
-      {cards.map((card, i) => (
-        <Grid size={{ xs: 6, sm: 4, md: 2 }} key={i}>
-          <Paper sx={{ p: 2, textAlign: 'center', border: `1px solid ${theme.palette.divider}`, height: '100%' }}>
-            <Box sx={{ color: card.color, mb: 1 }}>{card.icon}</Box>
-            <Typography variant="h5" fontWeight="bold">{card.value}</Typography>
-            <Typography variant="caption" color="text.secondary">{card.label}</Typography>
-          </Paper>
-        </Grid>
+    <PageSummaryGrid columns={4}>
+      {cards.map((card) => (
+        <StatCard
+          key={card.title}
+          title={card.title}
+          value={card.value.toLocaleString('en-US')}
+          icon={card.icon}
+          tone={card.tone}
+        />
       ))}
-    </Grid>
+    </PageSummaryGrid>
   );
 };

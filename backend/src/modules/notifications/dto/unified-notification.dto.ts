@@ -244,6 +244,10 @@ export class ListNotificationsDto {
   @IsString()
   @MaxLength(100)
   campaign?: string;
+
+  @IsOptional()
+  @IsString()
+  visibilityStatus?: 'active' | 'expired' | 'all';
 }
 
 // ===== Mark as Read DTO =====

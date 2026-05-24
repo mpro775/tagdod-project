@@ -692,7 +692,7 @@ export const ProductsListPage: React.FC = () => {
 
 {/* Product Overview Stats */}
 {!statsLoading && productStats ? (
-  <PageSummaryGrid columns={3}>
+  <PageSummaryGrid columns={4}>
     <StatCard
       title={t('stats.total', 'إجمالي المنتجات')}
       value={productStats.total || 0}
@@ -737,7 +737,7 @@ export const ProductsListPage: React.FC = () => {
     />
   </PageSummaryGrid>
 ) : statsLoading ? (
-  <PageSummaryGrid columns={3}>
+  <PageSummaryGrid columns={4}>
     {[1,2,3,4,5,6].map((i) => (
       <StatCard key={i} title="..." value="-" tone="neutral" loading />
     ))}

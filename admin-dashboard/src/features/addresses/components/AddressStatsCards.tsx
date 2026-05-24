@@ -1,5 +1,3 @@
-import { Card, CardContent, Typography, Box, Skeleton } from '@mui/material';
-import { Grid } from '@mui/material';
 import {
   LocationOn as LocationIcon,
   People as PeopleIcon,
@@ -9,6 +7,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAddressStats } from '../hooks/useAddresses';
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
 
 export function AddressStatsCards() {
   const { t } = useTranslation('addresses');
@@ -18,119 +17,47 @@ export function AddressStatsCards() {
     {
       title: t('stats.totalAddresses', { defaultValue: 'عدد العناوين الكلي' }),
       value: stats?.totalAddresses || 0,
-      icon: <LocationIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
-      color: '#3f51b5',
+      icon: <LocationIcon fontSize="small" />,
+      tone: 'primary' as const,
     },
     {
       title: t('stats.activeAddresses', { defaultValue: 'عدد العناوين النشطة' }),
       value: stats?.totalActiveAddresses || 0,
-      icon: <ActiveIcon sx={{ fontSize: 40, color: 'success.main' }} />,
-      color: '#4caf50',
+      icon: <ActiveIcon fontSize="small" />,
+      tone: 'success' as const,
     },
     {
       title: t('stats.totalUsers', { defaultValue: 'عدد المستخدمين الكلي' }),
       value: stats?.totalUsers || 0,
-      icon: <PeopleIcon sx={{ fontSize: 40, color: 'info.main' }} />,
-      color: '#2196f3',
+      icon: <PeopleIcon fontSize="small" />,
+      tone: 'info' as const,
     },
     {
       title: t('stats.averagePerUser', { defaultValue: 'متوسط العناوين لكل مستخدم' }),
       value: stats?.averagePerUser?.toFixed(1) || '0.0',
-      icon: <TrendingIcon sx={{ fontSize: 40, color: 'warning.main' }} />,
-      color: '#ff9800',
+      icon: <TrendingIcon fontSize="small" />,
+      tone: 'warning' as const,
     },
     {
       title: t('stats.deletedAddresses', { defaultValue: 'عدد العناوين المحذوفة' }),
       value: stats?.totalDeletedAddresses || 0,
-      icon: <DeleteIcon sx={{ fontSize: 40, color: 'error.main' }} />,
-      color: '#f44336',
+      icon: <DeleteIcon fontSize="small" />,
+      tone: 'error' as const,
     },
   ];
 
-  if (isLoading) {
-    return (
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
-        {[1, 2, 3, 4, 5].map((i: number) => (
-          <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2.4 }} key={i}>
-            <Card>
-              <CardContent>
-                <Skeleton variant="rectangular" height={100} />
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-    );
-  }
-
   return (
-    <Grid container spacing={{ xs: 2, sm: 3 }}>
-      {cards.map((card, index) => (
-        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2.4 }} key={index}>
-          <Card
-            sx={{
-              height: '100%',
-              position: 'relative',
-              overflow: 'hidden',
-              '&:hover': {
-                boxShadow: 6,
-                transform: 'translateY(-4px)',
-                transition: 'all 0.3s ease',
-              },
-            }}
-          >
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                width: '100%',
-                height: '4px',
-                bgcolor: card.color,
-              }}
-            />
-            <CardContent
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
-                p: { xs: 2, sm: 3 },
-                height: '100%',
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 2,
-                }}
-              >
-                {card.icon}
-              </Box>
-              <Typography 
-                variant="h4" 
-                component="div" 
-                fontWeight="bold" 
-                gutterBottom
-                sx={{ textAlign: 'center', width: '100%' }}
-              >
-                {card.value.toLocaleString('ar')}
-              </Typography>
-              <Typography 
-                variant="body2" 
-                color="text.secondary"
-                sx={{ textAlign: 'center', width: '100%' }}
-              >
-                {card.title}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+    <PageSummaryGrid columns={4}>
+      {cards.map((card) => (
+        <StatCard
+          key={card.title}
+          title={card.title}
+          value={typeof card.value === 'number' ? card.value.toLocaleString('en-US') : card.value}
+          icon={card.icon}
+          tone={card.tone}
+          loading={isLoading}
+        />
       ))}
-    </Grid>
+    </PageSummaryGrid>
   );
 }
-

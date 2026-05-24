@@ -40,3 +40,5 @@ export class EngineerOffer {
 }
 export const EngineerOfferSchema = SchemaFactory.createForClass(EngineerOffer);
 EngineerOfferSchema.index({ requestId: 1, engineerId: 1 }, { unique: true });
+EngineerOfferSchema.index({ requestId: 1, status: 1, createdAt: -1 });
+EngineerOfferSchema.index({ engineerId: 1, status: 1, createdAt: -1 });
