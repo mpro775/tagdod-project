@@ -256,6 +256,9 @@ export class NotificationProcessor {
           type: data.type,
           priority: data.priority,
           data: data.data,
+          actionUrl: data.actionUrl,
+          navigationType: data.navigationType,
+          navigationTarget: data.navigationTarget,
           createdAt: new Date(),
           isRead: false,
         },
@@ -376,6 +379,12 @@ export class NotificationProcessor {
           recipientId: data.recipientId,
           deviceToken: deviceToken.token,
           actionUrl: data.actionUrl,
+          data: {
+            ...(data.data || {}),
+            actionUrl: data.actionUrl,
+            navigationType: data.navigationType,
+            navigationTarget: data.navigationTarget,
+          },
         });
 
         if (result.success) {
