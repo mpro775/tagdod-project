@@ -29,6 +29,8 @@ export interface NotificationJobData {
   recipientEmail?: string;
   recipientPhone?: string;
   actionUrl?: string;
+  navigationType?: string;
+  navigationTarget?: string;
   attempt?: number;
   scheduledFor?: Date;
 }

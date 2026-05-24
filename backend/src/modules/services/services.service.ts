@@ -131,6 +131,7 @@ export class ServicesService {
   private readonly enableSMSToEngineers: boolean;
   private readonly engineerNotificationRoute = '/customers-orders';
   private readonly engineerRecipientContext = 'engineer';
+  private readonly customerRecipientContext = 'customer';
 
   constructor(
     @InjectModel(ServiceRequest.name) private requests: Model<ServiceRequest>,
@@ -234,6 +235,29 @@ export class ServicesService {
     );
   }
 
+  private async safeNotifyCustomer(
+    customerUserId: string,
+    type: NotificationType,
+    title: string,
+    message: string,
+    data?: Record<string, unknown>,
+    navigationType?: NotificationNavigationType,
+    navigationTarget?: string,
+  ) {
+    return this.safeNotify(
+      customerUserId,
+      type,
+      title,
+      message,
+      {
+        ...(data || {}),
+        recipientContext: this.customerRecipientContext,
+      },
+      navigationType,
+      navigationTarget,
+    );
+  }
+
   /**
    * تطبيع رقم الهاتف بإضافة +967 للأرقام اليمنية
    */
@@ -312,35 +336,37 @@ export class ServicesService {
   }
 
   /**
-   * إرسال إشعارات لجميع المهندسين في مدينة معينة
+   * إرسال إشعارات لجميع المهندسين المعتمدين النشطين.
    */
-  private async notifyEngineersInCity(
-    city: string,
+  private async notifyApprovedEngineers(
     type: NotificationType,
     title: string,
     message: string,
     data?: Record<string, unknown>,
-    _navigationType?: NotificationNavigationType,
-    _navigationTarget?: string,
+    excludeUserId?: string,
   ): Promise<void> {
     try {
-      // جلب جميع المهندسين في المدينة
+      // جلب جميع المهندسين المعتمدين، مع استثناء صاحب الطلب إن كان مهندساً
+      const query: Record<string, unknown> = {
+        engineer_capable: true,
+        engineer_status: CapabilityStatus.APPROVED,
+        status: UserStatus.ACTIVE,
+      };
+      if (excludeUserId && Types.ObjectId.isValid(excludeUserId)) {
+        query._id = { $ne: new Types.ObjectId(excludeUserId) };
+      }
+
       const engineers = await this.userModel
-        .find({
-          city: city,
-          engineer_capable: true,
-          engineer_status: CapabilityStatus.APPROVED,
-          status: UserStatus.ACTIVE,
-        })
+        .find(query)
         .select('_id')
         .lean();
 
       if (engineers.length === 0) {
-        this.logger.debug(`No engineers found in city ${city}`);
+        this.logger.debug('No approved active engineers found for service request notification');
         return;
       }
 
-      this.logger.log(`Notifying ${engineers.length} engineers in city ${city}`);
+      this.logger.log(`Notifying ${engineers.length} approved active engineers`);
 
       // إرسال إشعار لكل مهندس بشكل متوازي لتحسين الأداء
       const notificationPromises = engineers.map((engineer) =>
@@ -355,10 +381,10 @@ export class ServicesService {
 
       await Promise.all(notificationPromises);
       this.logger.log(
-        `Successfully sent notifications to ${engineers.length} engineers in city ${city}`,
+        `Successfully sent notifications to ${engineers.length} approved active engineers`,
       );
     } catch (error) {
-      this.logger.error(`Failed to notify engineers in city ${city}:`, error);
+      this.logger.error('Failed to notify approved active engineers:', error);
       // لا نرمي الخطأ حتى لا يؤثر على العملية الأساسية
     }
   }
@@ -671,35 +697,17 @@ export class ServicesService {
       engineerId: null,
     });
 
-    // إشعار للعميل بتأكيد إنشاء الطلب (في الخلفية)
-    this.safeNotify(
-      userId,
-      NotificationType.SERVICE_REQUEST_OPENED,
-      'تم استلام طلب خدمة',
-      `تم إنشاء طلب خدمة جديد: ${dto.title}`,
-      { requestId: String(doc._id), title: dto.title },
-      NotificationNavigationType.SERVICE_REQUEST,
-      String(doc._id),
-    ).catch((error) => {
-      this.logger.error(
-        `Failed to notify customer about request creation: ${String(doc._id)}`,
-        error,
-      );
-    });
-
     // تشغيل العمليات غير الحرجة في الخلفية بدون انتظار
-    // إرسال إشعار لجميع المهندسين في نفس المدينة (في الخلفية)
-    this.notifyEngineersInCity(
-      addr.city,
+    // إرسال إشعار لجميع المهندسين المعتمدين (في الخلفية)
+    this.notifyApprovedEngineers(
       NotificationType.SERVICE_REQUEST_OPENED,
-      'طلب خدمة جديد في مدينتك',
+      'طلب خدمة جديد',
       `طلب خدمة جديد: ${dto.title}`,
       { requestId: String(doc._id), title: dto.title, city: addr.city },
-      NotificationNavigationType.SERVICE_REQUEST,
-      String(doc._id),
+      userId,
     ).catch((error) => {
       this.logger.error(
-        `Failed to notify engineers in city ${addr.city} about request ${String(doc._id)}`,
+        `Failed to notify approved engineers about request ${String(doc._id)}`,
         error,
       );
     });
@@ -1311,7 +1319,7 @@ export class ServicesService {
       );
     }
 
-    await this.safeNotify(
+    await this.safeNotifyCustomer(
       userId,
       NotificationType.SERVICE_REQUEST_CANCELLED,
       'تم إلغاء طلب الخدمة',
@@ -1520,7 +1528,7 @@ export class ServicesService {
     }
 
     // إشعار للعميل بتأكيد التقييم
-    await this.safeNotify(
+    await this.safeNotifyCustomer(
       userId,
       NotificationType.SERVICE_RATED,
       'تم تقييم الخدمة',
@@ -2081,7 +2089,7 @@ export class ServicesService {
       isFreeOffer: dto.amount === undefined || dto.amount === 0,
     });
 
-    await this.safeNotify(
+    await this.safeNotifyCustomer(
       String(r.userId),
       NotificationType.NEW_ENGINEER_OFFER,
       'عرض جديد من مهندس',
@@ -2168,7 +2176,7 @@ export class ServicesService {
     });
     await r.save();
 
-    await this.safeNotify(
+    await this.safeNotifyCustomer(
       String(r.userId),
       NotificationType.SERVICE_REQUEST_OPENED,
       'المهندس في الطريق',
@@ -2259,12 +2267,15 @@ export class ServicesService {
     });
     await r.save();
 
+    const requestTitle =
+      typeof r.title === 'string' && r.title.trim().length > 0 ? r.title.trim() : 'طلب خدمة';
+
     if (r.engineerId) {
       await this.safeNotifyEngineer(
         String(r.engineerId),
         NotificationType.SERVICE_REQUEST_OPENED,
         'تم فتح نزاع على الطلب',
-        `تم فتح نزاع على الطلب ${String(r._id)}`,
+        `تم فتح نزاع على طلب: ${requestTitle}`,
         { requestId: String(r._id), status: 'DISPUTED' },
       );
     }
@@ -2715,7 +2726,7 @@ export class ServicesService {
     }
     await r.save();
 
-    await this.safeNotify(
+    await this.safeNotifyCustomer(
       String(r.userId),
       NotificationType.SERVICE_REQUEST_OPENED, // Using available type
       'تم تحديث حالة الخدمة',
@@ -2758,7 +2769,7 @@ export class ServicesService {
       { $set: { status: 'REJECTED' } },
     );
 
-    await this.safeNotify(
+    await this.safeNotifyCustomer(
       String(r.userId),
       NotificationType.SERVICE_REQUEST_CANCELLED,
       'تم إلغاء الخدمة من قبل الإدارة',
@@ -2794,7 +2805,7 @@ export class ServicesService {
 
     await this.offers.updateMany({ requestId: r._id }, { $set: { status: 'REJECTED' } });
 
-    await this.safeNotify(
+    await this.safeNotifyCustomer(
       String(r.userId),
       NotificationType.OFFER_ACCEPTED,
       'تم تعيين مهندس من قبل الإدارة',
@@ -3940,7 +3951,7 @@ export class ServicesService {
         .lean();
 
       for (const req of expiredRequestsList) {
-        await this.safeNotify(
+        await this.safeNotifyCustomer(
           String(req.userId),
           NotificationType.SERVICE_REQUEST_CANCELLED,
           'انتهت صلاحية طلب الخدمة',

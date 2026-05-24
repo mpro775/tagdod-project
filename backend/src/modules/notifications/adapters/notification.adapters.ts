@@ -119,6 +119,7 @@ export class InAppNotificationAdapter extends BaseNotificationAdapter implements
           type: notification.type,
           priority: notification.priority,
           data: notification.data,
+          actionUrl: notification.actionUrl,
           createdAt: new Date().toISOString(),
         },
       );
@@ -175,7 +176,10 @@ export class PushNotificationAdapter extends BaseNotificationAdapter implements 
     return {
       title: data.title,
       body: data.message,
-      data: this.convertDataToStrings(data.data || {}),
+      data: this.convertDataToStrings({
+        ...(data.data || {}),
+        actionUrl: data.actionUrl,
+      }),
       imageUrl: data.imageUrl,
       clickAction: data.actionUrl,
     };
@@ -187,6 +191,7 @@ export class PushNotificationAdapter extends BaseNotificationAdapter implements 
   private convertDataToStrings(data: Record<string, unknown>): Record<string, string> {
     const result: Record<string, string> = {};
     for (const [key, value] of Object.entries(data)) {
+      if (value === undefined || value === null) continue;
       result[key] = typeof value === 'string' ? value : JSON.stringify(value);
     }
     return result;
