@@ -8,20 +8,36 @@ export interface OverallUserAnalytics {
   activeUsers: number;
   newUsersThisMonth: number;
   averageOrderValue: number;
-  totalRevenue: number;
-  averageOrdersPerUser: number;
+  customerLifetimeValue?: number;
+  topSpenders?: Array<{ userId: string; totalSpent: number }>;
+  userGrowth?: Array<{ month: string; newUsers: number }>;
+  totalRevenue?: number;
+  averageOrdersPerUser?: number;
+  generatedAt?: string;
 }
 
 export interface CustomerRanking {
+  _id?: string;
   userId: string;
-  name: string;
-  email: string;
+  userInfo?: {
+    phone?: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  name?: string;
+  email?: string;
+  phone?: string;
+  contact?: string;
   totalSpent: number;
-  orderCount: number;
-  averageOrderValue: number;
-  lastOrderDate: string;
-  rank: number;
-  tier: string;
+  orderCount?: number;
+  totalOrders?: number;
+  averageOrderValue?: number;
+  lastOrderDate?: string;
+  rank?: number;
+  tier?: string;
+  score?: number;
+  badge?: string;
+  points?: number;
 }
 
 export interface UserDetailedStats {
@@ -64,14 +80,24 @@ export interface CustomerSegments {
 }
 
 export interface ChurnRiskCustomer {
+  _id?: string;
   userId: string;
-  name: string;
-  email: string;
+  userInfo?: {
+    phone?: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  name?: string;
+  email?: string;
+  phone?: string;
+  contact?: string;
   churnRisk: 'high' | 'medium' | 'low';
   lastOrderDays: number;
   recommendedAction: string;
   totalSpent: number;
-  orderCount: number;
+  orderCount?: number;
+  riskReason?: string;
+  reason?: string;
 }
 
 export interface ChurnRiskAlert {

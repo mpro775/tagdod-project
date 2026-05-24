@@ -31,6 +31,7 @@ export interface DataToolbarProps {
   filters?: ReactNode;
   activeFilters?: DataToolbarFilter[];
   actions?: ReactNode;
+  compact?: boolean;
 }
 
 export function DataToolbar({
@@ -40,6 +41,7 @@ export function DataToolbar({
   filters,
   activeFilters = [],
   actions,
+  compact = false,
 }: DataToolbarProps) {
   const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -77,14 +79,14 @@ export function DataToolbar({
       <Paper
         elevation={0}
         sx={{
-          p: 1.5,
+          p: compact ? 1 : 1.5,
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: `${designRadius.lg}px`,
           bgcolor: 'background.paper',
         }}
       >
-        <Stack spacing={1.5}>
+        <Stack spacing={compact ? 1 : 1.5}>
           <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
             <Box sx={{ flex: 1, minWidth: 0 }}>
               {onSearchChange && (
@@ -182,17 +184,17 @@ export function DataToolbar({
     <Paper
       elevation={0}
       sx={{
-        p: 2,
+        p: compact ? 1.25 : 2,
         border: '1px solid',
         borderColor: 'divider',
         borderRadius: `${designRadius.lg}px`,
         bgcolor: 'background.paper',
       }}
     >
-      <Stack spacing={1.5}>
+      <Stack spacing={compact ? 1 : 1.5}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
-          spacing={1.5}
+          spacing={compact ? 1 : 1.5}
           alignItems={{ xs: 'stretch', md: 'center' }}
           justifyContent="space-between"
         >

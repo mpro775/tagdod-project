@@ -1,45 +1,37 @@
-import React from 'react';
-import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Paper,
-  Chip,
-  Box,
-  useTheme,
-  useMediaQuery,
-} from '@mui/material';
-import { Star } from '@mui/icons-material';
+import React, { useMemo } from 'react';
+import { Box, Chip, Stack, Typography } from '@mui/material';
+import type { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
-
-interface CustomerRanking {
-  userId: string;
-  userInfo?: {
-    phone?: string;
-    firstName?: string;
-    lastName?: string;
-  };
-  name?: string;
-  email?: string;
-  totalSpent: number;
-  orderCount?: number;
-  totalOrders?: number;
-  averageOrderValue?: number;
-  lastOrderDate?: string | Date;
-  rank: number;
-  tier?: string;
-  score?: number;
-}
+import { DataTable } from '@/shared/components/DataTable/DataTable';
+import type { CustomerRanking } from '../hooks/useUserAnalytics';
 
 interface CustomerRankingsTableProps {
   rankings: CustomerRanking[];
   loading?: boolean;
+  paginationModel: GridPaginationModel;
+  onPaginationModelChange: (model: GridPaginationModel) => void;
+  sortModel?: GridSortModel;
+  onSortModelChange?: (model: GridSortModel) => void;
+  height?: number | string;
 }
 
-const getTierColor = (tier: string): 'error' | 'warning' | 'info' | 'default' => {
+const formatMoney = (value: number) =>
+  `${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
+
+const formatDate = (value?: string | Date) => {
+  if (!value) return '-';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+
+  return new Intl.DateTimeFormat('ar-SA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+};
+
+const getTierColor = (tier: string): 'error' | 'warning' | 'info' | 'success' | 'default' => {
   switch (tier?.toLowerCase()) {
     case 'vip':
       return 'error';
@@ -47,6 +39,8 @@ const getTierColor = (tier: string): 'error' | 'warning' | 'info' | 'default' =>
       return 'warning';
     case 'regular':
       return 'info';
+    case 'new':
+      return 'success';
     default:
       return 'default';
   }
@@ -55,115 +49,176 @@ const getTierColor = (tier: string): 'error' | 'warning' | 'info' | 'default' =>
 export const CustomerRankingsTable: React.FC<CustomerRankingsTableProps> = ({
   rankings,
   loading = false,
+  paginationModel,
+  onPaginationModelChange,
+  sortModel,
+  onSortModelChange,
+  height = 560,
 }) => {
   const { t } = useTranslation(['users', 'common']);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  if (loading || rankings.length === 0) {
-    return null;
-  }
+  const columns: GridColDef[] = useMemo(
+    () => [
+      {
+        field: 'rank',
+        headerName: t('users:analytics.table.rank', 'الترتيب'),
+        width: 92,
+        align: 'center',
+        headerAlign: 'center',
+        sortable: true,
+        renderCell: (params) => {
+          const row = params.row as CustomerRanking;
+          const rank = row.rank || 0;
+          const isTopThree = rank > 0 && rank <= 3;
+
+          return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <Chip
+                label={`#${rank || '-'}`}
+                size="small"
+                color={isTopThree ? 'warning' : 'default'}
+                variant={isTopThree ? 'filled' : 'outlined'}
+                sx={{ minWidth: 44, fontWeight: 800 }}
+              />
+            </Box>
+          );
+        },
+      },
+      {
+        field: 'name',
+        headerName: t('users:analytics.table.customer', 'العميل'),
+        flex: 1.4,
+        minWidth: 220,
+        sortable: true,
+        renderCell: (params) => {
+          const row = params.row as CustomerRanking;
+
+          return (
+            <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+              <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                {row.name || t('users:analytics.unknown', 'غير معروف')}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {row.contact || row.userInfo?.phone || row.email || '-'}
+              </Typography>
+            </Stack>
+          );
+        },
+      },
+      {
+        field: 'tier',
+        headerName: t('users:analytics.table.tier', 'الفئة'),
+        width: 122,
+        align: 'center',
+        headerAlign: 'center',
+        sortable: true,
+        renderCell: (params) => {
+          const tier = String((params.row as CustomerRanking).tier || 'new');
+
+          return (
+            <Chip
+              label={t(`users:analytics.tiers.${tier.toLowerCase()}`, tier)}
+              size="small"
+              color={getTierColor(tier)}
+              variant="outlined"
+              sx={{ fontWeight: 700 }}
+            />
+          );
+        },
+      },
+      {
+        field: 'totalSpent',
+        headerName: t('users:analytics.table.totalSpent', 'إجمالي الإنفاق'),
+        width: 148,
+        align: 'right',
+        headerAlign: 'right',
+        type: 'number',
+        renderCell: (params) => (
+          <Typography variant="body2" sx={{ fontWeight: 800, color: 'success.main' }} noWrap>
+            {formatMoney(Number(params.value ?? 0))}
+          </Typography>
+        ),
+      },
+      {
+        field: 'orderCount',
+        headerName: t('users:analytics.table.orderCount', 'عدد الطلبات'),
+        width: 116,
+        align: 'center',
+        headerAlign: 'center',
+        type: 'number',
+      },
+      {
+        field: 'averageOrderValue',
+        headerName: t('users:analytics.table.averageOrder', 'متوسط الطلب'),
+        width: 140,
+        align: 'right',
+        headerAlign: 'right',
+        type: 'number',
+        renderCell: (params) => (
+          <Typography variant="body2" color="text.secondary" noWrap>
+            {formatMoney(Number(params.value ?? 0))}
+          </Typography>
+        ),
+      },
+      {
+        field: 'lastOrderDate',
+        headerName: t('users:analytics.table.lastOrder', 'آخر طلب'),
+        width: 138,
+        align: 'center',
+        headerAlign: 'center',
+        renderCell: (params) => (
+          <Typography variant="body2" color="text.secondary" noWrap>
+            {formatDate(params.value as string | Date | undefined)}
+          </Typography>
+        ),
+      },
+      {
+        field: 'score',
+        headerName: t('users:analytics.table.score', 'النقاط/الشارة'),
+        width: 130,
+        align: 'center',
+        headerAlign: 'center',
+        sortable: true,
+        renderCell: (params) => {
+          const row = params.row as CustomerRanking;
+          const score = row.score ?? row.points ?? row.badge;
+
+          return score ? (
+            <Chip label={String(score)} size="small" color="primary" variant="outlined" />
+          ) : (
+            <Typography variant="caption" color="text.secondary">
+              -
+            </Typography>
+          );
+        },
+      },
+    ],
+    [t]
+  );
 
   return (
-    <TableContainer
-      component={Paper}
-      sx={{
-        bgcolor: 'background.paper',
-        backgroundImage: 'none',
-        boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
-        overflowX: 'auto',
+    <DataTable
+      columns={columns}
+      rows={rankings}
+      loading={loading}
+      paginationModel={paginationModel}
+      onPaginationModelChange={onPaginationModelChange}
+      sortModel={sortModel}
+      onSortModelChange={onSortModelChange}
+      getRowId={(row) => {
+        const customer = row as CustomerRanking;
+        return customer.userId || `${customer.rank}-${customer.name}`;
       }}
-    >
-      <Table size={isMobile ? 'small' : 'medium'}>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-              {t('users:analytics.table.rank', 'الترتيب')}
-            </TableCell>
-            <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-              {t('users:analytics.table.customer', 'العميل')}
-            </TableCell>
-            {!isMobile && (
-              <TableCell sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                {t('users:analytics.table.email', 'البريد الإلكتروني')}
-              </TableCell>
-            )}
-            <TableCell align="center" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-              {t('users:analytics.table.tier', 'الفئة')}
-            </TableCell>
-            <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-              {t('users:analytics.table.totalSpent', 'إجمالي الإنفاق')}
-            </TableCell>
-            <TableCell align="center" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-              {t('users:analytics.table.orderCount', 'عدد الطلبات')}
-            </TableCell>
-            {!isMobile && (
-              <TableCell align="right" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                {t('users:analytics.table.averageOrder', 'متوسط الطلب')}
-              </TableCell>
-            )}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {rankings.map((customer, index) => {
-            // حساب القيم المفقودة
-            const orderCount = customer.orderCount || customer.totalOrders || 0;
-            const averageOrderValue = customer.averageOrderValue ?? (orderCount > 0 ? customer.totalSpent / orderCount : 0);
-            
-            // بناء الاسم من userInfo إذا لم يكن موجوداً
-            const name = customer.name || 
-              (customer.userInfo?.firstName && customer.userInfo?.lastName
-                ? `${customer.userInfo.firstName} ${customer.userInfo.lastName}`
-                : customer.userInfo?.firstName || customer.userInfo?.phone || t('users:analytics.unknown', 'غير معروف'));
-            
-            // حساب الفئة بناءً على totalSpent
-            const getTier = (spent: number): string => {
-              if (spent >= 5000) return 'vip';
-              if (spent >= 2000) return 'premium';
-              if (spent >= 500) return 'regular';
-              return 'new';
-            };
-            const tier = customer.tier || getTier(customer.totalSpent);
-            
-            return (
-              <TableRow key={customer.userId || index} hover>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    {index < 3 && <Star sx={{ color: 'gold', fontSize: { xs: 16, sm: 20 } }} />}
-                    <span>#{customer.rank || index + 1}</span>
-                  </Box>
-                </TableCell>
-                <TableCell sx={{ fontWeight: index < 3 ? 'bold' : 'normal' }}>
-                  {name}
-                </TableCell>
-                {!isMobile && (
-                  <TableCell sx={{ color: 'text.secondary', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                    {customer.email || customer.userInfo?.phone || '-'}
-                  </TableCell>
-                )}
-                <TableCell align="center">
-                  <Chip
-                    label={t(`users:analytics.tiers.${tier.toLowerCase()}`, tier)}
-                    size="small"
-                    color={getTierColor(tier)}
-                    sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-                  />
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                  {customer.totalSpent?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} $
-                </TableCell>
-                <TableCell align="center">{orderCount}</TableCell>
-                {!isMobile && (
-                  <TableCell align="right" sx={{ color: 'text.secondary' }}>
-                    {averageOrderValue?.toFixed(2) || '0.00'} $
-                  </TableCell>
-                )}
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </TableContainer>
+      height={height}
+      rowHeight={52}
+      sx={{
+        '& .MuiDataGrid-columnHeader': {
+          minHeight: '42px !important',
+        },
+        '& .MuiDataGrid-row': {
+          minHeight: '52px !important',
+        },
+      }}
+    />
   );
 };
-

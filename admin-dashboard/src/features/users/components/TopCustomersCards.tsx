@@ -1,26 +1,9 @@
 import React from 'react';
-import { Grid, Card, CardContent, Box, Typography, Chip, useTheme } from '@mui/material';
-import { Star } from '@mui/icons-material';
+import { alpha, Box, Chip, Stack, Typography, useTheme } from '@mui/material';
+import { EmojiEvents } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-
-interface CustomerRanking {
-  userId: string;
-  userInfo?: {
-    phone?: string;
-    firstName?: string;
-    lastName?: string;
-  };
-  name?: string;
-  email?: string;
-  totalSpent: number;
-  orderCount?: number;
-  totalOrders?: number;
-  averageOrderValue?: number;
-  lastOrderDate?: string | Date;
-  rank: number;
-  tier?: string;
-  score?: number;
-}
+import { EmptyState, LoadingState, designRadius } from '@/shared/design-system';
+import type { CustomerRanking } from '../hooks/useUserAnalytics';
 
 interface TopCustomersCardsProps {
   customers: CustomerRanking[];
@@ -28,7 +11,10 @@ interface TopCustomersCardsProps {
   loading?: boolean;
 }
 
-const getTierColor = (tier: string): 'error' | 'warning' | 'info' | 'default' => {
+const formatMoney = (value: number) =>
+  `${value.toLocaleString('en-US', { maximumFractionDigits: 0 })} $`;
+
+const getTierColor = (tier: string): 'error' | 'warning' | 'info' | 'success' | 'default' => {
   switch (tier?.toLowerCase()) {
     case 'vip':
       return 'error';
@@ -36,6 +22,8 @@ const getTierColor = (tier: string): 'error' | 'warning' | 'info' | 'default' =>
       return 'warning';
     case 'regular':
       return 'info';
+    case 'new':
+      return 'success';
     default:
       return 'default';
   }
@@ -49,104 +37,152 @@ export const TopCustomersCards: React.FC<TopCustomersCardsProps> = ({
   const { t } = useTranslation(['users', 'common']);
   const theme = useTheme();
 
-  if (loading || customers.length === 0) {
-    return null;
+  if (loading && customers.length === 0) {
+    return <LoadingState variant="skeleton" rows={5} title={t('common:loading', 'جاري التحميل...')} />;
   }
 
+  if (customers.length === 0) {
+    return (
+      <EmptyState
+        title={t('users:analytics.topCustomers.emptyTitle', 'لا توجد بيانات لأفضل العملاء')}
+        description={t(
+          'users:analytics.topCustomers.emptyDescription',
+          'ستظهر القائمة بعد توفر طلبات وإنفاق كافيين للتحليل.'
+        )}
+        icon={<EmojiEvents />}
+      />
+    );
+  }
+
+  const visibleCustomers = customers.slice(0, limit);
+  const podiumCustomers = visibleCustomers.slice(0, 3);
+  const restCustomers = visibleCustomers.slice(3);
+
   return (
-    <Grid container spacing={{ xs: 2, sm: 3 }}>
-      {customers.slice(0, limit).map((customer, index) => {
-        // حساب القيم المفقودة
-        const orderCount = customer.orderCount || customer.totalOrders || 0;
-        
-        // بناء الاسم من userInfo إذا لم يكن موجوداً
-        const name = customer.name || 
-          (customer.userInfo?.firstName && customer.userInfo?.lastName
-            ? `${customer.userInfo.firstName} ${customer.userInfo.lastName}`
-            : customer.userInfo?.firstName || customer.userInfo?.phone || t('users:analytics.unknown', 'غير معروف'));
-        
-        // حساب الفئة بناءً على totalSpent
-        const getTier = (spent: number): string => {
-          if (spent >= 5000) return 'vip';
-          if (spent >= 2000) return 'premium';
-          if (spent >= 500) return 'regular';
-          return 'new';
-        };
-        const tier = customer.tier || getTier(customer.totalSpent);
-        
-        return (
-          <Grid size={{ xs: 6, sm: 6, md: 4 }} key={customer.userId || index}>
-            <Card
+    <Stack spacing={1.25}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(3, minmax(0, 1fr))',
+          },
+          gap: 1,
+        }}
+      >
+        {podiumCustomers.map((customer) => {
+          const isFirst = customer.rank === 1;
+
+          return (
+            <Box
+              key={customer.userId}
               sx={{
-                bgcolor: 'background.paper',
-                backgroundImage: 'none',
-                boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
-                height: '100%',
-                border: index < 3 ? `2px solid ${theme.palette.warning.main}` : undefined,
+                p: 1.25,
+                minHeight: 104,
+                border: '1px solid',
+                borderColor: isFirst
+                  ? alpha(theme.palette.warning.main, 0.42)
+                  : alpha(theme.palette.divider, theme.palette.mode === 'dark' ? 0.16 : 0.9),
+                borderRadius: `${designRadius.md}px`,
+                bgcolor: alpha(
+                  isFirst ? theme.palette.warning.main : theme.palette.primary.main,
+                  theme.palette.mode === 'dark' ? 0.08 : 0.04
+                ),
               }}
             >
-              <CardContent sx={{ p: { xs: 1.5, sm: 3 } }}>
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'flex-start' }, mb: { xs: 1.5, sm: 2 }, gap: { xs: 1, sm: 0 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flex: 1, minWidth: 0 }}>
-                    {index < 3 && <Star sx={{ color: 'gold', fontSize: { xs: 16, sm: 24 }, flexShrink: 0 }} />}
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: index < 3 ? 'bold' : 'normal',
-                        fontSize: { xs: '0.875rem', sm: '1.125rem' },
-                      }}
-                      noWrap
-                    >
-                      {name}
-                    </Typography>
-                  </Box>
+              <Stack spacing={1}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
                   <Chip
-                    label={t(`users:analytics.tiers.${tier.toLowerCase()}`, tier)}
+                    label={`#${customer.rank}`}
                     size="small"
-                    color={getTierColor(tier)}
-                    sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' }, flexShrink: 0 }}
+                    color={isFirst ? 'warning' : 'primary'}
+                    sx={{ fontWeight: 800, minWidth: 44 }}
                   />
-                </Box>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  gutterBottom
-                  sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' }, mb: { xs: 1.5, sm: 2 } }}
-                  noWrap
-                >
-                  {customer.email || customer.userInfo?.phone || '-'}
+                  <Chip
+                    label={t(`users:analytics.tiers.${customer.tier.toLowerCase()}`, customer.tier)}
+                    size="small"
+                    color={getTierColor(customer.tier)}
+                    variant="outlined"
+                  />
+                </Stack>
+                <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 800 }} noWrap>
+                    {customer.name || t('users:analytics.unknown', 'غير معروف')}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {customer.contact || customer.userInfo?.phone || customer.email || '-'}
+                  </Typography>
+                </Stack>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: 'success.main' }}>
+                    {formatMoney(customer.totalSpent)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('users:analytics.topCustomers.orderCount', '{{count}} طلب', {
+                      count: customer.orderCount,
+                    })}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Box>
+          );
+        })}
+      </Box>
+
+      {restCustomers.length > 0 && (
+        <Stack spacing={0.75}>
+          {restCustomers.map((customer) => (
+            <Box
+              key={customer.userId}
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '52px minmax(0, 1fr)',
+                  md: '64px minmax(0, 1.5fr) 132px 96px 112px',
+                },
+                alignItems: 'center',
+                gap: { xs: 0.75, md: 1.25 },
+                p: 1,
+                border: '1px solid',
+                borderColor: alpha(theme.palette.divider, theme.palette.mode === 'dark' ? 0.14 : 0.9),
+                borderRadius: `${designRadius.md}px`,
+                bgcolor: alpha(theme.palette.background.paper, 0.7),
+              }}
+            >
+              <Chip label={`#${customer.rank}`} size="small" variant="outlined" sx={{ fontWeight: 800 }} />
+              <Stack spacing={0.1} sx={{ minWidth: 0 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                  {customer.name || t('users:analytics.unknown', 'غير معروف')}
                 </Typography>
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1.5, sm: 2 } }}>
-                  <Box sx={{ flex: 1, width: { xs: '100%', sm: 'auto' } }}>
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                      {t('users:analytics.table.totalSpent', 'إجمالي الإنفاق')}
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      color="success.main"
-                      sx={{ fontSize: { xs: '0.9375rem', sm: '1.125rem' }, fontWeight: 'bold' }}
-                    >
-                      {customer.totalSpent?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} $
-                    </Typography>
-                  </Box>
-                  <Box sx={{ flex: 1, width: { xs: '100%', sm: 'auto' } }}>
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                      {t('users:analytics.table.orderCount', 'عدد الطلبات')}
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      sx={{ fontSize: { xs: '0.9375rem', sm: '1.125rem' }, fontWeight: 'bold' }}
-                    >
-                      {orderCount}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        );
-      })}
-    </Grid>
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {customer.contact || customer.userInfo?.phone || customer.email || '-'}
+                </Typography>
+              </Stack>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 800, color: 'success.main', display: { xs: 'none', md: 'block' } }}
+              >
+                {formatMoney(customer.totalSpent)}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ display: { xs: 'none', md: 'block' } }}
+              >
+                {customer.orderCount.toLocaleString('en-US')} طلب
+              </Typography>
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, justifyContent: 'flex-end' }}>
+                <Chip
+                  label={t(`users:analytics.tiers.${customer.tier.toLowerCase()}`, customer.tier)}
+                  size="small"
+                  color={getTierColor(customer.tier)}
+                  variant="outlined"
+                />
+              </Box>
+            </Box>
+          ))}
+        </Stack>
+      )}
+    </Stack>
   );
 };
-

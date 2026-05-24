@@ -1,162 +1,90 @@
 import React from 'react';
-import { Grid, Card, CardContent, Box, Typography, Chip, useTheme } from '@mui/material';
-import { People, AttachMoney, TrendingUp } from '@mui/icons-material';
+import {
+  AttachMoney,
+  EmojiEvents,
+  Groups,
+  LocalActivity,
+  PersonAddAlt1,
+  ReceiptLong,
+} from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-
-interface OverallAnalytics {
-  totalUsers: number;
-  activeUsers: number;
-  newUsersThisMonth: number;
-  averageOrderValue: number;
-  customerLifetimeValue: number;
-  topSpenders: Array<{ userId: string; totalSpent: number }>;
-  userGrowth: Array<{ month: string; newUsers: number }>;
-}
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
+import type { OverallAnalytics } from '../hooks/useUserAnalytics';
 
 interface AnalyticsKPICardsProps {
   analytics: OverallAnalytics | null;
+  loading?: boolean;
+  topCustomersCount?: number;
 }
 
-export const AnalyticsKPICards: React.FC<AnalyticsKPICardsProps> = ({ analytics }) => {
-  const { t } = useTranslation(['users', 'common']);
-  const theme = useTheme();
+const formatNumber = (value: number) => value.toLocaleString('en-US');
+const formatMoney = (value: number) =>
+  value.toLocaleString('en-US', { maximumFractionDigits: 0 });
 
-  if (!analytics) return null;
+export const AnalyticsKPICards: React.FC<AnalyticsKPICardsProps> = ({
+  analytics,
+  loading = false,
+  topCustomersCount,
+}) => {
+  const { t } = useTranslation(['users', 'common']);
+
+  if (!analytics && !loading) return null;
+
+  const kpis = [
+    {
+      title: t('users:analytics.kpi.totalUsers', 'إجمالي المستخدمين'),
+      value: analytics ? formatNumber(analytics.totalUsers) : '-',
+      icon: <Groups fontSize="small" />,
+      tone: 'primary' as const,
+    },
+    {
+      title: t('users:analytics.kpi.activeUsersLabel', 'النشطون'),
+      value: analytics ? formatNumber(analytics.activeUsers) : '-',
+      icon: <LocalActivity fontSize="small" />,
+      tone: 'success' as const,
+    },
+    {
+      title: t('users:analytics.kpi.newUsersThisMonth', 'الجدد هذا الشهر'),
+      value: analytics ? formatNumber(analytics.newUsersThisMonth) : '-',
+      icon: <PersonAddAlt1 fontSize="small" />,
+      tone: 'info' as const,
+    },
+    {
+      title: t('users:analytics.kpi.averageOrderShort', 'متوسط الطلب'),
+      value: analytics ? formatMoney(analytics.averageOrderValue) : '-',
+      unit: '$',
+      icon: <ReceiptLong fontSize="small" />,
+      tone: 'warning' as const,
+    },
+    {
+      title: t('users:analytics.kpi.customerLifetimeValue', 'القيمة الدائمة للعميل'),
+      value: analytics ? formatMoney(analytics.customerLifetimeValue) : '-',
+      unit: '$',
+      icon: <AttachMoney fontSize="small" />,
+      tone: 'success' as const,
+    },
+    {
+      title: t('users:analytics.kpi.topCustomers', 'أفضل العملاء'),
+      value: analytics ? formatNumber(topCustomersCount ?? analytics.topSpenders.length) : '-',
+      icon: <EmojiEvents fontSize="small" />,
+      tone: 'secondary' as const,
+    },
+  ];
 
   return (
-    <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
-      <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-        <Card
-          sx={{
-            bgcolor: 'background.paper',
-            backgroundImage: 'none',
-            boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
-            height: '100%',
-          }}
-        >
-          <CardContent sx={{ p: { xs: 1.5, sm: 3 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 }, flexDirection: { xs: 'column', sm: 'row' } }}>
-              <People
-                sx={{
-                  fontSize: { xs: 24, sm: 40 },
-                  color: 'primary.main',
-                  mr: { xs: 0, sm: 2 },
-                  mb: { xs: 0.5, sm: 0 },
-                }}
-              />
-              <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                <Typography
-                  variant="h4"
-                  fontWeight="bold"
-                  sx={{ fontSize: { xs: '1.25rem', sm: '2rem' } }}
-                >
-                  {analytics.totalUsers.toLocaleString('en-US')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                  {t('users:analytics.kpi.totalUsers', 'إجمالي المستخدمين')}
-                </Typography>
-              </Box>
-            </Box>
-            <Chip
-              label={t('users:analytics.kpi.activeUsers', '{{count}} نشط', {
-                count: analytics.activeUsers,
-              })}
-              size="small"
-              color="success"
-              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-            />
-          </CardContent>
-        </Card>
-      </Grid>
-
-      <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-        <Card
-          sx={{
-            bgcolor: 'background.paper',
-            backgroundImage: 'none',
-            boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
-            height: '100%',
-          }}
-        >
-          <CardContent sx={{ p: { xs: 1.5, sm: 3 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-              <AttachMoney
-                sx={{
-                  fontSize: { xs: 24, sm: 40 },
-                  color: 'success.main',
-                  mr: { xs: 0, sm: 2 },
-                  mb: { xs: 0.5, sm: 0 },
-                }}
-              />
-              <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                <Typography
-                  variant="h4"
-                  fontWeight="bold"
-                  sx={{ fontSize: { xs: '1.25rem', sm: '2rem' } }}
-                >
-                  {analytics.customerLifetimeValue.toFixed(2)} $
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                  {t('users:analytics.kpi.customerLifetimeValue', 'القيمة الدائمة للعميل')}
-                </Typography>
-              </Box>
-            </Box>
-            <Chip
-              label={t('users:analytics.kpi.averageOrderValue', 'معدل الطلب: {{value}} $', {
-                value: analytics.averageOrderValue.toFixed(2),
-              })}
-              size="small"
-              color="info"
-              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-            />
-          </CardContent>
-        </Card>
-      </Grid>
-
-      <Grid size={{ xs: 6, sm: 6, md: 4 }}>
-        <Card
-          sx={{
-            bgcolor: 'background.paper',
-            backgroundImage: 'none',
-            boxShadow: theme.palette.mode === 'dark' ? 2 : 1,
-            height: '100%',
-          }}
-        >
-          <CardContent sx={{ p: { xs: 1.5, sm: 3 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-              <TrendingUp
-                sx={{
-                  fontSize: { xs: 24, sm: 40 },
-                  color: 'warning.main',
-                  mr: { xs: 0, sm: 2 },
-                  mb: { xs: 0.5, sm: 0 },
-                }}
-              />
-              <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                <Typography
-                  variant="h4"
-                  fontWeight="bold"
-                  sx={{ fontSize: { xs: '1.25rem', sm: '2rem' } }}
-                >
-                  {analytics.newUsersThisMonth.toLocaleString('en-US')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                  {t('users:analytics.kpi.newUsersThisMonth', 'مستخدمون جدد هذا الشهر')}
-                </Typography>
-              </Box>
-            </Box>
-            <Chip
-              label={t('users:analytics.kpi.topSpenders', 'أفضل العملاء: {{count}}', {
-                count: analytics.topSpenders.length,
-              })}
-              size="small"
-              color="warning"
-              sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-            />
-          </CardContent>
-        </Card>
-      </Grid>
-    </Grid>
+    <PageSummaryGrid columns={6} compact spacing={0.75}>
+      {kpis.map((kpi) => (
+        <StatCard
+          key={kpi.title}
+          compact
+          loading={loading}
+          title={kpi.title}
+          value={kpi.value}
+          unit={kpi.unit}
+          icon={kpi.icon}
+          tone={kpi.tone}
+        />
+      ))}
+    </PageSummaryGrid>
   );
 };
-
