@@ -15,46 +15,47 @@ export function AddressStatsCards() {
 
   const cards = [
     {
-      title: t('stats.totalAddresses', { defaultValue: 'عدد العناوين الكلي' }),
-      value: stats?.totalAddresses || 0,
+      title: t('stats.totalAddresses', 'إجمالي العناوين'),
+      value: stats?.totalAddresses?.toLocaleString('en-US') || '0',
       icon: <LocationIcon fontSize="small" />,
       tone: 'primary' as const,
     },
     {
-      title: t('stats.activeAddresses', { defaultValue: 'عدد العناوين النشطة' }),
-      value: stats?.totalActiveAddresses || 0,
+      title: t('stats.activeAddresses', 'النشطة'),
+      value: stats?.totalActiveAddresses?.toLocaleString('en-US') || '0',
       icon: <ActiveIcon fontSize="small" />,
       tone: 'success' as const,
     },
     {
-      title: t('stats.totalUsers', { defaultValue: 'عدد المستخدمين الكلي' }),
-      value: stats?.totalUsers || 0,
+      title: t('stats.deletedAddresses', 'المحذوفة'),
+      value: stats?.totalDeletedAddresses?.toLocaleString('en-US') || '0',
+      icon: <DeleteIcon fontSize="small" />,
+      tone: 'error' as const,
+    },
+    {
+      title: t('stats.totalUsers', 'مستخدمون لديهم عناوين'),
+      value: stats?.totalUsers?.toLocaleString('en-US') || '0',
       icon: <PeopleIcon fontSize="small" />,
       tone: 'info' as const,
     },
     {
-      title: t('stats.averagePerUser', { defaultValue: 'متوسط العناوين لكل مستخدم' }),
+      title: t('stats.averagePerUser', 'متوسط/مستخدم'),
       value: stats?.averagePerUser?.toFixed(1) || '0.0',
       icon: <TrendingIcon fontSize="small" />,
       tone: 'warning' as const,
     },
-    {
-      title: t('stats.deletedAddresses', { defaultValue: 'عدد العناوين المحذوفة' }),
-      value: stats?.totalDeletedAddresses || 0,
-      icon: <DeleteIcon fontSize="small" />,
-      tone: 'error' as const,
-    },
   ];
 
   return (
-    <PageSummaryGrid columns={4}>
+    <PageSummaryGrid columns={5} compact>
       {cards.map((card) => (
         <StatCard
           key={card.title}
           title={card.title}
-          value={typeof card.value === 'number' ? card.value.toLocaleString('en-US') : card.value}
+          value={card.value}
           icon={card.icon}
           tone={card.tone}
+          compact
           loading={isLoading}
         />
       ))}

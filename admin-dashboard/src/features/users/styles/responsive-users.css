@@ -1,31 +1,31 @@
-.users-page .MuiDataGrid-columnHeader--sortable {
+.users-subpage .MuiDataGrid-columnHeader--sortable {
   font-size: 0.8rem;
 }
 
 @media (max-width: 480px) {
-  .users-page .MuiDataGrid-columnHeader--sortable {
+  .users-subpage .MuiDataGrid-columnHeader--sortable {
     font-size: 0.7rem;
   }
 }
 
 @media (max-width: 768px) {
-  .users-page .MuiDataGrid-cell {
+  .users-subpage .MuiDataGrid-cell {
     padding: 4px 6px;
     font-size: 0.75rem;
   }
 
-  .users-page .MuiDataGrid-columnHeader {
+  .users-subpage .MuiDataGrid-columnHeader {
     padding: 4px 6px;
     font-size: 0.75rem;
   }
 }
 
 @media (max-width: 480px) {
-  .users-page .MuiDataGrid-main {
+  .users-subpage .MuiDataGrid-main {
     overflow-x: auto;
   }
 
-  .users-page .MuiDataGrid-virtualScroller {
+  .users-subpage .MuiDataGrid-virtualScroller {
     overflow-x: auto;
   }
 }

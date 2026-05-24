@@ -18,33 +18,29 @@ export function FavoritesStatsCards() {
       value: formatNumber(stats?.total),
       icon: <FavoriteIcon fontSize="small" />,
       tone: 'error' as const,
-      description: t('stats.totalDesc', 'مجموع جميع العناصر النشطة في قوائم المفضلة'),
     },
     {
       title: t('stats.totalUsers', 'مستخدمون لديهم مفضلة'),
       value: formatNumber(stats?.totalUsers),
       icon: <GroupIcon fontSize="small" />,
       tone: 'primary' as const,
-      description: t('stats.totalUsersDesc', 'عدد الحسابات التي تحتوي على عنصر واحد على الأقل'),
     },
     {
-      title: t('stats.totalSynced', 'عناصر تمت مزامنتها بنجاح'),
+      title: t('stats.totalSynced', 'سجلات مزامنة'),
       value: formatNumber(stats?.totalSynced),
       icon: <SyncIcon fontSize="small" />,
       tone: 'success' as const,
-      description: t('stats.totalSyncedDesc', 'عناصر تم نقلها من أجهزة سابقة إلى حسابات المستخدمين'),
     },
     {
-      title: t('stats.totalGuests', 'سجلات قديمة غير مرتبطة'),
+      title: t('stats.totalGuests', 'سجلات ضيوف'),
       value: formatNumber(stats?.totalGuests),
       icon: <ArchiveIcon fontSize="small" />,
       tone: 'warning' as const,
-      description: t('stats.totalGuestsDesc', 'عناصر محفوظة مؤقتاً بانتظار المزامنة أو المراجعة'),
     },
   ];
 
   return (
-    <PageSummaryGrid columns={4}>
+    <PageSummaryGrid columns={4} compact>
       {cards.map((card) => (
         <StatCard
           key={card.title}
@@ -52,7 +48,7 @@ export function FavoritesStatsCards() {
           value={card.value}
           icon={card.icon}
           tone={card.tone}
-          description={card.description}
+          compact
           loading={isLoading}
         />
       ))}

@@ -48,6 +48,8 @@ export interface DataTableProps {
   // eslint-disable-next-line no-unused-vars
   getRowId?: (row: unknown) => string | number;
 
+  density?: 'compact' | 'standard' | 'comfortable';
+
   sx?: object;
 }
 
@@ -75,6 +77,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   getRowHeight,
   onRowClick,
   getRowId,
+  density = 'compact',
   sx,
 }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -97,6 +100,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   return (
     <Paper
       elevation={0}
+      className="DataTable-root"
       sx={{
         width: '100%',
         height: actualHeight,
@@ -206,7 +210,7 @@ export const DataTable: React.FC<DataTableProps> = ({
           onRowClick={onRowClick}
           disableRowSelectionOnClick
           autoHeight={false}
-          density="compact"
+          density={density}
           sx={{
             flex: 1,
             border: 'none',

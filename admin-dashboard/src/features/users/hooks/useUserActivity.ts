@@ -63,29 +63,37 @@ export interface PaginatedResponse<T> {
 
 export const useUserActivity = () => {
   const { t } = useTranslation(['users', 'common']);
-  const [loading, setLoading] = useState(false);
+  const [loadingStates, setLoadingStates] = useState({
+    stats: false,
+    online: false,
+    recent: false,
+    inactive: false,
+    neverLoggedIn: false,
+  });
   const [activityStats, setActivityStats] = useState<UserActivityStats | null>(null);
   const [activeUsers, setActiveUsers] = useState<PaginatedResponse<ActiveUser> | null>(null);
   const [inactiveUsers, setInactiveUsers] = useState<PaginatedResponse<InactiveUser> | null>(null);
   const [neverLoggedInUsers, setNeverLoggedInUsers] = useState<PaginatedResponse<NeverLoggedInUser> | null>(null);
 
+  const loading = Object.values(loadingStates).some(Boolean);
+
   const fetchActivityStats = useCallback(async () => {
     try {
-      setLoading(true);
+      setLoadingStates((prev) => ({ ...prev, stats: true }));
       const response = await apiClient.get('/admin/user-analytics/activity/stats');
       const stats = response.data?.data || response.data;
       setActivityStats(stats);
     } catch {
       toast.error(t('users:activity.errors.loadStats', 'فشل تحميل إحصائيات النشاط'));
     } finally {
-      setLoading(false);
+      setLoadingStates((prev) => ({ ...prev, stats: false }));
     }
   }, [t]);
 
   const fetchActiveUsersNow = useCallback(
     async (minutes: number = 15, page: number = 1, limit: number = 50) => {
       try {
-        setLoading(true);
+        setLoadingStates((prev) => ({ ...prev, online: true }));
         const response = await apiClient.get('/admin/user-analytics/activity/online-now', {
           params: { minutes, page, limit },
         });
@@ -94,7 +102,7 @@ export const useUserActivity = () => {
       } catch {
         toast.error(t('users:activity.errors.loadActive', 'فشل تحميل المستخدمين النشطين'));
       } finally {
-        setLoading(false);
+        setLoadingStates((prev) => ({ ...prev, online: false }));
       }
     },
     [t]
@@ -103,7 +111,7 @@ export const useUserActivity = () => {
   const fetchRecentlyActiveUsers = useCallback(
     async (days: number = 7, page: number = 1, limit: number = 50) => {
       try {
-        setLoading(true);
+        setLoadingStates((prev) => ({ ...prev, recent: true }));
         const response = await apiClient.get('/admin/user-analytics/activity/recent', {
           params: { days, page, limit },
         });
@@ -112,7 +120,7 @@ export const useUserActivity = () => {
       } catch {
         toast.error(t('users:activity.errors.loadRecent', 'فشل تحميل المستخدمين النشطين مؤخراً'));
       } finally {
-        setLoading(false);
+        setLoadingStates((prev) => ({ ...prev, recent: false }));
       }
     },
     [t]
@@ -121,7 +129,7 @@ export const useUserActivity = () => {
   const fetchInactiveUsers = useCallback(
     async (days: number = 30, page: number = 1, limit: number = 50) => {
       try {
-        setLoading(true);
+        setLoadingStates((prev) => ({ ...prev, inactive: true }));
         const response = await apiClient.get('/admin/user-analytics/activity/inactive', {
           params: { days, page, limit },
         });
@@ -130,7 +138,7 @@ export const useUserActivity = () => {
       } catch {
         toast.error(t('users:activity.errors.loadInactive', 'فشل تحميل المستخدمين غير النشطين'));
       } finally {
-        setLoading(false);
+        setLoadingStates((prev) => ({ ...prev, inactive: false }));
       }
     },
     [t]
@@ -139,7 +147,7 @@ export const useUserActivity = () => {
   const fetchNeverLoggedInUsers = useCallback(
     async (page: number = 1, limit: number = 50) => {
       try {
-        setLoading(true);
+        setLoadingStates((prev) => ({ ...prev, neverLoggedIn: true }));
         const response = await apiClient.get('/admin/user-analytics/activity/never-logged-in', {
           params: { page, limit },
         });
@@ -148,7 +156,7 @@ export const useUserActivity = () => {
       } catch {
         toast.error(t('users:activity.errors.loadNeverLoggedIn', 'فشل تحميل المستخدمين الذين لم يدخلوا أبداً'));
       } finally {
-        setLoading(false);
+        setLoadingStates((prev) => ({ ...prev, neverLoggedIn: false }));
       }
     },
     [t]
@@ -156,6 +164,7 @@ export const useUserActivity = () => {
 
   return {
     loading,
+    loadingStates,
     activityStats,
     activeUsers,
     inactiveUsers,

@@ -1,15 +1,9 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  Stack,
-  Paper as MuiPaper,
-  TextField,
-  InputAdornment,
-  useTheme,
+import React, { useState, useMemo } from 'react';
+import {
+  Box,
   Typography,
-  Chip,
-  IconButton,
   Tooltip,
+  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -17,29 +11,36 @@ import {
   DialogActions,
   Button,
 } from '@mui/material';
-import { Search, Restore, Info, DeleteForever } from '@mui/icons-material';
+import { Restore, DeleteForever, Info, Refresh, PersonOff, TimerOff } from '@mui/icons-material';
 import { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
+import { PageShell } from '@/shared/design-system/components/PageShell';
+import { PageHeader } from '@/shared/design-system/components/PageHeader';
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
+import { DataToolbar } from '@/shared/design-system/components/DataToolbar';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { useDeletedUsers, usePermanentDeleteUser, useRestoreUser } from '../hooks/useUsers';
+import { ConfirmDialog } from '@/shared/design-system';
+import { EmptyState } from '@/shared/design-system/components/EmptyState';
+import { RowActionsMenu, type RowAction } from '@/shared/design-system/components/RowActionsMenu';
+import { useDeletedUsers, useRestoreUser, usePermanentDeleteUser } from '../hooks/useUsers';
 import type { DeletedUser } from '../types/user.types';
 import { formatDate } from '@/shared/utils/formatters';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useAuthStore } from '@/store/authStore';
-import '../styles/responsive-users.css';
 
 export const DeletedUsersPage: React.FC = () => {
   const { t } = useTranslation(['users', 'common']);
-  const theme = useTheme();
-  const { isMobile, isTablet, isXs } = useBreakpoint();
 
-  // State
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
-    pageSize: isMobile ? 10 : 20,
+    pageSize: 20,
   });
   const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'deletedAt', sort: 'desc' }]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [confirmRestore, setConfirmRestore] = useState<{ open: boolean; user: DeletedUser | null }>({
+    open: false,
+    user: null,
+  });
   const [permanentDeleteDialog, setPermanentDeleteDialog] = useState<{
     open: boolean;
     user: DeletedUser | null;
@@ -50,7 +51,6 @@ export const DeletedUsersPage: React.FC = () => {
     confirmPhone: '',
   });
 
-  // API
   const { data, isLoading, refetch } = useDeletedUsers({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -68,11 +68,15 @@ export const DeletedUsersPage: React.FC = () => {
     hasPermission('users.delete') &&
     hasPermission('super_admin.access');
 
-  // Handle restore
   const handleRestore = (user: DeletedUser) => {
-    if (window.confirm(t('users:deleted.confirmRestore'))) {
-      restoreUserMutation.mutate(user.id, {
+    setConfirmRestore({ open: true, user });
+  };
+
+  const handleRestoreConfirm = () => {
+    if (confirmRestore.user) {
+      restoreUserMutation.mutate(confirmRestore.user.id, {
         onSuccess: () => {
+          setConfirmRestore({ open: false, user: null });
           refetch();
         },
       });
@@ -80,31 +84,17 @@ export const DeletedUsersPage: React.FC = () => {
   };
 
   const openPermanentDeleteDialog = (user: DeletedUser) => {
-    setPermanentDeleteDialog({
-      open: true,
-      user,
-      confirmPhone: '',
-    });
+    setPermanentDeleteDialog({ open: true, user, confirmPhone: '' });
   };
 
   const closePermanentDeleteDialog = () => {
-    if (permanentDeleteMutation.isPending) {
-      return;
-    }
-    setPermanentDeleteDialog({
-      open: false,
-      user: null,
-      confirmPhone: '',
-    });
+    if (permanentDeleteMutation.isPending) return;
+    setPermanentDeleteDialog({ open: false, user: null, confirmPhone: '' });
   };
 
   const handlePermanentDelete = () => {
-    const targetUser = permanentDeleteDialog.user;
-    if (!targetUser) {
-      return;
-    }
-
-    permanentDeleteMutation.mutate(targetUser.id, {
+    if (!permanentDeleteDialog.user) return;
+    permanentDeleteMutation.mutate(permanentDeleteDialog.user.id, {
       onSuccess: () => {
         closePermanentDeleteDialog();
         refetch();
@@ -112,495 +102,198 @@ export const DeletedUsersPage: React.FC = () => {
     });
   };
 
-  // Table Columns
-  const columns = React.useMemo(() => [
-    {
-      field: 'phone',
-      headerName: t('users:list.columns.phone', 'رقم الهاتف'),
-      minWidth: 120,
-      flex: 0.9,
-      renderCell: (params: any) => (
-        <Box
-          sx={{
-            fontWeight: 'medium',
-            fontSize: { xs: '0.7rem', sm: '0.875rem' },
-            color: 'text.primary',
-          }}
-        >
-          {params.row.phone}
-        </Box>
-      ),
-    },
-    {
-      field: 'name',
-      headerName: t('users:list.columns.name', 'الاسم'),
-      minWidth: 130,
-      flex: 1.2,
-      renderCell: (params: any) => {
-        const fullName = `${params.row.firstName || ''} ${params.row.lastName || ''}`.trim();
-        return (
-          <Box
-            sx={{
-              fontWeight: 'medium',
-              fontSize: { xs: '0.7rem', sm: '0.875rem' },
-            }}
-          >
-            {fullName || t('common:notProvided', 'غير متوفر')}
-          </Box>
-        );
-      },
-    },
-    {
-      field: 'deletionReason',
-      headerName: t('users:deleted.deletionReason', 'سبب الحذف'),
-      minWidth: 200,
-      flex: 2,
-      renderCell: (params: any) => (
-        <Tooltip title={params.row.deletionReason} arrow>
-          <Box
-            sx={{
-              fontSize: { xs: '0.7rem', sm: '0.875rem' },
-              color: 'text.secondary',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-            }}
-          >
-            <Info sx={{ fontSize: '0.875rem', color: 'text.disabled' }} />
-            {params.row.deletionReason}
-          </Box>
-        </Tooltip>
-      ),
-    },
-    {
-      field: 'deletedAt',
-      headerName: t('users:deleted.deletedAt', 'تاريخ الحذف'),
-      minWidth: 150,
-      flex: 1,
-      renderCell: (params: any) => (
-        <Box
-          sx={{
-            fontSize: { xs: '0.7rem', sm: '0.875rem' },
-            color: 'text.secondary',
-          }}
-        >
-          {formatDate(params.row.deletedAt)}
-        </Box>
-      ),
-    },
-    {
-      field: 'createdAt',
-      headerName: t('users:list.columns.createdAt', 'تاريخ الإنشاء'),
-      minWidth: 150,
-      flex: 1,
-      renderCell: (params: any) => (
-        <Box
-          sx={{
-            fontSize: { xs: '0.7rem', sm: '0.875rem' },
-            color: 'text.secondary',
-          }}
-        >
-          {formatDate(params.row.createdAt)}
-        </Box>
-      ),
-    },
-    {
-      field: 'actions',
-      headerName: t('common:actions.title', 'الإجراءات'),
-      minWidth: canPermanentDelete ? 170 : 120,
-      flex: 0.8,
-      sortable: false,
-      renderCell: (params: any) => (
-        <Stack direction="row" spacing={1}>
-          <Tooltip title={t('users:deleted.restore')}>
-            <IconButton
-              size="small"
-              onClick={() => handleRestore(params.row)}
-              disabled={restoreUserMutation.isPending}
-              color="primary"
-              sx={{
-                '&:hover': {
-                  backgroundColor:
-                    theme.palette.mode === 'dark'
-                      ? 'rgba(255, 255, 255, 0.1)'
-                      : 'rgba(0, 0, 0, 0.04)',
-                },
-              }}
-            >
-              <Restore fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {canPermanentDelete && (
-            <Tooltip title={t('users:deleted.permanentDelete')}>
-              <IconButton
-                size="small"
-                onClick={() => openPermanentDeleteDialog(params.row)}
-                disabled={permanentDeleteMutation.isPending}
-                color="error"
-                sx={{
-                  '&:hover': {
-                    backgroundColor:
-                      theme.palette.mode === 'dark'
-                        ? 'rgba(211, 47, 47, 0.16)'
-                        : 'rgba(211, 47, 47, 0.08)',
-                  },
-                }}
-              >
-                <DeleteForever fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Stack>
-      ),
-    },
-  ], [
-    t,
-    theme.palette.mode,
-    canPermanentDelete,
-    handleRestore,
-    openPermanentDeleteDialog,
-    restoreUserMutation.isPending,
-    permanentDeleteMutation.isPending,
-  ]);
-
-  // Calculate table height responsively
-  const tableHeight = React.useMemo(() => {
-    if (isXs) return 'calc(100vh - 320px)';
-    if (isMobile) return 'calc(100vh - 300px)';
-    return 'calc(100vh - 280px)';
-  }, [isMobile, isXs]);
-
   const isPermanentDeleteConfirmationValid =
     !!permanentDeleteDialog.user &&
     permanentDeleteDialog.confirmPhone.trim() === permanentDeleteDialog.user.phone;
 
+  const recentCount = data?.data?.filter(
+    (u: DeletedUser) => new Date(u.deletedAt).getTime() > Date.now() - 7 * 86400000
+  ).length ?? 0;
+
+  const kpiCards = [
+    {
+      title: t('users:deleted.kpi.total', 'إجمالي المحذوفة'),
+      value: data?.meta?.total?.toLocaleString('en-US') ?? '0',
+      icon: <PersonOff fontSize="small" />,
+      tone: 'error' as const,
+    },
+    {
+      title: t('users:deleted.kpi.recentlyDeleted', 'محذوفة هذا الأسبوع'),
+      value: recentCount.toLocaleString('en-US'),
+      icon: <TimerOff fontSize="small" />,
+      tone: 'warning' as const,
+    },
+    {
+      title: t('users:deleted.kpi.restorable', 'قابلة للاستعادة'),
+      value: data?.meta?.total?.toLocaleString('en-US') ?? '0',
+      icon: <Restore fontSize="small" />,
+      tone: 'success' as const,
+    },
+  ];
+
+  const columns = useMemo(
+    () => [
+      {
+        field: 'name',
+        headerName: t('users:list.columns.name', 'المستخدم'),
+        minWidth: 180,
+        flex: 1.2,
+        renderCell: (params: any) => {
+          const fullName = `${params.row.firstName || ''} ${params.row.lastName || ''}`.trim();
+          return (
+            <Box sx={{ py: 0.5 }}>
+              <Typography variant="body2" fontWeight="medium" noWrap>
+                {fullName || t('common:notProvided', 'غير متوفر')}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {params.row.phone}
+              </Typography>
+            </Box>
+          );
+        },
+      },
+      {
+        field: 'deletionReason',
+        headerName: t('users:deleted.deletionReason', 'سبب الحذف'),
+        minWidth: 200,
+        flex: 1.5,
+        renderCell: (params: any) => (
+          <Tooltip title={params.row.deletionReason || ''} arrow>
+            <Typography variant="body2" color="text.secondary" noWrap sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Info sx={{ fontSize: 14, color: 'text.disabled', flexShrink: 0 }} />
+              {params.row.deletionReason || t('common:notProvided', 'غير متوفر')}
+            </Typography>
+          </Tooltip>
+        ),
+      },
+      {
+        field: 'deletedAt',
+        headerName: t('users:deleted.deletedAt', 'تاريخ الحذف'),
+        minWidth: 140,
+        flex: 0.8,
+        renderCell: (params: any) => (
+          <Typography variant="body2" color="text.secondary">
+            {formatDate(params.row.deletedAt)}
+          </Typography>
+        ),
+      },
+      {
+        field: 'createdAt',
+        headerName: t('users:list.columns.createdAt', 'تاريخ الإنشاء'),
+        minWidth: 140,
+        flex: 0.8,
+        renderCell: (params: any) => (
+          <Typography variant="body2" color="text.secondary">
+            {formatDate(params.row.createdAt)}
+          </Typography>
+        ),
+      },
+      {
+        field: 'actions',
+        headerName: t('common:actions.title', 'الإجراءات'),
+        minWidth: 80,
+        flex: 0.5,
+        sortable: false,
+        renderCell: (params: any) => {
+          const actions: RowAction[] = [
+            {
+              label: t('users:deleted.restore', 'استعادة الحساب'),
+              icon: <Restore fontSize="small" />,
+              onClick: () => handleRestore(params.row),
+              disabled: restoreUserMutation.isPending,
+            },
+          ];
+          if (canPermanentDelete) {
+            actions.push({
+              label: t('users:deleted.permanentDelete', 'حذف نهائي'),
+              icon: <DeleteForever fontSize="small" />,
+              onClick: () => openPermanentDeleteDialog(params.row),
+              disabled: permanentDeleteMutation.isPending,
+              danger: true,
+            });
+          }
+          return <RowActionsMenu actions={actions} menuId={`deleted-user-actions-${params.row.id}`} />;
+        },
+      },
+    ],
+    [t, canPermanentDelete, restoreUserMutation.isPending, permanentDeleteMutation.isPending]
+  );
+
   return (
-    <Box
-      sx={{
-        width: '100%',
-        bgcolor: 'background.default',
-        minHeight: '100vh',
-        pb: { xs: 2, sm: 3 },
-      }}
-    >
-      {/* Header */}
-      <Box sx={{ mb: { xs: 2, md: 3 }, px: { xs: 1, sm: 0 } }}>
-        <Typography
-          variant={isMobile ? 'h5' : isTablet ? 'h4' : 'h4'}
-          sx={{
-            fontWeight: 600,
-            mb: 1,
-            fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
-            color: theme.palette.text.primary,
-          }}
-        >
-          {t('users:deleted.title')}
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            color: theme.palette.text.secondary,
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-          }}
-        >
-          {t('users:deleted.description')}
-        </Typography>
-      </Box>
+    <PageShell spacing="compact">
+      <PageHeader
+        variant="compact"
+        title={t('users:deleted.title', 'الحسابات المحذوفة')}
+        description={t('users:deleted.description', 'استعادة الحسابات المحذوفة أو حذفها نهائياً حسب الصلاحيات')}
+        actions={[
+          {
+            label: t('common:actions.refresh', 'تحديث'),
+            icon: <Refresh fontSize="small" />,
+            onClick: () => refetch(),
+            variant: 'secondary',
+          },
+        ]}
+      />
 
-      {/* Search Bar */}
-      <Box sx={{ mb: { xs: 1.5, md: 2 }, px: { xs: 1, sm: 0 } }}>
-        <MuiPaper
-          elevation={0}
-          sx={{
-            p: { xs: 1.5, md: 2 },
-            bgcolor: theme.palette.background.paper,
-            backgroundImage: 'none',
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 1,
-          }}
-        >
-          <TextField
-            fullWidth
-            placeholder={t('users:deleted.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setPaginationModel((prev) => ({ ...prev, page: 0 }));
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search sx={{ color: theme.palette.text.secondary }} />
-                </InputAdornment>
-              ),
-            }}
-            size={isMobile ? 'small' : 'medium'}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                bgcolor: theme.palette.background.default,
-                '& fieldset': {
-                  borderColor: theme.palette.divider,
-                },
-                '&:hover fieldset': {
-                  borderColor: theme.palette.primary.main,
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: theme.palette.primary.main,
-                },
-              },
-              '& .MuiInputBase-input': {
-                color: theme.palette.text.primary,
-              },
-            }}
-          />
-        </MuiPaper>
-      </Box>
-
-      {/* Stats Info */}
-      {data && (
-        <Box sx={{ mb: { xs: 1.5, md: 2 }, px: { xs: 1, sm: 0 } }}>
-          <Chip
-            label={t('users:deleted.totalCount', { count: data.meta.total })}
-            color="primary"
-            variant="outlined"
-            size={isMobile ? 'small' : 'medium'}
-            sx={{
-              fontWeight: 500,
-              fontSize: isMobile ? '0.75rem' : undefined,
-              borderColor: theme.palette.primary.main,
-              color: theme.palette.primary.main,
-              '&:hover': {
-                backgroundColor:
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(255, 255, 255, 0.05)'
-                    : 'rgba(0, 0, 0, 0.04)',
-              },
-            }}
-          />
-        </Box>
-      )}
-
-      {/* Desktop View - Table */}
-      <Box
-        sx={{
-          mb: 2,
-          display: { xs: 'none', md: 'block' },
-          px: { xs: 1, sm: 0 },
-        }}
-      >
-        <Box
-          sx={{
-            height: tableHeight,
-            '& .MuiDataGrid-root': {
-              border: 'none',
-              bgcolor: theme.palette.background.paper,
-            },
-            '& .MuiDataGrid-cell': {
-              borderBottom: `1px solid ${theme.palette.divider}`,
-              color: theme.palette.text.primary,
-            },
-            '& .MuiDataGrid-columnHeaders': {
-              backgroundColor:
-                theme.palette.mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.05)'
-                  : 'rgba(0, 0, 0, 0.02)',
-              borderBottom: `1px solid ${theme.palette.divider}`,
-              color: theme.palette.text.primary,
-            },
-            '& .MuiDataGrid-footerContainer': {
-              borderTop: `1px solid ${theme.palette.divider}`,
-              color: theme.palette.text.secondary,
-            },
-            '& .MuiDataGrid-row:hover': {
-              backgroundColor:
-                theme.palette.mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.05)'
-                  : 'rgba(0, 0, 0, 0.02)',
-            },
-          }}
-        >
-          <DataTable
-            title={t('users:deleted.title', 'الحسابات المحذوفة')}
-            columns={columns}
-            rows={data?.data || []}
+      <PageSummaryGrid columns={4} compact>
+        {kpiCards.map((card) => (
+          <StatCard
+            key={card.title}
+            title={card.title}
+            value={card.value}
+            icon={card.icon}
+            tone={card.tone}
+            compact
             loading={isLoading}
-            paginationModel={paginationModel}
-            onPaginationModelChange={setPaginationModel}
-            sortModel={sortModel}
-            onSortModelChange={setSortModel}
-            height={tableHeight}
           />
-        </Box>
-      </Box>
+        ))}
+      </PageSummaryGrid>
 
-      {/* Mobile View - Cards */}
-      <Box
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          px: { xs: 1, sm: 0 },
+      <DataToolbar
+        searchValue={searchQuery}
+        searchPlaceholder={t('users:deleted.searchPlaceholder', 'بحث بالاسم أو الهاتف أو سبب الحذف...')}
+        onSearchChange={(value) => {
+          setSearchQuery(value);
+          setPaginationModel((prev) => ({ ...prev, page: 0 }));
         }}
-      >
-        {isLoading ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography color={theme.palette.text.secondary}>
-              {t('common:loading')}
-            </Typography>
-          </Box>
-        ) : data?.data && data.data.length > 0 ? (
-          <Stack spacing={{ xs: 1.5, md: 2 }}>
-            {data.data.map((user) => (
-              <MuiPaper
-                key={user.id}
-                elevation={0}
-                sx={{
-                  p: { xs: 1.5, md: 2 },
-                  bgcolor: theme.palette.background.paper,
-                  backgroundImage: 'none',
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 1,
-                }}
-              >
-                <Stack spacing={{ xs: 1, md: 1.5 }}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'start',
-                      gap: 1,
-                    }}
-                  >
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
-                        variant={isMobile ? 'body1' : 'subtitle1'}
-                        sx={{
-                          fontWeight: 600,
-                          color: theme.palette.text.primary,
-                          fontSize: isMobile ? '0.875rem' : undefined,
-                        }}
-                      >
-                        {user.firstName || user.lastName
-                          ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
-                          : t('common:notProvided')}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: theme.palette.text.secondary,
-                          mt: 0.5,
-                          fontSize: isMobile ? '0.75rem' : undefined,
-                        }}
-                      >
-                        {user.phone}
-                      </Typography>
-                    </Box>
-                    <Stack direction="row" spacing={0.5}>
-                      <IconButton
-                        size={isMobile ? 'small' : 'medium'}
-                        onClick={() => handleRestore(user)}
-                        disabled={restoreUserMutation.isPending}
-                        color="primary"
-                        sx={{
-                          '&:hover': {
-                            backgroundColor:
-                              theme.palette.mode === 'dark'
-                                ? 'rgba(255, 255, 255, 0.1)'
-                                : 'rgba(0, 0, 0, 0.04)',
-                          },
-                        }}
-                      >
-                        <Restore fontSize={isMobile ? 'small' : 'medium'} />
-                      </IconButton>
-                      {canPermanentDelete && (
-                        <IconButton
-                          size={isMobile ? 'small' : 'medium'}
-                          onClick={() => openPermanentDeleteDialog(user)}
-                          disabled={permanentDeleteMutation.isPending}
-                          color="error"
-                          sx={{
-                            '&:hover': {
-                              backgroundColor:
-                                theme.palette.mode === 'dark'
-                                  ? 'rgba(211, 47, 47, 0.16)'
-                                  : 'rgba(211, 47, 47, 0.08)',
-                            },
-                          }}
-                        >
-                          <DeleteForever fontSize={isMobile ? 'small' : 'medium'} />
-                        </IconButton>
-                      )}
-                    </Stack>
-                  </Box>
+        compact
+      />
 
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        fontWeight: 500,
-                        display: 'block',
-                        mb: 0.5,
-                        fontSize: isMobile ? '0.7rem' : undefined,
-                      }}
-                    >
-                      {t('users:deleted.deletionReason')}:
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: theme.palette.text.primary,
-                        fontSize: isMobile ? '0.75rem' : undefined,
-                      }}
-                    >
-                      {user.deletionReason}
-                    </Typography>
-                  </Box>
+      {data?.data && data.data.length > 0 ? (
+        <DataTable
+          columns={columns}
+          rows={data.data}
+          loading={isLoading}
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+          rowCount={data?.meta?.total}
+          paginationMode="server"
+          sortModel={sortModel}
+          onSortModelChange={setSortModel}
+          getRowId={(row: any) => row.id}
+          height="calc(100vh - 380px)"
+          density="compact"
+        />
+      ) : !isLoading ? (
+        <EmptyState
+          title={t('users:deleted.noResults', 'لا توجد حسابات محذوفة')}
+          description={t('users:deleted.noResultsDescription', 'كل الحسابات الحالية نشطة أو غير محذوفة')}
+          icon={<PersonOff sx={{ fontSize: 48 }} />}
+        />
+      ) : null}
 
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      gap: { xs: 1, md: 2 },
-                      flexWrap: 'wrap',
-                      pt: 0.5,
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        fontSize: isMobile ? '0.7rem' : undefined,
-                      }}
-                    >
-                      {t('users:deleted.deletedAt')}: {formatDate(user.deletedAt)}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        fontSize: isMobile ? '0.7rem' : undefined,
-                      }}
-                    >
-                      {t('users:list.columns.createdAt')}: {formatDate(user.createdAt)}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </MuiPaper>
-            ))}
-          </Stack>
-        ) : (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography
-              variant={isMobile ? 'body2' : 'body1'}
-              sx={{ color: theme.palette.text.secondary }}
-            >
-              {t('users:deleted.noResults')}
-            </Typography>
-          </Box>
-        )}
-      </Box>
+      <ConfirmDialog
+        open={confirmRestore.open}
+        title={t('users:deleted.confirmRestoreTitle', 'استعادة الحساب')}
+        message={t('users:deleted.confirmRestoreMessage', 'هل تريد استعادة هذا الحساب؟ سيتمكن المستخدم من استخدام الحساب مرة أخرى.')}
+        type="question"
+        confirmText={t('users:deleted.restore', 'استعادة')}
+        cancelText={t('common:actions.cancel', 'إلغاء')}
+        onConfirm={handleRestoreConfirm}
+        onCancel={() => setConfirmRestore({ open: false, user: null })}
+        loading={restoreUserMutation.isPending}
+        confirmColor="primary"
+      />
 
       <Dialog
         open={permanentDeleteDialog.open}
@@ -609,7 +302,7 @@ export const DeletedUsersPage: React.FC = () => {
         fullWidth
       >
         <DialogTitle sx={{ color: 'error.main', fontWeight: 700 }}>
-          {t('users:deleted.confirmPermanentDeleteTitle')}
+          {t('users:deleted.confirmPermanentDeleteTitle', 'حذف نهائي')}
         </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ color: 'text.primary', mb: 2 }}>
@@ -618,10 +311,10 @@ export const DeletedUsersPage: React.FC = () => {
             })}
           </DialogContentText>
           <DialogContentText sx={{ color: 'error.main', mb: 2, fontWeight: 600 }}>
-            {t('users:deleted.confirmPermanentDeleteWarning')}
+            {t('users:deleted.confirmPermanentDeleteWarning', 'هذا الإجراء لا يمكن التراجع عنه!')}
           </DialogContentText>
           <DialogContentText sx={{ color: 'text.secondary', mb: 1 }}>
-            {t('users:deleted.confirmPermanentDeleteHint')}
+            {t('users:deleted.confirmPermanentDeleteHint', 'يرجى كتابة رقم الهاتف للتأكيد:')}
           </DialogContentText>
           <TextField
             fullWidth
@@ -632,17 +325,19 @@ export const DeletedUsersPage: React.FC = () => {
                 confirmPhone: e.target.value,
               }))
             }
-            label={t('users:deleted.confirmPermanentDeleteInputLabel')}
+            label={t('users:deleted.confirmPermanentDeleteInputLabel', 'رقم الهاتف')}
             placeholder={t('users:deleted.confirmPermanentDeleteInputPlaceholder', {
               phone: permanentDeleteDialog.user?.phone || '',
             })}
             disabled={permanentDeleteMutation.isPending}
             autoFocus
+            size="small"
+            sx={{ mt: 1 }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={closePermanentDeleteDialog} disabled={permanentDeleteMutation.isPending}>
-            {t('common:actions.cancel')}
+            {t('common:actions.cancel', 'إلغاء')}
           </Button>
           <Button
             color="error"
@@ -651,12 +346,11 @@ export const DeletedUsersPage: React.FC = () => {
             disabled={!isPermanentDeleteConfirmationValid || permanentDeleteMutation.isPending}
           >
             {permanentDeleteMutation.isPending
-              ? t('common:loading')
-              : t('users:deleted.permanentDelete')}
+              ? t('common:loading', 'جاري التحميل...')
+              : t('users:deleted.permanentDelete', 'حذف نهائي')}
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageShell>
   );
 };
-

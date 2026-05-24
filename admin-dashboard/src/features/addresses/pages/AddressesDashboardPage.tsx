@@ -1,56 +1,64 @@
+import { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Typography,
   Chip,
-  Pagination,
-  Skeleton,
+  Tab,
+  Tabs,
   Stack,
-  TextField,
-  InputAdornment,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
   Tooltip,
-  Switch,
-  FormControlLabel,
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
-import { Close as CloseIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import {
+  Refresh,
+  LocationOn,
+  People,
+  CheckCircle,
+  Delete,
+  TrendingUp,
+  Visibility as VisibilityIcon,
+  Map as MapIcon,
+  BarChart as BarChartIcon,
+  List as ListIcon,
+  StarOutline,
+} from '@mui/icons-material';
 import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
+import { useTranslation } from 'react-i18next';
+import { useMediaQuery, useTheme } from '@mui/material';
+import { PageShell } from '@/shared/design-system/components/PageShell';
+import { PageHeader } from '@/shared/design-system/components/PageHeader';
+import { PageSummaryGrid, StatCard } from '@/shared/design-system';
+import { DataToolbar } from '@/shared/design-system/components/DataToolbar';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { AddressStatsCards } from '../components/AddressStatsCards';
+import { EmptyState } from '@/shared/design-system/components/EmptyState';
+import { RowActionsMenu, type RowAction } from '@/shared/design-system/components/RowActionsMenu';
+import { DetailsDrawer } from '@/shared/design-system/components/DetailsDrawer';
 import { TopCitiesChart } from '../components/TopCitiesChart';
-import { AddressCard } from '../components/AddressCard';
 import { AddressMap } from '../components/AddressMap';
-import { useAddressList } from '../hooks/useAddresses';
-import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
+import { AddressCard } from '../components/AddressCard';
+import {
+  useAddressList,
+  useAddressStats,
+  useMostUsedAddresses,
+  useNeverUsedAddresses,
+} from '../hooks/useAddresses';
 import { formatDate } from '@/shared/utils/formatters';
 import type { Address } from '../types/address.types';
 
 export function AddressesDashboardPage() {
   const { t } = useTranslation('addresses');
-  const breakpoint = useBreakpoint();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const [selectedTab, setSelectedTab] = useState(0);
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 20,
   });
   const [sortModel, setSortModel] = useState<GridSortModel>([{ field: 'createdAt', sort: 'desc' }]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [screenSize, setScreenSize] = useState(window.innerWidth);
+  const [showDeleted, setShowDeleted] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-  const [showDeleted, setShowDeleted] = useState(false);
-
-  // Listen to window resize
-  useEffect(() => {
-    const handleResize = () => setScreenSize(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const handleOpenDetails = useCallback((address: Address) => {
     setSelectedAddress(address);
@@ -62,7 +70,6 @@ export function AddressesDashboardPage() {
     setSelectedAddress(null);
   }, []);
 
-  // Fetch addresses data
   const { data, isLoading } = useAddressList({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -73,41 +80,58 @@ export function AddressesDashboardPage() {
     deletedOnly: showDeleted || undefined,
   });
 
-  // Define columns
-  const columns: GridColDef[] = useMemo(
+  const { data: stats, isLoading: statsLoading } = useAddressStats();
+  const { data: mostUsedData, isLoading: mostUsedLoading } = useMostUsedAddresses(20);
+  const { data: neverUsedData, isLoading: neverUsedLoading } = useNeverUsedAddresses(20);
+
+  const kpiCards = [
+    {
+      title: t('stats.totalAddresses', 'إجمالي العناوين'),
+      value: stats?.totalAddresses?.toLocaleString('en-US') ?? '0',
+      icon: <LocationOn fontSize="small" />,
+      tone: 'primary' as const,
+    },
+    {
+      title: t('stats.activeAddresses', 'النشطة'),
+      value: stats?.totalActiveAddresses?.toLocaleString('en-US') ?? '0',
+      icon: <CheckCircle fontSize="small" />,
+      tone: 'success' as const,
+    },
+    {
+      title: t('stats.deletedAddresses', 'المحذوفة'),
+      value: stats?.totalDeletedAddresses?.toLocaleString('en-US') ?? '0',
+      icon: <Delete fontSize="small" />,
+      tone: 'error' as const,
+    },
+    {
+      title: t('stats.totalUsers', 'مستخدمون لديهم عناوين'),
+      value: stats?.totalUsers?.toLocaleString('en-US') ?? '0',
+      icon: <People fontSize="small" />,
+      tone: 'info' as const,
+    },
+    {
+      title: t('stats.averagePerUser', 'متوسط/مستخدم'),
+      value: stats?.averagePerUser?.toFixed(1) ?? '0.0',
+      icon: <TrendingUp fontSize="small" />,
+      tone: 'warning' as const,
+    },
+  ];
+
+  const addressColumns: GridColDef[] = useMemo(
     () => [
       {
         field: 'userId',
-        headerName: t('list.columns.user', { defaultValue: 'المستخدم' }),
-        minWidth: 200,
+        headerName: t('list.columns.user', 'المستخدم'),
+        minWidth: 160,
         flex: 1.2,
-        renderCell: (params) => {
+        renderCell: (params: any) => {
           const address = params.row as Address;
           return (
-            <Box sx={{ py: 1 }}>
-              <Typography
-                variant="body2"
-                fontWeight="medium"
-                sx={{
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '100%',
-                }}
-              >
+            <Box sx={{ py: 0.5 }}>
+              <Typography variant="body2" fontWeight="medium" noWrap>
                 {address.userId?.name || '-'}
               </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  display: 'block',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '100%',
-                }}
-              >
+              <Typography variant="caption" color="text.secondary" noWrap>
                 {address.userId?.phone || '-'}
               </Typography>
             </Box>
@@ -116,31 +140,16 @@ export function AddressesDashboardPage() {
       },
       {
         field: 'label',
-        headerName: t('list.columns.label', { defaultValue: 'التسمية' }),
-        minWidth: 150,
+        headerName: t('list.columns.label', 'التسمية'),
+        minWidth: 120,
         flex: 0.8,
-        renderCell: (params) => {
+        renderCell: (params: any) => {
           const address = params.row as Address;
           return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '100%',
-                }}
-              >
-                {address.label}
-              </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="body2" noWrap>{address.label}</Typography>
               {address.isDefault && (
-                <Chip
-                  label={String(t('list.status.default', { defaultValue: 'افتراضي' }))}
-                  size="small"
-                  color="primary"
-                  sx={{ flexShrink: 0 }}
-                />
+                <Chip label={t('list.status.default', 'افتراضي')} size="small" color="primary" sx={{ height: 20, fontSize: '0.65rem' }} />
               )}
             </Box>
           );
@@ -148,70 +157,37 @@ export function AddressesDashboardPage() {
       },
       {
         field: 'line1',
-        headerName: t('list.columns.address', { defaultValue: 'العنوان' }),
-        minWidth: 300,
-        flex: 2,
-        renderCell: (params) => {
+        headerName: t('list.columns.address', 'العنوان'),
+        minWidth: 200,
+        flex: 1.5,
+        renderCell: (params: any) => {
           const address = params.row as Address;
           return (
-            <Box sx={{ py: 1, width: '100%' }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
-                  lineHeight: 1.5,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-                title={address.line1}
-              >
+            <Tooltip title={address.line1} arrow>
+              <Typography variant="body2" noWrap sx={{ maxWidth: '100%' }}>
                 {address.line1}
               </Typography>
-              {address.notes && (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{
-                    display: 'block',
-                    mt: 0.5,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                  title={address.notes}
-                >
-                  {address.notes}
-                </Typography>
-              )}
-            </Box>
+            </Tooltip>
           );
         },
       },
       {
         field: 'city',
-        headerName: t('list.columns.city', { defaultValue: 'المدينة' }),
-        minWidth: 120,
-        flex: 0.7,
-        renderCell: (params) => {
+        headerName: t('list.columns.city', 'المدينة'),
+        minWidth: 100,
+        flex: 0.6,
+        renderCell: (params: any) => {
           const address = params.row as Address;
-          return (
-            <Box sx={{ py: 1 }}>
-              <Typography variant="body2">{address.city || '-'}</Typography>
-            </Box>
-          );
+          return <Chip label={address.city || '-'} size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />;
         },
       },
       {
         field: 'usageCount',
-        headerName: t('list.columns.usage', { defaultValue: 'الاستخدام' }),
-        minWidth: 100,
-        flex: 0.6,
+        headerName: t('list.columns.usage', 'الاستخدام'),
+        minWidth: 80,
+        flex: 0.5,
         align: 'center',
-        headerAlign: 'center',
-        renderCell: (params) => {
+        renderCell: (params: any) => {
           const address = params.row as Address;
           return (
             <Chip
@@ -219,35 +195,25 @@ export function AddressesDashboardPage() {
               size="small"
               variant="outlined"
               color={address.usageCount > 5 ? 'success' : 'default'}
+              sx={{ fontSize: '0.7rem' }}
             />
           );
         },
       },
       {
         field: 'isActive',
-        headerName: t('list.columns.status', { defaultValue: 'الحالة' }),
-        minWidth: 120,
-        flex: 0.7,
+        headerName: t('list.columns.status', 'الحالة'),
+        minWidth: 90,
+        flex: 0.5,
         align: 'center',
-        headerAlign: 'center',
-        renderCell: (params) => {
+        renderCell: (params: any) => {
           const address = params.row as Address;
           if (address.deletedAt) {
-            return (
-              <Chip
-                label={String(t('list.status.deleted', { defaultValue: 'محذوف' }))}
-                size="small"
-                color="error"
-                variant="filled"
-              />
-            );
+            return <Chip label={t('list.status.deleted', 'محذوف')} size="small" color="error" />;
           }
-          const statusLabel = address.isActive
-            ? String(t('list.status.active', { defaultValue: 'نشط' }))
-            : String(t('list.status.inactive', { defaultValue: 'غير نشط' }));
           return (
             <Chip
-              label={statusLabel}
+              label={address.isActive ? t('list.status.active', 'نشط') : t('list.status.inactive', 'غير نشط')}
               size="small"
               color={address.isActive ? 'success' : 'default'}
             />
@@ -255,285 +221,300 @@ export function AddressesDashboardPage() {
         },
       },
       {
-        field: 'createdAt',
-        headerName: t('list.columns.createdAt', { defaultValue: 'تاريخ الإنشاء' }),
-        minWidth: 140,
-        flex: 0.8,
-        valueFormatter: (value) => formatDate(value as Date),
-        renderCell: (params) => (
-          <Box sx={{ py: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {params.formattedValue || '-'}
-            </Typography>
-          </Box>
-        ),
-      },
-      {
         field: 'actions',
-        headerName: t('list.columns.actions', { defaultValue: 'الإجراءات' }),
+        headerName: t('list.columns.actions', 'الإجراءات'),
+        minWidth: 80,
+        flex: 0.5,
         sortable: false,
-        filterable: false,
-        minWidth: 120,
-        flex: 0.7,
-        align: 'center',
-        headerAlign: 'center',
-        renderCell: (params) => {
+        renderCell: (params: any) => {
           const address = params.row as Address;
-          return (
-            <Tooltip title={t('list.actions.viewDetails', { defaultValue: 'عرض التفاصيل' })}>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<VisibilityIcon fontSize="small" />}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleOpenDetails(address);
-                }}
-                sx={{ minWidth: 'auto' }}
-              >
-                {t('list.actions.view', { defaultValue: 'عرض' })}
-              </Button>
-            </Tooltip>
-          );
+          const actions: RowAction[] = [
+            {
+              label: t('list.actions.viewDetails', 'عرض التفاصيل'),
+              icon: <VisibilityIcon fontSize="small" />,
+              onClick: () => handleOpenDetails(address),
+            },
+          ];
+          return <RowActionsMenu actions={actions} menuId={`address-actions-${address._id}`} />;
         },
       },
     ],
     [handleOpenDetails, t]
   );
 
-  // Calculate total pages for mobile pagination
-  const totalPages = data?.pagination
-    ? Math.ceil(data.pagination.total / paginationModel.pageSize)
-    : 0;
+  const mostUsedColumns: GridColDef[] = useMemo(
+    () => [
+      {
+        field: 'label',
+        headerName: t('list.columns.label', 'العنوان'),
+        minWidth: 160,
+        flex: 1.2,
+      },
+      {
+        field: 'city',
+        headerName: t('list.columns.city', 'المدينة'),
+        minWidth: 100,
+        flex: 0.7,
+        renderCell: (params: any) => <Chip label={params.row.city || '-'} size="small" variant="outlined" />,
+      },
+      {
+        field: 'usageCount',
+        headerName: t('list.columns.usage', 'الاستخدام'),
+        minWidth: 90,
+        flex: 0.6,
+        align: 'center',
+        renderCell: (params: any) => (
+          <Typography variant="body2" fontWeight="bold">
+            {params.row.usageCount || 0}
+          </Typography>
+        ),
+      },
+      {
+        field: 'lastUsedAt',
+        headerName: t('list.columns.lastUsed', 'آخر استخدام'),
+        minWidth: 130,
+        flex: 0.8,
+        renderCell: (params: any) => (
+          <Typography variant="body2" color="text.secondary">
+            {params.row.lastUsedAt ? formatDate(params.row.lastUsedAt) : '-'}
+          </Typography>
+        ),
+      },
+    ],
+    [t]
+  );
 
-  return (
-    <Box sx={{ px: { xs: 1, sm: 2, md: 3 }, pb: { xs: 2, sm: 3 } }}>
-      {/* Header - Responsive */}
-      <Box sx={{ mb: { xs: 2, sm: 3, md: 4 }, mt: { xs: 1, sm: 2 } }}>
-        <Typography
-          variant={breakpoint.isMobile ? 'h5' : 'h4'}
-          component="h1"
-          gutterBottom
-          fontWeight="bold"
-          sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' } }}
-        >
-          {t('navigation.title', { defaultValue: '📍 إدارة العناوين' })}
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{
-            fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
-            display: { xs: 'none', sm: 'block' },
-          }}
-        >
-          {t('navigation.subtitle', {
-            defaultValue: 'نظرة شاملة على عناوين المستخدمين والتحليلات الجغرافية',
-          })}
-        </Typography>
-      </Box>
+  const neverUsedColumns: GridColDef[] = useMemo(
+    () => [
+      {
+        field: 'label',
+        headerName: t('list.columns.label', 'العنوان'),
+        minWidth: 160,
+        flex: 1.2,
+      },
+      {
+        field: 'city',
+        headerName: t('list.columns.city', 'المدينة'),
+        minWidth: 100,
+        flex: 0.7,
+        renderCell: (params: any) => <Chip label={params.row.city || '-'} size="small" variant="outlined" />,
+      },
+      {
+        field: 'createdAt',
+        headerName: t('list.columns.createdAt', 'تاريخ الإنشاء'),
+        minWidth: 130,
+        flex: 0.8,
+        renderCell: (params: any) => (
+          <Typography variant="body2" color="text.secondary">
+            {formatDate(params.row.createdAt)}
+          </Typography>
+        ),
+      },
+    ],
+    [t]
+  );
 
-      {/* Stats Cards */}
-      <Box sx={{ mb: { xs: 3, sm: 4, md: 5 } }}>
-        <AddressStatsCards />
-      </Box>
+  const tabs = [
+    { key: 'list', label: t('tabs.list', 'قائمة العناوين'), icon: <ListIcon sx={{ fontSize: 18 }} /> },
+    { key: 'cities', label: t('tabs.cities', 'أكثر المدن'), icon: <BarChartIcon sx={{ fontSize: 18 }} /> },
+    { key: 'mostUsed', label: t('tabs.mostUsed', 'الأكثر استخداماً'), icon: <StarOutline sx={{ fontSize: 18 }} /> },
+    { key: 'neverUsed', label: t('tabs.neverUsed', 'غير المستخدمة'), icon: <Delete sx={{ fontSize: 18 }} /> },
+    { key: 'map', label: t('tabs.map', 'الخريطة'), icon: <MapIcon sx={{ fontSize: 18 }} /> },
+  ];
 
-      {/* Top Cities Chart */}
-      <Box sx={{ mb: { xs: 3, sm: 4, md: 5 } }}>
-        <TopCitiesChart />
-      </Box>
-
-      {/* Address List Section */}
-      <Box>
-        {/* Desktop View - Table */}
-        <Box sx={{ display: { xs: 'none', md: 'block' }, overflowX: 'auto' }}>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              mb: 2,
-            }}
-          >
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={showDeleted}
-                  onChange={(_, checked) => {
-                    setShowDeleted(checked);
-                    setPaginationModel((prev) => ({ ...prev, page: 0 }));
-                  }}
-                  color="primary"
-                />
-              }
-              label={t('list.filters.showDeleted', { defaultValue: 'إظهار المحذوفة' })}
-            />
-          </Box>
-          <DataTable
-            columns={columns}
-            rows={data?.data || []}
-            loading={isLoading}
-            paginationModel={paginationModel}
-            onPaginationModelChange={setPaginationModel}
-            sortModel={sortModel}
-            onSortModelChange={setSortModel}
-            searchPlaceholder={t('list.search.placeholder', { defaultValue: 'ابحث عن عنوان...' })}
-            onSearch={(query) => {
-              setSearchQuery(query);
-              setPaginationModel((prev) => ({ ...prev, page: 0 }));
-            }}
-            getRowId={(row: any) => row._id}
-            height={screenSize < 600 ? 'calc(100vh - 140px)' : 'calc(100vh - 180px)'}
-            getRowHeight={() => 'auto'}
-            onRowClick={(params) => handleOpenDetails(params.row as Address)}
-            sx={{
-              '& .MuiDataGrid-cell': {
-                py: 1,
-                display: 'flex',
-                alignItems: 'center',
-              },
-              '& .MuiDataGrid-row': {
-                '&:hover': {
-                  backgroundColor: (theme: { palette: { mode: string } }) =>
-                    theme.palette.mode === 'dark'
-                      ? 'rgba(255, 255, 255, 0.05)'
-                      : 'rgba(0, 0, 0, 0.02)',
-                },
-              },
-            }}
-          />
-        </Box>
-
-        {/* Mobile/Tablet View - Cards */}
-        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-          {/* Search Bar for Mobile */}
-          <Box sx={{ mb: 2 }}>
-            <TextField
-              fullWidth
-              placeholder={t('list.search.placeholder', { defaultValue: 'ابحث عن عنوان...' })}
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
+  const renderTabContent = () => {
+    switch (selectedTab) {
+      case 0:
+        return (
+          <>
+            <DataToolbar
+              searchValue={searchQuery}
+              searchPlaceholder={t('list.search.placeholder', 'ابحث عن عنوان...')}
+              onSearchChange={(value) => {
+                setSearchQuery(value);
                 setPaginationModel((prev) => ({ ...prev, page: 0 }));
               }}
-              size="medium"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  fontSize: { xs: '16px', sm: '14px' }, // Prevents zoom on iOS
-                },
-              }}
-            />
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={showDeleted}
-                  onChange={(_, checked) => {
-                    setShowDeleted(checked);
+              filters={
+                <Chip
+                  label={showDeleted ? t('list.filters.hideDeleted', 'إخفاء المحذوفة') : t('list.filters.showDeleted', 'إظهار المحذوفة')}
+                  size="small"
+                  variant={showDeleted ? 'filled' : 'outlined'}
+                  color={showDeleted ? 'error' : 'default'}
+                  onClick={() => {
+                    setShowDeleted(!showDeleted);
                     setPaginationModel((prev) => ({ ...prev, page: 0 }));
                   }}
-                  color="primary"
-                  size="small"
+                  sx={{ cursor: 'pointer' }}
                 />
               }
-              label={t('list.filters.showDeleted', { defaultValue: 'إظهار المحذوفة' })}
+              compact
             />
+            {data?.data && data.data.length > 0 ? (
+              <DataTable
+                columns={addressColumns}
+                rows={data.data}
+                loading={isLoading}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                rowCount={data?.pagination?.total}
+                paginationMode="server"
+                sortModel={sortModel}
+                onSortModelChange={setSortModel}
+                getRowId={(row: any) => row._id}
+                height="calc(100vh - 440px)"
+                density="compact"
+              />
+            ) : !isLoading ? (
+              <EmptyState
+                title={t('list.noAddresses', 'لا توجد عناوين')}
+                description={t('list.noAddressesDescription', 'لا توجد عناوين مطابقة للبحث')}
+                icon={<LocationOn sx={{ fontSize: 48 }} />}
+              />
+            ) : null}
+          </>
+        );
+
+      case 1:
+        return <TopCitiesChart />;
+
+      case 2:
+        return (
+          <>
+            {mostUsedData && mostUsedData.length > 0 ? (
+              <DataTable
+                columns={mostUsedColumns}
+                rows={mostUsedData}
+                loading={mostUsedLoading}
+                paginationModel={{ page: 0, pageSize: 50 }}
+                onPaginationModelChange={() => {}}
+                paginationMode="client"
+                getRowId={(row: any) => row._id}
+                height="calc(100vh - 380px)"
+                density="compact"
+              />
+            ) : !mostUsedLoading ? (
+              <EmptyState
+                title={t('list.noAddresses', 'لا توجد عناوين')}
+                description={t('mostUsed.empty', 'لا توجد بيانات عن العناوين الأكثر استخداماً')}
+                icon={<StarOutline sx={{ fontSize: 48 }} />}
+              />
+            ) : null}
+          </>
+        );
+
+      case 3:
+        return (
+          <>
+            {neverUsedData && neverUsedData.length > 0 ? (
+              <DataTable
+                columns={neverUsedColumns}
+                rows={neverUsedData}
+                loading={neverUsedLoading}
+                paginationModel={{ page: 0, pageSize: 50 }}
+                onPaginationModelChange={() => {}}
+                paginationMode="client"
+                getRowId={(row: any) => row._id}
+                height="calc(100vh - 380px)"
+                density="compact"
+              />
+            ) : !neverUsedLoading ? (
+              <EmptyState
+                title={t('neverUsed.empty', 'لا توجد عناوين غير مستخدمة')}
+                description={t('neverUsed.emptyDescription', 'عناوين لم تُستخدم في الطلبات بعد')}
+                icon={<Delete sx={{ fontSize: 48 }} />}
+              />
+            ) : null}
+          </>
+        );
+
+      case 4:
+        return selectedAddress ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: 'calc(100vh - 380px)' }}>
+            <AddressMap address={selectedAddress} />
           </Box>
+        ) : (
+          <EmptyState
+            title={t('map.noAddress', 'اختر عنواناً لعرضه على الخريطة')}
+            description={t('map.selectAddress', 'انتقل لتبويب قائمة العناوين واختر عرض التفاصيل')}
+            icon={<MapIcon sx={{ fontSize: 48 }} />}
+          />
+        );
 
-          {/* Loading State */}
-          {isLoading ? (
-            <Stack spacing={2}>
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
-              ))}
-            </Stack>
-          ) : data?.data && data.data.length > 0 ? (
-            <>
-              <Stack spacing={2}>
-                {data.data.map((address: Address) => (
-                  <AddressCard key={address._id} address={address} />
-                ))}
-              </Stack>
+      default:
+        return null;
+    }
+  };
 
-              {/* Mobile Pagination */}
-              {totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
-                  <Pagination
-                    count={totalPages}
-                    page={paginationModel.page + 1}
-                    onChange={(_, page) => {
-                      setPaginationModel((prev) => ({ ...prev, page: page - 1 }));
-                    }}
-                    color="primary"
-                    size={breakpoint.isXs ? 'small' : 'medium'}
-                    showFirstButton
-                    showLastButton
-                  />
-                </Box>
-              )}
-            </>
-          ) : (
-            <Box
-              sx={{
-                textAlign: 'center',
-                py: 8,
-                px: 2,
-              }}
-            >
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                {t('list.noResults', { defaultValue: 'لا توجد نتائج' })}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {searchQuery
-                  ? t('list.noResultsForSearch', {
-                      defaultValue: 'لم يتم العثور على عناوين تطابق البحث',
-                    })
-                  : t('list.noAddresses', { defaultValue: 'لا توجد عناوين متاحة' })}
-              </Typography>
-            </Box>
-          )}
-        </Box>
+  return (
+    <PageShell spacing="compact">
+      <PageHeader
+        variant="compact"
+        title={t('navigation.title', 'إدارة العناوين')}
+        description={t('navigation.subtitle', 'تحليل العناوين والمدن والاستخدام الجغرافي')}
+        actions={[
+          {
+            label: t('common:actions.refresh', 'تحديث'),
+            icon: <Refresh fontSize="small" />,
+            onClick: () => {},
+            variant: 'secondary',
+          },
+        ]}
+      />
+
+      <PageSummaryGrid columns={5} compact>
+        {kpiCards.map((card) => (
+          <StatCard
+            key={card.title}
+            title={card.title}
+            value={card.value}
+            icon={card.icon}
+            tone={card.tone}
+            compact
+            loading={statsLoading}
+          />
+        ))}
+      </PageSummaryGrid>
+
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs
+          value={selectedTab}
+          onChange={(_, newValue) => setSelectedTab(newValue)}
+          variant={isMobile ? 'scrollable' : 'standard'}
+          scrollButtons="auto"
+          allowScrollButtonsMobile={isMobile}
+          sx={{
+            '& .MuiTab-root': {
+              minHeight: 44,
+              px: 1.5,
+              fontSize: '0.8rem',
+            },
+          }}
+        >
+          {tabs.map((tab) => (
+            <Tab
+              key={tab.key}
+              icon={tab.icon}
+              iconPosition="start"
+              label={tab.label}
+            />
+          ))}
+        </Tabs>
       </Box>
 
-      <Dialog
+      {renderTabContent()}
+
+      <DetailsDrawer
         open={detailsOpen && !!selectedAddress}
         onClose={handleCloseDetails}
-        fullWidth
-        maxWidth="md"
-        aria-labelledby="address-details-dialog-title"
+        title={t('details.title', 'تفاصيل العنوان')}
       >
-        <DialogTitle
-          id="address-details-dialog-title"
-          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          {t('details.title', { defaultValue: 'تفاصيل العنوان' })}
-          <IconButton
-            onClick={handleCloseDetails}
-            aria-label={t('details.close', { defaultValue: 'إغلاق' })}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent
-          dividers
-          sx={{ backgroundColor: (theme) => theme.palette.background.default }}
-        >
-          {selectedAddress && (
-            <>
-              <AddressCard address={selectedAddress} />
-              <AddressMap address={selectedAddress} />
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </Box>
+        {selectedAddress && (
+          <Stack spacing={2}>
+            <AddressCard address={selectedAddress} />
+            <AddressMap address={selectedAddress} />
+          </Stack>
+        )}
+      </DetailsDrawer>
+    </PageShell>
   );
 }
