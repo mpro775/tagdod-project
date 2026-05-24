@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -39,6 +40,47 @@ export class MediaController {
   private readonly logger = new Logger(MediaController.name);
 
   constructor(private mediaService: MediaService) {}
+
+  @Post('usage')
+  @ApiOperation({
+    summary: 'تحديث استخدام الوسائط',
+    description: 'زيادة أو تقليل عداد استخدام ملف وسائط داخل محتوى آخر',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['mediaId', 'usedInId', 'action'],
+      properties: {
+        mediaId: { type: 'string' },
+        usedInId: { type: 'string' },
+        action: { type: 'string', enum: ['increment', 'decrement'] },
+      },
+    },
+  })
+  async updateMediaUsage(
+    @Body()
+    body: {
+      mediaId?: string;
+      usedInId?: string;
+      action?: 'increment' | 'decrement';
+    },
+  ) {
+    if (!body.mediaId || !body.usedInId) {
+      throw new BadRequestException('mediaId and usedInId are required');
+    }
+
+    if (body.action === 'increment') {
+      const media = await this.mediaService.incrementUsage(body.mediaId, body.usedInId);
+      return { mediaId: body.mediaId, usageCount: media.usageCount };
+    }
+
+    if (body.action === 'decrement') {
+      const media = await this.mediaService.decrementUsage(body.mediaId, body.usedInId);
+      return { mediaId: body.mediaId, usageCount: media.usageCount };
+    }
+
+    throw new BadRequestException('action must be increment or decrement');
+  }
 
   // ==================== رفع صورة إلى المستودع ====================
   @Post('upload')

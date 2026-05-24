@@ -2,13 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CartFilters,
- 
   BulkActionRequest,
   ConvertToOrderRequest,
   SendReminderRequest,
 } from '../types/cart.types';
 import { cartApi } from '../api/cartApi';
-import { useSnackbar } from 'notistack';
+import toast from 'react-hot-toast';
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error ? error.message : fallback;
 
 // Query Keys
 export const cartQueryKeys = {
@@ -145,7 +147,6 @@ export const useRevenueImpactAnalytics = (period: string = '30') => {
 // Convert cart to order
 export const useConvertCartToOrder = () => {
   const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
 
   return useMutation({
     mutationFn: async (request: ConvertToOrderRequest) => {
@@ -155,10 +156,10 @@ export const useConvertCartToOrder = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: cartQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: cartQueryKeys.detail(variables.cartId) });
-      enqueueSnackbar('تم تحويل السلة إلى طلب بنجاح', { variant: 'success' });
+      toast.success('تم تحويل السلة إلى طلب بنجاح');
     },
-    onError: (error: any) => {
-      enqueueSnackbar(error.message || 'فشل في تحويل السلة إلى طلب', { variant: 'error' });
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'فشل في تحويل السلة إلى طلب'));
     },
   });
 };
@@ -166,7 +167,6 @@ export const useConvertCartToOrder = () => {
 // Send cart reminder
 export const useSendCartReminder = () => {
   const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
 
   return useMutation({
     mutationFn: async (request: SendReminderRequest) => {
@@ -174,12 +174,12 @@ export const useSendCartReminder = () => {
       return response; // sendCartReminder already returns the data
     },
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: cartQueryKeys.all });
       queryClient.invalidateQueries({ queryKey: cartQueryKeys.detail(variables.cartId) });
-      queryClient.invalidateQueries({ queryKey: cartQueryKeys.abandoned({}) });
-      enqueueSnackbar('تم إرسال التذكير بنجاح', { variant: 'success' });
+      toast.success('تم إرسال التذكير بنجاح');
     },
-    onError: (error: any) => {
-      enqueueSnackbar(error.message || 'فشل في إرسال التذكير', { variant: 'error' });
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'فشل في إرسال التذكير'));
     },
   });
 };
@@ -187,7 +187,6 @@ export const useSendCartReminder = () => {
 // Send all reminders
 export const useSendAllReminders = () => {
   const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
 
   return useMutation({
     mutationFn: async () => {
@@ -196,10 +195,10 @@ export const useSendAllReminders = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: cartQueryKeys.all });
-      enqueueSnackbar(`تم إرسال ${data?.sent || 0} تذكير بنجاح`, { variant: 'success' });
+      toast.success(`تم إرسال ${data?.sent ?? data?.emailsSent ?? 0} تذكير بنجاح`);
     },
-    onError: (error: any) => {
-      enqueueSnackbar(error.message || 'فشل في إرسال التذكيرات', { variant: 'error' });
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'فشل في إرسال التذكيرات'));
     },
   });
 };
@@ -207,7 +206,6 @@ export const useSendAllReminders = () => {
 // Bulk actions
 export const useBulkActions = () => {
   const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
 
   return useMutation({
     mutationFn: async (request: BulkActionRequest) => {
@@ -216,10 +214,10 @@ export const useBulkActions = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: cartQueryKeys.all });
-      enqueueSnackbar(`تم معالجة ${data?.processed || 0} سلة بنجاح`, { variant: 'success' });
+      toast.success(`تم معالجة ${data?.processed || 0} سلة بنجاح`);
     },
-    onError: (error: any) => {
-      enqueueSnackbar(error.message || 'فشل في تنفيذ الإجراءات الجماعية', { variant: 'error' });
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'فشل في تنفيذ الإجراءات الجماعية'));
     },
   });
 };

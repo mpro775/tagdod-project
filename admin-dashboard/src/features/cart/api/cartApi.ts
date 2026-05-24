@@ -14,37 +14,8 @@ import {
   PricingSummary,
 } from '../types/cart.types';
 import apiClient from '@/core/api/client';
+import { unwrapApiData } from '@/core/api/response';
 import type { ApiResponse } from '@/shared/types/common.types';
-
-// API Base Configuration
-
-
-// Request interceptor to add auth token
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor for error handling
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('authToken');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
 
 // Cart Management API
 export const cartApi = {
@@ -58,7 +29,9 @@ export const cartApi = {
     const response = await apiClient.get<ApiResponse<{ carts: Cart[]; pagination: any }>>('/admin/carts/all', { params });
 
     // Convert pagination back to 0-based for frontend
-    const result = response.data.data;
+    const result = unwrapApiData<{ carts: Cart[]; pagination?: any }>(response.data, {
+      carts: [],
+    });
     if (result.pagination) {
       result.pagination = {
         ...result.pagination,
@@ -72,7 +45,7 @@ export const cartApi = {
   // Get cart by ID
   async getCartById(cartId: string): Promise<Cart> {
     const response = await apiClient.get<ApiResponse<Cart>>(`/admin/carts/${cartId}`);
-    return response.data.data;
+    return unwrapApiData<Cart>(response.data);
   },
 
   // Convert cart to order
@@ -80,7 +53,7 @@ export const cartApi = {
     request: ConvertToOrderRequest
   ): Promise<{ orderId: string; cartId: string; status: string; message: string }> {
     const response = await apiClient.post<ApiResponse<{ orderId: string; cartId: string; status: string; message: string }>>(`/admin/carts/${request.cartId}/convert-to-order`, request);
-    return response.data.data;
+    return unwrapApiData<{ orderId: string; cartId: string; status: string; message: string }>(response.data);
   },
 
   // Get abandoned carts
@@ -88,7 +61,10 @@ export const cartApi = {
     filters: CartFilters = {}
   ): Promise<{ carts: Cart[]; count: number; totalCarts: number; totalValue: number }> {
     const response = await apiClient.get<ApiResponse<{ carts: Cart[]; count: number; totalCarts: number; totalValue: number }>>('/admin/carts/abandoned', { params: filters });
-    return response.data.data;
+    return unwrapApiData<{ carts: Cart[]; count: number; totalCarts: number; totalValue: number }>(
+      response.data,
+      { carts: [], count: 0, totalCarts: 0, totalValue: 0 },
+    );
   },
 
   // Send reminder to specific cart
@@ -96,56 +72,56 @@ export const cartApi = {
     request: SendReminderRequest
   ) {
     const response = await apiClient.post<ApiResponse<any>>(`/admin/carts/${request.cartId}/send-reminder`, request);
-    return response.data.data;
+    return unwrapApiData(response.data);
   },
 
   // Send reminders to all abandoned carts
   async sendAllReminders() {
     const response = await apiClient.post<ApiResponse<any>>('/admin/carts/send-reminders');
-    return response.data.data;
+    return unwrapApiData(response.data);
   },
 
   // Analytics API
   async getCartAnalytics(period: string = '30'): Promise<CartAnalytics> {
     const response = await apiClient.get<ApiResponse<CartAnalytics>>('/admin/carts/analytics', { params: { period } });
-    return response.data.data;
+    return unwrapApiData<CartAnalytics>(response.data);
   },
 
   async getCartStatistics(): Promise<CartStatistics> {
     const response = await apiClient.get<ApiResponse<CartStatistics>>('/admin/carts/statistics');
-    return response.data.data;
+    return unwrapApiData<CartStatistics>(response.data);
   },
 
   async getConversionRates(period: string = '30'): Promise<ConversionRates> {
     const response = await apiClient.get<ApiResponse<ConversionRates>>('/admin/carts/conversion-rates', { params: { period } });
-    return response.data.data;
+    return unwrapApiData<ConversionRates>(response.data);
   },
 
   async getRecoveryCampaignAnalytics(
     period: string = '30'
   ): Promise<RecoveryCampaignAnalytics> {
     const response = await apiClient.get<ApiResponse<RecoveryCampaignAnalytics>>('/admin/carts/recovery-campaigns', { params: { period } });
-    return response.data.data;
+    return unwrapApiData<RecoveryCampaignAnalytics>(response.data);
   },
 
   async getCustomerBehaviorAnalytics(
     period: string = '30'
   ): Promise<CustomerBehaviorAnalytics> {
     const response = await apiClient.get<ApiResponse<CustomerBehaviorAnalytics>>('/admin/carts/customer-behavior', { params: { period } });
-    return response.data.data;
+    return unwrapApiData<CustomerBehaviorAnalytics>(response.data);
   },
 
   async getRevenueImpactAnalytics(
     period: string = '30'
   ): Promise<RevenueImpactAnalytics> {
     const response = await apiClient.get<ApiResponse<RevenueImpactAnalytics>>('/admin/carts/revenue-impact', { params: { period } });
-    return response.data.data;
+    return unwrapApiData<RevenueImpactAnalytics>(response.data);
   },
 
   // Bulk actions
   async performBulkActions(request: BulkActionRequest): Promise<BulkActionResponse> {
     const response = await apiClient.post<ApiResponse<BulkActionResponse>>('/admin/carts/bulk-actions', request);
-    return response.data.data;
+    return unwrapApiData<BulkActionResponse>(response.data);
   },
 };
 

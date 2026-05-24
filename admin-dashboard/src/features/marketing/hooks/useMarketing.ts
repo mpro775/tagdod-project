@@ -165,19 +165,12 @@ export const useToggleCouponStatus = () => {
 };
 
 export const useCouponAnalytics = (id?: string, period?: number) => {
-  // If id is provided, get individual coupon analytics
-  if (id) {
-    return useQuery({
-      queryKey: [MARKETING_KEY, 'coupons', id, 'analytics'],
-      queryFn: () => marketingApi.getCouponAnalytics(id),
-      enabled: !!id,
-    });
-  }
-
-  // If no id, get general coupon analytics
   return useQuery({
-    queryKey: [MARKETING_KEY, 'coupons', 'analytics', period || 30],
-    queryFn: () => marketingApi.getCouponsAnalytics(period || 30),
+    queryKey: id
+      ? [MARKETING_KEY, 'coupons', id, 'analytics']
+      : [MARKETING_KEY, 'coupons', 'analytics', period || 30],
+    queryFn: () =>
+      id ? marketingApi.getCouponAnalytics(id) : marketingApi.getCouponsAnalytics(period || 30),
   });
 };
 

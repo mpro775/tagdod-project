@@ -358,8 +358,7 @@
       "fields": {
         "reminderType": "Reminder Type",
         "customMessage": "Custom Message (Optional)"
-      },
-      "comingSoon": "This feature is under development and will be released soon"
+      }
     },
     "delete": {
       "title": "Delete Cart",

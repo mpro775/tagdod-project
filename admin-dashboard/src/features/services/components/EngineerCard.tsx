@@ -109,7 +109,7 @@ export const EngineerCard: React.FC<EngineerCardProps> = ({
               </Tooltip>
             )}
             {onEdit && (
-              <Tooltip title={t('common:actions.edit')}>
+              <Tooltip title={t('services:engineers.editUserEngineer', 'تعديل بيانات المستخدم/المهندس')}>
                 <IconButton size="small" onClick={() => onEdit(engineer)} color="info">
                   <Edit fontSize="small" />
                 </IconButton>

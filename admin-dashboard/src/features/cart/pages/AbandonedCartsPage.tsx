@@ -20,18 +20,19 @@ import {
   Pagination,
 } from '@mui/material';
 import { Refresh, Send, Email, TrendingDown, MonetizationOn, Schedule, ShoppingCartCheckout, Delete, Visibility } from '@mui/icons-material';
-import { useSnackbar } from 'notistack';
+import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import { ConfirmDialog } from '@/shared/components';
 import { DataTable } from '@/shared/components';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
-import { CartFilters, Cart } from '../types/cart.types';
+import { BulkActionRequest, CartFilters, Cart } from '../types/cart.types';
 import {
   useAbandonedCarts,
   useCartFilters,
   useCartSelection,
+  useBulkActions,
   useSendAllReminders,
 } from '../hooks/useCart';
 import { CartFilters as CartFiltersComponent, CartDetailsModal } from '../components';
@@ -47,7 +48,6 @@ import {
 } from '../api/cartApi';
 
 export const AbandonedCartsPage: React.FC = () => {
-  const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation('cart');
   const theme = useTheme();
   const { isMobile, isXs } = useBreakpoint();
@@ -77,6 +77,7 @@ export const AbandonedCartsPage: React.FC = () => {
   const { data: cartData, isLoading, error, refetch } = useAbandonedCarts(filters);
 
   const sendAllRemindersMutation = useSendAllReminders();
+  const bulkActionsMutation = useBulkActions();
 
   // Event handlers
   const handleFiltersChange = (newFilters: CartFilters) => {
@@ -116,10 +117,13 @@ export const AbandonedCartsPage: React.FC = () => {
       confirmColor: 'error',
     });
     if (confirmed) {
-      // Implement delete functionality
-      enqueueSnackbar(t('messages.success.deleted'), { variant: 'success' });
+      const bulkRequest: BulkActionRequest = {
+        action: 'delete',
+        cartIds: [cart._id],
+      };
+      bulkActionsMutation.mutate(bulkRequest);
     }
-  }, [t, enqueueSnackbar, confirmDialog]);
+  }, [t, confirmDialog, bulkActionsMutation]);
 
   const handleSelectAll = useCallback((cartIds: string[]) => {
     if (cartIds.length === 0) {
@@ -704,11 +708,9 @@ export const AbandonedCartsPage: React.FC = () => {
                   (cart) => (cart.abandonmentEmailsSent || 0) === 0
                 );
                 if (cartsToRemind.length === 0) {
-                  enqueueSnackbar(t('actions.allCartsReminded'), { variant: 'info' });
+                  toast(t('actions.allCartsReminded'));
                 } else {
-                  enqueueSnackbar(t('actions.remindersWillBeSent', { count: cartsToRemind.length }), {
-                    variant: 'info',
-                  });
+                  toast(t('actions.remindersWillBeSent', { count: cartsToRemind.length }));
                 }
               }}
               disabled={cartsWithNoEmails === 0}
@@ -726,9 +728,7 @@ export const AbandonedCartsPage: React.FC = () => {
                   const emailsSent = cart.abandonmentEmailsSent || 0;
                   return emailsSent > 0 && emailsSent < 3;
                 });
-                enqueueSnackbar(t('actions.followUpCartsCount', { count: followUpCarts.length }), {
-                  variant: 'info',
-                });
+                toast(t('actions.followUpCartsCount', { count: followUpCarts.length }));
               }}
               fullWidth={isMobile}
               size={isMobile ? 'medium' : 'large'}

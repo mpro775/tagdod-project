@@ -163,6 +163,7 @@ export class AdminCartController {
     };
   }
 
+  @RequirePermissions(AdminPermission.CARTS_SEND_REMINDERS, AdminPermission.ADMIN_ACCESS)
   @Post(':id/send-reminder')
   @ApiOperation({
     summary: 'إرسال تذكير لسلة محددة',

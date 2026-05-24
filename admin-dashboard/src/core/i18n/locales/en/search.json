@@ -30,10 +30,26 @@
     "noData": "No data available",
     "rowsPerPage": "Rows per page:"
   },
-  "placeholders": {
-    "comingSoon": {
-      "title": "Coming Soon: Zero Results Searches",
-      "subtitle": "This feature will be added when Search Logs are enabled"
+  "zeroResults": {
+    "title": "Zero Result Searches",
+    "columns": {
+      "query": "Search query",
+      "count": "Count",
+      "lastSearchedAt": "Last searched",
+      "actions": "Actions"
+    },
+    "actions": {
+      "copy": "Copy query",
+      "copySuccess": "Search query copied",
+      "copyError": "Could not copy search query",
+      "createProduct": "Create product for this query"
+    },
+    "empty": {
+      "title": "No zero-result searches",
+      "subtitle": "Search queries with no customer results will appear here."
+    },
+    "errors": {
+      "loadFailed": "Failed to load zero-result searches"
     }
   },
   "messages": {

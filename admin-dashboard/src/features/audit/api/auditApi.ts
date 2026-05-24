@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/client';
+import { unwrapApiData } from '@/core/api/response';
 import type { ApiResponse } from '@/shared/types/common.types';
 import {
   AuditLog,
@@ -27,7 +28,19 @@ export const auditApi = {
     if (filters.page) params.append('page', filters.page.toString());
 
     const response = await apiClient.get<ApiResponse<AuditLogsResponse>>(`/admin/audit/logs?${params.toString()}`);
-    return response.data.data;
+    const payload = unwrapApiData<AuditLogsResponse & { logs?: AuditLog[] }>(response.data, {
+      data: [],
+      meta: { total: 0, limit: filters.limit || 50, skip: 0, hasMore: false },
+    });
+    return {
+      data: payload.data ?? payload.logs ?? [],
+      meta: payload.meta ?? {
+        total: 0,
+        limit: filters.limit || 50,
+        skip: 0,
+        hasMore: false,
+      },
+    };
   },
 
   // Get audit statistics
@@ -37,25 +50,25 @@ export const auditApi = {
     if (endDate) params.append('endDate', endDate);
 
     const response = await apiClient.get<ApiResponse<AuditStatsResponse>>(`/admin/audit/stats?${params.toString()}`);
-    return response.data.data;
+    return { data: unwrapApiData<AuditStatsResponse['data']>(response.data) };
   },
 
   // Get available audit actions
   getAuditActions: async (): Promise<AuditActionsResponse> => {
     const response = await apiClient.get<ApiResponse<AuditActionsResponse>>('/admin/audit/actions');
-    return response.data.data;
+    return { data: unwrapApiData<AuditActionsResponse['data']>(response.data, []) };
   },
 
   // Get available audit resources
   getAuditResources: async (): Promise<AuditResourcesResponse> => {
     const response = await apiClient.get<ApiResponse<AuditResourcesResponse>>('/admin/audit/resources');
-    return response.data.data;
+    return { data: unwrapApiData<AuditResourcesResponse['data']>(response.data, []) };
   },
 
   // Get audit log by ID (if needed for detailed view)
   getAuditLogById: async (id: string): Promise<AuditLog> => {
     const response = await apiClient.get<ApiResponse<AuditLog>>(`/admin/audit/logs/${id}`);
-    return response.data.data;
+    return unwrapApiData<AuditLog>(response.data);
   },
 
   // Export audit logs

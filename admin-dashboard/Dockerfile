@@ -12,8 +12,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (using legacy-peer-deps for react-quill compatibility with React 19)
-RUN npm ci --legacy-peer-deps
-
+RUN npm ci
 # Copy source code
 COPY . .
 

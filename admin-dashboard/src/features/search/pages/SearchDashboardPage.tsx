@@ -2,6 +2,7 @@ import { Box, Typography, Tab, Tabs, useTheme, useMediaQuery } from '@mui/materi
 import { useTranslation } from 'react-i18next';
 import { SearchStatsCards } from '../components/SearchStatsCards';
 import { TopSearchTermsTable } from '../components/TopSearchTermsTable';
+import { ZeroResultsTable } from '../components/ZeroResultsTable';
 import { useState } from 'react';
 
 interface TabPanelProps {
@@ -161,36 +162,9 @@ export function SearchDashboardPage() {
         </Box>
       </TabPanel>
 
-      {/* Tab 2: Zero Results - Placeholder */}
+      {/* Tab 2: Zero Results */}
       <TabPanel value={currentTab} index={1}>
-        <Box 
-          sx={{ 
-            textAlign: 'center', 
-            py: { xs: 4, sm: 6, md: 8 },
-            px: { xs: 2, sm: 3 },
-          }}
-        >
-          <Typography 
-            variant={isMobile ? 'body1' : 'h6'} 
-            color="text.secondary"
-            sx={{
-              fontWeight: 500,
-              mb: { xs: 1, sm: 1.5 },
-            }}
-          >
-            {t('placeholders.comingSoon.title')}
-          </Typography>
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-            sx={{ 
-              fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-              opacity: 0.8,
-            }}
-          >
-            {t('placeholders.comingSoon.subtitle')}
-          </Typography>
-        </Box>
+        <ZeroResultsTable />
       </TabPanel>
     </Box>
   );

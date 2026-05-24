@@ -74,13 +74,6 @@ export const productsApi = {
   },
 
   /**
-   * Update product statistics
-   */
-  updateStats: async (id: string): Promise<void> => {
-    await apiClient.post(`/admin/products/${id}/update-stats`);
-  },
-
-  /**
    * Get product statistics
    * API returns: { total, active, featured, newProducts, byStatus: { draft, active, archived } }
    * We map to ProductStats: { total, active, featured, new, draft, archived }

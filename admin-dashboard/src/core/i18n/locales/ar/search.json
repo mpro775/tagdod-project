@@ -30,10 +30,26 @@
     "noData": "لا توجد بيانات",
     "rowsPerPage": "عدد الصفوف في الصفحة:"
   },
-  "placeholders": {
-    "comingSoon": {
-      "title": "قريباً: عمليات البحث بدون نتائج",
-      "subtitle": "سيتم إضافة هذه الميزة عند تفعيل Search Logs"
+  "zeroResults": {
+    "title": "عمليات البحث بدون نتائج",
+    "columns": {
+      "query": "عبارة البحث",
+      "count": "العدد",
+      "lastSearchedAt": "آخر بحث",
+      "actions": "الإجراءات"
+    },
+    "actions": {
+      "copy": "نسخ عبارة البحث",
+      "copySuccess": "تم نسخ عبارة البحث",
+      "copyError": "تعذر نسخ عبارة البحث",
+      "createProduct": "إضافة منتج لهذه العبارة"
+    },
+    "empty": {
+      "title": "لا توجد عمليات بحث بدون نتائج",
+      "subtitle": "ستظهر هنا عبارات البحث التي لم يجد لها العملاء نتائج."
+    },
+    "errors": {
+      "loadFailed": "فشل تحميل عمليات البحث بدون نتائج"
     }
   },
   "messages": {

@@ -2,9 +2,11 @@ import {
   Controller,
   Get,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Response } from 'express';
 import { AuditService } from '../../shared/services/audit.service';
 import { AuditAction, AuditResource } from './schemas/audit-log.schema';
 import { RolesGuard } from '../../shared/guards/roles.guard';
@@ -20,6 +22,59 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @Controller('admin/audit')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
+
+  private escapeCsvValue(value: unknown): string {
+    if (value === undefined || value === null) return '';
+    const text =
+      value instanceof Date
+        ? value.toISOString()
+        : typeof value === 'object'
+          ? JSON.stringify(value)
+          : String(value);
+    return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+
+  private formatAuditUser(value: unknown): string {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object') {
+      const user = value as {
+        _id?: unknown;
+        phone?: string;
+        firstName?: string;
+        lastName?: string;
+      };
+      const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+      return name || user.phone || String(user._id ?? '');
+    }
+    return String(value);
+  }
+
+  private buildAuditFilters(query: {
+    userId?: string;
+    performedBy?: string;
+    action?: AuditAction;
+    resource?: AuditResource;
+    resourceId?: string;
+    startDate?: string;
+    endDate?: string;
+    isSensitive?: string;
+    limit?: string;
+    skip?: string;
+  }) {
+    return {
+      userId: query.userId,
+      performedBy: query.performedBy,
+      action: query.action as AuditAction,
+      resource: query.resource as AuditResource,
+      resourceId: query.resourceId,
+      startDate: query.startDate ? new Date(query.startDate) : undefined,
+      endDate: query.endDate ? new Date(query.endDate) : undefined,
+      isSensitive: query.isSensitive ? query.isSensitive === 'true' : undefined,
+      limit: query.limit ? parseInt(query.limit) : 50,
+      skip: query.skip ? parseInt(query.skip) : 0,
+    };
+  }
 
   @Get('logs')
   @RequirePermissions('audit.read', 'admin.access')
@@ -45,18 +100,7 @@ export class AuditController {
       skip?: string;
     },
   ) {
-    const filters = {
-      userId: query.userId,
-      performedBy: query.performedBy,
-      action: query.action as AuditAction,
-      resource: query.resource as AuditResource,
-      resourceId: query.resourceId,
-      startDate: query.startDate ? new Date(query.startDate) : undefined,
-      endDate: query.endDate ? new Date(query.endDate) : undefined,
-      isSensitive: query.isSensitive ? query.isSensitive === 'true' : undefined,
-      limit: query.limit ? parseInt(query.limit) : 50,
-      skip: query.skip ? parseInt(query.skip) : 0,
-    };
+    const filters = this.buildAuditFilters(query);
 
     const [logs, total] = await Promise.all([
       this.auditService.searchAuditLogs(filters),
@@ -72,6 +116,64 @@ export class AuditController {
         hasMore: filters.skip + filters.limit < total,
       },
     };
+  }
+
+  @Get('export')
+  @RequirePermissions('audit.read', 'admin.access')
+  @ApiOperation({
+    summary: 'تصدير سجلات التدقيق',
+    description: 'تصدير سجلات التدقيق المطابقة للفلاتر بصيغة CSV',
+  })
+  async exportAuditLogs(
+    @Query() query: {
+      userId?: string;
+      performedBy?: string;
+      action?: AuditAction;
+      resource?: AuditResource;
+      resourceId?: string;
+      startDate?: string;
+      endDate?: string;
+      isSensitive?: string;
+    },
+    @Res() res: Response,
+  ) {
+    const filters = {
+      ...this.buildAuditFilters(query),
+      limit: 10000,
+      skip: 0,
+    };
+
+    const logs = await this.auditService.searchAuditLogs(filters);
+    const headers = [
+      'createdAt',
+      'performedBy',
+      'action',
+      'resource',
+      'resourceId',
+      'isSensitive',
+      'ipAddress',
+      'userAgent',
+    ];
+    const rows = logs.map((log) => {
+      const record = log as typeof log & { createdAt?: Date };
+      return [
+        record.timestamp || record.createdAt,
+        this.formatAuditUser(record.performedBy),
+        record.action,
+        record.resource,
+        record.resourceId,
+        record.isSensitive ? 'true' : 'false',
+        record.ipAddress,
+        record.userAgent,
+      ].map((value) => this.escapeCsvValue(value));
+    });
+
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\r\n');
+    const date = new Date().toISOString().slice(0, 10);
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="audit-logs-${date}.csv"`);
+    res.send(`\uFEFF${csv}`);
   }
 
   @Get('stats')

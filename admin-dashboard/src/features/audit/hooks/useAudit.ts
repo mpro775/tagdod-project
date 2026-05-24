@@ -153,7 +153,7 @@ export const useAuditExport = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `audit-logs-${new Date().toISOString().split('T')[0]}.xlsx`;
+      link.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -162,8 +162,7 @@ export const useAuditExport = () => {
       toast.success('تم تصدير سجلات التدقيق بنجاح', {
         duration: 3000,
       });
-    } catch (error) {
-      console.error('Export error:', error);
+    } catch {
       toast.error('فشل في تصدير سجلات التدقيق', {
         duration: 3000,
       });

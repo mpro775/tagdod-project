@@ -26,6 +26,7 @@ export default [
       },
     },
     plugins: {
+      '@typescript-eslint': tseslint.plugin,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       'jsx-a11y': jsxA11y,
@@ -36,6 +37,8 @@ export default [
       '@typescript-eslint/no-unused-vars': ['error', { 
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
+        caughtErrors: 'none',
+        ignoreRestSiblings: true,
       }],
       'no-console': 'warn',
       

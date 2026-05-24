@@ -1150,6 +1150,14 @@ export const ServicesListPage: React.FC = () => {
                                   cursor: 'pointer',
                                 }}
                                 onClick={() => window.open(image, '_blank')}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    window.open(image, '_blank');
+                                  }
+                                }}
+                                role="button"
+                                tabIndex={0}
                               />
                             </ImageListItem>
                           ))}

@@ -252,11 +252,7 @@ export const useNotificationStatsOverview = () => {
 export const useUserNotifications = (params: { limit?: number; offset?: number } = {}) => {
   return useQuery({
     queryKey: [USER_NOTIFICATIONS_KEY, params],
-    queryFn: async () => {
-      const result = await notificationsApi.getUserNotifications(params);
-      console.log('useUserNotifications - API result:', result);
-      return result;
-    },
+    queryFn: () => notificationsApi.getUserNotifications(params),
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 };
@@ -335,7 +331,7 @@ export const useRegisterDevice = () => {
 
 export const useUnregisterDevice = () => {
   return useMutation({
-    mutationFn: (id: string) => notificationsApi.unregisterDevice(id),
+    mutationFn: (token: string) => notificationsApi.unregisterDevice(token),
     onSuccess: () => {
       toast.success('تم إلغاء تسجيل الجهاز بنجاح');
     },

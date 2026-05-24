@@ -444,13 +444,16 @@ export class MediaService {
   async incrementUsage(id: string, usedInId: string) {
     const media = await this.mediaModel.findById(id);
 
-    if (media) {
-      media.usageCount += 1;
-      if (!media.usedIn?.includes(usedInId)) {
-        media.usedIn = [...(media.usedIn || []), usedInId];
-      }
-      await media.save();
+    if (!media) {
+      throw new MediaNotFoundException({ mediaId: id });
     }
+
+    media.usageCount += 1;
+    if (!media.usedIn?.includes(usedInId)) {
+      media.usedIn = [...(media.usedIn || []), usedInId];
+    }
+    await media.save();
+    return media;
   }
 
   /**
@@ -459,11 +462,14 @@ export class MediaService {
   async decrementUsage(id: string, usedInId: string) {
     const media = await this.mediaModel.findById(id);
 
-    if (media) {
-      media.usageCount = Math.max(0, media.usageCount - 1);
-      media.usedIn = media.usedIn?.filter((item) => item !== usedInId) || [];
-      await media.save();
+    if (!media) {
+      throw new MediaNotFoundException({ mediaId: id });
     }
+
+    media.usageCount = Math.max(0, media.usageCount - 1);
+    media.usedIn = media.usedIn?.filter((item) => item !== usedInId) || [];
+    await media.save();
+    return media;
   }
 
   /**

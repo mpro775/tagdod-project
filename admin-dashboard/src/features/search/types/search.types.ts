@@ -24,6 +24,14 @@ export interface ZeroResultSearch {
   lastSearchedAt: string;
 }
 
+export interface SearchPagination {
+  page?: number;
+  limit?: number;
+  total?: number;
+  totalPages?: number;
+  pages?: number;
+}
+
 export interface SearchTrend {
   date: string;
   count: number;

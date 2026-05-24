@@ -27,7 +27,7 @@ import {
   Email,
   ShoppingCart,
 } from '@mui/icons-material';
-import { useSnackbar } from 'notistack';
+import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
@@ -61,7 +61,6 @@ import {
 } from '../api/cartApi';
 
 export const CartManagementPage: React.FC = () => {
-  const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation('cart');
   const theme = useTheme();
   const { isMobile, isXs } = useBreakpoint();
@@ -166,9 +165,7 @@ export const CartManagementPage: React.FC = () => {
 
   const handleBulkDelete = async () => {
     if (selectedCarts.length === 0) {
-      enqueueSnackbar(t('bulk.noneSelected'), {
-        variant: 'warning',
-      });
+      toast.error(t('bulk.noneSelected'));
       return;
     }
 
@@ -191,9 +188,7 @@ export const CartManagementPage: React.FC = () => {
 
   const handleBulkClear = async () => {
     if (selectedCarts.length === 0) {
-      enqueueSnackbar(t('bulk.noneSelected'), {
-        variant: 'warning',
-      });
+      toast.error(t('bulk.noneSelected'));
       return;
     }
 

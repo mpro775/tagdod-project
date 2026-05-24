@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/client';
+import { unwrapApiData } from '@/core/api/response';
 import type { ApiResponse, PaginatedResponse } from '@/shared/types/common.types';
 import type {
   Media,
@@ -12,6 +13,13 @@ import type {
   MediaWithUser,
   BulkMediaOperation,
 } from '../types/media.types';
+
+const unwrapNestedData = <T>(payload: unknown): T => {
+  const value = unwrapApiData<T | { data: T }>(payload);
+  return value && typeof value === 'object' && 'data' in value
+    ? (value as { data: T }).data
+    : (value as T);
+};
 
 export const mediaApi = {
   /**
@@ -35,7 +43,7 @@ export const mediaApi = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data.data;
+    return unwrapApiData<UploadResponse>(response.data);
   },
 
   /**
@@ -45,7 +53,12 @@ export const mediaApi = {
     const response = await apiClient.get<ApiResponse<PaginatedResponse<Media>>>('/admin/media', {
       params,
     });
-    return response.data.data;
+    return unwrapApiData<PaginatedResponse<Media>>(response.data, { data: [], meta: {
+      page: params.page || 1,
+      limit: params.limit || 24,
+      total: 0,
+      totalPages: 0,
+    } });
   },
 
   /**
@@ -53,7 +66,7 @@ export const mediaApi = {
    */
   getById: async (id: string): Promise<Media> => {
     const response = await apiClient.get<ApiResponse<Media>>(`/admin/media/${id}`);
-    return response.data.data;
+    return unwrapNestedData<Media>(response.data);
   },
 
   /**
@@ -61,7 +74,7 @@ export const mediaApi = {
    */
   update: async (id: string, data: UpdateMediaDto): Promise<Media> => {
     const response = await apiClient.patch<ApiResponse<Media>>(`/admin/media/${id}`, data);
-    return response.data.data;
+    return unwrapNestedData<Media>(response.data);
   },
 
   /**
@@ -76,7 +89,7 @@ export const mediaApi = {
    */
   restore: async (id: string): Promise<Media> => {
     const response = await apiClient.post<ApiResponse<Media>>(`/admin/media/${id}/restore`);
-    return response.data.data;
+    return unwrapNestedData<Media>(response.data);
   },
 
   /**
@@ -91,8 +104,7 @@ export const mediaApi = {
    */
   getStats: async (): Promise<MediaStats> => {
     const response = await apiClient.get('/admin/media/stats/summary');
-    // Handle nested data structure: response.data.data.data or response.data.data
-    return response.data.data?.data || response.data.data;
+    return unwrapNestedData<MediaStats>(response.data);
   },
 
   /**
@@ -107,7 +119,7 @@ export const mediaApi = {
    */
   bulkOperation: async (data: BulkMediaOperation): Promise<{ success: boolean; affected: number }> => {
     const response = await apiClient.post<ApiResponse<{ success: boolean; affected: number }>>('/admin/media/bulk', data);
-    return response.data.data;
+    return unwrapApiData<{ success: boolean; affected: number }>(response.data);
   },
 
   /**
@@ -115,7 +127,7 @@ export const mediaApi = {
    */
   cleanupDeleted: async (): Promise<CleanupResponse> => {
     const response = await apiClient.post<ApiResponse<CleanupResponse>>('/admin/media/cleanup/deleted');
-    return response.data.data;
+    return unwrapApiData<CleanupResponse>(response.data);
   },
 
   /**
@@ -123,7 +135,7 @@ export const mediaApi = {
    */
   cleanupDuplicates: async (): Promise<CleanupResponse> => {
     const response = await apiClient.post<ApiResponse<CleanupResponse>>('/admin/media/cleanup/duplicates');
-    return response.data.data;
+    return unwrapApiData<CleanupResponse>(response.data);
   },
 
   /**
@@ -133,7 +145,7 @@ export const mediaApi = {
     const response = await apiClient.post<ApiResponse<CleanupResponse>>('/admin/media/cleanup/unused', null, {
       params: days ? { days } : {},
     });
-    return response.data.data;
+    return unwrapApiData<CleanupResponse>(response.data);
   },
 
   /**
@@ -141,6 +153,6 @@ export const mediaApi = {
    */
   getMediaWithUser: async (id: string): Promise<MediaWithUser> => {
     const response = await apiClient.get<ApiResponse<MediaWithUser>>(`/admin/media/${id}/with-user`);
-    return response.data.data;
+    return unwrapNestedData<MediaWithUser>(response.data);
   },
 };

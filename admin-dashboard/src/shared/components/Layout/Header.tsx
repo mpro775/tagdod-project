@@ -158,7 +158,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             {t('common.profile', 'الملف الشخصي')}
           </MenuItem>
 
-          <MenuItem onClick={() => navigate('/settings')}>
+          <MenuItem onClick={() => navigate('/system/settings')}>
             <ListItemIcon>
               <Settings fontSize="small" />
             </ListItemIcon>

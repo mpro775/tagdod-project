@@ -1,4 +1,5 @@
 import { apiClient } from '@/core/api/client';
+import { unwrapApiData } from '@/core/api/response';
 import type { ApiResponse } from '@/shared/types/common.types';
 import type {
   Notification,
@@ -44,6 +45,8 @@ function mapApiTemplateToNotificationTemplate(api: ApiTemplateResponse | Notific
   return api as NotificationTemplate;
 }
 
+const getEnvelopeData = <T>(payload: unknown, fallback?: T): T => unwrapApiData<T>(payload, fallback);
+
 export const notificationsApi = {
   // ===== Admin Notifications =====
   list: async (
@@ -60,8 +63,10 @@ export const notificationsApi = {
       },
     });
 
-    // Backend returns: { notifications, total, meta }
-    const responseData = response.data.data || response.data;
+    const responseData = getEnvelopeData<{ notifications?: Notification[]; total?: number; meta?: any }>(
+      response.data,
+      {},
+    );
     const notifications = responseData.notifications || [];
     const total = responseData.total || 0;
     const meta = responseData.meta || {};
@@ -83,31 +88,30 @@ export const notificationsApi = {
     const response = await apiClient.get<ApiResponse<Notification>>(
       `/notifications/admin/notification/${id}`
     );
-    // Backend returns: { success: true, data: notification }
-    return response.data.data || response.data;
+    return getEnvelopeData<Notification>(response.data);
   },
 
   getDeliveryDetails: async (id: string): Promise<NotificationDeliveryDetails> => {
     const response = await apiClient.get<ApiResponse<NotificationDeliveryDetails>>(
       `/notifications/admin/notification/${id}/delivery-details`
     );
-    // Backend returns: { success: true, data: details }
-    return response.data.data || response.data;
+    return getEnvelopeData<NotificationDeliveryDetails>(response.data);
   },
 
   getBatchDeliveryDetails: async (batchId: string): Promise<NotificationDeliveryDetails> => {
     const response = await apiClient.get<ApiResponse<NotificationDeliveryDetails>>(
       `/notifications/admin/batch/${batchId}/delivery-details`
     );
-    return response.data.data || response.data;
+    return getEnvelopeData<NotificationDeliveryDetails>(response.data);
   },
 
   create: async (data: CreateNotificationDto): Promise<Notification> => {
     const response = await apiClient.post<
       ApiResponse<{ notification: Notification; message: string }>
     >('/notifications/admin/create', data);
-    // Backend returns: { notification, message }
-    const responseData = response.data.data || response.data;
+    const responseData = getEnvelopeData<{ notification?: Notification } & Notification>(
+      response.data,
+    );
     return responseData.notification || responseData;
   },
 
@@ -116,8 +120,7 @@ export const notificationsApi = {
       `/notifications/admin/notification/${id}`,
       data
     );
-    // Backend returns: { success: true, data: notification }
-    return response.data.data || response.data;
+    return getEnvelopeData<Notification>(response.data);
   },
 
   delete: async (id: string): Promise<void> => {
@@ -128,7 +131,7 @@ export const notificationsApi = {
     const response = await apiClient.delete<ApiResponse<{ deletedCount: number; message?: string }>>(
       `/notifications/admin/batch/${batchId}`
     );
-    const data = response.data.data || response.data;
+    const data = getEnvelopeData<{ deletedCount?: number }>(response.data, {});
     return { deletedCount: data?.deletedCount ?? 0 };
   },
 
@@ -146,7 +149,11 @@ export const notificationsApi = {
         results: Array<{ notificationId: string; success: boolean; error?: string }>;
       }>
     >(`/notifications/admin/batch/${batchId}/send`);
-    const data = response.data.data || response.data;
+    const data = getEnvelopeData<{
+      sent?: number;
+      failed?: number;
+      results?: Array<{ notificationId: string; success: boolean; error?: string }>;
+    }>(response.data, {});
     return {
       sent: data?.sent ?? 0,
       failed: data?.failed ?? 0,
@@ -159,8 +166,7 @@ export const notificationsApi = {
       `/notifications/admin/notification/${id}/send`,
       data
     );
-    // Backend returns notification in data field
-    return response.data.data || response.data;
+    return getEnvelopeData<Notification>(response.data);
   },
 
   bulkSend: async (
@@ -169,7 +175,10 @@ export const notificationsApi = {
     const response = await apiClient.post<
       ApiResponse<{ batchId: string; accepted: boolean; total: number }>
     >('/notifications/admin/bulk-send', data);
-    const payload = response.data.data || response.data;
+    const payload = getEnvelopeData<{ batchId: string; accepted: boolean; total: number }>(
+      response.data,
+      { batchId: '', accepted: false, total: 0 },
+    );
     return {
       batchId: payload.batchId,
       accepted: !!payload.accepted,
@@ -194,7 +203,7 @@ export const notificationsApi = {
     const response = await apiClient.get<ApiResponse<ApiTemplateResponse[] | NotificationTemplate[]>>(
       '/notifications/admin/templates'
     );
-    const raw = response.data.data || [];
+    const raw = getEnvelopeData<ApiTemplateResponse[] | NotificationTemplate[]>(response.data, []);
     const arr = Array.isArray(raw) ? raw : [];
     return arr.map((item) => mapApiTemplateToNotificationTemplate(item as ApiTemplateResponse));
   },
@@ -204,7 +213,7 @@ export const notificationsApi = {
       '/notifications/admin/templates',
       data
     );
-    const raw = response.data.data;
+    const raw = getEnvelopeData<ApiTemplateResponse | NotificationTemplate | undefined>(response.data);
     return raw ? mapApiTemplateToNotificationTemplate(raw as ApiTemplateResponse) : (raw as NotificationTemplate);
   },
 
@@ -213,7 +222,7 @@ export const notificationsApi = {
       `/notifications/admin/templates/${key}`,
       data
     );
-    const raw = response.data.data;
+    const raw = getEnvelopeData<ApiTemplateResponse | NotificationTemplate | undefined>(response.data);
     return raw ? mapApiTemplateToNotificationTemplate(raw as ApiTemplateResponse) : (raw as NotificationTemplate);
   },
 
@@ -225,7 +234,7 @@ export const notificationsApi = {
     const response = await apiClient.get<ApiResponse<any>>(
       `/notifications/admin/templates/${key}/stats`
     );
-    return response.data.data;
+    return getEnvelopeData<any>(response.data);
   },
 
   // ===== Statistics =====
@@ -236,32 +245,12 @@ export const notificationsApi = {
         params,
       }
     );
-    // Backend returns nested structure: { success: true, data: { success: true, data: stats } }
-    // Extract the actual stats data from nested response
-    const responseData = response.data.data;
-    let stats: NotificationStats;
-
-    if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-      stats = (responseData as any).data || responseData;
-    } else {
-      stats = responseData || response.data;
-    }
-
-    // Debug logging
-    console.log('getStats - Full response:', response);
-    console.log('getStats - Extracted stats:', stats);
-
-    return stats;
+    return getEnvelopeData<NotificationStats>(response.data);
   },
 
   getStatsOverview: async (): Promise<any> => {
     const response = await apiClient.get<ApiResponse<any>>('/notifications/admin/stats/overview');
-    // Handle nested response structure
-    const responseData = response.data.data;
-    if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-      return (responseData as any).data || responseData;
-    }
-    return responseData || response.data;
+    return getEnvelopeData<any>(response.data);
   },
 
   getLogs: async (
@@ -277,8 +266,10 @@ export const notificationsApi = {
       },
     });
 
-    // Backend returns: { notifications, total, meta }
-    const responseData = response.data.data || response.data;
+    const responseData = getEnvelopeData<{ notifications?: Notification[]; total?: number; meta?: any }>(
+      response.data,
+      {},
+    );
     const notifications = responseData.notifications || [];
     const total = responseData.total || 0;
     const meta = responseData.meta || {};
@@ -309,19 +300,12 @@ export const notificationsApi = {
       },
     });
 
-    console.log('getUserNotifications - Full response:', response);
-    console.log('getUserNotifications - response.data:', response.data);
-    console.log('getUserNotifications - response.data.data:', response.data.data);
-    console.log(
-      'getUserNotifications - response.data.data.notifications:',
-      response.data.data?.notifications
+    const responseData = getEnvelopeData<{ notifications?: Notification[]; total?: number }>(
+      response.data,
+      {},
     );
-
-    const notifications = response.data.data?.notifications || [];
-    const total = response.data.data?.total || 0;
-
-    console.log('getUserNotifications - Final notifications:', notifications);
-    console.log('getUserNotifications - Final total:', total);
+    const notifications = responseData.notifications || [];
+    const total = responseData.total || 0;
 
     return {
       data: notifications,
@@ -340,7 +324,7 @@ export const notificationsApi = {
     const response = await apiClient.get<ApiResponse<{ count: number }>>(
       '/notifications/unread-count'
     );
-    return response.data.data.count;
+    return getEnvelopeData<{ count: number }>(response.data, { count: 0 }).count;
   },
 
   markAsRead: async (data: MarkAsReadDto): Promise<void> => {
@@ -353,18 +337,18 @@ export const notificationsApi = {
 
   getUserStats: async (): Promise<any> => {
     const response = await apiClient.get<ApiResponse<any>>('/notifications/stats');
-    return response.data.data;
+    return getEnvelopeData<any>(response.data);
   },
 
   // ===== Preferences =====
   getPreferences: async (): Promise<any> => {
     const response = await apiClient.get<ApiResponse<any>>('/notifications/preferences');
-    return response.data.data;
+    return getEnvelopeData<any>(response.data);
   },
 
   updatePreferences: async (data: any): Promise<any> => {
     const response = await apiClient.put<ApiResponse<any>>('/notifications/preferences', data);
-    return response.data.data;
+    return getEnvelopeData<any>(response.data);
   },
 
   // ===== Device Management =====
@@ -373,11 +357,11 @@ export const notificationsApi = {
       '/notifications/devices/register',
       data
     );
-    return response.data.data;
+    return getEnvelopeData<any>(response.data);
   },
 
-  unregisterDevice: async (id: string): Promise<void> => {
-    await apiClient.delete(`/notifications/devices/${id}`);
+  unregisterDevice: async (token: string): Promise<void> => {
+    await apiClient.post('/notifications/devices/unregister', { token });
   },
 
   // ===== Device Check (Admin) =====
@@ -423,7 +407,25 @@ export const notificationsApi = {
         };
       }>
     >(`/notifications/admin/users/${userId}/devices`);
-    return response.data.data;
+    return getEnvelopeData<{
+      userId: string;
+      hasDevices: boolean;
+      deviceCount: number;
+      devices: Array<{
+        _id: string;
+        platform: string;
+        userAgent?: string;
+        appVersion?: string;
+        isActive: boolean;
+        lastUsedAt?: string;
+        createdAt?: string;
+      }>;
+      platforms: {
+        ios: number;
+        android: number;
+        web: number;
+      };
+    }>(response.data);
   },
 
   checkMultipleUsersDevices: async (
@@ -462,7 +464,21 @@ export const notificationsApi = {
     >('/notifications/admin/users/devices/check', {
       userIds,
     });
-    return response.data.data;
+    return getEnvelopeData<{
+      total: number;
+      withDevices: number;
+      withoutDevices: number;
+      results: Array<{
+        userId: string;
+        hasDevices: boolean;
+        deviceCount: number;
+        platforms: {
+          ios: number;
+          android: number;
+          web: number;
+        };
+      }>;
+    }>(response.data);
   },
 
   // ===== Channel Config APIs =====
@@ -471,27 +487,7 @@ export const notificationsApi = {
       '/notifications/admin/channel-configs'
     );
 
-    // Extract data from nested response structure
-    // Response structure: { success: true, data: { success: true, data: [...] } }
-    // Due to ResponseEnvelopeInterceptor wrapping the controller response
-    const extractData = (obj: any): NotificationChannelConfig[] => {
-      if (Array.isArray(obj)) {
-        return obj;
-      }
-      if (obj && typeof obj === 'object') {
-        // Check if it's an API envelope with data field
-        if ('data' in obj && obj.data !== undefined) {
-          return extractData(obj.data);
-        }
-        // Check if it's the direct array
-        if (Array.isArray(obj)) {
-          return obj;
-        }
-      }
-      return [];
-    };
-
-    return extractData(response.data);
+    return getEnvelopeData<NotificationChannelConfig[]>(response.data, []);
   },
 
   getChannelConfigByType: async (
@@ -500,7 +496,7 @@ export const notificationsApi = {
     const response = await apiClient.get<ApiResponse<NotificationChannelConfig>>(
       `/notifications/admin/channel-configs/${type}`
     );
-    return response.data.data || null;
+    return getEnvelopeData<NotificationChannelConfig | null>(response.data, null);
   },
 
   createChannelConfig: async (data: CreateChannelConfigDto): Promise<NotificationChannelConfig> => {
@@ -508,7 +504,7 @@ export const notificationsApi = {
       '/notifications/admin/channel-configs',
       data
     );
-    return response.data.data || response.data;
+    return getEnvelopeData<NotificationChannelConfig>(response.data);
   },
 
   updateChannelConfig: async (
@@ -519,7 +515,7 @@ export const notificationsApi = {
       `/notifications/admin/channel-configs/${type}`,
       data
     );
-    return response.data.data || response.data;
+    return getEnvelopeData<NotificationChannelConfig>(response.data);
   },
 
   deleteChannelConfig: async (type: NotificationType): Promise<void> => {
@@ -530,7 +526,7 @@ export const notificationsApi = {
     const response = await apiClient.post<ApiResponse<InitializeChannelConfigsResponse>>(
       '/notifications/admin/channel-configs/initialize'
     );
-    return response.data.data || response.data;
+    return getEnvelopeData<InitializeChannelConfigsResponse>(response.data);
   },
 
   // ===== Advanced Analytics =====
@@ -580,7 +576,7 @@ export const notificationsApi = {
       '/notifications/admin/analytics/advanced',
       { params }
     );
-    return response.data.data;
+    return getEnvelopeData<any>(response.data);
   },
 
   getCTR: async (
@@ -604,7 +600,7 @@ export const notificationsApi = {
     const response = await apiClient.get<ApiResponse<any>>('/notifications/admin/analytics/ctr', {
       params,
     });
-    return response.data.data;
+    return getEnvelopeData<any>(response.data);
   },
 
   getConversionRate: async (
@@ -628,7 +624,7 @@ export const notificationsApi = {
       '/notifications/admin/analytics/conversion',
       { params }
     );
-    return response.data.data;
+    return getEnvelopeData<any>(response.data);
   },
 
   getPerformance: async (
@@ -668,7 +664,7 @@ export const notificationsApi = {
       '/notifications/admin/analytics/performance',
       { params }
     );
-    return response.data.data;
+    return getEnvelopeData<any>(response.data);
   },
 
   getQueueStats: async (): Promise<{
@@ -684,6 +680,6 @@ export const notificationsApi = {
     totalPending: number;
   }> => {
     const response = await apiClient.get<ApiResponse<any>>('/notifications/admin/queue-stats');
-    return response.data.data;
+    return getEnvelopeData<any>(response.data);
   },
 };

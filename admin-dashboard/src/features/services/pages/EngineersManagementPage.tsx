@@ -41,6 +41,7 @@ import { useTranslation } from 'react-i18next';
 import { EngineerCard } from '../components/EngineerCard';
 import { EngineerDetailsDialog } from '../components/EngineerDetailsDialog';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export const EngineersManagementPage: React.FC = () => {
   const { t } = useTranslation(['services', 'common']);
@@ -86,9 +87,13 @@ export const EngineersManagementPage: React.FC = () => {
   };
 
   const handleEditEngineer = (engineer: any) => {
-    // TODO: Navigate to edit page or open edit dialog
-    setSelectedEngineer(engineer);
-    setDetailsDialogOpen(true);
+    const engineerUserId = engineer.engineerId || engineer.userId || engineer._id;
+    if (!engineerUserId) {
+      toast.error(t('services:engineers.missingUserId', 'تعذر العثور على معرف المستخدم لهذا المهندس'));
+      return;
+    }
+
+    navigate(`/users/${engineerUserId}`);
   };
 
   const handleToggleStatus = async (engineer: any) => {
@@ -406,7 +411,7 @@ export const EngineersManagementPage: React.FC = () => {
                 <Visibility />
               </IconButton>
             </Tooltip>
-            <Tooltip title={t('common:actions.edit')}>
+            <Tooltip title={t('services:engineers.editUserEngineer', 'تعديل بيانات المستخدم/المهندس')}>
               <IconButton size="small" onClick={() => handleEditEngineer(params.row)} color="info">
                 <Edit />
               </IconButton>

@@ -97,8 +97,8 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         customMessage: customMessage.trim() || undefined,
       });
 
-      onSuccess();
       handleClose();
+      onSuccess();
     } catch (error) {
       // Error handling is done in the mutation hook
     }
@@ -140,6 +140,9 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
       setErrors({});
     }
   }, [cart, open]);
+
+  const isSubmitDisabled =
+    !cart || sendReminderMutation.isPending || !reminderType || customMessage.length > 500;
 
   if (!cart) return null;
 
@@ -508,30 +511,6 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
           </Alert>
         )}
 
-        {/* Coming Soon Notice */}
-        <Alert
-          severity="info"
-          sx={{
-            mb: 2,
-            bgcolor:
-              theme.palette.mode === 'dark'
-                ? 'rgba(33, 150, 243, 0.1)'
-                : 'rgba(33, 150, 243, 0.08)',
-            border: `1px solid ${
-              theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(33, 150, 243, 0.2)'
-            }`,
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              color: 'text.primary',
-            }}
-          >
-            {t('dialogs.sendReminder.comingSoon')}
-          </Typography>
-        </Alert>
       </DialogContent>
 
       <DialogActions
@@ -558,15 +537,13 @@ export const SendReminderDialog: React.FC<SendReminderDialogProps> = ({
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={true}
+          disabled={isSubmitDisabled}
           startIcon={<Email />}
           fullWidth={isMobile}
           size={isMobile ? 'medium' : 'large'}
           sx={{
             order: { xs: 1, sm: 2 },
             minWidth: { xs: '100%', sm: 'auto' },
-            opacity: 0.6,
-            cursor: 'not-allowed',
           }}
         >
           {t('dialogs.sendReminder.send')}
