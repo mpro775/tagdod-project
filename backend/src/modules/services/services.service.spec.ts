@@ -303,4 +303,115 @@ describe('ServicesService notifications', () => {
       }),
     );
   });
+
+  it('notifies engineers only when a customer accepts an offer', async () => {
+    const requestId = new Types.ObjectId();
+    const customerUserId = new Types.ObjectId();
+    const acceptedEngineerId = new Types.ObjectId();
+    const acceptedOfferId = new Types.ObjectId();
+    const outbidEngineerId = new Types.ObjectId();
+    const outbidOfferId = new Types.ObjectId();
+    const createNotification = jest.fn().mockResolvedValue({});
+    const webSocketService = {
+      isUserOnline: jest.fn().mockReturnValue(true),
+    };
+    const moduleRef = {
+      get: jest.fn((token) => {
+        if (token === NotificationService) {
+          return { createNotification };
+        }
+        if (token === WebSocketService) {
+          return webSocketService;
+        }
+        return undefined;
+      }),
+    } as unknown as ModuleRef;
+    const request = {
+      _id: requestId,
+      userId: customerUserId,
+      status: 'OFFERS_COLLECTING',
+      engineerId: undefined as Types.ObjectId | undefined,
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+    const acceptedOffer = {
+      _id: acceptedOfferId,
+      requestId,
+      engineerId: acceptedEngineerId,
+      amount: 125,
+      currency: 'YER',
+      note: 'Accepted offer',
+      isFreeOffer: false,
+      status: 'OFFERED',
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+    const outbidOffer = {
+      _id: outbidOfferId,
+      requestId,
+      engineerId: outbidEngineerId,
+      status: 'OFFERED',
+    };
+    const requestsModel = {
+      findOne: jest.fn().mockResolvedValue(request),
+    };
+    const offersModel = {
+      findOne: jest.fn().mockResolvedValue(acceptedOffer),
+      find: jest.fn().mockResolvedValue([outbidOffer]),
+      updateMany: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
+    };
+    const service = new ServicesService(
+      requestsModel as never,
+      offersModel as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { get: jest.fn().mockReturnValue(false) } as unknown as ConfigService,
+      {} as never,
+      moduleRef,
+    );
+
+    await service.acceptOffer(
+      customerUserId.toString(),
+      requestId.toString(),
+      acceptedOfferId.toString(),
+    );
+
+    expect(request.status).toBe('ASSIGNED');
+    expect(request.engineerId).toBe(acceptedEngineerId);
+    expect(acceptedOffer.status).toBe('ACCEPTED');
+    expect(createNotification).toHaveBeenCalledTimes(2);
+    expect(createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientId: acceptedEngineerId.toString(),
+        type: NotificationType.OFFER_ACCEPTED,
+        data: {
+          requestId: requestId.toString(),
+          recipientContext: 'engineer',
+        },
+        navigationType: NotificationNavigationType.SECTION,
+        navigationTarget: '/customers-orders',
+      }),
+    );
+    expect(createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientId: outbidEngineerId.toString(),
+        type: NotificationType.OFFER_REJECTED,
+        data: expect.objectContaining({
+          requestId: requestId.toString(),
+          offerId: outbidOfferId.toString(),
+          recipientContext: 'engineer',
+        }),
+        navigationType: NotificationNavigationType.SECTION,
+        navigationTarget: '/customers-orders',
+      }),
+    );
+    expect(createNotification).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientId: customerUserId.toString(),
+      }),
+    );
+  });
 });
