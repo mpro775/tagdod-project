@@ -70,16 +70,13 @@ class NotificationsSocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('✅ Connected to notifications socket');
       this.reconnectAttempts = 0;
     });
 
-    this.socket.on('connected', (data) => {
-      console.log('✅ Authenticated with notifications socket:', data);
+    this.socket.on('connected', () => {
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('❌ Disconnected from notifications socket:', reason);
       if (reason === 'io server disconnect') {
         this.socket?.connect();
       }

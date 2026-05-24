@@ -1005,9 +1005,10 @@ export const ProductsListPage: React.FC = () => {
         >
           <Box
             sx={{
-              display: 'none',
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
               justifyContent: 'space-between',
-              alignItems: 'center',
+              alignItems: { xs: 'stretch', sm: 'center' },
               flexWrap: 'wrap',
               gap: 2,
             }}
@@ -1265,6 +1266,7 @@ export const ProductsListPage: React.FC = () => {
         </Box>
       ) : (
         /* Table Layout */
+        <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
         <DataTable
           title={t('list.title')}
           columns={columns}
@@ -1288,6 +1290,7 @@ export const ProductsListPage: React.FC = () => {
           onRowSelectionModelChange={(selection) => setSelectedProducts(selection as string[])}
           height="calc(100vh - 200px)"
         />
+        </Box>
       )}
 
       {/* Advanced Filters Drawer */}

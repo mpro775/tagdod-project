@@ -18,9 +18,20 @@ export function EmptyState({
   onAction,
 }: EmptyStateProps) {
   return (
-    <Stack alignItems="center" spacing={1.5} sx={{ py: 6, px: 2, textAlign: 'center' }}>
-      <Box sx={{ color: 'text.secondary' }}>{icon ?? <Inbox sx={{ fontSize: 48 }} />}</Box>
-      <Typography variant="h6" sx={{ fontWeight: 800 }}>
+    <Stack
+      alignItems="center"
+      spacing={1.5}
+      sx={{
+        py: { xs: 4, sm: 6 },
+        px: { xs: 2, sm: 3 },
+        textAlign: 'center',
+        width: '100%',
+      }}
+    >
+      <Box sx={{ color: 'text.secondary', '& .MuiSvgIcon-root': { fontSize: { xs: 36, sm: 48 } } }}>
+        {icon ?? <Inbox sx={{ fontSize: 'inherit' }} />}
+      </Box>
+      <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
         {title}
       </Typography>
       {description && (
@@ -29,7 +40,7 @@ export function EmptyState({
         </Typography>
       )}
       {actionLabel && onAction && (
-        <Button variant="outlined" onClick={onAction}>
+        <Button variant="outlined" onClick={onAction} size="medium">
           {actionLabel}
         </Button>
       )}

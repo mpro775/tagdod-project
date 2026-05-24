@@ -12,6 +12,8 @@ import {
   Grid,
   Paper,
   Alert,
+  useMediaQuery,
+  Theme,
 } from '@mui/material';
 import {
   AccessTime as ClockIcon,
@@ -43,6 +45,7 @@ interface AuditLogDetailsProps {
 
 export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, onClose }) => {
   const { t } = useTranslation('audit');
+  const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
   if (!log) return null;
 
   const formatTimestamp = (timestamp: string) => {
@@ -68,6 +71,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
       onClose={onClose}
       maxWidth="lg"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         sx: { maxHeight: '90vh' },
       }}
@@ -89,7 +93,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
             </CardHeader>
             <CardContent>
               <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <ClockIcon color="action" />
                     <Typography variant="body2" fontWeight="medium">
@@ -99,7 +103,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
                   <Typography variant="body2">{formatTimestamp(log.timestamp)}</Typography>
                 </Grid>
 
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <KeyIcon color="action" />
                     <Typography variant="body2" fontWeight="medium">
@@ -113,7 +117,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
                   />
                 </Grid>
 
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <DatabaseIcon color="action" />
                     <Typography variant="body2" fontWeight="medium">
@@ -127,7 +131,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
                   />
                 </Grid>
 
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <AlertTriangleIcon color="action" />
                     <Typography variant="body2" fontWeight="medium">
@@ -194,7 +198,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
             </CardHeader>
             <CardContent>
               <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
                     {t('details.affectedUser')}:
                   </Typography>
@@ -214,7 +218,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
                 </Grid>
 
                 {log.performedByUser && (
-                  <Grid size={{ xs: 12, md: 6 }}>
+                  <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                     <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
                       {t('details.performedBy')}:
                     </Typography>
@@ -248,7 +252,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
             <CardContent>
               <Grid container spacing={2}>
                 {log.ipAddress && (
-                  <Grid size={{ xs: 12, md: 6 }}>
+                  <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <GlobeIcon color="action" />
                       <Typography variant="body2" fontWeight="medium">
@@ -264,7 +268,7 @@ export const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({ log, isOpen, o
                 )}
 
                 {log.sessionId && (
-                  <Grid size={{ xs: 12, md: 6 }}>
+                  <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                     <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
                       {t('details.sessionId')}:
                     </Typography>

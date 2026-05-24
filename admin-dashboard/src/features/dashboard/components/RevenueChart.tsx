@@ -127,7 +127,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ revenueCharts, isLoa
 
   if (isLoading) {
     return (
-      <Card>
+      <Card sx={{ overflow: 'hidden' }}>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             {t('revenueChart.title', 'نظرة عامة على الإيرادات')}
@@ -142,9 +142,9 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ revenueCharts, isLoa
   }
 
   return (
-    <Card>
+    <Card sx={{ overflow: 'hidden' }}>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 0 }, mb: 3 }}>
           <Box>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               {t('revenueChart.title', 'نظرة عامة على الإيرادات')}
@@ -174,7 +174,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ revenueCharts, isLoa
           </ToggleButtonGroup>
         </Box>
 
-        <Box sx={{ height: 300 }}>
+        <Box sx={{ height: { xs: 220, sm: 280, md: 300 }, minHeight: 220 }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
               <defs>

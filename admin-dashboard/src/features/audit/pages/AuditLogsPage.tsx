@@ -248,7 +248,7 @@ export const AuditLogsPage: React.FC = () => {
       {/* Search and Filters */}
       <Grid container spacing={3}>
         {/* Search */}
-        <Grid size={{ xs: 12, lg: 4 }}>
+        <Grid size={{ xs: 12, lg: 4 }} sx={{ minWidth: 0 }}>
           <Card>
             <CardHeader>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -268,7 +268,7 @@ export const AuditLogsPage: React.FC = () => {
         </Grid>
 
         {/* Results Count */}
-        <Grid size={{ xs: 12, lg: 4 }}>
+        <Grid size={{ xs: 12, lg: 4 }} sx={{ minWidth: 0 }}>
           <Card>
             <CardHeader>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -290,7 +290,7 @@ export const AuditLogsPage: React.FC = () => {
         </Grid>
 
         {/* Pagination Controls */}
-        <Grid size={{ xs: 12, lg: 4 }}>
+        <Grid size={{ xs: 12, lg: 4 }} sx={{ minWidth: 0 }}>
           <Card>
             <CardHeader>
               <Typography variant="h6">{t('filters.pagination')}</Typography>
@@ -329,11 +329,13 @@ export const AuditLogsPage: React.FC = () => {
           <Typography variant="h6">{t('audit.logs')}</Typography>
         </CardHeader>
         <CardContent>
-          <AuditLogsTable
-            logs={filteredLogs}
-            isLoading={isLoading}
-            onViewDetails={handleViewDetails}
-          />
+          <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
+            <AuditLogsTable
+              logs={filteredLogs}
+              isLoading={isLoading}
+              onViewDetails={handleViewDetails}
+            />
+          </Box>
         </CardContent>
       </Card>
 

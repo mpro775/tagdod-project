@@ -195,13 +195,13 @@ export const ProjectsListPage: React.FC = () => {
         <Grid container spacing={2}>
           {isLoading
             ? [...Array(6)].map((_, i) => (
-                <Grid size={{ xs: 12 }} key={i}>
-                  <Box sx={{ height: 300, borderRadius: 2, bgcolor: 'grey.100' }} />
-                </Grid>
+<Grid size={{ xs: 12 }} key={i} sx={{ minWidth: 0 }}>
+                   <Box sx={{ height: 300, borderRadius: 2, bgcolor: 'grey.100' }} />
+                 </Grid>
               ))
             : projects.map((p) => (
-                <Grid size={{ xs: 12 }} key={p._id}>
-                  <ProjectCard
+<Grid size={{ xs: 12 }} key={p._id} sx={{ minWidth: 0 }}>
+                   <ProjectCard
                     project={p}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
@@ -213,20 +213,22 @@ export const ProjectsListPage: React.FC = () => {
               ))}
         </Grid>
       ) : (
-        <DataTable
-          title={t('table.title')}
-          columns={columns}
-          rows={projects}
-          loading={isLoading}
-          paginationModel={paginationModel}
-          onPaginationModelChange={handlePaginationModelChange}
-          rowCount={projectsResponse?.meta?.total ?? 0}
-          paginationMode="server"
-          getRowId={(row: any) => row._id}
-          onAdd={handleAdd}
-          addButtonText={t('table.addButton')}
-          height="calc(100vh - 450px)"
-        />
+        <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
+          <DataTable
+            title={t('table.title')}
+            columns={columns}
+            rows={projects}
+            loading={isLoading}
+            paginationModel={paginationModel}
+            onPaginationModelChange={handlePaginationModelChange}
+            rowCount={projectsResponse?.meta?.total ?? 0}
+            paginationMode="server"
+            getRowId={(row: any) => row._id}
+            onAdd={handleAdd}
+            addButtonText={t('table.addButton')}
+            height="calc(100vh - 450px)"
+          />
+        </Box>
       )}
       <ProjectFormDialog
         open={formDialog.open}

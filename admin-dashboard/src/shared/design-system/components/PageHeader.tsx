@@ -6,6 +6,8 @@ import {
   Link as MuiLink,
   Stack,
   Typography,
+  useMediaQuery,
+  Theme,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
@@ -48,10 +50,13 @@ export function PageHeader({
   meta,
 }: PageHeaderProps) {
   const navigate = useNavigate();
+  const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
+  const primaryAction = actions.find((a) => a.variant === 'primary');
+  const secondaryActions = actions.filter((a) => a.variant !== 'primary');
 
   return (
     <Stack spacing={1.5}>
-      {breadcrumbs && breadcrumbs.length > 0 && (
+      {breadcrumbs && breadcrumbs.length > 0 && !isMobile && (
         <Breadcrumbs aria-label="breadcrumb" sx={{ fontSize: '0.8125rem' }}>
           {breadcrumbs.map((crumb, index) =>
             crumb.to ? (
@@ -79,16 +84,17 @@ export function PageHeader({
         justifyContent="space-between"
         spacing={2}
       >
-        <Stack spacing={0.75} sx={{ minWidth: 0 }}>
+        <Stack spacing={0.75} sx={{ minWidth: 0, overflow: 'hidden' }}>
           <Typography
             component="h1"
-            variant="h4"
+            variant={isMobile ? 'h5' : 'h4'}
             sx={{ fontWeight: 800, letterSpacing: 0, lineHeight: 1.35 }}
+            noWrap={isMobile}
           >
             {title}
           </Typography>
           {description && (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '100%' }}>
               {description}
             </Typography>
           )}
@@ -100,31 +106,82 @@ export function PageHeader({
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1}
             justifyContent="flex-end"
-            sx={{ width: { xs: '100%', md: 'auto' } }}
+            sx={{ width: { xs: '100%', md: 'auto' }, flexShrink: 0 }}
           >
-            {actions.map((action) => {
-              const buttonProps = getButtonProps(action.variant);
-
-              return (
-                <Button
-                  key={action.label}
-                  {...buttonProps}
-                  startIcon={
-                    action.loading ? <CircularProgress color="inherit" size={16} /> : action.icon
-                  }
-                  onClick={() => {
-                    action.onClick?.();
-                    if (action.to) {
-                      navigate(action.to);
+            {isMobile ? (
+              <>
+                {primaryAction && (
+                  <Button
+                    key={primaryAction.label}
+                    {...getButtonProps(primaryAction.variant)}
+                    fullWidth
+                    startIcon={
+                      primaryAction.loading ? (
+                        <CircularProgress color="inherit" size={16} />
+                      ) : (
+                        primaryAction.icon
+                      )
                     }
-                  }}
-                  disabled={action.disabled || action.loading}
-                  sx={{ whiteSpace: 'nowrap' }}
-                >
-                  {action.label}
-                </Button>
-              );
-            })}
+                    onClick={() => {
+                      primaryAction.onClick?.();
+                      if (primaryAction.to) {
+                        navigate(primaryAction.to);
+                      }
+                    }}
+                    disabled={primaryAction.disabled || primaryAction.loading}
+                    sx={{ whiteSpace: 'nowrap' }}
+                  >
+                    {primaryAction.label}
+                  </Button>
+                )}
+                {secondaryActions.slice(0, 2).map((action) => {
+                  const buttonProps = getButtonProps(action.variant);
+                  return (
+                    <Button
+                      key={action.label}
+                      {...buttonProps}
+                      fullWidth
+                      startIcon={
+                        action.loading ? <CircularProgress color="inherit" size={16} /> : action.icon
+                      }
+                      onClick={() => {
+                        action.onClick?.();
+                        if (action.to) {
+                          navigate(action.to);
+                        }
+                      }}
+                      disabled={action.disabled || action.loading}
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      {action.label}
+                    </Button>
+                  );
+                })}
+              </>
+            ) : (
+              actions.map((action) => {
+                const buttonProps = getButtonProps(action.variant);
+                return (
+                  <Button
+                    key={action.label}
+                    {...buttonProps}
+                    startIcon={
+                      action.loading ? <CircularProgress color="inherit" size={16} /> : action.icon
+                    }
+                    onClick={() => {
+                      action.onClick?.();
+                      if (action.to) {
+                        navigate(action.to);
+                      }
+                    }}
+                    disabled={action.disabled || action.loading}
+                    sx={{ whiteSpace: 'nowrap' }}
+                  >
+                    {action.label}
+                  </Button>
+                );
+              })
+            )}
           </Stack>
         )}
       </Stack>

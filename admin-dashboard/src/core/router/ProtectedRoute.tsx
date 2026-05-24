@@ -28,15 +28,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   useEffect(() => {
     // Initialize auth and then set loading to false
     try {
-      // eslint-disable-next-line no-console
-      console.log('🔄 Initializing ProtectedRoute...');
       initialize();
       // Add a small delay to ensure state is updated
       setTimeout(() => {
         setIsInitializing(false);
       }, 100);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('❌ Error initializing auth:', error);
       setIsInitializing(false);
     }
@@ -59,23 +56,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Not authenticated
   if (!isAuthenticated) {
-    // eslint-disable-next-line no-console
-    console.log('❌ User not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check if user is admin (for admin dashboard)
   if (requireAdmin && user && !user.roles.includes('admin') && !user.roles.includes('super_admin')) {
-    // eslint-disable-next-line no-console
-    console.log('❌ User does not have admin privileges');
     ErrorHandler.logError('Access denied: Admin privileges required', 'ProtectedRoute');
     return <Navigate to={fallbackPath} replace />;
   }
 
   // Check role permissions
   if (requiredRoles.length > 0 && !hasRole(requiredRoles)) {
-    // eslint-disable-next-line no-console
-    console.log('❌ User does not have required roles:', requiredRoles);
     ErrorHandler.logError('Access denied: Required roles missing', 'ProtectedRoute');
     return <Navigate to={fallbackPath} replace />;
   }
@@ -86,16 +77,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       hasPermission(permission)
     );
     if (!hasAllPermissions) {
-      const missingPermissions = requiredPermissions.filter(permission => !hasPermission(permission));
-      // eslint-disable-next-line no-console
-      console.log('❌ User does not have required permissions:', missingPermissions);
+      requiredPermissions.filter(permission => !hasPermission(permission));
       ErrorHandler.logError('Access denied: Required permissions missing', 'ProtectedRoute');
       return <Navigate to={fallbackPath} replace />;
     }
   }
 
-  // eslint-disable-next-line no-console
-  console.log('✅ User authenticated and authorized');
   return <>{children}</>;
 };
 

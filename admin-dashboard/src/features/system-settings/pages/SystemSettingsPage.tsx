@@ -998,7 +998,7 @@ type PaymentProviderRow = GridValidRowModel & {
               />
 
               <Grid container spacing={2}>
-                <Grid component="div" size={{ xs: 12, md: 6 }}>
+                <Grid component="div" size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <TextField
                     label={t('sections.general.defaultLanguage')}
                     value={settings.default_language || ''}
@@ -1008,7 +1008,7 @@ type PaymentProviderRow = GridValidRowModel & {
                   />
                 </Grid>
 
-                <Grid component="div" size={{ xs: 12, md: 6 }}>
+                <Grid component="div" size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <TextField
                     label={t('sections.general.defaultCurrency')}
                     value={settings.default_currency || ''}
@@ -1101,7 +1101,7 @@ type PaymentProviderRow = GridValidRowModel & {
           <CardContent>
             <Stack spacing={3}>
               <Grid container spacing={2}>
-                <Grid component="div" size={{ xs: 12, md: 6 }}>
+                <Grid component="div" size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <TextField
                     label={t('sections.email.smtpHost')}
                     value={settings.smtp_host || ''}
@@ -1111,7 +1111,7 @@ type PaymentProviderRow = GridValidRowModel & {
                   />
                 </Grid>
 
-                <Grid component="div" size={{ xs: 12, md: 6 }}>
+                <Grid component="div" size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <TextField
                     label={t('sections.email.smtpPort')}
                     type="number"
@@ -1141,7 +1141,7 @@ type PaymentProviderRow = GridValidRowModel & {
               />
 
               <Grid container spacing={2}>
-                <Grid component="div" size={{ xs: 12, md: 6 }}>
+                <Grid component="div" size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <TextField
                     label={t('sections.email.fromEmail')}
                     value={settings.from_email || ''}
@@ -1151,7 +1151,7 @@ type PaymentProviderRow = GridValidRowModel & {
                   />
                 </Grid>
 
-                <Grid component="div" size={{ xs: 12, md: 6 }}>
+                <Grid component="div" size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                   <TextField
                     label={t('sections.email.fromName')}
                     value={settings.from_name || ''}
@@ -1603,20 +1603,22 @@ type PaymentProviderRow = GridValidRowModel & {
                   : t('sections.localPaymentAccounts.noResults', 'لم يتم العثور على نتائج مطابقة.')}
               </Alert>
             )}
-            <DataTable
-              columns={columns}
-              rows={filteredRows}
-              loading={accountsLoading}
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              sortModel={sortModel}
-              onSortModelChange={setSortModel}
-              searchPlaceholder={t('sections.localPaymentAccounts.searchPlaceholder', 'ابحث عن مزود...')}
-              onSearch={handleSearch}
-              getRowId={(row) => (row as PaymentProviderRow).id}
-              height={filteredRows.length === 0 ? 420 : 520}
-              rowHeight={isMobile ? 132 : 108}
-            />
+            <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
+              <DataTable
+                columns={columns}
+                rows={filteredRows}
+                loading={accountsLoading}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                sortModel={sortModel}
+                onSortModelChange={setSortModel}
+                searchPlaceholder={t('sections.localPaymentAccounts.searchPlaceholder', 'ابحث عن مزود...')}
+                onSearch={handleSearch}
+                getRowId={(row) => (row as PaymentProviderRow).id}
+                height={filteredRows.length === 0 ? 420 : 520}
+                rowHeight={isMobile ? 132 : 108}
+              />
+            </Box>
           </CardContent>
         </Card>
       )}
@@ -1901,7 +1903,7 @@ type PaymentProviderRow = GridValidRowModel & {
                   {t('sections.appVersion.androidTitle')}
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                  <Grid component="div" size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                     <TextField
                       label={t('sections.appVersion.minVersion')}
                       value={appVersionPolicy.android!.minVersion}
@@ -1910,7 +1912,7 @@ type PaymentProviderRow = GridValidRowModel & {
                       fullWidth
                     />
                   </Grid>
-                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                  <Grid component="div" size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                     <TextField
                       label={t('sections.appVersion.latestVersion')}
                       value={appVersionPolicy.android!.latestVersion}
@@ -1970,7 +1972,7 @@ type PaymentProviderRow = GridValidRowModel & {
                   {t('sections.appVersion.iosTitle')}
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                  <Grid component="div" size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                     <TextField
                       label={t('sections.appVersion.minVersion')}
                       value={appVersionPolicy.ios!.minVersion}
@@ -1979,7 +1981,7 @@ type PaymentProviderRow = GridValidRowModel & {
                       fullWidth
                     />
                   </Grid>
-                  <Grid component="div" size={{ xs: 12, md: 6 }}>
+                  <Grid component="div" size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                     <TextField
                       label={t('sections.appVersion.latestVersion')}
                       value={appVersionPolicy.ios!.latestVersion}

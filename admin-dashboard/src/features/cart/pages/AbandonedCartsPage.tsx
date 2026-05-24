@@ -596,7 +596,8 @@ const sendAllRemindersMutation = useSendAllReminders();
 
       {/* DataTable - Desktop */}
       {!isXs ? (
-        <DataTable
+        <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
+          <DataTable
           columns={columns}
           rows={carts as unknown as any[]}
           loading={isLoading}
@@ -609,9 +610,10 @@ const sendAllRemindersMutation = useSendAllReminders();
           }}
           getRowId={(row) => (row as Cart)._id}
           height={isMobile ? 500 : 600}
-          rowHeight={isMobile ? 80 : 56}
-        />
-      ) : (
+rowHeight={isMobile ? 80 : 56}
+         />
+        </Box>
+       ) : (
         /* Card View - Mobile */
         <Box>
           {isLoading ? (
@@ -631,7 +633,7 @@ const sendAllRemindersMutation = useSendAllReminders();
                   const isSelected = selectedCarts.includes(cart._id);
                   
                   return (
-                    <Grid key={cart._id} size={{ xs: 6 }}>
+                    <Grid key={cart._id} size={{ xs: 6 }} sx={{ minWidth: 0 }}>
                       <Card
                         sx={{
                           height: '100%',

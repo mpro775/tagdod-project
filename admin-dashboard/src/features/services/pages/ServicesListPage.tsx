@@ -852,7 +852,7 @@ export const ServicesListPage: React.FC = () => {
           
           <Collapse in={filtersExpanded || !isMobile} timeout="auto" unmountOnExit>
             <Grid container spacing={{ xs: 2, sm: 2 }} alignItems="center">
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ minWidth: 0 }}>
               <TextField
                 fullWidth
                 label={t('filters.searchLabel')}
@@ -872,7 +872,7 @@ export const ServicesListPage: React.FC = () => {
               />
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ minWidth: 0 }}>
               <FormControl 
                 fullWidth
                 size={isMobile ? 'small' : 'medium'}
@@ -902,7 +902,7 @@ export const ServicesListPage: React.FC = () => {
               </FormControl>
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ minWidth: 0 }}>
               <TextField
                 fullWidth
                 label={t('filters.typeLabel')}
@@ -919,7 +919,7 @@ export const ServicesListPage: React.FC = () => {
               />
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ minWidth: 0 }}>
               <Stack 
                 direction={{ xs: 'column', sm: 'row' }} 
                 spacing={1}
@@ -961,19 +961,21 @@ export const ServicesListPage: React.FC = () => {
 
       {/* جدول البيانات - للشاشات الكبيرة */}
       {!isMobile && (
-        <DataTable
-          title={t('titles.serviceRequests')}
-          columns={columns}
-          rows={services}
-          loading={isLoading}
-          paginationModel={{ page: filters.page - 1, pageSize: filters.limit }}
-          onPaginationModelChange={(model) => {
-            setFilters((prev) => ({ ...prev, page: model.page + 1 }));
-          }}
-          getRowId={(row) => (row as any)._id}
-          height="calc(100vh - 300px)"
-          rowHeight={90}
-        />
+        <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
+          <DataTable
+            title={t('titles.serviceRequests')}
+            columns={columns}
+            rows={services}
+            loading={isLoading}
+            paginationModel={{ page: filters.page - 1, pageSize: filters.limit }}
+            onPaginationModelChange={(model) => {
+              setFilters((prev) => ({ ...prev, page: model.page + 1 }));
+            }}
+            getRowId={(row) => (row as any)._id}
+            height="calc(100vh - 300px)"
+            rowHeight={90}
+          />
+        </Box>
       )}
 
       {/* عرض الكاردات - للشاشات الصغيرة */}

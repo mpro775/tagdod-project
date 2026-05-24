@@ -212,15 +212,6 @@ export const MyNotificationsPage: React.FC = () => {
     }
 
     const route = getNotificationRoute(notification);
-    console.log('Notification click - notification:', notification);
-    console.log('Notification click - route:', route);
-    console.log('Notification click - data:', notification.data);
-    console.log('Notification click - productId:', notification.data?.productId);
-    console.log('Notification click - productId type:', typeof notification.data?.productId);
-    console.log(
-      'Notification click - productId value:',
-      JSON.stringify(notification.data?.productId)
-    );
 
     if (
       route &&

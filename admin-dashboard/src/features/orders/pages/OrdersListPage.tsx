@@ -626,7 +626,7 @@ export const OrdersListPage: React.FC = () => {
             ...(filters.toDate ? [{ label: t('filters.dateRange.to'), value: filters.toDate, onDelete: () => handleFilterChange('toDate', undefined) }] : []),
           ]}
           actions={
-            <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" gap={1}>
               {activeFilterCount > 0 && (
                 <Button
                   variant="text"
@@ -770,7 +770,7 @@ export const OrdersListPage: React.FC = () => {
             <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700, color: 'text.primary' }}>
               {t('bulk.selected', { count: selectedOrders.length })}
             </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" gap={1}>
               <Button
                 variant="contained"
                 color="success"
@@ -823,7 +823,7 @@ export const OrdersListPage: React.FC = () => {
         {/* Data Table */}
         <SectionCard padding="none">
           {isMobile ? (
-            <Stack spacing={1.5} sx={{ p: 2 }}>
+            <Stack spacing={1.5} sx={{ p: 2, overflow: 'hidden' }}>
               <Typography variant="h6" fontWeight={800}>{t('list.title')}</Typography>
               {orders.length === 0 && !isLoading ? (
                 <EmptyState
@@ -850,29 +850,31 @@ export const OrdersListPage: React.FC = () => {
               )}
             </Stack>
           ) : (
-            <DataTable
-              title={t('list.title')}
-              columns={columns}
-              rows={data?.data || []}
-              loading={isLoading}
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              rowCount={data?.meta?.total ?? 0}
-              paginationMode="server"
-              sortModel={sortModel}
-              onSortModelChange={setSortModel}
-              sortingMode="server"
-              getRowId={(row: unknown) => (row as Order)._id as string}
-              onRowClick={(params) => {
-                const row = params.row as Order;
-                navigate(`/orders/${row._id as string}`);
-              }}
-              selectable
-              onRowSelectionModelChange={(newSelection) => {
-                setSelectedOrders(newSelection as unknown as string[]);
-              }}
-              height="calc(100vh - 400px)"
-            />
+            <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
+              <DataTable
+                title={t('list.title')}
+                columns={columns}
+                rows={data?.data || []}
+                loading={isLoading}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                rowCount={data?.meta?.total ?? 0}
+                paginationMode="server"
+                sortModel={sortModel}
+                onSortModelChange={setSortModel}
+                sortingMode="server"
+                getRowId={(row: unknown) => (row as Order)._id as string}
+                onRowClick={(params) => {
+                  const row = params.row as Order;
+                  navigate(`/orders/${row._id as string}`);
+                }}
+                selectable
+                onRowSelectionModelChange={(newSelection) => {
+                  setSelectedOrders(newSelection as unknown as string[]);
+                }}
+                height="calc(100vh - 400px)"
+              />
+            </Box>
           )}
         </SectionCard>
 

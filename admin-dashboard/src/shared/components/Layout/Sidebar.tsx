@@ -1048,13 +1048,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant 
       variant={variant}
       open={open}
       onClose={onClose}
+      ModalProps={{ keepMounted: false }}
       sx={{
         width: width,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: width,
+          maxWidth: '100vw',
           boxSizing: 'border-box',
-          borderInlineEnd: '1px solid',
+          borderInlineEnd: variant === 'permanent' ? '1px solid' : 'none',
           borderColor: 'divider',
           bgcolor: 'background.paper',
           backgroundImage: 'none',

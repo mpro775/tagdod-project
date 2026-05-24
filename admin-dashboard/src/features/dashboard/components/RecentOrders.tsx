@@ -152,7 +152,7 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
 
   if (isLoading) {
     return (
-      <Card>
+      <Card sx={{ overflow: 'hidden' }}>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             {t('recentOrders.title', 'الطلبات الأخيرة')}
@@ -202,7 +202,7 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
 
   if (!ordersList || ordersList.length === 0) {
     return (
-      <Card>
+      <Card sx={{ overflow: 'hidden' }}>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             {t('recentOrders.title', 'الطلبات الأخيرة')}
@@ -218,9 +218,9 @@ export const RecentOrders: React.FC<RecentOrdersProps> = ({ orders, isLoading })
   }
 
   return (
-    <Card>
+    <Card sx={{ overflow: 'hidden' }}>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
           <Typography variant="h6" fontWeight="bold">
             {t('recentOrders.title', 'الطلبات الأخيرة')}
           </Typography>

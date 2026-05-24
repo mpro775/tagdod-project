@@ -96,7 +96,7 @@ export const TopProductsWidget: React.FC<TopProductsWidgetProps> = ({
 
   if (displayProducts.length === 0) {
     return (
-      <Card>
+      <Card sx={{ overflow: 'hidden' }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
             <Star sx={{ color: 'warning.main' }} />
@@ -115,8 +115,8 @@ export const TopProductsWidget: React.FC<TopProductsWidgetProps> = ({
   const maxSales = Math.max(...displayProducts.map(p => p.sales), 1);
 
   return (
-    <Card>
-      <CardContent>
+<Card sx={{ overflow: 'hidden' }}>
+        <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
           <Star sx={{ color: 'warning.main' }} />
           <Typography variant="h6" fontWeight="bold">

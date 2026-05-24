@@ -160,11 +160,6 @@ export const CategoryFormPage: React.FC = () => {
 
   // Submit
   const onSubmit = (data: CategoryFormData) => {
-    // eslint-disable-next-line no-console
-    console.log('📤 Category form data:', data);
-    // eslint-disable-next-line no-console
-    console.log('🖼️ Selected image:', selectedImage);
-    
     const categoryData: CreateCategoryDto = {
       parentId: data.parentId || null,
       name: data.name,
@@ -179,9 +174,6 @@ export const CategoryFormPage: React.FC = () => {
       isActive: data.isActive,
       isFeatured: data.isFeatured,
     };
-    
-    // eslint-disable-next-line no-console
-    console.log('📦 Category data to send:', categoryData);
 
     if (isEditMode) {
       updateCategory(
@@ -410,13 +402,9 @@ export const CategoryFormPage: React.FC = () => {
                         label={t('form.categoryImage')}
                         value={selectedImage}
                         onChange={(media: any) => {
-                          // eslint-disable-next-line no-console
-                          console.log('🖼️ ImageField onChange - media:', media);
                           setSelectedImage(media);
                           // استخراج ID من Media object (قد يكون _id أو id)
                           const mediaId = media?._id || media?.id || '';
-                          // eslint-disable-next-line no-console
-                          console.log('🆔 Extracted mediaId:', mediaId);
                           methods.setValue('imageId', mediaId);
                         }}
                         category={MediaCategory.CATEGORY}

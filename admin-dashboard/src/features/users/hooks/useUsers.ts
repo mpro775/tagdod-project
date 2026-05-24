@@ -42,11 +42,7 @@ export const useCreateUser = () => {
   return useMutation({
     mutationFn: (data: CreateUserDto) => usersApi.create(data),
     onSuccess: () => {
-      // eslint-disable-next-line no-console
-      console.log('✅ User created successfully - showing toast');
       const message = 'تم إنشاء المستخدم بنجاح';
-      // eslint-disable-next-line no-console
-      console.log('Message to show:', message);
       toast.success(message, {
         style: {
           background: '#4caf50',
@@ -72,11 +68,7 @@ export const useUpdateUser = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserDto }) => usersApi.update(id, data),
     onSuccess: (_, variables) => {
-      // eslint-disable-next-line no-console
-      console.log('✅ User updated successfully - showing toast');
       const message = 'تم تحديث المستخدم بنجاح';
-      // eslint-disable-next-line no-console
-      console.log('Message to show:', message);
       toast.success(message, {
         style: {
           background: '#4caf50',

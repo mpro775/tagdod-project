@@ -22,6 +22,8 @@ import {
   Stack,
   FormControlLabel,
   Switch,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Save,
@@ -83,6 +85,8 @@ export const GenerateVariantsDialog: React.FC<GenerateVariantsDialogProps> = ({
 }) => {
   const { t } = useTranslation(['products', 'common']);
   const { attributes } = useProductFormData();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(false);
   const [attributesWithValues, setAttributesWithValues] = useState<AttributeWithValues[]>([]);
   const [variantOptions, setVariantOptions] = useState<VariantOption[]>([]);
@@ -290,8 +294,9 @@ export const GenerateVariantsDialog: React.FC<GenerateVariantsDialogProps> = ({
       onClose={onClose}
       maxWidth="lg"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
-        sx: { maxHeight: '90vh' }
+        sx: { maxHeight: isMobile ? '100%' : '90vh' }
       }}
     >
       <DialogTitle>
@@ -402,7 +407,7 @@ export const GenerateVariantsDialog: React.FC<GenerateVariantsDialogProps> = ({
             </Stack>
 
             {/* Variants Table */}
-            <TableContainer component={Paper} sx={{ maxHeight: 500 }}>
+            <TableContainer component={Paper} sx={{ maxHeight: isMobile ? '50vh' : 500, overflowX: 'auto' }}>
               <Table stickyHeader size="small">
                 <TableHead>
                   <TableRow>

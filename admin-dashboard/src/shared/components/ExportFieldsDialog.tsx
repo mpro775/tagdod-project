@@ -11,6 +11,8 @@ import {
   FormControlLabel,
   Stack,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Download, SelectAll, Clear } from '@mui/icons-material';
 
@@ -39,6 +41,9 @@ export const ExportFieldsDialog: React.FC<ExportFieldsDialogProps> = ({
   onClose,
   onExport,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const defaultFieldKeys = React.useMemo(
     () => fields.filter((field) => field.default).map((field) => field.key),
     [fields],
@@ -62,7 +67,7 @@ export const ExportFieldsDialog: React.FC<ExportFieldsDialogProps> = ({
   );
 
   return (
-    <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="md" fullScreen={isMobile}>
       <DialogTitle sx={{ fontWeight: 800 }}>{title}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2.5}>

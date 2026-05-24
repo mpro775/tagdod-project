@@ -33,6 +33,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { getCardPadding, getCardSpacing } from '../utils/responsive';
+import toast from 'react-hot-toast';
 
 interface Column {
   id: string;
@@ -127,7 +128,7 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
   const handleExport = () => {
     // Export data to CSV
     if (filteredData.length === 0) {
-      alert(t('table.exportNoData'));
+      toast.error(t('table.exportNoData'));
       return;
     }
 
@@ -178,7 +179,7 @@ export const AnalyticsDataTable: React.FC<AnalyticsDataTableProps> = ({
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error exporting data:', error);
-      alert(t('table.exportError'));
+      toast.error(t('table.exportError'));
     }
   };
 

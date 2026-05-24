@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Grid, Stack, Typography } from '@mui/material';
+import { Box, Grid, Stack, Typography } from '@mui/material';
 import {
   AttachMoney,
   Inventory,
@@ -178,7 +178,7 @@ export const DashboardPage: React.FC = () => {
       />
 
       {/* KPI Cards */}
-      <PageSummaryGrid columns={3}>
+      <PageSummaryGrid columns={4}>
         <StatCard
           title={t('dashboard:stats.totalRevenue.title', 'إجمالي المبيعات')}
           value={formatCurrency(dashboardData?.overview?.totalRevenue || 0)}
@@ -246,11 +246,14 @@ export const DashboardPage: React.FC = () => {
 
       {/* Charts Row */}
       <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <RevenueChart revenueCharts={dashboardData?.revenueCharts} isLoading={isLoading} />
+        <Grid size={{ xs: 12, sm: 12, lg: 8 }} sx={{ minWidth: 0 }}>
+          <Box sx={{ overflow: 'hidden' }}>
+            <RevenueChart revenueCharts={dashboardData?.revenueCharts} isLoading={isLoading} />
+          </Box>
         </Grid>
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <QuickStatsWidget
+        <Grid size={{ xs: 12, sm: 12, lg: 4 }} sx={{ minWidth: 0 }}>
+          <Box sx={{ overflow: 'hidden' }}>
+            <QuickStatsWidget
             title={t('dashboard:quickStats.title', 'إحصائيات الأداء')}
             stats={{
               activeUsers: dashboardData?.overview?.totalUsers,
@@ -260,16 +263,21 @@ export const DashboardPage: React.FC = () => {
             }}
             isLoading={performanceLoading}
           />
+          </Box>
         </Grid>
       </Grid>
 
       {/* Top Products & Recent Orders */}
       <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <TopProductsWidget products={topProductsData} isLoading={topProductsLoading} />
+        <Grid size={{ xs: 12, sm: 6, lg: 6 }} sx={{ minWidth: 0 }}>
+          <Box sx={{ overflow: 'hidden' }}>
+            <TopProductsWidget products={topProductsData} isLoading={topProductsLoading} />
+          </Box>
         </Grid>
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <RecentOrders orders={recentOrdersData} isLoading={ordersLoading} />
+        <Grid size={{ xs: 12, sm: 6, lg: 6 }} sx={{ minWidth: 0 }}>
+          <Box sx={{ overflow: 'hidden' }}>
+            <RecentOrders orders={recentOrdersData} isLoading={ordersLoading} />
+          </Box>
         </Grid>
       </Grid>
 

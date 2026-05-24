@@ -155,12 +155,8 @@ export const MediaAnalyticsPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/admin/media-analytics/overview');
-      console.log('Overview Full Response:', response);
-      console.log('Overview response.data:', response.data);
-      console.log('Overview response.data.data:', response.data.data);
       // Handle nested data structure: response.data.data.data
       const data = response.data.data?.data || response.data.data;
-      console.log('Overview Final Data:', data);
       setOverview(data);
     } catch (error) {
       console.error('Overview Error:', error);
@@ -174,12 +170,8 @@ export const MediaAnalyticsPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/admin/media-analytics/storage');
-      console.log('Storage Full Response:', response);
-      console.log('Storage response.data:', response.data);
-      console.log('Storage response.data.data:', response.data.data);
       // Handle nested data structure: response.data.data.data
       const data = response.data.data?.data || response.data.data;
-      console.log('Storage Final Data:', data);
       setStorage(data);
     } catch (error) {
       console.error('Storage Error:', error);

@@ -14,4 +14,5 @@ export * from './components/DetailsDrawer';
 export * from './components/FormActionBar';
 export * from './components/PermissionGuard';
 export * from './components/MediaPicker';
+export * from './components/ResponsiveDataView';
 export * from './hooks/usePageTitle';

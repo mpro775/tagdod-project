@@ -82,9 +82,7 @@ async function loadArabicFont(doc: jsPDF): Promise<boolean> {
       if (boldBase64Font) {
         doc.addFileToVFS('GraphikArabic-Bold.ttf', boldBase64Font);
         doc.addFont('GraphikArabic-Bold.ttf', 'GraphikArabic', 'bold');
-        console.log('Arabic fonts (regular and bold) loaded successfully');
-      } else {
-        console.log('Arabic font (regular only) loaded successfully');
+        } else {
         console.warn('Bold font not found, using normal font for bold text');
       }
 
@@ -140,16 +138,17 @@ const processArabicText = (text: string): string => {
  * تصدير تقرير العمولات إلى PDF
  */
 export const exportCommissionsReportToPDF = async (report: CommissionsReport) => {
-  console.log('exportCommissionsReportToPDF called', { report });
   try {
     if (!report) {
       console.error('Report is undefined');
+      // TODO: replace with toast notification
       alert('لا توجد بيانات للتصدير');
       return;
     }
 
     if (!report.summary) {
       console.error('Report summary is undefined');
+      // TODO: replace with toast notification
       alert('لا توجد بيانات ملخصة للتصدير');
       return;
     }
@@ -460,6 +459,7 @@ export const exportCommissionsReportToPDF = async (report: CommissionsReport) =>
     doc.save(fileName);
   } catch (error) {
     console.error('Error exporting commissions report to PDF:', error);
+    // TODO: replace with toast notification
     alert('حدث خطأ أثناء تصدير التقرير. يرجى المحاولة مرة أخرى.');
   }
 };
@@ -468,16 +468,17 @@ export const exportCommissionsReportToPDF = async (report: CommissionsReport) =>
  * تصدير تقرير العمولات إلى Excel (CSV) - محفوظ للتوافق مع الإصدارات السابقة
  */
 export const exportCommissionsReportToExcel = (report: CommissionsReport) => {
-  console.log('exportCommissionsReportToExcel called', { report });
   try {
     if (!report) {
       console.error('Report is undefined');
+      // TODO: replace with toast notification
       alert('لا توجد بيانات للتصدير');
       return;
     }
 
     if (!report.summary) {
       console.error('Report summary is undefined');
+      // TODO: replace with toast notification
       alert('لا توجد بيانات ملخصة للتصدير');
       return;
     }
@@ -601,6 +602,7 @@ export const exportCommissionsReportToExcel = (report: CommissionsReport) => {
     }, 100);
   } catch (error) {
     console.error('Error exporting commissions report:', error);
+    // TODO: replace with toast notification
     alert('حدث خطأ أثناء تصدير التقرير. يرجى المحاولة مرة أخرى.');
   }
 };
@@ -693,12 +695,14 @@ export const exportCommissionsReportToPDFFromHTML = (report: CommissionsReport):
   try {
     if (!report) {
       console.error('Report is undefined');
+      // TODO: replace with toast notification
       alert('لا توجد بيانات للتصدير');
       return;
     }
 
     if (!report.summary) {
       console.error('Report summary is undefined');
+      // TODO: replace with toast notification
       alert('لا توجد بيانات ملخصة للتصدير');
       return;
     }
@@ -708,6 +712,7 @@ export const exportCommissionsReportToPDFFromHTML = (report: CommissionsReport):
 
     if (!element) {
       console.error('عنصر التقرير غير موجود في الصفحة');
+      // TODO: replace with toast notification
       alert('عنصر التقرير غير موجود. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
       return;
     }
@@ -733,6 +738,7 @@ export const exportCommissionsReportToPDFFromHTML = (report: CommissionsReport):
     html2pdf().set(opt).from(element).save();
   } catch (error) {
     console.error('Error exporting commissions report to PDF from HTML:', error);
+    // TODO: replace with toast notification
     alert('حدث خطأ أثناء تصدير التقرير. يرجى المحاولة مرة أخرى.');
   }
 };

@@ -1050,14 +1050,15 @@ export const OrderDetailsPage: React.FC = () => {
             open={mobileActionsOpen}
             onClose={() => setMobileActionsOpen(false)}
           >
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
                 {t('actions.updateStatus')}
               </Typography>
-              <Stack spacing={1}>
+              <Stack spacing={{ xs: 1, sm: 1.5 }}>
                 <Button
                   variant="outlined"
                   fullWidth
+                  size="large"
                   startIcon={<Edit />}
                   onClick={() => {
                     setMobileActionsOpen(false);
@@ -1069,6 +1070,7 @@ export const OrderDetailsPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   fullWidth
+                  size="large"
                   startIcon={<LocalShipping />}
                   onClick={() => {
                     setMobileActionsOpen(false);
@@ -1081,6 +1083,7 @@ export const OrderDetailsPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   fullWidth
+                  size="large"
                   startIcon={<Refresh />}
                   onClick={() => {
                     setMobileActionsOpen(false);
@@ -1093,6 +1096,7 @@ export const OrderDetailsPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   fullWidth
+                  size="large"
                   startIcon={<Cancel />}
                   onClick={() => {
                     setMobileActionsOpen(false);
@@ -1114,7 +1118,7 @@ export const OrderDetailsPage: React.FC = () => {
 
         <Grid container spacing={{ xs: 2, md: 3 }}>
           {/* Order Overview */}
-          <Grid size={{ xs: 12, lg: 8 }}>
+          <Grid size={{ xs: 12, sm: 12, lg: 8 }} sx={{ minWidth: 0 }}>
             <Card
               sx={{
                 mb: { xs: 2, md: 3 },
@@ -1130,7 +1134,7 @@ export const OrderDetailsPage: React.FC = () => {
                   {t('details.overview')}
                 </Typography>
                 <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-                  <Grid size={{ xs: 6, sm: 3 }}>
+                  <Grid size={{ xs: 6, sm: 3 }} sx={{ minWidth: 0 }}>
                     <Box textAlign="center">
                       <Typography
                         variant="caption"
@@ -1143,7 +1147,7 @@ export const OrderDetailsPage: React.FC = () => {
                     </Box>
                   </Grid>
                   {/* Note: Status can be changed inline from the header Quick Actions */}
-                  <Grid size={{ xs: 6, sm: 3 }}>
+                  <Grid size={{ xs: 6, sm: 3 }} sx={{ minWidth: 0 }}>
                     <Box textAlign="center">
                       <Typography
                         variant="caption"
@@ -1159,7 +1163,7 @@ export const OrderDetailsPage: React.FC = () => {
                       />
                     </Box>
                   </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
+                  <Grid size={{ xs: 6, sm: 3 }} sx={{ minWidth: 0 }}>
                     <Box textAlign="center">
                       <Typography
                         variant="caption"
@@ -1190,7 +1194,7 @@ export const OrderDetailsPage: React.FC = () => {
                         )}
                     </Box>
                   </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
+                  <Grid size={{ xs: 6, sm: 3 }} sx={{ minWidth: 0 }}>
                     <Box textAlign="center">
                       <Typography
                         variant="caption"
@@ -1464,7 +1468,7 @@ export const OrderDetailsPage: React.FC = () => {
                     {t('details.returnSummary', { defaultValue: 'ملخص الإرجاع' })}
                   </Typography>
                   <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
+                    <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                       <Box
                         sx={{
                           p: 2,
@@ -1490,7 +1494,7 @@ export const OrderDetailsPage: React.FC = () => {
                         </Typography>
                       </Box>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
+                    <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                       <Box
                         sx={{
                           p: 2,
@@ -1520,7 +1524,7 @@ export const OrderDetailsPage: React.FC = () => {
                       </Box>
                     </Grid>
                     {order.returnInfo.returnReason && (
-                      <Grid size={{ xs: 12 }}>
+                      <Grid size={{ xs: 12 }} sx={{ minWidth: 0 }}>
                         <Box
                           sx={{
                             p: 2,
@@ -1541,7 +1545,7 @@ export const OrderDetailsPage: React.FC = () => {
                       </Grid>
                     )}
                     {order.returnInfo.returnedAt && (
-                      <Grid size={{ xs: 12, sm: 6 }}>
+                      <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                         <Typography variant="caption" color="text.secondary">
                           {t('details.returnedAt', { defaultValue: 'تاريخ الإرجاع' })}:{' '}
                           {formatDate(order.returnInfo.returnedAt)}
@@ -1549,7 +1553,7 @@ export const OrderDetailsPage: React.FC = () => {
                       </Grid>
                     )}
                     {order.returnInfo.returnedBy && (
-                      <Grid size={{ xs: 12, sm: 6 }}>
+                      <Grid size={{ xs: 12, sm: 6 }} sx={{ minWidth: 0 }}>
                         <Typography variant="caption" color="text.secondary">
                           {t('details.returnedBy', { defaultValue: 'تم الإرجاع بواسطة' })}:{' '}
                           {order.returnInfo.returnedBy}
@@ -1557,7 +1561,7 @@ export const OrderDetailsPage: React.FC = () => {
                       </Grid>
                     )}
                     {order.returnInvoiceUrl && (
-                      <Grid size={{ xs: 12 }}>
+                      <Grid size={{ xs: 12 }} sx={{ minWidth: 0 }}>
                         <Button
                           variant="outlined"
                           color="warning"
@@ -1766,7 +1770,7 @@ export const OrderDetailsPage: React.FC = () => {
           </Grid>
 
           {/* Order Details Sidebar */}
-          <Grid size={{ xs: 12, lg: 4 }}>
+          <Grid size={{ xs: 12, sm: 12, lg: 4 }} sx={{ minWidth: 0 }}>
             {/* Customer Information */}
             <Card
               sx={{
@@ -2423,6 +2427,7 @@ export const OrderDetailsPage: React.FC = () => {
                     defaultValue: 'اختر الأصناف المراد إرجاعها',
                   })}
                 </Typography>
+                <Box sx={{ overflowX: 'auto', minWidth: 0 }}>
                 <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400 }}>
                   <Table stickyHeader size="small">
                     <TableHead>
@@ -2552,6 +2557,7 @@ export const OrderDetailsPage: React.FC = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                </Box>
                 {Object.keys(selectedReturnItems).length > 0 && (
                   <Alert severity="info" sx={{ mt: 2 }}>
                     {t('dialogs.refundOrder.calculatedAmount', {

@@ -25,7 +25,7 @@ export const QuickStatsWidget: React.FC<QuickStatsWidgetProps> = ({
 
   if (isLoading) {
     return (
-      <Card>
+      <Card sx={{ overflow: 'hidden', height: '100%' }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
             {title}
@@ -59,7 +59,7 @@ export const QuickStatsWidget: React.FC<QuickStatsWidgetProps> = ({
   };
 
   return (
-    <Card>
+    <Card sx={{ overflow: 'hidden', height: '100%' }}>
       <CardContent>
         <Typography variant="h6" gutterBottom>
           {title}

@@ -18,9 +18,20 @@ export function ErrorState({
   onRetry,
 }: ErrorStateProps) {
   return (
-    <Stack alignItems="center" spacing={1.5} sx={{ py: 6, px: 2, textAlign: 'center' }}>
-      <Box sx={{ color: 'error.main' }}>{icon ?? <ErrorOutline sx={{ fontSize: 48 }} />}</Box>
-      <Typography variant="h6" sx={{ fontWeight: 800 }}>
+    <Stack
+      alignItems="center"
+      spacing={1.5}
+      sx={{
+        py: { xs: 4, sm: 6 },
+        px: { xs: 2, sm: 3 },
+        textAlign: 'center',
+        width: '100%',
+      }}
+    >
+      <Box sx={{ color: 'error.main', '& .MuiSvgIcon-root': { fontSize: { xs: 36, sm: 48 } } }}>
+        {icon ?? <ErrorOutline sx={{ fontSize: 'inherit' }} />}
+      </Box>
+      <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
         {title}
       </Typography>
       {description && (
@@ -29,7 +40,7 @@ export function ErrorState({
         </Typography>
       )}
       {onRetry && (
-        <Button variant="contained" onClick={onRetry}>
+        <Button variant="contained" onClick={onRetry} size="medium">
           {retryLabel}
         </Button>
       )}

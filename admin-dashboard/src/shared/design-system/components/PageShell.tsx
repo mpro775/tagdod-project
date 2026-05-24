@@ -25,6 +25,8 @@ export function PageShell({
       component="section"
       sx={{
         width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
         minHeight: fullHeight ? 'calc(100vh - 96px)' : undefined,
         overflowX: 'hidden',
       }}

@@ -12,16 +12,16 @@ export function LoadingState({
   variant = 'linear',
 }: LoadingStateProps) {
   return (
-    <Stack spacing={2} sx={{ py: 3 }}>
+    <Stack spacing={2} sx={{ py: 3, width: '100%' }}>
       <Typography variant="body2" color="text.secondary">
         {title}
       </Typography>
       {variant === 'linear' ? (
         <LinearProgress />
       ) : (
-        <Stack spacing={1}>
+        <Stack spacing={1.5}>
           {Array.from({ length: rows }).map((_, index) => (
-            <Skeleton key={index} variant="rounded" height={56} />
+            <Skeleton key={index} variant="rounded" height={56} sx={{ width: '100%' }} />
           ))}
         </Stack>
       )}

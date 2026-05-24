@@ -54,10 +54,12 @@ export const ContactRequestsListPage: React.FC = () => {
       <ContactRequestFilters filters={filters} onFiltersChange={handleFiltersChange} onReset={handleFiltersReset} loading={isLoading} />
       {isMobile ? (
         <Grid container spacing={2}>
-          {isLoading ? [...Array(6)].map((_, i) => (<Grid size={{ xs: 12 }} key={i}><Box sx={{ height: 200, borderRadius: 2, bgcolor: 'grey.100' }} /></Grid>)) : requests.length === 0 ? (<Grid size={{ xs: 12 }}><Box textAlign="center" py={8}><ContactMail sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} /><Typography variant="h6" color="text.secondary">{t('messages.noRequests')}</Typography></Box></Grid>) : requests.map((r) => (<Grid size={{ xs: 12 }} key={r._id}><ContactRequestCard request={r} onDelete={handleDelete} /></Grid>))}
+          {isLoading ? [...Array(6)].map((_, i) => (<Grid size={{ xs: 12 }} key={i} sx={{ minWidth: 0 }}><Box sx={{ height: 200, borderRadius: 2, bgcolor: 'grey.100' }} /></Grid>)) : requests.length === 0 ? (<Grid size={{ xs: 12 }} sx={{ minWidth: 0 }}><Box textAlign="center" py={8}><ContactMail sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} /><Typography variant="h6" color="text.secondary">{t('messages.noRequests')}</Typography></Box></Grid>) : requests.map((r) => (<Grid size={{ xs: 12 }} key={r._id} sx={{ minWidth: 0 }}><ContactRequestCard request={r} onDelete={handleDelete} /></Grid>))}
         </Grid>
       ) : (
-        <DataTable title={t('table.title')} columns={columns} rows={requests} loading={isLoading} paginationModel={paginationModel} onPaginationModelChange={handlePaginationModelChange} rowCount={requestsResponse?.meta?.total ?? 0} paginationMode="server" getRowId={(row: any) => row._id} height="calc(100vh - 350px)" />
+        <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
+          <DataTable title={t('table.title')} columns={columns} rows={requests} loading={isLoading} paginationModel={paginationModel} onPaginationModelChange={handlePaginationModelChange} rowCount={requestsResponse?.meta?.total ?? 0} paginationMode="server" getRowId={(row: any) => row._id} height="calc(100vh - 350px)" />
+        </Box>
       )}
 </PageShell>
   );

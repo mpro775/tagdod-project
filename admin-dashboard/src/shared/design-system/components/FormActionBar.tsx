@@ -25,16 +25,19 @@ export function FormActionBar({
     <Paper
       elevation={0}
       sx={{
-        p: 2,
+        p: { xs: 1.5, sm: 2 },
         border: '1px solid',
         borderColor: 'divider',
         bgcolor: 'background.paper',
+        position: 'sticky',
+        bottom: 0,
+        zIndex: (theme) => theme.zIndex.appBar - 1,
       }}
     >
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
         {children}
         {onCancel && (
-          <Button variant="outlined" onClick={onCancel} disabled={loading}>
+          <Button variant="outlined" onClick={onCancel} disabled={loading} fullWidth={false}>
             {cancelLabel}
           </Button>
         )}
@@ -44,6 +47,7 @@ export function FormActionBar({
             onClick={onSubmit}
             disabled={disabled || loading}
             startIcon={loading ? <CircularProgress color="inherit" size={16} /> : <Save />}
+            fullWidth={false}
           >
             {loading ? 'جاري الحفظ...' : submitLabel}
           </Button>

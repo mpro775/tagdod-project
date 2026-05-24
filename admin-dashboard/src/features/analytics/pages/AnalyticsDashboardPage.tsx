@@ -143,7 +143,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
 
       {/* KPI Overview Cards */}
       <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: { xs: 2, sm: 3 } }}>
-        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }} sx={{ minWidth: 0 }}>
           <KpiCard
             title={t('dashboard.totalUsers')}
             value={formatNumber(view.overview.totalUsers)}
@@ -152,7 +152,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
             color="primary"
           />
         </Grid>
-        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }} sx={{ minWidth: 0 }}>
           <KpiCard
             title={t('salesAnalytics.totalRevenue')}
             value={formatCurrency(view.overview.totalRevenue)}
@@ -161,7 +161,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
             color="success"
           />
         </Grid>
-        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }} sx={{ minWidth: 0 }}>
           <KpiCard
             title={t('salesAnalytics.totalOrders')}
             value={formatNumber(view.overview.totalOrders)}
@@ -170,7 +170,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
             color="warning"
           />
         </Grid>
-        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }} sx={{ minWidth: 0 }}>
           <KpiCard
             title={t('dashboard.activeServices')}
             value={formatNumber(view.overview.activeServices)}
@@ -179,7 +179,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
             color="info"
           />
         </Grid>
-        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }} sx={{ minWidth: 0 }}>
           <KpiCard
             title={t('dashboard.openSupportTickets')}
             value={formatNumber(view.overview.openSupportTickets)}
@@ -188,7 +188,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
             color="error"
           />
         </Grid>
-        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 4, lg: 2 }} sx={{ minWidth: 0 }}>
           <KpiCard
             title={t('dashboard.systemHealth')}
             value={
@@ -205,12 +205,12 @@ export const AnalyticsDashboardPage: React.FC = () => {
 
       {/* Revenue Section */}
       <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: { xs: 2, sm: 3 } }}>
-        <Grid size={{ xs: 12, lg: 8 }}>
+        <Grid size={{ xs: 12, lg: 8 }} sx={{ minWidth: 0 }}>
           <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض مخطط الإيرادات">
             <RevenueChart data={view.revenueDaily} title="الإيرادات والطلبات اليومية" />
           </AnalyticsCardErrorBoundary>
         </Grid>
-        <Grid size={{ xs: 12, lg: 4 }}>
+        <Grid size={{ xs: 12, lg: 4 }} sx={{ minWidth: 0 }}>
           <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض الإيرادات الشهرية">
             <MonthlyRevenueChart data={view.revenueMonthly} title="الإيرادات الشهرية والنمو" />
           </AnalyticsCardErrorBoundary>
@@ -219,12 +219,12 @@ export const AnalyticsDashboardPage: React.FC = () => {
 
       {/* Users Section */}
       <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: { xs: 2, sm: 3 } }}>
-        <Grid size={{ xs: 12, lg: 8 }}>
+        <Grid size={{ xs: 12, lg: 8 }} sx={{ minWidth: 0 }}>
           <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض اتجاه المستخدمين">
             <UserAnalyticsChart data={view.userRegistrationTrend} title="اتجاه التسجيل والنشاط" />
           </AnalyticsCardErrorBoundary>
         </Grid>
-        <Grid size={{ xs: 12, lg: 4 }}>
+        <Grid size={{ xs: 12, lg: 4 }} sx={{ minWidth: 0 }}>
           <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض توزيع المستخدمين">
             <UserTypesDistribution data={view.userTypes} title="توزيع أنواع المستخدمين" />
           </AnalyticsCardErrorBoundary>
@@ -233,7 +233,7 @@ export const AnalyticsDashboardPage: React.FC = () => {
 
       {/* Products Section */}
       <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: { xs: 2, sm: 3 } }}>
-        <Grid size={{ xs: 12 }}>
+        <Grid size={{ xs: 12 }} sx={{ minWidth: 0 }}>
           <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض أداء المنتجات">
             <ProductPerformanceChart data={view.topProducts} title="أفضل المنتجات مبيعًا" />
           </AnalyticsCardErrorBoundary>
@@ -242,12 +242,12 @@ export const AnalyticsDashboardPage: React.FC = () => {
 
       {/* Services & Support Section */}
       <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: { xs: 2, sm: 3 } }}>
-        <Grid size={{ xs: 12, lg: 6 }}>
+        <Grid size={{ xs: 12, lg: 6 }} sx={{ minWidth: 0 }}>
           <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض طلبات الخدمة">
             <ServiceAnalyticsChart data={view.serviceRequests} title="طلبات الخدمة" />
           </AnalyticsCardErrorBoundary>
         </Grid>
-        <Grid size={{ xs: 12, lg: 6 }}>
+        <Grid size={{ xs: 12, lg: 6 }} sx={{ minWidth: 0 }}>
           <AnalyticsCardErrorBoundary fallbackTitle="تعذر عرض تذاكر الدعم">
             <SupportAnalyticsChart data={view.supportTickets} title="تذاكر الدعم" />
           </AnalyticsCardErrorBoundary>
@@ -286,7 +286,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, change, icon, color }) 
       }}
     >
       <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="center" sx={{ mb: 1 }}>
           {icon}
           <Typography
             variant="caption"

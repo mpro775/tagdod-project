@@ -98,8 +98,8 @@ export const SupportTicketsListPage: React.FC = () => {
   const renderSkeletons = () => (
     <Grid container spacing={{ xs: 2, sm: 3 }}>
       {[...Array(isMobile ? 4 : isTablet ? 6 : 8)].map((_, index) => (
-        <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={index}>
-          <Skeleton 
+<Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={index} sx={{ minWidth: 0 }}>
+           <Skeleton
             variant="rectangular" 
             height={isMobile ? 180 : 200}
             sx={{ borderRadius: 2 }}
@@ -251,7 +251,7 @@ export const SupportTicketsListPage: React.FC = () => {
       ) : data?.data && Array.isArray(data.data) && data.data.length > 0 ? (
         <Grid container spacing={{ xs: 2, sm: 3 }}>
           {data.data.map((ticket) => (
-            <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={ticket._id}>
+            <Grid component="div" size={{ xs: 12, sm: 6, md: 4 }} key={ticket._id} sx={{ minWidth: 0 }}>
               <SupportTicketCard
                 ticket={ticket}
                 onClick={handleTicketClick}

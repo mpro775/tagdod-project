@@ -45,6 +45,7 @@ import {
 } from '../types/commissions.types';
 import { formatNumber, formatCurrency } from '@/shared/utils/formatters';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { exportCommissionsReportToPDFFromHTML } from '../utils/exportUtils';
 import { CommissionsReportTemplate } from '../components/CommissionsReportTemplate';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
@@ -255,14 +256,13 @@ export const CommissionsReportsPage: React.FC = () => {
               startIcon={<Download />}
               disabled={!report || !report.summary || isLoading}
               onClick={() => {
-                console.log('Export button clicked', { report, hasSummary: !!report?.summary });
                 if (report && report.summary) {
                   try {
                     // استخدام الطريقة الجديدة HTML to PDF
                     exportCommissionsReportToPDFFromHTML(report);
                   } catch (error) {
                     console.error('Export error:', error);
-                    alert('حدث خطأ أثناء تصدير التقرير');
+                    toast.error('حدث خطأ أثناء تصدير التقرير');
                   }
                 } else {
                   console.warn('Cannot export: report or summary is missing', { report });

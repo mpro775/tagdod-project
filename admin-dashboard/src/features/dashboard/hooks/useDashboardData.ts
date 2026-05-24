@@ -104,14 +104,6 @@ export const useSalesAnalytics = () => {
         const response = await apiClient.get('/analytics/advanced/sales');
         const data = unwrapData(response);
         
-        // Debug logging
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('useSalesAnalytics - response:', response);
-          // eslint-disable-next-line no-console
-          console.log('useSalesAnalytics - data:', data);
-        }
-        
         // التأكد من أن البيانات موجودة
         if (data && typeof data === 'object') {
           return data;

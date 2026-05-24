@@ -125,9 +125,6 @@ export const initSentry = () => {
       /^safari-extension:\/\//i,
     ],
   });
-
-  // eslint-disable-next-line no-console
-  console.log('Sentry initialized successfully');
 };
 
 // Utility functions for manual error tracking

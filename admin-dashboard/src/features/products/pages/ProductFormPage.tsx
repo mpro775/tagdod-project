@@ -128,9 +128,7 @@ export const ProductFormPage: React.FC = () => {
   // ✅ استخدام useRef للحفاظ على القيمة الحالية (حل مشكلة stale closure)
   const relatedProductsRef = React.useRef<string[]>([]);
 
-  // ✅ Debug: Log relatedProducts changes وتحديث الـ ref
   React.useEffect(() => {
-    console.log('📝 relatedProducts state changed:', relatedProducts);
     relatedProductsRef.current = relatedProducts;
   }, [relatedProducts]);
 
@@ -434,16 +432,15 @@ export const ProductFormPage: React.FC = () => {
 
       // إذا كان الاستبدال مفعلاً، نحذف المتغيرات الحالية أولاً
       if (replaceExisting && existingVariants && existingVariants.length > 0) {
-        let deleteCount = 0;
+        let _deleteCount = 0;
         for (const variant of existingVariants) {
           try {
             await productsApi.deleteVariant(variant._id);
-            deleteCount++;
-          } catch (error) {
-            console.error('Error deleting variant:', error);
+            _deleteCount++;
+          } catch (_error) {
+            // Error deleting variant - already handled by mutation
           }
         }
-        console.log(`Deleted ${deleteCount} existing variants`);
       }
 
       // إنشاء المتغيرات واحداً تلو الآخر في الخلفية
@@ -696,26 +693,14 @@ export const ProductFormPage: React.FC = () => {
       };
 
       // ✅ التحقق من البيانات قبل الإرسال
-      console.log('🔍 Updating product with relatedProducts:', {
-        productId: id,
-        relatedProductsFromRef: currentRelatedProducts,
-        relatedProductsInData: updateData.relatedProducts,
-        relatedProductsLength: updateData.relatedProducts?.length || 0,
-      });
-
       updateProduct(
         { id: id!, data: updateData },
         {
-          onSuccess: (updatedProduct) => {
-            console.log('✅ Product updated successfully:', {
-              productId: updatedProduct._id,
-              relatedProducts: updatedProduct.relatedProducts,
-            });
+          onSuccess: () => {
             // العودة للصفحة السابقة مع الحفاظ على الـ pagination params
             navigate(-1);
           },
-          onError: (error) => {
-            console.error('❌ Error updating product:', error);
+          onError: () => {
           },
         }
       );
@@ -852,8 +837,8 @@ export const ProductFormPage: React.FC = () => {
               )}
 
               <Grid container spacing={3} sx={{ mt: 0.5 }}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Controller
+<Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Controller
                     name="warrantyDurationYears"
                     control={methods.control}
                     render={({ field }) => (
@@ -933,7 +918,7 @@ export const ProductFormPage: React.FC = () => {
             </Alert>
 
             <Grid container spacing={3}>
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <FormSelect
                   name="categoryId"
                   label={t('products:form.category', 'الفئة') + ' *'}
@@ -944,7 +929,7 @@ export const ProductFormPage: React.FC = () => {
                   disabled={dataLoading}
                 />
               </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <FormSelect
                   name="brandId"
                   label={t('products:form.brand', 'العلامة التجارية')}
@@ -957,7 +942,7 @@ export const ProductFormPage: React.FC = () => {
               </Grid>
 
               {/* ✅ قسم SKU المحسن */}
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <SmartSkuInput
                   value={methods.watch('sku') || ''}
                   onChange={(value) => {
@@ -1001,7 +986,7 @@ export const ProductFormPage: React.FC = () => {
                 )}
               </Grid>
 
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <FormSelect
                   name="status"
                   label={t('products:form.status', 'الحالة') + ' *'}
@@ -1030,7 +1015,7 @@ export const ProductFormPage: React.FC = () => {
             </Alert>
 
             <Grid container spacing={3}>
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <TextField
                   label={t('products:form.defaultPrice', 'السعر الافتراضي') + ' *'}
                   type="number"
@@ -1046,7 +1031,7 @@ export const ProductFormPage: React.FC = () => {
                 />
               </Grid>
               {/* ✅ حقل المخزون المحسن */}
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <TextField
                   label={t('products:form.defaultStock', 'المخزون الافتراضي') + (isLinkedToOnyx ? '' : ' *')}
                   type="number"
@@ -1094,7 +1079,7 @@ export const ProductFormPage: React.FC = () => {
                   )}
                 </Typography>
               </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <TextField
                   label={t('products:form.simpleComparePrice', 'السعر الأصلي (منتج بسيط)')}
                   type="number"
@@ -1105,7 +1090,7 @@ export const ProductFormPage: React.FC = () => {
                   inputProps={{ min: 0, step: '0.01' }}
                 />
               </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <TextField
                   label={t('products:form.simpleCostPrice', 'سعر التكلفة (منتج بسيط)')}
                   type="number"
@@ -1282,7 +1267,7 @@ export const ProductFormPage: React.FC = () => {
 
               {useManualRating && (
                 <>
-                  <Grid size={{ xs: 12, md: 6 }}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <Typography variant="subtitle2" gutterBottom>
                       {t('products:form.manualRating', 'التقييم اليدوي')} ⭐
                     </Typography>
@@ -1299,7 +1284,7 @@ export const ProductFormPage: React.FC = () => {
                     </Box>
                   </Grid>
 
-                  <Grid size={{ xs: 12, md: 6 }}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <TextField
                       label={t('products:form.manualReviewsCount', 'عدد التقييمات اليدوي')}
                       type="number"
@@ -1380,7 +1365,6 @@ export const ProductFormPage: React.FC = () => {
                 <RelatedProductsSelector
                   value={relatedProducts}
                   onChange={(productIds) => {
-                    console.log('🔄 RelatedProductsSelector onChange called:', productIds);
                     setRelatedProducts(productIds);
                   }}
                   currentProductId={isEditMode ? id : undefined}

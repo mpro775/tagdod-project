@@ -38,16 +38,6 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
   // Priority: salesByCategory > revenueCharts.byCategory > categoryBreakdown > revenueByCategory
   let categoryData: any[] = [];
   
-  // Debug logging (يمكن إزالتها لاحقاً)
-  if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
-    console.log('CategoryDistribution - salesData:', salesData);
-    // eslint-disable-next-line no-console
-    console.log('CategoryDistribution - revenueCharts:', revenueCharts);
-    // eslint-disable-next-line no-console
-    console.log('CategoryDistribution - isLoading:', isLoading);
-  }
-  
   // معالجة البيانات فقط إذا لم تكن قيد التحميل
   if (!isLoading) {
     if (salesData && typeof salesData === 'object') {
@@ -73,12 +63,7 @@ export const CategoryDistribution: React.FC<CategoryDistributionProps> = ({
       }
     }
   }
-  
-  if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
-    console.log('CategoryDistribution - categoryData:', categoryData);
-  }
-  
+
   const totalRevenue = salesData?.totalRevenue || 
                        categoryData.reduce((sum: number, cat: any) => sum + (cat.revenue || cat.totalRevenue || 0), 0) || 
                        1;

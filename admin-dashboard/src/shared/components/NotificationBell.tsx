@@ -49,16 +49,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
   const { latestNotification, unreadCount: socketUnreadCount } = useNotificationsSocket();
 
   useEffect(() => {
-    console.log('NotificationBell - notificationsData:', notificationsData);
-    console.log('NotificationBell - isLoading:', isLoading);
-
     if (notificationsData?.data) {
-      console.log('NotificationBell - notificationsData.data:', notificationsData.data);
-      console.log(
-        'NotificationBell - notificationsData.data length:',
-        notificationsData.data.length
-      );
-
       const formattedNotifications = notificationsData.data.map((n) => ({
         id: n._id,
         title: n.title,
@@ -75,10 +66,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         isRead: n.status === 'read' || n.readAt !== undefined,
       }));
 
-      console.log('NotificationBell - formattedNotifications:', formattedNotifications);
       setNotifications(formattedNotifications);
-    } else {
-      console.log('NotificationBell - No notifications data or data is empty');
     }
   }, [notificationsData, isLoading]);
 
@@ -367,10 +355,6 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
     }
 
     const route = getNotificationRoute(notification);
-    console.log('NotificationBell click - notification:', notification);
-    console.log('NotificationBell click - route:', route);
-    console.log('NotificationBell click - data:', notification.data);
-    console.log('NotificationBell click - productId:', notification.data?.productId);
 
     if (
       route &&

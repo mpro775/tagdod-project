@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, useMediaQuery, Theme } from '@mui/material';
 import { Warning } from '@mui/icons-material';
 import type { Project } from '../types/project.types';
 
@@ -11,8 +11,11 @@ interface ProjectDeleteDialogProps {
   loading?: boolean;
 }
 
-export const ProjectDeleteDialog: React.FC<ProjectDeleteDialogProps> = ({ open, onClose, onConfirm, project, loading }) => (
-  <Dialog open={open} onClose={onClose}>
+export const ProjectDeleteDialog: React.FC<ProjectDeleteDialogProps> = ({ open, onClose, onConfirm, project, loading }) => {
+  const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
+
+  return (
+  <Dialog open={open} onClose={onClose} fullScreen={isMobile}>
     <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Warning color="error" />تأكيد الحذف</DialogTitle>
     <DialogContent>
       <Typography>هل أنت متأكد من حذف المشروع "{project?.titleAr}"؟ لا يمكن التراجع عن هذا الإجراء.</Typography>
@@ -22,4 +25,5 @@ export const ProjectDeleteDialog: React.FC<ProjectDeleteDialogProps> = ({ open, 
       <Button variant="contained" color="error" onClick={onConfirm} disabled={loading}>حذف</Button>
     </DialogActions>
   </Dialog>
-);
+  );
+};

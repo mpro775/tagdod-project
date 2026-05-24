@@ -229,7 +229,7 @@ export const UsersListPage: React.FC = () => {
       {/* Action Buttons - Desktop */}
       <Box sx={{ mb: 2, display: { xs: 'none', md: 'block' }, px: { xs: 1, sm: 0 } }}>
         <SectionCard padding="sm">
-          <Stack direction="row" spacing={2} justifyContent="flex-end">
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="flex-end">
             <Button
               variant="outlined"
               color="secondary"
@@ -272,6 +272,9 @@ export const UsersListPage: React.FC = () => {
           mb: 2,
           display: { xs: 'none', md: 'block' },
           px: { xs: 1, sm: 0 },
+          width: '100%',
+          overflowX: 'auto',
+          minWidth: 0,
         }}
       >
         <DataTable
@@ -393,7 +396,7 @@ export const UsersListPage: React.FC = () => {
         ) : (
           <Grid container spacing={{ xs: 2, sm: 2 }}>
             {(data?.data || []).map((user: User) => (
-              <Grid component="div" size={{ xs: 6, sm: 6, md: 4 }} key={user._id}>
+              <Grid component="div" size={{ xs: 6, sm: 6, md: 4 }} key={user._id} sx={{ minWidth: 0 }}>
                 <UserCard
                   user={user}
                   onEdit={handleEdit}
@@ -450,6 +453,7 @@ export const UsersListPage: React.FC = () => {
         onClose={() => setMonthlyReportDialog(false)}
         maxWidth="xs"
         fullWidth
+        fullScreen={isSmallScreen}
       >
         <DialogTitle sx={{ fontWeight: 'bold' }}>
           {t('users:actions.monthlyReport', 'تقرير شهري')}

@@ -536,7 +536,7 @@ export const EngineersManagementPage: React.FC = () => {
 
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* إحصائيات سريعة */}
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }} sx={{ minWidth: 0 }}>
           <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -556,7 +556,7 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }} sx={{ minWidth: 0 }}>
           <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -576,7 +576,7 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }} sx={{ minWidth: 0 }}>
           <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -596,7 +596,7 @@ export const EngineersManagementPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }} sx={{ minWidth: 0 }}>
           <Card sx={{ bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
             <CardContent>
               <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -646,24 +646,26 @@ export const EngineersManagementPage: React.FC = () => {
           </Box>
         ) : (
           // عرض الجدول على الشاشات الكبيرة
-          <DataTable
-            title={t('services:engineers.listTitle', {
-              total: engineersData?.meta?.total || engineers.length,
-              active: engineers.filter((e: any) => e.isActive).length,
-            })}
-            columns={columns}
-            rows={engineers}
-            loading={isEngineersLoading}
-            searchPlaceholder={t('services:engineers.searchPlaceholder')}
-            onSearch={setSearchTerm}
-            getRowId={(row: any) => row.engineerId}
-            rowHeight={90}
-            height="calc(100vh - 280px)"
-            paginationModel={paginationModel}
-            onPaginationModelChange={setPaginationModel}
-            rowCount={engineersData?.meta?.total || engineers.length}
-            paginationMode="server"
-          />
+          <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
+            <DataTable
+              title={t('services:engineers.listTitle', {
+                total: engineersData?.meta?.total || engineers.length,
+                active: engineers.filter((e: any) => e.isActive).length,
+              })}
+              columns={columns}
+              rows={engineers}
+              loading={isEngineersLoading}
+              searchPlaceholder={t('services:engineers.searchPlaceholder')}
+              onSearch={setSearchTerm}
+              getRowId={(row: any) => row.engineerId}
+              rowHeight={90}
+              height="calc(100vh - 280px)"
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              rowCount={engineersData?.meta?.total || engineers.length}
+              paginationMode="server"
+            />
+          </Box>
         )}
       </Box>
 

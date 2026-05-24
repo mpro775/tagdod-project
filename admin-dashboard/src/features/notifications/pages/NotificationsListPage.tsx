@@ -414,6 +414,7 @@ export const NotificationsListPage: React.FC = () => {
       />
 
       {/* Data Table */}
+      <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
       <NotificationTable
         notifications={notifications}
         loading={isLoading}
@@ -428,6 +429,7 @@ export const NotificationsListPage: React.FC = () => {
         isSending={isSending || isSendingBatch}
         isDeleting={isDeleting || isDeletingBatch}
       />
+      </Box>
 
       {/* Snackbar for notifications */}
       <Snackbar
@@ -499,6 +501,7 @@ export const NotificationsListPage: React.FC = () => {
           onClose={() => setCreateDialogOpen(false)}
           maxWidth="lg"
           fullWidth
+          fullScreen={isMobile}
         >
           <DialogTitle
             sx={{
@@ -529,6 +532,7 @@ export const NotificationsListPage: React.FC = () => {
           onClose={() => setBulkSendDialogOpen(false)}
           maxWidth="md"
           fullWidth
+          fullScreen={isMobile}
         >
           <DialogTitle
             sx={{
@@ -558,6 +562,7 @@ export const NotificationsListPage: React.FC = () => {
           onClose={() => setTestDialogOpen(false)}
           maxWidth="sm"
           fullWidth
+          fullScreen={isMobile}
         >
           <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Analytics />

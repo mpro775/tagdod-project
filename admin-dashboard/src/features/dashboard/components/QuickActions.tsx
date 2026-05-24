@@ -108,8 +108,8 @@ export const QuickActions: React.FC = () => {
         onClick={handleClick}
         sx={{
           position: 'fixed',
-          bottom: 32,
-          right: 32,
+          bottom: { xs: 16, sm: 32 },
+          right: { xs: 16, sm: 32 },
           zIndex: 1000,
           boxShadow: `0 8px 16px ${alpha(theme.palette.primary.main, 0.4)}`,
           '&:hover': {
@@ -128,8 +128,8 @@ export const QuickActions: React.FC = () => {
             elevation={8}
             sx={{
               position: 'fixed',
-              bottom: 100,
-              right: 32,
+              bottom: { xs: 72, sm: 100 },
+              right: { xs: 16, sm: 32 },
               zIndex: 999,
               minWidth: 240,
               maxWidth: 300,

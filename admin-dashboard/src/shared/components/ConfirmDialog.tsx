@@ -7,6 +7,8 @@ import {
   Button,
   Typography,
   Box,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Warning as WarningIcon,
@@ -46,6 +48,8 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   loading = false,
 }) => {
   const { t } = useTranslation('common');
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const getIcon = () => {
     const getIconColor = (): 'error' | 'warning' | 'primary' => {
@@ -73,7 +77,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
   const getConfirmColor = (): 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success' => {
     if (confirmColor) return confirmColor;
-    
+
     switch (type) {
       case 'error':
         return 'error';
@@ -90,11 +94,12 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     <Dialog
       open={open}
       onClose={loading ? undefined : onCancel}
-      maxWidth="sm"
       fullWidth
+      fullScreen={fullScreen}
+      maxWidth="sm"
       PaperProps={{
         sx: {
-          borderRadius: 2,
+          borderRadius: fullScreen ? 0 : 2,
         },
       }}
     >
@@ -120,13 +125,13 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           {message}
         </Typography>
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+      <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexDirection: { xs: 'column-reverse', sm: 'row' } }}>
         <Button
           onClick={onCancel}
           disabled={loading}
           variant="outlined"
           color={cancelColor}
-          sx={{ minWidth: 100 }}
+          sx={{ minWidth: { xs: '100%', sm: 100 } }}
         >
           {cancelText || t('actions.cancel', 'إلغاء')}
         </Button>
@@ -135,7 +140,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           disabled={loading}
           variant="contained"
           color={getConfirmColor()}
-          sx={{ minWidth: 100 }}
+          sx={{ minWidth: { xs: '100%', sm: 100 } }}
         >
           {confirmText || t('actions.confirm', 'تأكيد')}
         </Button>
@@ -145,4 +150,3 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 };
 
 export default ConfirmDialog;
-

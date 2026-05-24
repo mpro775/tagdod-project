@@ -634,21 +634,23 @@ export const CartManagementPage: React.FC = () => {
 
       {/* DataTable - Desktop */}
       {!isXs ? (
-        <DataTable
-          columns={columns}
-          rows={carts as unknown as any[]}
-          loading={isLoading}
-          paginationModel={paginationModel}
-          onPaginationModelChange={handlePaginationModelChange}
-          selectable={true}
-          onRowSelectionModelChange={(selection) => {
-            const ids = selection as unknown as string[];
-            handleSelectAll(ids || []);
-          }}
-          getRowId={(row) => (row as Cart)._id}
-          height={isMobile ? 500 : 600}
-          rowHeight={isMobile ? 80 : 56}
-        />
+        <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
+          <DataTable
+            columns={columns}
+            rows={carts as unknown as any[]}
+            loading={isLoading}
+            paginationModel={paginationModel}
+            onPaginationModelChange={handlePaginationModelChange}
+            selectable={true}
+            onRowSelectionModelChange={(selection) => {
+              const ids = selection as unknown as string[];
+              handleSelectAll(ids || []);
+            }}
+            getRowId={(row) => (row as Cart)._id}
+            height={isMobile ? 500 : 600}
+            rowHeight={isMobile ? 80 : 56}
+          />
+        </Box>
       ) : (
         /* Card View - Mobile */
         <Box>
@@ -669,7 +671,7 @@ export const CartManagementPage: React.FC = () => {
                   const isSelected = selectedCarts.includes(cart._id);
 
                   return (
-                    <Grid key={cart._id} size={{ xs: 6 }}>
+                    <Grid key={cart._id} size={{ xs: 6 }} sx={{ minWidth: 0 }}>
                       <Card
                         sx={{
                           height: '100%',

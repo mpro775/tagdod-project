@@ -10,6 +10,8 @@ import {
   Box,
   CircularProgress,
   Alert,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useEngineerProfileAdmin } from '@/features/users/hooks/useEngineerProfileAdmin';
@@ -36,6 +38,8 @@ export const EngineerDetailsDialog: React.FC<EngineerDetailsDialogProps> = ({
   onEdit,
 }) => {
   const { t } = useTranslation(['services', 'common']);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [activeTab, setActiveTab] = useState(0);
 
   const {
@@ -46,7 +50,7 @@ export const EngineerDetailsDialog: React.FC<EngineerDetailsDialogProps> = ({
 
   if (isLoading) {
     return (
-      <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+      <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth fullScreen={isMobile}>
         <DialogContent>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight={400}>
             <CircularProgress />
@@ -61,7 +65,7 @@ export const EngineerDetailsDialog: React.FC<EngineerDetailsDialogProps> = ({
 
   if (error || !profile) {
     return (
-      <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+      <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth fullScreen={isMobile}>
         <DialogContent>
           <Alert severity="error">
             {t('services:engineers.profileLoadError', 'فشل تحميل بروفايل المهندس')}
@@ -91,7 +95,7 @@ export const EngineerDetailsDialog: React.FC<EngineerDetailsDialogProps> = ({
       : undefined;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { height: '90vh' } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth fullScreen={isMobile} PaperProps={{ sx: { height: isMobile ? '100%' : '90vh' } }}>
       <DialogTitle>{t('services:engineers.detailsTitle', 'تفاصيل المهندس')}</DialogTitle>
       <DialogContent dividers>
         <Box sx={{ mb: 3 }}>
@@ -99,7 +103,7 @@ export const EngineerDetailsDialog: React.FC<EngineerDetailsDialogProps> = ({
         </Box>
 
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-          <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
+          <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)} variant={isMobile ? 'scrollable' : 'standard'} scrollButtons="auto" allowScrollButtonsMobile>
             <Tab label={t('services:engineers.info', 'المعلومات')} />
             <Tab label={t('services:engineers.ratings', 'التقييمات')} />
             <Tab label={t('services:engineers.wallet', 'المحفظة')} />

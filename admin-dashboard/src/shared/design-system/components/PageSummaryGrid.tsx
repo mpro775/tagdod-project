@@ -1,5 +1,5 @@
 import { Children, type ReactNode } from 'react';
-import { Grid } from '@mui/material';
+import { Box } from '@mui/material';
 
 export interface PageSummaryGridProps {
   children: ReactNode;
@@ -7,31 +7,34 @@ export interface PageSummaryGridProps {
   spacing?: number;
 }
 
-const getColumnSize = (columns: number) => {
-  if (columns === 2) return { xs: 6, sm: 6, md: 6 };
-  if (columns === 3) return { xs: 6, sm: 4, md: 4 };
-  return { xs: 6, sm: 6, md: 3 };
-};
-
 export function PageSummaryGrid({
   children,
   columns = 4,
   spacing = 2.5,
 }: PageSummaryGridProps) {
   const childArray = Children.toArray(children);
-  const colSize = getColumnSize(columns);
+
+  const getGridCols = (cols: number) => {
+    if (cols <= 2) return { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' };
+    if (cols === 3) return { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' };
+    return { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: `repeat(${cols}, minmax(0, 1fr))` };
+  };
 
   return (
-    <Grid container spacing={spacing}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: getGridCols(columns),
+        gap: spacing,
+        width: '100%',
+      }}
+    >
       {childArray.map((child, index) => (
-        <Grid
-          key={index}
-          size={columns <= 4 ? colSize : { xs: 6, sm: 4, md: Math.max(2, Math.floor(12 / columns)) }}
-        >
+        <Box key={index} sx={{ minWidth: 0 }}>
           {child}
-        </Grid>
+        </Box>
       ))}
-    </Grid>
+    </Box>
   );
 }
 
