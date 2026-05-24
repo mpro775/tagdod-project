@@ -4,6 +4,7 @@ import { ContactMail } from '@mui/icons-material';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { ContactRequestFilters } from '../components/ContactRequestFilters';
@@ -16,6 +17,7 @@ export const ContactRequestsListPage: React.FC = () => {
   const { t } = useTranslation('contactRequests');
   const navigate = useNavigate();
   const { isMobile } = useBreakpoint();
+  usePageTitle(t('title', 'طلبات التواصل'));
   const [filters, setFilters] = useState<ListContactRequestsParams>({ page: 1, limit: 20, sortBy: 'createdAt', sortOrder: 'desc' });
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({ page: 0, pageSize: 20 });
   const deleteMutation = useDeleteContactRequest();
@@ -40,8 +42,15 @@ export const ContactRequestsListPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
-      <Box mb={3}><Box display="flex" alignItems="center" gap={2}><ContactMail fontSize={isMobile ? 'medium' : 'large'} color="primary" /><Typography variant="h4">{t('pageTitle')}</Typography></Box></Box>
+    <PageShell fullHeight>
+      <PageHeader
+        title={t('pageTitle')}
+        description="متابعة طلبات التواصل والاستفسارات"
+        breadcrumbs={[
+          { label: 'لوحة التحكم', to: '/dashboard' },
+          { label: t('pageTitle') },
+        ]}
+      />
       <ContactRequestFilters filters={filters} onFiltersChange={handleFiltersChange} onReset={handleFiltersReset} loading={isLoading} />
       {isMobile ? (
         <Grid container spacing={2}>
@@ -50,6 +59,6 @@ export const ContactRequestsListPage: React.FC = () => {
       ) : (
         <DataTable title={t('table.title')} columns={columns} rows={requests} loading={isLoading} paginationModel={paginationModel} onPaginationModelChange={handlePaginationModelChange} rowCount={requestsResponse?.meta?.total ?? 0} paginationMode="server" getRowId={(row: any) => row._id} height="calc(100vh - 350px)" />
       )}
-    </Box>
+</PageShell>
   );
 };

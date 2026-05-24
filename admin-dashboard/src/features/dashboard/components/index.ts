@@ -6,3 +6,5 @@ export { TopProductsWidget } from './TopProductsWidget';
 export { ActivityTimeline } from './ActivityTimeline';
 export { RecentOrders } from './RecentOrders';
 export { QuickActions } from './QuickActions';
+export { AttentionCenter } from './AttentionCenter';
+export type { AttentionItem, AttentionCenterProps } from './AttentionCenter';

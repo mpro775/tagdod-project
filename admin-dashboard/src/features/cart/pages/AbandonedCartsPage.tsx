@@ -1,5 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
+  PageShell,
+  PageHeader,
+  PageSummaryGrid,
+  StatCard,
+  usePageTitle,
+} from '@/shared/design-system';
+import {
   Box,
   Typography,
   Button,
@@ -34,6 +41,7 @@ import {
   useCartSelection,
   useBulkActions,
   useSendAllReminders,
+  useCartStatistics,
 } from '../hooks/useCart';
 import { CartFilters as CartFiltersComponent, CartDetailsModal } from '../components';
 import { SendReminderDialog } from './SendReminderDialog';
@@ -49,6 +57,8 @@ import {
 
 export const AbandonedCartsPage: React.FC = () => {
   const { t } = useTranslation('cart');
+  const pageTitle = t('cart:abandoned.title', 'السلات المتروكة');
+  usePageTitle(pageTitle);
   const theme = useTheme();
   const { isMobile, isXs } = useBreakpoint();
   const { confirmDialog, dialogProps } = useConfirmDialog();
@@ -76,8 +86,9 @@ export const AbandonedCartsPage: React.FC = () => {
 
   const { data: cartData, isLoading, error, refetch } = useAbandonedCarts(filters);
 
-  const sendAllRemindersMutation = useSendAllReminders();
+const sendAllRemindersMutation = useSendAllReminders();
   const bulkActionsMutation = useBulkActions();
+  const { data: cartStats } = useCartStatistics();
 
   // Event handlers
   const handleFiltersChange = (newFilters: CartFilters) => {
@@ -188,13 +199,8 @@ export const AbandonedCartsPage: React.FC = () => {
       ),
     [carts]
   );
-  const averageAbandonedValue = carts.length > 0 ? totalAbandonedValue / carts.length : 0;
   const cartsWithNoEmails = useMemo(() => 
     carts.filter((cart: Cart) => (cart.abandonmentEmailsSent || 0) === 0).length,
-    [carts]
-  );
-  const cartsWithEmails = useMemo(() => 
-    carts.filter((cart: Cart) => (cart.abandonmentEmailsSent || 0) > 0).length,
     [carts]
   );
 
@@ -480,55 +486,16 @@ export const AbandonedCartsPage: React.FC = () => {
   );
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
-      {/* Header */}
-      <Box 
-        display="flex" 
-        alignItems="center" 
-        justifyContent="space-between" 
-        mb={3}
-        flexDirection={{ xs: 'column', sm: 'row' }}
-        gap={{ xs: 2, sm: 0 }}
-      >
-        <Typography 
-          variant="h4" 
-          component="h1" 
-          sx={{ 
-            fontWeight: 'bold',
-            fontSize: { xs: '1.5rem', sm: '2rem' },
-            color: 'text.primary',
-          }}
-        >
-          {t('navigation.abandonedCarts')}
-        </Typography>
-        <Box 
-          display="flex" 
-          gap={1} 
-          flexWrap="wrap"
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        >
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
-            disabled={isLoading}
-            fullWidth={isMobile}
-            size={isMobile ? 'medium' : 'large'}
-          >
-            {t('actions.refresh')}
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<Send />}
-            onClick={handleSendAllReminders}
-            disabled={isLoading || sendAllRemindersMutation.isPending}
-            fullWidth={isMobile}
-            size={isMobile ? 'medium' : 'large'}
-          >
-            {t('actions.sendAllReminders')}
-          </Button>
-        </Box>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title={pageTitle}
+        description={t('cart:abandoned.description', 'استرداد السلات المتروكة وزيادة المبيعات')}
+        breadcrumbs={[{ label: 'لوحة التحكم', to: '/dashboard' }, { label: pageTitle }]}
+        actions={[
+          { label: 'تحديث', icon: <Refresh />, onClick: handleRefresh, variant: 'secondary', disabled: isLoading },
+          { label: 'إرسال تذكيرات', icon: <Send />, onClick: handleSendAllReminders, variant: 'primary', disabled: isLoading || sendAllRemindersMutation.isPending },
+        ]}
+      />
 
       {/* Error Alert */}
       {error && (
@@ -538,147 +505,26 @@ export const AbandonedCartsPage: React.FC = () => {
       )}
 
       {/* Statistics Cards */}
-      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <Card sx={{ height: '100%', bgcolor: 'background.paper' }}>
-            <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box flex={1}>
-                  <Typography 
-                    variant="h4" 
-                    component="div" 
-                    color="warning.main"
-                    sx={{ 
-                      fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {total.toLocaleString('en-US')}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                  >
-                    {t('stats.totalAbandonedCarts')}
-                  </Typography>
-                </Box>
-                <TrendingDown 
-                  sx={{ 
-                    fontSize: { xs: '1.5rem', sm: '2rem' },
-                    color: 'warning.main',
-                  }} 
-                />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <Card sx={{ height: '100%', bgcolor: 'background.paper' }}>
-            <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box flex={1}>
-                  <Typography 
-                    variant="h4" 
-                    component="div" 
-                    color="error.main"
-                    sx={{ 
-                      fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {totalAbandonedValue.toLocaleString('en-US')} $
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                  >
-                    {t('stats.totalAbandonedValue')}
-                  </Typography>
-                </Box>
-                <MonetizationOn 
-                  sx={{ 
-                    fontSize: { xs: '1.5rem', sm: '2rem' },
-                    color: 'error.main',
-                  }} 
-                />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <Card sx={{ height: '100%', bgcolor: 'background.paper' }}>
-            <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box flex={1}>
-                  <Typography 
-                    variant="h4" 
-                    component="div" 
-                    color="info.main"
-                    sx={{ 
-                      fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {averageAbandonedValue.toLocaleString('en-US')} $
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                  >
-                    {t('stats.averageAbandonedValue')}
-                  </Typography>
-                </Box>
-                <MonetizationOn 
-                  sx={{ 
-                    fontSize: { xs: '1.5rem', sm: '2rem' },
-                    color: 'info.main',
-                  }} 
-                />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <Card sx={{ height: '100%', bgcolor: 'background.paper' }}>
-            <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-              <Box display="flex" alignItems="center" justifyContent="space-between">
-                <Box flex={1}>
-                  <Typography 
-                    variant="h4" 
-                    component="div" 
-                    color="primary.main"
-                    sx={{ 
-                      fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {cartsWithEmails}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                  >
-                    {t('stats.cartsWithEmails')}
-                  </Typography>
-                </Box>
-                <Email 
-                  sx={{ 
-                    fontSize: { xs: '1.5rem', sm: '2rem' },
-                    color: 'primary.main',
-                  }} 
-                />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <PageSummaryGrid columns={3}>
+        <StatCard
+          title={t('stats.totalAbandonedCarts', 'إجمالي السلات المتروكة')}
+          value={cartStats?.allTime?.abandoned ?? total.toLocaleString('en-US')}
+          icon={<TrendingDown />}
+          tone="warning"
+        />
+        <StatCard
+          title={t('stats.totalAbandonedValue', 'قيمة السلات المتروكة')}
+          value={cartStats?.allTime?.totalValue ?? `${totalAbandonedValue.toLocaleString('en-US')} $`}
+          icon={<MonetizationOn />}
+          tone="error"
+        />
+        <StatCard
+          title={t('stats.conversionRate', 'معدل التحويل')}
+          value={cartStats?.allTime?.conversionRate ?? '-'}
+          icon={<TrendingDown />}
+          tone="info"
+        />
+      </PageSummaryGrid>
 
       {/* Quick Actions */}
       <Card sx={{ mb: 3, bgcolor: 'background.paper' }}>
@@ -1041,7 +887,7 @@ export const AbandonedCartsPage: React.FC = () => {
 
       {/* Confirm Dialog */}
       <ConfirmDialog {...dialogProps} />
-    </Box>
+    </PageShell>
   );
 };
 

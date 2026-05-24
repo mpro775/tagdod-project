@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Switch, TextField } from '@mui/material';
-import { Store } from '@mui/icons-material';
+
 import { useTranslation } from 'react-i18next';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 import { useLandingProducts, useUpdateLandingProduct } from '../hooks/useLandingProducts';
 import type { LandingProduct } from '../types/landing-product.types';
 
 export const LandingProductsPage: React.FC = () => {
   const { t } = useTranslation('landingProducts');
+  const pageTitle = t('pageTitle', 'منتجات صفحة الهبوط');
+  usePageTitle(pageTitle);
   const [search, setSearch] = useState('');
   const { data: productsResponse, isLoading } = useLandingProducts({ search });
   const updateMutation = useUpdateLandingProduct();
@@ -16,9 +19,16 @@ export const LandingProductsPage: React.FC = () => {
   const handleOrderChange = (product: LandingProduct, value: number) => { updateMutation.mutate({ id: product._id, data: { landingOrder: value } }); };
 
   return (
+    <PageShell fullHeight>
+      <PageHeader
+        title={pageTitle}
+        description="إدارة المنتجات المعروضة في صفحة الهبوط"
+        breadcrumbs={[
+          { label: 'لوحة التحكم', to: '/dashboard' },
+          { label: pageTitle },
+        ]}
+      />
     <Box sx={{ p: 3 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={3}><Store fontSize="large" color="primary" /><Typography variant="h4">{t('pageTitle')}</Typography></Box>
-      <Typography variant="body2" color="text.secondary" mb={3}>{t('pageDescription')}</Typography>
       <Box mb={3}><TextField fullWidth size="small" placeholder={t('filters.search') || 'بحث...'} value={search} onChange={(e) => setSearch(e.target.value)} /></Box>
       <TableContainer component={Paper}>
         <Table>
@@ -43,5 +53,6 @@ export const LandingProductsPage: React.FC = () => {
         </Table>
       </TableContainer>
     </Box>
+    </PageShell>
   );
 };

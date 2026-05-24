@@ -14,16 +14,24 @@ import {
   FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { DataExportDialog } from '../components/DataExportDialog';
 
 export const DataExportPage: React.FC = () => {
   const theme = useTheme();
   const { t } = useTranslation('analytics');
+  usePageTitle(t('analytics:export.title', 'تصدير البيانات'));
   const { isMobile } = useBreakpoint();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
+    <PageShell fullHeight>
+      <PageHeader
+        title={t('analytics:export.title', 'تصدير البيانات')}
+        description={t('analytics:export.description', 'تصدير البيانات والتقارير بتنسيقات مختلفة')}
+        breadcrumbs={[{ label: 'لوحة التحكم', to: '/dashboard' }, { label: t('analytics:export.title', 'تصدير البيانات') }]}
+      />
     <Box sx={{ width: '100%', px: { xs: 1, sm: 0 } }}>
       {/* Header */}
       <Paper
@@ -161,5 +169,6 @@ export const DataExportPage: React.FC = () => {
         onClose={() => setDialogOpen(false)} 
       />
     </Box>
+    </PageShell>
   );
 };

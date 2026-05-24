@@ -47,7 +47,11 @@ import {
   ArrowDownward,
   Cached,
   Search,
-  LocalOffer,
+LocalOffer,
+  Inventory2,
+  EditNote,
+  Archive,
+  Warning,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -55,7 +59,7 @@ import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { ProductCard } from '@/shared/components/Cards/ProductCard';
-import { useProducts, useDeleteProduct, useRestoreProduct, useClearCache } from '../hooks/useProducts';
+import { useProducts, useDeleteProduct, useRestoreProduct, useClearCache, useProductStats } from '../hooks/useProducts';
 import { useCategories } from '@/features/categories/hooks/useCategories';
 import { useBrands } from '@/features/brands/hooks/useBrands';
 import { formatDate } from '@/shared/utils/formatters';
@@ -63,13 +67,15 @@ import { CurrencySelector } from '@/shared/components/CurrencySelector';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import {
-  ConfirmDialog,
+ConfirmDialog,
   DataToolbar,
   DetailsDrawer,
   EmptyState,
   LoadingState,
   PageHeader,
   PageShell,
+  PageSummaryGrid,
+  StatCard,
   StatusChip,
   usePageTitle,
 } from '@/shared/design-system';
@@ -233,6 +239,8 @@ export const ProductsListPage: React.FC = () => {
     categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
     brandId: brandFilter !== 'all' ? brandFilter : undefined,
   });
+
+  const { data: productStats, isLoading: statsLoading } = useProductStats();
 
   // Apply hasOffer filter client-side
   const data = React.useMemo(() => {
@@ -680,7 +688,61 @@ export const ProductsListPage: React.FC = () => {
           { label: t('navigation.dashboard', 'لوحة التحكم'), to: '/dashboard' },
           { label: pageTitle },
         ]}
-      />
+/>
+
+{/* Product Overview Stats */}
+{!statsLoading && productStats ? (
+  <PageSummaryGrid columns={3}>
+    <StatCard
+      title={t('stats.total', 'إجمالي المنتجات')}
+      value={productStats.total || 0}
+      icon={<Inventory fontSize="small" />}
+      tone="primary"
+      linkTo="/products"
+    />
+    <StatCard
+      title={t('stats.active', 'منشورة')}
+      value={productStats.active || 0}
+      icon={<CheckCircle fontSize="small" />}
+      tone="success"
+      linkTo="/products?status=active"
+    />
+    <StatCard
+      title={t('stats.draft', 'مسودة')}
+      value={productStats.draft || 0}
+      icon={<EditNote fontSize="small" />}
+      tone="neutral"
+      linkTo="/products?status=draft"
+    />
+    <StatCard
+      title={t('stats.archived', 'مؤرشفة')}
+      value={productStats.archived || 0}
+      icon={<Archive fontSize="small" />}
+      tone="warning"
+      linkTo="/products?status=archived"
+    />
+    <StatCard
+      title={t('stats.lowStock', 'منخفض المخزون')}
+      value={productStats.lowStock || 0}
+      icon={<Warning fontSize="small" />}
+      tone="error"
+      linkTo="/products/inventory"
+    />
+    <StatCard
+      title={t('stats.outOfStock', 'نفذ المخزون')}
+      value={productStats.outOfStock || 0}
+      icon={<Inventory2 fontSize="small" />}
+      tone="error"
+      linkTo="/products/inventory"
+    />
+  </PageSummaryGrid>
+) : statsLoading ? (
+  <PageSummaryGrid columns={3}>
+    {[1,2,3,4,5,6].map((i) => (
+      <StatCard key={i} title="..." value="-" tone="neutral" loading />
+    ))}
+  </PageSummaryGrid>
+) : null}
 
       {false && (
         <>

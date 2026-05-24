@@ -16,6 +16,7 @@ import {
   FileDownload as FileDownloadIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { getCardSpacing } from '../utils/responsive';
 import { AnalyticsDashboardPage } from './AnalyticsDashboardPage';
@@ -52,6 +53,9 @@ export const AnalyticsMainPage: React.FC = () => {
   const breakpoint = useBreakpoint();
   const cardSpacing = getCardSpacing(breakpoint);
 
+  const pageTitle = t('analytics:header.title', 'التحليلات');
+  usePageTitle(pageTitle);
+
   const [selectedTab, setSelectedTab] = useState(0);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -86,6 +90,12 @@ export const AnalyticsMainPage: React.FC = () => {
   ];
 
   return (
+    <PageShell fullHeight>
+      <PageHeader
+        title={pageTitle}
+        description={t('analytics:header.description', 'تحليلات شاملة للأداء والمبيعات')}
+        breadcrumbs={[{ label: 'لوحة التحكم', to: '/dashboard' }, { label: pageTitle }]}
+      />
     <AnalyticsErrorBoundary>
       <Container 
         maxWidth="xl" 
@@ -253,5 +263,6 @@ export const AnalyticsMainPage: React.FC = () => {
         </TabPanel>
       </Container>
     </AnalyticsErrorBoundary>
+    </PageShell>
   );
 };

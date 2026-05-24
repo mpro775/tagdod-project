@@ -181,6 +181,8 @@ const AR_NAV_LABELS: Record<string, string> = {
   'navigation.landingProducts': 'منتجات صفحة الهبوط',
   'navigation.landingBrands': 'براندات صفحة الهبوط',
   'navigation.contactRequests': 'طلبات التواصل',
+  'navigation.scheduledReports': 'التقارير المجدولة',
+  'navigation.exportCenter': 'مركز التصدير',
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ width, open, onClose, variant }) => {

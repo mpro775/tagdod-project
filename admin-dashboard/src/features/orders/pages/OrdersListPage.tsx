@@ -6,7 +6,6 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  TextField,
   FormControl,
   InputLabel,
   Select,
@@ -18,18 +17,15 @@ import {
   Paper,
   useTheme,
   alpha,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Pagination,
   Divider,
+  Tab,
+  Tabs,
 } from '@mui/material';
 import {
   Visibility,
-  FilterList,
   Download,
   Refresh,
-  Search,
   Clear,
   Assignment,
   TrendingUp,
@@ -38,7 +34,6 @@ import {
   Warning,
   Replay,
   Paid,
-  ExpandMore,
   Payment,
   Verified,
 } from '@mui/icons-material';
@@ -58,11 +53,15 @@ import {
   ErrorState,
   PageHeader,
   PageShell,
+  PageSummaryGrid,
   SectionCard,
   StatCard,
   StatusChip,
+  DataToolbar,
   usePageTitle,
+  ConfirmDialog,
 } from '@/shared/design-system';
+import { useConfirmDialog } from '@/shared/hooks';
 import type {
   Order,
   OrderStatus,
@@ -71,23 +70,7 @@ import type {
 } from '../types/order.types';
 import { PaymentMethod } from '../types/order.types';
 import { ar } from 'date-fns/locale';
-
-// Order Status Labels and Colors
-
-const orderStatusColors: Record<
-  OrderStatus,
-  'default' | 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success'
-> = {
-  pending_payment: 'warning',
-  confirmed: 'info',
-  processing: 'primary',
-  completed: 'success',
-  on_hold: 'warning',
-  cancelled: 'error',
-  returned: 'info',
-  refunded: 'error',
-  out_of_stock: 'error',
-};
+import toast from 'react-hot-toast';
 
 const orderStatusToDesignStatus = (
   status: OrderStatus
@@ -98,6 +81,8 @@ const orderStatusToDesignStatus = (
   if (status === 'confirmed' || status === 'processing' || status === 'returned') return 'info';
   return 'neutral';
 };
+
+type StatusTabValue = 'all' | string;
 
 export const OrdersListPage: React.FC = () => {
   const theme = useTheme();
@@ -111,6 +96,7 @@ export const OrdersListPage: React.FC = () => {
   const [sortModel, setSortModel] = useState<GridSortModel>([
     { field: 'createdAt', sort: 'desc' },
   ]);
+  const [activeStatusTab, setActiveStatusTab] = useState<StatusTabValue>('all');
   const [filters, setFilters] = useState<ListOrdersParams>({
     page: 1,
     limit: 20,
@@ -118,8 +104,10 @@ export const OrdersListPage: React.FC = () => {
     sortOrder: 'desc',
   });
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const { confirmDialog, dialogProps: confirmDialogProps } = useConfirmDialog();
 
   const { data, isLoading, error, refetch } = useOrders(filters);
   const orders = data?.data ?? [];
@@ -141,7 +129,6 @@ export const OrdersListPage: React.FC = () => {
   const bulkUpdateMutation = useBulkUpdateOrderStatus();
   const exportMutation = useExportOrders();
 
-  // Update filters when pagination changes
   React.useEffect(() => {
     setFilters((prev) => ({
       ...prev,
@@ -150,7 +137,6 @@ export const OrdersListPage: React.FC = () => {
     }));
   }, [paginationModel]);
 
-  // Update filters when sort model changes
   React.useEffect(() => {
     if (sortModel.length > 0) {
       const sortField = sortModel[0].field;
@@ -159,7 +145,7 @@ export const OrdersListPage: React.FC = () => {
         ...prev,
         sortBy: sortField,
         sortOrder,
-        page: 1, // Reset to first page when sorting changes
+        page: 1,
       }));
       setPaginationModel((prev) => ({ ...prev, page: 0 }));
     }
@@ -169,7 +155,7 @@ export const OrdersListPage: React.FC = () => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
-      page: 1, // Reset to first page when filtering
+      page: 1,
     }));
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
   };
@@ -183,20 +169,52 @@ export const OrdersListPage: React.FC = () => {
     });
     setPaginationModel({ page: 0, pageSize: 20 });
     setSortModel([{ field: 'createdAt', sort: 'desc' }]);
+    setActiveStatusTab('all');
+  };
+
+  const handleStatusTabChange = (_: React.SyntheticEvent, newValue: StatusTabValue) => {
+    setActiveStatusTab(newValue);
+    if (newValue === 'all') {
+      setFilters((prev) => {
+        const { status, ...rest } = prev;
+        return rest as ListOrdersParams;
+      });
+    } else {
+      setFilters((prev) => ({ ...prev, status: newValue as OrderStatus, page: 1 }));
+    }
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
   };
 
   const handleBulkStatusUpdate = async (status: OrderStatus) => {
     if (selectedOrders.length === 0) return;
 
+    const isDangerous = status === 'cancelled';
+    const proceed = isDangerous
+      ? await confirmDialog({
+          title: t('bulk.confirmTitle', 'تأكيد العملية'),
+          message: t('bulk.confirmCancelMessage', 'هل أنت متأكد من إلغاء {{count}} طلب؟ لا يمكن التراجع عن هذا الإجراء.', { count: selectedOrders.length }),
+          type: 'warning',
+          confirmText: t('bulk.confirmYes', 'نعم، إلغاء'),
+          cancelText: t('bulk.confirmNo', 'تراجع'),
+          confirmColor: 'error',
+        })
+      : true;
+
+    if (!proceed) return;
+
     try {
       await bulkUpdateMutation.mutateAsync({
         orderIds: selectedOrders,
         status,
-        notes: `تم تحديث ${selectedOrders.length} طلب إلى حالة ${t(`status.${status}`)}`,
+        notes: t('bulk.statusUpdateNote', 'تم تحديث {{count}} طلب إلى حالة {{status}}', {
+          count: selectedOrders.length,
+          status: t(`status.${status}`),
+        }),
       });
       setSelectedOrders([]);
+      toast.success(t('bulk.success', 'تم تحديث الحالة بنجاح'));
     } catch {
-      // Error handled by mutation onError
+      toast.error(t('bulk.error', 'فشل تحديث الحالة'));
     }
   };
 
@@ -217,8 +235,9 @@ export const OrdersListPage: React.FC = () => {
         params: exportParams,
         fields,
       });
+      toast.success(t('actions.exportSuccess', 'تم تصدير البيانات بنجاح'));
     } catch {
-      // Error handled by mutation onError
+      toast.error(t('actions.exportError', 'فشل تصدير البيانات'));
     }
   };
 
@@ -226,6 +245,17 @@ export const OrdersListPage: React.FC = () => {
     1,
     Math.ceil((data?.meta?.total ?? 0) / Math.max(1, paginationModel.pageSize))
   );
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.search) count++;
+    if (filters.status) count++;
+    if (filters.paymentStatus) count++;
+    if (filters.paymentMethod) count++;
+    if (filters.fromDate) count++;
+    if (filters.toDate) count++;
+    return count;
+  }, [filters]);
 
   const renderOrderCard = (order: Order) => {
     const customer = usersMap.get(order.userId) ?? null;
@@ -249,6 +279,12 @@ export const OrdersListPage: React.FC = () => {
           boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 10px 28px rgba(15, 23, 42, 0.08)',
           overflow: 'hidden',
           cursor: 'pointer',
+          transition: theme.transitions.create(['border-color', 'box-shadow', 'transform']),
+          '&:hover': {
+            borderColor: alpha(theme.palette.primary.main, 0.3),
+            boxShadow: theme.palette.mode === 'dark' ? `0 4px 12px ${alpha(theme.palette.common.black, 0.3)}` : `0 8px 24px rgba(15, 23, 42, 0.12)`,
+            transform: 'translateY(-2px)',
+          },
         }}
       >
         <CardContent sx={{ p: 2 }}>
@@ -369,7 +405,6 @@ export const OrdersListPage: React.FC = () => {
         width: 120,
         renderCell: (params) => {
           const order = params.row as Order;
-          // إذا كان هناك localPaymentAccountType وكان wallet، اعرض "محفظة"
           if (order.localPaymentAccountType === 'wallet' && order.paymentMethod === PaymentMethod.BANK_TRANSFER) {
             return (
               <Chip
@@ -380,7 +415,6 @@ export const OrdersListPage: React.FC = () => {
               />
             );
           }
-          // إذا كان bank، اعرض "تحويل بنكي"
           if (order.localPaymentAccountType === 'bank' && order.paymentMethod === PaymentMethod.BANK_TRANSFER) {
             return (
               <Chip
@@ -390,7 +424,6 @@ export const OrdersListPage: React.FC = () => {
               />
             );
           }
-          // القيمة الافتراضية
           return (
             <Chip
               label={t(`payment.method.${order.paymentMethod as PaymentMethod}`) || order.paymentMethod}
@@ -457,75 +490,38 @@ export const OrdersListPage: React.FC = () => {
     [navigate, t]
   );
 
-  const statsCards = useMemo(() => {
-    if (!stats) return null;
+  const getStatusTabCount = (status: string): number => {
+    if (!stats) return 0;
+    const map: Record<string, number> = {
+      pending_payment: stats.pending_payment ?? 0,
+      confirmed: stats.confirmed ?? 0,
+      processing: stats.processing ?? 0,
+      completed: stats.completed ?? 0,
+      on_hold: stats.onHold ?? 0,
+      cancelled: stats.cancelled ?? 0,
+      returned: stats.returned ?? 0,
+      refunded: stats.refunded ?? 0,
+    };
+    return map[status] ?? 0;
+  };
 
-    const statsData = [
-      {
-        title: t('stats.total'),
-        value: stats.total || 0,
-        icon: <Assignment color="primary" />,
-        color: 'primary' as const,
-      },
-      {
-        title: t('stats.pending_payment'),
-        value: stats.pending_payment || 0,
-        icon: <Payment color="warning" />,
-        color: 'warning' as const,
-      },
-      {
-        title: t('stats.confirmed'),
-        value: stats.confirmed || 0,
-        icon: <Verified color="info" />,
-        color: 'info' as const,
-      },
-      {
-        title: t('stats.processing'),
-        value: stats.processing || 0,
-        icon: <TrendingUp color="warning" />,
-        color: 'warning' as const,
-      },
-      {
-        title: t('stats.completed'),
-        value: stats.completed || 0,
-        icon: <CheckCircle color="success" />,
-        color: 'success' as const,
-      },
-      {
-        title: t('stats.onHold'),
-        value: stats.onHold || 0,
-        icon: <Warning color="warning" />,
-        color: 'warning' as const,
-      },
-      {
-        title: t('stats.cancelled'),
-        value: stats.cancelled || 0,
-        icon: <Cancel color="error" />,
-        color: 'error' as const,
-      },
-      {
-        title: t('stats.returned'),
-        value: stats.returned || 0,
-        icon: <Replay color="info" />,
-        color: 'info' as const,
-      },
-      {
-        title: t('stats.refunded'),
-        value: stats.refunded || 0,
-        icon: <Paid color="success" />,
-        color: 'success' as const,
-      },
-    ];
-
-    return statsData;
-  }, [stats, t]);
+  const statusTabs: { value: StatusTabValue; label: string; count?: number }[] = [
+    { value: 'all', label: t('statusTabs.all', 'الكل'), count: stats?.total },
+    { value: 'pending_payment', label: t('status.pending_payment', 'بانتظار الدفع'), count: getStatusTabCount('pending_payment') },
+    { value: 'confirmed', label: t('status.confirmed', 'مؤكد'), count: getStatusTabCount('confirmed') },
+    { value: 'processing', label: t('status.processing', 'قيد المعالجة'), count: getStatusTabCount('processing') },
+    { value: 'completed', label: t('status.completed', 'مكتمل'), count: getStatusTabCount('completed') },
+    { value: 'on_hold', label: t('status.on_hold', 'معلق'), count: getStatusTabCount('on_hold') },
+    { value: 'cancelled', label: t('status.cancelled', 'ملغي'), count: getStatusTabCount('cancelled') },
+  ];
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ar}>
+      <ConfirmDialog {...confirmDialogProps} />
       <PageShell fullHeight>
         <PageHeader
           title={pageTitle}
-          description={t('navigation.description', 'متابعة الطلبات، الفلاتر، التصدير، وتحديث الحالات')}
+          description={t('navigation.description', 'إدارة الطلبات، الحالات، الشحن، والإجراءات')}
           breadcrumbs={[
             { label: t('navigation.dashboard', 'لوحة التحكم'), to: '/dashboard' },
             { label: pageTitle },
@@ -535,7 +531,6 @@ export const OrdersListPage: React.FC = () => {
               label: t('actions.refresh'),
               icon: <Refresh />,
               onClick: () => void refetch(),
-              loading: isLoading,
             },
             {
               label: exportMutation.isPending ? t('actions.exporting') : t('actions.export'),
@@ -549,178 +544,230 @@ export const OrdersListPage: React.FC = () => {
 
         {/* Stats Cards */}
         {statsLoading ? (
-          <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
-            {[...Array(9)].map((_, index) => (
-              <Grid size={{ xs: 6, sm: 4, md: 2 }} key={index}>
-                <StatCard
-                  title={t('stats.loading', 'جاري التحميل')}
-                  value="-"
-                  icon={<Assignment fontSize="small" />}
-                  tone="neutral"
-                  loading
-                />
-              </Grid>
+          <PageSummaryGrid columns={3}>
+            {Array.from({ length: 9 }).map((_, i) => (
+              <StatCard
+                key={i}
+                title={t('stats.loading', 'جاري التحميل')}
+                value="-"
+                icon={<Assignment fontSize="small" />}
+                tone="neutral"
+                loading
+              />
             ))}
-          </Grid>
-        ) : statsCards ? (
-          <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
-            {statsCards.map((stat, index) => (
-              <Grid size={{ xs: 6, sm: 4, md: 2 }} key={index}>
-                <StatCard title={stat.title} value={stat.value} icon={stat.icon} tone={stat.color} />
-              </Grid>
-            ))}
-          </Grid>
+          </PageSummaryGrid>
+        ) : stats ? (
+          <PageSummaryGrid columns={3}>
+            <StatCard title={t('stats.total')} value={stats.total || 0} icon={<Assignment fontSize="small" />} tone="primary" linkTo="/orders" />
+            <StatCard title={t('stats.pending_payment')} value={stats.pending_payment || 0} icon={<Payment fontSize="small" />} tone="warning" linkTo="/orders" />
+            <StatCard title={t('stats.confirmed')} value={stats.confirmed || 0} icon={<Verified fontSize="small" />} tone="info" linkTo="/orders" />
+            <StatCard title={t('stats.processing')} value={stats.processing || 0} icon={<TrendingUp fontSize="small" />} tone="primary" linkTo="/orders" />
+            <StatCard title={t('stats.completed')} value={stats.completed || 0} icon={<CheckCircle fontSize="small" />} tone="success" linkTo="/orders" />
+            <StatCard title={t('stats.onHold')} value={stats.onHold || 0} icon={<Warning fontSize="small" />} tone="warning" linkTo="/orders" />
+            <StatCard title={t('stats.cancelled')} value={stats.cancelled || 0} icon={<Cancel fontSize="small" />} tone="error" linkTo="/orders" />
+            <StatCard title={t('stats.returned')} value={stats.returned || 0} icon={<Replay fontSize="small" />} tone="info" linkTo="/orders" />
+            <StatCard title={t('stats.refunded')} value={stats.refunded || 0} icon={<Paid fontSize="small" />} tone="success" linkTo="/orders" />
+          </PageSummaryGrid>
         ) : null}
 
-        {/* Filters */}
-        <SectionCard padding="none">
-          <Accordion expanded={filtersExpanded} onChange={() => setFiltersExpanded(!filtersExpanded)}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography
-                variant="h6"
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.primary', fontSize: isMobile ? '1rem' : undefined }}
-              >
-                <FilterList />
-                {t('filters.title')}
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={isMobile ? 1.5 : 2}>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <TextField
-                fullWidth
-                label={t('filters.search')}
-                placeholder={t('list.searchPlaceholder')}
-                value={filters.search || ''}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                InputProps={{
-                  startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
+        {/* Status Tabs */}
+        <Paper
+          elevation={0}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2,
+            overflow: 'hidden',
+          }}
+        >
+          <Tabs
+            value={activeStatusTab}
+            onChange={handleStatusTabChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              bgcolor: alpha(theme.palette.primary.main, 0.02),
+            }}
+          >
+            {statusTabs.map((tab) => (
+              <Tab
+                key={tab.value}
+                value={tab.value}
+                label={
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <span>{tab.label}</span>
+                    {tab.count !== undefined && tab.count > 0 && (
+                      <Chip
+                        label={tab.count}
+                        size="small"
+                        color={tab.value === activeStatusTab ? 'primary' : 'default'}
+                        sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }}
+                      />
+                    )}
+                  </Stack>
+                }
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>{t('filters.status.label')}</InputLabel>
-                <Select
-                  value={filters.status || ''}
-                  onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-                  label={t('filters.status.label')}
+            ))}
+          </Tabs>
+        </Paper>
+
+        {/* Data Toolbar */}
+        <DataToolbar
+          searchValue={filters.search ?? ''}
+          searchPlaceholder={t('list.searchPlaceholder', 'بحث برقم الطلب أو اسم العميل...')}
+          onSearchChange={(value) => handleFilterChange('search', value || undefined)}
+          activeFilters={[
+            ...(filters.status ? [{ label: t('filters.status.label'), value: t(`status.${filters.status}`), onDelete: () => handleFilterChange('status', undefined) }] : []),
+            ...(filters.paymentStatus ? [{ label: t('filters.paymentStatus.label'), value: t(`payment.status.${filters.paymentStatus}`), onDelete: () => handleFilterChange('paymentStatus', undefined) }] : []),
+            ...(filters.paymentMethod ? [{ label: t('filters.paymentMethod.label'), value: filters.paymentMethod, onDelete: () => handleFilterChange('paymentMethod', undefined) }] : []),
+            ...(filters.fromDate ? [{ label: t('filters.dateRange.from'), value: filters.fromDate, onDelete: () => handleFilterChange('fromDate', undefined) }] : []),
+            ...(filters.toDate ? [{ label: t('filters.dateRange.to'), value: filters.toDate, onDelete: () => handleFilterChange('toDate', undefined) }] : []),
+          ]}
+          actions={
+            <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+              {activeFilterCount > 0 && (
+                <Button
+                  variant="text"
+                  size="small"
+                  startIcon={<Clear />}
+                  onClick={handleClearFilters}
                 >
-                  <MenuItem value="">{t('filters.status.all')}</MenuItem>
-                  {Object.keys(orderStatusColors).map((key) => (
-                    <MenuItem key={key} value={key}>
-                      {t(`status.${key}`)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>{t('filters.paymentStatus.label')}</InputLabel>
-                <Select
-                  value={filters.paymentStatus || ''}
-                  onChange={(e) => handleFilterChange('paymentStatus', e.target.value || undefined)}
-                  label={t('filters.paymentStatus.label')}
-                >
-                  <MenuItem value="">{t('filters.paymentStatus.all')}</MenuItem>
-                  <MenuItem value="pending">{t('payment.status.pending')}</MenuItem>
-                  <MenuItem value="authorized">{t('payment.status.authorized')}</MenuItem>
-                  <MenuItem value="paid">{t('payment.status.paid')}</MenuItem>
-                  <MenuItem value="failed">{t('payment.status.failed')}</MenuItem>
-                  <MenuItem value="refunded">{t('payment.status.refunded')}</MenuItem>
-                  <MenuItem value="partially_refunded">{t('payment.status.partially_refunded')}</MenuItem>
-                  <MenuItem value="cancelled">{t('payment.status.cancelled')}</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>{t('filters.paymentMethod.label')}</InputLabel>
-                <Select
-                  value={filters.paymentMethod || ''}
-                  onChange={(e) => handleFilterChange('paymentMethod', e.target.value || undefined)}
-                  label={t('filters.paymentMethod.label')}
-                >
-                  <MenuItem value="">{t('filters.paymentMethod.all')}</MenuItem>
-                  <MenuItem value="COD">{t('payment.method.COD')}</MenuItem>
-                  <MenuItem value="WALLET">{t('payment.method.WALLET')}</MenuItem>
-                  <MenuItem value="BANK_TRANSFER">{t('payment.method.BANK_TRANSFER')}</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <DatePicker
-                label={t('filters.dateRange.from')}
-                value={filters.fromDate ? new Date(filters.fromDate) : null}
-                onChange={(date) => handleFilterChange('fromDate', date?.toISOString())}
-                slotProps={{ textField: { fullWidth: true } }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <DatePicker
-                label={t('filters.dateRange.to')}
-                value={filters.toDate ? new Date(filters.toDate) : null}
-                onChange={(date) => handleFilterChange('toDate', date?.toISOString())}
-                slotProps={{ textField: { fullWidth: true } }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>{t('filters.sorting.sortBy')}</InputLabel>
-                <Select
-                  value={filters.sortBy || 'createdAt'}
-                  onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                  label={t('filters.sorting.sortBy')}
-                >
-                  <MenuItem value="createdAt">{t('filters.sorting.createdAt')}</MenuItem>
-                  <MenuItem value="total">{t('filters.sorting.total')}</MenuItem>
-                  <MenuItem value="orderNumber">{t('filters.sorting.orderNumber')}</MenuItem>
-                  <MenuItem value="status">{t('filters.sorting.status')}</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>{t('filters.sorting.sortOrder')}</InputLabel>
-                <Select
-                  value={filters.sortOrder || 'desc'}
-                  onChange={(e) =>
-                    handleFilterChange('sortOrder', e.target.value as 'asc' | 'desc')
-                  }
-                  label={t('filters.sorting.sortOrder')}
-                >
-                  <MenuItem value="desc">{t('filters.sorting.descending')}</MenuItem>
-                  <MenuItem value="asc">{t('filters.sorting.ascending')}</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <Stack direction="row" spacing={1}>
-                <Button variant="outlined" startIcon={<Clear />} onClick={handleClearFilters}>
                   {t('filters.clearFilters')}
                 </Button>
-              </Stack>
-            </Grid>
+              )}
+              <Button
+                variant={showFilters ? 'contained' : 'outlined'}
+                size="small"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                {showFilters ? t('filters.hideFilters', 'إخفاء الفلاتر') : t('filters.showFilters', 'فلاتر إضافية')}
+              </Button>
+            </Stack>
+          }
+        />
+
+        {/* Filter Panel (collapsible) */}
+        {showFilters && (
+          <SectionCard>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t('filters.status.label')}</InputLabel>
+                  <Select
+                    value={filters.status || ''}
+                    onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
+                    label={t('filters.status.label')}
+                  >
+                    <MenuItem value="">{t('filters.status.all')}</MenuItem>
+                    <MenuItem value="pending_payment">{t('status.pending_payment')}</MenuItem>
+                    <MenuItem value="confirmed">{t('status.confirmed')}</MenuItem>
+                    <MenuItem value="processing">{t('status.processing')}</MenuItem>
+                    <MenuItem value="completed">{t('status.completed')}</MenuItem>
+                    <MenuItem value="on_hold">{t('status.on_hold')}</MenuItem>
+                    <MenuItem value="cancelled">{t('status.cancelled')}</MenuItem>
+                    <MenuItem value="returned">{t('status.returned')}</MenuItem>
+                    <MenuItem value="refunded">{t('status.refunded')}</MenuItem>
+                  </Select>
+                </FormControl>
               </Grid>
-            </AccordionDetails>
-          </Accordion>
-        </SectionCard>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t('filters.paymentStatus.label')}</InputLabel>
+                  <Select
+                    value={filters.paymentStatus || ''}
+                    onChange={(e) => handleFilterChange('paymentStatus', e.target.value || undefined)}
+                    label={t('filters.paymentStatus.label')}
+                  >
+                    <MenuItem value="">{t('filters.paymentStatus.all')}</MenuItem>
+                    <MenuItem value="pending">{t('payment.status.pending')}</MenuItem>
+                    <MenuItem value="authorized">{t('payment.status.authorized')}</MenuItem>
+                    <MenuItem value="paid">{t('payment.status.paid')}</MenuItem>
+                    <MenuItem value="failed">{t('payment.status.failed')}</MenuItem>
+                    <MenuItem value="refunded">{t('payment.status.refunded')}</MenuItem>
+                    <MenuItem value="partially_refunded">{t('payment.status.partially_refunded')}</MenuItem>
+                    <MenuItem value="cancelled">{t('payment.status.cancelled')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t('filters.paymentMethod.label')}</InputLabel>
+                  <Select
+                    value={filters.paymentMethod || ''}
+                    onChange={(e) => handleFilterChange('paymentMethod', e.target.value || undefined)}
+                    label={t('filters.paymentMethod.label')}
+                  >
+                    <MenuItem value="">{t('filters.paymentMethod.all')}</MenuItem>
+                    <MenuItem value="COD">{t('payment.method.COD')}</MenuItem>
+                    <MenuItem value="WALLET">{t('payment.method.WALLET')}</MenuItem>
+                    <MenuItem value="BANK_TRANSFER">{t('payment.method.BANK_TRANSFER')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <DatePicker
+                  label={t('filters.dateRange.from')}
+                  value={filters.fromDate ? new Date(filters.fromDate) : null}
+                  onChange={(date) => handleFilterChange('fromDate', date?.toISOString())}
+                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <DatePicker
+                  label={t('filters.dateRange.to')}
+                  value={filters.toDate ? new Date(filters.toDate) : null}
+                  onChange={(date) => handleFilterChange('toDate', date?.toISOString())}
+                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t('filters.sorting.sortBy')}</InputLabel>
+                  <Select
+                    value={filters.sortBy || 'createdAt'}
+                    onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+                    label={t('filters.sorting.sortBy')}
+                  >
+                    <MenuItem value="createdAt">{t('filters.sorting.createdAt')}</MenuItem>
+                    <MenuItem value="total">{t('filters.sorting.total')}</MenuItem>
+                    <MenuItem value="orderNumber">{t('filters.sorting.orderNumber')}</MenuItem>
+                    <MenuItem value="status">{t('filters.sorting.status')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{t('filters.sorting.sortOrder')}</InputLabel>
+                  <Select
+                    value={filters.sortOrder || 'desc'}
+                    onChange={(e) =>
+                      handleFilterChange('sortOrder', e.target.value as 'asc' | 'desc')
+                    }
+                    label={t('filters.sorting.sortOrder')}
+                  >
+                    <MenuItem value="desc">{t('filters.sorting.descending')}</MenuItem>
+                    <MenuItem value="asc">{t('filters.sorting.ascending')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </SectionCard>
+        )}
 
         {/* Bulk Actions */}
         {selectedOrders.length > 0 && (
           <Paper
             sx={{
               p: isMobile ? 1.5 : 2,
-              mb: isMobile ? 2 : 3,
-              bgcolor: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.primary.main, 0.2)
-                : alpha(theme.palette.primary.light, 0.3),
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-              color: 'primary.contrastText',
+              border: '1px solid',
+              borderColor: alpha(theme.palette.primary.main, 0.3),
+              bgcolor: alpha(theme.palette.primary.main, 0.08),
+              borderRadius: 2,
             }}
           >
-            <Typography variant="subtitle1" sx={{ mb: 2, color: 'text.primary', fontSize: isMobile ? '0.875rem' : undefined }}>
+            <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700, color: 'text.primary' }}>
               {t('bulk.selected', { count: selectedOrders.length })}
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
@@ -764,89 +811,74 @@ export const OrdersListPage: React.FC = () => {
           </Paper>
         )}
 
-        {/* Error Alert */}
+        {/* Error State */}
         {error && (
-          <SectionCard>
-            <ErrorState
-              title={t('messages.error.loadFailed')}
-              onRetry={() => void refetch()}
-              retryLabel={t('actions.refresh')}
-            />
-          </SectionCard>
+          <ErrorState
+            title={t('messages.error.loadFailed')}
+            onRetry={() => void refetch()}
+            retryLabel={t('actions.refresh')}
+          />
         )}
 
         {/* Data Table */}
-        <Card
-          sx={{
-            bgcolor: 'background.paper',
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            borderRadius: 3,
-            overflow: 'hidden',
-          }}
-        >
-          <CardContent sx={{ p: { xs: 1.5, md: 2.5 } }}>
-            {isMobile ? (
-              <Stack spacing={1.5}>
-                <Typography variant="h6" fontWeight={800}>{t('list.title')}</Typography>
-                {orders.length === 0 && !isLoading ? (
-                  <>
-                    <EmptyState
-                      icon={<Assignment sx={{ fontSize: 44 }} />}
-                      title={t('messages.empty', { defaultValue: 'لا توجد طلبات' })}
-                    />
-                    {false && (
-                  <Paper sx={{ p: 3, textAlign: 'center', borderRadius: 3 }}>
-                    <Assignment sx={{ fontSize: 44, color: 'text.secondary', mb: 1 }} />
-                    <Typography color="text.secondary">{t('messages.empty', { defaultValue: 'لا توجد طلبات' })}</Typography>
-                  </Paper>
-                    )}
-                  </>
-                ) : (
-                  orders.map(renderOrderCard)
-                )}
-                {(data?.meta?.total ?? 0) > paginationModel.pageSize && (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1 }}>
-                    <Pagination
-                      count={totalPages}
-                      page={Math.min(paginationModel.page + 1, totalPages)}
-                      onChange={(_event, page) => setPaginationModel((prev) => ({ ...prev, page: Math.max(0, page - 1) }))}
-                      color="primary"
-                      shape="rounded"
-                      size="small"
-                    />
-                  </Box>
-                )}
-              </Stack>
-            ) : (
-              <DataTable
-                title={t('list.title')}
-                columns={columns}
-                rows={data?.data || []}
-                loading={isLoading}
-                paginationModel={paginationModel}
-                onPaginationModelChange={setPaginationModel}
-                rowCount={data?.meta?.total ?? 0}
-                paginationMode="server"
-                sortModel={sortModel}
-                onSortModelChange={setSortModel}
-                sortingMode="server"
-                getRowId={(row: unknown) => (row as Order)._id as string}
-                onRowClick={(params) => {
-                  const row = params.row as Order;
-                  navigate(`/orders/${row._id as string}`);
-                }}
-                selectable
-                onRowSelectionModelChange={(newSelection) => {
-                  setSelectedOrders(newSelection as unknown as string[]);
-                }}
-                height="calc(100vh - 400px)"
-              />
-            )}
-          </CardContent>
-        </Card>
+        <SectionCard padding="none">
+          {isMobile ? (
+            <Stack spacing={1.5} sx={{ p: 2 }}>
+              <Typography variant="h6" fontWeight={800}>{t('list.title')}</Typography>
+              {orders.length === 0 && !isLoading ? (
+                <EmptyState
+                  icon={<Assignment sx={{ fontSize: 44 }} />}
+                  title={t('messages.empty', { defaultValue: 'لا توجد طلبات' })}
+                  description={t('messages.emptyDesc', { defaultValue: 'لا توجد طلبات مطابقة للفلاتر المحددة' })}
+                  actionLabel={activeFilterCount > 0 ? t('filters.clearFilters') : undefined}
+                  onAction={activeFilterCount > 0 ? handleClearFilters : undefined}
+                />
+              ) : (
+                orders.map(renderOrderCard)
+              )}
+              {(data?.meta?.total ?? 0) > paginationModel.pageSize && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={Math.min(paginationModel.page + 1, totalPages)}
+                    onChange={(_event, page) => setPaginationModel((prev) => ({ ...prev, page: Math.max(0, page - 1) }))}
+                    color="primary"
+                    shape="rounded"
+                    size="small"
+                  />
+                </Box>
+              )}
+            </Stack>
+          ) : (
+            <DataTable
+              title={t('list.title')}
+              columns={columns}
+              rows={data?.data || []}
+              loading={isLoading}
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              rowCount={data?.meta?.total ?? 0}
+              paginationMode="server"
+              sortModel={sortModel}
+              onSortModelChange={setSortModel}
+              sortingMode="server"
+              getRowId={(row: unknown) => (row as Order)._id as string}
+              onRowClick={(params) => {
+                const row = params.row as Order;
+                navigate(`/orders/${row._id as string}`);
+              }}
+              selectable
+              onRowSelectionModelChange={(newSelection) => {
+                setSelectedOrders(newSelection as unknown as string[]);
+              }}
+              height="calc(100vh - 400px)"
+            />
+          )}
+        </SectionCard>
+
         <ExportFieldsDialog
           open={exportDialogOpen}
-          title="تصدير المبيعات"
+          title={t('actions.exportTitle', 'تصدير الطلبات')}
           loading={exportMutation.isPending}
           onClose={() => setExportDialogOpen(false)}
           onExport={handleExportOrders}

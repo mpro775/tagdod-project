@@ -49,6 +49,7 @@ import {
   Storage as StorageIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 
 import { useExportedFiles } from '../hooks/useAnalytics';
 import { ExportFile, ExportFileStatus, ExportFormat } from '../types/exports';
@@ -78,6 +79,7 @@ const statusLabelsEn: Record<ExportFileStatus, string> = {
 
 export const ExportCenterPage = withAnalyticsErrorBoundary(function ExportCenterPage() {
   const { t, i18n } = useTranslation('analytics');
+  usePageTitle(t('analytics:exportCenter.title', 'مركز التصدير'));
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [page, setPage] = useState(0);
@@ -331,6 +333,12 @@ export const ExportCenterPage = withAnalyticsErrorBoundary(function ExportCenter
   );
 
   return (
+    <PageShell fullHeight>
+      <PageHeader
+        title={t('analytics:exportCenter.title', 'مركز التصدير')}
+        description={t('analytics:exportCenter.description', 'مركز تصدير البيانات والتقارير')}
+        breadcrumbs={[{ label: 'لوحة التحكم', to: '/dashboard' }, { label: t('analytics:exportCenter.title', 'مركز التصدير') }]}
+      />
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
       {/* Header */}
       <Paper
@@ -547,5 +555,6 @@ export const ExportCenterPage = withAnalyticsErrorBoundary(function ExportCenter
         </MenuItem>
       </Menu>
     </Box>
+    </PageShell>
   );
 });

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Switch, TextField } from '@mui/material';
-import { Storefront } from '@mui/icons-material';
+
 import { useTranslation } from 'react-i18next';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 import { useLandingBrands, useUpdateLandingBrand } from '../hooks/useLandingBrands';
 import type { LandingBrand } from '../types/landing-brand.types';
 
 export const LandingBrandsPage: React.FC = () => {
   const { t } = useTranslation('landingBrands');
+  const pageTitle = t('pageTitle', 'العلامات التجارية');
+  usePageTitle(pageTitle);
   const [search, setSearch] = useState('');
   const { data: brandsResponse, isLoading } = useLandingBrands({ search });
   const updateMutation = useUpdateLandingBrand();
@@ -16,9 +19,16 @@ export const LandingBrandsPage: React.FC = () => {
   const handleOrderChange = (brand: LandingBrand, value: number) => { updateMutation.mutate({ id: brand._id, data: { landingOrder: value } }); };
 
   return (
+    <PageShell fullHeight>
+      <PageHeader
+        title={pageTitle}
+        description="إدارة العلامات التجارية المعروضة في صفحة الهبوط"
+        breadcrumbs={[
+          { label: 'لوحة التحكم', to: '/dashboard' },
+          { label: pageTitle },
+        ]}
+      />
     <Box sx={{ p: 3 }}>
-      <Box display="flex" alignItems="center" gap={2} mb={3}><Storefront fontSize="large" color="primary" /><Typography variant="h4">{t('pageTitle')}</Typography></Box>
-      <Typography variant="body2" color="text.secondary" mb={3}>{t('pageDescription')}</Typography>
       <Box mb={3}><TextField fullWidth size="small" placeholder="بحث..." value={search} onChange={(e) => setSearch(e.target.value)} /></Box>
       <TableContainer component={Paper}>
         <Table>
@@ -41,5 +51,6 @@ export const LandingBrandsPage: React.FC = () => {
         </Table>
       </TableContainer>
     </Box>
+    </PageShell>
   );
 };

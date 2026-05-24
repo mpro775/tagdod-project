@@ -21,6 +21,8 @@ import {
 } from '@mui/material';
 import { Visibility,} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 import { tejoApi } from '../api/tejoApi';
 import type { TejoSession, TejoSessionStats } from '../types/tejo.types';
 
@@ -50,6 +52,9 @@ const channelLabels: Record<string, string> = {
 
 export function TejoSessionsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation('tejo');
+  const pageTitle = t('sessions.title', 'محادثات تيجو');
+  usePageTitle(pageTitle);
   const [sessions, setSessions] = useState<TejoSession[]>([]);
   const [stats, setStats] = useState<TejoSessionStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,10 +109,16 @@ export function TejoSessionsPage() {
   }
 
   return (
+    <PageShell fullHeight>
+      <PageHeader
+        title={pageTitle}
+        description="مراقبة وإدارة جلسات محادثة تيجو"
+        breadcrumbs={[
+          { label: 'لوحة التحكم', to: '/dashboard' },
+          { label: pageTitle },
+        ]}
+      />
     <Box p={3}>
-      <Typography variant="h4" gutterBottom>
-        محادثات تيجو
-      </Typography>
 
       {stats && (
         <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -294,5 +305,6 @@ export function TejoSessionsPage() {
         />
       </TableContainer>
     </Box>
+    </PageShell>
   );
 }

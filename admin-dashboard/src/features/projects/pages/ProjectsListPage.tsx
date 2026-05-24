@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, Grid } from '@mui/material';
-import { Add, Assignment } from '@mui/icons-material';
+import { Add } from '@mui/icons-material';
 import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import { ProjectStatsCards } from '../components/ProjectStatsCards';
@@ -25,6 +26,7 @@ import type { Project, ListProjectsParams } from '../types/project.types';
 export const ProjectsListPage: React.FC = () => {
   const { t } = useTranslation('projects');
   const { isMobile } = useBreakpoint();
+  usePageTitle(t('title', 'المشاريع'));
 
   const [filters, setFilters] = useState<ListProjectsParams>({
     page: 1,
@@ -170,27 +172,18 @@ export const ProjectsListPage: React.FC = () => {
   ];
 
   return (
-    <Box>
-      <Box mb={3}>
-        <Box
-          display="flex"
-          flexDirection={{ xs: 'column', sm: 'row' }}
-          alignItems={{ xs: 'flex-start', sm: 'center' }}
-          justifyContent="space-between"
-          gap={2}
-          mb={2}
-        >
-          <Box display="flex" alignItems="center" gap={2}>
-            <Assignment fontSize={isMobile ? 'medium' : 'large'} color="primary" />
-            <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-              {t('pageTitle')}
-            </Typography>
-          </Box>
-          <Button variant="contained" startIcon={<Add />} onClick={handleAdd} fullWidth={isMobile}>
-            {t('table.addButton')}
-          </Button>
-        </Box>
-      </Box>
+    <PageShell fullHeight>
+      <PageHeader
+        title={t('pageTitle')}
+        description="إدارة المشاريع ومراقبة حالة التنفيذ"
+        breadcrumbs={[
+          { label: 'لوحة التحكم', to: '/dashboard' },
+          { label: t('pageTitle') },
+        ]}
+        actions={[
+          { label: t('table.addButton'), icon: <Add />, onClick: handleAdd, variant: 'primary' },
+        ]}
+      />
       <ProjectStatsCards />
       <ProjectFilters
         filters={filters}
@@ -250,6 +243,6 @@ export const ProjectsListPage: React.FC = () => {
         project={deleteDialog.project}
         loading={deleteMutation.isPending}
       />
-    </Box>
+    </PageShell>
   );
 };

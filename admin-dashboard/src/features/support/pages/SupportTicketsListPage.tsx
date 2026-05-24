@@ -5,7 +5,6 @@ import {
   Button,
   Grid,
   Skeleton,
-  Alert,
   Stack,
   Chip,
   Paper,
@@ -16,7 +15,20 @@ import {
   Analytics,
   Refresh,
   Support,
+  Email,
+  CheckCircle,
+  Pending,
+  Error as ErrorIcon,
 } from '@mui/icons-material';
+import {
+  PageShell,
+  PageHeader,
+  PageSummaryGrid,
+  StatCard,
+  EmptyState,
+  ErrorState,
+  usePageTitle,
+} from '@/shared/design-system';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -27,6 +39,8 @@ import {
 import { 
   useSupportTickets, 
   useBreachedSLATickets,
+  useSupportStats,
+  useUnreadSupportCount,
 } from '../hooks/useSupport';
 import type { 
   SupportTicket, 
@@ -42,6 +56,13 @@ export const SupportTicketsListPage: React.FC = () => {
   const [filters, setFilters] = useState<ListTicketsParams>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
+
+  const pageTitle = t('support:header.title', 'الدعم الفني');
+  usePageTitle(pageTitle);
+
+  const { data: statsData } = useSupportStats();
+  const { data: unreadData } = useUnreadSupportCount();
+  const unreadCount = unreadData?.unreadTicketsCount ?? 0;
 
   const { data, isLoading, error, refetch } = useSupportTickets({
     ...filters,
@@ -89,64 +110,55 @@ export const SupportTicketsListPage: React.FC = () => {
   );
 
   return (
-    <Box sx={{ px: { xs: 1, sm: 2, md: 3 }, py: { xs: 2, sm: 3 } }}>
-      {/* Header */}
-      <Stack 
-        direction={{ xs: 'column', sm: 'row' }} 
-        justifyContent="space-between" 
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        spacing={{ xs: 2, sm: 0 }}
-        mb={{ xs: 2, sm: 3 }}
-      >
-        <Typography 
-          variant={isMobile ? 'h5' : 'h4'} 
-          fontWeight="bold"
-          sx={{ color: 'text.primary' }}
-        >
-          {t('titles.supportManagement')}
-        </Typography>
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          spacing={1.5}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        >
-          <Button
-            variant="outlined"
-            startIcon={<Analytics />}
-            onClick={() => navigate('/support/stats')}
-            fullWidth={isMobile}
-            size={isMobile ? 'small' : 'medium'}
-            sx={{ 
-              color: 'text.primary',
-              borderColor: 'divider',
-              '&:hover': {
-                borderColor: 'primary.main',
-                backgroundColor: 'action.hover',
-              },
-            }}
-          >
-            {t('actions.viewStats')}
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
-            disabled={isLoading}
-            fullWidth={isMobile}
-            size={isMobile ? 'small' : 'medium'}
-            sx={{ 
-              color: 'text.primary',
-              borderColor: 'divider',
-              '&:hover': {
-                borderColor: 'primary.main',
-                backgroundColor: 'action.hover',
-              },
-            }}
-          >
-            {t('labels.refresh')}
-          </Button>
-        </Stack>
-      </Stack>
+    <PageShell fullHeight>
+      <PageHeader
+        title={pageTitle}
+        description={t('support:header.description', 'إدارة ومتابعة تذاكر الدعم الفني')}
+        actions={[
+          {
+            label: t('actions.viewStats', 'الإحصائيات'),
+            icon: <Analytics />,
+            onClick: () => navigate('/support/stats'),
+          },
+          {
+            label: t('labels.refresh', 'تحديث'),
+            icon: <Refresh />,
+            onClick: handleRefresh,
+            loading: isLoading,
+          },
+        ]}
+        breadcrumbs={[
+          { label: 'لوحة التحكم', to: '/dashboard' },
+          { label: pageTitle },
+        ]}
+      />
+
+      <PageSummaryGrid>
+        <StatCard
+          title={t('support:stats.totalTickets', 'إجمالي التذاكر')}
+          value={statsData?.total ?? data?.meta?.total ?? 0}
+          icon={<Email />}
+          tone="primary"
+        />
+        <StatCard
+          title={t('support:stats.openTickets', 'تذاكر مفتوحة')}
+          value={statsData?.open ?? unreadCount ?? 0}
+          icon={<Pending />}
+          tone="warning"
+        />
+        <StatCard
+          title={t('support:stats.closedTickets', 'تذاكر مغلقة')}
+          value={statsData?.closed ?? 0}
+          icon={<CheckCircle />}
+          tone="success"
+        />
+        <StatCard
+          title={t('support:stats.slaBreached', 'مخالفة SLA')}
+          value={breachedSLA?.tickets?.length ?? 0}
+          icon={<ErrorIcon />}
+          tone="error"
+        />
+      </PageSummaryGrid>
 
       {/* SLA Alerts */}
       {breachedSLA && breachedSLA.tickets && breachedSLA.tickets.length > 0 && (
@@ -227,16 +239,10 @@ export const SupportTicketsListPage: React.FC = () => {
 
       {/* Error State */}
       {error && (
-        <Alert 
-          severity="error" 
-          sx={{ 
-            mb: { xs: 2, sm: 3 },
-            backgroundColor: 'error.light',
-            color: 'error.contrastText',
-          }}
-        >
-          {t('messages.errorLoadingTickets')}
-        </Alert>
+        <ErrorState
+          title={t('messages.errorLoadingTickets', 'حدث خطأ أثناء تحميل التذاكر')}
+          onRetry={handleRefresh}
+        />
       )}
 
       {/* Tickets Grid */}
@@ -255,38 +261,11 @@ export const SupportTicketsListPage: React.FC = () => {
           ))}
         </Grid>
       ) : (
-        <Paper 
-          sx={{ 
-            p: { xs: 3, sm: 4 }, 
-            textAlign: 'center',
-            backgroundColor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Support 
-            sx={{ 
-              fontSize: { xs: 48, sm: 64 }, 
-              color: 'text.secondary', 
-              mb: 2 
-            }} 
-          />
-          <Typography 
-            variant={isMobile ? 'subtitle1' : 'h6'} 
-            color="text.secondary" 
-            gutterBottom
-            sx={{ fontWeight: 'medium' }}
-          >
-            {t('messages.noTickets')}
-          </Typography>
-          <Typography 
-            variant={isMobile ? 'caption' : 'body2'} 
-            color="text.secondary"
-            sx={{ mt: 1 }}
-          >
-            {t('messages.noTicketsDesc')}
-          </Typography>
-        </Paper>
+        <EmptyState
+          icon={<Support />}
+          title={t('messages.noTickets')}
+          description={t('messages.noTicketsDesc')}
+        />
       )}
 
       {/* Pagination */}
@@ -338,7 +317,7 @@ export const SupportTicketsListPage: React.FC = () => {
           </Stack>
         </Box>
       )}
-    </Box>
+    </PageShell>
   );
 };
 

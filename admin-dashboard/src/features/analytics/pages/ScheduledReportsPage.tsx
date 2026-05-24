@@ -44,6 +44,7 @@ import {
   Error as ErrorIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 import { useQueryClient } from '@tanstack/react-query';
 import { ReportScheduleForm } from '../components/ReportScheduleForm';
 import { EmptyAnalyticsState } from '../components/EmptyAnalyticsState';
@@ -53,6 +54,7 @@ import { withAnalyticsErrorBoundary } from '../components/AnalyticsErrorBoundary
 
 export const ScheduledReportsPage = withAnalyticsErrorBoundary(function ScheduledReportsPage() {
   const { t } = useTranslation('analytics');
+  usePageTitle(t('analytics:scheduledReports.title', 'التقارير المجدولة'));
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(0);
@@ -158,6 +160,12 @@ export const ScheduledReportsPage = withAnalyticsErrorBoundary(function Schedule
   }
 
   return (
+    <PageShell fullHeight>
+      <PageHeader
+        title={t('analytics:scheduledReports.title', 'التقارير المجدولة')}
+        description={t('analytics:scheduledReports.description', 'إدارة وتشغيل التقارير التلقائية')}
+        breadcrumbs={[{ label: 'لوحة التحكم', to: '/dashboard' }, { label: t('analytics:scheduledReports.title', 'التقارير المجدولة') }]}
+      />
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
       {/* Header */}
       <Paper sx={{ p: 3, mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
@@ -515,5 +523,6 @@ export const ScheduledReportsPage = withAnalyticsErrorBoundary(function Schedule
         </DialogActions>
       </Dialog>
     </Box>
+    </PageShell>
   );
 });

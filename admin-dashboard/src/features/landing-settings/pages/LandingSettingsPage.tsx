@@ -14,8 +14,9 @@ import {
   Grid,
   useTheme,
 } from '@mui/material';
-import { Save, Web } from '@mui/icons-material';
+import { Save } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import {
   useLandingSettings,
@@ -55,6 +56,8 @@ const getEmptyFormState = (): LandingSettings => ({
 
 export const LandingSettingsPage: React.FC = () => {
   const { t } = useTranslation('landingSettings');
+  const pageTitle = t('title', 'إعدادات صفحة الهبوط');
+  usePageTitle(pageTitle);
   const theme = useTheme();
   const { isMobile } = useBreakpoint();
 
@@ -118,18 +121,16 @@ export const LandingSettingsPage: React.FC = () => {
   ];
 
   return (
+    <PageShell fullHeight>
+      <PageHeader
+        title={pageTitle}
+        description="إعدادات صفحة الهبوط"
+        breadcrumbs={[
+          { label: 'لوحة التحكم', to: '/dashboard' },
+          { label: pageTitle },
+        ]}
+      />
     <Box sx={{ p: { xs: 2, sm: 3, md: 3 } }}>
-      <Box sx={{ mb: { xs: 2, sm: 3, md: 4 } }}>
-        <Box display="flex" alignItems="center" gap={2} mb={1}>
-          <Web fontSize="large" color="primary" />
-          <Typography variant="h4" fontWeight="bold">
-            {t('title')}
-          </Typography>
-        </Box>
-        <Typography variant="body2" color="text.secondary">
-          {t('subtitle')}
-        </Typography>
-      </Box>
 
       <Paper sx={{ p: 2, mb: 3, bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
@@ -245,5 +246,6 @@ export const LandingSettingsPage: React.FC = () => {
         )}
       </Paper>
     </Box>
+    </PageShell>
   );
 };

@@ -405,6 +405,8 @@ export interface ProductStats {
   archived: number;
   featured: number;
   new: number;
+  lowStock?: number;
+  outOfStock?: number;
 }
 
 // Pricing and Inventory Types

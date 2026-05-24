@@ -1,6 +1,7 @@
 export * from './tokens';
 export * from './components/PageShell';
 export * from './components/PageHeader';
+export * from './components/PageSummaryGrid';
 export * from './components/SectionCard';
 export * from './components/StatCard';
 export * from './components/DataToolbar';

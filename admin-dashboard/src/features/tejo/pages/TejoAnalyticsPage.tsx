@@ -1,5 +1,7 @@
 ﻿import React from 'react';
 import { Box, Grid, Paper, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { PageShell, PageHeader, usePageTitle } from '@/shared/design-system';
 import {
   useTejoAnalyticsOverview,
   useTejoAnalyticsQuality,
@@ -18,6 +20,9 @@ const MetricCard: React.FC<{ title: string; value: string | number }> = ({ title
 );
 
 export const TejoAnalyticsPage: React.FC = () => {
+  const { t } = useTranslation('tejo');
+  const pageTitle = t('analytics.title', 'تحليلات تيجو');
+  usePageTitle(pageTitle);
   const { data: overview, isLoading: overviewLoading } = useTejoAnalyticsOverview();
   const { data: quality } = useTejoAnalyticsQuality();
   const { data: volume } = useTejoAnalyticsVolume();
@@ -27,10 +32,16 @@ export const TejoAnalyticsPage: React.FC = () => {
   }
 
   return (
+    <PageShell fullHeight>
+      <PageHeader
+        title={pageTitle}
+        description="إحصائيات وتحليلات أداء تيجو"
+        breadcrumbs={[
+          { label: 'لوحة التحكم', to: '/dashboard' },
+          { label: pageTitle },
+        ]}
+      />
     <Box>
-      <Typography variant="h4" fontWeight="bold" mb={3}>
-        Tejo Analytics
-      </Typography>
 
       <Grid container spacing={2} mb={2}>
         <Grid component="div" size={{ xs: 12, sm: 6, md: 3 }}>
@@ -109,5 +120,6 @@ export const TejoAnalyticsPage: React.FC = () => {
         </Grid>
       </Grid>
     </Box>
+    </PageShell>
   );
 };

@@ -1,5 +1,10 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import {
+  PageShell,
+  PageHeader,
+  usePageTitle,
+} from '@/shared/design-system';
+import {
   Box,
   Typography,
   Button,
@@ -20,12 +25,11 @@ import {
   Pagination,
 } from '@mui/material';
 import {
-  Refresh,
+Refresh,
   Delete,
   Visibility,
   ShoppingCartCheckout,
   Email,
-  ShoppingCart,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -62,6 +66,8 @@ import {
 
 export const CartManagementPage: React.FC = () => {
   const { t } = useTranslation('cart');
+  const pageTitle = t('cart:header.title', 'إدارة السلات');
+  usePageTitle(pageTitle);
   const theme = useTheme();
   const { isMobile, isXs } = useBreakpoint();
   const { confirmDialog, dialogProps } = useConfirmDialog();
@@ -535,43 +541,13 @@ export const CartManagementPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
-      {/* Header */}
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        mb={3}
-        flexDirection={{ xs: 'column', sm: 'row' }}
-        gap={{ xs: 2, sm: 0 }}
-      >
-        <Box display="flex" alignItems="center" gap={2}>
-          <ShoppingCart fontSize={isMobile ? 'medium' : 'large'} color="primary" />
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{
-              fontWeight: 'bold',
-              fontSize: { xs: '1.5rem', sm: '2rem' },
-              color: 'text.primary',
-            }}
-          >
-            {t('navigation.title')}
-          </Typography>
-        </Box>
-        <Box display="flex" gap={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
-            disabled={isLoading}
-            fullWidth={isMobile}
-            size={isMobile ? 'medium' : 'large'}
-          >
-            {t('actions.refresh')}
-          </Button>
-        </Box>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title={pageTitle}
+        description={t('cart:header.description', 'متابعة السلات النشطة والمتروكة')}
+        breadcrumbs={[{ label: 'لوحة التحكم', to: '/dashboard' }, { label: pageTitle }]}
+        actions={[{ label: 'تحديث', icon: <Refresh />, onClick: refetch, variant: 'secondary' }]}
+      />
 
       {/* Error Alert */}
       {(error || dashboardError) && (
@@ -960,7 +936,7 @@ export const CartManagementPage: React.FC = () => {
 
       {/* Confirm Dialog */}
       <ConfirmDialog {...dialogProps} />
-    </Box>
+    </PageShell>
   );
 };
 
