@@ -46,6 +46,7 @@ interface PopulatedEngineer {
   lastName?: string;
   phone?: string;
   jobTitle?: string | null;
+  avatarUrl?: string | null;
 }
 
 // Helper function to check if engineer is populated
@@ -122,6 +123,7 @@ export interface OfferListItem {
     jobTitle: string | null;
     phone: string | null;
     whatsapp: string | null;
+    avatarUrl?: string | null;
   } | null;
 }
 
@@ -905,6 +907,16 @@ export class ServicesService {
       .sort({ createdAt: -1 })
       .lean()) as ServiceRequestPopulated[];
 
+    // جلب تفاصيل البروفايل (avatarUrl) للمهندسين المقبولين دفعة واحدة
+    const acceptedEngineerIds: Types.ObjectId[] = [];
+    for (const doc of docs) {
+      const id = extractEngineerId(doc.engineerId);
+      if (id) {
+        acceptedEngineerIds.push(id);
+      }
+    }
+    const profilesDataMap = await this.getEngineersProfileData(acceptedEngineerIds);
+
     return docs.map((doc) => {
       const engineerData = this.extractEngineer(doc.engineerId);
       const engineerPhone: string | null = engineerData?.phone ?? null;
@@ -920,6 +932,8 @@ export class ServicesService {
         : doc.engineerId
           ? String(doc.engineerId)
           : null;
+
+      const profile = engineerId ? profilesDataMap.get(engineerId) : null;
 
       return {
         _id: doc._id,
@@ -947,6 +961,7 @@ export class ServicesService {
               name: engineerName,
               phone: engineerPhone,
               whatsapp,
+              avatarUrl: profile?.avatarUrl ?? null,
             }
           : null,
         acceptedOffer: doc.acceptedOffer
@@ -1177,6 +1192,16 @@ export class ServicesService {
       .sort({ createdAt: -1 })
       .lean()) as ServiceRequestPopulated[];
 
+    // جلب تفاصيل البروفايل (avatarUrl) للمهندسين المقبولين دفعة واحدة
+    const acceptedEngineerIds: Types.ObjectId[] = [];
+    for (const doc of docs) {
+      const id = extractEngineerId(doc.engineerId);
+      if (id) {
+        acceptedEngineerIds.push(id);
+      }
+    }
+    const profilesDataMap = await this.getEngineersProfileData(acceptedEngineerIds);
+
     return docs.map((doc) => {
       const engineerData = this.extractEngineer(doc.engineerId);
       const engineerPhone: string | null = engineerData?.phone ?? null;
@@ -1192,6 +1217,8 @@ export class ServicesService {
         : doc.engineerId
           ? String(doc.engineerId)
           : null;
+
+      const profile = engineerId ? profilesDataMap.get(engineerId) : null;
 
       return {
         _id: doc._id,
@@ -1219,6 +1246,7 @@ export class ServicesService {
               name: engineerName,
               phone: engineerPhone,
               whatsapp,
+              avatarUrl: profile?.avatarUrl ?? null,
             }
           : null,
         acceptedOffer: doc.acceptedOffer
@@ -1627,15 +1655,17 @@ export class ServicesService {
       }
     }
 
-    const jobTitlesMap = await this.getEngineersJobTitles(engineerIds);
+    const profilesDataMap = await this.getEngineersProfileData(engineerIds);
 
-    // إضافة jobTitle و statusLabel للعروض
+    // إضافة jobTitle و avatarUrl و statusLabel للعروض
     return offers.map((offer) => {
       const id = extractEngineerId(offer.engineerId);
       const engineerId = id ? id.toString() : null;
 
-      if (engineerId && jobTitlesMap.has(engineerId) && isPopulatedEngineer(offer.engineerId)) {
-        offer.engineerId.jobTitle = jobTitlesMap.get(engineerId) ?? null;
+      if (engineerId && profilesDataMap.has(engineerId) && isPopulatedEngineer(offer.engineerId)) {
+        const profile = profilesDataMap.get(engineerId)!;
+        offer.engineerId.jobTitle = profile.jobTitle;
+        offer.engineerId.avatarUrl = profile.avatarUrl;
       }
 
       return {
@@ -1668,14 +1698,16 @@ export class ServicesService {
       : null;
     const whatsapp = engineerPhone ? this.makeWhatsappLink(engineerPhone) : null;
 
-    // جلب jobTitle من EngineerProfile
+    // جلب jobTitle و avatarUrl من EngineerProfile
     let jobTitle: string | null = null;
+    let avatarUrl: string | null = null;
     if (engineerData?._id) {
       const profile = await this.engineerProfileModel
         .findOne({ userId: engineerData._id })
-        .select('jobTitle')
+        .select('jobTitle avatarUrl')
         .lean();
       jobTitle = profile?.jobTitle ?? null;
+      avatarUrl = profile?.avatarUrl ?? null;
     }
 
     const addressData = this.extractAddress(request.addressId);
@@ -1697,6 +1729,7 @@ export class ServicesService {
             jobTitle,
             phone: engineerPhone,
             whatsapp,
+            avatarUrl,
           }
         : null,
     };
@@ -1996,6 +2029,30 @@ export class ServicesService {
       .lean();
 
     return new Map(profiles.map((p) => [p.userId.toString(), p.jobTitle ?? null]));
+  }
+
+  /**
+   * جلب تفاصيل البروفايل (jobTitle و avatarUrl) لجميع المهندسين دفعة واحدة
+   */
+  private async getEngineersProfileData(
+    engineerIds: Types.ObjectId[],
+  ): Promise<Map<string, { jobTitle: string | null; avatarUrl: string | null }>> {
+    if (engineerIds.length === 0) return new Map();
+
+    const profiles = await this.engineerProfileModel
+      .find({ userId: { $in: engineerIds } })
+      .select('userId jobTitle avatarUrl')
+      .lean();
+
+    return new Map(
+      profiles.map((p) => [
+        p.userId.toString(),
+        {
+          jobTitle: p.jobTitle ?? null,
+          avatarUrl: p.avatarUrl ?? null,
+        },
+      ]),
+    );
   }
 
   private extractAddress(
