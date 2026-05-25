@@ -69,7 +69,7 @@ export const envSchema = z.object({
   SMS_CAMPAIGN_BATCH_DELAY_MS: z.coerce.number().int().min(0).max(60000).default(1000),
   SMS_CAMPAIGN_MAX_RECIPIENTS: z.coerce.number().int().min(1).max(200000).default(50000),
   SMS_CAMPAIGN_MAX_MESSAGE_LENGTH: z.coerce.number().int().min(1).max(1000).default(500),
-  SMS_CAMPAIGN_REQUIRE_TEST_BEFORE_SEND: z.coerce.boolean().default(true),
+  SMS_CAMPAIGN_REQUIRE_TEST_BEFORE_SEND: z.coerce.boolean().default(false),
   SMS_CAMPAIGN_DEFAULT_PROVIDER: z.enum(['alawael']).default('alawael'),
   SMS_CAMPAIGN_QUEUE_NAME: z.string().default('sms-campaigns'),
   
