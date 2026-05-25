@@ -252,6 +252,7 @@ export const ProductsListPage: React.FC = () => {
       />
 
       <ResponsiveDataView
+        viewMode={viewMode === 'grid' ? 'grid' : 'auto'}
         rows={data?.data || []}
         renderCard={(product: Product) => (
           <ProductAdminCard
@@ -278,6 +279,7 @@ export const ProductsListPage: React.FC = () => {
             getRowId={(row) => (row as Product)._id}
             onRowClick={(params) => navigate(`/products/${(params.row as Product)._id}/view`)}
             height="calc(100vh - 300px)"
+            rowHeight={74}
           />
         )}
         loading={isLoading}

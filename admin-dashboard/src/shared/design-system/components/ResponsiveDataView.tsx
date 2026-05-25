@@ -11,6 +11,7 @@ export interface ResponsiveDataViewProps<T> {
   renderCard: (item: T, index: number) => ReactNode;
   renderTable?: (rows: T[]) => ReactNode;
   cardBreakpoint?: 'xs' | 'sm' | 'md';
+  viewMode?: 'auto' | 'table' | 'grid';
   loading?: boolean;
   error?: any;
   emptyTitle?: string;
@@ -32,6 +33,7 @@ export function ResponsiveDataView<T extends Record<string, any>>({
   renderCard,
   renderTable,
   cardBreakpoint = 'sm',
+  viewMode = 'auto',
   loading = false,
   error,
   emptyTitle = 'لا توجد بيانات حتى الآن',
@@ -50,16 +52,22 @@ export function ResponsiveDataView<T extends Record<string, any>>({
   const isBelowMd = useMediaQuery(theme.breakpoints.down('md'));
 
   let showCardLayout: boolean;
-  switch (cardBreakpoint) {
-    case 'xs':
-      showCardLayout = isXsOnly;
-      break;
-    case 'md':
-      showCardLayout = isBelowMd;
-      break;
-    default:
-      showCardLayout = isMobile;
-      break;
+  if (viewMode === 'grid') {
+    showCardLayout = true;
+  } else if (viewMode === 'table') {
+    showCardLayout = false;
+  } else {
+    switch (cardBreakpoint) {
+      case 'xs':
+        showCardLayout = isXsOnly;
+        break;
+      case 'md':
+        showCardLayout = isBelowMd;
+        break;
+      default:
+        showCardLayout = isMobile;
+        break;
+    }
   }
 
   if (loading) {

@@ -228,6 +228,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
       filters={filterControls}
       activeFilters={activeFilters}
       actions={actions}
+      layout="twoRow"
     />
   );
 };

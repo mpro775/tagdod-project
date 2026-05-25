@@ -32,6 +32,7 @@ export interface DataToolbarProps {
   activeFilters?: DataToolbarFilter[];
   actions?: ReactNode;
   compact?: boolean;
+  layout?: 'single' | 'twoRow';
 }
 
 export function DataToolbar({
@@ -42,6 +43,7 @@ export function DataToolbar({
   activeFilters = [],
   actions,
   compact = false,
+  layout = 'single',
 }: DataToolbarProps) {
   const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -176,6 +178,69 @@ export function DataToolbar({
             </Button>
           </Stack>
         </Drawer>
+      </Paper>
+    );
+  }
+
+  if (layout === 'twoRow') {
+    return (
+      <Paper
+        elevation={0}
+        sx={{
+          p: compact ? 1.25 : 2,
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: `${designRadius.lg}px`,
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Stack spacing={compact ? 1 : 1.5}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            flexWrap="wrap"
+            useFlexGap
+          >
+            {onSearchChange && (
+              <TextField
+                size="small"
+                value={searchValue ?? ''}
+                placeholder={searchPlaceholder}
+                onChange={(event) => onSearchChange(event.target.value)}
+                sx={{ minWidth: 260, maxWidth: 420, flex: '1 1 260px' }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+            {actions && <Box sx={{ flexShrink: 0, ml: 'auto' }}>{actions}</Box>}
+          </Stack>
+
+          {filters && (
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              {filters}
+            </Stack>
+          )}
+
+          {visibleActiveFilters.length > 0 && (
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {visibleActiveFilters.map((filter) => (
+                <Chip
+                  key={`${filter.label}-${String(filter.value)}`}
+                  label={`${filter.label}: ${String(filter.value)}`}
+                  size="small"
+                  variant="outlined"
+                  onDelete={filter.onDelete}
+                />
+              ))}
+            </Stack>
+          )}
+        </Stack>
       </Paper>
     );
   }

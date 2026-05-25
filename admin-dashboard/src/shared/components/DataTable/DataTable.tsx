@@ -192,7 +192,7 @@ export const DataTable: React.FC<DataTableProps> = ({
           loading={loading}
           getRowId={getRowId}
           columnHeaderHeight={48}
-          rowHeight={typeof rowHeight === 'number' ? rowHeight : 56}
+          rowHeight={typeof rowHeight === 'number' ? rowHeight : 60}
           {...(getRowHeight ? { getRowHeight } : {})}
           paginationMode={paginationMode}
           paginationModel={paginationModel}
@@ -266,8 +266,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               },
             },
             '& .MuiDataGrid-row': {
-              minHeight: '56px !important',
-              maxHeight: 'none !important',
+              minHeight: '56px',
               borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
               transition: 'background-color 0.15s ease',
               '&:nth-of-type(even)': {
