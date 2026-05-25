@@ -121,6 +121,7 @@ export class ListProductsDto {
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsBoolean() isNew?: boolean;
   @IsOptional() @IsBoolean() showOnLanding?: boolean;
+  @IsOptional() @IsBoolean() hasOffer?: boolean;
   @IsOptional() @IsBoolean() includeDeleted?: boolean = false; // في admin، يمكن عرض المحذوفة
   @IsOptional() @IsString() sortBy?: string;
   @IsOptional() @IsString() sortOrder?: 'asc' | 'desc';

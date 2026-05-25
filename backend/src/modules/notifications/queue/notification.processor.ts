@@ -714,6 +714,8 @@ export class RetryNotificationProcessor {
   constructor(
     @Inject(forwardRef(() => NotificationQueueService))
     private readonly queueService: NotificationQueueService,
+    @InjectModel(UnifiedNotification.name)
+    private readonly notificationModel: Model<UnifiedNotificationDocument>,
   ) {}
 
   @Process('retry')
@@ -721,6 +723,18 @@ export class RetryNotificationProcessor {
     const attempt = job.data.attempt || 1;
     this.logger.log(
       `Retrying notification ${job.data.notificationId} (attempt ${attempt})`,
+    );
+
+    // Change status from FAILED to QUEUED so addToQueue will accept it
+    const delayMs = Math.pow(2, attempt - 1) * 10000;
+    await this.notificationModel.updateOne(
+      { _id: job.data.notificationId, status: NotificationStatus.FAILED },
+      {
+        $set: {
+          status: NotificationStatus.QUEUED,
+          nextRetryAt: new Date(Date.now() + delayMs),
+        },
+      },
     );
 
     // Move to the main send queue

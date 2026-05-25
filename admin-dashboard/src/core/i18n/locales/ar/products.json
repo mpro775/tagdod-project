@@ -236,7 +236,8 @@
     "noLowStock": "لا توجد منتجات بمخزون منخفض حالياً",
     "allInStock": "جميع المنتجات متوفرة في المخزون",
     "featured": "منتجات مميزة",
-    "new": "منتجات جديدة"
+    "new": "منتجات جديدة",
+    "ofTotal": "من الإجمالي"
   },
   "status": {
     "active": "نشط",
@@ -270,7 +271,21 @@
   "badges": {
     "featured": "مميز",
     "new": "جديد",
-    "bestseller": "الأكثر مبيعاً"
+    "bestseller": "الأكثر مبيعاً",
+    "hasOffer": "عروض"
+  },
+  "filter": {
+    "search": "بحث",
+    "searchPlaceholder": "ابحث باسم المنتج أو SKU...",
+    "status": "الحالة",
+    "allStatuses": "جميع الحالات",
+    "category": "الفئة",
+    "allCategories": "جميع الفئات",
+    "brand": "العلامة التجارية",
+    "allBrands": "جميع العلامات",
+    "stockState": "المخزون",
+    "allStock": "كل المخزون",
+    "clearFilters": "مسح الفلاتر"
   },
   "actions": {
     "view": "عرض",

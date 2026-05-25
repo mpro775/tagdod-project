@@ -570,6 +570,14 @@ export class ProductService {
     includeSubcategories?: boolean;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    hasOffer?: boolean;
+    offerScope?: {
+      global: boolean;
+      productIds: string[];
+    };
+    lowStock?: boolean;
+    outOfStock?: boolean;
+    trackStock?: boolean;
   } = {}): Promise<{ data: Product[]; meta: { page: number; limit: number; total: number; totalPages: number; hasNextPage: boolean; hasPrevPage: boolean } }> {
     const {
       page = 1,
@@ -583,7 +591,11 @@ export class ProductService {
       isNew,
       showOnLanding,
       includeDeleted = false,
-      includeSubcategories = true, // افتراضي: true لتضمين الفئات الفرعية في admin و public
+      includeSubcategories = true,
+      hasOffer,
+      offerScope,
+      lowStock,
+      outOfStock,
       sortBy,
       sortOrder,
     } = query;
@@ -768,8 +780,50 @@ export class ProductService {
       filter.isNew = isNew;
     }
 
+    if (hasOffer !== undefined && offerScope) {
+      if (offerScope.global) {
+        if (hasOffer === false) {
+          filter._id = { $in: [] };
+        }
+      } else {
+        const ids = offerScope.productIds || [];
+        const values = ids.flatMap((id: string) =>
+          Types.ObjectId.isValid(id) ? [new Types.ObjectId(id), id] : [id],
+        );
+
+        if (hasOffer === true) {
+          filter._id = { $in: values };
+        } else {
+          filter._id = { $nin: values };
+        }
+      }
+    }
+
     if (showOnLanding !== undefined) {
       filter.showOnLanding = showOnLanding;
+    }
+
+    if (outOfStock === true || lowStock === true) {
+      const andFilters: any[] = [];
+      if (outOfStock === true) {
+        andFilters.push({
+          $or: [
+            { trackStock: true, stock: { $lte: 0 }, variantsCount: { $lte: 0 } },
+            { variantsCount: { $gt: 0 }, _id: { $in: await this._getOutOfStockProductIds() } },
+          ],
+        });
+      }
+      if (lowStock === true) {
+        andFilters.push({
+          $or: [
+            { trackStock: true, variantsCount: { $lte: 0 }, stock: { $gt: 0 }, $expr: { $lte: ['$stock', '$minStock'] } },
+            { variantsCount: { $gt: 0 }, _id: { $in: await this._getLowStockProductIds() } },
+          ],
+        });
+      }
+      if (andFilters.length > 0) {
+        filter.$and = andFilters;
+      }
     }
 
     // تحديد الترتيب: إذا تم تحديد sortBy و sortOrder، نستخدمهما، وإلا نستخدم الترتيب الافتراضي (الأحدث أولاً)
@@ -1189,7 +1243,7 @@ export class ProductService {
     await this.productModel.updateOne({ _id: id }, { $set: { variantsCount } });
   }
 
-  async getStats(startDate?: string, endDate?: string): Promise<{ data: { total: number; active: number; featured: number; newProducts: number; byStatus: Record<ProductStatus, number> } }> {
+  async getStats(startDate?: string, endDate?: string): Promise<{ data: { total: number; active: number; featured: number; newProducts: number; byStatus: Record<ProductStatus, number>; draft: number; archived: number; lowStock: number; outOfStock: number } }> {
     const dateFilter: Record<string, unknown> = { deletedAt: null };
     if (startDate || endDate) {
       dateFilter.createdAt = {};
@@ -1220,6 +1274,20 @@ export class ProductService {
       }
     });
 
+    const outOfStockCount = await this.productModel.countDocuments({
+      ...dateFilter,
+      trackStock: true,
+      stock: { $lte: 0 },
+      variantsCount: { $lte: 0 },
+    });
+
+    const lowStockCount = await this.productModel.countDocuments({
+      ...dateFilter,
+      trackStock: true,
+      variantsCount: { $lte: 0 },
+      stock: { $gt: 0, $lte: 10 },
+    });
+
     return {
       data: {
         total,
@@ -1227,6 +1295,10 @@ export class ProductService {
         featured,
         newProducts,
         byStatus: statusStats,
+        draft: statusStats.draft,
+        archived: statusStats.archived,
+        lowStock: lowStockCount,
+        outOfStock: outOfStockCount,
       },
     };
   }
@@ -1408,6 +1480,40 @@ export class ProductService {
   }
 
   // ==================== Cache Management ====================
+
+  private async _getOutOfStockProductIds(): Promise<string[]> {
+    const variants = await this.variantModel.find({
+      deletedAt: null,
+      trackInventory: true,
+      stock: { $lte: 0 },
+    }).select('productId').lean();
+    const productIds = [...new Set(variants.map((v: any) => String(v.productId)).filter(Boolean))];
+    const simpleOutOfStock = await this.productModel.find({
+      deletedAt: null,
+      trackStock: true,
+      variantsCount: { $lte: 0 },
+      stock: { $lte: 0 },
+    }).select('_id').lean();
+    simpleOutOfStock.forEach((p: any) => productIds.push(String(p._id)));
+    return [...new Set(productIds)];
+  }
+
+  private async _getLowStockProductIds(): Promise<string[]> {
+    const variants = await this.variantModel.find({
+      deletedAt: null,
+      trackInventory: true,
+      stock: { $gt: 0, $lte: 10 },
+    }).select('productId').lean();
+    const productIds = [...new Set(variants.map((v: any) => String(v.productId)).filter(Boolean))];
+    const simpleLowStock = await this.productModel.find({
+      deletedAt: null,
+      trackStock: true,
+      variantsCount: { $lte: 0 },
+      stock: { $gt: 0, $lte: 10 },
+    }).select('_id').lean();
+    simpleLowStock.forEach((p: any) => productIds.push(String(p._id)));
+    return [...new Set(productIds)];
+  }
 
   async clearCache(): Promise<void> {
     try {

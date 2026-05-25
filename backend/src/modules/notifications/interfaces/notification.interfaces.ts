@@ -187,6 +187,7 @@ export interface IDeviceToken {
   platform: DevicePlatform;
   userAgent?: string;
   appVersion?: string;
+  appBuildNumber?: string;
   isActive: boolean;
   lastUsedAt?: Date;
   createdAt: Date;

@@ -235,6 +235,7 @@
     "allInStock": "All products are in stock",
     "featured": "Featured Products",
     "new": "New Products",
+    "ofTotal": "of total",
     "variantClickToManage": "Variants (Click to Manage)",
     "noVariants": "No Variants"
   },
@@ -265,7 +266,21 @@
   "badges": {
     "featured": "Featured",
     "new": "New",
-    "bestseller": "Bestseller"
+    "bestseller": "Bestseller",
+    "hasOffer": "Offers"
+  },
+  "filter": {
+    "search": "Search",
+    "searchPlaceholder": "Search by product name or SKU...",
+    "status": "Status",
+    "allStatuses": "All Statuses",
+    "category": "Category",
+    "allCategories": "All Categories",
+    "brand": "Brand",
+    "allBrands": "All Brands",
+    "stockState": "Stock",
+    "allStock": "All Stock",
+    "clearFilters": "Clear Filters"
   },
   "actions": {
     "view": "View",

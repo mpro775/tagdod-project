@@ -163,6 +163,7 @@ export class NotificationService implements OnModuleInit {
       sourceData.categoryId ||
       sourceData.serviceRequestId;
     const payload: Record<string, unknown> = {
+      id: notification._id?.toString() || '',
       notificationId: notification._id?.toString() || '',
       trackingId: notification.trackingId || notification._id?.toString() || '',
       type: notification.type,
@@ -1369,24 +1370,34 @@ const {
     errorMessage?: string,
     errorCode?: string,
   ): Promise<boolean> {
-    const updateData: Record<string, unknown> = { status };
+    const updateData: Record<string, unknown> = {};
 
     if (status === NotificationStatus.SENT) {
+      updateData.status = NotificationStatus.SENT;
       updateData.sentAt = new Date();
     } else if (status === NotificationStatus.DELIVERED) {
+      updateData.status = NotificationStatus.DELIVERED;
       updateData.deliveredAt = new Date();
     } else if (status === NotificationStatus.READ) {
+      updateData.status = NotificationStatus.READ;
       updateData.readAt = new Date();
     } else if (status === NotificationStatus.CLICKED) {
+      updateData.status = NotificationStatus.CLICKED;
       updateData.clickedAt = new Date();
     } else if (status === NotificationStatus.FAILED) {
+      updateData.status = NotificationStatus.FAILED;
       updateData.failedAt = new Date();
       updateData.errorMessage = errorMessage;
       updateData.errorCode = errorCode;
-      updateData.retryCount = { $inc: 1 };
     }
 
-    const result = await this.notificationModel.updateOne({ _id: notificationId }, updateData);
+    const update: any = { $set: updateData };
+
+    if (status === NotificationStatus.FAILED) {
+      update.$inc = { retryCount: 1 };
+    }
+
+    const result = await this.notificationModel.updateOne({ _id: notificationId }, update);
 
     return result.modifiedCount > 0;
   }
@@ -1779,6 +1790,38 @@ const {
     }
   }
 
+  /**
+   * إرسال إشعار من لوحة الإدارة عبر Queue بدلاً من الإرسال المباشر
+   * يرجع نتيجة واضحة بدلاً من void
+   */
+  async sendAdminNotification(
+    notification: UnifiedNotificationDocument,
+    userId: string,
+  ): Promise<{ queued: boolean; hasDevices: boolean; notificationId: string }> {
+    const deviceTokens = await this.deviceTokenModel
+      .find({
+        userId: new Types.ObjectId(userId),
+        isActive: true,
+      })
+      .lean();
+
+    const hasDevices = deviceTokens.length > 0;
+
+    if (!hasDevices) {
+      this.logger.debug(`No active device tokens for user ${userId}, queuing anyway for fallback`);
+    }
+
+    // Queue the notification - the processor will handle FCM, fallback, and logging
+    const jobData = this.createJobData(notification, userId);
+    await this.queueService.addToQueue(jobData);
+
+    return {
+      queued: true,
+      hasDevices,
+      notificationId: notification._id?.toString() || '',
+    };
+  }
+
   // ===== User List for Selection =====
 
   /**
@@ -1850,9 +1893,10 @@ const {
     platform: string,
     userAgent?: string,
     appVersion?: string,
+    appBuildNumber?: string,
   ): Promise<{ success: boolean; message: string; deviceToken?: DeviceTokenDocument }> {
     try {
-      // البحث عن Token موجود لنفس المستخدم
+      // البحث عن Token موجود
       const now = new Date();
       let deviceToken = await this.deviceTokenModel.findOne({ token });
 
@@ -1865,6 +1909,7 @@ const {
         deviceToken.platform = platform as any;
         if (userAgent) deviceToken.userAgent = userAgent;
         if (appVersion) deviceToken.appVersion = appVersion;
+        if (appBuildNumber) deviceToken.appBuildNumber = appBuildNumber;
         await deviceToken.save();
 
         this.logger.log(
@@ -1901,6 +1946,7 @@ const {
         platform: platform as any,
         userAgent: userAgent,
         appVersion: appVersion,
+        appBuildNumber: appBuildNumber,
         isActive: true,
         lastUsedAt: now,
       });
@@ -1923,8 +1969,11 @@ const {
         // محاولة العثور على Token الموجود وتحديثه
         const existingToken = await this.deviceTokenModel.findOne({ token: token });
         if (existingToken && existingToken.userId.toString() !== userId) {
-          // Token موجود لمستخدم آخر - نحذف القديم وننشئ جديد
-          await this.deviceTokenModel.deleteOne({ _id: existingToken._id });
+          // Token موجود لمستخدم آخر - نعطّل القديم وننشئ جديد
+          await this.deviceTokenModel.updateOne(
+            { _id: existingToken._id },
+            { $set: { isActive: false } },
+          );
 
           const newToken = new this.deviceTokenModel({
             userId: new Types.ObjectId(userId),
@@ -1932,6 +1981,7 @@ const {
             platform: platform as any,
             userAgent: userAgent,
             appVersion: appVersion,
+            appBuildNumber: appBuildNumber,
             isActive: true,
             lastUsedAt: new Date(),
           });
@@ -2211,7 +2261,6 @@ const {
       }
 
       // إنشاء نسخة من الإشعار لكل مستخدم
-      const sentAt = new Date();
       const copyVisibleUntil = this.getNotificationVisibleUntil();
       const userNotifications = targetUsers.map((user) => {
         // التأكد من تحويل _id إلى string أولاً (لأن .lean() قد يعيد ObjectId)
@@ -2228,7 +2277,7 @@ const {
           navigationTarget: notification.navigationTarget,
           navigationParams: notification.navigationParams,
           channel: notification.channel,
-          status: NotificationStatus.SENT,
+          status: NotificationStatus.QUEUED,
           priority: notification.priority,
           category: notification.category,
           targetRoles: notification.targetRoles,
@@ -2236,7 +2285,6 @@ const {
           templateId: notification.templateId,
           templateKey: notification.templateKey,
           scheduledFor: notification.scheduledFor || new Date(),
-          sentAt,
           isSystemGenerated: notification.isSystemGenerated,
           createdBy: notification.createdBy,
           visibleUntil: copyVisibleUntil,
@@ -2249,15 +2297,20 @@ const {
         `Created ${createdNotifications.length} notification copies for users with roles [${rolesToSend.join(', ')}]`,
       );
 
-      // Log للتحقق من recipientId في النسخ
-      createdNotifications.forEach((notif) => {
-        this.logger.debug(
-          `Created notification copy ${notif._id} for recipient ${notif.recipientId?.toString() || 'undefined'}`,
-        );
-      });
+      // إضافة كل نسخة إلى Queue للإرسال الفعلي (Push للمستخدمين غير المتصلين)
+      for (const notif of createdNotifications) {
+        if (notif.recipientId) {
+          await this.queueService.addToQueue(
+            this.createJobData(
+              notif as UnifiedNotificationDocument,
+              notif.recipientId.toString(),
+            ),
+          );
+        }
+      }
 
-      // إرسال الإشعار لجميع المستخدمين عبر WebSocket
-      const sentCount = this.webSocketService.sendToMultipleUsers(
+      // إرسال الإشعار لجميع المستخدمين عبر WebSocket (قناة فورية إضافية)
+      this.webSocketService.sendToMultipleUsers(
         userIds,
         'notification:new',
         {
@@ -2273,14 +2326,14 @@ const {
           navigationType: notification.navigationType,
           navigationTarget: notification.navigationTarget,
           createdAt: notification.createdAt,
-          sentAt,
+          sentAt: new Date(),
           isRead: false,
         },
-        '/notifications', // ✅ تمرير namespace
+        '/notifications',
       );
 
       this.logger.log(
-        `Notification ${notification.type} sent via WebSocket to ${sentCount}/${userIds.length} users with roles [${rolesToSend.join(', ')}]`,
+        `Notification ${notification.type} queued for ${createdNotifications.length} users with roles [${rolesToSend.join(', ')}] via queue and WebSocket`,
       );
 
       return createdNotifications.length;

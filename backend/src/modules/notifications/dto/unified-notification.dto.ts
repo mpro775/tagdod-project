@@ -545,6 +545,11 @@ export class RegisterDeviceDto {
   @IsString()
   @MaxLength(50)
   appVersion?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  appBuildNumber?: string;
 }
 
 export class UpdateDeviceTokenDto {

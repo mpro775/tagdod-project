@@ -1,309 +1,127 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
-  Chip,
-  IconButton,
-  Tooltip,
-  Button,
-  Menu,
-  MenuItem,
-  Alert,
   Grid,
-  Paper,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
+  Button,
   Stack,
-  Divider,
-  Badge,
-  Breadcrumbs,
-  Link,
-  TextField,
-  InputAdornment,
-  Pagination,
+  ToggleButton,
+  ToggleButtonGroup,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
-  Edit,
-  Delete,
-  Restore,
-  Visibility,
-  Star,
-  NewReleases,
-  Inventory,
-  FilterList,
-  TrendingUp,
-  ViewModule,
+  Add,
   TableChart,
-  Close,
-  Clear,
-  CheckCircle,
-  SelectAll,
-  Deselect,
-  Home,
-  ChevronRight,
-  Sort,
-  ArrowUpward,
-  ArrowDownward,
+  ViewModule,
+  Inventory as InventoryIcon,
   Cached,
-  Search,
-LocalOffer,
-  Inventory2,
-  EditNote,
-  Archive,
-  Warning,
 } from '@mui/icons-material';
-import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
+import { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { ProductCard } from '@/shared/components/Cards/ProductCard';
-import { useProducts, useDeleteProduct, useRestoreProduct, useClearCache, useProductStats } from '../hooks/useProducts';
-import { useCategories } from '@/features/categories/hooks/useCategories';
-import { useBrands } from '@/features/brands/hooks/useBrands';
-import { formatDate } from '@/shared/utils/formatters';
-import { CurrencySelector } from '@/shared/components/CurrencySelector';
-import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
-import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
 import {
-ConfirmDialog,
-  DataToolbar,
-  DetailsDrawer,
+  ConfirmDialog,
   EmptyState,
   LoadingState,
   PageHeader,
   PageShell,
-  PageSummaryGrid,
-  StatCard,
-  StatusChip,
   usePageTitle,
 } from '@/shared/design-system';
+import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
+import { CurrencySelector } from '@/shared/components/CurrencySelector';
+import { useProducts, useDeleteProduct, useRestoreProduct, useClearCache, useProductStats } from '../hooks/useProducts';
+import { useCategories } from '@/features/categories/hooks/useCategories';
+import { useBrands } from '@/features/brands/hooks/useBrands';
+import { ProductStatsCards } from '../components/ProductStatsCards';
+import { ProductFilters, type ProductListFilters } from '../components/ProductFilters';
+import { useProductsTableColumns } from '../components/ProductsTableColumns';
+import { ProductAdminCard } from '../components/ProductAdminCard';
 import type { Product } from '../types/product.types';
 import { ProductStatus } from '../types/product.types';
-import { ProductImage } from '../components';
-
-type ImageWithUrl = {
-  url: string;
-  [key: string]: unknown;
-};
-
-const isImageWithUrl = (value: unknown): value is ImageWithUrl =>
-  typeof value === 'object' &&
-  value !== null &&
-  typeof (value as { url?: unknown }).url === 'string';
 
 export const ProductsListPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useTranslation('products');
-  const { isMobile } = useBreakpoint();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { confirmDialog, dialogProps } = useConfirmDialog();
   const pageTitle = t('list.title', 'المنتجات');
 
   usePageTitle(pageTitle);
 
-  // Helper function to parse URL params
-  const getParamNumber = useCallback((key: string, defaultValue: number) => {
-    const value = searchParams.get(key);
-    if (value === null) return defaultValue;
-    const parsed = parseInt(value, 10);
-    return isNaN(parsed) ? defaultValue : parsed;
-  }, [searchParams]);
+  const parseStatus = (val: string | null): ProductStatus | undefined => {
+    if (val === 'active' || val === 'draft' || val === 'archived') return val as ProductStatus;
+    return undefined;
+  };
 
-  const getParamString = useCallback((key: string, defaultValue: string) => {
-    return searchParams.get(key) ?? defaultValue;
-  }, [searchParams]);
+  const parseStockState = (val: string | null): 'low' | 'out' | undefined => {
+    if (val === 'low' || val === 'out') return val;
+    return undefined;
+  };
 
-  const getParamBoolean = useCallback((key: string): boolean | 'all' => {
-    const value = searchParams.get(key);
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return 'all';
-  }, [searchParams]);
+  const parseBool = (val: string | null): boolean | undefined => {
+    if (val === 'true') return true;
+    if (val === 'false') return false;
+    return undefined;
+  };
 
-  // State initialized from URL params (الأحدث أولاً كافتراضي)
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>(() => ({
-    page: getParamNumber('page', 0),
-    pageSize: getParamNumber('pageSize', 20),
-  }));
-  const [search, setSearch] = useState(() => getParamString('search', ''));
-  const [sortModel, setSortModel] = useState<GridSortModel>(() => [{
-    field: getParamString('sortBy', 'createdAt'),
-    sort: (getParamString('sortOrder', 'desc') as 'asc' | 'desc'),
-  }]);
-  const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
-  const [statusFilter, setStatusFilter] = useState<ProductStatus | 'all'>(() => {
-    const status = searchParams.get('status');
-    if (status === 'active' || status === 'draft' || status === 'archived') {
-      return status as ProductStatus;
-    }
-    return 'all';
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: parseInt(searchParams.get('page') || '0', 10) || 0,
+    pageSize: parseInt(searchParams.get('pageSize') || '20', 10),
   });
-  const [featuredFilter, setFeaturedFilter] = useState<boolean | 'all'>(() => getParamBoolean('isFeatured'));
-  const [newFilter, setNewFilter] = useState<boolean | 'all'>(() => getParamBoolean('isNew'));
-  const [bestsellerFilter, setBestsellerFilter] = useState<boolean | 'all'>(() => getParamBoolean('isBestseller'));
-  const [hasOfferFilter, setHasOfferFilter] = useState<boolean | 'all'>(() => getParamBoolean('hasOffer'));
-  const [categoryFilter, setCategoryFilter] = useState(() => getParamString('categoryId', 'all'));
-  const [brandFilter, setBrandFilter] = useState(() => getParamString('brandId', 'all'));
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
+
+  const [sortModel, setSortModel] = useState<GridSortModel>(() => {
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+    return [{ field: sortBy, sort: sortOrder }];
+  });
+
   const [viewMode, setViewMode] = useState<'table' | 'grid'>(() => {
-    // Load from localStorage if available, default to 'table'
     const saved = localStorage.getItem('products-view-mode');
     return saved === 'grid' || saved === 'table' ? saved : 'table';
   });
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
-  // Sync state changes to URL params
-  useEffect(() => {
-    const params = new URLSearchParams();
-
-    // Pagination
-    if (paginationModel.page !== 0) params.set('page', paginationModel.page.toString());
-    if (paginationModel.pageSize !== 20) params.set('pageSize', paginationModel.pageSize.toString());
-
-    // Search
-    if (search) params.set('search', search);
-
-    // Sort (only if different from default: createdAt desc)
-    const sortBy = sortModel[0]?.field || 'createdAt';
-    const sortOrder = sortModel[0]?.sort || 'desc';
-    if (sortBy !== 'createdAt' || sortOrder !== 'desc') {
-      params.set('sortBy', sortBy);
-      params.set('sortOrder', sortOrder);
-    }
-
-    // Filters
-    if (statusFilter !== 'all') params.set('status', statusFilter);
-    if (featuredFilter !== 'all') params.set('isFeatured', featuredFilter.toString());
-    if (newFilter !== 'all') params.set('isNew', newFilter.toString());
-    if (bestsellerFilter !== 'all') params.set('isBestseller', bestsellerFilter.toString());
-    if (hasOfferFilter !== 'all') params.set('hasOffer', hasOfferFilter.toString());
-    if (categoryFilter !== 'all') params.set('categoryId', categoryFilter);
-    if (brandFilter !== 'all') params.set('brandId', brandFilter);
-
-    // Update URL without navigation (replace to avoid history pollution)
-    setSearchParams(params, { replace: true });
-  }, [paginationModel, search, sortModel, statusFilter, featuredFilter, newFilter, bestsellerFilter, hasOfferFilter, categoryFilter, brandFilter, setSearchParams]);
+  const [filters, setFilters] = useState<ProductListFilters>(() => ({
+    search: searchParams.get('search') || '',
+    status: parseStatus(searchParams.get('status')),
+    categoryId: searchParams.get('categoryId') || undefined,
+    brandId: searchParams.get('brandId') || undefined,
+    isFeatured: parseBool(searchParams.get('isFeatured')),
+    isNew: parseBool(searchParams.get('isNew')),
+    hasOffer: parseBool(searchParams.get('hasOffer')),
+    stockState: parseStockState(searchParams.get('stockState')),
+  }));
 
   const { data: categoriesData = [] } = useCategories({ isActive: true });
-  const { data: brandsData } = useBrands({
-    isActive: true,
-    limit: 500,
-    sortBy: 'name',
-    sortOrder: 'asc',
-  });
+  const { data: brandsData } = useBrands({ isActive: true, limit: 500, sortBy: 'name', sortOrder: 'asc' });
   const brands = brandsData?.data ?? [];
 
-  const selectedCategoryName =
-    categoriesData.find((category) => category._id === categoryFilter)?.name ?? '';
-  const selectedBrandName = brands.find((brand) => brand._id === brandFilter)?.name ?? '';
+  const effectiveViewMode = isMobile ? 'grid' : viewMode;
 
-  // Count active filters
-  const activeFiltersCount = React.useMemo(() => {
-    let count = 0;
-    if (statusFilter !== 'all') count++;
-    if (featuredFilter !== 'all') count++;
-    if (newFilter !== 'all') count++;
-    if (bestsellerFilter !== 'all') count++;
-    if (hasOfferFilter !== 'all') count++;
-    if (categoryFilter !== 'all') count++;
-    if (brandFilter !== 'all') count++;
-    return count;
-  }, [statusFilter, featuredFilter, newFilter, bestsellerFilter, hasOfferFilter, categoryFilter, brandFilter]);
-
-  // Clear all filters (also reset to first page)
-  const clearAllFilters = () => {
-    setStatusFilter('all');
-    setFeaturedFilter('all');
-    setNewFilter('all');
-    setBestsellerFilter('all');
-    setHasOfferFilter('all');
-    setCategoryFilter('all');
-    setBrandFilter('all');
-    setPaginationModel(prev => ({ ...prev, page: 0 }));
-  };
-
-  // Filter products by hasOffer client-side (since backend doesn't support this filter yet)
-  const { data: rawData, isLoading, refetch } = useProducts({
+  const { data, isLoading } = useProducts({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
-    search,
+    search: filters.search || undefined,
     sortBy: sortModel[0]?.field || 'createdAt',
-    sortOrder: sortModel[0]?.sort || 'desc', // الأحدث أولاً كافتراضي
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    isFeatured: featuredFilter !== 'all' ? featuredFilter : undefined,
-    isNew: newFilter !== 'all' ? newFilter : undefined,
-    isBestseller: bestsellerFilter !== 'all' ? bestsellerFilter : undefined,
-    categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
-    brandId: brandFilter !== 'all' ? brandFilter : undefined,
+    sortOrder: sortModel[0]?.sort || 'desc',
+    status: filters.status,
+    isFeatured: filters.isFeatured,
+    isNew: filters.isNew,
+    hasOffer: filters.hasOffer,
+    categoryId: filters.categoryId,
+    brandId: filters.brandId,
+    lowStock: filters.stockState === 'low' ? true : undefined,
+    outOfStock: filters.stockState === 'out' ? true : undefined,
   });
 
   const { data: productStats, isLoading: statsLoading } = useProductStats();
 
-  // Apply hasOffer filter client-side
-  const data = React.useMemo(() => {
-    if (!rawData || hasOfferFilter === 'all') return rawData;
-    
-    const filteredProducts = rawData.data.filter((product: Product) => {
-      const hasOffer = product.appliedPriceRules && product.appliedPriceRules.length > 0;
-      return hasOfferFilter === true ? hasOffer : !hasOffer;
-    });
-
-    return {
-      ...rawData,
-      data: filteredProducts,
-      meta: {
-        ...rawData.meta,
-        total: filteredProducts.length,
-      },
-    };
-  }, [rawData, hasOfferFilter]);
-
   const { mutate: deleteProduct } = useDeleteProduct();
   const { mutate: restoreProduct } = useRestoreProduct();
   const { mutate: clearCache, isPending: isClearingCache } = useClearCache();
-  const effectiveViewMode = isMobile ? 'grid' : viewMode;
 
-  // Bulk Actions
-  const handleBulkDelete = async () => {
-    if (selectedProducts.length === 0) return;
-    const confirmed = await confirmDialog({
-      title: t('messages.bulkDeleteTitle', 'تأكيد الحذف الجماعي'),
-      message: t('messages.bulkDeleteConfirm', { count: selectedProducts.length }),
-      type: 'warning',
-      confirmColor: 'error',
-    });
-    if (confirmed) {
-      // Delete products one by one (can be optimized with bulk API if available)
-      Promise.all(
-        selectedProducts.map(
-          (id) =>
-            new Promise((resolve) => {
-              deleteProduct(id, {
-                onSuccess: () => resolve(true),
-                onError: () => resolve(false),
-              });
-            })
-        )
-      ).then(() => {
-        setSelectedProducts([]);
-        refetch();
-        toast.success(t('messages.bulkDeleteSuccess', { count: selectedProducts.length }));
-      });
-    }
-  };
-
-  const handleSelectAll = () => {
-    if (selectedProducts.length === (data?.data?.length || 0)) {
-      setSelectedProducts([]);
-    } else {
-      setSelectedProducts(data?.data?.map((p: Product) => p._id) || []);
-    }
-  };
-
-  // Actions
   const handleDelete = async (product: Product) => {
     const confirmed = await confirmDialog({
       title: t('messages.deleteTitle', 'تأكيد الحذف'),
@@ -312,9 +130,7 @@ export const ProductsListPage: React.FC = () => {
       confirmColor: 'error',
     });
     if (confirmed) {
-      deleteProduct(product._id, {
-        onSuccess: () => refetch(),
-      });
+      deleteProduct(product._id, { onSuccess: () => refetch() });
     }
   };
 
@@ -325,1141 +141,181 @@ export const ProductsListPage: React.FC = () => {
       type: 'question',
     });
     if (confirmed) {
-      restoreProduct(product._id, {
-        onSuccess: () => refetch(),
-      });
+      restoreProduct(product._id, { onSuccess: () => refetch() });
     }
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
+  const refetch = () => {
+    // Trigger refetch by invalidating queries - handled by react-query mutations
   };
 
-  const handleFilterChange = (filterType: 'status' | 'featured', value: any) => {
-    if (filterType === 'status') {
-      setStatusFilter(value);
-    } else {
-      setFeaturedFilter(value);
-    }
-    handleMenuClose();
-  };
+  const columns = useProductsTableColumns({
+    onEdit: (product) => navigate(`/products/${product._id}`),
+    onDelete: handleDelete,
+    onRestore: handleRestore,
+    onView: (product) => navigate(`/products/${product._id}/view`),
+    onVariants: (product) => navigate(`/products/${product._id}/variants`),
+    isMobile,
+  });
 
   const handleViewModeChange = (mode: 'table' | 'grid') => {
     setViewMode(mode);
     localStorage.setItem('products-view-mode', mode);
   };
 
-  // Columns
-  const columns: GridColDef[] = [
-    {
-      field: 'name',
-      headerName: t('list.columns.product'),
-      width: isMobile ? 150 : 250,
-      minWidth: 150,
-      flex: 1,
-      renderCell: (params) => {
-        const product = params.row as Product;
-        const primaryImage =
-          (typeof product.mainImageId === 'object' ? product.mainImageId : undefined) ??
-          product.mainImage;
+  const handleFiltersChange = (newFilters: ProductListFilters) => {
+    setFilters(newFilters);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
 
-        const fallbackImages: Array<string | ImageWithUrl> = [];
+  const clearAllFilters = () => {
+    setFilters({
+      search: '',
+      status: undefined,
+      categoryId: undefined,
+      brandId: undefined,
+      isFeatured: undefined,
+      isNew: undefined,
+      hasOffer: undefined,
+      stockState: undefined,
+    });
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
 
-        if (product.mainImage && typeof product.mainImage === 'string') {
-          fallbackImages.push(product.mainImage);
-        }
+  // Sync URL params
+  React.useEffect(() => {
+    const params = new URLSearchParams();
+    if (paginationModel.page !== 0) params.set('page', paginationModel.page.toString());
+    if (paginationModel.pageSize !== 20) params.set('pageSize', paginationModel.pageSize.toString());
+    if (filters.search) params.set('search', filters.search);
+    const sortBy = sortModel[0]?.field || 'createdAt';
+    const sortOrder = sortModel[0]?.sort || 'desc';
+    if (sortBy !== 'createdAt' || sortOrder !== 'desc') {
+      params.set('sortBy', sortBy);
+      params.set('sortOrder', sortOrder);
+    }
+    if (filters.status) params.set('status', filters.status);
+    if (filters.isFeatured !== undefined) params.set('isFeatured', filters.isFeatured.toString());
+    if (filters.isNew !== undefined) params.set('isNew', filters.isNew.toString());
+    if (filters.hasOffer !== undefined) params.set('hasOffer', filters.hasOffer.toString());
+    if (filters.categoryId) params.set('categoryId', filters.categoryId);
+    if (filters.brandId) params.set('brandId', filters.brandId);
+    if (filters.stockState) params.set('stockState', filters.stockState);
+    setSearchParams(params, { replace: true });
+  }, [paginationModel, sortModel, filters, setSearchParams]);
 
-        if (Array.isArray(product.imageIds) && product.imageIds.length > 0) {
-          const withUrl = product.imageIds.find(isImageWithUrl);
-          if (withUrl) {
-            fallbackImages.push(withUrl);
-          }
-        }
+  const toolbarActions = (
+    <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+      <CurrencySelector size="small" showLabel={false} />
+      <ToggleButtonGroup size="small" exclusive value={viewMode} onChange={(_, v) => v && handleViewModeChange(v)}>
+        <ToggleButton value="table"><TableChart fontSize="small" /></ToggleButton>
+        <ToggleButton value="grid"><ViewModule fontSize="small" /></ToggleButton>
+      </ToggleButtonGroup>
+      <Button variant="outlined" size="small" startIcon={<InventoryIcon />} onClick={() => navigate('/products/inventory')}>
+        {t('list.inventoryManagement', 'المخزون')}
+      </Button>
+      <Button variant="outlined" size="small" startIcon={<Cached />} onClick={() => clearCache()} disabled={isClearingCache} color="secondary">
+        {isClearingCache ? t('list.clearingCache', 'جاري المسح...') : t('list.clearCache', 'مسح الكاش')}
+      </Button>
+    </Stack>
+  );
 
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-            <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-              <ProductImage
-                image={primaryImage}
-                fallbackImages={fallbackImages}
-                size={isMobile ? 36 : 48}
-              />
-              {product.isFeatured && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: -4,
-                    right: -4,
-                    bgcolor: 'warning.main',
-                    borderRadius: '50%',
-                    width: 18,
-                    height: 18,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                  }}
-                >
-                  <Star sx={{ fontSize: 12, color: 'white' }} />
-                </Box>
-              )}
-              {product.appliedPriceRules && product.appliedPriceRules.length > 0 && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: -4,
-                    left: -4,
-                    bgcolor: 'error.main',
-                    borderRadius: '50%',
-                    width: 18,
-                    height: 18,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                    zIndex: 1,
-                  }}
-                >
-                  <LocalOffer sx={{ fontSize: 12, color: 'white' }} />
-                </Box>
-              )}
-            </Box>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography
-                variant="subtitle2"
-                fontWeight="bold"
-                noWrap
-                sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}
-              >
-                {product.name}
-              </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                noWrap
-                sx={{ display: 'block', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
-              >
-                {product.nameEn}
-              </Typography>
-              {product.sku && (
-                <Typography
-                  variant="caption"
-                  color="text.disabled"
-                  noWrap
-                  sx={{ display: 'block', fontSize: { xs: '0.6rem', sm: '0.7rem' }, mt: 0.25 }}
-                >
-                  SKU: {product.sku}
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        );
-      },
-    },
-    {
-      field: 'category',
-      headerName: t('list.columns.category'),
-      width: 150,
-      valueGetter: (_value, row) =>
-        (typeof row.categoryId === 'object' ? row.categoryId?.name : '-') || '-',
-    },
-    {
-      field: 'brand',
-      headerName: t('list.columns.brand'),
-      width: 130,
-      valueGetter: (_value, row) =>
-        (typeof row.brandId === 'object' ? row.brandId?.name : '-') || '-',
-    },
-    {
-      field: 'variantsCount',
-      headerName: t('list.columns.variants'),
-      width: 100,
-      align: 'center',
-    },
-    {
-      field: 'status',
-      headerName: t('list.columns.status'),
-      width: 130,
-      renderCell: (params) => {
-        const statusMap: Record<
-          ProductStatus,
-          { label: string; color: 'success' | 'warning' | 'error' | 'default' }
-        > = {
-          active: { label: t('status.active'), color: 'success' },
-          draft: { label: t('status.draft'), color: 'default' },
-          archived: { label: t('status.archived'), color: 'warning' },
-        };
-        const status = statusMap[params.row.status as ProductStatus];
-        return (
-          <StatusChip
-            label={status.label}
-            status={
-              params.row.status === ProductStatus.ACTIVE
-                ? 'active'
-                : params.row.status === ProductStatus.ARCHIVED
-                  ? 'archived'
-                  : 'draft'
-            }
-          />
-        );
-      },
-    },
-    {
-      field: 'badges',
-      headerName: t('list.columns.badges'),
-      width: 150,
-      sortable: false,
-      renderCell: (params) => {
-        const product = params.row as Product;
-        const hasPriceRules = product.appliedPriceRules && product.appliedPriceRules.length > 0;
-        const discountPercent = hasPriceRules && product.appliedPriceRules?.[0]?.effects?.percentOff;
-        
-        return (
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-            {hasPriceRules && (
-              <Tooltip 
-                title={
-                  discountPercent 
-                    ? `${t('badges.hasOffer', 'عرض')} ${discountPercent}%` 
-                    : t('badges.hasOffer', 'يحتوي على عرض')
-                }
-              >
-                <Chip
-                  icon={<LocalOffer sx={{ fontSize: 14 }} />}
-                  label={discountPercent ? `${discountPercent}%` : ''}
-                  size="small"
-                  color="error"
-                  sx={{
-                    height: 24,
-                    fontSize: '0.7rem',
-                    fontWeight: 'bold',
-                    '& .MuiChip-icon': {
-                      fontSize: 14,
-                    },
-                  }}
-                />
-              </Tooltip>
-            )}
-            {product.isFeatured && (
-              <Tooltip title={t('badges.featured')}>
-                <Star sx={{ fontSize: { xs: 16, sm: 18 }, color: 'warning.main' }} />
-              </Tooltip>
-            )}
-            {product.isNew && (
-              <Tooltip title={t('badges.new')}>
-                <NewReleases sx={{ fontSize: { xs: 16, sm: 18 }, color: 'info.main' }} />
-              </Tooltip>
-            )}
-            {product.isBestseller && (
-              <Tooltip title={t('badges.bestseller')}>
-                <TrendingUp sx={{ fontSize: { xs: 16, sm: 18 }, color: 'success.main' }} />
-              </Tooltip>
-            )}
-          </Box>
-        );
-      },
-    },
-    {
-      field: 'salesCount',
-      headerName: t('list.columns.sales'),
-      width: 100,
-      align: 'center',
-    },
-    {
-      field: 'createdAt',
-      headerName: t('list.columns.createdAt'),
-      width: 140,
-      valueGetter: (_value, row) => {
-        // استخدام updatedAt إذا لم يكن createdAt موجوداً
-        return row.createdAt || row.updatedAt || null;
-      },
-      valueFormatter: (value) => {
-        // value يأتي من valueGetter بالفعل (createdAt أو updatedAt)
-        if (!value || value === null || value === undefined) return '-';
-        return formatDate(value as Date | string);
-      },
-    },
-    {
-      field: 'actions',
-      headerName: t('list.columns.actions'),
-      width: 220,
-      sortable: false,
-      renderCell: (params) => {
-        const product = params.row as Product;
-        const isDeleted = !!product.deletedAt;
+  const mobileToolbarActions = (
+    <Stack direction="column" spacing={1} sx={{ width: '100%', mt: 1 }}>
+      <CurrencySelector size="small" showLabel={false} />
+      <ToggleButtonGroup size="small" exclusive value={viewMode} onChange={(_, v) => v && handleViewModeChange(v)} fullWidth>
+        <ToggleButton value="table"><TableChart fontSize="small" /></ToggleButton>
+        <ToggleButton value="grid"><ViewModule fontSize="small" /></ToggleButton>
+      </ToggleButtonGroup>
+      <Button variant="outlined" size="small" startIcon={<InventoryIcon />} onClick={() => navigate('/products/inventory')} fullWidth>
+        {t('list.inventoryManagement', 'المخزون')}
+      </Button>
+    </Stack>
+  );
 
-        if (isDeleted) {
-          return (
-            <Box display="flex" gap={0.5}>
-              <Tooltip title={t('actions.restore')}>
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRestore(product);
-                  }}
-                >
-                  <Restore fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          );
-        }
-
-        return (
-          <Box display="flex" gap={0.5}>
-            <Tooltip title={t('actions.view')}>
-              <IconButton
-                size="small"
-                color="info"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/products/${product._id}/view`);
-                }}
-              >
-                <Visibility fontSize="small" />
-              </IconButton>
-            </Tooltip>
-
-            <Tooltip title={t('actions.variants')}>
-              <IconButton
-                size="small"
-                color="secondary"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/products/${product._id}/variants`);
-                }}
-              >
-                <Inventory fontSize="small" />
-              </IconButton>
-            </Tooltip>
-
-            <Tooltip title={t('actions.edit')}>
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/products/${product._id}`);
-                }}
-              >
-                <Edit fontSize="small" />
-              </IconButton>
-            </Tooltip>
-
-            <Tooltip title={t('actions.delete')}>
-              <IconButton
-                size="small"
-                color="error"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(product);
-                }}
-              >
-                <Delete fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        );
-      },
-    },
-  ];
-
-  // Show full page loading state
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
-      <PageShell fullHeight>
-        <PageHeader
-          title={pageTitle}
-          description={t('list.description', 'إدارة المنتجات والفلاتر وحالات العرض')}
-        />
-        <LoadingState variant="skeleton" rows={isMobile ? 5 : 7} />
+      <PageShell spacing="compact" fullHeight>
+        <PageHeader variant="compact" title={pageTitle} />
+        <LoadingState variant="skeleton" rows={6} />
       </PageShell>
     );
   }
 
   return (
-    <PageShell fullHeight>
+    <PageShell spacing="compact" fullHeight>
       <PageHeader
         title={pageTitle}
-        description={t('list.description', 'إدارة المنتجات والفلاتر وحالات العرض')}
+        description={t('list.description', 'إدارة المنتجات، الفلاتر، الأسعار، والمخزون')}
+        variant="compact"
         breadcrumbs={[
           { label: t('navigation.dashboard', 'لوحة التحكم'), to: '/dashboard' },
           { label: pageTitle },
         ]}
-/>
+        actions={[
+          {
+            label: t('list.addNew', 'إضافة منتج جديد'),
+            icon: <Add />,
+            onClick: () => navigate('/products/new'),
+            variant: 'primary',
+          },
+        ]}
+      />
 
-{/* Product Overview Stats */}
-{!statsLoading && productStats ? (
-  <PageSummaryGrid columns={4}>
-    <StatCard
-      title={t('stats.total', 'إجمالي المنتجات')}
-      value={productStats.total || 0}
-      icon={<Inventory fontSize="small" />}
-      tone="primary"
-      linkTo="/products"
-    />
-    <StatCard
-      title={t('stats.active', 'منشورة')}
-      value={productStats.active || 0}
-      icon={<CheckCircle fontSize="small" />}
-      tone="success"
-      linkTo="/products?status=active"
-    />
-    <StatCard
-      title={t('stats.draft', 'مسودة')}
-      value={productStats.draft || 0}
-      icon={<EditNote fontSize="small" />}
-      tone="neutral"
-      linkTo="/products?status=draft"
-    />
-    <StatCard
-      title={t('stats.archived', 'مؤرشفة')}
-      value={productStats.archived || 0}
-      icon={<Archive fontSize="small" />}
-      tone="warning"
-      linkTo="/products?status=archived"
-    />
-    <StatCard
-      title={t('stats.lowStock', 'منخفض المخزون')}
-      value={productStats.lowStock || 0}
-      icon={<Warning fontSize="small" />}
-      tone="error"
-      linkTo="/products/inventory"
-    />
-    <StatCard
-      title={t('stats.outOfStock', 'نفذ المخزون')}
-      value={productStats.outOfStock || 0}
-      icon={<Inventory2 fontSize="small" />}
-      tone="error"
-      linkTo="/products/inventory"
-    />
-  </PageSummaryGrid>
-) : statsLoading ? (
-  <PageSummaryGrid columns={4}>
-    {[1,2,3,4,5,6].map((i) => (
-      <StatCard key={i} title="..." value="-" tone="neutral" loading />
-    ))}
-  </PageSummaryGrid>
-) : null}
+      {productStats && <ProductStatsCards stats={productStats} loading={statsLoading} compact />}
 
-      {false && (
-        <>
-      {/* Breadcrumbs */}
-      <Breadcrumbs
-        separator={<ChevronRight fontSize="small" />}
-        sx={{ mb: 2 }}
-        aria-label="breadcrumb"
-      >
-        <Link
-          color="inherit"
-          href="/dashboard"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate('/dashboard');
-          }}
-          sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
-        >
-          <Home sx={{ mr: 0.5 }} fontSize="inherit" />
-          {t('navigation.dashboard', 'لوحة التحكم')}
-        </Link>
-        <Typography color="text.primary">{t('list.title', 'المنتجات')}</Typography>
-      </Breadcrumbs>
-        </>
-      )}
+      <ProductFilters
+        filters={filters}
+        categories={categoriesData}
+        brands={brands}
+        onFiltersChange={handleFiltersChange}
+        onClearFilters={clearAllFilters}
+        actions={isMobile ? undefined : toolbarActions}
+      />
 
-      {/* Header with filters */}
-      <Box
-        sx={{
-          mb: 2,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: { xs: 2, sm: 0 },
-        }}
-      >
-        <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
-          <Badge badgeContent={activeFiltersCount} color="primary">
-            <Button
-              variant="outlined"
-              startIcon={<FilterList />}
-              onClick={() => setFiltersDrawerOpen(true)}
-              size={isMobile ? 'small' : 'medium'}
-            >
-              {t('list.filtersLabel', 'الفلاتر')}
-            </Button>
-          </Badge>
+      {isMobile && mobileToolbarActions}
 
-          {/* Quick Filters */}
-          <Stack
-            direction="row"
-            spacing={1}
-            flexWrap="wrap"
-            sx={{ display: { xs: 'none', md: 'flex' } }}
-          >
-            <Chip
-              label={t('status.active', 'نشط')}
-              onClick={() =>
-                setStatusFilter(
-                  statusFilter === ProductStatus.ACTIVE ? 'all' : ProductStatus.ACTIVE
-                )
-              }
-              color={statusFilter === ProductStatus.ACTIVE ? 'primary' : 'default'}
-              size="small"
-              variant={statusFilter === ProductStatus.ACTIVE ? 'filled' : 'outlined'}
-            />
-            <Chip
-              label={t('badges.featured', 'مميز')}
-              onClick={() => setFeaturedFilter(featuredFilter === true ? 'all' : true)}
-              color={featuredFilter === true ? 'warning' : 'default'}
-              size="small"
-              variant={featuredFilter === true ? 'filled' : 'outlined'}
-              icon={<Star />}
-            />
-            <Chip
-              label={t('badges.new', 'جديد')}
-              onClick={() => setNewFilter(newFilter === true ? 'all' : true)}
-              color={newFilter === true ? 'info' : 'default'}
-              size="small"
-              variant={newFilter === true ? 'filled' : 'outlined'}
-              icon={<NewReleases />}
-            />
-            <Chip
-              label={t('badges.bestseller', 'الأكثر مبيعاً')}
-              onClick={() => setBestsellerFilter(bestsellerFilter === true ? 'all' : true)}
-              color={bestsellerFilter === true ? 'success' : 'default'}
-              size="small"
-              variant={bestsellerFilter === true ? 'filled' : 'outlined'}
-              icon={<TrendingUp />}
-            />
-            <Chip
-              label={t('badges.hasOffer', 'عروض')}
-              onClick={() => setHasOfferFilter(hasOfferFilter === true ? 'all' : true)}
-              color={hasOfferFilter === true ? 'error' : 'default'}
-              size="small"
-              variant={hasOfferFilter === true ? 'filled' : 'outlined'}
-              icon={<LocalOffer />}
-            />
-          </Stack>
-
-          <Button
-            variant="outlined"
-            startIcon={<Inventory />}
-            onClick={() => navigate('/products/inventory')}
-            size={isMobile ? 'small' : 'medium'}
-          >
-            {t('list.inventoryManagement', 'إدارة المخزون')}
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Cached />}
-            onClick={() => clearCache()}
-            disabled={isClearingCache}
-            size={isMobile ? 'small' : 'medium'}
-            color="secondary"
-          >
-            {isClearingCache ? t('list.clearingCache', 'جاري المسح...') : t('list.clearCache', 'مسح الكاش')}
-          </Button>
-        </Box>
-        <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
-          {/* Sort Options */}
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Sort />}
-            endIcon={
-              sortModel[0]?.sort === 'desc' ? (
-                <ArrowDownward fontSize="small" />
-              ) : (
-                <ArrowUpward fontSize="small" />
-              )
-            }
-            onClick={(e) => setSortMenuAnchor(e.currentTarget)}
-            sx={{ minWidth: { xs: 'auto', sm: 140 } }}
-          >
-            {sortModel[0]?.field === 'createdAt' &&
-              (sortModel[0]?.sort === 'desc'
-                ? t('list.sort.newest', 'الأحدث')
-                : t('list.sort.oldest', 'الأقدم'))}
-            {sortModel[0]?.field === 'name' && t('list.sort.name', 'الاسم')}
-            {sortModel[0]?.field === 'price' && t('list.sort.price', 'السعر')}
-            {sortModel[0]?.field === 'stock' && t('list.sort.stock', 'المخزون')}
-            {!sortModel[0]?.field && t('list.sort.newest', 'الأحدث')}
-          </Button>
-          <Menu
-            anchorEl={sortMenuAnchor}
-            open={Boolean(sortMenuAnchor)}
-            onClose={() => setSortMenuAnchor(null)}
-          >
-            <MenuItem
-              onClick={() => {
-                setSortModel([{ field: 'createdAt', sort: 'desc' }]);
-                setSortMenuAnchor(null);
-              }}
-              selected={sortModel[0]?.field === 'createdAt' && sortModel[0]?.sort === 'desc'}
-            >
-              <ArrowDownward fontSize="small" sx={{ mr: 1 }} />
-              {t('list.sort.newest', 'الأحدث أولاً')}
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setSortModel([{ field: 'createdAt', sort: 'asc' }]);
-                setSortMenuAnchor(null);
-              }}
-              selected={sortModel[0]?.field === 'createdAt' && sortModel[0]?.sort === 'asc'}
-            >
-              <ArrowUpward fontSize="small" sx={{ mr: 1 }} />
-              {t('list.sort.oldest', 'الأقدم أولاً')}
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setSortModel([{ field: 'name', sort: 'asc' }]);
-                setSortMenuAnchor(null);
-              }}
-              selected={sortModel[0]?.field === 'name' && sortModel[0]?.sort === 'asc'}
-            >
-              {t('list.sort.nameAsc', 'الاسم (أ-ي)')}
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setSortModel([{ field: 'name', sort: 'desc' }]);
-                setSortMenuAnchor(null);
-              }}
-              selected={sortModel[0]?.field === 'name' && sortModel[0]?.sort === 'desc'}
-            >
-              {t('list.sort.nameDesc', 'الاسم (ي-أ)')}
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setSortModel([{ field: 'price', sort: 'asc' }]);
-                setSortMenuAnchor(null);
-              }}
-              selected={sortModel[0]?.field === 'price' && sortModel[0]?.sort === 'asc'}
-            >
-              {t('list.sort.priceLow', 'السعر (منخفض-عالي)')}
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setSortModel([{ field: 'price', sort: 'desc' }]);
-                setSortMenuAnchor(null);
-              }}
-              selected={sortModel[0]?.field === 'price' && sortModel[0]?.sort === 'desc'}
-            >
-              {t('list.sort.priceHigh', 'السعر (عالي-منخفض)')}
-            </MenuItem>
-          </Menu>
-          {/* View Mode Toggle */}
-          <Box display={{ xs: 'none', sm: 'flex' }} gap={0.5} sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
-            <Tooltip title={t('list.viewMode.table', 'عرض الجدول')}>
-              <IconButton
-                size="small"
-                color={viewMode === 'table' ? 'primary' : 'default'}
-                onClick={() => handleViewModeChange('table')}
-                sx={{
-                  borderRadius: 0,
-                  borderTopLeftRadius: 4,
-                  borderBottomLeftRadius: 4,
-                }}
-              >
-                <TableChart fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t('list.viewMode.grid', 'العرض الشبكي')}>
-              <IconButton
-                size="small"
-                color={viewMode === 'grid' ? 'primary' : 'default'}
-                onClick={() => handleViewModeChange('grid')}
-                sx={{
-                  borderRadius: 0,
-                  borderTopRightRadius: 4,
-                  borderBottomRightRadius: 4,
-                }}
-              >
-                <ViewModule fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          <CurrencySelector size="small" showLabel={false} />
-          <Button
-            variant="contained"
-            onClick={() => navigate('/products/new')}
-            size={isMobile ? 'small' : 'medium'}
-          >
-            {t('list.addNew')}
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Bulk Actions Toolbar */}
-      {selectedProducts.length > 0 && (
-        <Paper
-          sx={{
-            p: { xs: 1.5, sm: 2 },
-            mb: 2,
-            bgcolor: 'primary.light',
-            border: '1px solid',
-            borderColor: 'primary.main',
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              justifyContent: 'space-between',
-              alignItems: { xs: 'stretch', sm: 'center' },
-              flexWrap: 'wrap',
-              gap: 2,
-            }}
-          >
-            <Typography variant="body1" fontWeight="medium">
-              {t('list.selectedCount', 'تم اختيار {{count}} منتج', {
-                count: selectedProducts.length,
-              })}
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Button
-                variant="contained"
-                color="error"
-                size="small"
-                startIcon={<Delete />}
-                onClick={handleBulkDelete}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
-              >
-                {t('list.bulkDelete', 'حذف المحدد')}
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={
-                  selectedProducts.length === (data?.data?.length || 0) ? (
-                    <Deselect />
-                  ) : (
-                    <SelectAll />
-                  )
-                }
-                onClick={handleSelectAll}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
-              >
-                {selectedProducts.length === (data?.data?.length || 0)
-                  ? t('list.deselectAll', 'إلغاء تحديد الكل')
-                  : t('list.selectAll', 'تحديد الكل')}
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Clear />}
-                onClick={() => setSelectedProducts([])}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
-              >
-                {t('list.clearSelection', 'مسح التحديد')}
-              </Button>
-            </Stack>
-          </Box>
-        </Paper>
-      )}
-
-      {/* Active filters */}
-      {activeFiltersCount > 0 && (
-        <Box mb={2}>
-          <Alert
-            severity="info"
-            action={
-              <Button size="small" onClick={clearAllFilters} startIcon={<Clear />}>
-                {t('list.clearAll', 'مسح الكل')}
-              </Button>
-            }
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-              <Typography variant="body2">{t('list.activeFilters', 'الفلاتر النشطة')}:</Typography>
-              {statusFilter !== 'all' && (
-                <Chip
-                  label={t(`status.${statusFilter}`, statusFilter)}
-                  size="small"
-                  onDelete={() => setStatusFilter('all')}
-                  color="primary"
-                />
-              )}
-              {featuredFilter !== 'all' && (
-                <Chip
-                  label={t('badges.featured', 'مميز')}
-                  size="small"
-                  onDelete={() => setFeaturedFilter('all')}
-                  color="warning"
-                  icon={<Star />}
-                />
-              )}
-              {newFilter !== 'all' && (
-                <Chip
-                  label={t('badges.new', 'جديد')}
-                  size="small"
-                  onDelete={() => setNewFilter('all')}
-                  color="info"
-                  icon={<NewReleases />}
-                />
-              )}
-              {bestsellerFilter !== 'all' && (
-                <Chip
-                  label={t('badges.bestseller', 'الأكثر مبيعاً')}
-                  size="small"
-                  onDelete={() => setBestsellerFilter('all')}
-                  color="success"
-                  icon={<TrendingUp />}
-                />
-              )}
-              {hasOfferFilter !== 'all' && (
-                <Chip
-                  label={t('badges.hasOffer', 'عروض')}
-                  size="small"
-                  onDelete={() => setHasOfferFilter('all')}
-                  color="error"
-                  icon={<LocalOffer />}
-                />
-              )}
-              {categoryFilter !== 'all' && (
-                <Chip
-                  label={`${t('list.columns.category', 'الفئة')}: ${selectedCategoryName || '-'}`}
-                  size="small"
-                  onDelete={() => setCategoryFilter('all')}
-                  color="primary"
-                />
-              )}
-              {brandFilter !== 'all' && (
-                <Chip
-                  label={`${t('list.columns.brand', 'العلامة التجارية')}: ${selectedBrandName || '-'}`}
-                  size="small"
-                  onDelete={() => setBrandFilter('all')}
-                  color="secondary"
-                />
-              )}
-            </Box>
-          </Alert>
-        </Box>
-      )}
-
-      {/* Display based on view mode */}
-      {effectiveViewMode === 'grid' ? (
-        /* Grid/Card Layout */
-        <Box>
-          <DataToolbar
-            searchValue={search}
-            searchPlaceholder={t('list.search')}
-            onSearchChange={(value) => {
-              setSearch(value);
-              setPaginationModel((prev) => ({ ...prev, page: 0 }));
-            }}
-          />
-
-          {/* Search Field for Grid View */}
-          <Paper
-            sx={{
-              p: { xs: 1.5, sm: 2 },
-              mb: 2,
-              display: 'none',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: { xs: 2, sm: 0 },
-            }}
-          >
-            <TextField
-              size="small"
-              placeholder={t('list.search', 'بحث...')}
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPaginationModel((prev) => ({ ...prev, page: 0 }));
-              }}
-              sx={{
-                minWidth: { xs: '100%', sm: 250, md: 300 },
-                width: { xs: '100%', sm: 'auto' },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Paper>
-
-          {!data?.data || data.data.length === 0 ? (
-            /* Empty State */
-            <>
-              <EmptyState
-                icon={<Inventory sx={{ fontSize: 52 }} />}
-                title={t('list.empty')}
-                description={t('list.emptyDescription')}
-              />
-              {false && (
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <Inventory sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                {t('list.empty')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('list.emptyDescription')}
-              </Typography>
-            </Paper>
-              )}
-            </>
-          ) : (
-            /* Products Grid */
-            <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-              {data.data.map((product) => (
-                <Grid
-                  size={{
-                    xs: 12,
-                    sm: 6,
-                    md: 4,
-                    lg: 3,
-                    xl: 2,
-                  }}
-                  key={product._id}
-                >
-                  <ProductCard
-                    product={product}
-                    onView={(p) => navigate(`/products/${p._id}/view`)}
-                    onEdit={(p) => navigate(`/products/${p._id}`)}
-                    onDelete={handleDelete}
-                    onToggleStatus={product.deletedAt ? handleRestore : undefined}
-                    showActions={true}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-          )}
-
-          {/* Pagination */}
-          {data?.meta && data.meta.total > paginationModel.pageSize && (
-            <Box
-              mt={3}
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              flexWrap="wrap"
-              gap={1}
-            >
-              <Typography variant="body2" color="text.secondary">
-                {t('common.page', { ns: 'common', defaultValue: 'صفحة' })} {paginationModel.page + 1}{' '}
-                {t('common.of', { ns: 'common' })}{' '}
-                {Math.max(1, Math.ceil((data.meta.total || 0) / paginationModel.pageSize))}
-              </Typography>
-              <Pagination
-                count={Math.max(1, Math.ceil((data.meta.total || 0) / paginationModel.pageSize))}
-                page={paginationModel.page + 1}
-                onChange={(_event, page) =>
-                  setPaginationModel((prev) => ({ ...prev, page: Math.max(0, page - 1) }))
-                }
-                showFirstButton
-                showLastButton
-                siblingCount={1}
-                boundaryCount={1}
-                color="primary"
-                shape="rounded"
-                size="small"
-              />
-            </Box>
-          )}
-        </Box>
-      ) : (
-        /* Table Layout */
+      {effectiveViewMode === 'table' && !isMobile ? (
         <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
-        <DataTable
-          title={t('list.title')}
-          columns={columns}
-          rows={data?.data || []}
-          loading={isLoading}
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-          rowCount={data?.meta?.total ?? 0}
-          paginationMode="server"
-          customPagination
-          sortModel={sortModel}
-          onSortModelChange={setSortModel}
-          sortingMode="server"
-          searchPlaceholder={t('list.search')}
-          onSearch={setSearch}
-          getRowId={(row) => (row as Product)._id}
-          onRowClick={(params) => {
-            navigate(`/products/${(params.row as Product)._id}`);
-          }}
-          selectable={true}
-          onRowSelectionModelChange={(selection) => setSelectedProducts(selection as string[])}
-          height="calc(100vh - 200px)"
-        />
+          <DataTable
+            title={t('list.title')}
+            columns={columns}
+            rows={data?.data || []}
+            loading={isLoading}
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            rowCount={data?.meta?.total ?? 0}
+            paginationMode="server"
+            sortModel={sortModel}
+            onSortModelChange={setSortModel}
+            getRowId={(row) => (row as Product)._id}
+            onRowClick={(params) => navigate(`/products/${(params.row as Product)._id}/view`)}
+            height="calc(100vh - 300px)"
+          />
         </Box>
+      ) : !isLoading && (!data?.data || data.data.length === 0) ? (
+        <EmptyState
+          icon={<InventoryIcon sx={{ fontSize: 52 }} />}
+          title={t('list.empty', 'لا توجد منتجات')}
+          description={t('list.emptyDescription', 'لم يتم العثور على منتجات تطابق معايير البحث')}
+        />
+      ) : (
+        <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+          {(data?.data || []).map((product: Product) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={product._id}>
+              <ProductAdminCard
+                product={product}
+                onView={(p) => navigate(`/products/${p._id}/view`)}
+                onEdit={(p) => navigate(`/products/${p._id}`)}
+                onDelete={handleDelete}
+                onRestore={handleRestore}
+                onVariants={(p) => navigate(`/products/${p._id}/variants`)}
+              />
+            </Grid>
+          ))}
+        </Grid>
       )}
 
-      {/* Advanced Filters Drawer */}
-      <DetailsDrawer
-        open={filtersDrawerOpen}
-        onClose={() => setFiltersDrawerOpen(false)}
-        title={t('list.advancedFilters', 'الفلاتر المتقدمة')}
-        width={400}
-      >
-        <Box>
-          <Box
-            sx={{
-              display: 'none',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 3,
-            }}
-          >
-            <Typography variant="h6" fontWeight="bold">
-              {t('list.advancedFilters', 'الفلاتر المتقدمة')}
-            </Typography>
-            <IconButton onClick={() => setFiltersDrawerOpen(false)}>
-              <Close />
-            </IconButton>
-          </Box>
-
-          <Divider sx={{ mb: 3 }} />
-
-          <Stack spacing={3}>
-            {/* Status Filter */}
-            <FormControl fullWidth>
-              <InputLabel>{t('list.columns.status', 'الحالة')}</InputLabel>
-              <Select
-                value={statusFilter}
-                label={t('list.columns.status', 'الحالة')}
-                onChange={(e) => setStatusFilter(e.target.value as ProductStatus | 'all')}
-              >
-                <MenuItem value="all">{t('list.allStatuses', 'جميع الحالات')}</MenuItem>
-                <MenuItem value={ProductStatus.ACTIVE}>{t('status.active', 'نشط')}</MenuItem>
-                <MenuItem value={ProductStatus.DRAFT}>{t('status.draft', 'مسودة')}</MenuItem>
-                <MenuItem value={ProductStatus.ARCHIVED}>{t('status.archived', 'مؤرشف')}</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* Featured Filter */}
-            <FormControl fullWidth>
-              <InputLabel>{t('badges.featured', 'مميز')}</InputLabel>
-              <Select
-                value={featuredFilter}
-                label={t('badges.featured', 'مميز')}
-                onChange={(e) => setFeaturedFilter(e.target.value as boolean | 'all')}
-              >
-                <MenuItem value="all">{t('common.all', 'الكل')}</MenuItem>
-                <MenuItem value="true">{t('common.yes', 'نعم')}</MenuItem>
-                <MenuItem value="false">{t('common.no', 'لا')}</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* New Filter */}
-            <FormControl fullWidth>
-              <InputLabel>{t('badges.new', 'جديد')}</InputLabel>
-              <Select
-                value={newFilter}
-                label={t('badges.new', 'جديد')}
-                onChange={(e) => setNewFilter(e.target.value as boolean | 'all')}
-              >
-                <MenuItem value="all">{t('common.all', 'الكل')}</MenuItem>
-                <MenuItem value="true">{t('common.yes', 'نعم')}</MenuItem>
-                <MenuItem value="false">{t('common.no', 'لا')}</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* Bestseller Filter */}
-            <FormControl fullWidth>
-              <InputLabel>{t('badges.bestseller', 'الأكثر مبيعاً')}</InputLabel>
-              <Select
-                value={bestsellerFilter}
-                label={t('badges.bestseller', 'الأكثر مبيعاً')}
-                onChange={(e) => setBestsellerFilter(e.target.value as boolean | 'all')}
-              >
-                <MenuItem value="all">{t('common.all', 'الكل')}</MenuItem>
-                <MenuItem value="true">{t('common.yes', 'نعم')}</MenuItem>
-                <MenuItem value="false">{t('common.no', 'لا')}</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* Category Filter */}
-            <FormControl fullWidth>
-              <InputLabel>{t('list.columns.category', 'الفئة')}</InputLabel>
-              <Select
-                value={categoryFilter}
-                label={t('list.columns.category', 'الفئة')}
-                onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                  setPaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-              >
-                <MenuItem value="all">{t('common.all', 'الكل')}</MenuItem>
-                {categoriesData.map((category) => (
-                  <MenuItem key={category._id} value={category._id}>
-                    {category.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {/* Brand Filter */}
-            <FormControl fullWidth>
-              <InputLabel>{t('list.columns.brand', 'العلامة التجارية')}</InputLabel>
-              <Select
-                value={brandFilter}
-                label={t('list.columns.brand', 'العلامة التجارية')}
-                onChange={(e) => {
-                  setBrandFilter(e.target.value);
-                  setPaginationModel((prev) => ({ ...prev, page: 0 }));
-                }}
-              >
-                <MenuItem value="all">{t('common.all', 'الكل')}</MenuItem>
-                {brands.map((brand) => (
-                  <MenuItem key={brand._id} value={brand._id}>
-                    {brand.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <Divider />
-
-            {/* Actions */}
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant="outlined" startIcon={<Clear />} onClick={clearAllFilters} fullWidth>
-                {t('list.clearAll', 'مسح الكل')}
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<CheckCircle />}
-                onClick={() => setFiltersDrawerOpen(false)}
-                fullWidth
-              >
-                {t('common.apply', 'تطبيق')}
-              </Button>
-            </Box>
-          </Stack>
-        </Box>
-      </DetailsDrawer>
-
-      {/* Filter Menu (Legacy - keeping for backward compatibility) */}
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={() => handleFilterChange('status', 'all')}>
-          {t('list.allStatuses')}
-        </MenuItem>
-        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.ACTIVE)}>
-          {t('status.active')}
-        </MenuItem>
-        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.DRAFT)}>
-          {t('status.draft')}
-        </MenuItem>
-        <MenuItem onClick={() => handleFilterChange('status', ProductStatus.ARCHIVED)}>
-          {t('status.archived')}
-        </MenuItem>
-        <MenuItem onClick={() => handleFilterChange('featured', true)}>
-          {t('list.featuredProducts')}
-        </MenuItem>
-        <MenuItem onClick={() => handleFilterChange('featured', false)}>
-          {t('list.normalProducts')}
-        </MenuItem>
-      </Menu>
-
-      {/* Confirm Dialog */}
       <ConfirmDialog {...dialogProps} />
     </PageShell>
   );

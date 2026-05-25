@@ -94,6 +94,8 @@ export const productsApi = {
       new: inner.new ?? inner.newProducts ?? 0,
       draft: inner.draft ?? inner.byStatus?.draft ?? 0,
       archived: inner.archived ?? inner.byStatus?.archived ?? 0,
+      lowStock: inner.lowStock ?? 0,
+      outOfStock: inner.outOfStock ?? 0,
     };
   },
 

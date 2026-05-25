@@ -379,6 +379,7 @@ export class UnifiedNotificationController {
       dto.platform,
       dto.userAgent,
       dto.appVersion,
+      dto.appBuildNumber,
     );
 
     return {
@@ -484,6 +485,7 @@ export class UnifiedNotificationController {
         platform: device.platform,
         userAgent: device.userAgent,
         appVersion: device.appVersion,
+        appBuildNumber: device.appBuildNumber,
         isActive: device.isActive,
         lastUsedAt: device.lastUsedAt,
         createdAt: device.createdAt,
@@ -747,43 +749,27 @@ export class UnifiedNotificationController {
       const copiesCount = await this.notificationService.createNotificationCopiesForTargetRoles(
         notification as any,
       );
-      
-      // تحديث حالة الإشعار الأصلي
-      await this.notificationService.updateNotificationStatus(
-        id,
-        notification.status === NotificationStatus.PENDING
-          ? NotificationStatus.SENT
-          : notification.status,
-      );
 
       return {
-        message: `Notification sent successfully to ${copiesCount} user(s)`,
+        message: `Notification queued for ${copiesCount} user(s)`,
         copiesCreated: copiesCount,
       };
     }
 
-    // إعادة إرسال الإشعار للمستخدم المحدد
+    // إعادة إرسال الإشعار للمستخدم المحدد عبر Queue بدلاً من الإرسال المباشر
     if (notification.recipientId) {
-      if (notification.channel === NotificationChannel.PUSH) {
-        await this.notificationService.sendPushNotification(
-          notification as any,
-          notification.recipientId.toString(),
-        );
-      } else if (notification.channel === NotificationChannel.IN_APP) {
-        // إرسال عبر WebSocket
-        await this.notificationService.resendInAppNotification(id);
-      }
+      const result = await this.notificationService.sendAdminNotification(
+        notification as any,
+        notification.recipientId.toString(),
+      );
+
+      return {
+        message: result.queued ? 'Notification queued for sending' : 'No devices found for user',
+        ...result,
+      };
     }
 
-    // تحديث حالة الإشعار
-    await this.notificationService.updateNotificationStatus(
-      id,
-      notification.status === NotificationStatus.PENDING
-        ? NotificationStatus.SENT
-        : notification.status,
-    );
-
-    return { message: 'Notification sent successfully' };
+    return { message: 'Notification has no recipient' };
   }
 
   @Get('admin/users-list')
@@ -839,6 +825,7 @@ export class UnifiedNotificationController {
                   platform: { type: 'string', enum: ['ios', 'android', 'web'] },
                   userAgent: { type: 'string' },
                   appVersion: { type: 'string' },
+                  appBuildNumber: { type: 'string' },
                   isActive: { type: 'boolean' },
                   lastUsedAt: { type: 'string', format: 'date-time' },
                   createdAt: { type: 'string', format: 'date-time' },

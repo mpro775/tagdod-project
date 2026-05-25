@@ -64,49 +64,33 @@ export class ProductsController {
   })
   @ApiResponse({ status: 200, description: 'Products list retrieved successfully' })
   async listProducts(@Query() dto: ListProductsDto) {
-    // في admin، نمرر جميع المعاملات مباشرة من DTO
-    // includeSubcategories افتراضي: true (يتم تضمين الفئات الفرعية)
-    // includeDeleted افتراضي: false (يمكن تفعيله لعرض المحذوفة)
-    // لا يتم فلترة المنتجات حسب المخزون - جميع المنتجات تظهر
-    const result = await this.productService.list(dto);
-    
-    // إضافة معلومات قواعد الأسعار المطبقة على كل منتج
-    const productsWithPriceRules = await Promise.all(
-      result.data.map(async (product) => {
-        // product من .lean() يحتوي على _id من نوع Types.ObjectId
-        const productAny = product as any;
-        const categoryId = typeof product.categoryId === 'string' 
-          ? product.categoryId 
-          : (product.categoryId as any)?._id?.toString() || (product.categoryId as any)?.toString();
-        const brandId = typeof product.brandId === 'string'
-          ? product.brandId
-          : (product.brandId as any)?._id?.toString() || (product.brandId as any)?.toString();
-        
-        const applicableRules = await this.marketingService.getApplicablePriceRules({
-          productId: productAny._id?.toString() || String(productAny._id),
-          categoryId: categoryId,
-          brandId: brandId,
-        });
-        
-        return {
-          ...product,
-          appliedPriceRules: applicableRules.map((rule) => {
-            const ruleAny = rule as any;
-            return {
-              _id: ruleAny._id?.toString() || String(ruleAny._id),
-              title: rule.metadata?.title || 'قاعدة سعر',
-              priority: rule.priority,
-              active: rule.active,
-              startAt: rule.startAt,
-              endAt: rule.endAt,
-              effects: rule.effects,
-              conditions: rule.conditions,
-            };
-          }),
-        };
-      })
+    const hasOffer = dto.hasOffer;
+
+    const offerScope = hasOffer !== undefined
+      ? await this.marketingService.getActiveOfferProductScopeForAdmin()
+      : undefined;
+
+    const result = await this.productService.list({
+      ...dto,
+      ...(hasOffer !== undefined ? { hasOffer, offerScope } : {}),
+    } as any);
+
+    const priceRulesMap = await this.marketingService.getApplicablePriceRulesBatch(
+      result.data.map((product: any) => ({
+        _id: product._id,
+        categoryId: typeof product.categoryId === 'object' && product.categoryId ? (product.categoryId as any)._id?.toString() || (product.categoryId as any)?.toString() : product.categoryId,
+        brandId: typeof product.brandId === 'object' && product.brandId ? (product.brandId as any)._id?.toString() || (product.brandId as any)?.toString() : product.brandId,
+      })),
     );
-    
+
+    const productsWithPriceRules = result.data.map((product: any) => {
+      const id = String(product._id);
+      return {
+        ...product,
+        appliedPriceRules: priceRulesMap[id] || [],
+      };
+    });
+
     return {
       ...result,
       data: productsWithPriceRules,

@@ -629,6 +629,148 @@ export class MarketingService {
     return matchingRules;
   }
 
+  async getActiveOfferProductScopeForAdmin(): Promise<{ global: boolean; productIds: string[] }> {
+    const now = new Date();
+
+    const rules = await this.priceRuleModel
+      .find({
+        active: true,
+        startAt: { $lte: now },
+        endAt: { $gte: now },
+      })
+      .sort({ priority: -1 })
+      .lean();
+
+    const productIds = new Set<string>();
+
+    for (const rule of rules) {
+      const cond = rule.conditions || {};
+
+      const hasProductCondition = cond.productId !== undefined;
+      const hasCategoryCondition = cond.categoryId !== undefined;
+      const hasBrandCondition = cond.brandId !== undefined;
+      const hasVariantCondition = cond.variantId !== undefined;
+
+      if (!hasProductCondition && !hasCategoryCondition && !hasBrandCondition && !hasVariantCondition) {
+        return { global: true, productIds: [] };
+      }
+
+      const productQuery: Record<string, unknown> = { deletedAt: null };
+      const andConditions: Record<string, unknown>[] = [];
+
+      const normalizeArray = (value: unknown): string[] => {
+        if (value === undefined || value === null) return [];
+        return Array.isArray(value) ? value.map(String) : [String(value)];
+      };
+
+      const objectIdOrStringValues = (values: string[]) =>
+        values.flatMap((value) =>
+          Types.ObjectId.isValid(value) ? [new Types.ObjectId(value), value] : [value],
+        );
+
+      if (hasProductCondition) {
+        const values = normalizeArray(cond.productId);
+        andConditions.push({ _id: { $in: objectIdOrStringValues(values) } });
+      }
+
+      if (hasCategoryCondition) {
+        const values = normalizeArray(cond.categoryId);
+        andConditions.push({ categoryId: { $in: objectIdOrStringValues(values) } });
+      }
+
+      if (hasBrandCondition) {
+        const values = normalizeArray(cond.brandId);
+        andConditions.push({ brandId: { $in: objectIdOrStringValues(values) } });
+      }
+
+      if (hasVariantCondition) {
+        const variantIds = normalizeArray(cond.variantId);
+        const variants = await this.variantModel
+          .find({ _id: { $in: objectIdOrStringValues(variantIds) }, deletedAt: null })
+          .select('productId')
+          .lean();
+
+        const variantProductIds = variants.map((v: any) => String(v.productId)).filter(Boolean);
+        if (variantProductIds.length === 0) continue;
+
+        andConditions.push({ _id: { $in: objectIdOrStringValues(variantProductIds) } });
+      }
+
+      if (andConditions.length > 0) {
+        productQuery.$and = andConditions;
+      }
+
+      const products = await this.productModel
+        .find(productQuery)
+        .select('_id')
+        .lean();
+
+      products.forEach((product: any) => productIds.add(String(product._id)));
+    }
+
+    return { global: false, productIds: [...productIds] };
+  }
+
+  async getApplicablePriceRulesBatch(
+    products: Array<{ _id: unknown; categoryId?: unknown; brandId?: unknown }>,
+  ): Promise<Record<string, any[]>> {
+    const now = new Date();
+
+    const rules = await this.priceRuleModel
+      .find({
+        active: true,
+        startAt: { $lte: now },
+        endAt: { $gte: now },
+      })
+      .sort({ priority: -1 })
+      .lean();
+
+    const toId = (value: any): string | undefined => {
+      if (!value) return undefined;
+      if (typeof value === 'string') return value;
+      if (value._id) return String(value._id);
+      return String(value);
+    };
+
+    const matches = (ruleCondition: any, itemValue?: string): boolean => {
+      if (ruleCondition === undefined) return true;
+      if (!itemValue) return false;
+      const arr = Array.isArray(ruleCondition) ? ruleCondition.map(String) : [String(ruleCondition)];
+      return arr.includes(itemValue);
+    };
+
+    const result: Record<string, any[]> = {};
+
+    for (const product of products) {
+      const productId = toId(product._id)!;
+      const categoryId = toId(product.categoryId);
+      const brandId = toId(product.brandId);
+
+      const applicable = rules.filter((rule: any) => {
+        const cond = rule.conditions || {};
+        return (
+          matches(cond.productId, productId) &&
+          matches(cond.categoryId, categoryId) &&
+          matches(cond.brandId, brandId) &&
+          cond.variantId === undefined
+        );
+      });
+
+      result[productId] = applicable.map((rule: any) => ({
+        _id: String(rule._id),
+        title: rule.metadata?.title || 'قاعدة سعر',
+        priority: rule.priority,
+        active: rule.active,
+        startAt: rule.startAt,
+        endAt: rule.endAt,
+        effects: rule.effects,
+        conditions: rule.conditions,
+      }));
+    }
+
+    return result;
+  }
+
   // ==================== COUPONS ====================
 
   async createCoupon(dto: CreateCouponDto, adminId?: string): Promise<Coupon> {

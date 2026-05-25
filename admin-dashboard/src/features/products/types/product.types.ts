@@ -349,12 +349,10 @@ export interface ListProductsParams extends ListParams {
   status?: ProductStatus;
   isFeatured?: boolean;
   isNew?: boolean;
-  isBestseller?: boolean;
+  hasOffer?: boolean;
   includeDeleted?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  
-  // فلاتر المخزون
   lowStock?: boolean;
   outOfStock?: boolean;
   trackStock?: boolean;
