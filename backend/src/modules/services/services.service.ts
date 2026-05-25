@@ -1051,7 +1051,7 @@ export class ServicesService {
 
     const profiles = await this.engineerProfileModel
       .find({ userId: { $in: engineerIds } })
-      .select('userId jobTitle')
+      .select('userId jobTitle avatarUrl')
       .lean();
 
     const profilesMap = new Map(profiles.map((p) => [p.userId.toString(), p]));
@@ -1086,6 +1086,7 @@ export class ServicesService {
               jobTitle: profile?.jobTitle ?? null,
               phone: engineerPhone,
               whatsapp,
+              avatarUrl: profile?.avatarUrl ?? null,
             }
           : null,
       };
