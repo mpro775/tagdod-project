@@ -1,256 +1,263 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Button, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  useTheme,
-  Breadcrumbs,
-  Link,
-  Alert,
-} from '@mui/material';
-import { ArrowBack, Home, ChevronRight, Warning } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
-import { InventoryDashboard } from '../components/InventoryDashboard';
-import { VariantCard } from '../components/VariantCard';
-import { StockManager } from '../components/StockManager';
-import { PricingManager } from '../components/PricingManager';
+import {
+  PageShell,
+  PageHeader,
+  LoadingState,
+  ErrorState,
+  ResponsiveDataView,
+  usePageTitle,
+} from '@/shared/design-system';
+import { useInventorySummary, useLowStockVariants, useOutOfStockVariants } from '../hooks/useProducts';
 import type { Variant } from '../types/product.types';
+import { InventoryStatsCards } from '../components/admin/InventoryStatsCards';
+import { InventoryToolbar, type InventoryFilters } from '../components/admin/InventoryToolbar';
+import { InventoryAlertsSection } from '../components/admin/InventoryAlertsSection';
+import { InventoryItemsTable, type InventoryItem } from '../components/admin/InventoryItemsTable';
+import { InventoryItemCard } from '../components/admin/InventoryItemCard';
+import { InventoryVariantDetailsDrawer } from '../components/admin/InventoryVariantDetailsDrawer';
 
 export const InventoryPage: React.FC = () => {
-  const navigate = useNavigate();
-  const theme = useTheme();
-  const { t } = useTranslation(['products', 'common']);
-  const { isMobile } = useBreakpoint();
+  const { t } = useTranslation('products');
+  const pageTitle = t('inventory.title', 'إدارة المخزون');
+  usePageTitle(pageTitle);
+
+  const [filters, setFilters] = useState<InventoryFilters>({
+    search: '',
+    stockStatus: 'all',
+    itemType: 'all',
+    sortField: 'name',
+    sortOrder: 'asc',
+  });
+
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const handleVariantClick = (variant: Variant) => {
-    setSelectedVariant(variant);
-    setDetailDialogOpen(true);
-  };
+  const {
+    data: _summary,
+    isLoading: loadingSummary,
+    error: summaryError,
+    refetch: refetchSummary,
+  } = useInventorySummary();
 
-  const handleCloseDialog = () => {
-    setDetailDialogOpen(false);
+  const {
+    data: lowStockVariants,
+    isLoading: loadingLowStock,
+    refetch: refetchLowStock,
+  } = useLowStockVariants();
+
+  const {
+    data: outOfStockVariants,
+    isLoading: loadingOutOfStock,
+    refetch: refetchOutOfStock,
+  } = useOutOfStockVariants();
+
+  const isLoading = loadingSummary || loadingLowStock || loadingOutOfStock;
+
+  const handleCloseDrawer = useCallback(() => {
+    setDrawerOpen(false);
     setSelectedVariant(null);
-  };
+  }, []);
 
-  const handleStockUpdate = (updatedVariant: Variant) => {
+  const handleStockUpdate = useCallback((updatedVariant: Variant) => {
     setSelectedVariant(updatedVariant);
-  };
+    refetchSummary();
+    refetchLowStock();
+    refetchOutOfStock();
+  }, [refetchSummary, refetchLowStock, refetchOutOfStock]);
+
+  const handleAlertVariantClick = useCallback((variantId: string, _productId: string) => {
+    const variant = {
+      _id: variantId,
+      productId: _productId,
+    } as unknown as Variant;
+    setSelectedVariant(variant);
+    setDrawerOpen(true);
+  }, []);
+
+  const allInventoryItems = useMemo<InventoryItem[]>(() => {
+    const items: InventoryItem[] = [];
+
+    if (lowStockVariants) {
+      for (const item of lowStockVariants) {
+        const isLow = item.currentStock > 0;
+        items.push({
+          id: item.variantId,
+          name: item.variantName || item.sku || item.variantId,
+          sku: item.sku || '',
+          product: item.productName || item.productId,
+          productId: item.productId,
+          stock: item.currentStock,
+          minStock: item.minStock,
+          price: 0,
+          status: isLow ? 'low' : 'out',
+          isVariant: true,
+        });
+      }
+    }
+
+    if (outOfStockVariants) {
+      for (const item of outOfStockVariants) {
+        const existing = items.find((i) => i.id === item.variantId);
+        if (!existing) {
+          items.push({
+            id: item.variantId,
+            name: item.variantName || item.sku || item.variantId,
+            sku: item.sku || '',
+            product: item.productName || item.productId,
+            productId: item.productId,
+            stock: 0,
+            minStock: 0,
+            price: 0,
+            status: 'out',
+            isVariant: true,
+          });
+        }
+      }
+    }
+
+    let filtered = items;
+
+    if (filters.search) {
+      const search = filters.search.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.name.toLowerCase().includes(search) ||
+          item.sku.toLowerCase().includes(search),
+      );
+    }
+
+    if (filters.stockStatus !== 'all') {
+      filtered = filtered.filter((item) => {
+        if (filters.stockStatus === 'available') return item.status === 'available';
+        if (filters.stockStatus === 'low') return item.status === 'low';
+        if (filters.stockStatus === 'out') return item.status === 'out';
+        return true;
+      });
+    }
+
+    if (filters.itemType !== 'all') {
+      filtered = filtered.filter((item) => {
+        if (filters.itemType === 'variant') return item.isVariant;
+        if (filters.itemType === 'direct') return !item.isVariant;
+        return true;
+      });
+    }
+
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (filters.sortField) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name, 'ar');
+          break;
+        case 'sku':
+          comparison = a.sku.localeCompare(b.sku);
+          break;
+        case 'stock':
+          comparison = a.stock - b.stock;
+          break;
+        case 'price':
+          comparison = a.price - b.price;
+          break;
+        case 'updatedAt':
+          comparison = 0;
+          break;
+        default:
+          comparison = 0;
+      }
+      return filters.sortOrder === 'desc' ? -comparison : comparison;
+    });
+
+    return filtered;
+  }, [lowStockVariants, outOfStockVariants, filters]);
+
+  const handleViewItem = useCallback((item: InventoryItem) => {
+    const variant = {
+      _id: item.id,
+      productId: item.productId,
+      sku: item.sku,
+      stock: item.stock,
+      minStock: item.minStock,
+    } as unknown as Variant;
+    setSelectedVariant(variant);
+    setDrawerOpen(true);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <PageShell spacing="compact" fullHeight>
+        <PageHeader variant="compact" title={pageTitle} />
+        <LoadingState variant="skeleton" rows={6} />
+      </PageShell>
+    );
+  }
+
+  if (summaryError) {
+    return (
+      <PageShell spacing="compact" fullHeight>
+        <PageHeader variant="compact" title={pageTitle} />
+        <ErrorState
+          title={t('inventory.errorTitle', 'خطأ في تحميل المخزون')}
+          onRetry={() => {
+            refetchSummary();
+            refetchLowStock();
+            refetchOutOfStock();
+          }}
+        />
+      </PageShell>
+    );
+  }
 
   return (
-    <Box>
-      {/* Breadcrumbs */}
-      <Breadcrumbs 
-        separator={<ChevronRight fontSize="small" />} 
-        sx={{ mb: 2 }}
-        aria-label="breadcrumb"
-      >
-        <Link
-          color="inherit"
-          href="/products"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate('/products');
-          }}
-          sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
-        >
-          <Home sx={{ mr: 0.5 }} fontSize="inherit" />
-          {t('products:list.title', 'المنتجات')}
-        </Link>
-        <Typography color="text.primary">
-          {t('products:inventory.title', 'إدارة المخزون')}
-        </Typography>
-      </Breadcrumbs>
+    <PageShell spacing="compact" fullHeight>
+      <PageHeader
+        variant="compact"
+        title={pageTitle}
+        breadcrumbs={[
+          { label: t('navigation.dashboard', 'لوحة التحكم'), to: '/dashboard' },
+          { label: t('list.title', 'المنتجات'), to: '/products' },
+          { label: pageTitle },
+        ]}
+      />
 
-      {/* Stock Alerts Banner */}
-      <Alert 
-        severity="info" 
-        icon={<Warning />}
-        sx={{ mb: 2 }}
-        action={
-          <Button 
-            size="small" 
-            onClick={() => navigate('/products/inventory')}
-            sx={{ textDecoration: 'none' }}
-          >
-            {t('products:inventory.viewAll', 'عرض الكل')}
-          </Button>
-        }
-      >
-        {t('products:inventory.stockAlertsInfo', 'راقب المخزون المنخفض والمنتجات النافذة')}
-      </Alert>
+      <InventoryStatsCards compact />
 
-      {/* Header */}
-      <Box 
-        display="flex" 
-        alignItems="center" 
-        gap={2} 
-        mb={3}
-        flexDirection={isMobile ? 'column' : 'row'}
-        sx={{ 
-          alignItems: isMobile ? 'stretch' : 'center',
-        }}
-      >
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(-1)}
-          fullWidth={isMobile}
-          sx={{
-            backgroundColor: theme.palette.mode === 'dark' 
-              ? theme.palette.grey[800] 
-              : theme.palette.background.paper,
-            borderColor: theme.palette.mode === 'dark' 
-              ? theme.palette.grey[700] 
-              : theme.palette.divider,
-            '&:hover': {
-              backgroundColor: theme.palette.mode === 'dark' 
-                ? theme.palette.grey[700] 
-                : theme.palette.action.hover,
-              borderColor: theme.palette.mode === 'dark' 
-                ? theme.palette.grey[600] 
-                : theme.palette.primary.main,
-            },
-          }}
-        >
-          {t('products:inventory.backToProducts', 'العودة للمنتجات')}
-        </Button>
-        <Typography 
-          variant={isMobile ? 'h5' : 'h4'} 
-          component="h1"
-          sx={{ 
-            flex: isMobile ? 'none' : 1,
-            textAlign: isMobile ? 'center' : 'right',
-            color: theme.palette.text.primary,
-          }}
-        >
-          {t('products:inventory.title', 'إدارة المخزون')}
-        </Typography>
-      </Box>
+      <InventoryToolbar
+        filters={filters}
+        onFiltersChange={setFilters}
+        loading={isLoading}
+      />
 
-      {/* Inventory Dashboard */}
-      <InventoryDashboard onVariantClick={handleVariantClick} />
+      <InventoryAlertsSection onVariantClick={handleAlertVariantClick} />
 
-      {/* Variant Details Dialog */}
-      <Dialog
-        open={detailDialogOpen}
-        onClose={handleCloseDialog}
-        maxWidth="lg"
-        fullWidth
-        fullScreen={isMobile}
-        PaperProps={{
-          sx: {
-            backgroundColor: theme.palette.mode === 'dark' 
-              ? theme.palette.grey[900] 
-              : theme.palette.background.paper,
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            backgroundColor: theme.palette.mode === 'dark' 
-              ? theme.palette.grey[800] 
-              : theme.palette.grey[50],
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            pb: 2,
-          }}
-        >
-          <Typography 
-            variant={isMobile ? 'h6' : 'h5'} 
-            sx={{ 
-              color: theme.palette.text.primary,
-              mb: selectedVariant ? 1 : 0,
-            }}
-          >
-            {t('products:inventory.variantDetails', 'تفاصيل المتغير')}
-          </Typography>
-          {selectedVariant && (
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                color: theme.palette.text.secondary,
-                fontSize: isMobile ? '0.875rem' : '1rem',
-              }}
-            >
-              {selectedVariant.sku || t('products:variants.noSku', 'بدون SKU')}
-            </Typography>
-          )}
-        </DialogTitle>
-        <DialogContent
-          sx={{
-            backgroundColor: theme.palette.mode === 'dark' 
-              ? theme.palette.grey[900] 
-              : theme.palette.background.paper,
-            pt: 3,
-          }}
-        >
-          {selectedVariant && (
-            <Box display="flex" flexDirection="column" gap={3}>
-              {/* Variant Card */}
-              <VariantCard
-                variant={selectedVariant}
-                showActions={false}
-              />
+      <ResponsiveDataView
+        rows={allInventoryItems}
+        renderCard={(item: InventoryItem) => (
+          <InventoryItemCard item={item} onView={handleViewItem} />
+        )}
+        renderTable={(rows: InventoryItem[]) => (
+          <InventoryItemsTable
+            rows={rows as InventoryItem[]}
+            loading={isLoading}
+            paginationModel={{ page: 0, pageSize: 20 }}
+            onPaginationModelChange={() => {}}
+            sortModel={[]}
+            onSortModelChange={() => {}}
+            onView={handleViewItem}
+          />
+        )}
+        loading={false}
+        emptyTitle={t('inventory.empty', 'لا توجد عناصر في المخزون')}
+        emptyDescription={t('inventory.emptyDescription', 'لم يتم العثور على عناصر تطابق معايير البحث')}
+        getRowId={(row: InventoryItem) => row.id}
+      />
 
-              {/* Management Components */}
-              <Box 
-                display="grid" 
-                gap={2}
-                sx={{
-                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                }}
-              >
-                <StockManager
-                  variant={selectedVariant}
-                  onStockUpdate={handleStockUpdate}
-                />
-                <PricingManager
-                  variant={selectedVariant}
-                  productId={selectedVariant.productId}
-                />
-              </Box>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions
-          sx={{
-            backgroundColor: theme.palette.mode === 'dark' 
-              ? theme.palette.grey[800] 
-              : theme.palette.grey[50],
-            borderTop: `1px solid ${theme.palette.divider}`,
-            pt: 2,
-            px: 3,
-            pb: 2,
-            flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? 1 : 0,
-          }}
-        >
-          <Button 
-            onClick={handleCloseDialog}
-            variant="contained"
-            fullWidth={isMobile}
-            sx={{
-              backgroundColor: theme.palette.mode === 'dark' 
-                ? theme.palette.primary.dark 
-                : theme.palette.primary.main,
-              '&:hover': {
-                backgroundColor: theme.palette.mode === 'dark' 
-                  ? theme.palette.primary.main 
-                  : theme.palette.primary.dark,
-              },
-            }}
-          >
-            {t('common:actions.close', 'إغلاق')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <InventoryVariantDetailsDrawer
+        open={drawerOpen}
+        onClose={handleCloseDrawer}
+        variant={selectedVariant}
+        onStockUpdate={handleStockUpdate}
+      />
+    </PageShell>
   );
 };

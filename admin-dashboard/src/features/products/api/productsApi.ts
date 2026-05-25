@@ -86,16 +86,27 @@ export const productsApi = {
     });
     const payload = response.data.data as any;
     const inner = payload?.data ?? payload;
-    if (!inner) return { total: 0, active: 0, draft: 0, archived: 0, featured: 0, new: 0 };
+    if (!inner) return {
+      total: 0, active: 0, draft: 0, archived: 0, featured: 0,
+      newProducts: 0, withOffers: 0, lowStock: 0, outOfStock: 0,
+      withoutImages: 0, withoutSku: 0, withoutCategory: 0, withoutBrand: 0, withoutVariants: 0,
+    };
     return {
       total: inner.total ?? 0,
       active: inner.active ?? 0,
       featured: inner.featured ?? 0,
-      new: inner.new ?? inner.newProducts ?? 0,
+      newProducts: inner.newProducts ?? inner.new ?? 0,
       draft: inner.draft ?? inner.byStatus?.draft ?? 0,
       archived: inner.archived ?? inner.byStatus?.archived ?? 0,
+      withOffers: inner.withOffers ?? 0,
       lowStock: inner.lowStock ?? 0,
       outOfStock: inner.outOfStock ?? 0,
+      withoutImages: inner.withoutImages ?? 0,
+      withoutSku: inner.withoutSku ?? 0,
+      withoutCategory: inner.withoutCategory ?? 0,
+      withoutBrand: inner.withoutBrand ?? 0,
+      withoutVariants: inner.withoutVariants ?? 0,
+      inventoryValueUSD: inner.inventoryValueUSD ?? undefined,
     };
   },
 

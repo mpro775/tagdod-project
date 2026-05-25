@@ -1,19 +1,12 @@
-/**
- * Inventory Integration Types
- * Types for Onyx inventory integration API responses
- */
-
-// إحصائيات لوحة التكامل
 export interface IntegrationStats {
-    onyxTotalItems: number;      // إجمالي أصناف أونكس
-    fullySynced: number;         // المربوطة بنجاح
-    notLinkedOpportunities: number; // غير المربوطة (الفرص)
+    onyxTotalItems: number;
+    fullySynced: number;
+    notLinkedOpportunities: number;
     lastUpdate: {
-        lastSyncedAt: string;      // تاريخ آخر تحديث
+        lastSyncedAt: string;
     } | null;
 }
 
-// رد API مُرقَّم (Paginated)
 export interface PaginatedResponse<T> {
     data: T[];
     total: number;
@@ -26,7 +19,23 @@ export interface LinkedPaginatedResponse extends PaginatedResponse<LinkedItem> {
     limit?: number;
 }
 
-// نتيجة فحص SKU
+export interface LinkedProductsParams {
+    limit?: number;
+    page?: number;
+    search?: string;
+    status?: 'all' | 'matched' | 'mismatched';
+    sort?: string;
+    sortOrder?: 'asc' | 'desc';
+}
+
+export interface UnlinkedProductsParams {
+    limit?: number;
+    page?: number;
+    search?: string;
+    sort?: string;
+    sortOrder?: 'asc' | 'desc';
+}
+
 export interface SkuCheckResult {
     existsInOnyx: boolean;
     onyxStock?: number;
@@ -34,14 +43,16 @@ export interface SkuCheckResult {
     message: string;
 }
 
-// صنف غير مربوط
 export interface UnlinkedItem {
     _id: string;
     sku: string;
     quantity: number;
-    itemNameAr?: string; // ✅ تأكد من وجود هذا السطر ومطابقته للباك إند
+    itemNameAr?: string;
     suggestion: string;
+    price?: number;
+    lastSyncedAt?: string;
 }
+
 export interface LinkedItem {
     sku: string;
     onyxName?: string;
@@ -50,4 +61,9 @@ export interface LinkedItem {
     appStock: number;
     lastSynced: string;
     isVariant: boolean;
+    stockDifference: number;
+    isStockMatch: boolean;
+    linkType: 'product' | 'variant';
+    productId?: string;
+    variantId?: string;
 }

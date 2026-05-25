@@ -780,12 +780,8 @@ export class ProductService {
       filter.isNew = isNew;
     }
 
-    if (hasOffer !== undefined && offerScope) {
-      if (offerScope.global) {
-        if (hasOffer === false) {
-          filter._id = { $in: [] };
-        }
-      } else {
+    if (hasOffer !== undefined) {
+      if (offerScope && offerScope.productIds && offerScope.productIds.length > 0) {
         const ids = offerScope.productIds || [];
         const values = ids.flatMap((id: string) =>
           Types.ObjectId.isValid(id) ? [new Types.ObjectId(id), id] : [id],
@@ -795,6 +791,18 @@ export class ProductService {
           filter._id = { $in: values };
         } else {
           filter._id = { $nin: values };
+        }
+      } else {
+        // Fallback: use price-based comparison when no marketing rules available
+        if (hasOffer === true) {
+          filter.$expr = { $gt: ['$compareAtPriceUSD', '$basePriceUSD'] };
+        } else {
+          filter.$or = [
+            { compareAtPriceUSD: { $exists: false } },
+            { compareAtPriceUSD: null },
+            { compareAtPriceUSD: 0 },
+            { $expr: { $lte: ['$compareAtPriceUSD', '$basePriceUSD'] } },
+          ];
         }
       }
     }
@@ -1243,7 +1251,7 @@ export class ProductService {
     await this.productModel.updateOne({ _id: id }, { $set: { variantsCount } });
   }
 
-  async getStats(startDate?: string, endDate?: string): Promise<{ data: { total: number; active: number; featured: number; newProducts: number; byStatus: Record<ProductStatus, number>; draft: number; archived: number; lowStock: number; outOfStock: number } }> {
+  async getStats(startDate?: string, endDate?: string): Promise<{ data: { total: number; active: number; featured: number; newProducts: number; byStatus: Record<ProductStatus, number>; draft: number; archived: number; lowStock: number; outOfStock: number; withOffers: number; withoutImages: number; withoutSku: number; withoutCategory: number; withoutBrand: number; withoutVariants: number } }> {
     const dateFilter: Record<string, unknown> = { deletedAt: null };
     if (startDate || endDate) {
       dateFilter.createdAt = {};
@@ -1251,7 +1259,19 @@ export class ProductService {
       if (endDate) (dateFilter.createdAt as Record<string, Date>).$lte = new Date(endDate);
     }
 
-    const [total, active, featured, newProducts, byStatus] = await Promise.all([
+    const [
+      total,
+      active,
+      featured,
+      newProducts,
+      byStatus,
+      withOffers,
+      withoutImages,
+      withoutSku,
+      withoutCategory,
+      withoutBrand,
+      withoutVariants,
+    ] = await Promise.all([
       this.productModel.countDocuments({ ...dateFilter }),
       this.productModel.countDocuments({ status: ProductStatus.ACTIVE, ...dateFilter }),
       this.productModel.countDocuments({ isFeatured: true, ...dateFilter }),
@@ -1260,6 +1280,46 @@ export class ProductService {
         { $match: { ...dateFilter } },
         { $group: { _id: '$status', count: { $sum: 1 } } },
       ]),
+      this.productModel.countDocuments({
+        ...dateFilter,
+        $expr: { $gt: ['$compareAtPriceUSD', '$basePriceUSD'] },
+      }),
+      this.productModel.countDocuments({
+        ...dateFilter,
+        $or: [
+          { mainImageId: { $exists: false } },
+          { mainImageId: null },
+          { mainImageId: '' },
+        ],
+      }),
+      this.productModel.countDocuments({
+        ...dateFilter,
+        $or: [
+          { sku: { $exists: false } },
+          { sku: null },
+          { sku: '' },
+        ],
+      }),
+      this.productModel.countDocuments({
+        ...dateFilter,
+        $or: [
+          { categoryId: { $exists: false } },
+          { categoryId: null },
+          { categoryId: '' },
+        ],
+      }),
+      this.productModel.countDocuments({
+        ...dateFilter,
+        $or: [
+          { brandId: { $exists: false } },
+          { brandId: null },
+          { brandId: '' },
+        ],
+      }),
+      this.productModel.countDocuments({
+        ...dateFilter,
+        variantsCount: { $lte: 0 },
+      }),
     ]);
 
     const statusStats: Record<ProductStatus, number> = {
@@ -1299,6 +1359,12 @@ export class ProductService {
         archived: statusStats.archived,
         lowStock: lowStockCount,
         outOfStock: outOfStockCount,
+        withOffers,
+        withoutImages,
+        withoutSku,
+        withoutCategory,
+        withoutBrand,
+        withoutVariants,
       },
     };
   }

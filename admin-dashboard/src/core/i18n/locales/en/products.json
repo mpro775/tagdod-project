@@ -13,7 +13,16 @@
       "brand": "Brand",
       "featured": "Featured",
       "new": "New",
-      "bestseller": "Bestseller"
+"bestseller": "Bestseller",
+      "hasOffer": "Offers",
+      "withOffer": "On Sale",
+      "withoutOffer": "No Sale",
+      "stockStatus": "Stock Status",
+      "linkedStatus": "Link Status",
+      "matched": "Matched",
+      "mismatched": "Mismatched",
+      "highStock": "High Stock",
+      "clearFilters": "Clear Filters"
     },
     "columns": {
       "product": "Product",
@@ -203,6 +212,30 @@
     "draft": "Drafts",
     "lowStock": "Low Stock",
     "outOfStock": "Out of Stock",
+    "withOffers": "On Sale",
+    "withoutImages": "No Image",
+    "withoutSku": "No SKU",
+    "withoutCategory": "No Category",
+    "withoutBrand": "No Brand",
+    "withoutVariants": "No Variants",
+    "inventoryValue": "Inventory Value",
+    "featured": "Featured",
+    "newProducts": "New",
+    "archived": "Archived",
+    "dateFrom": "From Date",
+    "dateTo": "To Date",
+    "metric": "Metric",
+    "value": "Value",
+    "status": "Status",
+    "count": "Count",
+    "statusSheet": "By Status",
+    "inventorySheet": "Inventory",
+    "dateRangeSheet": "Date Range",
+    "overviewSheet": "Overview",
+    "ofTotal": "of total",
+    "exportSuccess": "Data exported successfully",
+    "exportError": "Error exporting data",
+    "noDataToExport": "No data to export",
     "views": "Views",
     "sales": "Sales",
     "variants": "Variant",
@@ -267,7 +300,18 @@
     "featured": "Featured",
     "new": "New",
     "bestseller": "Bestseller",
-    "hasOffer": "Offers"
+    "hasOffer": "On Sale"
+  },
+  "actions": {
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "restore": "Restore",
+    "variants": "Variants",
+    "clearFilters": "Clear Filters",
+    "syncNow": "Sync Now",
+    "addAsProduct": "Add as Product",
+    "viewVariants": "Variants"
   },
   "filter": {
     "search": "Search",
@@ -356,5 +400,94 @@
       "notSpecified": "Not specified"
     },
     "notSpecified": "Not specified"
+  },
+  "integration": {
+    "title": "Inventory Integration",
+    "subtitle": "Overview of inventory integration with Onyx system",
+    "error": "Failed to load data. Make sure the local Onyx server is running.",
+    "viewOpportunities": "View Details",
+    "howItWorks": "How does integration work?",
+    "step1": "1. Local script sends data",
+    "step2": "2. System saves to shadow inventory",
+    "step3": "3. Linked products update automatically",
+    "tip": "Tip: Items in \"Add Opportunities\" exist in Onyx but haven't been added to the site yet. Add them to enable automatic linking.",
+    "cards": {
+      "totalOnyx": "Total Onyx Items",
+      "synced": "Successfully Linked",
+      "opportunities": "Add Opportunities",
+      "lastSync": "Last Update",
+      "noSync": "Never synced",
+      "justNow": "Just now",
+      "minsAgo": "{{count}} min ago",
+      "hoursAgo": "{{count}} hr ago",
+      "daysAgo": "{{count}} day ago"
+    },
+    "unlinked": {
+      "title": "Unlinked Products",
+      "subtitle": "Items in Onyx that haven't been added to the site yet. Add them to benefit from automatic linking.",
+      "search": "Search by item code...",
+      "totalCount": "Total: {{count}} items",
+      "filteredCount": "Search results: {{count}}",
+      "noResults": "No results found",
+      "empty": "No unlinked items 🎉",
+      "noName": "No name",
+      "createProduct": "Add as Product",
+      "tip": "Clicking \"Add as Product\" will take you to a new product form with SKU and quantity pre-filled.",
+      "totalLabel": "Total Opportunities",
+      "opportunityLabel": "Add Opportunities",
+      "itemUnit": "items",
+      "columns": {
+        "sku": "Item Code (SKU)",
+        "name": "Name",
+        "quantity": "Quantity",
+        "price": "Price",
+        "lastSynced": "Last Synced",
+        "action": "Action"
+      },
+      "filter": {
+        "sortBy": "Sort by",
+        "sortOrder": "Order",
+        "sort": "Sort"
+      }
+    },
+    "skuCheck": {
+      "checking": "Checking item code...",
+      "found": "Verified: Item exists in Onyx with current quantity {{quantity}}. Stock will be linked automatically.",
+      "notFound": "Warning: This code does not exist in current Onyx inventory.",
+      "stockManaged": "Stock is managed automatically from Onyx system"
+    },
+    "linked": {
+      "title": "Linked Products",
+      "subtitle": "Products that are automatically synced with Onyx",
+      "search": "Search by SKU or product name...",
+      "totalCount": "Total: {{count}} products",
+      "matchedCount": "Matched: {{count}}",
+      "mismatchedCount": "Mismatched: {{count}}",
+      "totalLabel": "Total Linked",
+      "matchedLabel": "Matched",
+      "mismatchedLabel": "Mismatched",
+      "productUnit": "products",
+      "tip": "These products have their stock updated automatically when new data is received from the Onyx system.",
+      "noResults": "No results",
+      "columns": {
+        "sku": "SKU",
+        "onyxName": "Onyx Name",
+        "appName": "App Name",
+        "onyxStock": "Onyx Stock",
+        "appStock": "App Stock",
+        "status": "Status",
+        "difference": "Difference",
+        "lastSynced": "Last Synced"
+      },
+      "filter": {
+        "allStatus": "All",
+        "matched": "Matched",
+        "mismatched": "Mismatched",
+        "statusLabel": "Status",
+        "sortBy": "Sort by",
+        "sortOrder": "Order",
+        "sort": "Sort"
+      }
+    }
   }
 }

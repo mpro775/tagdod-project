@@ -1,68 +1,49 @@
-/**
- * Unlinked Products Page
- * صفحة المنتجات غير المربوطة (فرص الإضافة)
- */
-
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Sync } from '@mui/icons-material';
 import {
-    Box,
-    Typography,
-    Button,
-    Alert,
-    Chip,
-    Tooltip,
-    Card,
-    CardContent,
-    Grid,
-    CircularProgress,
-    TextField,
-    InputAdornment,
-    Pagination,
-} from '@mui/material';
-import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-import {
-    Add,
-    Refresh,
-    Home,
-    ChevronRight,
-    Inventory,
-    ArrowBack,
-    Search,
-} from '@mui/icons-material';
-import { Breadcrumbs, Link } from '@mui/material';
+    PageShell,
+    PageHeader,
+    LoadingState,
+    ErrorState,
+    ResponsiveDataView,
+    usePageTitle,
+} from '@/shared/design-system';
 import { DataTable } from '@/shared/components';
 import { useUnlinkedItems } from '../hooks/useInventoryIntegration';
-import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
 import type { UnlinkedItem } from '../types/inventory-integration.types';
+import { UnlinkedProductsStatsCards } from '../components/admin/UnlinkedProductsStatsCards';
+import { UnlinkedProductsToolbar, type UnlinkedProductsFilters } from '../components/admin/UnlinkedProductsToolbar';
+import { useUnlinkedProductsTableColumns } from '../components/admin/UnlinkedProductsTableColumns';
+import { UnlinkedOpportunityCard } from '../components/admin/UnlinkedOpportunityCard';
 
 export const UnlinkedProductsPage: React.FC = () => {
     const { t } = useTranslation(['products', 'common']);
     const navigate = useNavigate();
-    const { isMobile } = useBreakpoint();
-    const [searchQuery, setSearchQuery] = React.useState('');
-    const [paginationModel, setPaginationModel] = React.useState({ page: 0, pageSize: 25 });
-    const normalizedSearchQuery = searchQuery.trim();
+    const pageTitle = t('products:integration.unlinked.title', 'فرص الإضافة');
+    usePageTitle(pageTitle);
 
-    // تحميل البيانات من السيرفر حسب الصفحة الحالية
-    const { data: response, isLoading, error, refetch } = useUnlinkedItems(
-        paginationModel.pageSize,
-        paginationModel.page + 1,
-        normalizedSearchQuery
-    );
+    const [filters, setFilters] = useState<UnlinkedProductsFilters>({
+        search: '',
+        sortField: 'quantity',
+        sortOrder: 'desc',
+    });
 
-    // استخراج البيانات من الاستجابة الجديدة
+    const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
+
+    const { data: response, isLoading, error, refetch } = useUnlinkedItems({
+        limit: paginationModel.pageSize,
+        page: paginationModel.page + 1,
+        search: filters.search,
+        sort: filters.sortField,
+        sortOrder: filters.sortOrder,
+    });
+
     const items = response?.data || [];
     const totalCount = response?.total || 0;
 
-    const handleSearchChange = React.useCallback((query: string) => {
-        setSearchQuery(query);
-        setPaginationModel((prev) => ({ ...prev, page: 0 }));
-    }, []);
-
-    // Handle create product action
-    const handleCreateProduct = (item: UnlinkedItem) => {
+    const handleCreateProduct = useCallback((item: UnlinkedItem) => {
         navigate('/products/new', {
             state: {
                 prefillSku: item.sku,
@@ -70,322 +51,78 @@ export const UnlinkedProductsPage: React.FC = () => {
                 prefillName: item.itemNameAr,
             },
         });
-    };
+    }, [navigate]);
 
-    // Define columns for DataTable
-    const columns: GridColDef[] = [
-        {
-            field: 'sku',
-            headerName: t('products:integration.unlinked.columns.sku', 'رمز الصنف (SKU)'),
-            flex: 1,
-            minWidth: 120,
-            renderCell: (params: GridRenderCellParams<UnlinkedItem>) => (
-                <Chip
-                    label={params.value}
-                    size="small"
-                    variant="outlined"
-                    sx={{ fontFamily: 'monospace' }}
-                />
-            ),
-        },
-        {
-            field: 'itemNameAr',
-            headerName: t('products:integration.unlinked.columns.name', 'الاسم'),
-            flex: 2,
-            minWidth: 200,
-            renderCell: (params: GridRenderCellParams<UnlinkedItem>) => (
-                <Typography variant="body2" noWrap>
-                    {params.value || (
-                        <Typography component="span" variant="body2" color="text.secondary" fontStyle="italic">
-                            {t('products:integration.unlinked.noName', 'بدون اسم')}
-                        </Typography>
-                    )}
-                </Typography>
-            ),
-        },
-        {
-            field: 'quantity',
-            headerName: t('products:integration.unlinked.columns.quantity', 'الكمية'),
-            width: 120,
-            align: 'center',
-            headerAlign: 'center',
-            renderCell: (params: GridRenderCellParams<UnlinkedItem>) => (
-                <Chip
-                    label={params.value?.toLocaleString('en-US') ?? 0}
-                    color={params.value > 0 ? 'success' : 'default'}
-                    size="small"
-                />
-            ),
-        },
-        {
-            field: 'actions',
-            headerName: t('products:integration.unlinked.columns.action', 'إجراء'),
-            width: 150,
-            align: 'center',
-            headerAlign: 'center',
-            sortable: false,
-            renderCell: (params: GridRenderCellParams<UnlinkedItem>) => (
-                <Tooltip title={t('products:integration.unlinked.createProduct', 'إضافة كمنتج جديد')}>
-                    <Button
-                        variant="contained"
-                        size="small"
-                        color="primary"
-                        startIcon={<Add />}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleCreateProduct(params.row as UnlinkedItem);
-                        }}
-                    >
-                        {t('products:integration.unlinked.createProduct', 'إضافة كمنتج')}
-                    </Button>
-                </Tooltip>
-            ),
-        },
-    ];
-
-    // Mobile Card Component
-    const UnlinkedItemCard = ({ item }: { item: UnlinkedItem }) => {
-        return (
-            <Card
-                variant="outlined"
-                sx={{
-                    height: '100%',
-                    borderColor: 'warning.light',
-                    borderWidth: 2,
-                }}
-            >
-                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                    {/* SKU */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                        <Chip
-                            label={item.sku}
-                            size="small"
-                            variant="outlined"
-                            sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
-                        />
-                        <Chip
-                            label={item.quantity?.toLocaleString('en-US') ?? 0}
-                            color={item.quantity > 0 ? 'success' : 'default'}
-                            size="small"
-                        />
-                    </Box>
-
-                    {/* Name */}
-                    <Typography variant="body2" fontWeight="bold" noWrap sx={{ mb: 1 }}>
-                        {item.itemNameAr || (
-                            <Typography component="span" variant="body2" color="text.secondary" fontStyle="italic">
-                                {t('products:integration.unlinked.noName', 'بدون اسم')}
-                            </Typography>
-                        )}
-                    </Typography>
-
-                    {/* Quantity Label */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                        <Inventory sx={{ fontSize: 18, color: 'text.secondary' }} />
-                        <Typography variant="body2" color="text.secondary">
-                            {t('products:integration.unlinked.columns.quantity', 'الكمية')}:
-                            <Typography component="span" fontWeight="bold" color="text.primary" sx={{ ml: 0.5 }}>
-                                {item.quantity?.toLocaleString('ar-SA') ?? 0}
-                            </Typography>
-                        </Typography>
-                    </Box>
-
-                    {/* Action Button */}
-                    <Button
-                        variant="contained"
-                        size="small"
-                        color="primary"
-                        startIcon={<Add />}
-                        onClick={() => handleCreateProduct(item)}
-                        fullWidth
-                    >
-                        {t('products:integration.unlinked.createProduct', 'إضافة كمنتج')}
-                    </Button>
-                </CardContent>
-            </Card>
-        );
-    };
+    const columns = useUnlinkedProductsTableColumns({
+        onCreateProduct: handleCreateProduct,
+    });
 
     return (
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>
-            {/* Breadcrumbs */}
-            <Breadcrumbs separator={<ChevronRight fontSize="small" />} sx={{ mb: 3 }}>
-                <Link
-                    component="button"
-                    underline="hover"
-                    color="inherit"
-                    onClick={() => navigate('/')}
-                    sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                >
-                    <Home fontSize="small" />
-                    {t('common:navigation.home', 'الرئيسية')}
-                </Link>
-                <Link
-                    component="button"
-                    underline="hover"
-                    color="inherit"
-                    onClick={() => navigate('/products')}
-                >
-                    {t('products:title', 'المنتجات')}
-                </Link>
-                <Link
-                    component="button"
-                    underline="hover"
-                    color="inherit"
-                    onClick={() => navigate('/products/integration')}
-                >
-                    {t('products:integration.title', 'ربط المخزون')}
-                </Link>
-                <Typography color="text.primary">
-                    {t('products:integration.unlinked.title', 'فرص الإضافة')}
-                </Typography>
-            </Breadcrumbs>
-
-            {/* Page Header */}
-            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-                <Box>
-                    <Button
-                        startIcon={<ArrowBack />}
-                        onClick={() => navigate('/products/integration')}
-                        sx={{ mb: 1 }}
-                    >
-                        {t('common:actions.back', 'رجوع')}
-                    </Button>
-                    <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight="bold" gutterBottom>
-                        <Inventory sx={{ mr: 1, verticalAlign: 'middle', color: 'warning.main' }} />
-                        {t('products:integration.unlinked.title', 'المنتجات غير المربوطة')}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                        {t(
-                            'products:integration.unlinked.subtitle',
-                            'أصناف موجودة في نظام أونكس ولم تُضف للموقع بعد. أضفها للاستفادة من الربط التلقائي.'
-                        )}
-                    </Typography>
-                </Box>
-                <Button
-                    variant="outlined"
-                    startIcon={<Refresh />}
-                    onClick={() => refetch()}
-                    disabled={isLoading}
-                >
-                    {t('common:actions.refresh', 'تحديث')}
-                </Button>
-            </Box>
-
-            {/* Summary Stats */}
-            <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Chip
-                    label={`${t('products:integration.unlinked.totalLabel', 'إجمالي')}: ${totalCount.toLocaleString('ar-SA')} ${t('products:integration.unlinked.itemUnit', 'صنف')}`}
-                    color="warning"
-                    variant="outlined"
-                />
-                <Chip
-                    label={`${t('products:integration.unlinked.displayedLabel', 'معروض')}: ${items.length}`}
-                    variant="outlined"
-                    size="small"
-                />
-                {normalizedSearchQuery && (
-                    <Chip
-                        label={`${t('products:integration.unlinked.filteredLabel', 'نتائج البحث')}: ${totalCount}`}
-                        color="primary"
-                        variant="outlined"
-                    />
+        <PageShell spacing="compact" fullHeight>
+            <PageHeader
+                variant="compact"
+                title={pageTitle}
+                description={t(
+                    'products:integration.unlinked.subtitle',
+                    'أصناف موجودة في نظام أونكس ولم تُضف للموقع بعد. أضفها للاستفادة من الربط التلقائي.'
                 )}
-            </Box>
+                breadcrumbs={[
+                    { label: t('common:navigation.home', 'الرئيسية'), to: '/' },
+                    { label: t('products:title', 'المنتجات'), to: '/products' },
+                    { label: t('products:integration.title', 'ربط المخزون'), to: '/products/integration' },
+                    { label: pageTitle },
+                ]}
+                actions={[
+                    {
+                        label: t('common:actions.refresh', 'تحديث'),
+                        icon: <Sync fontSize="small" />,
+                        onClick: () => refetch(),
+                        variant: 'secondary',
+                    },
+                ]}
+            />
 
-            {/* Mobile Search */}
-            {isMobile && (
-                <TextField
-                    fullWidth
-                    size="small"
-                    placeholder={t('products:integration.unlinked.search', 'بحث برمز الصنف...')}
-                    value={searchQuery}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <Search />
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-            )}
+            <UnlinkedProductsStatsCards total={totalCount} loading={isLoading} compact />
 
-            {/* Error Alert */}
-            {error && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                    {t('products:integration.error', 'حدث خطأ في جلب البيانات.')}
-                </Alert>
-            )}
+            <UnlinkedProductsToolbar
+                filters={filters}
+                onFiltersChange={setFilters}
+                loading={isLoading}
+            />
 
-            {/* Content - Cards for Mobile, DataTable for Desktop */}
             {isLoading ? (
-                <Box display="flex" justifyContent="center" p={4}>
-                    <CircularProgress />
-                </Box>
-            ) : isMobile ? (
-                /* Mobile Card Layout */
-                <>
-                    <Grid container spacing={2}>
-                        {items.length > 0 ? (
-                            items.map((item) => (
-                                <Grid size={{ xs: 12 }} key={item._id || item.sku}>
-                                    <UnlinkedItemCard item={item} />
-                                </Grid>
-                            ))
-                        ) : (
-                            <Grid size={{ xs: 12 }}>
-                                <Alert severity="info">
-                                    {t('products:integration.unlinked.noResults', 'لا توجد نتائج')}
-                                </Alert>
-                            </Grid>
-                        )}
-                    </Grid>
-
-                    {totalCount > paginationModel.pageSize && (
-                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-                            <Pagination
-                                count={Math.max(1, Math.ceil(totalCount / paginationModel.pageSize))}
-                                page={paginationModel.page + 1}
-                                onChange={(_event, page) =>
-                                    setPaginationModel((prev) => ({ ...prev, page: Math.max(0, page - 1) }))
-                                }
-                                color="primary"
-                                shape="rounded"
-                                showFirstButton
-                                showLastButton
-                                size="small"
-                            />
-                        </Box>
-                    )}
-                </>
+                <LoadingState variant="skeleton" rows={5} />
+            ) : error ? (
+                <ErrorState
+                    title={t('products:integration.error', 'حدث خطأ في جلب البيانات')}
+                    onRetry={() => refetch()}
+                />
             ) : (
-                /* Desktop DataTable */
-                <DataTable
-                    columns={columns}
+                <ResponsiveDataView
                     rows={items}
-                    loading={isLoading}
-                    paginationModel={paginationModel}
-                    onPaginationModelChange={setPaginationModel}
-                    paginationMode="server"
-                    rowCount={totalCount}
-                    getRowId={(row) => (row as UnlinkedItem)._id || (row as UnlinkedItem).sku}
-                    onSearch={handleSearchChange}
-                    searchPlaceholder={t('products:integration.unlinked.search', 'بحث برمز الصنف...')}
-                    sortingMode="client"
-                    sortModel={[{ field: 'quantity', sort: 'desc' }]}
-                    height={600}
+                    columns={columns}
+                    renderCard={(item: UnlinkedItem) => (
+                        <UnlinkedOpportunityCard item={item} onCreateProduct={handleCreateProduct} />
+                    )}
+                    renderTable={(rows: UnlinkedItem[]) => (
+                        <DataTable
+                            columns={columns}
+                            rows={rows}
+                            loading={false}
+                            paginationModel={paginationModel}
+                            onPaginationModelChange={setPaginationModel}
+                            paginationMode="server"
+                            rowCount={totalCount}
+                            getRowId={(row) => (row as UnlinkedItem)._id || (row as UnlinkedItem).sku}
+                            height={600}
+                        />
+                    )}
+                    loading={false}
+                    emptyTitle={t('products:integration.unlinked.empty', 'لا توجد أصناف غير مربوطة 🎉')}
+                    emptyDescription={t('products:integration.unlinked.noResults', 'لا توجد نتائج للبحث')}
+                    getRowId={(row: UnlinkedItem) => row._id || row.sku}
                 />
             )}
-
-            {/* Info Alert */}
-            <Alert severity="info" sx={{ mt: 3 }}>
-                {t(
-                    'products:integration.unlinked.tip',
-                    'عند الضغط على "إضافة كمنتج"، سيتم نقلك لصفحة إضافة منتج جديد مع تعبئة رمز الصنف والكمية تلقائياً.'
-                )}
-            </Alert>
-        </Box>
+        </PageShell>
     );
 };

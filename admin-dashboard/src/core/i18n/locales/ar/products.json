@@ -13,7 +13,16 @@
       "brand": "العلامة التجارية",
       "featured": "مميز",
       "new": "جديد",
-      "bestseller": "الأكثر مبيعاً"
+"bestseller": "الأكثر مبيعاً",
+      "hasOffer": "العروض",
+      "withOffer": "عليها عرض",
+      "withoutOffer": "بدون عرض",
+      "stockStatus": "حالة المخزون",
+      "linkedStatus": "حالة الربط",
+      "matched": "متطابق",
+      "mismatched": "فيه اختلاف",
+      "highStock": "كمية عالية",
+      "clearFilters": "مسح الفلاتر"
     },
     "columns": {
       "product": "المنتج",
@@ -203,6 +212,30 @@
     "draft": "المسودات",
     "lowStock": "مخزون منخفض",
     "outOfStock": "نفذ من المخزون",
+    "withOffers": "عليها عروض",
+    "withoutImages": "بدون صور",
+    "withoutSku": "بدون SKU",
+    "withoutCategory": "بدون فئة",
+    "withoutBrand": "بدون علامة تجارية",
+    "withoutVariants": "بدون متغيرات",
+    "inventoryValue": "قيمة المخزون",
+    "featured": "مميزة",
+    "newProducts": "جديدة",
+    "archived": "مؤرشفة",
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "metric": "المقياس",
+    "value": "القيمة",
+    "status": "الحالة",
+    "count": "العدد",
+    "statusSheet": "حسب الحالة",
+    "inventorySheet": "المخزون",
+    "dateRangeSheet": "نطاق التاريخ",
+    "overviewSheet": "إحصائيات عامة",
+    "ofTotal": "من الإجمالي",
+    "exportSuccess": "تم تصدير البيانات بنجاح",
+    "exportError": "حدث خطأ أثناء تصدير البيانات",
+    "noDataToExport": "لا توجد بيانات للتصدير",
     "views": "مشاهدة",
     "sales": "مبيعات",
     "variants": "متغير",
@@ -268,7 +301,18 @@
     "sar": "ريال سعودي",
     "eur": "يورو"
   },
-  "badges": {
+  "actions": {
+      "view": "عرض",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "restore": "استعادة",
+      "variants": "المتغيرات",
+      "clearFilters": "مسح الفلاتر",
+      "syncNow": "مزامنة الآن",
+      "addAsProduct": "إضافة كمنتج",
+      "viewVariants": "المتغيرات"
+    },
+    "badges": {
     "featured": "مميز",
     "new": "جديد",
     "bestseller": "الأكثر مبيعاً",
@@ -389,11 +433,21 @@
       "noName": "بدون اسم",
       "createProduct": "إضافة كمنتج",
       "tip": "عند الضغط على \"إضافة كمنتج\"، سيتم نقلك لصفحة إضافة منتج جديد مع تعبئة رمز الصنف والكمية تلقائياً.",
+      "totalLabel": "إجمالي الفرص",
+      "opportunityLabel": "فرص الإضافة",
+      "itemUnit": "صنف",
       "columns": {
         "sku": "رمز الصنف (SKU)",
         "name": "الاسم",
         "quantity": "الكمية",
+        "price": "السعر",
+        "lastSynced": "آخر مزامنة",
         "action": "إجراء"
+      },
+      "filter": {
+        "sortBy": "ترتيب حسب",
+        "sortOrder": "الاتجاه",
+        "sort": "ترتيب"
       }
     },
     "skuCheck": {
@@ -409,14 +463,30 @@
       "totalCount": "إجمالي: {{count}} منتج",
       "matchedCount": "متطابق: {{count}}",
       "mismatchedCount": "اختلاف: {{count}}",
+      "totalLabel": "إجمالي المربوطة",
+      "matchedLabel": "متطابق",
+      "mismatchedLabel": "اختلاف",
+      "productUnit": "منتج",
       "tip": "هذه المنتجات يتم تحديث مخزونها تلقائياً عند استلام بيانات جديدة من نظام أونكس.",
+      "noResults": "لا توجد نتائج",
       "columns": {
         "sku": "SKU",
         "onyxName": "اسم أونكس",
         "appName": "اسم التطبيق",
         "onyxStock": "مخزون أونكس",
         "appStock": "مخزون التطبيق",
-        "status": "الحالة"
+        "status": "الحالة",
+        "difference": "الفرق",
+        "lastSynced": "آخر مزامنة"
+      },
+      "filter": {
+        "allStatus": "الكل",
+        "matched": "متطابق",
+        "mismatched": "اختلاف",
+        "statusLabel": "الحالة",
+        "sortBy": "ترتيب حسب",
+        "sortOrder": "الاتجاه",
+        "sort": "ترتيب"
       }
     }
   }

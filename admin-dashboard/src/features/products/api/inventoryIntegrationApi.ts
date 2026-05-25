@@ -1,8 +1,3 @@
-/**
- * Inventory Integration API
- * API client functions for Onyx inventory integration endpoints
- */
-
 import { apiClient } from '@/core/api/client';
 import type {
     IntegrationStats,
@@ -10,27 +5,35 @@ import type {
     SkuCheckResult,
     UnlinkedItem,
     LinkedPaginatedResponse,
+    LinkedProductsParams,
+    UnlinkedProductsParams,
 } from '../types/inventory-integration.types';
 
 export const inventoryIntegrationApi = {
-    /**
-     * Get dashboard statistics
-     * جلب إحصائيات لوحة الربط
-     */
     getDashboardStats: async (): Promise<IntegrationStats> => {
         const response = await apiClient.get('/inventory/integration/dashboard');
-        // Handle both wrapped and unwrapped responses
         return response.data?.data ?? response.data;
     },
 
-    /**
-     * جلب المنتجات المربوطة
-     */
-    getLinkedProducts: async (limit = 50, page = 1): Promise<LinkedPaginatedResponse> => {
+    getLinkedProducts: async (params: LinkedProductsParams = {}): Promise<LinkedPaginatedResponse> => {
+        const {
+            limit = 50,
+            page = 1,
+            search = '',
+            status = 'all',
+            sort = 'sku',
+            sortOrder = 'asc',
+        } = params;
         const response = await apiClient.get('/inventory/integration/linked', {
-            params: { limit, page }
+            params: {
+                limit,
+                page,
+                search: search.trim() || undefined,
+                status: status !== 'all' ? status : undefined,
+                sort,
+                sortOrder,
+            },
         });
-        // التعامل مع الرد الجديد { data: [], total: number }
         const result = response.data?.data ?? response.data;
         return {
             data: Array.isArray(result?.data) ? result.data : [],
@@ -42,29 +45,32 @@ export const inventoryIntegrationApi = {
         };
     },
 
-    /**
-     * Get unlinked items (opportunities)
-     * جلب المنتجات غير المربوطة
-     */
-    getUnlinkedItems: async (limit = 50, page = 1, search = ''): Promise<PaginatedResponse<UnlinkedItem>> => {
+    getUnlinkedItems: async (params: UnlinkedProductsParams = {}): Promise<PaginatedResponse<UnlinkedItem>> => {
+        const {
+            limit = 50,
+            page = 1,
+            search = '',
+            sort = 'quantity',
+            sortOrder = 'desc',
+        } = params;
         const response = await apiClient.get('/inventory/integration/unlinked', {
-            params: { limit, page, search: search.trim() || undefined }
+            params: {
+                limit,
+                page,
+                search: search.trim() || undefined,
+                sort,
+                sortOrder,
+            },
         });
-        // التعامل مع الرد الجديد { data: [], total: number }
         const result = response.data?.data ?? response.data;
         return {
             data: Array.isArray(result?.data) ? result.data : [],
-            total: result?.total ?? 0
+            total: result?.total ?? 0,
         };
     },
 
-    /**
-     * Check SKU availability in Onyx
-     * فحص توفر الـ SKU في أونكس
-     */
     checkSku: async (sku: string): Promise<SkuCheckResult> => {
         const response = await apiClient.get(`/inventory/integration/check-sku/${encodeURIComponent(sku)}`);
-        // Handle both wrapped and unwrapped responses
         return response.data?.data ?? response.data;
     },
 };

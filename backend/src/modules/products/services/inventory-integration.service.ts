@@ -160,11 +160,45 @@ export class InventoryIntegrationService {
     };
   }
 
-  async getLinkedProducts(limit = 50, page = 1) {
+  async getLinkedProducts(
+    limit = 50,
+    page = 1,
+    search = '',
+    status: 'all' | 'matched' | 'mismatched' = 'all',
+    sort = 'sku',
+    sortOrder: 'asc' | 'desc' = 'asc',
+  ) {
     const skip = (page - 1) * limit;
+    const normalizedSearch = search?.trim() || '';
 
-    const pipeline = [
-      // 1. مراحل البحث والدمج (كما هي سابقاً)
+    const searchMatch = normalizedSearch
+      ? {
+          $match: {
+            $or: [
+              { sku: { $regex: this.escapeRegExp(normalizedSearch), $options: 'i' } },
+              { itemNameAr: { $regex: this.escapeRegExp(normalizedSearch), $options: 'i' } },
+            ],
+          },
+        }
+      : null;
+
+    const statusMatch =
+      status === 'matched'
+        ? { $match: { isStockMatch: true } }
+        : status === 'mismatched'
+          ? { $match: { isStockMatch: false } }
+          : null;
+
+    const sortFieldMap: Record<string, string> = {
+      sku: 'sku',
+      onyxStock: 'quantity',
+      appStock: 'appStockComparable',
+      lastSynced: 'lastSyncedAt',
+    };
+    const effectiveSortField = sortFieldMap[sort] || 'sku';
+    const sortDirection = sortOrder === 'desc' ? -1 : 1;
+
+    const pipeline: any[] = [
       { $lookup: { from: 'products', localField: 'sku', foreignField: 'sku', as: 'p' } },
       { $lookup: { from: 'variants', localField: 'sku', foreignField: 'sku', as: 'v' } },
       {
@@ -175,14 +209,11 @@ export class InventoryIntegrationService {
           as: 'vParent',
         },
       },
-
-      // 2. الفلترة (المربوط فقط)
       {
         $match: {
           $or: [{ 'p.0': { $exists: true } }, { 'v.0': { $exists: true } }],
         },
       },
-
       {
         $addFields: {
           appStockComparable: {
@@ -192,62 +223,90 @@ export class InventoryIntegrationService {
               { $ifNull: [{ $arrayElemAt: ['$v.stock', 0] }, 0] },
             ],
           },
+          linkType: {
+            $cond: [
+              { $gt: [{ $size: '$p' }, 0] },
+              'product',
+              'variant',
+            ],
+          },
+          productId: {
+            $ifNull: [{ $arrayElemAt: ['$p._id', 0] }, null],
+          },
+          variantId: {
+            $cond: [
+              { $gt: [{ $size: '$v' }, 0] },
+              { $arrayElemAt: ['$v._id', 0] },
+              null,
+            ],
+          },
         },
       },
       {
         $addFields: {
           isStockMatch: { $eq: ['$quantity', '$appStockComparable'] },
-        },
-      },
-
-      // 3. ✅ التغيير الجوهري: استخدام $facet لفصل العد عن البيانات
-      {
-        $facet: {
-          metadata: [
-            {
-              $group: {
-                _id: null,
-                total: { $sum: 1 },
-                matchedTotal: { $sum: { $cond: ['$isStockMatch', 1, 0] } },
-                mismatchedTotal: { $sum: { $cond: ['$isStockMatch', 0, 1] } },
-              },
-            },
-          ],
-          data: [
-            { $skip: skip },
-            { $limit: limit },
-            {
-              $project: {
-                // نفس الـ Project السابق
-                sku: 1,
-                onyxStock: '$quantity',
-                itemNameAr: 1,
-                lastSyncedAt: 1,
-                productDoc: { $arrayElemAt: ['$p', 0] },
-                variantDoc: { $arrayElemAt: ['$v', 0] },
-                variantParentDoc: { $arrayElemAt: ['$vParent', 0] },
-              },
-            },
-          ],
+          stockDifference: { $abs: { $subtract: ['$quantity', '$appStockComparable'] } },
         },
       },
     ];
 
+    if (searchMatch) pipeline.push(searchMatch);
+    if (statusMatch) pipeline.push(statusMatch);
+
+    pipeline.push({
+      $facet: {
+        metadata: [
+          {
+            $group: {
+              _id: null,
+              total: { $sum: 1 },
+              matchedTotal: { $sum: { $cond: ['$isStockMatch', 1, 0] } },
+              mismatchedTotal: { $sum: { $cond: ['$isStockMatch', 0, 1] } },
+            },
+          },
+        ],
+        data: [
+          { $sort: { [effectiveSortField]: sortDirection } },
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $project: {
+              sku: 1,
+              onyxStock: '$quantity',
+              itemNameAr: 1,
+              lastSyncedAt: 1,
+              isStockMatch: 1,
+              stockDifference: 1,
+              linkType: 1,
+              productId: 1,
+              variantId: 1,
+              productDoc: { $arrayElemAt: ['$p', 0] },
+              variantDoc: { $arrayElemAt: ['$v', 0] },
+              variantParentDoc: { $arrayElemAt: ['$vParent', 0] },
+            },
+          },
+        ],
+      },
+    });
+
     const result = await this.externalStockModel.aggregate(pipeline);
 
-    // استخراج النتائج
     const total = result[0].metadata[0]?.total || 0;
     const matchedTotal = result[0].metadata[0]?.matchedTotal || 0;
     const mismatchedTotal = result[0].metadata[0]?.mismatchedTotal || 0;
     const items = result[0].data;
 
-    // تنسيق البيانات (Map)
     const formattedItems = items.map(
       (item: {
         sku: string;
         onyxStock: number;
         itemNameAr?: string;
         lastSyncedAt?: Date;
+        isStockMatch?: boolean;
+        stockDifference?: number;
+        linkType?: string;
+        productId?: string;
+        variantId?: string;
         productDoc?: { name?: string; nameEn?: string; stock: number };
         variantDoc?: { stock: number };
         variantParentDoc?: { name?: string; nameEn?: string };
@@ -278,11 +337,15 @@ export class InventoryIntegrationService {
           appStock: appStock,
           lastSynced: item.lastSyncedAt,
           isVariant: isVariant,
+          isStockMatch: item.isStockMatch ?? (item.onyxStock === appStock),
+          stockDifference: item.stockDifference ?? Math.abs(item.onyxStock - appStock),
+          linkType: item.linkType || (isVariant ? 'variant' : 'product'),
+          productId: item.productId ?? undefined,
+          variantId: item.variantId ?? undefined,
         };
       },
     );
 
-    // إرجاع كائن يحتوي على القائمة + العدد الكلي
     return {
       data: formattedItems,
       total: total,
@@ -296,8 +359,7 @@ export class InventoryIntegrationService {
    * 3. جلب الفرص (منتجات في أونكس وغير موجودة عندنا)
    * يساعد المدير في إضافة المنتجات الناقصة
    */
-  async getUnlinkedOpportunities(limit = 50, page = 1, search = '') {
-    // أضفنا Page هنا أيضاً
+  async getUnlinkedOpportunities(limit = 50, page = 1, search = '', sort = 'quantity', sortOrder: 'asc' | 'desc' = 'desc') {
     const skip = (page - 1) * limit;
     const normalizedSearch = search.trim();
     const searchMatch = normalizedSearch
@@ -311,6 +373,16 @@ export class InventoryIntegrationService {
         }
       : null;
 
+    const sortFieldMap: Record<string, string> = {
+      sku: 'sku',
+      quantity: 'quantity',
+      itemNameAr: 'itemNameAr',
+      price: 'price',
+      lastSyncedAt: 'lastSyncedAt',
+    };
+    const effectiveSortField = sortFieldMap[sort] || 'quantity';
+    const sortDirection = sortOrder === 'desc' ? -1 : 1;
+
     const result = await this.externalStockModel.aggregate([
       { $lookup: { from: 'products', localField: 'sku', foreignField: 'sku', as: 'p' } },
       { $lookup: { from: 'variants', localField: 'sku', foreignField: 'sku', as: 'v' } },
@@ -320,7 +392,7 @@ export class InventoryIntegrationService {
         $facet: {
           metadata: [{ $count: 'total' }],
           data: [
-            { $sort: { quantity: -1, sku: 1 } },
+            { $sort: { [effectiveSortField]: sortDirection } },
             { $skip: skip },
             { $limit: limit },
             {
@@ -328,6 +400,8 @@ export class InventoryIntegrationService {
                 sku: 1,
                 quantity: 1,
                 itemNameAr: 1,
+                price: 1,
+                lastSyncedAt: 1,
                 suggestion: { $literal: 'موجود في أونكس وغير مضاف للتطبيق' },
               },
             },

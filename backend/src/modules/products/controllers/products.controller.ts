@@ -85,9 +85,13 @@ export class ProductsController {
 
     const productsWithPriceRules = result.data.map((product: any) => {
       const id = String(product._id);
+      const appliedPriceRules = priceRulesMap[id] || [];
+      const hasOffer = appliedPriceRules.length > 0 ||
+        (product.compareAtPriceUSD != null && product.basePriceUSD != null && product.compareAtPriceUSD > product.basePriceUSD);
       return {
         ...product,
-        appliedPriceRules: priceRulesMap[id] || [],
+        appliedPriceRules,
+        hasOffer,
       };
     });
 

@@ -24,16 +24,34 @@ export class InventoryIntegrationController {
     @Query('limit') limit: number,
     @Query('page') page: number,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
   ) {
     return this.integrationService.getUnlinkedOpportunities(
       Number(limit) || 50,
       Number(page) || 1,
       search,
+      sort,
+      sortOrder,
     );
   }
   @Get('linked')
-  async getLinkedProducts(@Query('limit') limit: number, @Query('page') page: number) {
-    return this.integrationService.getLinkedProducts(Number(limit) || 50, Number(page) || 1);
+  async getLinkedProducts(
+    @Query('limit') limit: number,
+    @Query('page') page: number,
+    @Query('search') search?: string,
+    @Query('status') status?: 'all' | 'matched' | 'mismatched',
+    @Query('sort') sort?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+  ) {
+    return this.integrationService.getLinkedProducts(
+      Number(limit) || 50,
+      Number(page) || 1,
+      search,
+      status,
+      sort,
+      sortOrder,
+    );
   }
   // 4. فحص SKU سريع (عند تعبئة الفورم)
   @Get('check-sku/:sku')

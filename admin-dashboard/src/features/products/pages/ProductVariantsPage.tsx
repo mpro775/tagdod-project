@@ -1,33 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
   Button,
-  Card,
-  CardContent,
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Chip,
   Alert,
-  CircularProgress,
+  Stack,
   TextField,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
   IconButton,
   Tooltip,
-  Stack,
   Paper,
 } from '@mui/material';
-import { ArrowBack, Add, Save, Cancel, Edit, Delete, Check, Close, SelectAll, Deselect, Clear, Home, ChevronRight } from '@mui/icons-material';
-import { Breadcrumbs, Link } from '@mui/material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Add, Edit, Delete, Inventory, ArrowBack } from '@mui/icons-material';
+import { useParams } from 'react-router-dom';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { GridColDef, GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
+import { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import {
   useProduct,
   useProductVariants,
@@ -35,17 +30,26 @@ import {
   useUpdateVariant,
   useDeleteVariant,
 } from '../hooks/useProducts';
-import { FormInput } from '@/shared/components/Form/FormInput';
-import { DataTable } from '@/shared/components/DataTable/DataTable';
-import { VariantCard } from '../components/VariantCard';
-import { useBreakpoint } from '@/shared/hooks/useBreakpoint';
-import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
-import { ConfirmDialog } from '@/shared/components';
+import { ProductImage } from '../components/ProductImage';
 import { SmartSkuInput } from '../components/SmartSkuInput';
-import { inventoryIntegrationApi } from '../api/inventoryIntegrationApi';
+import { DataTable } from '@/shared/components/DataTable/DataTable';
+import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
+import {
+  PageShell,
+  PageHeader,
+  PageSummaryGrid,
+  StatCard,
+  DataToolbar,
+  ResponsiveDataView,
+  StatusChip,
+  DetailsDrawer,
+  ConfirmDialog,
+  FormActionBar,
+  LoadingState,
+  RowActionsMenu,
+} from '@/shared/design-system';
 import type { Variant, CreateVariantDto } from '../types/product.types';
 
-// Validation Schema for Variant (مبسط - فقط الأساسيات)
 const variantSchema = z.object({
   sku: z.string().optional(),
   price: z.number().min(0),
@@ -54,179 +58,162 @@ const variantSchema = z.object({
 
 type VariantFormData = z.infer<typeof variantSchema>;
 
+const getColorValue = (colorName: string): string | null => {
+  if (!colorName) return null;
+  const colorMap: Record<string, string> = {
+    'اسود': '#000000', 'أسود': '#000000',
+    'ابيض': '#FFFFFF', 'أبيض': '#FFFFFF',
+    'احمر': '#FF0000', 'أحمر': '#FF0000',
+    'ازرق': '#0000FF', 'أزرق': '#0000FF',
+    'اخضر': '#00FF00', 'أخضر': '#00FF00',
+    'اصفر': '#FFFF00', 'أصفر': '#FFFF00',
+    'برتقالي': '#FFA500', 'بنفسجي': '#800080',
+    'وردي': '#FFC0CB', 'رمادي': '#808080',
+    'بني': '#A52A2A',
+    'black': '#000000', 'white': '#FFFFFF',
+    'red': '#FF0000', 'blue': '#0000FF',
+    'green': '#00FF00', 'yellow': '#FFFF00',
+  };
+  const normalized = colorName.toLowerCase().trim();
+  return colorMap[normalized] || (normalized.startsWith('#') ? normalized : null);
+};
+
 export const ProductVariantsPage: React.FC = () => {
   const { t } = useTranslation(['products', 'common']);
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { isMobile } = useBreakpoint();
   const { confirmDialog, dialogProps } = useConfirmDialog();
-  const [variantDialogOpen, setVariantDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingData, setEditingData] = useState<{ sku?: string; price: number; stock: number }>({ price: 0, stock: 0 });
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
-    page: 0,
-    pageSize: 20,
-  });
-  const [sortModel, setSortModel] = useState<GridSortModel>([]);
-  const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
-  const [bulkEditDialogOpen, setBulkEditDialogOpen] = useState(false);
-  const [bulkEditData, setBulkEditData] = useState<{ price?: number; stock?: number }>({});
 
-  // ✅ State لتتبع حالة أونكس (للنافذة وللتعديل السريع)
+  const [search, setSearch] = useState('');
+  const [stockFilter, setStockFilter] = useState<string>('all');
+  const [sortField, setSortField] = useState<string>('sku');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({ page: 0, pageSize: 20 });
+
+  const [addDrawerOpen, setAddDrawerOpen] = useState(false);
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
+  const [editSku, setEditSku] = useState('');
+  const [editPrice, setEditPrice] = useState(0);
+  const [editStock, setEditStock] = useState(0);
+
+  const [bulkEditDrawerOpen, setBulkEditDrawerOpen] = useState(false);
+  const [bulkPrice, setBulkPrice] = useState<string>('');
+  const [bulkStock, setBulkStock] = useState<string>('');
+
   const [onyxData, setOnyxData] = useState<{ isLinked: boolean; stock?: number }>({ isLinked: false });
 
-  // Form
   const methods = useForm<VariantFormData>({
     resolver: zodResolver(variantSchema),
-    defaultValues: {
-      sku: '',
-      price: 0,
-      stock: 0,
-    },
+    defaultValues: { sku: '', price: 0, stock: 0 },
   });
 
-  // API
   const { data: product, isLoading: loadingProduct } = useProduct(id!);
   const { data: variants, isLoading: loadingVariants, refetch } = useProductVariants(id!);
   const { mutate: addVariant, isPending: addingVariant } = useAddVariant();
   const { mutate: updateVariant, isPending: updatingVariant } = useUpdateVariant();
   const { mutate: deleteVariant } = useDeleteVariant();
 
-  const handleAddVariant = () => {
-    setOnyxData({ isLinked: false }); // تصفير حالة أونكس
-    methods.reset({
-      sku: '',
-      price: 0,
-      stock: 0,
-    });
-    setVariantDialogOpen(true);
-  };
-
-  // ✅ دالة للتعامل مع نتيجة التحقق من أونكس في النافذة المنبثقة
-  const handleOnyxValidationInDialog = (result: { existsInOnyx: boolean; onyxStock?: number }) => {
+  const handleOnyxValidation = (result: { existsInOnyx: boolean; onyxStock?: number }) => {
     setOnyxData({ isLinked: result.existsInOnyx, stock: result.onyxStock });
-
     if (result.existsInOnyx && result.onyxStock !== undefined) {
-      // تعبئة المخزون تلقائياً في الفورم
       methods.setValue('stock', result.onyxStock);
       toast.success(t('products:integration.linkedSuccess', 'تم الربط مع أونكس'));
     }
   };
 
-  // ✅ useEffect للتعديل السريع (Inline Edit) مع Debounce
-  React.useEffect(() => {
-    if (!editingId || !editingData.sku || editingData.sku.length < 3) {
-      setOnyxData({ isLinked: false });
-      return;
-    }
+  const handleOpenAddDrawer = () => {
+    setOnyxData({ isLinked: false });
+    methods.reset({ sku: '', price: 0, stock: 0 });
+    setAddDrawerOpen(true);
+  };
 
-    const timer = setTimeout(async () => {
-      try {
-        const result = await inventoryIntegrationApi.checkSku(editingData.sku!);
-        setOnyxData({ isLinked: result.existsInOnyx, stock: result.onyxStock });
+  const handleCloseAddDrawer = () => {
+    setAddDrawerOpen(false);
+    methods.reset();
+  };
 
-        // إذا وجدنا المنتج في أونكس، نحدث المخزون فوراً
-        if (result.existsInOnyx && result.onyxStock !== undefined) {
-          setEditingData(prev => ({ ...prev, stock: result.onyxStock! }));
-        }
-      } catch (error) {
-        console.error('Error checking SKU:', error);
-      }
-    }, 500); // 500ms Debounce
+  const handleOpenEditDrawer = (variant: Variant) => {
+    setEditingVariant(variant);
+    setEditSku(variant.sku || '');
+    setEditPrice(variant.price ?? variant.basePriceUSD ?? 0);
+    setEditStock(variant.stock || 0);
+    setEditDrawerOpen(true);
+  };
 
-    return () => clearTimeout(timer);
-  }, [editingData.sku, editingId]);
+  const handleCloseEditDrawer = () => {
+    setEditDrawerOpen(false);
+    setEditingVariant(null);
+  };
 
   const handleDeleteVariant = async (variant: Variant) => {
     const confirmed = await confirmDialog({
       title: t('products:variants.deleteTitle', 'تأكيد حذف المتغير'),
-      message: `${t('products:variants.deleteConfirm', 'هل أنت متأكد من حذف المتغير')} "${variant.sku || variant._id
-        }"؟`,
+      message: `${t('products:variants.deleteConfirm', 'هل أنت متأكد من حذف المتغير')} "${variant.sku || variant._id}"؟`,
       type: 'warning',
       confirmColor: 'error',
     });
     if (confirmed) {
       deleteVariant(
         { productId: id!, variantId: variant._id },
-        {
-          onSuccess: () => {
-            toast.success(t('products:messages.deleteSuccess', 'تم الحذف بنجاح'));
-            refetch();
-          },
-        }
+        { onSuccess: () => { toast.success(t('products:messages.deleteSuccess', 'تم الحذف بنجاح')); refetch(); } }
       );
     }
   };
 
-  const handleStartEdit = (variant: Variant) => {
-    setOnyxData({ isLinked: false }); // تصفير حالة أونكس مؤقتاً (الـ useEffect سيعمل بعدها)
-    setEditingId(variant._id);
-    setEditingData({
-      sku: variant.sku || '',
-      price: variant.price ?? variant.basePriceUSD ?? 0,
-      stock: variant.stock || 0,
-    });
-  };
-
-  const handleCancelEdit = () => {
-    setOnyxData({ isLinked: false }); // تصفير حالة أونكس
-    setEditingId(null);
-    setEditingData({ price: 0, stock: 0, sku: '' });
-  };
-
-  const handleSaveEdit = (variantId: string) => {
-    if (editingData.price < 0 || editingData.stock < 0) {
+  const handleSaveEdit = () => {
+    if (!editingVariant) return;
+    if (editPrice < 0 || editStock < 0) {
       toast.error(t('products:messages.priceStockRequired', 'السعر والكمية يجب أن تكون أكبر من أو تساوي صفر'));
       return;
     }
-
     updateVariant(
       {
         productId: id!,
-        variantId,
-        data: {
-          sku: editingData.sku?.trim() || undefined,
-          price: editingData.price,
-          stock: editingData.stock,
-        }
+        variantId: editingVariant._id,
+        data: { sku: editSku.trim() || undefined, price: editPrice, stock: editStock },
       },
       {
-        onSuccess: () => {
-          toast.success(t('products:messages.updateSuccess', 'تم التحديث بنجاح'));
-          refetch();
-          handleCancelEdit();
-        },
+        onSuccess: () => { toast.success(t('products:messages.updateSuccess', 'تم التحديث بنجاح')); refetch(); handleCloseEditDrawer(); },
         onError: (error: any) => {
-          // معالجة أخطاء SKU المكرر
           const errorCode = error?.response?.data?.error?.code;
           const errorMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
-          const lowerErrorMessage = errorMessage?.toLowerCase() || '';
-
-          // التحقق من كود الخطأ أو وجود كلمات مفتاحية في الرسالة
-          if (
-            errorCode === 'PRODUCT_314' ||
-            lowerErrorMessage.includes('sku') ||
-            lowerErrorMessage.includes('مكرر') ||
-            lowerErrorMessage.includes('موجود مسبقاً') ||
-            lowerErrorMessage.includes('duplicate')
-          ) {
-            toast.error(
-              t('products:messages.duplicateSku', 'رمز SKU موجود مسبقاً. الرجاء استخدام رمز آخر'),
-              { duration: 5000 }
-            );
+          const lowerMsg = errorMessage?.toLowerCase() || '';
+          if (errorCode === 'PRODUCT_314' || lowerMsg.includes('sku') || lowerMsg.includes('مكرر') || lowerMsg.includes('duplicate')) {
+            toast.error(t('products:messages.duplicateSku', 'رمز SKU موجود مسبقاً'), { duration: 5000 });
           } else {
-            // عرض رسالة الخطأ العامة
-            const message = errorMessage ||
-              error?.message ||
-              t('products:messages.updateError', 'حدث خطأ أثناء تحديث المتغير');
-            toast.error(message, { duration: 5000 });
+            toast.error(errorMessage || error?.message || t('products:messages.updateError', 'حدث خطأ أثناء تحديث المتغير'), { duration: 5000 });
           }
         },
       }
     );
   };
 
-  // Bulk Actions
+  const onSubmit = (data: VariantFormData) => {
+    if (isNaN(data.price) || data.price < 0) { toast.error(t('products:messages.invalidPrice', 'السعر غير صحيح')); return; }
+    if (isNaN(data.stock) || data.stock < 0) { toast.error(t('products:messages.invalidStock', 'المخزون غير صحيح')); return; }
+    const createData: CreateVariantDto = {
+      productId: id!,
+      sku: data.sku?.trim() || undefined,
+      attributeValues: [],
+      price: Number(data.price),
+      stock: Number(data.stock),
+    };
+    addVariant(createData, {
+      onSuccess: () => { toast.success(t('products:messages.createSuccess', 'تم الإنشاء بنجاح')); refetch(); handleCloseAddDrawer(); },
+      onError: (error: any) => {
+        const errorCode = error?.response?.data?.error?.code;
+        const errorMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
+        const lowerMsg = errorMessage?.toLowerCase() || '';
+        if (errorCode === 'PRODUCT_314' || lowerMsg.includes('sku') || lowerMsg.includes('مكرر') || lowerMsg.includes('duplicate')) {
+          toast.error(t('products:messages.duplicateSku', 'رمز SKU موجود مسبقاً'), { duration: 5000 });
+        } else {
+          toast.error(errorMessage || error?.message || t('products:messages.createError', 'حدث خطأ أثناء إضافة المتغير'), { duration: 5000 });
+        }
+      },
+    });
+  };
+
   const handleBulkDelete = async () => {
     if (selectedVariants.length === 0) return;
     const confirmed = await confirmDialog({
@@ -236,50 +223,31 @@ export const ProductVariantsPage: React.FC = () => {
       confirmColor: 'error',
     });
     if (confirmed) {
-      Promise.all(selectedVariants.map(variantId =>
+      Promise.all(selectedVariants.map((variantId) =>
         new Promise((resolve) => {
-          deleteVariant(
-            { productId: id!, variantId },
-            {
-              onSuccess: () => resolve(true),
-              onError: () => resolve(false),
-            }
-          );
+          deleteVariant({ productId: id!, variantId }, { onSuccess: () => resolve(true), onError: () => resolve(false) });
         })
-      )).then(() => {
-        setSelectedVariants([]);
-        refetch();
-        toast.success(t('products:messages.bulkDeleteSuccess', { count: selectedVariants.length }));
-      });
+      )).then(() => { setSelectedVariants([]); refetch(); toast.success(t('products:messages.bulkDeleteSuccess', { count: selectedVariants.length })); });
     }
-  };
-
-  const handleBulkEdit = () => {
-    if (selectedVariants.length === 0) return;
-    setBulkEditDialogOpen(true);
   };
 
   const handleBulkEditSave = () => {
     if (selectedVariants.length === 0) return;
-
-    Promise.all(selectedVariants.map(variantId =>
+    Promise.all(selectedVariants.map((variantId) =>
       new Promise((resolve) => {
         const updateData: any = {};
-        if (bulkEditData.price !== undefined) updateData.price = bulkEditData.price;
-        if (bulkEditData.stock !== undefined) updateData.stock = bulkEditData.stock;
-
+        if (bulkPrice !== '') updateData.price = Number(bulkPrice);
+        if (bulkStock !== '') updateData.stock = Number(bulkStock);
         updateVariant(
           { productId: id!, variantId, data: updateData },
-          {
-            onSuccess: () => resolve(true),
-            onError: () => resolve(false),
-          }
+          { onSuccess: () => resolve(true), onError: () => resolve(false) }
         );
       })
     )).then(() => {
       setSelectedVariants([]);
-      setBulkEditDialogOpen(false);
-      setBulkEditData({});
+      setBulkEditDrawerOpen(false);
+      setBulkPrice('');
+      setBulkStock('');
       refetch();
       toast.success(t('products:messages.bulkUpdateSuccess', { count: selectedVariants.length }));
     });
@@ -293,298 +261,99 @@ export const ProductVariantsPage: React.FC = () => {
     }
   };
 
-  const onSubmit = (data: VariantFormData) => {
-    // التحقق من صحة البيانات قبل الإرسال
-    if (isNaN(data.price) || data.price < 0) {
-      toast.error(t('products:messages.invalidPrice', 'السعر غير صحيح'));
-      return;
+  const filteredVariants = useMemo(() => {
+    if (!variants) return [];
+    let result = [...variants];
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((v) =>
+        (v.sku?.toLowerCase().includes(q)) ||
+        v.attributeValues?.some((a) => a.name?.toLowerCase().includes(q) || a.value?.toLowerCase().includes(q))
+      );
     }
 
-    if (isNaN(data.stock) || data.stock < 0) {
-      toast.error(t('products:messages.invalidStock', 'المخزون غير صحيح'));
-      return;
-    }
+    if (stockFilter === 'inStock') result = result.filter((v) => v.stock > (v.minStock || 0));
+    else if (stockFilter === 'lowStock') result = result.filter((v) => v.stock > 0 && v.stock <= (v.minStock || 0));
+    else if (stockFilter === 'outOfStock') result = result.filter((v) => v.stock === 0);
 
-    const createData: CreateVariantDto = {
-      productId: id!,
-      sku: data.sku?.trim() || undefined,
-      attributeValues: [], // سيتم إضافة السمات لاحقاً
-      price: Number(data.price),
-      stock: Number(data.stock),
-    };
-
-    addVariant(createData, {
-      onSuccess: () => {
-        toast.success(t('products:messages.createSuccess', 'تم الإنشاء بنجاح'));
-        refetch();
-        setVariantDialogOpen(false);
-        methods.reset();
-      },
-      onError: (error: any) => {
-        // معالجة أخطاء SKU المكرر
-        const errorCode = error?.response?.data?.error?.code;
-        const errorMessage = error?.response?.data?.error?.message || error?.response?.data?.message;
-        const lowerErrorMessage = errorMessage?.toLowerCase() || '';
-
-        // التحقق من كود الخطأ أو وجود كلمات مفتاحية في الرسالة
-        if (
-          errorCode === 'PRODUCT_314' ||
-          lowerErrorMessage.includes('sku') ||
-          lowerErrorMessage.includes('مكرر') ||
-          lowerErrorMessage.includes('موجود مسبقاً') ||
-          lowerErrorMessage.includes('duplicate')
-        ) {
-          toast.error(
-            t('products:messages.duplicateSku', 'رمز SKU موجود مسبقاً. الرجاء استخدام رمز آخر'),
-            { duration: 5000 }
-          );
-        } else {
-          // عرض رسالة الخطأ العامة
-          const message = errorMessage ||
-            error?.message ||
-            t('products:messages.createError', 'حدث خطأ أثناء إضافة المتغير');
-          toast.error(message, { duration: 5000 });
-        }
-      },
+    result.sort((a, b) => {
+      let cmp = 0;
+      const aVal = sortField === 'sku' ? (a.sku || '') : sortField === 'price' ? (a.price ?? a.basePriceUSD ?? 0) : a.stock;
+      const bVal = sortField === 'sku' ? (b.sku || '') : sortField === 'price' ? (b.price ?? b.basePriceUSD ?? 0) : b.stock;
+      if (typeof aVal === 'string' && typeof bVal === 'string') cmp = aVal.localeCompare(bVal);
+      else cmp = (aVal as number) - (bVal as number);
+      return sortDir === 'desc' ? -cmp : cmp;
     });
-  };
 
-  const handleCloseDialog = () => {
-    setVariantDialogOpen(false);
-    methods.reset();
-  };
+    return result;
+  }, [variants, search, stockFilter, sortField, sortDir]);
 
-  if (loadingProduct) {
-    return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  // Helper function to convert Arabic color names to hex
-  const getColorValue = (colorName: string): string | null => {
-    if (!colorName) return null;
-
-    const colorMap: Record<string, string> = {
-      'اسود': '#000000',
-      'أسود': '#000000',
-      'ابيض': '#FFFFFF',
-      'أبيض': '#FFFFFF',
-      'احمر': '#FF0000',
-      'أحمر': '#FF0000',
-      'ازرق': '#0000FF',
-      'أزرق': '#0000FF',
-      'اخضر': '#00FF00',
-      'أخضر': '#00FF00',
-      'اصفر': '#FFFF00',
-      'أصفر': '#FFFF00',
-      'برتقالي': '#FFA500',
-      'بنفسجي': '#800080',
-      'وردي': '#FFC0CB',
-      'رمادي': '#808080',
-      'بني': '#A52A2A',
-      'black': '#000000',
-      'white': '#FFFFFF',
-      'red': '#FF0000',
-      'blue': '#0000FF',
-      'green': '#00FF00',
-      'yellow': '#FFFF00',
-    };
-
-    const normalized = colorName.toLowerCase().trim();
-    return colorMap[normalized] || (normalized.startsWith('#') ? normalized : null);
-  };
-
-  // Prepare data for DataTable
-  const getAttributeDisplay = (variant: Variant) => {
-    if (!variant.attributeValues || variant.attributeValues.length === 0) {
-      return (
-        <Typography variant="body2" color="text.secondary">
-          {t('products:variants.noAttributes', 'بدون سمات')}
-        </Typography>
-      );
-    }
-
-    return (
-      <Stack spacing={0.5} direction="column">
-        {variant.attributeValues.map((attr, index) => {
-          const isColorAttribute = attr.name?.toLowerCase().includes('لون') ||
-            attr.name?.toLowerCase().includes('color');
-          const colorValue = isColorAttribute ? getColorValue(attr.value || '') : null;
-          const hasValidColor = colorValue !== null;
-          const key = attr.valueId || `${attr.attributeId}-${index}`;
-
-          return (
-            <Box
-              key={key}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                flexWrap: 'nowrap'
-              }}
-            >
-              {isColorAttribute && hasValidColor && (
-                <Box
-                  sx={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: '50%',
-                    bgcolor: colorValue,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    flexShrink: 0
-                  }}
-                />
-              )}
-              <Typography
-                variant="body2"
-                component="span"
-                sx={{
-                  fontSize: '0.875rem',
-                  lineHeight: 1.4,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '100%'
-                }}
-              >
-                <strong>{attr.name}:</strong> {attr.value}
-              </Typography>
-            </Box>
-          );
-        })}
-      </Stack>
-    );
-  };
-
-  const getStockChip = (variant: Variant) => {
-    if (variant.stock === 0) {
-      return (
-        <Chip
-          label={t('products:variants.status.outOfStock', 'غير متوفر')}
-          color="error"
-          size="small"
-        />
-      );
-    } else if (variant.stock <= (variant.minStock || 0)) {
-      return (
-        <Chip
-          label={t('products:variants.status.low', 'منخفض')}
-          color="warning"
-          size="small"
-        />
-      );
-    } else {
-      return (
-        <Chip
-          label={t('products:variants.status.available', 'متوفر')}
-          color="success"
-          size="small"
-        />
-      );
-    }
-  };
+  const inStockCount = variants?.filter((v) => v.stock > (v.minStock || 0)).length ?? 0;
+  const outOfStockCount = variants?.filter((v) => v.stock === 0).length ?? 0;
+  const lowStockCount = variants?.filter((v) => v.stock > 0 && v.stock <= (v.minStock || 0)).length ?? 0;
 
   const columns: GridColDef[] = [
     {
       field: 'attributes',
       headerName: t('products:variants.columns.attributes', 'السمات'),
       flex: 1,
-      minWidth: 250,
-      renderCell: (params) => (
-        <Box sx={{ py: 0.5, width: '100%' }}>
-          {getAttributeDisplay(params.row)}
-        </Box>
-      ),
+      minWidth: 200,
+      renderCell: (params) => {
+        const v = params.row as Variant;
+        if (!v.attributeValues || v.attributeValues.length === 0) {
+          return <Typography variant="body2" color="text.secondary">{t('products:variants.noAttributes', 'بدون سمات')}</Typography>;
+        }
+        return (
+          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ py: 0.5 }}>
+            {v.attributeValues.map((attr, idx) => {
+              const isColorAttr = attr.name?.toLowerCase().includes('لون') || attr.name?.toLowerCase().includes('color');
+              const colorVal = isColorAttr ? getColorValue(attr.value || '') : null;
+              return (
+                <Chip
+                  key={attr.valueId || `${attr.attributeId}-${idx}`}
+                  label={`${attr.name}: ${attr.value}`}
+                  size="small"
+                  variant="outlined"
+                  sx={isColorAttr && colorVal ? { fontSize: 11, height: 22, borderColor: colorVal } : { fontSize: 11, height: 22 }}
+                />
+              );
+            })}
+          </Stack>
+        );
+      },
     },
     {
       field: 'sku',
       headerName: t('products:variants.columns.sku', 'SKU'),
-      width: 180,
-      align: 'center',
-      headerAlign: 'center',
-      renderCell: (params) => {
-        const isEditing = editingId === params.row._id;
-        return isEditing ? (
-          <TextField
-            type="text"
-            size="small"
-            value={editingData.sku || ''}
-            onChange={(e) => setEditingData({ ...editingData, sku: e.target.value })}
-            sx={{ width: 140 }}
-            onClick={(e) => e.stopPropagation()}
-            placeholder={t('products:variants.form.sku', 'SKU')}
-            color={onyxData.isLinked ? 'success' : 'primary'}
-            focused={onyxData.isLinked}
-          />
-        ) : (
-          <Typography variant="body2" color={params.row.sku ? 'text.primary' : 'text.secondary'}>
-            {params.row.sku || '-'}
-          </Typography>
-        );
-      },
+      width: 160,
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight={600} fontFamily="monospace">
+          {params.row.sku || '-'}
+        </Typography>
+      ),
     },
     {
       field: 'price',
       headerName: t('products:variants.columns.price', 'السعر'),
-      width: 150,
+      width: 120,
       align: 'center',
       headerAlign: 'center',
-      renderCell: (params) => {
-        const isEditing = editingId === params.row._id;
-        const price = params.row.price ?? params.row.basePriceUSD ?? 0;
-        return isEditing ? (
-          <TextField
-            type="number"
-            size="small"
-            value={editingData.price}
-            onChange={(e) => setEditingData({ ...editingData, price: Number(e.target.value) })}
-            sx={{ width: 100 }}
-            inputProps={{ min: 0, step: 0.01 }}
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <Typography variant="h6" color="primary">
-            ${price}
-          </Typography>
-        );
-      },
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="bold" color="primary">
+          ${params.row.price ?? params.row.basePriceUSD ?? 0}
+        </Typography>
+      ),
     },
     {
       field: 'stock',
       headerName: t('products:variants.columns.stock', 'المخزون'),
-      width: 150,
+      width: 120,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
-        const isEditing = editingId === params.row._id;
-        return isEditing ? (
-          <Tooltip title={onyxData.isLinked ? t('products:integration.stockManagedByOnyx', 'يتم إدارة المخزون من أونكس') : ''}>
-            <TextField
-              type="number"
-              size="small"
-              value={editingData.stock}
-              disabled={onyxData.isLinked}
-              onChange={(e) => setEditingData({ ...editingData, stock: Number(e.target.value) })}
-              sx={{
-                width: 100,
-                '& .MuiInputBase-root.Mui-disabled': {
-                  backgroundColor: onyxData.isLinked ? '#e8f5e9' : 'inherit',
-                },
-                '& .MuiInputBase-input.Mui-disabled': {
-                  WebkitTextFillColor: onyxData.isLinked ? '#2e7d32' : undefined,
-                  fontWeight: onyxData.isLinked ? 'bold' : 'normal',
-                },
-              }}
-              inputProps={{ min: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </Tooltip>
-        ) : (
-          <Typography variant="body1">{params.row.stock}</Typography>
-        );
+        const v = params.row as Variant;
+        return <Typography variant="body2">{v.stock}</Typography>;
       },
     },
     {
@@ -593,523 +362,500 @@ export const ProductVariantsPage: React.FC = () => {
       width: 130,
       align: 'center',
       headerAlign: 'center',
-      renderCell: (params) => getStockChip(params.row),
+      renderCell: (params) => {
+        const v = params.row as Variant;
+        const stockStatus: 'error' | 'warning' | 'success' =
+          v.stock === 0 ? 'error' : v.stock <= (v.minStock || 0) ? 'warning' : 'success';
+        const statusLabel =
+          v.stock === 0
+            ? t('products:variants.status.outOfStock', 'غير متوفر')
+            : v.stock <= (v.minStock || 0)
+              ? t('products:variants.status.low', 'منخفض')
+              : t('products:variants.status.available', 'متوفر');
+        return <StatusChip label={statusLabel} status={stockStatus} size="small" />;
+      },
     },
     {
       field: 'actions',
       headerName: t('products:variants.columns.actions', 'الإجراءات'),
-      width: 180,
+      width: 80,
       align: 'center',
       headerAlign: 'center',
       sortable: false,
       renderCell: (params) => {
-        const variant = params.row;
-        const isEditing = editingId === variant._id;
-        return isEditing ? (
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-            <Tooltip title={t('common:actions.save', 'حفظ')}>
-              <IconButton
-                color="success"
-                size="small"
-                onClick={() => handleSaveEdit(variant._id)}
-                disabled={updatingVariant}
-              >
-                <Check />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t('common:actions.cancel', 'إلغاء')}>
-              <IconButton
-                color="error"
-                size="small"
-                onClick={handleCancelEdit}
-              >
-                <Close />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        ) : (
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-            <Tooltip title={t('products:variants.form.quickEdit', 'تعديل سريع')}>
-              <IconButton
-                color="primary"
-                size="small"
-                onClick={() => handleStartEdit(variant)}
-              >
-                <Edit />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t('common:actions.delete', 'حذف')}>
-              <IconButton
-                color="error"
-                size="small"
-                onClick={() => handleDeleteVariant(variant)}
-              >
-                <Delete />
-              </IconButton>
-            </Tooltip>
-          </Box>
+        const variant = params.row as Variant;
+        return (
+          <RowActionsMenu
+            actions={[
+              { label: t('products:variants.form.quickEdit', 'تعديل'), icon: <Edit fontSize="small" />, onClick: () => handleOpenEditDrawer(variant) },
+              { label: t('common:actions.delete', 'حذف'), icon: <Delete fontSize="small" />, onClick: () => handleDeleteVariant(variant), danger: true },
+            ]}
+          />
         );
       },
     },
   ];
 
-  // Prepare rows for DataTable
-  const rows = variants || [];
+  const renderCompactCard = (variant: Variant) => {
+    const stockStatus: 'error' | 'warning' | 'success' =
+      variant.stock === 0 ? 'error' : variant.stock <= (variant.minStock || 0) ? 'warning' : 'success';
+    const stockLabel =
+      variant.stock === 0
+        ? t('products:variants.status.outOfStock', 'غير متوفر')
+        : variant.stock <= (variant.minStock || 0)
+          ? t('products:variants.status.low', 'منخفض')
+          : t('products:variants.status.available', 'متوفر');
+
+    return (
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 1.5,
+          borderRadius: 1,
+          cursor: 'pointer',
+          transition: 'border-color 0.2s, box-shadow 0.2s',
+          '&:hover': { borderColor: 'primary.main', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' },
+        }}
+        onClick={() => handleOpenEditDrawer(variant)}
+      >
+        <Stack direction="row" spacing={1.5} alignItems="flex-start">
+          <ProductImage image={variant.imageId as any} size={56} />
+          <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+            <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="space-between">
+              <Typography variant="body2" fontWeight="bold" noWrap sx={{ fontFamily: 'monospace' }}>
+                {variant.sku || t('products:variants.noSku', 'بدون SKU')}
+              </Typography>
+              <StatusChip label={stockLabel} status={stockStatus} size="small" />
+            </Stack>
+            <Typography variant="caption" color="primary" fontWeight="bold">
+              ${variant.price ?? variant.basePriceUSD ?? 0}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {t('products:variants.columns.stock', 'المخزون')}: {variant.stock}
+            </Typography>
+            {variant.attributeValues && variant.attributeValues.length > 0 && (
+              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                {variant.attributeValues.slice(0, 3).map((attr, idx) => {
+                  const isColorAttr = attr.name?.toLowerCase().includes('لون') || attr.name?.toLowerCase().includes('color');
+                  const colorVal = isColorAttr ? getColorValue(attr.value || '') : null;
+                  return (
+                    <Chip
+                      key={attr.valueId || `${attr.attributeId}-${idx}`}
+                      label={`${attr.name}: ${attr.value}`}
+                      size="small"
+                      variant="outlined"
+                      sx={isColorAttr && colorVal ? { fontSize: 10, height: 20, borderColor: colorVal } : { fontSize: 10, height: 20 }}
+                    />
+                  );
+                })}
+                {variant.attributeValues.length > 3 && (
+                  <Chip label={`+${variant.attributeValues.length - 3}`} size="small" variant="outlined" sx={{ fontSize: 10, height: 20 }} />
+                )}
+              </Stack>
+            )}
+            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+              <Tooltip title={t('products:variants.form.quickEdit', 'تعديل')}>
+                <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); handleOpenEditDrawer(variant); }}>
+                  <Edit fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={t('common:actions.delete', 'حذف')}>
+                <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteVariant(variant); }}>
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </Stack>
+        </Stack>
+      </Paper>
+    );
+  };
+
+  const renderTable = (rows: Variant[]) => (
+    <DataTable
+      columns={columns}
+      rows={rows}
+      loading={loadingVariants}
+      paginationModel={paginationModel}
+      onPaginationModelChange={setPaginationModel}
+      sortModel={[{ field: sortField, sort: sortDir }]}
+      onSortModelChange={(model) => {
+        if (model.length > 0) {
+          setSortField(model[0].field);
+          setSortDir(model[0].sort as 'asc' | 'desc');
+        }
+      }}
+      getRowId={(row: unknown) => (row as Variant)?._id || ''}
+      selectable={true}
+      onRowSelectionModelChange={(selection) => setSelectedVariants(selection as string[])}
+      height={500}
+    />
+  );
+
+  const activeFilters = [
+    ...(stockFilter !== 'all' ? [{
+      label: t('products:variants.filters.stockStatus', 'حالة المخزون'),
+      value: stockFilter === 'inStock' ? t('products:variants.status.available', 'متوفر') :
+        stockFilter === 'lowStock' ? t('products:variants.status.low', 'منخفض') :
+        t('products:variants.status.outOfStock', 'غير متوفر'),
+      onDelete: () => setStockFilter('all'),
+    }] : []),
+  ];
+
+  if (loadingProduct) {
+    return (
+      <PageShell spacing="compact" fullHeight>
+        <PageHeader variant="compact" title={t('products:variants.manage', 'إدارة المتغيرات')} />
+        <LoadingState variant="skeleton" rows={4} />
+      </PageShell>
+    );
+  }
+
+  const productName = product?.name || t('products:variants.product', 'المنتج');
 
   return (
-    <Box>
-      {/* Breadcrumbs */}
-      <Breadcrumbs
-        separator={<ChevronRight fontSize="small" />}
-        sx={{ mb: 2 }}
-        aria-label="breadcrumb"
-      >
-        <Link
-          color="inherit"
-          href="/products"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate('/products');
-          }}
-          sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
-        >
-          <Home sx={{ mr: 0.5 }} fontSize="inherit" />
-          {t('products:list.title', 'المنتجات')}
-        </Link>
-        <Link
-          color="inherit"
-          href={`/products/${id}`}
-          onClick={(e) => {
-            e.preventDefault();
-            navigate(`/products/${id}`);
-          }}
-          sx={{ textDecoration: 'none' }}
-        >
-          {product?.name || t('products:variants.product', 'المنتج')}
-        </Link>
-        <Typography color="text.primary">
-          {t('products:variants.manage', 'إدارة المتغيرات')}
-        </Typography>
-      </Breadcrumbs>
+    <PageShell spacing="compact" fullHeight>
+      <PageHeader
+        variant="compact"
+        title={t('products:variants.manage', 'إدارة المتغيرات')}
+        description={productName}
+        breadcrumbs={[
+          { label: t('common:navigation.dashboard', 'لوحة التحكم'), to: '/dashboard' },
+          { label: t('products:list.title', 'المنتجات'), to: '/products' },
+          { label: productName, to: `/products/${id}` },
+          { label: t('products:variants.manage', 'المتغيرات') },
+        ]}
+        actions={[
+          {
+            label: t('products:variants.add', 'إضافة متغير'),
+            icon: <Add />,
+            onClick: handleOpenAddDrawer,
+            variant: 'primary',
+          },
+          {
+            label: t('products:variants.backToProduct', 'العودة إلى المنتج'),
+            icon: <ArrowBack />,
+            to: `/products/${id}`,
+            variant: 'ghost',
+          },
+        ]}
+      />
 
-      {/* Header */}
-      <Box
-        display="flex"
-        flexDirection={isMobile ? 'column' : 'row'}
-        alignItems={isMobile ? 'stretch' : 'center'}
-        gap={2}
-        mb={3}
-      >
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(`/products/${id}`)}
-          fullWidth={isMobile}
-        >
-          {t('products:variants.backToProduct', 'العودة إلى المنتج')}
-        </Button>
-        <Typography variant={isMobile ? 'h5' : 'h4'} component="h1" sx={{ flex: 1 }}>
-          {t('products:variants.manage', 'إدارة المتغيرات')}
-        </Typography>
-      </Box>
+      <PageSummaryGrid columns={4} compact>
+        <StatCard title={t('products:variants.totalVariants', 'إجمالي المتغيرات')} value={variants?.length || 0} icon={<Inventory fontSize="small" />} tone="primary" compact />
+        <StatCard title={t('products:variants.inStock', 'متوفر')} value={inStockCount} tone="success" compact />
+        <StatCard title={t('products:variants.lowStock', 'منخفض')} value={lowStockCount} tone="warning" compact />
+        <StatCard title={t('products:variants.outOfStock', 'غير متوفر')} value={outOfStockCount} tone="error" compact />
+      </PageSummaryGrid>
 
-      {/* Product Info */}
-      {product && (
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant={isMobile ? 'h6' : 'h5'} gutterBottom>
-              {product.name}
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {product.nameEn}
-            </Typography>
-            <Box display="flex" gap={1} mt={1} flexWrap="wrap">
-              <Chip label={t(`products:status.${product.status}`, product.status)} color="primary" size="small" />
-              {product.isFeatured && (
-                <Chip label={t('products:badges.featured', 'مميز')} color="warning" size="small" />
-              )}
-              {product.isNew && (
-                <Chip label={t('products:badges.new', 'جديد')} color="success" size="small" />
-              )}
-            </Box>
-          </CardContent>
-        </Card>
-      )}
+      <DataToolbar
+        searchValue={search}
+        searchPlaceholder={t('products:variants.searchSku', 'بحث بال SKU أو السمات...')}
+        onSearchChange={setSearch}
+        filters={
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel>{t('products:variants.filters.stockStatus', 'حالة المخزون')}</InputLabel>
+              <Select
+                value={stockFilter}
+                label={t('products:variants.filters.stockStatus', 'حالة المخزون')}
+                onChange={(e) => setStockFilter(e.target.value)}
+              >
+                <MenuItem value="all">{t('common:all', 'الكل')}</MenuItem>
+                <MenuItem value="inStock">{t('products:variants.status.available', 'متوفر')}</MenuItem>
+                <MenuItem value="lowStock">{t('products:variants.status.low', 'منخفض')}</MenuItem>
+                <MenuItem value="outOfStock">{t('products:variants.status.outOfStock', 'غير متوفر')}</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>{t('products:variants.filters.sortBy', 'ترتيب حسب')}</InputLabel>
+              <Select
+                value={sortField}
+                label={t('products:variants.filters.sortBy', 'ترتيب حسب')}
+                onChange={(e) => setSortField(e.target.value)}
+              >
+                <MenuItem value="sku">SKU</MenuItem>
+                <MenuItem value="price">{t('products:variants.columns.price', 'السعر')}</MenuItem>
+                <MenuItem value="stock">{t('products:variants.columns.stock', 'المخزون')}</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 100 }}>
+              <InputLabel>{t('products:variants.filters.direction', 'الاتجاه')}</InputLabel>
+              <Select
+                value={sortDir}
+                label={t('products:variants.filters.direction', 'الاتجاه')}
+                onChange={(e) => setSortDir(e.target.value as 'asc' | 'desc')}
+              >
+                <MenuItem value="asc">{t('products:variants.filters.ascending', 'تصاعدي')}</MenuItem>
+                <MenuItem value="desc">{t('products:variants.filters.descending', 'تنازلي')}</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        }
+        activeFilters={activeFilters}
+        compact
+      />
 
-      {/* Actions */}
-      <Box
-        display="flex"
-        flexDirection={isMobile ? 'column' : 'row'}
-        justifyContent="space-between"
-        alignItems={isMobile ? 'stretch' : 'center'}
-        gap={2}
-        mb={3}
-      >
-        <Typography variant={isMobile ? 'body1' : 'h6'}>
-          {t('products:variants.count', {
-            count: variants?.length || 0,
-            defaultValue: 'عدد المتغيرات: {{count}}',
-          })}
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={handleAddVariant}
-          fullWidth={isMobile}
-        >
-          {t('products:variants.add', 'إضافة متغير')}
-        </Button>
-      </Box>
-
-      {/* Bulk Actions Toolbar */}
       {selectedVariants.length > 0 && (
         <Paper
           sx={{
             p: { xs: 1.5, sm: 2 },
-            mb: 2,
-            bgcolor: 'primary.light',
             border: '1px solid',
             borderColor: 'primary.main',
+            bgcolor: 'primary.50',
+            borderRadius: 1,
           }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-            <Typography variant="body1" fontWeight="medium">
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" flexWrap="wrap" useFlexGap>
+            <Typography variant="body2" fontWeight="bold">
               {t('products:variants.selectedCount', 'تم اختيار {{count}} متغير', { count: selectedVariants.length })}
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Button
-                variant="contained"
-                color="primary"
-                size="small"
-                startIcon={<Edit />}
-                onClick={handleBulkEdit}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
-              >
+              <Button size="small" variant="contained" startIcon={<Edit />} onClick={() => setBulkEditDrawerOpen(true)}>
                 {t('products:variants.bulkEdit', 'تعديل جماعي')}
               </Button>
-              <Button
-                variant="contained"
-                color="error"
-                size="small"
-                startIcon={<Delete />}
-                onClick={handleBulkDelete}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
-              >
+              <Button size="small" variant="contained" color="error" startIcon={<Delete />} onClick={handleBulkDelete}>
                 {t('products:variants.bulkDelete', 'حذف المحدد')}
               </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={selectedVariants.length === (variants?.length || 0) ? <Deselect /> : <SelectAll />}
-                onClick={handleSelectAll}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
-              >
-                {selectedVariants.length === (variants?.length || 0)
-                  ? t('products:variants.deselectAll', 'إلغاء تحديد الكل')
-                  : t('products:variants.selectAll', 'تحديد الكل')}
+              <Button size="small" variant="outlined" onClick={handleSelectAll}>
+                {selectedVariants.length === (variants?.length || 0) ? t('products:variants.deselectAll', 'إلغاء تحديد الكل') : t('products:variants.selectAll', 'تحديد الكل')}
               </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Clear />}
-                onClick={() => setSelectedVariants([])}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}
-              >
+              <Button size="small" variant="outlined" color="inherit" onClick={() => setSelectedVariants([])}>
                 {t('products:variants.clearSelection', 'مسح التحديد')}
               </Button>
             </Stack>
-          </Box>
+          </Stack>
         </Paper>
       )}
 
-      {/* Variants Display */}
-      {loadingVariants ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
-      ) : variants && variants.length > 0 ? (
-        <>
-          {isMobile ? (
-            /* Mobile Card Layout - 2 cards per row */
-            <Grid container spacing={2}>
-              {variants.map((variant) => {
-                const isEditing = editingId === variant._id;
-                return (
-                  <Grid size={{ xs: 6 }} key={variant._id}>
-                    <VariantCard
-                      variant={variant}
-                      onDelete={handleDeleteVariant}
-                      showActions={true}
-                    />
-                    {isEditing && (
-                      <Card sx={{ mt: 2, p: 2 }}>
-                        <Stack spacing={2}>
-                          <TextField
-                            label={t('products:variants.form.sku', 'SKU')}
-                            type="text"
-                            size="small"
-                            value={editingData.sku || ''}
-                            onChange={(e) => setEditingData({ ...editingData, sku: e.target.value })}
-                            fullWidth
-                            helperText={t('products:variants.form.skuHelp', 'رمز التخزين (اختياري)')}
-                          />
-                          <TextField
-                            label={t('products:variants.form.price', 'السعر')}
-                            type="number"
-                            size="small"
-                            value={editingData.price}
-                            onChange={(e) => setEditingData({ ...editingData, price: Number(e.target.value) })}
-                            inputProps={{ min: 0, step: 0.01 }}
-                            fullWidth
-                          />
-                          <TextField
-                            label={t('products:variants.form.stock', 'المخزون')}
-                            type="number"
-                            size="small"
-                            value={editingData.stock}
-                            onChange={(e) => setEditingData({ ...editingData, stock: Number(e.target.value) })}
-                            inputProps={{ min: 0 }}
-                            fullWidth
-                          />
-                          <Stack direction="row" spacing={1}>
-                            <Button
-                              variant="contained"
-                              color="success"
-                              size="small"
-                              startIcon={<Check />}
-                              onClick={() => handleSaveEdit(variant._id)}
-                              disabled={updatingVariant}
-                              fullWidth
-                            >
-                              {t('common:actions.save', 'حفظ')}
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              color="error"
-                              size="small"
-                              startIcon={<Close />}
-                              onClick={handleCancelEdit}
-                              fullWidth
-                            >
-                              {t('common:actions.cancel', 'إلغاء')}
-                            </Button>
-                          </Stack>
-                        </Stack>
-                      </Card>
-                    )}
-                  </Grid>
-                );
-              })}
-            </Grid>
-          ) : (
-            /* Desktop DataTable Layout */
-            <DataTable
-              columns={columns}
-              rows={rows}
-              loading={loadingVariants}
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              sortModel={sortModel}
-              onSortModelChange={setSortModel}
-              getRowId={(row: unknown) => (row as Variant)?._id || ''}
-              selectable={true}
-              onRowSelectionModelChange={(selection) => setSelectedVariants(selection as string[])}
-              height={600}
-            />
-          )}
-        </>
-      ) : (
-        <Alert severity="info" sx={{ mt: 3 }}>
-          <Typography variant={isMobile ? 'body1' : 'h6'} gutterBottom>
-            {t('products:variants.empty', 'لا توجد متغيرات بعد')}
-          </Typography>
-          <Typography variant="body2">
-            {t('products:variants.emptyDescription', 'أضف متغيرات للمنتج لبدء إدارتها هنا')}
-          </Typography>
-        </Alert>
-      )}
+      <ResponsiveDataView
+        rows={filteredVariants}
+        renderCard={renderCompactCard}
+        renderTable={renderTable}
+        cardBreakpoint="md"
+        loading={loadingVariants}
+        emptyTitle={t('products:variants.empty', 'لا توجد متغيرات')}
+        emptyDescription={t('products:variants.emptyDescription', 'أضف متغيرات للمنتج لبدء إدارتها')}
+        emptyActionLabel={t('products:variants.add', 'إضافة متغير')}
+        onEmptyAction={handleOpenAddDrawer}
+        gridProps={{ columns: 2, spacing: 1.5 }}
+        getRowId={(row) => row._id}
+      />
 
-      {/* Variant Form Dialog */}
-      <Dialog
-        open={variantDialogOpen}
-        onClose={handleCloseDialog}
-        maxWidth="md"
-        fullWidth
-        fullScreen={isMobile}
+      <DetailsDrawer
+        open={addDrawerOpen}
+        onClose={handleCloseAddDrawer}
+        title={t('products:variants.addVariant', 'إضافة متغير')}
       >
-        <DialogTitle>
-          {t('products:variants.addVariant', 'إضافة متغير')}
-        </DialogTitle>
-        <DialogContent>
-          <FormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit(onSubmit)}>
-              <Box display="flex" flexDirection="column" gap={3} pt={2}>
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  <Typography variant="body2">
-                    💡 {t('products:variants.generateTip', 'يمكنك توليد المتغيرات تلقائياً من السمات لاحقاً')}
-                  </Typography>
-                </Alert>
+        <FormProvider {...methods}>
+          <form onSubmit={methods.handleSubmit(onSubmit)}>
+            <Stack spacing={2.5} sx={{ pt: 1 }}>
+              <Alert severity="info" sx={{ py: 0 }}>
+                <Typography variant="caption">
+                  {t('products:variants.generateTip', 'يمكنك توليد المتغيرات تلقائياً من السمات لاحقاً')}
+                </Typography>
+              </Alert>
 
-                <Grid container spacing={2}>
-                  {/* استبدال TextField العادي بـ SmartSkuInput عبر Controller */}
-                  <Grid size={{ xs: 12 }}>
-                    <Controller
-                      name="sku"
-                      control={methods.control}
-                      render={({ field }) => (
-                        <SmartSkuInput
-                          value={field.value || ''}
-                          onChange={(val) => {
-                            field.onChange(val);
-                            // إذا تم مسح الـ SKU، نلغي الربط
-                            if (val.length < 3) setOnyxData({ isLinked: false });
-                          }}
-                          onSkuValidated={handleOnyxValidationInDialog}
-                          label={t('products:variants.form.sku', 'SKU')}
-                          error={!!methods.formState.errors.sku}
-                          helperText={methods.formState.errors.sku?.message as string | undefined}
-                        />
-                      )}
+              <Controller
+                name="sku"
+                control={methods.control}
+                render={({ field }) => (
+                  <SmartSkuInput
+                    value={field.value || ''}
+                    onChange={(val) => {
+                      field.onChange(val);
+                      if (val.length < 3) setOnyxData({ isLinked: false });
+                    }}
+                    onSkuValidated={handleOnyxValidation}
+                    label={t('products:variants.form.sku', 'SKU')}
+                    error={!!methods.formState.errors.sku}
+                    helperText={methods.formState.errors.sku?.message as string | undefined}
+                  />
+                )}
+              />
+
+              {(methods.watch('sku') || '').length >= 3 && (
+                <Box>
+                  {onyxData.isLinked ? (
+                    <Alert severity="success" sx={{ py: 0 }}>
+                      <Typography variant="caption">
+                        {t('products:integration.foundMsg', 'تم الربط مع أونكس. الكمية المتوفرة')}: <strong>{onyxData.stock}</strong>
+                      </Typography>
+                    </Alert>
+                  ) : (
+                    <Alert severity="warning" sx={{ py: 0 }}>
+                      <Typography variant="caption">
+                        {t('products:integration.notFoundMsg', 'غير موجود في أونكس. سيتم تعيين المخزون يدوياً.')}
+                      </Typography>
+                    </Alert>
+                  )}
+                </Box>
+              )}
+
+              <Controller
+                name="price"
+                control={methods.control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label={t('products:variants.form.price', 'السعر') + ' *'}
+                    type="number"
+                    fullWidth
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    inputProps={{ min: 0, step: 0.01 }}
+                    error={!!methods.formState.errors.price}
+                    helperText={methods.formState.errors.price?.message as string | undefined}
+                  />
+                )}
+              />
+
+              <Controller
+                name="stock"
+                control={methods.control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label={t('products:variants.form.stock', 'المخزون') + ' *'}
+                    type="number"
+                    fullWidth
+                    disabled={onyxData.isLinked}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    inputProps={{ min: 0 }}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': { backgroundColor: onyxData.isLinked ? 'action.hover' : 'inherit' },
+                      '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: onyxData.isLinked ? '#2e7d32' : undefined, fontWeight: onyxData.isLinked ? 'bold' : 'normal' },
+                    }}
+                    helperText={onyxData.isLinked ? t('products:integration.stockSynced', 'يتم جلب الكمية من أونكس تلقائياً') : t('products:variants.form.stockHelp', 'أدخل الكمية المتاحة')}
+                  />
+                )}
+              />
+
+              <Alert severity="warning">
+                <Typography variant="body2">
+                  {t('products:variants.form.discountNote', 'ملاحظة: يمكن تطبيق الخصومات لاحقاً من إعدادات التسعير')}
+                </Typography>
+              </Alert>
+            </Stack>
+
+            <FormActionBar
+              onSubmit={methods.handleSubmit(onSubmit)}
+              onCancel={handleCloseAddDrawer}
+              submitLabel={t('common:actions.add', 'إضافة')}
+              cancelLabel={t('products:variants.form.cancel', 'إلغاء')}
+              loading={addingVariant}
+            />
+          </form>
+        </FormProvider>
+      </DetailsDrawer>
+
+      <DetailsDrawer
+        open={editDrawerOpen}
+        onClose={handleCloseEditDrawer}
+        title={editingVariant?.sku || t('products:variants.form.editVariant', 'تعديل المتغير')}
+        description={
+          editingVariant
+            ? `${t('products:variants.columns.price', 'السعر')}: $${editingVariant.price ?? editingVariant.basePriceUSD ?? 0} | ${t('products:variants.columns.stock', 'المخزون')}: ${editingVariant.stock}`
+            : undefined
+        }
+      >
+        {editingVariant && (
+          <Stack spacing={2.5}>
+            {editingVariant.attributeValues && editingVariant.attributeValues.length > 0 && (
+              <Box>
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                  {t('products:variants.columns.attributes', 'السمات')}
+                </Typography>
+                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                  {editingVariant.attributeValues.map((attr, idx) => (
+                    <Chip
+                      key={attr.valueId || `${attr.attributeId}-${idx}`}
+                      label={`${attr.name}: ${attr.value}`}
+                      size="small"
+                      variant="outlined"
                     />
-
-                    {/* رسالة حالة الربط في النافذة */}
-                    {(methods.watch('sku') || '').length >= 3 && (
-                      <Box mt={1}>
-                        {onyxData.isLinked ? (
-                          <Alert severity="success" sx={{ py: 0 }}>
-                            <Typography variant="caption">
-                              {t('products:integration.foundMsg', 'تم الربط مع أونكس. الكمية المتوفرة')}: <strong>{onyxData.stock}</strong>
-                            </Typography>
-                          </Alert>
-                        ) : (
-                          <Alert severity="warning" sx={{ py: 0 }}>
-                            <Typography variant="caption">
-                              {t('products:integration.notFoundMsg', 'غير موجود في أونكس. سيتم تعيين المخزون يدوياً.')}
-                            </Typography>
-                          </Alert>
-                        )}
-                      </Box>
-                    )}
-                  </Grid>
-
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <FormInput
-                      name="price"
-                      label={t('products:variants.form.price', 'السعر') + ' *'}
-                      type="number"
-                      helperText={t('products:variants.form.priceHelp', 'أدخل السعر')}
-                    />
-                  </Grid>
-
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    {/* حقل المخزون: يتم تعطيله إذا كان مربوطاً */}
-                    <Controller
-                      name="stock"
-                      control={methods.control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label={t('products:variants.form.stock', 'المخزون') + ' *'}
-                          type="number"
-                          fullWidth
-                          disabled={onyxData.isLinked}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          sx={{
-                            '& .MuiInputBase-root.Mui-disabled': {
-                              backgroundColor: onyxData.isLinked ? 'action.hover' : 'inherit',
-                            },
-                            '& .MuiInputBase-input.Mui-disabled': {
-                              WebkitTextFillColor: onyxData.isLinked ? '#2e7d32' : undefined,
-                              fontWeight: onyxData.isLinked ? 'bold' : 'normal',
-                            },
-                          }}
-                          helperText={onyxData.isLinked
-                            ? t('products:integration.stockSynced', 'يتم جلب الكمية من أونكس تلقائياً')
-                            : t('products:variants.form.stockHelp', 'أدخل الكمية المتاحة')}
-                        />
-                      )}
-                    />
-                  </Grid>
-                </Grid>
-
-                <Alert severity="warning">
-                  <Typography variant="body2">
-                    {t('products:variants.form.discountNote', 'ملاحظة: يمكن تطبيق الخصومات لاحقاً من إعدادات التسعير')}
-                  </Typography>
-                </Alert>
+                  ))}
+                </Stack>
               </Box>
-            </form>
-          </FormProvider>
-        </DialogContent>
-        <DialogActions sx={{ p: { xs: 2, sm: 3 } }}>
-          <Button onClick={handleCloseDialog} startIcon={<Cancel />} fullWidth={isMobile}>
-            {t('products:variants.form.cancel', 'إلغاء')}
-          </Button>
-          <Button
-            onClick={methods.handleSubmit(onSubmit)}
-            variant="contained"
-            startIcon={addingVariant ? <CircularProgress size={20} /> : <Save />}
-            disabled={addingVariant}
-            fullWidth={isMobile}
-          >
-            {t('common:actions.add', 'إضافة')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            )}
 
-      {/* Bulk Edit Dialog */}
-      <Dialog
-        open={bulkEditDialogOpen}
-        onClose={() => setBulkEditDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
-      >
-        <DialogTitle>
-          {t('products:variants.bulkEditTitle', 'تعديل جماعي للمتغيرات')}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-            <Alert severity="info">
-              {t('products:variants.bulkEditInfo', 'سيتم تطبيق التغييرات على {{count}} متغير', { count: selectedVariants.length })}
-            </Alert>
             <TextField
-              label={t('products:variants.form.price', 'السعر')}
-              type="number"
-              value={bulkEditData.price || ''}
-              onChange={(e) => setBulkEditData({ ...bulkEditData, price: Number(e.target.value) })}
+              label={t('products:variants.form.sku', 'SKU')}
+              type="text"
               fullWidth
+              value={editSku}
+              onChange={(e) => setEditSku(e.target.value)}
+              sx={{ fontFamily: 'monospace' }}
+            />
+
+            <TextField
+              label={t('products:variants.form.price', 'السعر') + ' *'}
+              type="number"
+              fullWidth
+              value={editPrice}
+              onChange={(e) => setEditPrice(Number(e.target.value))}
               inputProps={{ min: 0, step: 0.01 }}
-              helperText={t('products:variants.bulkEditPriceHelp', 'اتركه فارغاً إذا لم ترد تغييره')}
             />
-            <TextField
-              label={t('products:variants.form.stock', 'المخزون')}
-              type="number"
-              value={bulkEditData.stock || ''}
-              onChange={(e) => setBulkEditData({ ...bulkEditData, stock: Number(e.target.value) })}
-              fullWidth
-              inputProps={{ min: 0 }}
-              helperText={t('products:variants.bulkEditStockHelp', 'اتركه فارغاً إذا لم ترد تغييره')}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setBulkEditDialogOpen(false)} startIcon={<Cancel />}>
-            {t('common:actions.cancel', 'إلغاء')}
-          </Button>
-          <Button
-            onClick={handleBulkEditSave}
-            variant="contained"
-            startIcon={<Save />}
-            disabled={bulkEditData.price === undefined && bulkEditData.stock === undefined}
-          >
-            {t('common:actions.save', 'حفظ')}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
-      {/* Confirm Dialog */}
+            <TextField
+              label={t('products:variants.form.stock', 'المخزون') + ' *'}
+              type="number"
+              fullWidth
+              value={editStock}
+              onChange={(e) => setEditStock(Number(e.target.value))}
+              inputProps={{ min: 0 }}
+            />
+          </Stack>
+        )}
+
+        <FormActionBar
+          onSubmit={handleSaveEdit}
+          onCancel={handleCloseEditDrawer}
+          submitLabel={t('common:actions.save', 'حفظ')}
+          cancelLabel={t('common:actions.cancel', 'إلغاء')}
+          loading={updatingVariant}
+        />
+      </DetailsDrawer>
+
+      <DetailsDrawer
+        open={bulkEditDrawerOpen}
+        onClose={() => { setBulkEditDrawerOpen(false); setBulkPrice(''); setBulkStock(''); }}
+        title={t('products:variants.bulkEditTitle', 'تعديل جماعي للمتغيرات')}
+        description={t('products:variants.bulkEditInfo', 'سيتم تطبيق التغييرات على {{count}} متغير', { count: selectedVariants.length })}
+      >
+        <Stack spacing={2.5}>
+          <Alert severity="info">
+            {t('products:variants.bulkEditInfo', 'سيتم تطبيق التغييرات على {{count}} متغير', { count: selectedVariants.length })}
+          </Alert>
+          <TextField
+            label={t('products:variants.form.price', 'السعر')}
+            type="number"
+            fullWidth
+            value={bulkPrice}
+            onChange={(e) => setBulkPrice(e.target.value)}
+            inputProps={{ min: 0, step: 0.01 }}
+            helperText={t('products:variants.bulkEditPriceHelp', 'اتركه فارغاً إذا لم ترد تغييره')}
+          />
+          <TextField
+            label={t('products:variants.form.stock', 'المخزون')}
+            type="number"
+            fullWidth
+            value={bulkStock}
+            onChange={(e) => setBulkStock(e.target.value)}
+            inputProps={{ min: 0 }}
+            helperText={t('products:variants.bulkEditStockHelp', 'اتركه فارغاً إذا لم ترد تغييره')}
+          />
+        </Stack>
+
+        <FormActionBar
+          onSubmit={handleBulkEditSave}
+          onCancel={() => { setBulkEditDrawerOpen(false); setBulkPrice(''); setBulkStock(''); }}
+          submitLabel={t('common:actions.save', 'حفظ')}
+          cancelLabel={t('common:actions.cancel', 'إلغاء')}
+          disabled={bulkPrice === '' && bulkStock === ''}
+        />
+      </DetailsDrawer>
+
       <ConfirmDialog {...dialogProps} />
-    </Box>
+    </PageShell>
   );
 };

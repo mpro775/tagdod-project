@@ -162,6 +162,9 @@ export interface Product extends BaseEntity {
   };
   variants?: Variant[];
 
+  // هل المنتج عليه عرض (يحسب من الباك إند)
+  hasOffer?: boolean;
+
   // قواعد الأسعار المطبقة على المنتج
   appliedPriceRules?: Array<{
     _id: string;
@@ -402,9 +405,18 @@ export interface ProductStats {
   draft: number;
   archived: number;
   featured: number;
-  new: number;
-  lowStock?: number;
-  outOfStock?: number;
+  newProducts: number;
+  withOffers: number;
+  lowStock: number;
+  outOfStock: number;
+  withoutImages: number;
+  withoutSku: number;
+  withoutCategory: number;
+  withoutBrand: number;
+  withoutVariants: number;
+  inventoryValueUSD?: number;
+  /** @deprecated Use newProducts instead */
+  new?: number;
 }
 
 // Pricing and Inventory Types

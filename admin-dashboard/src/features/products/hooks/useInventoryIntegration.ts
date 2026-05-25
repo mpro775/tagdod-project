@@ -1,56 +1,36 @@
-/**
- * Inventory Integration Hooks
- * React Query hooks for Onyx inventory integration
- */
-
 import { useQuery } from '@tanstack/react-query';
 import { inventoryIntegrationApi } from '../api/inventoryIntegrationApi';
+import type { LinkedProductsParams, UnlinkedProductsParams } from '../types/inventory-integration.types';
 
 const INTEGRATION_KEY = 'inventory-integration';
 
-/**
- * Hook for fetching integration dashboard statistics
- * إحصائيات لوحة الربط
- */
 export const useIntegrationStats = () => {
     return useQuery({
         queryKey: [INTEGRATION_KEY, 'stats'],
         queryFn: () => inventoryIntegrationApi.getDashboardStats(),
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 5 * 60 * 1000,
     });
 };
 
-/**
- * Hook for fetching linked products
- * المنتجات المربوطة
- */
-export const useLinkedProducts = (limit = 50, page = 1) => {
+export const useLinkedProducts = (params: LinkedProductsParams = {}) => {
     return useQuery({
-        queryKey: [INTEGRATION_KEY, 'linked', limit, page],
-        queryFn: () => inventoryIntegrationApi.getLinkedProducts(limit, page),
+        queryKey: [INTEGRATION_KEY, 'linked', params],
+        queryFn: () => inventoryIntegrationApi.getLinkedProducts(params),
     });
 };
 
-/**
- * Hook for fetching unlinked items
- * المنتجات غير المربوطة
- */
-export const useUnlinkedItems = (limit = 50, page = 1, search = '') => {
+export const useUnlinkedItems = (params: UnlinkedProductsParams = {}) => {
     return useQuery({
-        queryKey: [INTEGRATION_KEY, 'unlinked', limit, page, search],
-        queryFn: () => inventoryIntegrationApi.getUnlinkedItems(limit, page, search),
+        queryKey: [INTEGRATION_KEY, 'unlinked', params],
+        queryFn: () => inventoryIntegrationApi.getUnlinkedItems(params),
     });
 };
 
-/**
- * Hook for checking SKU availability in Onyx
- * فحص الـ SKU (يستخدم مع debounce في المكون)
- */
 export const useCheckSku = (sku: string, enabled: boolean) => {
     return useQuery({
         queryKey: [INTEGRATION_KEY, 'check-sku', sku],
         queryFn: () => inventoryIntegrationApi.checkSku(sku),
         enabled: enabled && sku.length > 0,
-        staleTime: 30 * 1000, // 30 seconds
+        staleTime: 30 * 1000,
     });
 };

@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Box,
-  Grid,
   Button,
   Stack,
   ToggleButton,
@@ -22,10 +20,10 @@ import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/shared/components/DataTable/DataTable';
 import {
   ConfirmDialog,
-  EmptyState,
   LoadingState,
   PageHeader,
   PageShell,
+  ResponsiveDataView,
   usePageTitle,
 } from '@/shared/design-system';
 import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog';
@@ -33,10 +31,10 @@ import { CurrencySelector } from '@/shared/components/CurrencySelector';
 import { useProducts, useDeleteProduct, useRestoreProduct, useClearCache, useProductStats } from '../hooks/useProducts';
 import { useCategories } from '@/features/categories/hooks/useCategories';
 import { useBrands } from '@/features/brands/hooks/useBrands';
-import { ProductStatsCards } from '../components/ProductStatsCards';
-import { ProductFilters, type ProductListFilters } from '../components/ProductFilters';
+import { ProductStatsCards } from '../components/admin/ProductStatsCards';
+import { ProductFilters, type ProductListFilters } from '../components/admin/ProductFilters';
 import { useProductsTableColumns } from '../components/ProductsTableColumns';
-import { ProductAdminCard } from '../components/ProductAdminCard';
+import { ProductAdminCard } from '../components/admin/ProductAdminCard';
 import type { Product } from '../types/product.types';
 import { ProductStatus } from '../types/product.types';
 
@@ -98,8 +96,6 @@ export const ProductsListPage: React.FC = () => {
   const { data: brandsData } = useBrands({ isActive: true, limit: 500, sortBy: 'name', sortOrder: 'asc' });
   const brands = brandsData?.data ?? [];
 
-  const effectiveViewMode = isMobile ? 'grid' : viewMode;
-
   const { data, isLoading } = useProducts({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
@@ -130,7 +126,7 @@ export const ProductsListPage: React.FC = () => {
       confirmColor: 'error',
     });
     if (confirmed) {
-      deleteProduct(product._id, { onSuccess: () => refetch() });
+      deleteProduct(product._id);
     }
   };
 
@@ -141,12 +137,8 @@ export const ProductsListPage: React.FC = () => {
       type: 'question',
     });
     if (confirmed) {
-      restoreProduct(product._id, { onSuccess: () => refetch() });
+      restoreProduct(product._id);
     }
-  };
-
-  const refetch = () => {
-    // Trigger refetch by invalidating queries - handled by react-query mutations
   };
 
   const columns = useProductsTableColumns({
@@ -182,7 +174,6 @@ export const ProductsListPage: React.FC = () => {
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
   };
 
-  // Sync URL params
   React.useEffect(() => {
     const params = new URLSearchParams();
     if (paginationModel.page !== 0) params.set('page', paginationModel.page.toString());
@@ -216,19 +207,6 @@ export const ProductsListPage: React.FC = () => {
       </Button>
       <Button variant="outlined" size="small" startIcon={<Cached />} onClick={() => clearCache()} disabled={isClearingCache} color="secondary">
         {isClearingCache ? t('list.clearingCache', 'جاري المسح...') : t('list.clearCache', 'مسح الكاش')}
-      </Button>
-    </Stack>
-  );
-
-  const mobileToolbarActions = (
-    <Stack direction="column" spacing={1} sx={{ width: '100%', mt: 1 }}>
-      <CurrencySelector size="small" showLabel={false} />
-      <ToggleButtonGroup size="small" exclusive value={viewMode} onChange={(_, v) => v && handleViewModeChange(v)} fullWidth>
-        <ToggleButton value="table"><TableChart fontSize="small" /></ToggleButton>
-        <ToggleButton value="grid"><ViewModule fontSize="small" /></ToggleButton>
-      </ToggleButtonGroup>
-      <Button variant="outlined" size="small" startIcon={<InventoryIcon />} onClick={() => navigate('/products/inventory')} fullWidth>
-        {t('list.inventoryManagement', 'المخزون')}
       </Button>
     </Stack>
   );
@@ -270,17 +248,26 @@ export const ProductsListPage: React.FC = () => {
         brands={brands}
         onFiltersChange={handleFiltersChange}
         onClearFilters={clearAllFilters}
-        actions={isMobile ? undefined : toolbarActions}
+        actions={toolbarActions}
       />
 
-      {isMobile && mobileToolbarActions}
-
-      {effectiveViewMode === 'table' && !isMobile ? (
-        <Box sx={{ width: '100%', overflowX: 'auto', minWidth: 0 }}>
+      <ResponsiveDataView
+        rows={data?.data || []}
+        renderCard={(product: Product) => (
+          <ProductAdminCard
+            product={product}
+            onView={(p: Product) => navigate(`/products/${p._id}/view`)}
+            onEdit={(p: Product) => navigate(`/products/${p._id}`)}
+            onDelete={handleDelete}
+            onRestore={handleRestore}
+            onVariants={(p: Product) => navigate(`/products/${p._id}/variants`)}
+          />
+        )}
+        renderTable={(rows) => (
           <DataTable
             title={t('list.title')}
             columns={columns}
-            rows={data?.data || []}
+            rows={rows}
             loading={isLoading}
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
@@ -292,29 +279,14 @@ export const ProductsListPage: React.FC = () => {
             onRowClick={(params) => navigate(`/products/${(params.row as Product)._id}/view`)}
             height="calc(100vh - 300px)"
           />
-        </Box>
-      ) : !isLoading && (!data?.data || data.data.length === 0) ? (
-        <EmptyState
-          icon={<InventoryIcon sx={{ fontSize: 52 }} />}
-          title={t('list.empty', 'لا توجد منتجات')}
-          description={t('list.emptyDescription', 'لم يتم العثور على منتجات تطابق معايير البحث')}
-        />
-      ) : (
-        <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-          {(data?.data || []).map((product: Product) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={product._id}>
-              <ProductAdminCard
-                product={product}
-                onView={(p) => navigate(`/products/${p._id}/view`)}
-                onEdit={(p) => navigate(`/products/${p._id}`)}
-                onDelete={handleDelete}
-                onRestore={handleRestore}
-                onVariants={(p) => navigate(`/products/${p._id}/variants`)}
-              />
-            </Grid>
-          ))}
-        </Grid>
-      )}
+        )}
+        loading={isLoading}
+        emptyTitle={t('list.empty', 'لا توجد منتجات')}
+        emptyDescription={t('list.emptyDescription', 'لم يتم العثور على منتجات تطابق معايير البحث')}
+        emptyActionLabel={t('list.addNew', 'إضافة منتج جديد')}
+        onEmptyAction={() => navigate('/products/new')}
+        getRowId={(row) => (row as Product)._id}
+      />
 
       <ConfirmDialog {...dialogProps} />
     </PageShell>

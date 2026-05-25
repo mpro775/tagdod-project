@@ -8,9 +8,10 @@ import { PageSummaryGrid, StatCard, StatsSection } from '@/shared/design-system'
 
 interface CategoryStatsCardsProps {
   onRefresh?: () => void;
+  compact?: boolean;
 }
 
-export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefresh }) => {
+export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefresh, compact = false }) => {
   const { t } = useTranslation('categories');
   const { data: stats, isLoading, error } = useCategoryStats();
   const { isPending: isUpdating } = useUpdateCategoryStats();
@@ -20,7 +21,7 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
   };
 
   if (error) {
-    return <StatCard title={t('stats.title')} value="-" tone="error" />;
+    return <StatCard title={t('stats.title')} value="-" tone="error" compact={compact} />;
   }
 
   const statsCards = [
@@ -29,42 +30,28 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
       value: formatNumber(stats?.totalCategories || 0),
       icon: <Category fontSize="small" />,
       tone: 'primary' as const,
-      description: t('stats.totalDesc'),
+      description: compact ? undefined : t('stats.totalDesc'),
     },
     {
       title: t('stats.activeCategories'),
       value: formatNumber(stats?.activeCategories || 0),
       icon: <Visibility fontSize="small" />,
       tone: 'success' as const,
-      description: t('stats.activeDesc'),
+      description: compact ? undefined : t('stats.activeDesc'),
     },
     {
       title: t('stats.featuredCategories'),
       value: formatNumber(stats?.featuredCategories || 0),
       icon: <Star fontSize="small" />,
       tone: 'warning' as const,
-      description: t('stats.featuredDesc'),
+      description: compact ? undefined : t('stats.featuredDesc'),
     },
     {
       title: t('stats.totalProducts'),
       value: formatNumber(stats?.totalProducts || 0),
       icon: <TrendingUp fontSize="small" />,
       tone: 'info' as const,
-      description: t('stats.totalProductsDesc'),
-    },
-    {
-      title: t('stats.categoriesWithProducts'),
-      value: formatNumber(stats?.categoriesWithProducts || 0),
-      icon: <TrendingUp fontSize="small" />,
-      tone: 'secondary' as const,
-      description: t('stats.categoriesWithProductsDesc'),
-    },
-    {
-      title: t('stats.averageProducts'),
-      value: Number(stats?.averageProductsPerCategory || 0).toFixed(1),
-      icon: <TrendingUp fontSize="small" />,
-      tone: 'error' as const,
-      description: t('stats.averageProductsDesc'),
+      description: compact ? undefined : t('stats.totalProductsDesc'),
     },
   ];
 
@@ -77,6 +64,24 @@ export const CategoryStatsCards: React.FC<CategoryStatsCardsProps> = ({ onRefres
       </span>
     </Tooltip>
   );
+
+  if (compact) {
+    return (
+      <PageSummaryGrid columns={4} compact>
+        {statsCards.map((card) => (
+          <StatCard
+            key={card.title}
+            title={card.title}
+            value={card.value}
+            icon={card.icon}
+            tone={card.tone}
+            loading={isLoading}
+            compact
+          />
+        ))}
+      </PageSummaryGrid>
+    );
+  }
 
   return (
     <StatsSection title={t('stats.title')} action={refreshButton}>
