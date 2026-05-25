@@ -211,19 +211,6 @@ export class SmsCampaignsService {
       throw new BadRequestException(`Message length exceeds ${this.maxMessageLength()} characters`);
     }
 
-    const requireTest =
-      this.configService.get<boolean>('SMS_CAMPAIGN_REQUIRE_TEST_BEFORE_SEND') !== false;
-    if (requireTest) {
-      const lastSuccessfulTest = await this.testModel.exists({
-        createdBy: new Types.ObjectId(createdBy),
-        message: dto.message,
-        success: true,
-      });
-      if (!lastSuccessfulTest) {
-        throw new BadRequestException('A successful test SMS is required before sending');
-      }
-    }
-
     const prepared = await this.prepareRecipients(dto);
     if (prepared.validRecipients.length === 0) {
       throw new BadRequestException('No valid recipients matched this campaign');
