@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from '../auth/auth.module';
 import { NotificationsCompleteModule } from '../notifications/notifications-complete.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import {
@@ -32,6 +33,7 @@ import { SmsCampaignTest, SmsCampaignTestSchema } from './schemas/sms-campaign-t
         removeOnFail: 20,
       },
     }),
+    forwardRef(() => AuthModule),
     forwardRef(() => NotificationsCompleteModule),
   ],
   controllers: [SmsCampaignsAdminController],
