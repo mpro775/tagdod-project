@@ -42,6 +42,7 @@ import { HealthModule } from './health/health.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { ArticlesModule } from './modules/articles/articles.module';
 import { ContactRequestsModule } from './modules/contact-requests/contact-requests.module';
+import { SmsCampaignsModule } from './modules/sms-campaigns/sms-campaigns.module';
 
 // Shared modules
 import { CacheModule } from './shared/cache/cache.module';
@@ -140,6 +141,7 @@ import { ShareProductController } from './deep-linking/share-product.controller'
     ProjectsModule,
     ArticlesModule,
     ContactRequestsModule,
+    SmsCampaignsModule,
 
     // Shared modules
     CacheModule,

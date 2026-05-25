@@ -63,6 +63,15 @@ export const envSchema = z.object({
   
   // SMS Feature Flags
   ENABLE_SMS_TO_ENGINEERS: z.coerce.boolean().default(false),
+  SMS_CAMPAIGNS_ENABLED: z.coerce.boolean().default(true),
+  SMS_CAMPAIGN_RATE_LIMIT_PER_SECOND: z.coerce.number().int().min(1).max(50).default(5),
+  SMS_CAMPAIGN_BATCH_SIZE: z.coerce.number().int().min(1).max(500).default(50),
+  SMS_CAMPAIGN_BATCH_DELAY_MS: z.coerce.number().int().min(0).max(60000).default(1000),
+  SMS_CAMPAIGN_MAX_RECIPIENTS: z.coerce.number().int().min(1).max(200000).default(50000),
+  SMS_CAMPAIGN_MAX_MESSAGE_LENGTH: z.coerce.number().int().min(1).max(1000).default(500),
+  SMS_CAMPAIGN_REQUIRE_TEST_BEFORE_SEND: z.coerce.boolean().default(true),
+  SMS_CAMPAIGN_DEFAULT_PROVIDER: z.enum(['alawael']).default('alawael'),
+  SMS_CAMPAIGN_QUEUE_NAME: z.string().default('sms-campaigns'),
   
   // Sales Manager Contact Information
   SALES_MANAGER_EMAIL: z.string().email().optional(),

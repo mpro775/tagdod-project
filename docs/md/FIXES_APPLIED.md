@@ -16,7 +16,7 @@
 ### المشكلة:
 ```bash
 # قبل: بيانات اتصال حقيقية مكشوفة في الملف
-MONGO_URI=mongodb+srv://bthwani1_db_user:WTmCFUDVVGOTeMHc@cluster0.vip178l.mongodb.net/tagadodo?...
+MONGO_URI=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/YOUR_DATABASE?...
 ```
 
 ### الحل:

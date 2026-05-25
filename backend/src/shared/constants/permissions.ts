@@ -146,6 +146,12 @@ export enum AdminPermission {
   NOTIFICATIONS_DELETE = 'notifications.delete',
   NOTIFICATIONS_SEND = 'notifications.send',
   NOTIFICATIONS_MANAGE = 'notifications.manage',
+
+  // SMS campaigns
+  SMS_CAMPAIGNS_READ = 'sms_campaigns.read',
+  SMS_CAMPAIGNS_CREATE = 'sms_campaigns.create',
+  SMS_CAMPAIGNS_CONTROL = 'sms_campaigns.control',
+  SMS_CAMPAIGNS_EXPORT = 'sms_campaigns.export',
 }
 
 // مجموعات الصلاحيات للأدوار الشائعة
@@ -218,6 +224,10 @@ export const PERMISSION_GROUPS = {
     AdminPermission.MARKETING_DELETE,
     AdminPermission.MARKETING_PUBLISH,
     AdminPermission.MARKETING_ANALYZE,
+    AdminPermission.SMS_CAMPAIGNS_READ,
+    AdminPermission.SMS_CAMPAIGNS_CREATE,
+    AdminPermission.SMS_CAMPAIGNS_CONTROL,
+    AdminPermission.SMS_CAMPAIGNS_EXPORT,
     AdminPermission.ANALYTICS_READ,
     AdminPermission.REPORTS_GENERATE,
     AdminPermission.ADMIN_ACCESS,

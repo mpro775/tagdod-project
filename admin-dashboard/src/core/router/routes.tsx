@@ -374,6 +374,16 @@ const NotificationChannelConfigPage = lazy(() =>
     default: m.NotificationChannelConfigPage,
   }))
 );
+const SmsCampaignsPage = lazy(() =>
+  import('@/features/sms-campaigns/pages/SmsCampaignsPage').then((m) => ({
+    default: m.SmsCampaignsPage,
+  }))
+);
+const SmsCampaignDetailsPage = lazy(() =>
+  import('@/features/sms-campaigns/pages/SmsCampaignDetailsPage').then((m) => ({
+    default: m.SmsCampaignDetailsPage,
+  }))
+);
 const ServicesListPage = lazy(() =>
   import('@/features/services/pages/ServicesListPage').then((m) => ({
     default: m.ServicesListPage,
@@ -956,6 +966,14 @@ export const routes: RouteObject[] = [
       {
         path: 'notifications/channel-configs',
         element: <NotificationChannelConfigPage />,
+      },
+      {
+        path: 'sms-campaigns',
+        element: <SmsCampaignsPage />,
+      },
+      {
+        path: 'sms-campaigns/:id',
+        element: <SmsCampaignDetailsPage />,
       },
 
       // ===========================================

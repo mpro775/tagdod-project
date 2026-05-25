@@ -70,6 +70,8 @@ import arLandingSettings from './locales/ar/landingSettings.json';
 import enLandingSettings from './locales/en/landingSettings.json';
 import arArticles from './locales/ar/articles.json';
 import enArticles from './locales/en/articles.json';
+import arSmsCampaigns from './locales/ar/smsCampaigns.json';
+import enSmsCampaigns from './locales/en/smsCampaigns.json';
 
 // الترجمات المحلية
 const resources = {
@@ -107,6 +109,7 @@ const resources = {
     landingBrands: arLandingBrands,
     landingSettings: arLandingSettings,
     articles: arArticles,
+    smsCampaigns: arSmsCampaigns,
   },
   en: {
     common: enCommon,
@@ -142,6 +145,7 @@ const resources = {
     landingBrands: enLandingBrands,
     landingSettings: enLandingSettings,
     articles: enArticles,
+    smsCampaigns: enSmsCampaigns,
   },
 };
 
@@ -156,7 +160,7 @@ if (!i18n.isInitialized) {
       
       fallbackLng: DEFAULT_LANGUAGE,
       defaultNS: 'common',
-      ns: ['common', 'auth', 'orders', 'services', 'users', 'dashboard', 'attributes', 'categories', 'banners', 'brands', 'media', 'errorLogs', 'addresses', 'audit', 'cart', 'coupons', 'exchangeRates', 'marketing', 'analytics', 'notifications', 'systemSettings', 'search', 'system-monitoring', 'products', 'support', 'policies', 'about', 'commissions', 'projects', 'landingProducts', 'landingBrands', 'landingSettings', 'articles'],
+      ns: ['common', 'auth', 'orders', 'services', 'users', 'dashboard', 'attributes', 'categories', 'banners', 'brands', 'media', 'errorLogs', 'addresses', 'audit', 'cart', 'coupons', 'exchangeRates', 'marketing', 'analytics', 'notifications', 'systemSettings', 'search', 'system-monitoring', 'products', 'support', 'policies', 'about', 'commissions', 'projects', 'landingProducts', 'landingBrands', 'landingSettings', 'articles', 'smsCampaigns'],
       
       interpolation: {
         escapeValue: false, // React already escapes

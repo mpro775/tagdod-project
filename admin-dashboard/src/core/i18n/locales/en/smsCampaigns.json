@@ -1,0 +1,16 @@
+{
+  "title": "SMS Campaigns",
+  "subtitle": "Send bulk SMS through Alawael with per-recipient delivery tracking",
+  "create": "Create SMS Campaign",
+  "message": "Message",
+  "target": "Audience",
+  "preview": "Preview Audience",
+  "sendTest": "Send Test SMS",
+  "startCampaign": "Start Campaign",
+  "confirmSendTitle": "Confirm SMS Campaign",
+  "pause": "Pause",
+  "resume": "Resume",
+  "cancel": "Cancel",
+  "retryFailed": "Retry Failed",
+  "exportCsv": "Export CSV"
+}
