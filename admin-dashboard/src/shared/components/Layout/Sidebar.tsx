@@ -138,6 +138,7 @@ const AR_NAV_LABELS: Record<string, string> = {
   'navigation.mediaLibrary': 'مكتبة الوسائط',
   'navigation.notifications': 'الإشعارات',
   'navigation.notificationsAnalytics': 'إحصائيات الإشعارات',
+  'navigation.notificationsBatches': 'دفعات الإشعارات',
   'navigation.notificationsChannelConfigs': 'إعدادات القنوات',
   'navigation.notificationsList': 'قائمة الإشعارات',
   'navigation.notificationsTemplates': 'قوالب الإشعارات',
@@ -672,6 +673,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             label: navLabel('navigation.notificationsList'),
             icon: <Notifications />,
             path: '/notifications',
+          },
+          {
+            id: 'notifications-batches',
+            label: navLabel('navigation.notificationsBatches'),
+            icon: <Campaign />,
+            path: '/notifications/batches',
           },
           {
             id: 'notifications-analytics',

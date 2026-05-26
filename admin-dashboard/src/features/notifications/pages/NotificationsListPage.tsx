@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   LinearProgress,
@@ -51,6 +52,7 @@ export const NotificationsListPage: React.FC = () => {
   const { t } = useTranslation('notifications');
   const { isMobile } = useBreakpoint();
   const { confirmDialog, dialogProps } = useConfirmDialog();
+  const navigate = useNavigate();
 
   const [filters, setFilters] = useState<ListNotificationsParams>({
     search: '',
@@ -292,11 +294,11 @@ export const NotificationsListPage: React.FC = () => {
         targetUserIds: recipientIds,
       };
       bulkSendNotification(bulkData, {
-        onSuccess: () => {
+        onSuccess: (result) => {
           setCreateDialogOpen(false);
           setMobileActionsDrawerOpen(false);
-          showSnackbar(t('messages.bulkSendSuccess'), 'success');
-          refetch();
+          showSnackbar(t('messages.bulkSendAccepted'), 'success');
+          navigate(result?.batchId ? `/notifications/batches?batchId=${result.batchId}` : '/notifications/batches');
         },
         onError: () => showSnackbar(t('messages.bulkSendError'), 'error'),
       });
@@ -315,11 +317,11 @@ export const NotificationsListPage: React.FC = () => {
 
   const handleBulkSend = (data: BulkSendNotificationDto) => {
     bulkSendNotification(data, {
-      onSuccess: () => {
+      onSuccess: (result) => {
         setBulkSendDialogOpen(false);
         setMobileActionsDrawerOpen(false);
-        showSnackbar(t('messages.bulkSendSuccess'), 'success');
-        refetch();
+        showSnackbar(t('messages.bulkSendAccepted'), 'success');
+        navigate(result?.batchId ? `/notifications/batches?batchId=${result.batchId}` : '/notifications/batches');
       },
       onError: () => showSnackbar(t('messages.bulkSendError'), 'error'),
     });

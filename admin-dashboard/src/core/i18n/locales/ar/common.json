@@ -76,9 +76,10 @@
     "exchangeRates": "أسعار الصرف",
     "adminManagement": "إدارة المشرفين",
     "addresses": "العناوين",
-    "search": "البحث"
+    "search": "البحث",
+    "notificationsBatches": "دفعات الإشعارات"
   },
-   "actions": {
+  "actions": {
     "title": "الإجراءات",
     "add": "إضافة",
     "edit": "تعديل",
@@ -110,7 +111,7 @@
     "cancelled": "ملغى",
     "refunded": "مسترد"
   },
-    "common": {
+  "common": {
     "loading": "جارٍ التحميل...",
     "noData": "لا توجد بيانات",
     "error": "حدث خطأ",
@@ -156,4 +157,3 @@
     "error": "حدث خطأ، يرجى المحاولة مرة أخرى"
   }
 }
-

@@ -75,10 +75,9 @@ export const NotificationTable: React.FC<NotificationTableProps> = ({
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
-        minHeight: isMobile ? 400 : 600,
-        height: isMobile ? 'auto' : 'calc(100vh - 520px)',
-        maxHeight: isMobile ? 'none' : 'calc(100vh - 520px)',
-        overflow: 'hidden',
+        minHeight: isMobile ? 440 : 620,
+        height: 'auto',
+        overflow: 'visible',
         position: 'relative',
       }}
     >
@@ -99,8 +98,8 @@ export const NotificationTable: React.FC<NotificationTableProps> = ({
         getRowId={(row) => (row as Notification)._id}
         selectable={!!onSelectionChange}
         onRowSelectionModelChange={onSelectionChange}
-        height={isMobile ? 'auto' : 'calc(100vh - 520px)'}
-        rowHeight={isMobile ? 80 : 72}
+        height={isMobile ? 560 : 680}
+        rowHeight={isMobile ? 84 : 80}
         sx={{
           flex: 1,
           display: 'flex',

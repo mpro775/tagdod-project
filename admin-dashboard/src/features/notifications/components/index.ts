@@ -8,6 +8,8 @@ export { NotificationFilters } from './NotificationFilters';
 // Table Components
 export { NotificationTable } from './NotificationTable';
 export { createNotificationColumns } from './NotificationTableColumns';
+export { NotificationBatchTable } from './NotificationBatchTable';
+export { createNotificationBatchColumns } from './NotificationBatchTableColumns';
 
 // Form Components
 export { NotificationCreateForm } from './NotificationCreateForm';

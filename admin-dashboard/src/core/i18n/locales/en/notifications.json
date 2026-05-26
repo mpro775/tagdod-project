@@ -175,7 +175,8 @@
     "refreshSuccess": "Data refreshed",
     "loadingError": "Error loading data",
     "loadingErrorWithDetails": "Error loading data: {{error}}",
-    "selectRecipientRequired": "Please select at least one recipient"
+    "selectRecipientRequired": "Please select at least one recipient",
+    "bulkSendAccepted": "Batch accepted. You can track its status from Notification Batches."
   },
   "wizard": {
     "step1": "Type & Template",
@@ -426,5 +427,31 @@
     "campaign": "Campaign",
     "campaignDescription": "Marketing campaign name for classifying notifications (optional)",
     "groupByBatch": "Group by batch"
+  },
+  "batches": {
+    "title": "Notification Batches",
+    "subtitle": "Track bulk notification batches for the app",
+    "tableTitle": "Notification Batches List",
+    "campaign": "Campaign",
+    "unnamedCampaign": "Unnamed batch",
+    "batchId": "Batch ID",
+    "copyBatchId": "Copy batch ID",
+    "copied": "Batch ID copied",
+    "recipients": "Recipients",
+    "sent": "Sent",
+    "failed": "Failed",
+    "pending": "Pending",
+    "viewDetails": "View details",
+    "resend": "Resend",
+    "delete": "Delete batch",
+    "refresh": "Refresh",
+    "emptyTitle": "No notification batches",
+    "emptyDescription": "Bulk notification batches will appear here.",
+    "deleteConfirmTitle": "Delete notification batch",
+    "deleteConfirmMessage": "All notifications linked to this batch will be deleted. Continue?",
+    "deleteConfirmMessageWithCount": "All notifications linked to this batch ({{count}} notifications) will be deleted. Continue?",
+    "resendConfirmTitle": "Resend batch",
+    "resendConfirmMessage": "Do you want to resend this batch?",
+    "resendConfirmMessageWithCount": "Do you want to resend this batch to {{count}} recipients?"
   }
 }

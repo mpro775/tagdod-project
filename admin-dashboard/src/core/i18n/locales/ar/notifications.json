@@ -175,7 +175,8 @@
     "refreshSuccess": "تم تحديث البيانات",
     "loadingError": "حدث خطأ في تحميل البيانات",
     "loadingErrorWithDetails": "حدث خطأ في تحميل البيانات: {{error}}",
-    "selectRecipientRequired": "يرجى تحديد مستلم واحد على الأقل"
+    "selectRecipientRequired": "يرجى تحديد مستلم واحد على الأقل",
+    "bulkSendAccepted": "تم قبول الدفعة، يمكنك متابعة حالتها من صفحة دفعات الإشعارات"
   },
   "wizard": {
     "step1": "النوع والقالب",
@@ -426,5 +427,31 @@
     "campaign": "حملة",
     "campaignDescription": "اسم حملة تسويقية لتصنيف الإشعارات (اختياري)",
     "groupByBatch": "تجميع حسب الدفعة"
+  },
+  "batches": {
+    "title": "دفعات الإشعارات",
+    "subtitle": "متابعة دفعات الإرسال الجماعي لإشعارات التطبيق",
+    "tableTitle": "قائمة دفعات الإشعارات",
+    "campaign": "الحملة",
+    "unnamedCampaign": "دفعة بدون اسم حملة",
+    "batchId": "معرف الدفعة",
+    "copyBatchId": "نسخ معرف الدفعة",
+    "copied": "تم نسخ معرف الدفعة",
+    "recipients": "المستلمون",
+    "sent": "نجح",
+    "failed": "فشل",
+    "pending": "قيد الانتظار",
+    "viewDetails": "عرض التفاصيل",
+    "resend": "إعادة إرسال",
+    "delete": "حذف الدفعة",
+    "refresh": "تحديث",
+    "emptyTitle": "لا توجد دفعات إشعارات",
+    "emptyDescription": "ستظهر هنا الدفعات الناتجة عن الإرسال الجماعي للإشعارات.",
+    "deleteConfirmTitle": "حذف دفعة الإشعارات",
+    "deleteConfirmMessage": "سيتم حذف كل الإشعارات المرتبطة بهذه الدفعة. هل تريد المتابعة؟",
+    "deleteConfirmMessageWithCount": "سيتم حذف كل الإشعارات المرتبطة بهذه الدفعة ({{count}} إشعار). هل تريد المتابعة؟",
+    "resendConfirmTitle": "إعادة إرسال الدفعة",
+    "resendConfirmMessage": "هل تريد إعادة إرسال هذه الدفعة؟",
+    "resendConfirmMessageWithCount": "هل تريد إعادة إرسال هذه الدفعة إلى {{count}} مستلم؟"
   }
 }

@@ -354,6 +354,11 @@ const NotificationsListPage = lazy(() =>
     default: m.NotificationsListPage,
   }))
 );
+const NotificationBatchesPage = lazy(() =>
+  import('@/features/notifications/pages/NotificationBatchesPage').then((m) => ({
+    default: m.NotificationBatchesPage,
+  }))
+);
 const MyNotificationsPage = lazy(() =>
   import('@/features/notifications/pages/MyNotificationsPage').then((m) => ({
     default: m.MyNotificationsPage,
@@ -954,6 +959,10 @@ export const routes: RouteObject[] = [
       {
         path: 'notifications',
         element: <NotificationsListPage />,
+      },
+      {
+        path: 'notifications/batches',
+        element: <NotificationBatchesPage />,
       },
       {
         path: 'notifications/analytics',

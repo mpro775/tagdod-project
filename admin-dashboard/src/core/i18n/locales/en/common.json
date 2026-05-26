@@ -65,6 +65,7 @@
     "supportCannedResponses": "Canned Responses",
     "notifications": "Notifications",
     "notificationsList": "Notifications List",
+    "notificationsBatches": "Notification Batches",
     "notificationsAnalytics": "Notifications Analytics",
     "notificationsTemplates": "Notification Templates",
     "systemManagement": "System Management",
@@ -78,7 +79,7 @@
     "addresses": "Addresses",
     "search": "Search"
   },
-   "actions": {
+  "actions": {
     "title": "Actions",
     "add": "Add",
     "edit": "Edit",
@@ -110,7 +111,7 @@
     "cancelled": "Cancelled",
     "refunded": "Refunded"
   },
-    "common": {
+  "common": {
     "loading": "Loading...",
     "noData": "No Data",
     "error": "Error",
@@ -153,4 +154,3 @@
     "error": "An error occurred, please try again"
   }
 }
-

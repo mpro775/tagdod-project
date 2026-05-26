@@ -1206,6 +1206,7 @@ const {
           },
         },
         { $project: { userDoc: 0 } },
+        { $sort: { createdAt: -1, _id: -1 } },
       ];
 
       const [facetResult] = await this.notificationModel
